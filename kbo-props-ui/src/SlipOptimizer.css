@@ -1,0 +1,439 @@
+/* ── SlipOptimizer.css ── */
+.so-container {
+  min-height: 100vh;
+  background: #000;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.so-header {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+  padding: 1.2rem 2rem;
+  text-align: center;
+}
+.so-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* Mode bar */
+.so-mode-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 1rem 1rem 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.so-mode-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: #111;
+  border: 1px solid #222;
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-mode-btn:first-child { border-radius: 8px 0 0 8px; }
+.so-mode-btn:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.so-mode-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.so-mode-btn:hover:not(.active) { background: #161616; color: #ccc; }
+
+/* ── Build Mode ── */
+/* Slip summary */
+.so-slip-summary {
+  max-width: 900px;
+  margin: 1rem auto;
+  padding: 1rem 1.25rem;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 12px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-inline: max(1rem, calc((100% - 900px) / 2));
+}
+.so-slip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.so-slip-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.so-leg-count {
+  font-size: 0.7rem;
+  background: #7c3aed;
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.so-clear-btn {
+  padding: 0.25rem 0.6rem;
+  background: #222;
+  border: none;
+  border-radius: 5px;
+  color: #888;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.so-clear-btn:hover { background: #333; color: #ccc; }
+.so-slip-empty { color: #555; font-size: 0.85rem; font-style: italic; margin: 0; }
+
+.so-slip-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.so-slip-leg {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: #111;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+.so-leg-name { font-weight: 700; color: #fff; min-width: 140px; }
+.so-leg-prop {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #999;
+  background: #1a1a1a;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.so-leg-line { font-size: 0.8rem; color: #ccc; font-weight: 600; }
+.so-leg-side {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-leg-side:hover { opacity: 0.8; }
+.so-leg-edge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  margin-left: auto;
+}
+.so-leg-remove {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+.so-leg-remove:hover { color: #ef4444; }
+
+.so-slip-stats {
+  display: flex;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1a1a1a;
+}
+.so-slip-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.so-stat-label {
+  font-size: 0.6rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.so-stat-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Shared side/edge colors */
+.side-over { background: rgba(34,197,94,0.15); color: #22c55e; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.side-under { background: rgba(239,68,68,0.15); color: #ef4444; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.edge-pos { color: #22c55e; }
+.edge-neg { color: #ef4444; }
+
+/* Confidence */
+.conf-elite { color: #22c55e; }
+.conf-high { color: #60a5fa; }
+.conf-mid { color: #eab308; }
+.conf-low { color: #888; }
+
+/* PP icon */
+.pp-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 900;
+  border-radius: 3px;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+/* Prop picker */
+.so-picker {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem 1rem;
+}
+.so-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.so-picker-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #999;
+  margin: 0;
+}
+.so-picker-filters { display: flex; gap: 0.3rem; }
+.so-filter-chip {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #333;
+  border-radius: 5px;
+  background: transparent;
+  color: #888;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-filter-chip:hover { border-color: #555; color: #ccc; }
+.so-filter-chip.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+
+.so-prop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.so-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  background: #0a0a0a;
+  border: 1px solid #151515;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-prop-row:hover { border-color: #333; background: #0f0f0f; }
+.so-prop-selected { border-color: #7c3aed; background: rgba(124, 58, 237, 0.06); }
+
+.so-prop-check { flex-shrink: 0; }
+.so-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #7c3aed;
+  transition: all 0.15s;
+}
+.so-checkbox.checked { border-color: #7c3aed; background: rgba(124,58,237,0.15); }
+
+.so-prop-info { display: flex; flex-direction: column; min-width: 160px; }
+.so-prop-name { font-weight: 700; font-size: 0.85rem; color: #fff; }
+.so-prop-meta { font-size: 0.7rem; color: #666; }
+.so-vs { color: #444; margin: 0 0.2rem; }
+
+.so-prop-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #999;
+  background: #1a1a1a;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.so-prop-line { font-size: 0.8rem; color: #ccc; font-weight: 600; white-space: nowrap; }
+.so-prop-proj { font-size: 0.8rem; color: #999; font-family: 'JetBrains Mono', monospace; }
+.so-prop-side {
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-prop-side:hover { opacity: 0.7; }
+.so-prop-edge { font-size: 0.8rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+
+/* ── Auto Mode ── */
+.so-auto {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.so-auto-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.so-auto-label { font-size: 0.85rem; color: #999; font-weight: 600; }
+.so-legs-btns { display: flex; gap: 0; }
+.so-legs-btn {
+  width: 36px;
+  height: 36px;
+  background: #111;
+  border: 1px solid #222;
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-legs-btn:first-child { border-radius: 6px 0 0 6px; }
+.so-legs-btn:last-child { border-radius: 0 6px 6px 0; }
+.so-legs-btn:not(:first-child) { border-left: none; }
+.so-legs-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.so-legs-btn:hover:not(.active) { background: #1a1a1a; }
+
+.so-auto-empty { color: #555; font-style: italic; }
+.so-auto-title {
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.so-auto-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.so-auto-card {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 1rem;
+  transition: border-color 0.15s;
+}
+.so-auto-card:hover { border-color: #333; }
+
+.so-auto-rank {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.so-auto-num {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #7c3aed;
+}
+.so-auto-conf {
+  font-size: 1.3rem;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.so-auto-conf-label {
+  font-size: 0.6rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.so-auto-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+.so-auto-leg {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.5rem;
+  background: #111;
+  border-radius: 5px;
+  font-size: 0.8rem;
+}
+.so-auto-player { font-weight: 700; color: #fff; min-width: 130px; }
+.so-auto-prop {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #999;
+  background: #1a1a1a;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+.so-auto-line { color: #ccc; font-weight: 600; white-space: nowrap; }
+.so-auto-side { display: inline-block; }
+.so-auto-edge {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
+}
+
+.so-auto-stats {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 0.6rem;
+}
+.so-auto-stats strong { color: #e2e8f0; }
+
+.so-auto-use {
+  padding: 0.4rem 1rem;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 6px;
+  color: #c084fc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-auto-use:hover { background: rgba(124,58,237,0.25); color: #fff; }
+
+.so-footer-note {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.7rem;
+  color: #444;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .so-slip-legs .so-slip-leg { flex-wrap: wrap; }
+  .so-leg-name { min-width: auto; }
+  .so-prop-row { flex-wrap: wrap; gap: 0.4rem; }
+  .so-prop-info { min-width: auto; }
+  .so-auto-leg { flex-wrap: wrap; }
+  .so-auto-player { min-width: auto; }
+  .so-slip-stats { flex-wrap: wrap; gap: 0.75rem; }
+}

@@ -1,0 +1,189 @@
+/* ── BatterProjections.css ── */
+/* Matches StrikeoutProjections dark theme */
+
+.bp-container {
+  min-height: 100vh;
+  background: #000;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.bp-header {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+  padding: 1.2rem 2rem;
+  text-align: center;
+}
+.bp-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.bp-filter-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.bp-filter-btn {
+  padding: 0.35rem 1rem;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 20px;
+  background: rgba(0,0,0,0.2);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bp-filter-btn:hover {
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+}
+.bp-filter-btn.active {
+  background: #fff;
+  color: #7c3aed;
+  border-color: #fff;
+}
+
+/* Main */
+.bp-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+/* Loading */
+.bp-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 300px; gap: 1rem;
+}
+.bp-spinner {
+  width: 48px; height: 48px; border: 4px solid rgba(168,85,247,.3);
+  border-top-color: #a855f7; border-radius: 50%;
+  animation: bp-spin 0.8s linear infinite;
+}
+@keyframes bp-spin { to { transform: rotate(360deg); } }
+.bp-error { color: #f87171; font-weight: 600; }
+
+/* Table */
+.bp-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #222; }
+.bp-table {
+  width: 100%; border-collapse: collapse; font-size: 0.88rem;
+}
+.bp-table thead th {
+  background: #111; color: #a78bfa; padding: 0.7rem 0.6rem;
+  text-align: left; font-weight: 600; font-size: 0.82rem;
+  border-bottom: 2px solid #7c3aed33; cursor: pointer;
+  user-select: none; white-space: nowrap; position: sticky; top: 0;
+}
+.bp-table thead th:hover { color: #c4b5fd; }
+.bp-table tbody td { padding: 0.6rem 0.6rem; border-bottom: 1px solid #1a1a1a; }
+.bp-row:nth-child(odd) { background: #0a0a0a; }
+.bp-row:nth-child(even) { background: #111; }
+.bp-row:hover { background: #1a1533; }
+
+/* Columns */
+.col-player { font-weight: 600; color: #f1f5f9; white-space: nowrap; }
+.col-prop { color: #94a3b8; font-size: 0.82rem; }
+.col-num { text-align: center; }
+.col-center { text-align: center; }
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.team-text { font-weight: 700; font-size: 0.85rem; }
+
+/* PP icon column */
+.col-pp { white-space: nowrap; }
+.pp-cell { display: inline-flex; align-items: center; gap: 4px; }
+.pp-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem;
+  font-weight: 800; background: #7c3aed; color: #fff;
+}
+.pp-icon-sm {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; font-size: 0.6rem;
+  font-weight: 800; background: #7c3aed; color: #fff;
+}
+
+/* Projection column */
+.col-projection { color: #fbbf24; font-weight: 700; }
+
+/* N/A cells */
+.cell-na { color: #ef4444; font-style: italic; }
+
+/* Rate color */
+.rate-high { color: #34d399; font-weight: 700; }
+.rate-low { color: #f87171; font-weight: 700; }
+
+/* Variance color */
+.var-pos { color: #34d399; font-weight: 600; }
+.var-neg { color: #f87171; font-weight: 600; }
+
+/* VALUE badge */
+.val-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.val-over { background: #166534; color: #4ade80; }
+.val-under { background: #7f1d1d; color: #fca5a5; }
+.val-push { background: #713f12; color: #fbbf24; }
+.val-nodata { background: #374151; color: #9ca3af; }
+
+/* Sort icon */
+.sort-icon { margin-left: 2px; font-size: 0.7rem; }
+.sort-icon.dim { opacity: 0.3; }
+.sort-icon.active { color: #a855f7; }
+
+/* Bottom panels */
+.bp-bottom-panels {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;
+}
+.bp-panel {
+  background: #111; border: 1px solid #222; border-radius: 12px; padding: 1rem;
+}
+.bp-panel-title {
+  margin: 0 0 0.7rem; font-size: 0.85rem; font-weight: 700;
+  color: #a78bfa; text-transform: uppercase; letter-spacing: 1px;
+}
+.bp-panel-subtitle { color: #64748b; font-weight: 400; text-transform: none; font-size: 0.78rem; }
+
+/* Legend */
+.bp-legend-items { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.bp-legend-item {
+  display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #94a3b8;
+}
+
+/* Team rates grid */
+.bp-team-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;
+}
+.bp-team-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 8px; background: #0a0a0a; border-radius: 6px;
+}
+.bp-team-name { font-weight: 700; font-size: 0.8rem; }
+.bp-team-rate { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #fbbf24; }
+
+/* Formula bar */
+.bp-formula-bar {
+  margin-top: 1rem; padding: 0.6rem 1rem;
+  background: #111; border: 1px solid #222; border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: #94a3b8;
+}
+.bp-formula-icon {
+  font-size: 1rem; font-weight: 700; color: #a855f7;
+  font-style: italic;
+}
+.bp-formula-bar code {
+  font-family: 'JetBrains Mono', monospace; color: #c4b5fd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bp-bottom-panels { grid-template-columns: 1fr; }
+  .bp-title { font-size: 1.2rem; }
+  .bp-table { font-size: 0.8rem; }
+}

@@ -1,0 +1,38 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+kbo-props-ui/node_modules/
+kbo-props-ui/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Downloaded files from scrapers
+Park-Factor/downloaded_files/
+Pitchers-Data/downloaded_files/
+
+# Browser profiles from scrapers
+Pitchers-Data/.browser_profile/
+KBO-Odds/.browser_profile/
+
+# Credentials (keep out of repo)
+credentials.json
+
+# IDE
+.idea/
+.vscode/
+
+# Temp / editor
+*.swp
+*.swo
+*~
+
+# Large HTML dumps
+page_source.html
+

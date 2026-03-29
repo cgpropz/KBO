@@ -1,0 +1,503 @@
+/* ── PropTracker.css ── */
+.pt-container {
+  min-height: 100vh;
+  background: #000;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.pt-header {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+  padding: 1.2rem 2rem;
+  text-align: center;
+}
+.pt-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* Dashboard */
+.pt-dashboard {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.25rem 1rem;
+  flex-wrap: wrap;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.pt-dash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 10px;
+  min-width: 80px;
+}
+.pt-dash-num {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.pt-dash-label {
+  font-size: 0.6rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.pt-green { color: #22c55e; }
+.pt-red { color: #ef4444; }
+.pt-yellow { color: #eab308; }
+
+/* Bankroll bar */
+.pt-bankroll-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #0d0d17, #111128);
+  border-bottom: 1px solid #1a1a2e;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pt-br-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pt-br-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.pt-br-display {
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.pt-br-display:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+.pt-br-amount {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.pt-br-start {
+  font-size: 0.7rem;
+  color: #555;
+}
+.pt-br-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.pt-br-edit-inline {
+  display: flex;
+  align-items: center;
+}
+.pt-br-dollar {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pt-br-input {
+  width: 70px;
+  padding: 0.2rem 0.4rem;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  text-align: right;
+}
+.pt-br-input:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+.pt-br-input-sm {
+  width: 50px;
+}
+.pt-br-save {
+  padding: 0.2rem 0.5rem;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pt-br-save:hover { background: #6d28d9; }
+.pt-br-cancel {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.1rem 0.3rem;
+}
+.pt-br-cancel:hover { color: #ef4444; }
+
+/* Tab bar */
+.pt-tab-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 0 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto 0.5rem;
+}
+.pt-tab-btn {
+  padding: 0.5rem 1.5rem;
+  background: transparent;
+  color: #999;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pt-tab-btn:hover { color: #ccc; }
+.pt-tab-btn.active {
+  color: #c084fc;
+  border-bottom-color: #7c3aed;
+}
+
+/* Controls */
+.pt-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.pt-filter-bar {
+  display: flex;
+  gap: 0.35rem;
+}
+.pt-filter-btn {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pt-filter-btn:hover { border-color: #555; color: #ccc; }
+.pt-filter-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.pt-actions { display: flex; gap: 0.5rem; }
+.pt-btn {
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.pt-btn-add { background: #7c3aed; color: #fff; }
+.pt-btn-add:hover { background: #6d28d9; }
+.pt-btn-clear { background: #222; color: #888; }
+.pt-btn-clear:hover { background: #333; color: #ccc; }
+
+/* Auto-grade */
+.pt-btn-grade { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700; }
+.pt-btn-grade:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.pt-btn-grade:disabled { opacity: 0.5; cursor: not-allowed; }
+.pt-grade-msg {
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  background: #1a1a2e;
+  border: 1px solid #7c3aed44;
+  border-radius: 8px;
+  color: #c084fc;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.pt-actual {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Add panel */
+.pt-add-panel {
+  max-width: 1200px;
+  margin: 0 auto 1rem;
+  padding: 0 1.5rem;
+}
+.pt-add-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #999;
+  margin-bottom: 0.75rem;
+}
+.pt-add-empty {
+  color: #555;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.pt-add-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.pt-add-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #111;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+.pt-add-card:hover { border-color: #333; }
+.pt-add-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  margin-right: 0.5rem;
+}
+.pt-add-meta {
+  font-size: 0.75rem;
+  color: #888;
+}
+.pp-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 900;
+  border-radius: 3px;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+.pt-add-btns { display: flex; gap: 0.3rem; flex-shrink: 0; }
+.pt-side-btn {
+  padding: 0.25rem 0.6rem;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.pt-side-over { background: rgba(34,197,94,0.15); color: #22c55e; }
+.pt-side-over:hover { background: rgba(34,197,94,0.3); }
+.pt-side-under { background: rgba(239,68,68,0.15); color: #ef4444; }
+.pt-side-under:hover { background: rgba(239,68,68,0.3); }
+
+/* Table */
+.pt-table-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  overflow-x: auto;
+}
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.pt-table thead th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #222;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.pt-table thead th:hover { color: #999; }
+.pt-table tbody td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #111;
+  white-space: nowrap;
+}
+.pt-row { transition: background 0.15s; }
+.pt-row:hover { background: #0a0a0a; }
+.pt-row-won { background: rgba(34,197,94,0.04); }
+.pt-row-lost { background: rgba(239,68,68,0.04); }
+.pt-date { color: #666; font-size: 0.8rem; }
+.pt-player { font-weight: 700; color: #fff; }
+.pt-vs { color: #444; margin: 0 0.3rem; font-size: 0.7rem; }
+.pt-prop-tag {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #999;
+  letter-spacing: 0.5px;
+}
+.col-num { text-align: right; }
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.side-over { background: rgba(34,197,94,0.15); color: #22c55e; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.side-under { background: rgba(239,68,68,0.15); color: #ef4444; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.pt-side-tag { display: inline-block; }
+
+.pt-result-btns { display: flex; gap: 0.2rem; }
+.pt-res-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: none;
+  font-size: 0.65rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pt-res-won { background: rgba(34,197,94,0.15); color: #22c55e; }
+.pt-res-won:hover { background: rgba(34,197,94,0.35); }
+.pt-res-lost { background: rgba(239,68,68,0.15); color: #ef4444; }
+.pt-res-lost:hover { background: rgba(239,68,68,0.35); }
+.pt-res-push { background: rgba(234,179,8,0.15); color: #eab308; }
+.pt-res-push:hover { background: rgba(234,179,8,0.35); }
+
+.pt-result-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.pt-result-won { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.pt-result-lost { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.pt-result-push { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+
+.pt-remove-btn {
+  background: none;
+  border: none;
+  color: #444;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+.pt-remove-btn:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Wager & odds inputs in table */
+.pt-wager-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.pt-wager-dollar {
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-right: 1px;
+}
+.pt-wager-input,
+.pt-odds-input {
+  width: 52px;
+  padding: 0.15rem 0.3rem;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  text-align: right;
+}
+.pt-wager-input:focus,
+.pt-odds-input:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+.pt-payout {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+/* Daily P&L tab */
+.pt-daily-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+.pt-daily-table {
+  font-size: 0.85rem;
+}
+.pt-daily-total {
+  border-top: 2px solid #333;
+}
+.pt-daily-total td {
+  padding-top: 0.6rem;
+}
+
+.pt-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #555;
+  font-style: italic;
+}
+
+.sort-icon { margin-left: 3px; font-size: 0.65rem; }
+.sort-icon.dim { opacity: 0.3; }
+.sort-icon.active { color: #c084fc; }
+
+.pt-footer-note {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.7rem;
+  color: #444;
+}
+
+@media (max-width: 640px) {
+  .pt-dashboard { gap: 0.4rem; }
+  .pt-dash-card { min-width: 60px; padding: 0.4rem 0.6rem; }
+  .pt-dash-num { font-size: 1.1rem; }
+  .pt-controls { flex-direction: column; align-items: stretch; }
+  .pt-filter-bar { flex-wrap: wrap; }
+  .pt-add-card { flex-direction: column; align-items: flex-start; }
+  .pt-bankroll-bar { gap: 0.75rem; padding: 0.5rem 1rem; }
+  .pt-br-amount { font-size: 0.95rem; }
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

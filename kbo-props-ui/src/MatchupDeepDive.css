@@ -1,0 +1,499 @@
+/* MatchupDeepDive.css — purple/black theme */
+
+.mdd {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e2e8f0;
+}
+
+/* Empty state */
+.mdd-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+.mdd-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.mdd-empty h2 {
+  font-size: 1.5rem;
+  color: #c084fc;
+  margin-bottom: 0.5rem;
+}
+.mdd-empty p {
+  color: #94a3b8;
+}
+
+/* Header */
+.mdd-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.mdd-title {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #c084fc, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+.mdd-subtitle {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* Game selector tabs */
+.mdd-game-selector {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+.mdd-game-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s;
+  color: #e2e8f0;
+}
+.mdd-game-tab:hover {
+  border-color: #7c3aed;
+  background: #1a1a2e;
+}
+.mdd-game-tab.active {
+  background: linear-gradient(135deg, #7c3aed22, #a855f722);
+  border-color: #7c3aed;
+  box-shadow: 0 0 12px #7c3aed33;
+}
+.mdd-at {
+  color: #555;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+/* Game Header - VS display */
+.mdd-game-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #0a0a1a, #111128);
+  border: 1px solid #1e1e3a;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+.mdd-team-side {
+  text-align: center;
+  flex: 1;
+}
+.mdd-team-label {
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: #64748b;
+  margin-bottom: 0.3rem;
+}
+.mdd-team-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.mdd-vs-block {
+  text-align: center;
+}
+.mdd-vs {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #7c3aed;
+  line-height: 1;
+}
+.mdd-stadium {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+/* Sections */
+.mdd-section {
+  margin-bottom: 1rem;
+  background: #0d0d17;
+  border: 1px solid #1a1a2e;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mdd-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+.mdd-section-toggle:hover {
+  background: #ffffff08;
+}
+.mdd-section-icon {
+  font-size: 1.1rem;
+}
+.mdd-chevron {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+/* Pitcher Cards */
+.mdd-pitchers {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem 1rem;
+}
+.mdd-pitcher-divider {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, #7c3aed44, transparent);
+  margin: 0 0.75rem;
+  flex-shrink: 0;
+}
+.mdd-pitcher-card {
+  flex: 1;
+  min-width: 0;
+}
+.mdd-pitcher-unknown {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.mdd-pitcher-header {
+  margin-bottom: 0.75rem;
+}
+.mdd-pitcher-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.mdd-pitcher-team {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Stat boxes */
+.mdd-pitcher-stats {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.mdd-stat-box {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  flex: 1;
+  min-width: 50px;
+}
+.mdd-stat-box.mdd-stat-highlight {
+  border-color: #22c55e44;
+  background: #22c55e0a;
+}
+.mdd-stat-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+.mdd-stat-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  margin-top: 0.1rem;
+}
+
+/* K line */
+.mdd-pitcher-kline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: #7c3aed11;
+  border: 1px solid #7c3aed33;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+.mdd-pp-badge {
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.mdd-k-label {
+  font-weight: 600;
+  color: #c084fc;
+}
+.mdd-k-proj {
+  margin-left: auto;
+  color: #94a3b8;
+}
+
+/* Recent starts table */
+.mdd-recent {
+  margin-top: 0.5rem;
+}
+.mdd-recent-title {
+  font-size: 0.75rem;
+  color: #64748b;
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+.mdd-recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.mdd-recent-table th {
+  text-align: center;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.65rem;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #222;
+}
+.mdd-recent-table td {
+  text-align: center;
+  padding: 0.3rem;
+  border-bottom: 1px solid #111;
+}
+.mdd-k-val {
+  color: #c084fc;
+  font-weight: 600;
+}
+.mdd-good {
+  color: #22c55e;
+}
+.mdd-bad {
+  color: #ef4444;
+}
+
+/* Batting comparison */
+.mdd-batting {
+  padding: 0 1rem 1rem;
+}
+.mdd-batting-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-weight: 700;
+  font-size: 1rem;
+  border-bottom: 1px solid #222;
+  margin-bottom: 0.5rem;
+}
+.mdd-batting-vs {
+  color: #64748b;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+.mdd-batting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #0a0a0a;
+}
+.mdd-batting-row.mdd-batting-divider {
+  border-top: 1px solid #222;
+  margin-top: 0.3rem;
+  padding-top: 0.5rem;
+}
+.mdd-bat-val {
+  width: 80px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.mdd-bat-val:first-child {
+  text-align: left;
+}
+.mdd-bat-val:last-child {
+  text-align: right;
+}
+.mdd-bat-val.mdd-winner {
+  color: #22c55e;
+  font-weight: 700;
+}
+.mdd-bat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+}
+
+/* Park factor */
+.mdd-park {
+  padding: 0 1rem 1rem;
+  text-align: center;
+}
+.mdd-park-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+.park-hot {
+  background: #ef444422;
+  color: #ef4444;
+  border: 1px solid #ef444444;
+}
+.park-cold {
+  background: #3b82f622;
+  color: #3b82f6;
+  border: 1px solid #3b82f644;
+}
+.park-neutral {
+  background: #64748b22;
+  color: #94a3b8;
+  border: 1px solid #64748b44;
+}
+.mdd-park-stats {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.mdd-park-stat {
+  text-align: center;
+}
+.mdd-park-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+.mdd-park-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+/* Props list */
+.mdd-props-list {
+  padding: 0 0.5rem 0.5rem;
+}
+.mdd-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid #111;
+  transition: background 0.15s;
+}
+.mdd-prop-row:hover {
+  background: #ffffff05;
+}
+.mdd-prop-player {
+  flex: 1.5;
+  min-width: 0;
+}
+.mdd-prop-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: block;
+}
+.mdd-prop-team {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.mdd-prop-type {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  width: 80px;
+  text-align: center;
+}
+.mdd-prop-line {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 65px;
+}
+.mdd-prop-proj {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  width: 65px;
+}
+.mdd-prop-edge {
+  font-weight: 700;
+  font-size: 0.85rem;
+  width: 55px;
+  text-align: right;
+}
+.mdd-prop-edge.pos { color: #22c55e; }
+.mdd-prop-edge.neg { color: #ef4444; }
+.mdd-prop-rec {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  width: 55px;
+}
+.rec-over {
+  background: #22c55e22;
+  color: #22c55e;
+  border: 1px solid #22c55e44;
+}
+.rec-under {
+  background: #ef444422;
+  color: #ef4444;
+  border: 1px solid #ef444444;
+}
+.rec-push {
+  background: #64748b22;
+  color: #94a3b8;
+  border: 1px solid #64748b44;
+}
+.mdd-no-data {
+  text-align: center;
+  padding: 1.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .mdd { padding: 1rem; }
+  .mdd-game-header { flex-direction: column; gap: 0.75rem; }
+  .mdd-pitchers { flex-direction: column; }
+  .mdd-pitcher-divider { width: 100%; height: 1px; margin: 0.75rem 0; }
+  .mdd-prop-row { flex-wrap: wrap; gap: 0.4rem; }
+  .mdd-prop-type { width: auto; }
+}
