@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PlayerPropsUI.css';
+import { dataUrl } from './dataUrl';
 
 const PlayerPropsUI = () => {
   const [players, setPlayers] = useState([]);
@@ -19,8 +20,8 @@ const PlayerPropsUI = () => {
         console.log('Loading data...');
         // Fetch pitcher logs and teams data
         const [pitcherResponse, teamsResponse] = await Promise.all([
-          fetch('/data/pitcher_logs.json'),
-          fetch('/data/teams.json')
+          fetch(dataUrl('pitcher_logs.json')),
+          fetch(dataUrl('teams.json'))
         ]);
         
         if (!pitcherResponse.ok || !teamsResponse.ok) {

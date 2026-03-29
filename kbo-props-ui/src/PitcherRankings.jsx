@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './PitcherRankings.css';
+import { dataUrl } from './dataUrl';
 
 const TEAMS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -15,7 +16,7 @@ function PitcherRankings() {
   const [sortDir, setSortDir] = useState('asc');
 
   useEffect(() => {
-    fetch('/data/pitcher_rankings.json')
+    fetch(dataUrl('pitcher_rankings.json'))
       .then(res => { if (!res.ok) throw new Error('Failed to load'); return res.json(); })
       .then(d => { setData(d); setLoading(false); })
       .catch(err => { setError(err.message); setLoading(false); });

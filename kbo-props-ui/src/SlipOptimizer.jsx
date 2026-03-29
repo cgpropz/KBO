@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import './SlipOptimizer.css';
+import { dataUrl } from './dataUrl';
 
 const TEAMS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -17,8 +18,8 @@ function SlipOptimizer() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/data/strikeout_projections.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/data/batter_projections.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(dataUrl('strikeout_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(dataUrl('batter_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([k, b]) => {
       const props = [];
       (k?.projections || []).forEach(p => {

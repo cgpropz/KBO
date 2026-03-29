@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './MatchupDeepDive.css';
+import { dataUrl } from './dataUrl';
 
 const TEAMS = {
   Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
@@ -22,7 +23,7 @@ function MatchupDeepDive() {
   });
 
   useEffect(() => {
-    fetch('/data/matchup_data.json')
+    fetch(dataUrl('matchup_data.json'))
       .then(r => r.ok ? r.json() : null)
       .then(d => setData(d))
       .catch(() => null);

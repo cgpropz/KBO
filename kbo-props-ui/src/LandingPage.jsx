@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './LandingPage.css';
+import { dataUrl } from './dataUrl';
 
 const TEAMS = {
   Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
@@ -22,9 +23,9 @@ function LandingPage({ onNavigate }) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/data/strikeout_projections.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/data/batter_projections.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/data/pitcher_rankings.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(dataUrl('strikeout_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(dataUrl('batter_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(dataUrl('pitcher_rankings.json')).then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([k, b, r]) => {
       setKData(k);
       setBatterData(b);

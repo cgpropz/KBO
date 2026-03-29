@@ -1,3 +1,4 @@
+import os
 import requests
 import pandas as pd
 import gspread
@@ -46,7 +47,8 @@ def dfs_scraper():
 
 
 def save_to_json(df):
-    df.to_json('/Users/kahlilhodge/KBO/KBO-Odds/KBO_odds_2025.json', orient='records', indent=2)
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'KBO_odds_2025.json')
+    df.to_json(out_path, orient='records', indent=2)
     print("Data saved to KBO_odds_2025.json ✅")
 
 

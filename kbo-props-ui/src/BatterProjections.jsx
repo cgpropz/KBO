@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './BatterProjections.css';
+import { dataUrl } from './dataUrl';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -23,7 +24,7 @@ function BatterProjections() {
   const [propFilter, setPropFilter] = useState('all');
 
   useEffect(() => {
-    fetch('/data/batter_projections.json')
+    fetch(dataUrl('batter_projections.json'))
       .then(res => {
         if (!res.ok) throw new Error('Failed to load batter projection data');
         return res.json();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './StrikeoutProjections.css';
+import { dataUrl } from './dataUrl';
 
 // KBO Team text colors (visible on dark backgrounds)
 const TEAMS = {
@@ -23,7 +24,7 @@ function StrikeoutProjections() {
   const [sortDir, setSortDir] = useState('desc');
 
   useEffect(() => {
-    fetch('/data/strikeout_projections.json')
+    fetch(dataUrl('strikeout_projections.json'))
       .then(res => {
         if (!res.ok) throw new Error('Failed to load projection data');
         return res.json();

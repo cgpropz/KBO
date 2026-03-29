@@ -322,7 +322,7 @@ def main():
     pitchers = get_pitcher_list()
     print(f"🔍 Found {len(pitchers)} pitchers to scrape...")
 
-    output_file = "/Users/kahlilhodge/KBO/KBO_daily_pitching_stats.csv"
+    output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'KBO_daily_pitching_stats.csv')
     if os.path.exists(output_file):
         all_data = pd.read_csv(output_file)
     else:
@@ -341,7 +341,7 @@ def main():
     print(f"✅ Saved combined gamelogs to {output_file}")
 
     # Save to JSON
-    json_output = "/Users/kahlilhodge/KBO/Pitchers-Data/pitcher_logs.json"
+    json_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pitcher_logs.json')
     all_data.to_json(json_output, orient='records', indent=2)
     print(f"✅ Saved pitcher logs to {json_output}")
 
