@@ -8,7 +8,7 @@ UI can grade any pick from any date by matching player + date + prop type.
 
 Reads:
   - Pitchers-Data/pitcher_logs.json   (pitcher game logs with SO, IP)
-  - Batters-Data/KBO_daily_batting_stats_2025.csv  (batter game logs)
+  - Batters-Data/KBO_daily_batting_stats_combined.csv  (batter game logs)
 
 Outputs:
   - kbo-props-ui/public/data/prop_results.json
@@ -70,7 +70,7 @@ def main():
         pitcher_count += 1
 
     # ── Batters ───────────────────────────────────────────────────────────
-    batter_path = os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_2025.csv")
+    batter_path = os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")
     batter_count = 0
     with open(batter_path) as f:
         for row in csv.DictReader(f):

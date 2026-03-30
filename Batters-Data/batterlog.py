@@ -174,7 +174,8 @@ async def scrape_multiple_players(player_codes, season):
     all_data = pd.DataFrame()
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+        context = await browser.new_context(ignore_https_errors=True)
+        page = await context.new_page()
         for pcode in player_codes:
             print(f"Scraping {PLAYER_NAMES.get(pcode, pcode)}")
             df = await scrape_kbo_player_logs(pcode, page, season)

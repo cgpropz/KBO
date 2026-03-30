@@ -10,7 +10,7 @@ Total Bases Formula:
   for how much the opposing pitching staff gives up in total bases.
 
 Reads from:
-  - Batters-Data/KBO_daily_batting_stats_2025.csv  (batter game logs)
+  - Batters-Data/KBO_daily_batting_stats_combined.csv  (batter game logs)
   - Batters-Data/league_batting.csv                (team batting totals)
   - KBO-Odds/KBO_odds_2025.json or .csv            (PrizePicks lines)
   - Pitchers-Data/player_names.csv                 (today's starters)
@@ -102,7 +102,7 @@ print("Team HRR/G:", {k: round(v["hrr_per_g"], 1) for k, v in team_batting.items
 print("Team TB/G: ", {k: round(v["tb_per_g"], 1) for k, v in team_batting.items()})
 
 # ── Step 3: Load batter game logs ──
-with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_2025.csv")) as f:
+with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")) as f:
     batter_logs = list(csv.DictReader(f))
 
 # Build per-batter stats
