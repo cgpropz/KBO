@@ -129,11 +129,13 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
         hit_rate = (over_count / total * 100) if total > 0 else 0
         avg_val = sum(values) / total if total > 0 else 0
 
-        # Last 5 & last 10
+        # Last 5, 10, 20
         l5 = values[:5]
         l10 = values[:10]
+        l20 = values[:20]
         hr5 = (sum(1 for v in l5 if v > line) / len(l5) * 100) if l5 else 0
         hr10 = (sum(1 for v in l10 if v > line) / len(l10) * 100) if l10 else 0
+        hr20 = (sum(1 for v in l20 if v > line) / len(l20) * 100) if l20 else 0
 
         card["props"].append({
             "stat": stat,
@@ -146,6 +148,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
             "hit_rate_all": round(hit_rate, 1),
             "hit_rate_l5": round(hr5, 1),
             "hit_rate_l10": round(hr10, 1),
+            "hit_rate_l20": round(hr20, 1),
             "recent_values": values[:10],
         })
 
@@ -199,8 +202,10 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
 
         l5 = values[:5]
         l10 = values[:10]
+        l20 = values[:20]
         hr5 = (sum(1 for v in l5 if v > line) / len(l5) * 100) if l5 else 0
         hr10 = (sum(1 for v in l10 if v > line) / len(l10) * 100) if l10 else 0
+        hr20 = (sum(1 for v in l20 if v > line) / len(l20) * 100) if l20 else 0
 
         # Get projection
         proj = b_proj.get((name, stat), {})
@@ -216,6 +221,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
             "hit_rate_all": round(hit_rate, 1),
             "hit_rate_l5": round(hr5, 1),
             "hit_rate_l10": round(hr10, 1),
+            "hit_rate_l20": round(hr20, 1),
             "recent_values": values[:10],
             "projection": proj.get("projection"),
             "edge": proj.get("edge"),
@@ -230,6 +236,28 @@ def main():
     pitcher_logs = load_pitcher_logs()
     batter_data = load_batter_logs()
     k_proj, b_proj = load_projections()
+
+    # Load park factors from batter projections
+    park_factors = {}
+    b_path = os.path.join(PUBLIC_DATA, "batter_projections.json")
+    if os.path.exists(b_path):
+        with open(b_path) as f:
+            park_factors = json.load(f).get("park_factors", {})
+
+    # Load starters to determine home teams
+    home_map = {}
+    starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
+    if os.path.exists(starters_path):
+        teams = []
+        with open(starters_path) as f:
+            for row in csv.DictReader(f):
+                teams.append(row["Team"])
+        for i in range(0, len(teams), 2):
+            away = teams[i]
+            home = teams[i + 1] if i + 1 < len(teams) else None
+            if home:
+                home_map[away] = home
+                home_map[home] = home
 
     # Index pitcher logs by name
     pitcher_logs_by_name = defaultdict(list)
@@ -281,6 +309,13 @@ def main():
     def sort_key(c):
         best_hr = max((p["hit_rate_all"] for p in c["props"]), default=0)
         return (0 if c["type"] == "pitcher" else 1, -best_hr)
+
+    # Attach park factor and venue to each card
+    for card in cards:
+        home = home_map.get(card["team"], card["team"])
+        pf_data = park_factors.get(home, {})
+        card["venue"] = pf_data.get("venue", "")
+        card["park_factor"] = pf_data.get("pf_r", 1.0)
 
     cards.sort(key=sort_key)
 

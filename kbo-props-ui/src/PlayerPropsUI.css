@@ -195,6 +195,33 @@
   color: #64748b;
 }
 
+/* Park factor tag */
+.pp-park-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.pp-park-tag.hitter {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.pp-park-tag.pitcher {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+.pp-park-tag.neutral {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
 /* Hit rate badge */
 .pp-card-hit-badge {
   font-size: 0.95rem;
@@ -202,6 +229,17 @@
   padding: 0.35rem 0.7rem;
   border-radius: 8px;
   letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.pp-hit-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
 }
 
 .pp-card-hit-badge[data-level="hot"]  { background: rgba(34,197,94,0.15); color: #22c55e; }

@@ -59,6 +59,12 @@ for away_team, home_team in matchups:
     team_opponent[away_team] = home_team
     team_opponent[home_team] = away_team
 
+# Map each team to the home team of their game (for park factors)
+game_home_team = {}
+for away_team, home_team in matchups:
+    game_home_team[away_team] = home_team
+    game_home_team[home_team] = home_team
+
 print("Today's games:")
 for away, home in matchups:
     print(f"  {away} @ {home}")
@@ -100,6 +106,43 @@ league_avg_tb_per_g = sum(t["tb_per_g"] for t in team_batting.values()) / len(te
 print(f"\nLeague avg HRR/G: {league_avg_hrr_per_g:.2f}  |  League avg TB/G: {league_avg_tb_per_g:.2f}")
 print("Team HRR/G:", {k: round(v["hrr_per_g"], 1) for k, v in team_batting.items()})
 print("Team TB/G: ", {k: round(v["tb_per_g"], 1) for k, v in team_batting.items()})
+
+# ── Step 2.5: Load park factors ──
+park_factor_path = os.path.join(BASE, "Park-Factor", "park_factor.csv")
+park_factors = {}
+if os.path.exists(park_factor_path):
+    with open(park_factor_path) as f:
+        reader = csv.reader(f)
+        next(reader)  # skip header
+        seen_teams = {}
+        for row in reader:
+            team_full = row[0].strip()
+            stadium = row[1].strip()
+            try:
+                games = int(row[3])
+                r_per_g = float(row[9]) if row[9] else 0
+                hr_per_g = float(row[11]) if row[11] else 0
+            except (ValueError, IndexError):
+                continue
+            short = TEAM_NAME_MAP_REV.get(team_full, team_full)
+            if short not in seen_teams or games > seen_teams[short]["games"]:
+                seen_teams[short] = {
+                    "games": games, "stadium": stadium,
+                    "r_per_g": r_per_g, "hr_per_g": hr_per_g,
+                }
+        if seen_teams:
+            avg_r = sum(v["r_per_g"] for v in seen_teams.values()) / len(seen_teams)
+            avg_hr = sum(v["hr_per_g"] for v in seen_teams.values()) / len(seen_teams)
+            for team_s, data in seen_teams.items():
+                park_factors[team_s] = {
+                    "venue": data["stadium"],
+                    "pf_r": round(data["r_per_g"] / avg_r, 3) if avg_r else 1.0,
+                    "pf_hr": round(data["hr_per_g"] / avg_hr, 3) if avg_hr else 1.0,
+                }
+            pf_r_str = ', '.join(f"{k}={v['pf_r']:.3f}" for k, v in sorted(park_factors.items()))
+            pf_hr_str = ', '.join(f"{k}={v['pf_hr']:.3f}" for k, v in sorted(park_factors.items()))
+            print(f"\nPark Factors (R):  {pf_r_str}")
+            print(f"Park Factors (HR): {pf_hr_str}")
 
 # ── Step 3: Load batter game logs ──
 with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")) as f:
@@ -245,7 +288,9 @@ def build_hrr_projections():
         base = bs["hrr_per_g"]
         opp_rate = team_batting.get(opp, {}).get("hrr_per_g", league_avg_hrr_per_g)
         opp_factor = opp_rate / league_avg_hrr_per_g
-        proj = base * opp_factor
+        home = game_home_team.get(team, team)
+        pf = park_factors.get(home, {}).get("pf_r", 1.0)
+        proj = base * opp_factor * pf
         edge = proj - line
         rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
         rating = round((proj / line) * 50, 1) if line else None
@@ -256,9 +301,12 @@ def build_hrr_projections():
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "opp_factor": round(opp_factor, 3),
+            "park_factor": round(pf, 3),
+            "venue": park_factors.get(home, {}).get("venue", ""),
+            "home_team": home,
             "ba": round(bs["ba"], 3), "games_used": bs["games"],
         })
-        print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
+        print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
 def build_tb_projections():
@@ -295,7 +343,9 @@ def build_tb_projections():
         base = bs["tb_per_g"]
         opp_rate = team_batting.get(opp, {}).get("tb_per_g", league_avg_tb_per_g)
         opp_factor = opp_rate / league_avg_tb_per_g
-        proj = base * opp_factor
+        home = game_home_team.get(team, team)
+        pf = park_factors.get(home, {}).get("pf_hr", 1.0)
+        proj = base * opp_factor * pf
         edge = proj - line
         rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
         rating = round((proj / line) * 50, 1) if line else None
@@ -306,9 +356,12 @@ def build_tb_projections():
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "slg": round(bs["slg"], 3),
-            "opp_factor": round(opp_factor, 3), "games_used": bs["games"],
+            "opp_factor": round(opp_factor, 3), "park_factor": round(pf, 3),
+            "venue": park_factors.get(home, {}).get("venue", ""),
+            "home_team": home,
+            "games_used": bs["games"],
         })
-        print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
+        print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
 build_hrr_projections()
@@ -325,6 +378,7 @@ with open(out_path, "w") as f:
         "league_avg_hrr_per_g": round(league_avg_hrr_per_g, 2),
         "league_avg_tb_per_g": round(league_avg_tb_per_g, 2),
         "team_batting": {k: {"hrr_per_g": round(v["hrr_per_g"], 1), "tb_per_g": round(v["tb_per_g"], 1)} for k, v in team_batting.items()},
+        "park_factors": park_factors,
     }, f, indent=2)
 
 hrr_count = sum(1 for p in projections if p["prop"] == "Hits+Runs+RBIs")

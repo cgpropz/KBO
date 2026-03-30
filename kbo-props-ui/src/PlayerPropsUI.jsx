@@ -141,11 +141,19 @@ function PlayerCard({ card, expanded, onToggle }) {
           </span>
           <div>
             <h3 className="pp-card-name">{card.name}</h3>
-            <span className="pp-card-team">{card.team} vs {card.opponent}</span>
+            <span className="pp-card-team">
+              {card.team} vs {card.opponent}
+              {card.venue ? (
+                <span className={`pp-park-tag ${card.park_factor >= 1.05 ? 'hitter' : card.park_factor <= 0.95 ? 'pitcher' : 'neutral'}`}>
+                  \uD83C\uDFDF\uFE0F {card.venue} ({card.park_factor >= 1 ? '+' : ''}{((card.park_factor - 1) * 100).toFixed(0)}%)
+                </span>
+              ) : null}
+            </span>
           </div>
         </div>
         <div className="pp-card-hit-badge" data-level={hitLevel(bestProp.hit_rate_all)}>
-          {bestProp.hit_rate_all}%
+          {hitIcon(bestProp.hit_rate_all)} {bestProp.hit_rate_all}%
+          <span className="pp-hit-label">{hitLabel(bestProp.hit_rate_all)}</span>
         </div>
       </div>
 
@@ -182,6 +190,7 @@ function PropRow({ prop, type }) {
       {/* Hit Rate Bars */}
       <div className="pp-hr-bars">
         <HitRateBar label="Season" value={prop.hit_rate_all} count={`${prop.over}/${prop.total_games}`} />
+        <HitRateBar label="L20" value={prop.hit_rate_l20} />
         <HitRateBar label="L10" value={prop.hit_rate_l10} />
         <HitRateBar label="L5" value={prop.hit_rate_l5} />
       </div>
@@ -277,6 +286,20 @@ function hitLevel(v) {
   if (v >= 50) return 'warm';
   if (v >= 30) return 'cool';
   return 'cold';
+}
+
+function hitIcon(v) {
+  if (v >= 70) return '\uD83D\uDD25';
+  if (v >= 50) return '\u2705';
+  if (v >= 30) return '\u26A0\uFE0F';
+  return '\u2744\uFE0F';
+}
+
+function hitLabel(v) {
+  if (v >= 70) return 'HOT';
+  if (v >= 50) return 'SOLID';
+  if (v >= 30) return 'RISKY';
+  return 'COLD';
 }
 
 function shortStat(s) {
