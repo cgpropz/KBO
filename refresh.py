@@ -52,6 +52,11 @@ STEPS = [
         "cmd": [VENV_PYTHON, os.path.join(BASE, "grade_props.py")],
         "skip_flag": "--skip-grade",
     },
+    {
+        "name": "PrizePicks Props Cards",
+        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_props.py")],
+        "skip_flag": None,
+    },
 ]
 
 
