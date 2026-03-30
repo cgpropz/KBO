@@ -1,13 +1,10 @@
 name: Refresh Data & Deploy Site
 
 on:
-  # Run daily at 8:00 UTC (5:00 PM KST — before evening KBO games)
   schedule:
     - cron: "0 8 * * *"
-  # Also run on push to main
   push:
     branches: [main]
-  # Manual trigger from GitHub UI
   workflow_dispatch:
 
 permissions:
@@ -17,19 +14,15 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  refresh-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ── Python setup ──────────────────────────────────────────
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -41,16 +34,14 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium --with-deps
 
-      # ── Write Google credentials from secret ──────────────────
       - name: Write credentials.json
+        if: ${{ secrets.GOOGLE_CREDENTIALS_JSON != '' }}
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
 
-      # ── Run data pipeline ─────────────────────────────────────
       - name: Run refresh pipeline
         run: python refresh.py
         timeout-minutes: 10
 
-      # ── Commit updated data files back to repo ────────────────
       - name: Commit data updates
         run: |
           git config user.name "github-actions[bot]"
@@ -63,7 +54,6 @@ jobs:
             git push
           fi
 
-      # ── Node.js setup & build ─────────────────────────────────
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -81,15 +71,18 @@ jobs:
         env:
           GITHUB_PAGES: true
 
-      # ── Deploy to GitHub Pages ────────────────────────────────
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: kbo-props-ui/dist
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
