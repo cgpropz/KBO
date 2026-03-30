@@ -35,7 +35,7 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Write credentials.json
-        if: ${{ secrets.GOOGLE_CREDENTIALS_JSON != '' }}
+        if: secrets.GOOGLE_CREDENTIALS_JSON != ''
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
 
       - name: Run refresh pipeline
