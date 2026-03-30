@@ -270,6 +270,32 @@ function LandingPage({ onNavigate }) {
         </section>
       )}
 
+      {/* Pricing CTA */}
+      <section className="lp-section" style={{ textAlign: 'center' }}>
+        <h2 className="lp-section-title">
+          <span className="lp-section-icon">💎</span> Unlock Full Access
+        </h2>
+        <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '1.25rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+          Get unlimited projections, hit-rate analysis, slip builder, and more with a premium plan.
+        </p>
+        <button
+          onClick={() => onNavigate('pricing')}
+          style={{
+            padding: '0.9rem 2.5rem',
+            background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '1rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          View Plans & Pricing
+        </button>
+      </section>
+
       {/* Footer */}
       <footer className="lp-footer">
         <p>KBO Props &middot; Data sourced from KBO &amp; PrizePicks &middot; Projections updated daily</p>

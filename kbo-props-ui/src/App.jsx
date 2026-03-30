@@ -7,6 +7,7 @@ import PropTracker from './PropTracker'
 import SlipOptimizer from './SlipOptimizer'
 import MatchupDeepDive from './MatchupDeepDive'
 import LandingPage from './LandingPage'
+import SubscriptionPage from './SubscriptionPage'
 
 function App() {
   const [showUI, setShowUI] = useState(false);
@@ -178,6 +179,25 @@ function App() {
         >
           Matchups
         </button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setView('pricing')}
+          style={{
+            padding: '0.6rem 1.2rem',
+            background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '700',
+            fontSize: '0.85rem',
+            transition: 'all 0.2s',
+            letterSpacing: '0.3px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Upgrade
+        </button>
       </nav>
       {view === 'projections' && <StrikeoutProjections />}
       {view === 'batters' && <BatterProjections />}
@@ -186,6 +206,7 @@ function App() {
       {view === 'tracker' && <PropTracker />}
       {view === 'optimizer' && <SlipOptimizer />}
       {view === 'matchups' && <MatchupDeepDive />}
+      {view === 'pricing' && <SubscriptionPage />}
     </div>
   );
 }

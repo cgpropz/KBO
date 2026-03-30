@@ -58,10 +58,23 @@ def normalize(name):
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
     return n.lower().strip()
 
+def _parse_date(d):
+    """Parse MM/DD/YYYY or YYYY-MM-DD to a sortable tuple."""
+    try:
+        if '/' in d:
+            parts = d.split('/')
+            return (int(parts[2]), int(parts[0]), int(parts[1]))
+        elif '-' in d:
+            parts = d.split('-')
+            return (int(parts[0]), int(parts[1]), int(parts[2]))
+    except (ValueError, IndexError):
+        pass
+    return (0, 0, 0)
+
 def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
     logs = pitcher_logs_by_name.get(name, [])
-    # Sort by date descending
-    logs.sort(key=lambda x: x.get("Date", ""), reverse=True)
+    # Sort by date descending (handles MM/DD/YYYY correctly)
+    logs.sort(key=lambda x: _parse_date(x.get("Date", "")), reverse=True)
 
     games = []
     for g in logs:
@@ -140,7 +153,8 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
 
 def build_batter_card(name, props, batter_logs_by_name, b_proj):
     logs = batter_logs_by_name.get(name, [])
-    logs.sort(key=lambda x: x.get("date", ""), reverse=True)
+    # Sort by date descending (handles YYYY-MM-DD correctly)
+    logs.sort(key=lambda x: _parse_date(x.get("date", "")), reverse=True)
 
     games = []
     for g in logs:

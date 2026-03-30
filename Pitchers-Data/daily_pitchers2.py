@@ -137,7 +137,8 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(ignore_https_errors=True)
+        page = context.new_page()
 
         # Step 1: Get upcoming games from the KBO Game Center
         games = get_upcoming_games(page, args.timeout)

@@ -112,7 +112,10 @@ NAME_ALIASES = {
     
 }
 
-def convert_date(date_str, default_year=2025):
+def convert_date(date_str, default_year=None):
+    if default_year is None:
+        from datetime import datetime
+        default_year = datetime.now().year
     month, day = date_str.split('.')
     return f"{month}/{day}/{default_year}"
 
@@ -156,7 +159,7 @@ def scrape_kbo_pitcher_logs(pitcher):
     url = f"http://eng.koreabaseball.com/Teams/PlayerInfoPitcher/GameLogs.aspx?pcode={pcode}"
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, verify=False, timeout=30)
         soup = BeautifulSoup(response.content, 'html.parser')
         # Target the table with class 'tbl_common'
         table = soup.find('div', class_='tbl_common')
@@ -211,7 +214,7 @@ def scrape_kbo_pitcher_logs(pitcher):
                     'BB': int(cols[8].text.strip()),
                     'HBP': int(cols[9].text.strip()),
                     'PA': int(cols[4].text.strip()),
-                    'Season': 2025
+                    'Season': __import__('datetime').datetime.now().year
                 }
 
                 stats = calculate_stats(game_data)

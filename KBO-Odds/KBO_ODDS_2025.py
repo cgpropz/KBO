@@ -4,11 +4,17 @@ import pandas as pd
 import gspread
 from gspread_dataframe import set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def dfs_scraper():
     # Fetch PrizePicks API
-    response = requests.get('https://partner-api.prizepicks.com/projections?per_page=1000')
+    response = requests.get(
+        'https://partner-api.prizepicks.com/projections?per_page=1000',
+        verify=False,
+        timeout=30,
+    )
     prizepicks = response.json()
 
     pplist, library = [], {}
@@ -47,9 +53,12 @@ def dfs_scraper():
 
 
 def save_to_json(df):
-    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'KBO_odds_2025.json')
-    df.to_json(out_path, orient='records', indent=2)
-    print("Data saved to KBO_odds_2025.json ✅")
+    base = os.path.dirname(os.path.abspath(__file__))
+    out_json = os.path.join(base, 'KBO_odds_2025.json')
+    out_csv = os.path.join(base, 'KBO_odds_2025.csv')
+    df.to_json(out_json, orient='records', indent=2)
+    df.to_csv(out_csv, index=False)
+    print(f"Data saved to KBO_odds_2025.json + .csv ({len(df)} lines) ✅")
 
 
 def update_google_sheet(df):

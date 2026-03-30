@@ -11,9 +11,11 @@ import subprocess
 import sys
 import os
 import time
+import shutil
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 VENV_PYTHON = os.path.join(BASE, "venv", "bin", "python")
+PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
 STEPS = [
     {
@@ -26,6 +28,11 @@ STEPS = [
         "cmd": [VENV_PYTHON, os.path.join(BASE, "Pitchers-Data", "daily_pitchers2.py"),
                 "--output", os.path.join(BASE, "Pitchers-Data", "player_names.csv")],
         "skip_flag": "--skip-lineups",
+    },
+    {
+        "name": "Pitcher Game Logs",
+        "cmd": [VENV_PYTHON, os.path.join(BASE, "Pitchers-Data", "NEWPITCHER_LOG25.py")],
+        "skip_flag": "--skip-logs",
     },
     {
         "name": "Strikeout Projections",
@@ -80,6 +87,16 @@ def main():
             failed.append(step["name"])
         else:
             print(f"✓ {step['name']} done [{elapsed:.1f}s]")
+
+    # Copy data files to public/data for the UI
+    copies = [
+        (os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json"),
+         os.path.join(PUBLIC_DATA, "pitcher_logs.json")),
+    ]
+    for src, dst in copies:
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            print(f"📋 Copied {os.path.basename(src)} → public/data/")
 
     print("\n" + "=" * 50)
     if failed:

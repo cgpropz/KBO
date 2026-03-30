@@ -1,0 +1,374 @@
+/* ── Subscription Page ── dark/purple theme matching the app ── */
+
+.sub-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+/* Header */
+.sub-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.sub-badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.15);
+  color: #c084fc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 1rem;
+}
+
+.sub-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 0.75rem;
+}
+
+.sub-highlight {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sub-subtitle {
+  color: #94a3b8;
+  font-size: 1.05rem;
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Setup notice */
+.sub-setup-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sub-setup-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.sub-setup-notice strong {
+  color: #fbbf24;
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.sub-setup-notice p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.sub-setup-notice code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+}
+
+/* Tier grid */
+.sub-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+/* Card */
+.sub-card {
+  position: relative;
+  background: #12121a;
+  border: 1px solid #1e1e2e;
+  border-radius: 16px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.sub-card:hover {
+  transform: translateY(-4px);
+  border-color: #333;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.sub-card-selected {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+}
+
+.sub-card-featured {
+  border-color: #7c3aed;
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, #12121a 40%);
+}
+
+.sub-card-featured:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.2);
+}
+
+.sub-card-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Card header */
+.sub-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.sub-card-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 0.75rem;
+}
+
+.sub-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.sub-price-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -1px;
+}
+
+.sub-price-period {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.sub-card-desc {
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Features */
+.sub-card-features {
+  flex: 1;
+  margin-bottom: 1.25rem;
+}
+
+.sub-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.sub-feature-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.sub-check {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.sub-lock {
+  background: rgba(100, 116, 139, 0.15);
+  color: #475569;
+}
+
+.sub-feature-locked {
+  color: #475569;
+}
+
+/* CTA buttons */
+.sub-cta {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.sub-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sub-cta-free {
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border: 1px solid #1e1e2e;
+}
+
+.sub-cta-weekly {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white;
+}
+
+.sub-cta-weekly:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.sub-cta-monthly {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: white;
+}
+
+.sub-cta-monthly:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+  transform: translateY(-1px);
+}
+
+.sub-cta-season {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: #000;
+}
+
+.sub-cta-season:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+/* FAQ */
+.sub-faq {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.sub-faq-title {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 1.25rem;
+}
+
+.sub-faq-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sub-faq-item {
+  background: #12121a;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sub-faq-item:hover {
+  border-color: #333;
+}
+
+.sub-faq-open {
+  border-color: #7c3aed;
+}
+
+.sub-faq-q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.sub-faq-toggle {
+  color: #7c3aed;
+  font-size: 1.2rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.sub-faq-a {
+  padding: 0 1.25rem 1rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .sub-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .sub-page {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .sub-title {
+    font-size: 1.75rem;
+  }
+
+  .sub-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .sub-card {
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+
+  .sub-price-amount {
+    font-size: 1.6rem;
+  }
+}
