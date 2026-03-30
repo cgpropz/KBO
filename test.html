@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KBO Props Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #003d7a 0%, #00a8e8 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #5b7cfa;
+        }
+        .card h3 { color: #1a1a1a; margin-bottom: 0.5rem; }
+        .card p { color: #666; }
+        .stats { display: flex; gap: 1rem; margin-top: 1rem; }
+        .stat { 
+            background: #f0f0f0; 
+            padding: 0.75rem 1rem; 
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-label { font-size: 0.75rem; color: #666; }
+        .stat-value { font-size: 1.25rem; font-weight: bold; }
+        .footer {
+            background: #003d7a;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>⚾ KBO Player Props</h1>
+        <p>Korean Baseball Organization Daily Props & Odds</p>
+    </header>
+    
+    <main class="main">
+        <div class="card">
+            <h3>James Naile</h3>
+            <p>KIA Tigers - Pitcher (SP)</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">ERA</div>
+                    <div class="stat-value">3.45</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">WHIP</div>
+                    <div class="stat-value">1.12</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">K</div>
+                    <div class="stat-value">145</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" style="border-left-color: #ffa94d;">
+            <h3>Kang Min-ho</h3>
+            <p>Samsung Lions - Batter</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">AVG</div>
+                    <div class="stat-value">.285</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">HR</div>
+                    <div class="stat-value">28</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">RBI</div>
+                    <div class="stat-value">95</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Kenny Rosenberg</h3>
+            <p>Kiwoom Heroes - Pitcher (SP)</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">ERA</div>
+                    <div class="stat-value">4.12</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">WHIP</div>
+                    <div class="stat-value">1.35</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">K</div>
+                    <div class="stat-value">98</div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>KBO Player Props • 2025 Season</p>
+    </footer>
+</body>
+</html>
