@@ -113,7 +113,7 @@ function LandingPage({ onNavigate }) {
           <span className="lp-section-icon">🔥</span> Top Value Picks
         </h2>
         <div className="lp-picks-grid">
-          {topKPick && topKPick.projection && (
+          {topKPick && topKPick.projection != null && (
             <div className="lp-pick-card lp-pick-k" onClick={() => onNavigate('projections')}>
               <div className="lp-pick-type">STRIKEOUTS</div>
               <div className="lp-pick-player">{topKPick.name}</div>
@@ -124,19 +124,21 @@ function LandingPage({ onNavigate }) {
               </div>
               <div className="lp-pick-nums">
                 <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topKPick.line}
+                  <span className="lp-pp-icon">P</span> {topKPick.line ?? '—'}
                 </div>
                 <div className="lp-pick-proj">Proj: {topKPick.projection.toFixed(1)}</div>
-                <div className={`lp-pick-edge ${topKPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                  {topKPick.edge > 0 ? '+' : ''}{topKPick.edge.toFixed(2)}
-                </div>
+                {topKPick.edge != null && (
+                  <div className={`lp-pick-edge ${topKPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                    {topKPick.edge > 0 ? '+' : ''}{topKPick.edge.toFixed(2)}
+                  </div>
+                )}
               </div>
               <div className={`lp-pick-badge ${topKPick.recommendation === 'OVER' ? 'badge-over' : topKPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
                 {topKPick.recommendation}
               </div>
             </div>
           )}
-          {topBatterPick && topBatterPick.projection && (
+          {topBatterPick && topBatterPick.projection != null && (
             <div className="lp-pick-card lp-pick-hrr" onClick={() => onNavigate('batters')}>
               <div className="lp-pick-type">H+R+RBI</div>
               <div className="lp-pick-player">{topBatterPick.name}</div>
@@ -147,19 +149,21 @@ function LandingPage({ onNavigate }) {
               </div>
               <div className="lp-pick-nums">
                 <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topBatterPick.line}
+                  <span className="lp-pp-icon">P</span> {topBatterPick.line ?? '—'}
                 </div>
                 <div className="lp-pick-proj">Proj: {topBatterPick.projection.toFixed(1)}</div>
-                <div className={`lp-pick-edge ${topBatterPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                  {topBatterPick.edge > 0 ? '+' : ''}{topBatterPick.edge.toFixed(2)}
-                </div>
+                {topBatterPick.edge != null && (
+                  <div className={`lp-pick-edge ${topBatterPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                    {topBatterPick.edge > 0 ? '+' : ''}{topBatterPick.edge.toFixed(2)}
+                  </div>
+                )}
               </div>
               <div className={`lp-pick-badge ${topBatterPick.recommendation === 'OVER' ? 'badge-over' : topBatterPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
                 {topBatterPick.recommendation}
               </div>
             </div>
           )}
-          {topTBPick && topTBPick.projection && (
+          {topTBPick && topTBPick.projection != null && (
             <div className="lp-pick-card lp-pick-tb" onClick={() => onNavigate('batters')}>
               <div className="lp-pick-type">TOTAL BASES</div>
               <div className="lp-pick-player">{topTBPick.name}</div>
@@ -170,12 +174,14 @@ function LandingPage({ onNavigate }) {
               </div>
               <div className="lp-pick-nums">
                 <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topTBPick.line}
+                  <span className="lp-pp-icon">P</span> {topTBPick.line ?? '—'}
                 </div>
                 <div className="lp-pick-proj">Proj: {topTBPick.projection.toFixed(1)}</div>
-                <div className={`lp-pick-edge ${topTBPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                  {topTBPick.edge > 0 ? '+' : ''}{topTBPick.edge.toFixed(2)}
-                </div>
+                {topTBPick.edge != null && (
+                  <div className={`lp-pick-edge ${topTBPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                    {topTBPick.edge > 0 ? '+' : ''}{topTBPick.edge.toFixed(2)}
+                  </div>
+                )}
               </div>
               <div className={`lp-pick-badge ${topTBPick.recommendation === 'OVER' ? 'badge-over' : topTBPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
                 {topTBPick.recommendation}
@@ -259,9 +265,9 @@ function LandingPage({ onNavigate }) {
                 <span className="lp-rank-name" style={{ color: TEAMS[p.team]?.color || '#ccc' }}>{p.name}</span>
                 <span className="lp-rank-team">{p.team}</span>
                 <div className="lp-rank-stats">
-                  <span className="lp-rank-stat">{p.era.toFixed(2)} <small>ERA</small></span>
-                  <span className="lp-rank-stat">{p.whip.toFixed(2)} <small>WHIP</small></span>
-                  <span className="lp-rank-stat">{p.k_pct.toFixed(1)}% <small>K%</small></span>
+                  <span className="lp-rank-stat">{p.era?.toFixed(2) ?? '—'} <small>ERA</small></span>
+                  <span className="lp-rank-stat">{p.whip?.toFixed(2) ?? '—'} <small>WHIP</small></span>
+                  <span className="lp-rank-stat">{p.k_pct?.toFixed(1) ?? '—'}% <small>K%</small></span>
                   <span className="lp-rank-stat">{p.w}-{p.l} <small>W-L</small></span>
                 </div>
               </div>
