@@ -1,23 +1,27 @@
-name: Refresh Data & Deploy Site
+name: Refresh Data & Deploy to Vercel
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    # KBO games typically start 5-6:30 PM KST (= 8-9:30 AM UTC / 4-5:30 AM ET)
+    # Run at these UTC times to capture fresh data throughout the day:
+    - cron: "0 3 * * *"    #  3:00 AM UTC = 12:00 PM KST (pre-game)
+    - cron: "0 5 * * *"    #  5:00 AM UTC =  2:00 PM KST (early games)
+    - cron: "0 8 * * *"    #  8:00 AM UTC =  5:00 PM KST (main slate)
+    - cron: "30 9 * * *"   #  9:30 AM UTC =  6:30 PM KST (late games)
+    - cron: "0 12 * * *"   # 12:00 PM UTC =  9:00 PM KST (post-game results)
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: true
 
 jobs:
-  build:
+  refresh-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -40,7 +44,8 @@ jobs:
 
       - name: Run refresh pipeline
         run: python refresh.py
-        timeout-minutes: 10
+        timeout-minutes: 15
+        continue-on-error: true
 
       - name: Commit data updates
         run: |
@@ -68,21 +73,13 @@ jobs:
       - name: Build site
         run: npm run build
         working-directory: kbo-props-ui
+
+      - name: Deploy to Vercel
+        run: |
+          npm i -g vercel
+          mkdir -p kbo-props-ui/dist/.vercel
+          echo '{"projectId":"prj_HgdvsekuqCfqzKYvGAUD6gQi36AW","orgId":"team_NsMEVaPP3l5Ouz0DWr1y9cxU"}' > kbo-props-ui/dist/.vercel/project.json
+          cd kbo-props-ui/dist
+          vercel --yes --prod --token "$VERCEL_TOKEN"
         env:
-          GITHUB_PAGES: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: kbo-props-ui/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
