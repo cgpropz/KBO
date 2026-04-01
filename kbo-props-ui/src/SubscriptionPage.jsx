@@ -12,9 +12,8 @@ import './SubscriptionPage.css';
  * ────────────────────────────────────────────────────────────────────
  */
 const STRIPE_LINKS = {
-  weekly:  '',   // e.g. 'https://buy.stripe.com/xxx'
-  monthly: '',   // e.g. 'https://buy.stripe.com/yyy'
-  season:  '',   // e.g. 'https://buy.stripe.com/zzz'
+  monthly: 'https://buy.stripe.com/28E28tc4nfmKfPI1eM5Ne01',
+  season:  'https://buy.stripe.com/eVqcN75FZdeC6f8cXu5Ne02',
 };
 
 const TIERS = [
@@ -42,37 +41,16 @@ const TIERS = [
     link: null,
   },
   {
-    id: 'weekly',
-    name: 'Weekly',
-    price: '$5.99',
-    period: '/ week',
-    badge: null,
-    description: 'Full access for the week ahead',
+    id: 'monthly',
+    name: 'Monthly',
+    price: '$19.99',
+    period: '/ month',
+    badge: 'MOST POPULAR',
+    description: 'Full access — everything unlocked',
     features: [
       'All K projections',
       'All batter projections',
       'Player prop cards + hit rates',
-      'Game logs & sparklines',
-      'Edge & recommendation data',
-    ],
-    limited: [
-      'Pitcher rankings',
-      'Slip builder',
-      'Matchup deep dive',
-    ],
-    cta: 'Subscribe Weekly',
-    ctaStyle: 'weekly',
-    link: STRIPE_LINKS.weekly,
-  },
-  {
-    id: 'monthly',
-    name: 'Monthly',
-    price: '$16.99',
-    period: '/ month',
-    badge: 'MOST POPULAR',
-    description: 'Best value — everything unlocked',
-    features: [
-      'Everything in Weekly',
       'Pitcher rankings & tiers',
       'Matchup deep dive',
       'Slip builder & optimizer',
@@ -86,21 +64,22 @@ const TIERS = [
   },
   {
     id: 'season',
-    name: 'Full Season',
+    name: 'Yearly',
     price: '$49.99',
-    period: 'one-time',
+    period: '/ year',
     badge: 'BEST DEAL',
-    description: 'Lock in all features for the entire 2025 season',
+    description: 'Lock in all features for the entire 2026 season',
     features: [
       'Everything in Monthly',
-      'Full 2025 season access',
+      'Full 2026 season access',
       'Early access to new features',
       'Priority data updates',
       'Season-long prop history',
       'No recurring charges',
     ],
     limited: [],
-    cta: 'Get Full Season',
+    cta: 'Get Yearly',
+
     ctaStyle: 'season',
     link: STRIPE_LINKS.season,
   },
@@ -114,7 +93,7 @@ function SubscriptionPage() {
     window.open(tier.link, '_blank', 'noopener');
   };
 
-  const noLinksConfigured = !STRIPE_LINKS.weekly && !STRIPE_LINKS.monthly && !STRIPE_LINKS.season;
+  const noLinksConfigured = !STRIPE_LINKS.monthly && !STRIPE_LINKS.season;
 
   return (
     <div className="sub-page">
