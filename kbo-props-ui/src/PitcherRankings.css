@@ -136,3 +136,11 @@
   .rk-main { padding: 0.75rem; }
   .rk-table th, .rk-table td { padding: 0.45rem 0.5rem; font-size: 0.78rem; }
 }
+
+@media (max-width: 480px) {
+  .rk-header { padding: 0.75rem; }
+  .rk-title { font-size: 1.15rem; }
+  .rk-main { padding: 0.5rem; }
+  .rk-table th, .rk-table td { padding: 0.3rem 0.3rem; font-size: 0.68rem; }
+  .rk-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

@@ -11,6 +11,7 @@ import MatchupDeepDive from './MatchupDeepDive'
 import LandingPage from './LandingPage'
 import SubscriptionPage from './SubscriptionPage'
 import Paywall from './Paywall'
+import './App.css'
 
 /* Views that require a paid subscription */
 const PAID_VIEWS = new Set(['projections', 'batters', 'props', 'optimizer', 'matchups']);
@@ -79,90 +80,65 @@ function App() {
 /* ── Nav bar (extracted for readability) ── */
 function Nav({ view, setView }) {
   const { signOut, user } = useAuth();
-  const navBtn = (id, label) => ({
-    padding: '0.75rem 1.5rem',
-    background: view === id ? '#7c3aed' : 'transparent',
-    color: 'white',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: view === id ? '700' : '400',
-    fontSize: '0.95rem',
-    borderBottom: view === id ? '3px solid #c084fc' : '3px solid transparent',
-    transition: 'all 0.2s',
-  });
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const navItems = [
+    { id: 'projections', label: 'K Projections' },
+    { id: 'props', label: 'Player Props' },
+    { id: 'batters', label: 'Batters' },
+    { id: 'rankings', label: 'Pitcher Rankings' },
+    { id: 'tracker', label: 'Tracker' },
+    { id: 'optimizer', label: 'Slip Builder' },
+    { id: 'matchups', label: 'Matchups' },
+  ];
+
+  const handleNav = (id) => {
+    setView(id);
+    setMenuOpen(false);
+  };
 
   return (
-    <nav style={{
-      display: 'flex',
-      gap: '0',
-      background: '#000',
-      padding: '0 1.5rem',
-      borderBottom: '2px solid #222',
-      alignItems: 'center',
-    }}>
-      <button
-        onClick={() => setView('home')}
-        style={{
-          padding: '0.75rem 1rem',
-          background: 'transparent',
-          color: '#c084fc',
-          border: 'none',
-          cursor: 'pointer',
-          fontWeight: '700',
-          fontSize: '1.1rem',
-          transition: 'all 0.2s',
-          letterSpacing: '-0.5px',
-          marginRight: '0.5rem',
-        }}
-        title="Home"
-      >
-        KBO
-      </button>
-      <div style={{ width: '1px', height: '1.2rem', background: '#333', marginRight: '0.5rem' }} />
-      <button onClick={() => setView('projections')} style={navBtn('projections')}>K Projections</button>
-      <button onClick={() => setView('props')} style={navBtn('props')}>Player Props</button>
-      <button onClick={() => setView('batters')} style={navBtn('batters')}>Batters</button>
-      <button onClick={() => setView('rankings')} style={navBtn('rankings')}>Pitcher Rankings</button>
-      <button onClick={() => setView('tracker')} style={navBtn('tracker')}>Tracker</button>
-      <button onClick={() => setView('optimizer')} style={navBtn('optimizer')}>Slip Builder</button>
-      <button onClick={() => setView('matchups')} style={navBtn('matchups')}>Matchups</button>
-      <div style={{ flex: 1 }} />
-      <button
-        onClick={() => setView('pricing')}
-        style={{
-          padding: '0.6rem 1.2rem',
-          background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '700',
-          fontSize: '0.85rem',
-          transition: 'all 0.2s',
-          letterSpacing: '0.3px',
-          whiteSpace: 'nowrap',
-          marginRight: '0.75rem',
-        }}
-      >
-        Upgrade
-      </button>
-      <button
-        onClick={signOut}
-        style={{
-          padding: '0.5rem 0.9rem',
-          background: 'transparent',
-          color: '#64748b',
-          border: '1px solid #333',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontSize: '0.8rem',
-          transition: 'all 0.2s',
-        }}
-        title={user?.email}
-      >
-        Sign Out
-      </button>
-    </nav>
+    <>
+      <nav className="app-nav">
+        <button className="nav-logo" onClick={() => handleNav('home')}>KBO</button>
+        <div className="nav-divider" />
+        <div className="nav-links-desktop">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              className={`nav-btn ${view === item.id ? 'nav-btn-active' : ''}`}
+              onClick={() => handleNav(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button className="nav-upgrade" onClick={() => handleNav('pricing')}>Upgrade</button>
+        <button className="nav-signout" onClick={signOut} title={user?.email}>Sign Out</button>
+        <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          {menuOpen ? '✕' : '☰'}
+        </button>
+      </nav>
+      {menuOpen && (
+        <div className="nav-mobile-menu">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              className={`nav-mobile-btn ${view === item.id ? 'nav-mobile-btn-active' : ''}`}
+              onClick={() => handleNav(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+          <div className="nav-mobile-divider" />
+          <button className="nav-mobile-btn" onClick={() => handleNav('pricing')}>Upgrade</button>
+          <button className="nav-mobile-btn nav-mobile-signout" onClick={() => { signOut(); setMenuOpen(false); }}>
+            Sign Out
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 

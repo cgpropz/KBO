@@ -52,7 +52,7 @@ function LandingPage({ onNavigate }) {
       <section className="lp-hero">
         <div className="lp-hero-bg" />
         <div className="lp-hero-content">
-          <div className="lp-badge">2025 SEASON</div>
+          <div className="lp-badge">2026 SEASON</div>
           <h1 className="lp-logo-text">
             <span className="lp-logo-k">KBO</span>
             <span className="lp-logo-divider" />

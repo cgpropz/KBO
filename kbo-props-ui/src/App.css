@@ -1,1 +1,127 @@
 /* App-level overrides — kept minimal since pages own their own styles */
+
+/* ── Nav bar ── */
+.app-nav {
+  display: flex;
+  align-items: center;
+  background: #000;
+  padding: 0 1.5rem;
+  border-bottom: 2px solid #222;
+}
+
+.nav-logo {
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: #c084fc;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.5px;
+  margin-right: 0.5rem;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 1.2rem;
+  background: #333;
+  margin-right: 0.5rem;
+}
+
+.nav-btn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 400;
+  font-size: 0.95rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.nav-btn-active {
+  background: #7c3aed;
+  font-weight: 700;
+  border-bottom-color: #c084fc;
+}
+
+.nav-upgrade {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  margin-right: 0.75rem;
+}
+
+.nav-signout {
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.nav-hamburger {
+  display: none;
+  padding: 0.5rem;
+  background: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  margin-left: 0.5rem;
+}
+
+/* Mobile menu */
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  background: #111;
+  border-bottom: 2px solid #222;
+  padding: 0.5rem 0;
+}
+.nav-mobile-btn {
+  padding: 0.85rem 1.5rem;
+  background: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-align: left;
+}
+.nav-mobile-btn-active {
+  color: #c084fc;
+  font-weight: 700;
+  background: rgba(124, 58, 237, 0.15);
+}
+.nav-mobile-divider {
+  height: 1px;
+  background: #222;
+  margin: 0.25rem 1rem;
+}
+.nav-mobile-signout {
+  color: #64748b;
+}
+
+/* Desktop: show links, hide hamburger */
+.nav-links-desktop {
+  display: flex;
+}
+
+/* ── Mobile breakpoint ── */
+@media (max-width: 768px) {
+  .nav-links-desktop { display: none; }
+  .nav-upgrade { display: none; }
+  .nav-signout { display: none; }
+  .nav-hamburger { display: block; }
+  .nav-mobile-menu { display: flex; }
+  .app-nav { padding: 0 1rem; }
+}

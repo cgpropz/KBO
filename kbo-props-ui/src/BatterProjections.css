@@ -187,3 +187,11 @@
   .bp-title { font-size: 1.2rem; }
   .bp-table { font-size: 0.8rem; }
 }
+
+@media (max-width: 480px) {
+  .bp-title { font-size: 1rem; }
+  .bp-table { font-size: 0.72rem; }
+  .bp-table th, .bp-table td { padding: 0.35rem 0.35rem; }
+  .bp-team-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 4px; }
+  .bp-formula-bar { flex-wrap: wrap; font-size: 0.72rem; }
+}

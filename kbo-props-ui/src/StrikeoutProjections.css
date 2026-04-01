@@ -348,3 +348,12 @@
   .so-table th, .so-table td { padding: 0.45rem 0.5rem; font-size: 0.78rem; }
   .so-team-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
 }
+
+@media (max-width: 480px) {
+  .so-header { padding: 0.75rem; }
+  .so-title { font-size: 1.15rem; }
+  .so-main { padding: 0.5rem; }
+  .so-table th, .so-table td { padding: 0.35rem 0.35rem; font-size: 0.7rem; }
+  .so-team-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; }
+  .so-formula-bar { flex-wrap: wrap; font-size: 0.72rem; }
+}

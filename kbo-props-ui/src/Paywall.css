@@ -67,3 +67,12 @@
   opacity: 0.9;
   transform: translateY(-1px);
 }
+
+@media (max-width: 480px) {
+  .pw-wrap { min-height: 50vh; }
+  .pw-card { padding: 1.75rem 1.25rem; margin: 0 1rem; max-width: 100%; }
+  .pw-icon { font-size: 2rem; }
+  .pw-title { font-size: 1.25rem; }
+  .pw-desc { font-size: 0.82rem; }
+  .pw-cta { padding: 0.65rem 1.5rem; font-size: 0.9rem; }
+}

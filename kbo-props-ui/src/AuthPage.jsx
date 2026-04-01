@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import './AuthPage.css';
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,6 +18,16 @@ export default function AuthPage() {
 
     if (!supabase) {
       setError('Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.');
+      setLoading(false);
+      return;
+    }
+
+    if (mode === 'reset') {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (err) setError(err.message);
+      else setMessage('Password reset email sent! Check your inbox.');
       setLoading(false);
       return;
     }
@@ -76,26 +86,39 @@ export default function AuthPage() {
               autoComplete="email"
             />
           </label>
-          <label className="auth-label">
-            Password
-            <input
-              className="auth-input"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder={mode === 'signup' ? 'Create a password (6+ chars)' : 'Your password'}
-              required
-              minLength={6}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            />
-          </label>
+          {mode !== 'reset' && (
+            <label className="auth-label">
+              Password
+              <input
+                className="auth-input"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'Create a password (6+ chars)' : 'Your password'}
+                required
+                minLength={6}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              />
+            </label>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
           {message && <div className="auth-success">{message}</div>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? '...' : mode === 'login' ? 'Log In' : 'Create Account'}
+            {loading ? '...' : mode === 'reset' ? 'Send Reset Link' : mode === 'login' ? 'Log In' : 'Create Account'}
           </button>
+
+          {mode === 'login' && (
+            <button type="button" className="auth-link auth-forgot" onClick={() => { setMode('reset'); setError(''); setMessage(''); }}>
+              Forgot password?
+            </button>
+          )}
+          {mode === 'reset' && (
+            <button type="button" className="auth-link auth-forgot" onClick={() => { setMode('login'); setError(''); setMessage(''); }}>
+              Back to login
+            </button>
+          )}
         </form>
 
         <div className="auth-footer">

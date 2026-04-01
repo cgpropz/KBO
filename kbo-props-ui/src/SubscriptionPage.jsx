@@ -182,7 +182,7 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="What is the Full Season plan?"
-            a="A one-time payment that gives you complete access to every feature for the entire 2025 KBO season. No recurring charges — the best deal for committed bettors."
+            a="A one-time payment that gives you complete access to every feature for the entire 2026 KBO season. No recurring charges — the best deal for committed bettors."
           />
           <FaqItem
             q="How often is the data updated?"
