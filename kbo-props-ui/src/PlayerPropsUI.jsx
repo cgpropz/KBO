@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import './PlayerPropsUI.css';
 import { dataUrl } from './dataUrl';
 
-const TEAMS = {
-  Doosan: '#131230', Hanwha: '#FF6600', Lotte: '#041E42',
-  Kia: '#EA0029', Kiwoom: '#570514', LG: '#C30452',
-  KT: '#000000', NC: '#315288', Samsung: '#074CA1', SSG: '#CE0E2D',
+const TEAM_COLORS = {
+  Doosan: '#9595d3', Hanwha: '#ff8c00', Lotte: '#ff6666',
+  Kia: '#ff4444', Kiwoom: '#d4a76a', LG: '#e8557a',
+  KT: '#e0e0e0', NC: '#5b9bd5', Samsung: '#60a5fa', SSG: '#ff5555',
 };
 
+/* ============== Main Component ============== */
 const PlayerPropsUI = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +18,6 @@ const PlayerPropsUI = () => {
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('hit_rate');
-  const [expandedCard, setExpandedCard] = useState(null);
 
   useEffect(() => {
     fetch(dataUrl('prizepicks_props.json'))
@@ -24,75 +26,56 @@ const PlayerPropsUI = () => {
       .catch(err => { setError(err.message); setLoading(false); });
   }, []);
 
-  const cards = useMemo(() => {
+  /* Flatten cards: one card per prop line */
+  const propCards = useMemo(() => {
     if (!data?.cards) return [];
-    let filtered = data.cards;
-
-    if (filterType !== 'all') {
-      filtered = filtered.filter(c => c.type === filterType);
+    let items = [];
+    for (const card of data.cards) {
+      for (const prop of card.props) {
+        items.push({ ...card, prop, props: undefined });
+      }
     }
+    if (filterType !== 'all') items = items.filter(c => c.type === filterType);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      filtered = filtered.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.team.toLowerCase().includes(q) ||
-        c.opponent.toLowerCase().includes(q)
+      items = items.filter(c =>
+        c.name.toLowerCase().includes(q) || c.team.toLowerCase().includes(q) || c.opponent.toLowerCase().includes(q)
       );
     }
-
-    filtered = [...filtered].sort((a, b) => {
-      const bestHr = c => Math.max(...c.props.map(p => p.hit_rate_all), 0);
-      const bestEdge = c => Math.max(...c.props.map(p => (p.avg || 0) - p.line), 0);
-      if (sortBy === 'hit_rate') return bestHr(b) - bestHr(a);
-      if (sortBy === 'edge') return bestEdge(b) - bestEdge(a);
+    items.sort((a, b) => {
+      if (sortBy === 'hit_rate') return (b.prop.hit_rate_all || 0) - (a.prop.hit_rate_all || 0);
+      if (sortBy === 'edge') return ((b.prop.avg || 0) - b.prop.line) - ((a.prop.avg || 0) - a.prop.line);
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
-
-    return filtered;
+    return items;
   }, [data, filterType, searchTerm, sortBy]);
 
-  if (loading) {
-    return (
-      <div className="pp-container">
-        <div className="pp-loading"><div className="pp-spinner" /><p>Loading props...</p></div>
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="pp-container">
-        <div className="pp-loading"><p style={{ color: '#ef476f' }}>Error: {error}</p></div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="pp-container">
+      <div className="pp-loading"><div className="pp-spinner" /><p>Loading props...</p></div>
+    </div>
+  );
+  if (error) return (
+    <div className="pp-container">
+      <div className="pp-loading"><p style={{ color: '#ef476f' }}>Error: {error}</p></div>
+    </div>
+  );
 
   return (
     <div className="pp-container">
-      {/* Header */}
       <div className="pp-header">
-        <div>
-          <h1 className="pp-title">Player Props</h1>
-          <p className="pp-subtitle">{data.total_props} PrizePicks lines with game log hit rates</p>
-        </div>
+        <h1 className="pp-title">Player Props</h1>
+        <p className="pp-subtitle">{data.total_props} PrizePicks lines with game log hit rates</p>
       </div>
 
-      {/* Controls */}
       <div className="pp-controls">
-        <input
-          type="text"
-          placeholder="Search player, team..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="pp-search"
-        />
+        <input type="text" placeholder="Search player, team..." value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)} className="pp-search" />
         <div className="pp-filters">
           {['all', 'pitcher', 'batter'].map(t => (
-            <button
-              key={t}
-              className={`pp-filter-btn ${filterType === t ? 'active' : ''}`}
-              onClick={() => setFilterType(t)}
-            >
+            <button key={t} className={`pp-filter-btn ${filterType === t ? 'active' : ''}`}
+              onClick={() => setFilterType(t)}>
               {t === 'all' ? 'All' : t === 'pitcher' ? 'Pitchers' : 'Batters'}
             </button>
           ))}
@@ -104,183 +87,158 @@ const PlayerPropsUI = () => {
         </select>
       </div>
 
-      {/* Cards Grid */}
       <div className="pp-grid">
-        {cards.map((card, i) => (
-          <PlayerCard
-            key={`${card.name}-${card.type}-${i}`}
-            card={card}
-            expanded={expandedCard === `${card.name}-${card.type}`}
-            onToggle={() =>
-              setExpandedCard(
-                expandedCard === `${card.name}-${card.type}` ? null : `${card.name}-${card.type}`
-              )
-            }
-          />
+        {propCards.map((card, i) => (
+          <PropCard key={`${card.name}-${card.prop.stat}-${card.prop.line}-${i}`} card={card} />
         ))}
-        {cards.length === 0 && (
-          <div className="pp-empty">No props match your filters.</div>
-        )}
+        {propCards.length === 0 && <div className="pp-empty">No props match your filters.</div>}
       </div>
     </div>
   );
 };
 
-/* --- Player Card ---------------------------------------- */
-function PlayerCard({ card, expanded, onToggle }) {
-  const teamColor = TEAMS[card.team] || '#555';
-  const bestProp = card.props.reduce((a, b) => (a.hit_rate_all > b.hit_rate_all ? a : b), card.props[0]);
+/* ============== Individual Prop Card (NBA style) ============== */
+function PropCard({ card }) {
+  const { prop, name, team, opponent, type, games, venue, park_factor } = card;
+  const teamColor = TEAM_COLORS[team] || '#888';
+  const oppColor = TEAM_COLORS[opponent] || '#888';
+  const edge = (prop.avg || 0) - prop.line;
+  const rec = prop.recommendation || (edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH');
+  const score = prop.hit_rate_all || 0;
+
+  const recentVals = prop.recent_values || [];
+  const gameDates = (games || []).slice(0, recentVals.length).map(g => fmtDate(g.date));
+  const chartValues = [...recentVals].reverse();
+  const chartDates = [...gameDates].reverse();
 
   return (
-    <div className={`pp-card ${expanded ? 'expanded' : ''}`} onClick={onToggle}>
-      {/* Card Header */}
-      <div className="pp-card-top" style={{ borderLeftColor: teamColor }}>
-        <div className="pp-card-identity">
-          <span className={`pp-type-badge ${card.type}`}>
-            {card.type === 'pitcher' ? 'P' : 'B'}
-          </span>
+    <div className="pc-card">
+      <div className="pc-header">
+        <div className="pc-player-info">
+          <div className="pc-type-badge" data-type={type}>
+            {type === 'pitcher' ? 'P' : 'B'}
+          </div>
           <div>
-            <h3 className="pp-card-name">{card.name}</h3>
-            <span className="pp-card-team">
-              {card.team} vs {card.opponent}
-              {card.venue ? (
-                <span className={`pp-park-tag ${card.park_factor >= 1.05 ? 'hitter' : card.park_factor <= 0.95 ? 'pitcher' : 'neutral'}`}>
-                  \uD83C\uDFDF\uFE0F {card.venue} ({card.park_factor >= 1 ? '+' : ''}{((card.park_factor - 1) * 100).toFixed(0)}%)
+            <h3 className="pc-name">{name}</h3>
+            <div className="pc-meta">
+              <span className="pc-team-tag" style={{ background: teamColor }}>{team}</span>
+              <span className="pc-vs">vs</span>
+              <span className="pc-team-tag" style={{ background: oppColor }}>{opponent}</span>
+              {venue && (
+                <span className={`pc-park ${park_factor >= 1.05 ? 'hitter' : park_factor <= 0.95 ? 'pitcher' : 'neutral'}`}>
+                  {venue} ({park_factor >= 1 ? '+' : ''}{((park_factor - 1) * 100).toFixed(0)}%)
                 </span>
-              ) : null}
-            </span>
-          </div>
-        </div>
-        <div className="pp-card-hit-badge" data-level={hitLevel(bestProp.hit_rate_all)}>
-          {hitIcon(bestProp.hit_rate_all)} {bestProp.hit_rate_all}%
-          <span className="pp-hit-label">{hitLabel(bestProp.hit_rate_all)}</span>
-        </div>
-      </div>
-
-      {/* Props */}
-      {card.props.map((prop, pi) => (
-        <PropRow key={pi} prop={prop} type={card.type} />
-      ))}
-
-      {/* Expanded: Game Log */}
-      {expanded && <GameLog card={card} />}
-    </div>
-  );
-}
-
-/* --- Prop Row -------------------------------------------- */
-function PropRow({ prop, type }) {
-  const diff = prop.avg - prop.line;
-  const diffSign = diff > 0 ? '+' : '';
-  const rec = prop.recommendation || (diff > 0.3 ? 'OVER' : diff < -0.3 ? 'UNDER' : 'PUSH');
-  const statLabel = shortStat(prop.stat);
-
-  return (
-    <div className="pp-prop-row">
-      <div className="pp-prop-header">
-        <span className="pp-prop-stat">{statLabel}</span>
-        <span className="pp-prop-line">Line: {prop.line}</span>
-        <span className="pp-prop-avg">Avg: {prop.avg}</span>
-        <span className={`pp-prop-diff ${diff > 0 ? 'pos' : diff < 0 ? 'neg' : ''}`}>
-          ({diffSign}{diff.toFixed(1)})
-        </span>
-        <span className={`pp-rec-badge ${rec.toLowerCase()}`}>{rec}</span>
-      </div>
-
-      {/* Hit Rate Bars */}
-      <div className="pp-hr-bars">
-        <HitRateBar label="Season" value={prop.hit_rate_all} count={`${prop.over}/${prop.total_games}`} />
-        <HitRateBar label="L20" value={prop.hit_rate_l20} />
-        <HitRateBar label="L10" value={prop.hit_rate_l10} />
-        <HitRateBar label="L5" value={prop.hit_rate_l5} />
-      </div>
-
-      {/* Mini Sparkline: last 10 games vs line */}
-      <div className="pp-sparkline">
-        {prop.recent_values.map((v, i) => (
-          <div
-            key={i}
-            className={`pp-spark-dot ${v > prop.line ? 'over' : v === prop.line ? 'push' : 'under'}`}
-            title={`Game ${i + 1}: ${v}`}
-          >
-            {v}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* --- Hit Rate Bar ---------------------------------------- */
-function HitRateBar({ label, value, count }) {
-  return (
-    <div className="pp-hr-bar-wrap">
-      <span className="pp-hr-label">{label}</span>
-      <div className="pp-hr-track">
-        <div
-          className="pp-hr-fill"
-          style={{ width: `${value}%` }}
-          data-level={hitLevel(value)}
-        />
-      </div>
-      <span className="pp-hr-value" data-level={hitLevel(value)}>
-        {value}%{count ? ` (${count})` : ''}
-      </span>
-    </div>
-  );
-}
-
-/* --- Game Log (expanded) --------------------------------- */
-function GameLog({ card }) {
-  return (
-    <div className="pp-gamelog" onClick={e => e.stopPropagation()}>
-      <h4 className="pp-gamelog-title">Recent Game Log</h4>
-      <div className="pp-gamelog-table-wrap">
-        <table className="pp-gamelog-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Opp</th>
-              {card.type === 'pitcher' ? (
-                <><th>IP</th><th>K</th><th>ER</th><th>H</th><th>BB</th><th>Outs</th></>
-              ) : (
-                <><th>H</th><th>R</th><th>RBI</th><th>HRR</th><th>TB</th></>
               )}
-            </tr>
-          </thead>
-          <tbody>
-            {card.games.slice(0, 10).map((g, i) => (
-              <tr key={i}>
-                <td className="pp-gl-date">{formatDate(g.date)}</td>
-                <td>{g.opp}</td>
-                {card.type === 'pitcher' ? (
-                  <>
-                    <td>{g.ip}</td>
-                    <td className="pp-gl-highlight">{g.so}</td>
-                    <td>{g.er}</td>
-                    <td>{g.ha}</td>
-                    <td>{g.bb}</td>
-                    <td className="pp-gl-highlight">{g.outs}</td>
-                  </>
-                ) : (
-                  <>
-                    <td>{g.h}</td>
-                    <td>{g.r}</td>
-                    <td>{g.rbi}</td>
-                    <td className="pp-gl-highlight">{g.hrr}</td>
-                    <td className="pp-gl-highlight">{g.tb}</td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </div>
+          </div>
+        </div>
+        <div className={`pc-rec ${rec.toLowerCase()}`}>{rec}</div>
       </div>
+
+      <div className={`pc-stat-banner ${rec.toLowerCase()}`}>
+        {shortStat(prop.stat)}
+      </div>
+
+      <div className="pc-stats-row">
+        <div className="pc-stat-box">
+          <div className="pc-stat-label">LINE</div>
+          <div className="pc-stat-value">{prop.line}</div>
+        </div>
+        <div className="pc-stat-box">
+          <div className="pc-stat-label">PROJECTION</div>
+          <div className="pc-stat-value">{prop.avg}</div>
+        </div>
+        <div className="pc-stat-box">
+          <div className="pc-stat-label">SCORE</div>
+          <div className="pc-stat-value" data-level={hitLevel(score)}>{score.toFixed(1)}</div>
+        </div>
+        <div className="pc-stat-box">
+          <div className="pc-stat-label">EDGE</div>
+          <div className={`pc-stat-value ${edge > 0 ? 'pos' : edge < 0 ? 'neg' : ''}`}>
+            {edge > 0 ? '+' : ''}{edge.toFixed(1)}
+          </div>
+        </div>
+      </div>
+
+      <div className="pc-hitrates">
+        <HitCircle label="L5" value={prop.hit_rate_l5} />
+        <HitCircle label="L10" value={prop.hit_rate_l10} highlight />
+        <HitCircle label="FULL" value={prop.hit_rate_all} count={`${prop.over}/${prop.total_games}`} />
+      </div>
+
+      {chartValues.length > 0 && (
+        <GameChart values={chartValues} dates={chartDates} line={prop.line} />
+      )}
     </div>
   );
 }
 
-/* --- Helpers --------------------------------------------- */
+/* ============== Hit Rate Circle ============== */
+function HitCircle({ label, value, highlight, count }) {
+  const level = hitLevel(value);
+  return (
+    <div className={`pc-circle-wrap ${highlight ? 'highlight' : ''}`}>
+      <div className="pc-circle" data-level={level}>
+        <span className="pc-circle-value">{value != null ? `${Math.round(value)}%` : '—'}</span>
+      </div>
+      <div className="pc-circle-label">{label}</div>
+      {count && <div className="pc-circle-count">{count}</div>}
+    </div>
+  );
+}
+
+/* ============== Highcharts Game Log Bar Chart ============== */
+function GameChart({ values, dates, line }) {
+  const colors = values.map(v =>
+    v > line ? '#22c55e' : v === line ? '#64748b' : '#ef4444'
+  );
+
+  const options = {
+    chart: {
+      type: 'column', backgroundColor: 'transparent', height: 160,
+      spacing: [5, 0, 0, 0], style: { fontFamily: 'inherit' },
+    },
+    title: { text: null },
+    credits: { enabled: false },
+    legend: { enabled: false },
+    xAxis: {
+      categories: dates,
+      labels: { style: { color: '#64748b', fontSize: '9px' }, rotation: -45 },
+      lineColor: '#1e293b', tickLength: 0,
+    },
+    yAxis: {
+      title: { text: null }, gridLineColor: '#1e293b', labels: { enabled: false },
+      plotLines: [{
+        value: line, color: '#a78bfa', width: 2, dashStyle: 'Dash', zIndex: 5,
+        label: { text: `Line: ${line}`, align: 'right', style: { color: '#a78bfa', fontSize: '9px', fontWeight: '700' }, y: -2 },
+      }],
+    },
+    plotOptions: {
+      column: {
+        borderWidth: 0, borderRadius: 3, colorByPoint: true, colors,
+        dataLabels: { enabled: true, style: { color: '#e2e8f0', fontSize: '10px', fontWeight: '700', textOutline: 'none' }, format: '{y}' },
+      },
+    },
+    tooltip: {
+      backgroundColor: '#1a1a2e', borderColor: '#334155',
+      style: { color: '#e2e8f0', fontSize: '11px' },
+      formatter: function () {
+        const v = this.y;
+        const st = v > line ? 'OVER ✅' : v === line ? 'PUSH' : 'UNDER ❌';
+        return `<b>${this.x}</b><br/>Value: <b>${v}</b><br/>${st}`;
+      },
+    },
+    series: [{ data: values }],
+  };
+
+  return (
+    <div className="pc-chart">
+      <HighchartsReact highcharts={Highcharts} options={options} />
+    </div>
+  );
+}
+
+/* ============== Helpers ============== */
 function hitLevel(v) {
   if (v >= 70) return 'hot';
   if (v >= 50) return 'warm';
@@ -288,38 +246,18 @@ function hitLevel(v) {
   return 'cold';
 }
 
-function hitIcon(v) {
-  if (v >= 70) return '\uD83D\uDD25';
-  if (v >= 50) return '\u2705';
-  if (v >= 30) return '\u26A0\uFE0F';
-  return '\u2744\uFE0F';
-}
-
-function hitLabel(v) {
-  if (v >= 70) return 'HOT';
-  if (v >= 50) return 'SOLID';
-  if (v >= 30) return 'RISKY';
-  return 'COLD';
-}
-
 function shortStat(s) {
-  const map = {
-    'Pitcher Strikeouts': 'Strikeouts',
-    'Pitching Outs': 'Outs',
-    'Hits+Runs+RBIs': 'H+R+RBI',
-    'Total Bases': 'Total Bases',
-  };
-  return map[s] || s;
+  return ({
+    'Pitcher Strikeouts': 'STRIKEOUTS', 'Pitching Outs': 'PITCHING OUTS',
+    'Hits+Runs+RBIs': 'HITS+RUNS+RBIS', 'Total Bases': 'TOTAL BASES',
+    'Hitter Strikeouts': 'HITTER STRIKEOUTS',
+  })[s] || s.toUpperCase();
 }
 
-function formatDate(d) {
+function fmtDate(d) {
   if (!d) return '';
-  if (d.includes('/')) {
-    const [m, day] = d.split('/');
-    return `${m}/${day}`;
-  }
-  const [, m, day] = d.split('-');
-  return `${m}/${day}`;
+  if (d.includes('/')) { const [m, day] = d.split('/'); return `${m}/${day}`; }
+  const p = d.split('-'); return `${p[1]}/${p[2]}`;
 }
 
 export default PlayerPropsUI;

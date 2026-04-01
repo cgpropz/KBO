@@ -27,7 +27,7 @@ const TIERS = [
     description: 'Get started with basic KBO projections',
     features: [
       'Today\'s game schedule',
-      'Top 3 K projections',
+      'Top 3 projections',
       'Basic batter stats',
       'Landing page overview',
     ],
