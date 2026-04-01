@@ -15,60 +15,60 @@ import shutil
 import csv
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-VENV_PYTHON = os.path.join(BASE, "venv", "bin", "python")
+PYTHON = sys.executable  # works in both venv (local) and CI (system python)
 PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
 STEPS = [
     {
         "name": "PrizePicks Odds",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "KBO-Odds", "KBO_ODDS_2025.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "KBO-Odds", "KBO_ODDS_2025.py")],
         "skip_flag": "--skip-odds",
     },
     {
         "name": "Daily Lineups",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "Pitchers-Data", "daily_pitchers2.py"),
+        "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "daily_pitchers2.py"),
                 "--output", os.path.join(BASE, "Pitchers-Data", "player_names.csv")],
         "skip_flag": "--skip-lineups",
     },
     {
         "name": "Pitcher Game Logs",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "Pitchers-Data", "NEWPITCHER_LOG25.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "NEWPITCHER_LOG25.py")],
         "skip_flag": "--skip-logs",
     },
     {
         "name": "Batter Game Logs (2026)",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "Batters-Data", "batterlog.py"),
+        "cmd": [PYTHON, os.path.join(BASE, "Batters-Data", "batterlog.py"),
                 "--season", "2026"],
         "skip_flag": "--skip-batter-logs",
     },
     {
         "name": "Strikeout Projections",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_projections.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "generate_projections.py")],
         "skip_flag": None,
     },
     {
         "name": "Batter H+R+RBI Projections",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_batter_projections.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "generate_batter_projections.py")],
         "skip_flag": None,
     },
     {
         "name": "Pitcher Rankings",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_rankings.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "generate_rankings.py")],
         "skip_flag": None,
     },
     {
         "name": "Matchup Deep Dive",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_matchups.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "generate_matchups.py")],
         "skip_flag": None,
     },
     {
         "name": "Grade Props",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "grade_props.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "grade_props.py")],
         "skip_flag": "--skip-grade",
     },
     {
         "name": "PrizePicks Props Cards",
-        "cmd": [VENV_PYTHON, os.path.join(BASE, "generate_props.py")],
+        "cmd": [PYTHON, os.path.join(BASE, "generate_props.py")],
         "skip_flag": None,
     },
 ]
