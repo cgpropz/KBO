@@ -231,7 +231,7 @@ function PitcherCard({ pitcher, team, teamColor, side }) {
 
           {recent.length > 0 && (
             <div className="mdd-recent">
-              <div className="mdd-recent-title">Last {recent.length} Starts</div>
+              <div className="mdd-recent-title">LAST {recent.length} STARTS</div>
               <table className="mdd-recent-table">
                 <thead>
                   <tr>

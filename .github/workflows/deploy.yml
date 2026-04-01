@@ -4,11 +4,11 @@ on:
   schedule:
     # KBO games typically start 5-6:30 PM KST (= 8-9:30 AM UTC / 4-5:30 AM ET)
     # Run at these UTC times to capture fresh data throughout the day:
-    - cron: "0 3 * * *"    #  3:00 AM UTC = 12:00 PM KST (pre-game)
-    - cron: "0 5 * * *"    #  5:00 AM UTC =  2:00 PM KST (early games)
-    - cron: "0 8 * * *"    #  8:00 AM UTC =  5:00 PM KST (main slate)
-    - cron: "30 9 * * *"   #  9:30 AM UTC =  6:30 PM KST (late games)
-    - cron: "0 12 * * *"   # 12:00 PM UTC =  9:00 PM KST (post-game results)
+    - cron: "0 3 * * *" #  3:00 AM UTC = 12:00 PM KST (pre-game)
+    - cron: "0 5 * * *" #  5:00 AM UTC =  2:00 PM KST (early games)
+    - cron: "0 8 * * *" #  8:00 AM UTC =  5:00 PM KST (main slate)
+    - cron: "30 9 * * *" #  9:30 AM UTC =  6:30 PM KST (late games)
+    - cron: "0 12 * * *" # 12:00 PM UTC =  9:00 PM KST (post-game results)
   push:
     branches: [main]
   workflow_dispatch:

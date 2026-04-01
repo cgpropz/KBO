@@ -142,9 +142,15 @@ def build_pitcher_profiles(logs):
         k_per_9 = round((total_so / total_ip * 9), 2) if total_ip > 0 else 0
         ip_per_g = round(total_ip / n, 1) if n > 0 else 0
 
-        last_3 = sorted(sp_games, key=lambda g: g["Date"])[-3:]
+        from datetime import datetime
+        def parse_date(d):
+            for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+                try: return datetime.strptime(d, fmt)
+                except: pass
+            return datetime.min
+        last_n = sorted(sp_games, key=lambda g: parse_date(g["Date"]), reverse=True)[:5]
         recent = []
-        for g in last_3:
+        for g in last_n:
             opp_team = TEAM_SHORT.get(g["Opp"], g["Opp"])
             recent.append({
                 "date": g["Date"],
