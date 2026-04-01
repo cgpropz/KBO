@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 import pandas as pd
 import gspread
@@ -7,15 +8,35 @@ from oauth2client.service_account import ServiceAccountCredentials
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+    "Referer": "https://app.prizepicks.com/",
+}
+PP_URL = "https://partner-api.prizepicks.com/projections?per_page=1000"
+MAX_RETRIES = 3
+
 
 def dfs_scraper():
-    # Fetch PrizePicks API
-    response = requests.get(
-        'https://partner-api.prizepicks.com/projections?per_page=1000',
-        verify=False,
-        timeout=30,
-    )
-    prizepicks = response.json()
+    # Fetch PrizePicks API with retries
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = requests.get(PP_URL, headers=HEADERS, verify=False, timeout=30)
+            if response.status_code != 200:
+                print(f"  ⚠ Attempt {attempt}: HTTP {response.status_code}")
+                time.sleep(3 * attempt)
+                continue
+            prizepicks = response.json()
+            break
+        except (requests.RequestException, ValueError) as e:
+            print(f"  ⚠ Attempt {attempt}: {e}")
+            if attempt < MAX_RETRIES:
+                time.sleep(3 * attempt)
+    else:
+        print("✗ PrizePicks API unreachable after retries — using cached data")
+        return _load_cached()
 
     pplist, library = [], {}
 
@@ -52,7 +73,21 @@ def dfs_scraper():
     return df
 
 
+def _load_cached():
+    """Return the last saved JSON as a DataFrame so downstream steps still work."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    cached = os.path.join(base, 'KBO_odds_2025.json')
+    if os.path.exists(cached):
+        df = pd.read_json(cached)
+        print(f"  ↳ Loaded {len(df)} cached lines from KBO_odds_2025.json")
+        return df
+    return pd.DataFrame(columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type'])
+
+
 def save_to_json(df):
+    if df.empty:
+        print("No new data to save — keeping existing files")
+        return
     base = os.path.dirname(os.path.abspath(__file__))
     out_json = os.path.join(base, 'KBO_odds_2025.json')
     out_csv = os.path.join(base, 'KBO_odds_2025.csv')
