@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from './AuthContext';
 import './SubscriptionPage.css';
 
 /*
@@ -87,10 +88,15 @@ const TIERS = [
 
 function SubscriptionPage() {
   const [selectedTier, setSelectedTier] = useState(null);
+  const { user } = useAuth();
 
   const handleSubscribe = (tier) => {
     if (!tier.link) return;
-    window.open(tier.link, '_blank', 'noopener');
+    // Pass Supabase user ID + prefill email so Stripe webhook can match the payment
+    const url = new URL(tier.link);
+    if (user?.id) url.searchParams.set('client_reference_id', user.id);
+    if (user?.email) url.searchParams.set('prefilled_email', user.email);
+    window.open(url.toString(), '_blank', 'noopener');
   };
 
   const noLinksConfigured = !STRIPE_LINKS.monthly && !STRIPE_LINKS.season;
