@@ -80,9 +80,11 @@ jobs:
       - name: Deploy to Vercel
         run: |
           npm i -g vercel
-          mkdir -p kbo-props-ui/dist/.vercel
-          echo '{"projectId":"prj_HgdvsekuqCfqzKYvGAUD6gQi36AW","orgId":"team_NsMEVaPP3l5Ouz0DWr1y9cxU"}' > kbo-props-ui/dist/.vercel/project.json
-          cd kbo-props-ui/dist
-          vercel --yes --prod --token "$VERCEL_TOKEN"
+          cd kbo-props-ui
+          vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+          vercel build --prod --token "$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
