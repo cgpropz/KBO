@@ -1,9 +1,12 @@
 import { useAuth } from './AuthContext';
 import './Paywall.css';
 
+const OWNER_EMAILS = ['cgpropz@gmail.com'];
+
 export default function Paywall({ children, onNavigate }) {
-  const { tier } = useAuth();
-  const isPaid = tier === 'pro' || tier === 'monthly' || tier === 'weekly' || tier === 'season';
+  const { tier, user } = useAuth();
+  const isOwner = user && OWNER_EMAILS.includes(user.email);
+  const isPaid = isOwner || tier === 'owner' || tier === 'pro' || tier === 'monthly' || tier === 'weekly' || tier === 'season';
 
   if (isPaid) return children;
 
