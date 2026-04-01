@@ -54,15 +54,14 @@ export default async function handler(req, res) {
 
     const tier = tierFromSession(session);
 
-    // Try updating by user ID first, fall back to email lookup
+    // Upsert tier — creates row if missing, updates if exists
     if (userId) {
       const { error } = await supabase
         .from('user_profiles')
-        .update({ tier })
-        .eq('id', userId);
+        .upsert({ id: userId, tier }, { onConflict: 'id' });
 
-      if (error) console.error('Error updating tier by ID:', error);
-      else console.log(`Updated user ${userId} to tier: ${tier}`);
+      if (error) console.error('Error upserting tier by ID:', error);
+      else console.log(`Set user ${userId} to tier: ${tier}`);
     } else if (email) {
       // Look up user by email in auth.users
       const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers();
@@ -74,11 +73,10 @@ export default async function handler(req, res) {
       if (user) {
         const { error } = await supabase
           .from('user_profiles')
-          .update({ tier })
-          .eq('id', user.id);
+          .upsert({ id: user.id, tier }, { onConflict: 'id' });
 
-        if (error) console.error('Error updating tier by email:', error);
-        else console.log(`Updated user ${email} to tier: ${tier}`);
+        if (error) console.error('Error upserting tier by email:', error);
+        else console.log(`Set user ${email} to tier: ${tier}`);
       } else {
         console.error(`No Supabase user found for email: ${email}`);
       }
