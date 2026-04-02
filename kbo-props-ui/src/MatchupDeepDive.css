@@ -1,11 +1,11 @@
-/* MatchupDeepDive.css — purple/black theme */
+/* MatchupDeepDive.css — slate card style */
 
 .mdd {
-  max-width: 960px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #e2e8f0;
+  padding: 1.5rem 1.25rem 2.25rem;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  color: #e5e7eb;
 }
 
 /* Empty state */
@@ -28,47 +28,78 @@
 
 /* Header */
 .mdd-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
+  text-align: left;
+  margin-bottom: 0.9rem;
+}
+
+.mdd-kicker {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #f97316;
+  margin-bottom: 0.35rem;
+}
+
+.mdd-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mdd-header-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mdd-header-pill {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #374151;
+  background: #ffffff;
+  text-transform: uppercase;
 }
 .mdd-title {
-  font-size: 1.8rem;
-  background: linear-gradient(135deg, #c084fc, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 2.1rem;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  text-transform: uppercase;
+  color: #101114;
+  letter-spacing: 0.02em;
   margin: 0;
 }
 .mdd-subtitle {
-  color: #94a3b8;
+  color: #374151;
   font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin-top: 0.25rem;
 }
 
 /* Game selector tabs */
 .mdd-game-selector {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
-  scrollbar-width: thin;
-  scrollbar-color: #333 transparent;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.95rem;
+  margin-bottom: 1.1rem;
 }
 .mdd-game-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 1rem;
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 8px;
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: #090b14;
+  border: 1px solid #17233a;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.2s;
-  color: #e2e8f0;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  color: #e5e7eb;
+  overflow: hidden;
 }
 .mdd-team-tab-item {
   display: inline-flex;
@@ -76,18 +107,125 @@
   gap: 0.35rem;
 }
 .mdd-game-tab:hover {
-  border-color: #7c3aed;
-  background: #1a1a2e;
+  transform: translateY(-2px);
+  border-color: #159f7e;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 .mdd-game-tab.active {
-  background: linear-gradient(135deg, #7c3aed22, #a855f722);
-  border-color: #7c3aed;
-  box-shadow: 0 0 12px #7c3aed33;
+  border-color: #19c298;
+  box-shadow: 0 0 0 1px rgba(19, 183, 143, 0.35), 0 16px 28px rgba(0, 0, 0, 0.45);
+}
+.mdd-slate-card {
+  position: relative;
+}
+.mdd-slate-card.active::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #16a34a, #22c55e, #16a34a);
 }
 .mdd-at {
   color: #555;
   font-weight: 400;
   font-size: 0.8rem;
+}
+
+.mdd-slate-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 1.05rem 1rem 0.95rem;
+  background: radial-gradient(circle at 0% 0%, rgba(29, 78, 216, 0.16), transparent 55%), radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.17), transparent 55%), linear-gradient(180deg, #090b15, #05070f);
+}
+
+.mdd-slate-side {
+  min-width: 0;
+}
+
+.mdd-slate-side.mdd-home {
+  text-align: right;
+}
+
+.mdd-slate-side-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: color-mix(in srgb, var(--team) 55%, #d1d5db 45%);
+  margin-bottom: 0.35rem;
+}
+
+.mdd-slate-team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 2.15rem;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  color: color-mix(in srgb, var(--team) 72%, #f8fafc 28%);
+}
+
+.mdd-slate-pitcher {
+  margin-top: 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #d1d5db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdd-slate-mid {
+  text-align: center;
+  padding: 0 0.3rem;
+}
+
+.mdd-slate-game-tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #9ca3af;
+  margin-bottom: 0.2rem;
+}
+
+.mdd-slate-vs {
+  font-size: 1.28rem;
+  color: #d1d5db;
+  font-weight: 800;
+}
+
+.mdd-slate-time {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.mdd-slate-bottom {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem 0.9rem;
+  border-top: 1px solid rgba(17, 24, 39, 0.95);
+  background: #f8fafc;
+}
+
+.mdd-slate-pill {
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #374151;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Game Header - VS display */
@@ -97,10 +235,10 @@
   justify-content: center;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #0a0a1a, #111128);
-  border: 1px solid #1e1e3a;
+  background: linear-gradient(180deg, #121622, #0b0f1a);
+  border: 1px solid #1f2937;
   border-radius: 12px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.1rem;
 }
 .mdd-team-side {
   text-align: center;
@@ -213,26 +351,26 @@
   justify-content: center;
   border-radius: 999px;
   overflow: hidden;
-  background: #0f172a;
-  border: 1px solid color-mix(in srgb, var(--team-color) 60%, #ffffff 15%);
+  background: #0b1220;
+  border: 1px solid color-mix(in srgb, var(--team-color) 65%, #ffffff 20%);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
 }
 .mdd-team-logo-md {
-  min-width: 1.55rem;
-  height: 1.55rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
   font-size: 0.56rem;
-  padding: 0 0.35rem;
+  padding: 0;
 }
 .mdd-team-logo-sm {
-  min-width: 1.15rem;
-  height: 1.15rem;
+  min-width: 1.35rem;
+  height: 1.35rem;
   font-size: 0.44rem;
-  padding: 0 0.26rem;
+  padding: 0;
 }
 .mdd-team-logo-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 .mdd-team-logo-fallback {
@@ -543,6 +681,14 @@
 /* Responsive */
 @media (max-width: 720px) {
   .mdd { padding: 1rem; }
+  .mdd-title-row { flex-direction: column; align-items: flex-start; }
+  .mdd-game-selector { grid-template-columns: 1fr; }
+  .mdd-slate-top { grid-template-columns: 1fr; gap: 0.75rem; }
+  .mdd-slate-mid { order: 2; }
+  .mdd-slate-side.mdd-home,
+  .mdd-slate-side { text-align: left; }
+  .mdd-slate-team-name { font-size: 1.5rem; }
+  .mdd-slate-bottom { grid-template-columns: 1fr; }
   .mdd-game-header { flex-direction: column; gap: 0.75rem; }
   .mdd-pitchers { flex-direction: column; }
   .mdd-pitcher-divider { width: 100%; height: 1px; margin: 0.75rem 0; }
