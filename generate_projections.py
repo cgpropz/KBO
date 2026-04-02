@@ -270,7 +270,9 @@ for pitcher in all_pitchers:
     line = pp["line"] if pp else None
 
     if not stats:
-        print("WARNING: No data for %s — skipping" % name)
+        # Keep all PP pitchers on the board with a neutral fallback when no logs exist.
+        print("WARNING: No data for %s — using neutral fallback" % name)
+        fallback_proj = line if line is not None else None
         projections.append({
             "name": name,
             "team": team,
@@ -279,21 +281,22 @@ for pitcher in all_pitchers:
             "odds_type": pp["odds_type"] if pp else None,
             "pp_name": pp["pp_name"] if pp else None,
             "prop": "Strikeouts",
-            "projection": None,
-            "edge": None,
-            "rating": None,
-            "recommendation": "NO DATA",
+            "projection": round(fallback_proj, 2) if fallback_proj is not None else None,
+            "edge": 0.0 if fallback_proj is not None else None,
+            "rating": 50.0 if fallback_proj is not None else None,
+            "recommendation": "PUSH" if fallback_proj is not None else "NO LINE",
             "so_per_ip": None,
             "ip_per_g": None,
             "opp_so_per_g": team_so_per_g.get(opp),
             "games_used": 0,
+            "source": "fallback_no_logs",
         })
         continue
 
     opp_so_g = team_so_per_g.get(opp)
     if opp_so_g is None:
-        print("WARNING: No team SO/G for opponent '%s'" % opp)
-        continue
+        print("WARNING: No team SO/G for opponent '%s' — using league average" % opp)
+        opp_so_g = league_avg_so_per_g
 
     # Formula: (SO/IP * IP/G) * Opponent_SO_per_G / League_Avg_SO_per_G
     so_per_ip = stats["so_per_ip"]

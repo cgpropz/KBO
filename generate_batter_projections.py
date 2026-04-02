@@ -284,20 +284,28 @@ def build_hrr_projections():
             # Fallback: use PrizePicks Versus field
             opp = resolve_team(pp_val.get("versus", ""))
         if not opp:
-            continue
+            opp = pp_val.get("versus", "") or "Unknown"
 
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
 
         if not bs:
-            print(f"  WARNING: No data for {pp_name}")
+            # Keep every PP batter in output with a neutral fallback when no logs exist.
+            print(f"  WARNING: No data for {pp_name} — using neutral fallback")
             projections.append({
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Hits+Runs+RBIs",
-                "projection": None, "edge": None, "rating": None,
-                "recommendation": "NO DATA", "avg_per_g": None,
-                "opp_factor": None, "games_used": 0,
+                "projection": round(line, 2) if line is not None else None,
+                "edge": 0.0 if line is not None else None,
+                "rating": 50.0 if line is not None else None,
+                "recommendation": "PUSH" if line is not None else "NO LINE",
+                "avg_per_g": None,
+                "opp_factor": 1.0,
+                "park_factor": 1.0,
+                "venue": "",
+                "home_team": game_home_team.get(team, team),
+                "games_used": 0,
             })
             continue
 
@@ -341,20 +349,27 @@ def build_tb_projections():
         if not opp:
             opp = resolve_team(pp_val.get("versus", ""))
         if not opp:
-            continue
+            opp = pp_val.get("versus", "") or "Unknown"
 
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
 
         if not bs:
-            print(f"  WARNING: No data for {pp_name}")
+            print(f"  WARNING: No data for {pp_name} — using neutral fallback")
             projections.append({
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Total Bases",
-                "projection": None, "edge": None, "rating": None,
-                "recommendation": "NO DATA", "avg_per_g": None,
-                "opp_factor": None, "games_used": 0,
+                "projection": round(line, 2) if line is not None else None,
+                "edge": 0.0 if line is not None else None,
+                "rating": 50.0 if line is not None else None,
+                "recommendation": "PUSH" if line is not None else "NO LINE",
+                "avg_per_g": None,
+                "opp_factor": 1.0,
+                "park_factor": 1.0,
+                "venue": "",
+                "home_team": game_home_team.get(team, team),
+                "games_used": 0,
             })
             continue
 
