@@ -212,13 +212,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--team-color) 65%, #fff 35%), var(--team-color));
-  color: #fff;
-  font-weight: 800;
-  letter-spacing: 0.35px;
-  border: 1px solid color-mix(in srgb, var(--team-color) 50%, #ffffff 25%);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3) inset;
+  overflow: hidden;
+  background: #0f172a;
+  border: 1px solid color-mix(in srgb, var(--team-color) 60%, #ffffff 15%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
 }
 .mdd-team-logo-md {
   min-width: 1.55rem;
@@ -231,6 +228,18 @@
   height: 1.15rem;
   font-size: 0.44rem;
   padding: 0 0.26rem;
+}
+.mdd-team-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mdd-team-logo-fallback {
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 /* Stat boxes */

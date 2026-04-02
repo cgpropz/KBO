@@ -3,31 +3,41 @@ import './MatchupDeepDive.css';
 import { dataUrl } from './dataUrl';
 
 const TEAMS = {
-  Doosan:  { color: '#9595d3', full: 'Doosan Bears', abbr: 'DOO' },
-  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles', abbr: 'HAN' },
-  Kia:     { color: '#ff4444', full: 'Kia Tigers', abbr: 'KIA' },
-  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes', abbr: 'KIW' },
-  KT:      { color: '#e0e0e0', full: 'KT Wiz', abbr: 'KT' },
-  LG:      { color: '#e8557a', full: 'LG Twins', abbr: 'LG' },
-  Lotte:   { color: '#ff6666', full: 'Lotte Giants', abbr: 'LOT' },
-  NC:      { color: '#5b9bd5', full: 'NC Dinos', abbr: 'NC' },
-  Samsung: { color: '#60a5fa', full: 'Samsung Lions', abbr: 'SAM' },
-  SSG:     { color: '#ff5555', full: 'SSG Landers', abbr: 'SSG' },
+  Doosan:  { color: '#9595d3', full: 'Doosan Bears', abbr: 'DOO', logo: '/team-logos/doosan.svg' },
+  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles', abbr: 'HAN', logo: '/team-logos/hanwha.svg' },
+  Kia:     { color: '#ff4444', full: 'Kia Tigers', abbr: 'KIA', logo: '/team-logos/kia.png' },
+  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes', abbr: 'KIW', logo: '/team-logos/kiwoom.png' },
+  KT:      { color: '#e0e0e0', full: 'KT Wiz', abbr: 'KT', logo: '/team-logos/kt.svg' },
+  LG:      { color: '#e8557a', full: 'LG Twins', abbr: 'LG', logo: '/team-logos/lg.svg' },
+  Lotte:   { color: '#ff6666', full: 'Lotte Giants', abbr: 'LOT', logo: '/team-logos/lotte.svg' },
+  NC:      { color: '#5b9bd5', full: 'NC Dinos', abbr: 'NC', logo: '/team-logos/nc.svg' },
+  Samsung: { color: '#60a5fa', full: 'Samsung Lions', abbr: 'SAM', logo: '/team-logos/samsung.svg' },
+  SSG:     { color: '#ff5555', full: 'SSG Landers', abbr: 'SSG', logo: '/team-logos/ssg.png' },
 };
 
 function TeamLogoBadge({ team, size = 'md' }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const meta = TEAMS[team] || {};
   const color = meta.color || '#888';
   const abbr = meta.abbr || String(team || '?').slice(0, 3).toUpperCase();
+  const logo = meta.logo;
 
   return (
     <span
       className={`mdd-team-logo mdd-team-logo-${size}`}
       style={{ '--team-color': color }}
-      aria-hidden="true"
       title={meta.full || team}
     >
-      {abbr}
+      {logo && !imgFailed ? (
+        <img
+          src={logo}
+          alt={`${meta.full || team} logo`}
+          className="mdd-team-logo-img"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <span className="mdd-team-logo-fallback" aria-hidden="true">{abbr}</span>
+      )}
     </span>
   );
 }
