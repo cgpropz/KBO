@@ -12,7 +12,6 @@ import sys
 import os
 import time
 import shutil
-import csv
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PYTHON = sys.executable  # works in both venv (local) and CI (system python)
@@ -45,6 +44,11 @@ STEPS = [
         "cmd": [PYTHON, os.path.join(BASE, "Batters-Data", "batterlog.py"),
                 "--season", "2026"],
         "skip_flag": "--skip-batter-logs",
+    },
+    {
+        "name": "Combine Batter Logs (2025 + 2026)",
+        "cmd": [PYTHON, os.path.join(BASE, "combine_batter_logs.py")],
+        "skip_flag": "--skip-combine-batters",
     },
     {
         "name": "Strikeout Projections",
@@ -99,29 +103,6 @@ def main():
             failed.append(step["name"])
         else:
             print(f"✓ {step['name']} done [{elapsed:.1f}s]")
-
-    # Combine 2025 + 2026 batter data
-    batter_dir = os.path.join(BASE, "Batters-Data")
-    full_2025 = os.path.join(batter_dir, "KBO_daily_batting_stats_playwright.csv")
-    new_2026 = os.path.join(batter_dir, "KBO_daily_batting_stats_2026.csv")
-    combined = os.path.join(batter_dir, "KBO_daily_batting_stats_combined.csv")
-    if os.path.exists(full_2025):
-        with open(full_2025) as f:
-            reader = csv.reader(f)
-            header = next(reader)
-            rows_2025 = list(reader)
-        rows_2026 = []
-        if os.path.exists(new_2026):
-            with open(new_2026) as f:
-                reader = csv.reader(f)
-                next(reader)  # skip header
-                rows_2026 = list(reader)
-        with open(combined, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
-            writer.writerows(rows_2025)
-            writer.writerows(rows_2026)
-        print(f"📋 Combined batter logs: {len(rows_2025)} (2025) + {len(rows_2026)} (2026) = {len(rows_2025) + len(rows_2026)} rows")
 
     # Copy data files to public/data for the UI
     copies = [
