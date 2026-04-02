@@ -70,6 +70,11 @@
   transition: all 0.2s;
   color: #e2e8f0;
 }
+.mdd-team-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
 .mdd-game-tab:hover {
   border-color: #7c3aed;
   background: #1a1a2e;
@@ -108,6 +113,9 @@
   margin-bottom: 0.3rem;
 }
 .mdd-team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-size: 1.3rem;
   font-weight: 700;
 }
@@ -192,8 +200,37 @@
   font-weight: 700;
 }
 .mdd-pitcher-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.75rem;
   color: #64748b;
+}
+
+.mdd-team-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--team-color) 65%, #fff 35%), var(--team-color));
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  border: 1px solid color-mix(in srgb, var(--team-color) 50%, #ffffff 25%);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3) inset;
+}
+.mdd-team-logo-md {
+  min-width: 1.55rem;
+  height: 1.55rem;
+  font-size: 0.56rem;
+  padding: 0 0.35rem;
+}
+.mdd-team-logo-sm {
+  min-width: 1.15rem;
+  height: 1.15rem;
+  font-size: 0.44rem;
+  padding: 0 0.26rem;
 }
 
 /* Stat boxes */
@@ -305,11 +342,17 @@
 .mdd-batting-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0.5rem 0;
   font-weight: 700;
   font-size: 1rem;
   border-bottom: 1px solid #222;
   margin-bottom: 0.5rem;
+}
+.mdd-batting-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 .mdd-batting-vs {
   color: #64748b;

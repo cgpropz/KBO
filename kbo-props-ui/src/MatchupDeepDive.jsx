@@ -3,17 +3,34 @@ import './MatchupDeepDive.css';
 import { dataUrl } from './dataUrl';
 
 const TEAMS = {
-  Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
-  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles' },
-  Kia:     { color: '#ff4444', full: 'Kia Tigers' },
-  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes' },
-  KT:      { color: '#e0e0e0', full: 'KT Wiz' },
-  LG:      { color: '#e8557a', full: 'LG Twins' },
-  Lotte:   { color: '#ff6666', full: 'Lotte Giants' },
-  NC:      { color: '#5b9bd5', full: 'NC Dinos' },
-  Samsung: { color: '#60a5fa', full: 'Samsung Lions' },
-  SSG:     { color: '#ff5555', full: 'SSG Landers' },
+  Doosan:  { color: '#9595d3', full: 'Doosan Bears', abbr: 'DOO' },
+  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles', abbr: 'HAN' },
+  Kia:     { color: '#ff4444', full: 'Kia Tigers', abbr: 'KIA' },
+  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes', abbr: 'KIW' },
+  KT:      { color: '#e0e0e0', full: 'KT Wiz', abbr: 'KT' },
+  LG:      { color: '#e8557a', full: 'LG Twins', abbr: 'LG' },
+  Lotte:   { color: '#ff6666', full: 'Lotte Giants', abbr: 'LOT' },
+  NC:      { color: '#5b9bd5', full: 'NC Dinos', abbr: 'NC' },
+  Samsung: { color: '#60a5fa', full: 'Samsung Lions', abbr: 'SAM' },
+  SSG:     { color: '#ff5555', full: 'SSG Landers', abbr: 'SSG' },
 };
+
+function TeamLogoBadge({ team, size = 'md' }) {
+  const meta = TEAMS[team] || {};
+  const color = meta.color || '#888';
+  const abbr = meta.abbr || String(team || '?').slice(0, 3).toUpperCase();
+
+  return (
+    <span
+      className={`mdd-team-logo mdd-team-logo-${size}`}
+      style={{ '--team-color': color }}
+      aria-hidden="true"
+      title={meta.full || team}
+    >
+      {abbr}
+    </span>
+  );
+}
 
 function MatchupDeepDive() {
   const [data, setData] = useState(null);
@@ -66,9 +83,15 @@ function MatchupDeepDive() {
             className={`mdd-game-tab ${i === selectedIdx ? 'active' : ''}`}
             onClick={() => setSelectedIdx(i)}
           >
-            <span style={{ color: TEAMS[m.away]?.color }}>{m.away}</span>
+            <span className="mdd-team-tab-item" style={{ color: TEAMS[m.away]?.color }}>
+              <TeamLogoBadge team={m.away} size="sm" />
+              <span>{m.away}</span>
+            </span>
             <span className="mdd-at">@</span>
-            <span style={{ color: TEAMS[m.home]?.color }}>{m.home}</span>
+            <span className="mdd-team-tab-item" style={{ color: TEAMS[m.home]?.color }}>
+              <TeamLogoBadge team={m.home} size="sm" />
+              <span>{m.home}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -78,7 +101,8 @@ function MatchupDeepDive() {
         <div className="mdd-team-side mdd-away">
           <div className="mdd-team-label">AWAY</div>
           <div className="mdd-team-name" style={{ color: awayColor }}>
-            {TEAMS[game.away]?.full || game.away}
+            <TeamLogoBadge team={game.away} />
+            <span>{TEAMS[game.away]?.full || game.away}</span>
           </div>
         </div>
         <div className="mdd-vs-block">
@@ -88,7 +112,8 @@ function MatchupDeepDive() {
         <div className="mdd-team-side mdd-home">
           <div className="mdd-team-label">HOME</div>
           <div className="mdd-team-name" style={{ color: homeColor }}>
-            {TEAMS[game.home]?.full || game.home}
+            <TeamLogoBadge team={game.home} />
+            <span>{TEAMS[game.home]?.full || game.home}</span>
           </div>
         </div>
       </div>
@@ -208,7 +233,10 @@ function PitcherCard({ pitcher, team, teamColor, side }) {
     <div className={`mdd-pitcher-card ${side}`}>
       <div className="mdd-pitcher-header">
         <div className="mdd-pitcher-name" style={{ color: teamColor }}>{pitcher.name}</div>
-        <div className="mdd-pitcher-team">{TEAMS[team]?.full || team}</div>
+        <div className="mdd-pitcher-team">
+          <TeamLogoBadge team={team} size="sm" />
+          <span>{TEAMS[team]?.full || team}</span>
+        </div>
       </div>
 
       {profile && (
@@ -296,9 +324,15 @@ function BattingComparison({ away, home, awayBatting, homeBatting, awayRates, ho
   return (
     <div className="mdd-batting">
       <div className="mdd-batting-header">
-        <span style={{ color: awayColor }}>{away}</span>
+        <span className="mdd-batting-team" style={{ color: awayColor }}>
+          <TeamLogoBadge team={away} size="sm" />
+          <span>{away}</span>
+        </span>
         <span className="mdd-batting-vs">STAT</span>
-        <span style={{ color: homeColor }}>{home}</span>
+        <span className="mdd-batting-team" style={{ color: homeColor }}>
+          <TeamLogoBadge team={home} size="sm" />
+          <span>{home}</span>
+        </span>
       </div>
       {stats.map(s => {
         const aVal = awayBatting?.[s.key];
