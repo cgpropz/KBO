@@ -36,6 +36,38 @@ STADIUMS = {
 }
 
 
+def ip_to_outs(ip_value):
+    try:
+        ip = float(ip_value)
+    except Exception:
+        return 0
+    whole = int(ip)
+    frac = round(ip - whole, 2)
+    if frac in (0.0,):
+        frac_outs = 0
+    elif frac in (0.33, 0.34):
+        frac_outs = 1
+    elif frac in (0.67, 0.66):
+        frac_outs = 2
+    else:
+        frac_outs = 0
+    return whole * 3 + frac_outs
+
+
+def outs_to_ip(outs):
+    return outs / 3.0 if outs > 0 else 0.0
+
+
+def valid_pitch_row(g):
+    outs = int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0)
+    so = int(g.get("SO", 0) or 0)
+    if outs == 0 and so > 0:
+        return False
+    if outs > 0 and so > outs:
+        return False
+    return True
+
+
 def load_pitcher_logs():
     path = os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")
     with open(path) as f:
@@ -119,7 +151,8 @@ def build_pitcher_profiles(logs):
     """Build per-pitcher season stats and last 3 starts from game logs."""
     pitcher_games = defaultdict(list)
     for log in logs:
-        pitcher_games[log["Name"]].append(log)
+        if valid_pitch_row(log):
+            pitcher_games[log["Name"]].append(log)
 
     profiles = {}
     for name, games in pitcher_games.items():
@@ -129,7 +162,8 @@ def build_pitcher_profiles(logs):
         team_raw = sp_games[-1]["Tm"]
         team = TEAM_SHORT.get(team_raw, team_raw)
 
-        total_ip = sum(g["IP"] for g in sp_games)
+        total_outs = sum(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) for g in sp_games)
+        total_ip = outs_to_ip(total_outs)
         total_er = sum(g["ER"] for g in sp_games)
         total_so = sum(g["SO"] for g in sp_games)
         total_bb = sum(g["BB"] for g in sp_games)
@@ -160,7 +194,8 @@ def build_pitcher_profiles(logs):
                 "so": g["SO"],
                 "ha": g["HA"],
                 "bb": g["BB"],
-                "era": round((g["ER"] / g["IP"] * 9), 2) if g["IP"] > 0 else 0,
+                "era": round((g["ER"] / outs_to_ip(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0)) * 9), 2)
+                if int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) > 0 else 0,
             })
 
         profiles[name] = {
@@ -183,8 +218,11 @@ def build_team_pitching(logs):
     """Aggregate team pitching stats from all game logs."""
     team_stats = defaultdict(lambda: {"ip": 0, "er": 0, "so": 0, "ha": 0, "bb": 0, "hr": 0, "games": set()})
     for log in logs:
+        if not valid_pitch_row(log):
+            continue
         t = TEAM_SHORT.get(log["Tm"], log["Tm"])
-        team_stats[t]["ip"] += log["IP"]
+        outs = int(log.get("PitOuts", ip_to_outs(log.get("IP", 0))) or 0)
+        team_stats[t]["ip"] += outs_to_ip(outs)
         team_stats[t]["er"] += log["ER"]
         team_stats[t]["so"] += log["SO"]
         team_stats[t]["ha"] += log["HA"]

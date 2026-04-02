@@ -36,6 +36,11 @@ STEPS = [
         "skip_flag": "--skip-logs",
     },
     {
+        "name": "Combine Pitcher Logs (2025 + 2026)",
+        "cmd": [PYTHON, os.path.join(BASE, "combine_pitcher_logs.py")],
+        "skip_flag": "--skip-combine-pitchers",
+    },
+    {
         "name": "Batter Game Logs (2026)",
         "cmd": [PYTHON, os.path.join(BASE, "Batters-Data", "batterlog.py"),
                 "--season", "2026"],

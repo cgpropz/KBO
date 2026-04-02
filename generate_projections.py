@@ -172,11 +172,18 @@ for n in _log_names:
     _norm_to_actual[normalize_name(n).lower()] = n
     _parts_to_actual[name_parts(n)] = n
 
-# Also load daily CSV as backup
+# Also load daily CSV as backup (prefer multi-season combined file)
 daily_logs = []
-with open(os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats.csv")) as f:
-    for row in csv.DictReader(f):
-        daily_logs.append(row)
+fallback_csv_paths = [
+    os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats_combined.csv"),
+    os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats.csv"),
+]
+for fallback_path in fallback_csv_paths:
+    if os.path.exists(fallback_path):
+        with open(fallback_path) as f:
+            for row in csv.DictReader(f):
+                daily_logs.append(row)
+        break
 
 def resolve_name(name):
     """Resolve a pitcher name to match pitcher_logs.json, using aliases and normalization."""

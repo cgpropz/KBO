@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import os
 from playwright.sync_api import sync_playwright
+from datetime import datetime
 
 PLAYER_NAMES = {
     "54640": "Naile James",
@@ -114,30 +115,117 @@ NAME_ALIASES = {
 
 def convert_date(date_str, default_year=None):
     if default_year is None:
-        from datetime import datetime
         default_year = datetime.now().year
     month, day = date_str.split('.')
     return f"{month}/{day}/{default_year}"
 
 def parse_innings(innings_str):
-    if innings_str == '1/3':
-        return 0.33
-    elif innings_str == '2/3':
-        return 0.67
+    s = str(innings_str).strip()
+    if s == '1/3':
+        return 1.0 / 3.0
+    if s == '2/3':
+        return 2.0 / 3.0
+    try:
+        return float(s)
+    except Exception:
+        return 0.0
+
+
+def ip_to_outs(ip_value):
+    """Convert KBO innings notation to integer outs for exact arithmetic."""
+    try:
+        ip = float(ip_value)
+    except Exception:
+        return 0
+    whole = int(ip)
+    frac = round(ip - whole, 2)
+    if frac in (0.0,):
+        frac_outs = 0
+    elif frac in (0.33, 0.34):
+        frac_outs = 1
+    elif frac in (0.67, 0.66):
+        frac_outs = 2
     else:
-        try:
-            return float(innings_str)
-        except:
-            return 0.0
+        frac_outs = 0
+    return whole * 3 + frac_outs
+
+
+def validate_game_row(row):
+    """Reject logically impossible pitching lines that pollute downstream stats."""
+    outs = int(row.get('PitOuts', 0) or 0)
+    so = int(row.get('SO', 0) or 0)
+    # A pitcher cannot record strikeouts with zero outs, and SO cannot exceed outs.
+    if outs == 0 and so > 0:
+        return False
+    if outs > 0 and so > outs:
+        return False
+    return True
 
 def calculate_stats(game_data):
     innings = float(game_data['IP'])
     whip = (game_data['HA'] + game_data['BB']) / innings if innings > 0 else 0
-    pitouts = int(innings * 3)
+    pitouts = ip_to_outs(innings)
     return {
         'WHIP': round(whip, 3),
         'PitOuts': pitouts
     }
+
+
+def normalize_df(df):
+    if df is None or df.empty:
+        return pd.DataFrame()
+    out = df.copy()
+    out['Date'] = out['Date'].astype(str).str.replace('\\/', '/', regex=False)
+    numeric_cols = ['IP', 'R', 'ER', 'HA', 'HR', 'SO', 'BB', 'HBP', 'PitOuts', 'Season']
+    for c in numeric_cols:
+        if c in out.columns:
+            out[c] = pd.to_numeric(out[c], errors='coerce').fillna(0)
+    out['IP'] = out['IP'].astype(float)
+    out['PitOuts'] = out['PitOuts'].astype(int)
+    out['SO'] = out['SO'].astype(int)
+    out['ER'] = out['ER'].astype(int)
+    out['HA'] = out['HA'].astype(int)
+    out['BB'] = out['BB'].astype(int)
+    out['Season'] = out['Season'].astype(int)
+    return out
+
+
+def combine_seasons(current_df, legacy_csv_path, combined_csv_path):
+    """Merge prior + current season logs. Keep latest row per game key."""
+    frames = []
+    if os.path.exists(legacy_csv_path):
+        try:
+            frames.append(pd.read_csv(legacy_csv_path))
+        except Exception as e:
+            print(f"⚠️ Could not read legacy pitcher logs: {e}")
+    if current_df is not None and not current_df.empty:
+        frames.append(current_df)
+
+    if not frames:
+        return pd.DataFrame()
+
+    merged = pd.concat(frames, ignore_index=True)
+    merged = normalize_df(merged)
+
+    for col in ['Name', 'Date', 'Tm', 'Opp', 'Role']:
+        if col not in merged.columns:
+            merged[col] = ''
+
+    merged['valid_row'] = merged.apply(validate_game_row, axis=1)
+    bad_rows = int((~merged['valid_row']).sum())
+    if bad_rows:
+        print(f"⚠️ Dropping {bad_rows} impossible pitcher rows (outs/SO mismatch)")
+    merged = merged[merged['valid_row']].drop(columns=['valid_row'])
+
+    merged['date_sort'] = pd.to_datetime(merged['Date'], format='%m/%d/%Y', errors='coerce')
+    merged = merged.sort_values(['Season', 'date_sort'], ascending=[False, False])
+    merged = merged.drop_duplicates(subset=['Name', 'Date', 'Tm', 'Opp', 'Role'], keep='first')
+    merged = merged.drop(columns=['date_sort'])
+    merged = merged.sort_values('Date', ascending=True)
+
+    merged.to_csv(combined_csv_path, index=False)
+    print(f"✅ Saved combined pitcher logs to {combined_csv_path} ({len(merged)} rows)")
+    return merged
 
 def format_team_name(team):
     special_teams = {'NC', 'LG', 'SSG', 'KT'}
@@ -325,7 +413,12 @@ def main():
     pitchers = get_pitcher_list()
     print(f"🔍 Found {len(pitchers)} pitchers to scrape...")
 
-    output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'KBO_daily_pitching_stats.csv')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    output_file = os.path.join(base_dir, '..', 'KBO_daily_pitching_stats.csv')
+    pitch_data_dir_file = os.path.join(base_dir, 'KBO_daily_pitching_stats.csv')
+    legacy_file = os.path.join(base_dir, 'KBO_daily_pitching_stats_2025.csv')
+    combined_file = os.path.join(base_dir, 'KBO_daily_pitching_stats_combined.csv')
+
     if os.path.exists(output_file):
         all_data = pd.read_csv(output_file)
     else:
@@ -337,15 +430,28 @@ def main():
         print(f"Appended data for {pitcher['name']}:\n", df)
         time.sleep(2)
 
-    all_data = all_data.drop_duplicates(subset=["Name", "Date", "Tm", "Opp"]).sort_values('Date', ascending=True)
+    all_data = normalize_df(all_data)
+    all_data['valid_row'] = all_data.apply(validate_game_row, axis=1)
+    dropped = int((~all_data['valid_row']).sum())
+    if dropped:
+        print(f"⚠️ Dropping {dropped} impossible rows from scraped set (outs/SO mismatch)")
+    all_data = all_data[all_data['valid_row']].drop(columns=['valid_row'])
+    all_data = all_data.drop_duplicates(subset=["Name", "Date", "Tm", "Opp", "Role"]).sort_values('Date', ascending=True)
     print("Final combined data:\n", all_data.tail(10))
 
     all_data.to_csv(output_file, index=False)
+    all_data.to_csv(pitch_data_dir_file, index=False)
     print(f"✅ Saved combined gamelogs to {output_file}")
+    print(f"✅ Saved current-season gamelogs to {pitch_data_dir_file}")
+
+    # Merge prior + current season so downstream models use full history.
+    combined_df = combine_seasons(all_data, legacy_file, combined_file)
+    if combined_df.empty:
+        combined_df = all_data
 
     # Save to JSON
-    json_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pitcher_logs.json')
-    all_data.to_json(json_output, orient='records', indent=2)
+    json_output = os.path.join(base_dir, 'pitcher_logs.json')
+    combined_df.to_json(json_output, orient='records', indent=2)
     print(f"✅ Saved pitcher logs to {json_output}")
 
 if __name__ == "__main__":
