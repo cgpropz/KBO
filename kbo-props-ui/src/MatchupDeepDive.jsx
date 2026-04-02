@@ -3,24 +3,26 @@ import './MatchupDeepDive.css';
 import { dataUrl } from './dataUrl';
 
 const TEAMS = {
-  Doosan:  { color: '#9595d3', full: 'Doosan Bears', abbr: 'DOO', logo: '/team-logos/doosan.svg' },
-  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles', abbr: 'HAN', logo: '/team-logos/hanwha.svg' },
-  Kia:     { color: '#ff4444', full: 'Kia Tigers', abbr: 'KIA', logo: '/team-logos/kia.png' },
-  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes', abbr: 'KIW', logo: '/team-logos/kiwoom.png' },
-  KT:      { color: '#e0e0e0', full: 'KT Wiz', abbr: 'KT', logo: '/team-logos/kt.svg' },
-  LG:      { color: '#e8557a', full: 'LG Twins', abbr: 'LG', logo: '/team-logos/lg.svg' },
-  Lotte:   { color: '#ff6666', full: 'Lotte Giants', abbr: 'LOT', logo: '/team-logos/lotte.svg' },
-  NC:      { color: '#5b9bd5', full: 'NC Dinos', abbr: 'NC', logo: '/team-logos/nc.svg' },
-  Samsung: { color: '#60a5fa', full: 'Samsung Lions', abbr: 'SAM', logo: '/team-logos/samsung.svg' },
-  SSG:     { color: '#ff5555', full: 'SSG Landers', abbr: 'SSG', logo: '/team-logos/ssg.png' },
+  Doosan:  { color: '#9595d3', full: 'Doosan Bears', abbr: 'DOO', logo: 'team-logos/doosan.svg' },
+  Hanwha:  { color: '#ff8c00', full: 'Hanwha Eagles', abbr: 'HAN', logo: 'team-logos/hanwha.svg' },
+  Kia:     { color: '#ff4444', full: 'Kia Tigers', abbr: 'KIA', logo: 'team-logos/kia.png' },
+  Kiwoom:  { color: '#d4a76a', full: 'Kiwoom Heroes', abbr: 'KIW', logo: 'team-logos/kiwoom.png' },
+  KT:      { color: '#e0e0e0', full: 'KT Wiz', abbr: 'KT', logo: 'team-logos/kt.svg' },
+  LG:      { color: '#e8557a', full: 'LG Twins', abbr: 'LG', logo: 'team-logos/lg.svg' },
+  Lotte:   { color: '#ff6666', full: 'Lotte Giants', abbr: 'LOT', logo: 'team-logos/lotte.svg' },
+  NC:      { color: '#5b9bd5', full: 'NC Dinos', abbr: 'NC', logo: 'team-logos/nc.svg' },
+  Samsung: { color: '#60a5fa', full: 'Samsung Lions', abbr: 'SAM', logo: 'team-logos/samsung.svg' },
+  SSG:     { color: '#ff5555', full: 'SSG Landers', abbr: 'SSG', logo: 'team-logos/ssg.png' },
 };
+
+const assetUrl = (path) => `${import.meta.env.BASE_URL}${String(path || '').replace(/^\/+/, '')}`;
 
 function TeamLogoBadge({ team, size = 'md' }) {
   const [imgFailed, setImgFailed] = useState(false);
   const meta = TEAMS[team] || {};
   const color = meta.color || '#888';
   const abbr = meta.abbr || String(team || '?').slice(0, 3).toUpperCase();
-  const logo = meta.logo;
+  const logo = meta.logo ? assetUrl(meta.logo) : null;
 
   return (
     <span
