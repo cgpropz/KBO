@@ -37,7 +37,15 @@ function LandingPage({ onNavigate }) {
   const kProjections = kData?.projections || [];
   const batterProjections = batterData?.projections || [];
   const topPitchers = (rankings || []).slice(0, 5);
-  const todaysGames = [...new Set(kProjections.map(p => `${p.team},${p.opponent}`))];
+  const todaysGames = [];
+  const seenGamePairs = new Set();
+  for (const p of kProjections) {
+    if (!p?.team || !p?.opponent) continue;
+    const pairKey = [p.team, p.opponent].sort().join('|');
+    if (seenGamePairs.has(pairKey)) continue;
+    seenGamePairs.add(pairKey);
+    todaysGames.push({ away: p.team, home: p.opponent });
+  }
 
   // Compute stats
   const totalProps = kProjections.length + batterProjections.length;
@@ -93,16 +101,13 @@ function LandingPage({ onNavigate }) {
         <section className="lp-ticker">
           <div className="lp-ticker-label">TODAY'S GAMES</div>
           <div className="lp-ticker-games">
-            {todaysGames.map((g, i) => {
-              const [away, home] = g.split(',');
-              return (
-                <div key={i} className="lp-game-chip">
-                  <span style={{ color: TEAMS[away]?.color || '#999' }}>{away}</span>
-                  <span className="lp-at">@</span>
-                  <span style={{ color: TEAMS[home]?.color || '#999' }}>{home}</span>
-                </div>
-              );
-            })}
+            {todaysGames.map((g, i) => (
+              <div key={i} className="lp-game-chip">
+                <span style={{ color: TEAMS[g.away]?.color || '#999' }}>{g.away}</span>
+                <span className="lp-at">@</span>
+                <span style={{ color: TEAMS[g.home]?.color || '#999' }}>{g.home}</span>
+              </div>
+            ))}
           </div>
         </section>
       )}
