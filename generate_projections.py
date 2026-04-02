@@ -81,38 +81,52 @@ print("Today's matchups:")
 for away, home in matchups:
     print("  %s (%s) vs %s (%s)" % (away["name"], away["team"], home["name"], home["team"]))
 
-# --- Load PrizePicks pitcher strikeout props (match by pitcher name, standard only) ---
+# --- Load PrizePicks pitcher strikeout props (all odds types, prefer standard) ---
 # Try JSON first (more up-to-date), fall back to CSV
 odds_by_name = {}
 pp_json_path = os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.json")
 pp_csv_path = os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.csv")
 
+# Priority: standard > demon > goblin
+_odds_priority = {"standard": 0, "demon": 1, "goblin": 2}
+
+def _should_replace(existing, new_type):
+    return _odds_priority.get(new_type, 99) < _odds_priority.get(existing.get("odds_type", ""), 99)
+
 if os.path.exists(pp_json_path):
     with open(pp_json_path) as f:
         pp_data = json.load(f)
     for row in pp_data:
-        if row.get("Stat") == "Pitcher Strikeouts" and row.get("Odds Type") == "standard":
+        if row.get("Stat") == "Pitcher Strikeouts":
             pp_name = row["Name"]
-            odds_by_name[normalize_name(pp_name).lower()] = {
+            key = normalize_name(pp_name).lower()
+            entry = {
                 "pp_name": pp_name,
                 "line": float(row["Prizepicks"]),
                 "odds_type": row["Odds Type"],
                 "team": row["Team"],
+                "versus": row.get("Versus", ""),
             }
+            if key not in odds_by_name or _should_replace(odds_by_name[key], row["Odds Type"]):
+                odds_by_name[key] = entry
 
 if not odds_by_name and os.path.exists(pp_csv_path):
     with open(pp_csv_path) as f:
         for row in csv.DictReader(f):
-            if row["Stat"] == "Pitcher Strikeouts" and row["Odds Type"] == "standard":
+            if row["Stat"] == "Pitcher Strikeouts":
                 pp_name = row["Name"]
-                odds_by_name[normalize_name(pp_name).lower()] = {
+                key = normalize_name(pp_name).lower()
+                entry = {
                     "pp_name": pp_name,
                     "line": float(row["Prizepicks"]),
                     "odds_type": row["Odds Type"],
                     "team": row["Team"],
+                    "versus": row.get("Versus", ""),
                 }
+                if key not in odds_by_name or _should_replace(odds_by_name[key], row["Odds Type"]):
+                    odds_by_name[key] = entry
 
-print("PP standard lines loaded:", {v["pp_name"]: v["line"] for v in odds_by_name.values()})
+print("PP lines loaded:", {v["pp_name"]: f"{v['line']} ({v['odds_type']})" for v in odds_by_name.values()})
 
 # Build order-independent PP name lookup
 pp_by_parts = {}
@@ -219,8 +233,24 @@ def get_pitcher_stats_csv(name):
     }
 
 # --- Build projections ---
+# Start with today's starters, then add any PrizePicks pitchers not already included
+all_pitchers = list(today_pitchers)  # copy
+seen_parts = set(name_parts(p["name"]) for p in today_pitchers)
+
+# Add PrizePicks pitchers that aren't today's starters
+for pp in odds_by_name.values():
+    pp_parts = name_parts(pp["pp_name"])
+    if pp_parts not in seen_parts:
+        # Use PP data for team/opponent since they're not in the starter list
+        all_pitchers.append({
+            "name": pp["pp_name"],
+            "team": pp["team"],
+            "opponent": pp.get("versus", ""),
+        })
+        seen_parts.add(pp_parts)
+
 projections = []
-for pitcher in today_pitchers:
+for pitcher in all_pitchers:
     name = resolve_name(pitcher["name"])
     team = pitcher["team"]
     opp = pitcher["opponent"]

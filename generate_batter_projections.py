@@ -208,30 +208,43 @@ def resolve_batter_name(name):
 
 # ── Step 4: Load PrizePicks lines (H+R+RBI and Total Bases) ──
 def load_pp_lines(stat_name):
-    """Load PrizePicks standard lines for a given stat type."""
+    """Load PrizePicks lines for a given stat type (all odds types, prefer standard)."""
     lines = {}
+    _odds_priority = {"standard": 0, "demon": 1, "goblin": 2}
+
+    def _should_replace(existing, new_type):
+        return _odds_priority.get(new_type, 99) < _odds_priority.get(existing.get("odds_type", ""), 99)
+
     pp_json = os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.json")
     pp_csv_path = os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.csv")
     if os.path.exists(pp_json):
         with open(pp_json) as f:
             for row in json.load(f):
-                if row.get("Stat") == stat_name and row.get("Odds Type") == "standard":
-                    lines[normalize_name(row["Name"]).lower()] = {
+                if row.get("Stat") == stat_name:
+                    key = normalize_name(row["Name"]).lower()
+                    entry = {
                         "pp_name": row["Name"],
                         "line": float(row["Prizepicks"]),
                         "odds_type": row["Odds Type"],
                         "team": row["Team"],
+                        "versus": row.get("Versus", ""),
                     }
+                    if key not in lines or _should_replace(lines[key], row["Odds Type"]):
+                        lines[key] = entry
     if not lines and os.path.exists(pp_csv_path):
         with open(pp_csv_path) as f:
             for row in csv.DictReader(f):
-                if row["Stat"] == stat_name and row["Odds Type"] == "standard":
-                    lines[normalize_name(row["Name"]).lower()] = {
+                if row["Stat"] == stat_name:
+                    key = normalize_name(row["Name"]).lower()
+                    entry = {
                         "pp_name": row["Name"],
                         "line": float(row["Prizepicks"]),
                         "odds_type": row["Odds Type"],
                         "team": row["Team"],
+                        "versus": row.get("Versus", ""),
                     }
+                    if key not in lines or _should_replace(lines[key], row["Odds Type"]):
+                        lines[key] = entry
     # Build order-independent lookup
     by_parts = {}
     for v in lines.values():
@@ -267,6 +280,9 @@ def build_hrr_projections():
         pp_name = pp_val["pp_name"]
         team = resolve_team(pp_val["team"])
         opp = team_opponent.get(team)
+        if not opp:
+            # Fallback: use PrizePicks Versus field
+            opp = resolve_team(pp_val.get("versus", ""))
         if not opp:
             continue
 
@@ -322,6 +338,8 @@ def build_tb_projections():
         pp_name = pp_val["pp_name"]
         team = resolve_team(pp_val["team"])
         opp = team_opponent.get(team)
+        if not opp:
+            opp = resolve_team(pp_val.get("versus", ""))
         if not opp:
             continue
 
