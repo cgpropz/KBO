@@ -58,7 +58,7 @@ function LandingPage({ onNavigate }) {
             <span className="lp-logo-divider" />
             <span className="lp-logo-sub">PROPS</span>
           </h1>
-          <p className="lp-tagline">AI-powered projections for Korean baseball props</p>
+          <p className="lp-tagline">Daily KBO PrizePicks edges built from live data</p>
           <div className="lp-hero-stats">
             <div className="lp-stat-pill">
               <span className="lp-stat-num">{totalProps}</span>
