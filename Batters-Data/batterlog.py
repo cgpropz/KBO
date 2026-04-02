@@ -1,5 +1,6 @@
 import asyncio
 import argparse
+import os
 from datetime import datetime
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
@@ -204,8 +205,9 @@ async def main():
     if not df.empty:
         df = df.sort_values("DATE")
         output_name = f"KBO_daily_batting_stats_{args.season}.csv"
-        df.to_csv(output_name, index=False)
-        print(f"✅ Saved to {output_name}")
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), output_name)
+        df.to_csv(output_path, index=False)
+        print(f"✅ Saved to {output_path}")
     else:
         print("⚠️ No player data scraped. Check connections or site layout.")
 
