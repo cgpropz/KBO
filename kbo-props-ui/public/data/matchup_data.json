@@ -189,7 +189,7 @@
       "stadium": "Incheon-Munhak",
       "away_pitcher": {
         "name": "Jung Hyun-woo",
-        "line": null,
+        "line": 3.5,
         "k_projection": 3.1,
         "profile": {
           "name": "Jung Hyun-woo",
@@ -258,7 +258,7 @@
       },
       "home_pitcher": {
         "name": "Choi Min Jun",
-        "line": null,
+        "line": 3.5,
         "k_projection": null,
         "profile": null
       },
@@ -331,21 +331,31 @@
           "name": "Jung Hyun-woo",
           "team": "Kiwoom",
           "prop": "Strikeouts",
-          "line": null,
+          "line": 3.5,
           "projection": 3.1,
-          "edge": null,
-          "recommendation": "NO LINE",
-          "rating": null
+          "edge": -0.4,
+          "recommendation": "PUSH",
+          "rating": 44.2
         },
         {
           "name": "Choi Min Jun",
           "team": "SSG",
           "prop": "Strikeouts",
-          "line": null,
+          "line": 3.5,
           "projection": null,
           "edge": null,
           "recommendation": "NO DATA",
           "rating": null
+        },
+        {
+          "name": "An Chi-hong",
+          "team": "Kiwoom",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 0.7,
+          "edge": -1.8,
+          "recommendation": "UNDER",
+          "rating": 14.1
         },
         {
           "name": "Kim Gun-hee",
@@ -368,6 +378,16 @@
           "rating": 21.0
         },
         {
+          "name": "Trenton Brooks",
+          "team": "Kiwoom",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": null,
+          "edge": null,
+          "recommendation": "NO DATA",
+          "rating": null
+        },
+        {
           "name": "Choi Jeong",
           "team": "SSG",
           "prop": "Hits+Runs+RBIs",
@@ -386,6 +406,16 @@
           "edge": -0.0,
           "recommendation": "PUSH",
           "rating": 49.9
+        },
+        {
+          "name": "Ko Myeong-jun",
+          "team": "SSG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": null,
+          "edge": null,
+          "recommendation": "NO DATA",
+          "rating": null
         },
         {
           "name": "Park Seong-Han",
@@ -572,6 +602,46 @@
           "edge": -2.33,
           "recommendation": "UNDER",
           "rating": 11.1
+        },
+        {
+          "name": "Daz Cameron",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": null,
+          "edge": null,
+          "recommendation": "NO DATA",
+          "rating": null
+        },
+        {
+          "name": "Jung Soo-bin",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.66,
+          "edge": 0.16,
+          "recommendation": "PUSH",
+          "rating": 53.1
+        },
+        {
+          "name": "Park Chan-ho",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.82,
+          "edge": 0.32,
+          "recommendation": "OVER",
+          "rating": 56.3
+        },
+        {
+          "name": "Yang Eui-ji",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 3.23,
+          "edge": 0.73,
+          "recommendation": "OVER",
+          "rating": 64.5
         },
         {
           "name": "Choi Hyoung-woo",
@@ -788,6 +858,86 @@
           "edge": null,
           "recommendation": "NO DATA",
           "rating": null
+        },
+        {
+          "name": "Jeon Jun-woo",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.94,
+          "edge": 0.44,
+          "recommendation": "OVER",
+          "rating": 58.7
+        },
+        {
+          "name": "Son Ho-young",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.33,
+          "edge": -0.17,
+          "recommendation": "PUSH",
+          "rating": 46.5
+        },
+        {
+          "name": "V\u00edctor Reyes",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 3.61,
+          "edge": 1.11,
+          "recommendation": "OVER",
+          "rating": 72.2
+        },
+        {
+          "name": "Yoon Dong-hee",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.91,
+          "edge": 0.41,
+          "recommendation": "OVER",
+          "rating": 58.2
+        },
+        {
+          "name": "Kim Ju-won",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.96,
+          "edge": -0.54,
+          "recommendation": "UNDER",
+          "rating": 39.2
+        },
+        {
+          "name": "Matthew Davidson",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.18,
+          "edge": -0.32,
+          "recommendation": "UNDER",
+          "rating": 43.5
+        },
+        {
+          "name": "Park Kun-woo",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.64,
+          "edge": -0.86,
+          "recommendation": "UNDER",
+          "rating": 32.7
+        },
+        {
+          "name": "Park Min-woo",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.93,
+          "edge": -0.57,
+          "recommendation": "UNDER",
+          "rating": 38.7
         }
       ]
     },
@@ -866,7 +1016,7 @@
       },
       "home_pitcher": {
         "name": "Moon Dong-ju",
-        "line": null,
+        "line": 4.5,
         "k_projection": 5.38,
         "profile": {
           "name": "Moon Dong-ju",
@@ -1012,11 +1162,11 @@
           "name": "Moon Dong-ju",
           "team": "Hanwha",
           "prop": "Strikeouts",
-          "line": null,
+          "line": 4.5,
           "projection": 5.38,
-          "edge": null,
-          "recommendation": "NO LINE",
-          "rating": null
+          "edge": 0.88,
+          "recommendation": "OVER",
+          "rating": 59.8
         },
         {
           "name": "Moon Hyun-bin",
@@ -1039,6 +1189,16 @@
           "rating": null
         },
         {
+          "name": "Roh Si-Hwan",
+          "team": "Hanwha",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.87,
+          "edge": -0.63,
+          "recommendation": "UNDER",
+          "rating": 37.3
+        },
+        {
           "name": "Yonathan Perlaza",
           "team": "Hanwha",
           "prop": "Hits+Runs+RBIs",
@@ -1047,6 +1207,16 @@
           "edge": 2.06,
           "recommendation": "OVER",
           "rating": 118.8
+        },
+        {
+          "name": "Ahn Hyun-min",
+          "team": "KT",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.32,
+          "edge": -1.18,
+          "recommendation": "UNDER",
+          "rating": 26.5
         },
         {
           "name": "Choi Won-jun",
