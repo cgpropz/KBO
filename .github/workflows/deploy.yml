@@ -2,15 +2,21 @@ name: Refresh Data & Deploy to Vercel
 
 on:
   schedule:
-    # KBO games typically start 5-6:30 PM KST (= 8-9:30 AM UTC / 4-5:30 AM ET)
-    # Run at these UTC times to capture fresh data throughout the day:
-    - cron: "0 3 * * *" #  3:00 AM UTC = 12:00 PM KST (pre-game)
-    - cron: "0 5 * * *" #  5:00 AM UTC =  2:00 PM KST (early games)
-    - cron: "0 8 * * *" #  8:00 AM UTC =  5:00 PM KST (main slate)
-    - cron: "30 9 * * *" #  9:30 AM UTC =  6:30 PM KST (late games)
-    - cron: "0 12 * * *" # 12:00 PM UTC =  9:00 PM KST (post-game results)
+    # Once daily at 3 AM UTC: full redeploy to keep the Vercel build fresh.
+    # Live data is now served by data-refresh.yml + raw.githubusercontent.com —
+    # no need to redeploy Vercel for every data update.
+    - cron: "0 3 * * *" # 3:00 AM UTC = 12:00 PM KST
   push:
     branches: [main]
+    # Don't rebuild the site just because a data file changed — the frontend
+    # reads data directly from GitHub raw at runtime.
+    paths-ignore:
+      - "kbo-props-ui/public/data/**"
+      - "Batters-Data/**"
+      - "Pitchers-Data/**"
+      - "KBO-Odds/**"
+      - "**.csv"
+      - "game_logs_2025.csv"
   workflow_dispatch:
 
 permissions:
