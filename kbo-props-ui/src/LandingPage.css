@@ -5,7 +5,7 @@
   min-height: 100vh;
   background: #000;
   color: #e2e8f0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Sora', 'Inter', system-ui, -apple-system, sans-serif;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.5s ease, transform 0.5s ease;
@@ -42,6 +42,11 @@
   z-index: 1;
   max-width: 800px;
   margin: 0 auto;
+  background: linear-gradient(180deg, rgba(6, 6, 16, 0.16), rgba(6, 6, 16, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 1.3rem 1.4rem;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
 }
 
 .lp-badge {
@@ -208,16 +213,23 @@
   padding: 2.5rem 1.5rem 1rem;
 }
 .lp-section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: #e2e8f0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.45rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 .lp-section-icon {
   font-size: 1.2rem;
+}
+
+.lp-section-subtitle {
+  margin: 0 0 1rem;
+  color: #95a0b3;
+  font-size: 0.82rem;
+  letter-spacing: 0.3px;
 }
 
 /* ── Pick Cards ── */
@@ -227,10 +239,10 @@
   gap: 1rem;
 }
 .lp-pick-card {
-  background: #111;
-  border: 1px solid #222;
+  background: radial-gradient(120% 180% at 0% 0%, rgba(124, 58, 237, 0.12), rgba(17, 17, 17, 0.96));
+  border: 1px solid #2a2a35;
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1.1rem;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
@@ -268,15 +280,16 @@
 }
 .lp-pick-matchup {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.75rem;
   color: #888;
 }
 .lp-pick-nums {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 .lp-pick-line {
   font-size: 0.9rem;
@@ -299,7 +312,54 @@
 }
 .lp-pick-proj {
   font-size: 0.85rem;
-  color: #999;
+  color: #a6b1c2;
+}
+
+.lp-pick-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.lp-pick-metric {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.34rem 0.4rem;
+}
+
+.lp-pick-metric-label {
+  display: block;
+  font-size: 0.56rem;
+  color: #8c98ad;
+  letter-spacing: 0.7px;
+  margin-bottom: 0.12rem;
+  font-weight: 700;
+}
+
+.lp-pick-metric-value {
+  font-size: 0.82rem;
+  color: #e8ecf7;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 700;
+}
+
+.lp-value-meter {
+  position: relative;
+  height: 6px;
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.72rem;
+}
+
+.lp-value-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #10b981, #34d399);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
 }
 .lp-pick-edge {
   font-size: 0.85rem;
@@ -311,11 +371,11 @@
 
 .lp-pick-badge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
+  padding: 0.28rem 0.62rem;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.7px;
 }
 .badge-over { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
 .badge-under { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
@@ -442,6 +502,7 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .lp-hero { padding: 2.5rem 1rem 2rem; }
+  .lp-hero-content { padding: 1rem 0.95rem; }
   .lp-logo-k, .lp-logo-sub { font-size: 2.5rem; }
   .lp-logo-sub { letter-spacing: 4px; }
   .lp-logo-divider { height: 2rem; }
@@ -450,6 +511,7 @@
   .lp-stat-num { font-size: 1.2rem; }
   .lp-section { padding: 1.5rem 1rem 0.5rem; }
   .lp-picks-grid { grid-template-columns: 1fr; }
+  .lp-pick-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-nav-grid { grid-template-columns: 1fr; }
   .lp-rank-stats { gap: 0.5rem; }
   .lp-rank-stat { font-size: 0.75rem; }

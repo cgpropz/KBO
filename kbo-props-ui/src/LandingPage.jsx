@@ -15,6 +15,61 @@ const TEAMS = {
   SSG:     { color: '#ff5555', full: 'SSG Landers' },
 };
 
+function toNum(v, fallback = null) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function formatSigned(v, digits = 2) {
+  if (!Number.isFinite(v)) return '—';
+  return `${v > 0 ? '+' : ''}${v.toFixed(digits)}`;
+}
+
+function enrichPick(pick) {
+  if (!pick) return null;
+
+  const line = toNum(pick.line);
+  const projection = toNum(pick.projection);
+  const edge = toNum(pick.edge);
+  const rec = String(pick.recommendation || '').toUpperCase();
+
+  if (!Number.isFinite(line) || !Number.isFinite(projection) || !Number.isFinite(edge)) return null;
+  if (rec !== 'OVER' && rec !== 'UNDER') return null;
+
+  // Directional value: positive means model has an actionable edge in the recommended direction.
+  const directionalValue = rec === 'UNDER' ? -edge : edge;
+  if (!Number.isFinite(directionalValue) || directionalValue <= 0) return null;
+
+  const rating = toNum(pick.rating, 50);
+  const gamesUsed = Math.max(0, toNum(pick.games_used, 0));
+  const confidence = Math.max(0, Math.min(100, Math.abs(rating - 50) * 2));
+  const valuePct = line > 0 ? (directionalValue / line) * 100 : 0;
+  const stability = Math.min(gamesUsed / 20, 1);
+  const valueScore = directionalValue * (1 + confidence / 140 + stability / 8);
+
+  return {
+    ...pick,
+    line,
+    projection,
+    edge,
+    recommendation: rec,
+    directionalValue,
+    valuePct,
+    confidence,
+    gamesUsed,
+    valueScore,
+  };
+}
+
+function selectBestValuePick(picks, filterFn = () => true) {
+  const candidates = picks
+    .filter(filterFn)
+    .map(enrichPick)
+    .filter(Boolean)
+    .sort((a, b) => b.valueScore - a.valueScore);
+  return candidates[0] || null;
+}
+
 function LandingPage({ onNavigate }) {
   const [kData, setKData] = useState(null);
   const [batterData, setBatterData] = useState(null);
@@ -50,9 +105,9 @@ function LandingPage({ onNavigate }) {
   // Compute stats
   const totalProps = kProjections.length + batterProjections.length;
   const overPicks = [...kProjections, ...batterProjections].filter(p => p.recommendation === 'OVER');
-  const topKPick = kProjections.reduce((best, p) => (!best || (p.edge && p.edge > (best.edge || -999))) ? p : best, null);
-  const topBatterPick = batterProjections.filter(p => p.prop === 'Hits+Runs+RBIs').reduce((best, p) => (!best || (p.edge && p.edge > (best.edge || -999))) ? p : best, null);
-  const topTBPick = batterProjections.filter(p => p.prop === 'Total Bases').reduce((best, p) => (!best || (p.edge && p.edge > (best.edge || -999))) ? p : best, null);
+  const topKPick = selectBestValuePick(kProjections);
+  const topBatterPick = selectBestValuePick(batterProjections, p => p.prop === 'Hits+Runs+RBIs');
+  const topTBPick = selectBestValuePick(batterProjections, p => p.prop === 'Total Bases');
 
   return (
     <div className={`lp ${animate ? 'lp-visible' : ''}`}>
@@ -117,81 +172,31 @@ function LandingPage({ onNavigate }) {
         <h2 className="lp-section-title">
           <span className="lp-section-icon">🔥</span> Top Value Picks
         </h2>
+        <p className="lp-section-subtitle">Sorted by directional edge, confidence, and sample stability.</p>
         <div className="lp-picks-grid">
-          {topKPick && topKPick.projection != null && (
-            <div className="lp-pick-card lp-pick-k" onClick={() => onNavigate('projections')}>
-              <div className="lp-pick-type">STRIKEOUTS</div>
-              <div className="lp-pick-player">{topKPick.name}</div>
-              <div className="lp-pick-matchup">
-                <span style={{ color: TEAMS[topKPick.team]?.color }}>{topKPick.team}</span>
-                {' vs '}
-                <span style={{ color: TEAMS[topKPick.opponent]?.color }}>{topKPick.opponent}</span>
-              </div>
-              <div className="lp-pick-nums">
-                <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topKPick.line ?? '—'}
-                </div>
-                <div className="lp-pick-proj">Proj: {topKPick.projection.toFixed(1)}</div>
-                {topKPick.edge != null && (
-                  <div className={`lp-pick-edge ${topKPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                    {topKPick.edge > 0 ? '+' : ''}{topKPick.edge.toFixed(2)}
-                  </div>
-                )}
-              </div>
-              <div className={`lp-pick-badge ${topKPick.recommendation === 'OVER' ? 'badge-over' : topKPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
-                {topKPick.recommendation}
-              </div>
-            </div>
+          {topKPick && (
+            <ValuePickCard
+              pick={topKPick}
+              typeLabel="STRIKEOUTS"
+              cardClass="lp-pick-k"
+              onClick={() => onNavigate('projections')}
+            />
           )}
-          {topBatterPick && topBatterPick.projection != null && (
-            <div className="lp-pick-card lp-pick-hrr" onClick={() => onNavigate('batters')}>
-              <div className="lp-pick-type">H+R+RBI</div>
-              <div className="lp-pick-player">{topBatterPick.name}</div>
-              <div className="lp-pick-matchup">
-                <span style={{ color: TEAMS[topBatterPick.team]?.color }}>{topBatterPick.team}</span>
-                {' vs '}
-                <span style={{ color: TEAMS[topBatterPick.opponent]?.color }}>{topBatterPick.opponent}</span>
-              </div>
-              <div className="lp-pick-nums">
-                <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topBatterPick.line ?? '—'}
-                </div>
-                <div className="lp-pick-proj">Proj: {topBatterPick.projection.toFixed(1)}</div>
-                {topBatterPick.edge != null && (
-                  <div className={`lp-pick-edge ${topBatterPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                    {topBatterPick.edge > 0 ? '+' : ''}{topBatterPick.edge.toFixed(2)}
-                  </div>
-                )}
-              </div>
-              <div className={`lp-pick-badge ${topBatterPick.recommendation === 'OVER' ? 'badge-over' : topBatterPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
-                {topBatterPick.recommendation}
-              </div>
-            </div>
+          {topBatterPick && (
+            <ValuePickCard
+              pick={topBatterPick}
+              typeLabel="H+R+RBI"
+              cardClass="lp-pick-hrr"
+              onClick={() => onNavigate('batters')}
+            />
           )}
-          {topTBPick && topTBPick.projection != null && (
-            <div className="lp-pick-card lp-pick-tb" onClick={() => onNavigate('batters')}>
-              <div className="lp-pick-type">TOTAL BASES</div>
-              <div className="lp-pick-player">{topTBPick.name}</div>
-              <div className="lp-pick-matchup">
-                <span style={{ color: TEAMS[topTBPick.team]?.color }}>{topTBPick.team}</span>
-                {' vs '}
-                <span style={{ color: TEAMS[topTBPick.opponent]?.color }}>{topTBPick.opponent}</span>
-              </div>
-              <div className="lp-pick-nums">
-                <div className="lp-pick-line">
-                  <span className="lp-pp-icon">P</span> {topTBPick.line ?? '—'}
-                </div>
-                <div className="lp-pick-proj">Proj: {topTBPick.projection.toFixed(1)}</div>
-                {topTBPick.edge != null && (
-                  <div className={`lp-pick-edge ${topTBPick.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                    {topTBPick.edge > 0 ? '+' : ''}{topTBPick.edge.toFixed(2)}
-                  </div>
-                )}
-              </div>
-              <div className={`lp-pick-badge ${topTBPick.recommendation === 'OVER' ? 'badge-over' : topTBPick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
-                {topTBPick.recommendation}
-              </div>
-            </div>
+          {topTBPick && (
+            <ValuePickCard
+              pick={topTBPick}
+              typeLabel="TOTAL BASES"
+              cardClass="lp-pick-tb"
+              onClick={() => onNavigate('batters')}
+            />
           )}
         </div>
       </section>
@@ -311,6 +316,55 @@ function LandingPage({ onNavigate }) {
       <footer className="lp-footer">
         <p>KBO Props &middot; Data sourced from KBO &amp; PrizePicks &middot; Projections updated daily</p>
       </footer>
+    </div>
+  );
+}
+
+function ValuePickCard({ pick, typeLabel, cardClass, onClick }) {
+  const meterWidth = Math.max(8, Math.min(100, pick.valuePct * 4.2));
+  return (
+    <div className={`lp-pick-card ${cardClass}`} onClick={onClick}>
+      <div className="lp-pick-type">{typeLabel}</div>
+      <div className="lp-pick-player">{pick.name}</div>
+      <div className="lp-pick-matchup">
+        <span style={{ color: TEAMS[pick.team]?.color }}>{pick.team}</span>
+        {' vs '}
+        <span style={{ color: TEAMS[pick.opponent]?.color }}>{pick.opponent}</span>
+      </div>
+
+      <div className="lp-pick-nums">
+        <div className="lp-pick-line">
+          <span className="lp-pp-icon">P</span> {pick.line.toFixed(1)}
+        </div>
+        <div className="lp-pick-proj">Proj: {pick.projection.toFixed(1)}</div>
+      </div>
+
+      <div className="lp-pick-metrics">
+        <div className="lp-pick-metric">
+          <span className="lp-pick-metric-label">VALUE</span>
+          <span className="lp-pick-metric-value edge-pos">{formatSigned(pick.directionalValue)}</span>
+        </div>
+        <div className="lp-pick-metric">
+          <span className="lp-pick-metric-label">VALUE %</span>
+          <span className="lp-pick-metric-value">{formatSigned(pick.valuePct, 1)}%</span>
+        </div>
+        <div className="lp-pick-metric">
+          <span className="lp-pick-metric-label">CONF</span>
+          <span className="lp-pick-metric-value">{pick.confidence.toFixed(0)}%</span>
+        </div>
+        <div className="lp-pick-metric">
+          <span className="lp-pick-metric-label">GAMES</span>
+          <span className="lp-pick-metric-value">{pick.gamesUsed}</span>
+        </div>
+      </div>
+
+      <div className="lp-value-meter" aria-hidden="true">
+        <span style={{ width: `${meterWidth}%` }} />
+      </div>
+
+      <div className={`lp-pick-badge ${pick.recommendation === 'OVER' ? 'badge-over' : pick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
+        {pick.recommendation} · Raw Edge {formatSigned(pick.edge)}
+      </div>
     </div>
   );
 }
