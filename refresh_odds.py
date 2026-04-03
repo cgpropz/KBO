@@ -22,8 +22,8 @@ PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
 def fetch_odds():
     """
-    Fetch latest PrizePicks odds using KBO_ODDS_2025.py
-    Generates: prizepicks_props.json
+    Fetch latest PrizePicks odds using KBO_ODDS_2025.py, then regenerate props.
+    Generates: KBO-Odds/KBO_odds_2025.csv + prizepicks_props.json
     """
     print("\n▶  Fetching PrizePicks odds...")
     print("=" * 50)
@@ -35,6 +35,16 @@ def fetch_odds():
         return False
     
     print("✓ PrizePicks odds fetched")
+
+    # Regenerate prizepicks_props.json from the fresh odds + game logs
+    print("\n▶  Regenerating props cards...")
+    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py")]
+    props_result = subprocess.run(props_cmd, cwd=BASE)
+    if props_result.returncode != 0:
+        print("✗ Failed to regenerate props — keeping previous file")
+    else:
+        print("✓ prizepicks_props.json regenerated")
+
     return True
 
 
