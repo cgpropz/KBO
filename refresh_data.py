@@ -26,6 +26,8 @@ import os
 import time
 import shutil
 import json
+import csv
+from datetime import datetime
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PYTHON = sys.executable  # works in both venv (local) and CI (system python)
@@ -146,6 +148,61 @@ def push_snapshots_to_supabase(skip_flags):
     return errors
 
 
+def parse_any_date(value):
+    text = str(value or "").replace('\\/', '/').strip()
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def summarize_gamelogs():
+    summaries = []
+    latest_dates = {}
+
+    batter_path = os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")
+    if os.path.exists(batter_path):
+        with open(batter_path, newline="", encoding="utf-8") as f:
+            batter_rows = list(csv.DictReader(f))
+        batter_dates = [parse_any_date(row.get("DATE")) for row in batter_rows]
+        batter_dates = [d for d in batter_dates if d]
+        batter_latest = max(batter_dates) if batter_dates else None
+        batter_seasons = sorted({str(row.get("Season")) for row in batter_rows if row.get("Season")})
+        latest_dates["Batter logs"] = batter_latest
+        summaries.append(("Batter logs", len(batter_rows), batter_latest.strftime("%Y-%m-%d") if batter_latest else "unknown", batter_seasons))
+
+    pitcher_path = os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")
+    if os.path.exists(pitcher_path):
+        with open(pitcher_path, encoding="utf-8") as f:
+            pitcher_rows = json.load(f)
+        pitcher_dates = [parse_any_date(row.get("Date")) for row in pitcher_rows]
+        pitcher_dates = [d for d in pitcher_dates if d]
+        pitcher_latest = max(pitcher_dates) if pitcher_dates else None
+        pitcher_seasons = sorted({str(row.get("Season")) for row in pitcher_rows if row.get("Season")})
+        latest_dates["Pitcher logs"] = pitcher_latest
+        summaries.append(("Pitcher logs", len(pitcher_rows), pitcher_latest.strftime("%Y-%m-%d") if pitcher_latest else "unknown", pitcher_seasons))
+
+    print("\n📊 Gamelog freshness summary:")
+    for label, count, latest, seasons in summaries:
+        print(f"  {label:14} rows={count:<6} latest={latest} seasons={', '.join(seasons)}")
+
+    season_errors = []
+    for label, _, _, seasons in summaries:
+        if not {"2025", "2026"}.issubset(set(seasons)):
+            season_errors.append(f"{label} missing expected seasons 2025/2026")
+
+    batter_latest = latest_dates.get("Batter logs")
+    pitcher_latest = latest_dates.get("Pitcher logs")
+    if batter_latest and pitcher_latest and batter_latest < pitcher_latest:
+        season_errors.append(
+            f"Batter logs stale vs pitcher logs ({batter_latest.strftime('%Y-%m-%d')} < {pitcher_latest.strftime('%Y-%m-%d')})"
+        )
+
+    return season_errors
+
+
 def main():
     skip_flags = set(sys.argv[1:])
     failed = []
@@ -176,6 +233,8 @@ def main():
         if os.path.exists(src):
             shutil.copy2(src, dst)
             print(f"📋 Copied {os.path.basename(src)} → public/data/")
+
+    failed.extend(summarize_gamelogs())
 
     if failed:
         print("\n⚠ Skipping Supabase publish because one or more pipeline steps failed")

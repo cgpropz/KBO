@@ -3,6 +3,7 @@ import argparse
 import os
 import json
 from datetime import datetime
+import requests
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -120,6 +121,107 @@ def format_team_name(team):
 def normalize_opp_name(team):
     raw = team.strip()
     return KOR_TEAM_MAP.get(raw, format_team_name(raw))
+
+
+def scrape_english_kbo_hitter_logs(pcode, season):
+    """
+    Scrape hitter game logs from English KBO site (has April 2+ data).
+    Returns DataFrame with game-by-game stats.
+    """
+    url = f"http://eng.koreabaseball.com/Teams/PlayerInfoHitter/GameLogs.aspx?pcode={pcode}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"⚠️ Failed to fetch {pcode}: {e}")
+        return pd.DataFrame()
+    
+    soup = BeautifulSoup(resp.content, 'html.parser')
+    tables = soup.find_all('table')
+    
+    all_data = []
+    player_name = PLAYER_NAMES.get(pcode, f"Unknown_{pcode}")
+    player_team = PLAYER_TEAMS.get(pcode, "Unknown")
+    
+    # Parse all tables (organized by month: MAR, APR, etc.)
+    for table in tables:
+        rows = table.find_all('tr')
+        if len(rows) < 2:
+            continue
+        
+        # Get month from first row header
+        header_first = rows[0].find('th') or rows[0].find('td')
+        if not header_first:
+            continue
+        
+        month_str = header_first.get_text(strip=True)  # e.g., "MAR", "APR"
+        
+        # Parse data rows
+        for row in rows[1:]:
+            cells = row.find_all('td')
+            if len(cells) < 11:  # Need at least: Date, OPP, AVG, AB, R, H, 2B, 3B, HR, RBI, SB
+                continue
+            
+            try:
+                date_text = cells[0].get_text(strip=True)  # e.g., "03.28", "04.02"
+                opp_text = cells[1].get_text(strip=True)
+                
+                # Only include games from the requested season
+                # For 2025, we want MAR-OCT; for 2026, we want MAR onward
+                month_num = int(date_text.split('.')[0]) if '.' in date_text else 0
+                
+                # Filter by season - spring season is roughly March-October
+                if season == 2025 and month_num < 3:  # Skip early season for 2025
+                    continue
+                
+                # Parse date and create proper datestring
+                date_parts = date_text.split('.')
+                month, day = int(date_parts[0]), int(date_parts[1])
+                date_str = f"{month:02d}/{day:02d}/{season}"
+                
+                # Clean opponent name
+                opp = normalize_opp_name(opp_text.replace('@', '').strip())
+                home_away = '@' if '@' in opp_text else ''
+                
+                game_data = {
+                    'Name': player_name,
+                    'DATE': date_str,
+                    'Team': player_team,
+                    'Home/Away': home_away,
+                    'OPP': opp,
+                    'AB': parse_int(cells[3].get_text()),
+                    'R': parse_int(cells[4].get_text()),
+                    'H': parse_int(cells[5].get_text()),
+                    '2B': parse_int(cells[6].get_text()),
+                    '3B': parse_int(cells[7].get_text()),
+                    'HR': parse_int(cells[8].get_text()),
+                    'RBI': parse_int(cells[9].get_text()),
+                    'Walks': parse_int(cells[12].get_text()),
+                    'HBP': parse_int(cells[13].get_text()),
+                    'SB': parse_int(cells[10].get_text()),
+                    'CS': parse_int(cells[11].get_text()),
+                    'GDP': parse_int(cells[15].get_text()),
+                    'Season': season
+                }
+                
+                game_data.update(calculate_stats(game_data))
+                all_data.append(game_data)
+                
+            except Exception as e:
+                print(f"⚠️ Error parsing row for player {pcode}: {e}")
+                continue
+    
+    df = pd.DataFrame(all_data)
+    col_order = ['Name', 'DATE', 'Team', 'Home/Away', 'OPP', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI', 'Walks',
+                 'HBP', 'BA', 'OBP', 'SLG', 'OPS', 'SB', 'CS', 'GDP', '1B', 'HRR', 'TB', 'Season']
+    if df.empty:
+        print(f"⚠️ No data found for player {player_name} ({pcode})")
+    return df[col_order] if not df.empty else df
+
 
 def calculate_stats(game_data):
     singles = game_data['H'] - (game_data['2B'] + game_data['3B'] + game_data['HR'])
@@ -253,26 +355,60 @@ async def scrape_kbo_player_logs(pcode, page, season, series_label="KBO 정규�
     if df.empty:
         print(f"⚠️ No data found for player {PLAYER_NAMES.get(pcode, f'Unknown_{pcode}')} ({pcode})")
     return df[col_order] if not df.empty else df
-async def scrape_multiple_players(player_codes, season):
+
+
+def merge_with_existing(df, output_path):
+    if os.path.exists(output_path):
+        try:
+            existing = pd.read_csv(output_path)
+            if not existing.empty:
+                df = pd.concat([existing, df], ignore_index=True)
+        except Exception as exc:
+            print(f"⚠️ Could not merge existing hitter log file: {exc}")
+
+    if df.empty:
+        return df
+
+    return (
+        df.drop_duplicates(subset=["Name", "DATE", "Team", "OPP"], keep="last")
+          .sort_values(["DATE", "Name"])
+          .reset_index(drop=True)
+    )
+
+
+def save_progress(df, output_path, label="Saved"):
+    if df.empty:
+        return
+    df.to_csv(output_path, index=False)
+    print(f"✅ {label} {len(df)} rows to {output_path}")
+
+
+async def scrape_multiple_players(player_codes, season, output_path=None, checkpoint_every=10):
     all_data = pd.DataFrame()
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(ignore_https_errors=True)
-        page = await context.new_page()
-        for pcode in player_codes:
-            print(f"Scraping {PLAYER_NAMES.get(pcode, pcode)}")
-            try:
-                df = await scrape_kbo_player_logs(pcode, page, season)
+    
+    print(f"\nUsing English KBO endpoint (supports April+ data)\n")
+    
+    for index, pcode in enumerate(player_codes, 1):
+        player_name = PLAYER_NAMES.get(pcode, pcode)
+        print(f"[{index}/{len(player_codes)}] Scraping {player_name}")
+        try:
+            # Use English KBO endpoint (no Playwright needed, faster, has April 2+ data)
+            df = scrape_english_kbo_hitter_logs(pcode, season)
+            if not df.empty:
                 all_data = pd.concat([all_data, df], ignore_index=True)
-            except Exception as exc:
-                print(f"⚠️ Skipping {PLAYER_NAMES.get(pcode, pcode)} ({pcode}) — {exc}")
-                try:
-                    await page.goto("about:blank")
-                except Exception:
-                    pass
-            await asyncio.sleep(1.5)
-        await browser.close()
+                if output_path and checkpoint_every and index % checkpoint_every == 0:
+                    checkpoint_df = merge_with_existing(all_data.copy(), output_path)
+                    save_progress(checkpoint_df, output_path, label=f"✅ Checkpointed after {index} players:")
+        except Exception as exc:
+            print(f"⚠️ Skipping {player_name} ({pcode}) — {exc}")
+        
+        # Small delay to be respectful to server
+        await asyncio.sleep(0.3)
+
+    if output_path:
+        return merge_with_existing(all_data, output_path)
     return all_data
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scrape KBO hitter daily logs")
@@ -290,14 +426,13 @@ async def main():
     if args.max_players:
         player_codes = player_codes[:args.max_players]
 
+    output_name = f"KBO_daily_batting_stats_{args.season}.csv"
+    output_path = os.path.join(BASE_DIR, output_name)
+
     print(f"Target season: {args.season}")
-    df = await scrape_multiple_players(player_codes, args.season)
+    df = await scrape_multiple_players(player_codes, args.season, output_path=output_path)
     if not df.empty:
-        df = df.sort_values("DATE")
-        output_name = f"KBO_daily_batting_stats_{args.season}.csv"
-        output_path = os.path.join(BASE_DIR, output_name)
-        df.to_csv(output_path, index=False)
-        print(f"✅ Saved to {output_path}")
+        save_progress(df, output_path)
     else:
         print("⚠️ No player data scraped. Check connections or site layout.")
 
