@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './LandingPage.css';
-import { dataUrl } from './dataUrl';
+import { fetchDataSnapshot } from './dataUrl';
 
 const TEAMS = {
   Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
@@ -70,21 +70,53 @@ function selectBestValuePick(picks, filterFn = () => true) {
   return candidates[0] || null;
 }
 
+function freshnessInfo(updatedAt, source) {
+  if (!updatedAt) {
+    return source === 'static'
+      ? { tone: 'warn', text: 'Serving fallback static data' }
+      : { tone: 'warn', text: 'Freshness unavailable' };
+  }
+
+  const ageMinutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000));
+  if (ageMinutes <= 20) return { tone: 'fresh', text: `Live data updated ${ageMinutes}m ago` };
+  if (ageMinutes <= 120) return { tone: 'ok', text: `Data updated ${ageMinutes}m ago` };
+  return { tone: 'stale', text: `Stale data: last update ${ageMinutes}m ago` };
+}
+
+function deriveFreshness(kSnap, bSnap, rSnap) {
+  const snapshots = [kSnap, bSnap, rSnap].filter(Boolean);
+  const supaTimes = snapshots
+    .map(s => s?.updatedAt)
+    .filter(Boolean)
+    .map(ts => new Date(ts).getTime())
+    .filter(Number.isFinite);
+
+  if (supaTimes.length > 0) {
+    // Use oldest timestamp as conservative freshness for combined landing metrics.
+    return freshnessInfo(new Date(Math.min(...supaTimes)).toISOString(), 'supabase');
+  }
+
+  const staticOnly = snapshots.some(s => s?.source === 'static');
+  return freshnessInfo(null, staticOnly ? 'static' : 'unknown');
+}
+
 function LandingPage({ onNavigate }) {
   const [kData, setKData] = useState(null);
   const [batterData, setBatterData] = useState(null);
   const [rankings, setRankings] = useState(null);
   const [animate, setAnimate] = useState(false);
+  const [dataStatus, setDataStatus] = useState({ tone: 'ok', text: 'Checking data freshness...' });
 
   useEffect(() => {
     Promise.all([
-      fetch(dataUrl('strikeout_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(dataUrl('batter_projections.json')).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(dataUrl('pitcher_rankings.json')).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([k, b, r]) => {
-      setKData(k);
-      setBatterData(b);
-      setRankings(r);
+      fetchDataSnapshot('strikeout_projections.json').catch(() => null),
+      fetchDataSnapshot('batter_projections.json').catch(() => null),
+      fetchDataSnapshot('pitcher_rankings.json').catch(() => null),
+    ]).then(([kSnap, bSnap, rSnap]) => {
+      setKData(kSnap?.data || null);
+      setBatterData(bSnap?.data || null);
+      setRankings(rSnap?.data || null);
+      setDataStatus(deriveFreshness(kSnap, bSnap, rSnap));
     });
     setTimeout(() => setAnimate(true), 50);
   }, []);
@@ -122,6 +154,7 @@ function LandingPage({ onNavigate }) {
             <span className="lp-logo-sub">PROPS</span>
           </h1>
           <p className="lp-tagline">Daily KBO PrizePicks edges built from live data</p>
+          <div className={`lp-data-status lp-data-status-${dataStatus.tone}`}>{dataStatus.text}</div>
           <div className="lp-hero-stats">
             <div className="lp-stat-pill">
               <span className="lp-stat-num">{totalProps}</span>
