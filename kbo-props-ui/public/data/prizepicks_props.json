@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-03T17:22:20.085080",
+  "generated_at": "2026-04-03T18:23:18.952346",
   "total_props": 61,
   "cards": [
     {
@@ -663,8 +663,8 @@
       "projection_so": 3.92,
       "so_per_ip": 0.87,
       "ip_per_g": 4.67,
-      "proj_rating": 43.5,
-      "proj_rec": "UNDER",
+      "proj_rating": 56.0,
+      "proj_rec": "PUSH",
       "venue": "Suwon",
       "park_factor": 0.991
     },
@@ -870,16 +870,19 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 3.0,
-          "over": 3,
-          "under": 0,
+          "avg": 2.83,
+          "over": 5,
+          "under": 1,
           "push": 0,
-          "total_games": 3,
-          "hit_rate_all": 100.0,
-          "hit_rate_l5": 100.0,
-          "hit_rate_l10": 100.0,
-          "hit_rate_l20": 100.0,
+          "total_games": 6,
+          "hit_rate_all": 83.3,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 83.3,
+          "hit_rate_l20": 83.3,
           "recent_values": [
+            5,
+            2,
+            1,
             2,
             4,
             3
@@ -893,15 +896,18 @@
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
           "avg": 4.0,
-          "over": 3,
+          "over": 6,
           "under": 0,
           "push": 0,
-          "total_games": 3,
+          "total_games": 6,
           "hit_rate_all": 100.0,
           "hit_rate_l5": 100.0,
           "hit_rate_l10": 100.0,
           "hit_rate_l20": 100.0,
           "recent_values": [
+            6,
+            3,
+            3,
             3,
             5,
             4
@@ -913,6 +919,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Doosan",
+          "h": 2,
+          "r": 1,
+          "rbi": 3,
+          "hrr": 6,
+          "tb": 5
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "KT",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "KT",
+          "h": 1,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "KT",
@@ -953,26 +986,26 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 2.19,
-          "over": 61,
-          "under": 56,
+          "avg": 2.2,
+          "over": 62,
+          "under": 58,
           "push": 0,
-          "total_games": 117,
-          "hit_rate_all": 52.1,
+          "total_games": 120,
+          "hit_rate_all": 51.7,
           "hit_rate_l5": 40.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 65.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
+            7,
+            0,
+            1,
             0,
             4,
             3,
             0,
             0,
             1,
-            7,
-            5,
-            6,
-            0
+            7
           ],
           "projection": 2.32,
           "edge": 0.82,
@@ -982,26 +1015,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.72,
-          "over": 77,
-          "under": 40,
+          "avg": 2.73,
+          "over": 79,
+          "under": 41,
           "push": 0,
-          "total_games": 117,
+          "total_games": 120,
           "hit_rate_all": 65.8,
           "hit_rate_l5": 60.0,
           "hit_rate_l10": 60.0,
           "hit_rate_l20": 75.0,
           "recent_values": [
+            6,
+            0,
+            3,
             0,
             6,
             5,
             2,
             0,
             1,
-            7,
-            4,
-            8,
-            1
+            7
           ],
           "projection": 2.93,
           "edge": 1.43,
@@ -1010,6 +1043,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kiwoom",
+          "h": 3,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 6,
+          "tb": 7
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Kia",
@@ -1117,33 +1177,6 @@
           "rbi": 3,
           "hrr": 9,
           "tb": 5
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "KT",
-          "h": 3,
-          "r": 2,
-          "rbi": 2,
-          "hrr": 7,
-          "tb": 10
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "Kia",
-          "h": 1,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 4,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-13",
-          "opp": "Kia",
-          "h": 1,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 4,
-          "tb": 4
         }
       ],
       "venue": "Seoul-Gocheok",
@@ -1158,26 +1191,26 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 2.46,
-          "over": 79,
-          "under": 66,
+          "avg": 2.45,
+          "over": 81,
+          "under": 67,
           "push": 0,
-          "total_games": 145,
-          "hit_rate_all": 54.5,
-          "hit_rate_l5": 80.0,
-          "hit_rate_l10": 90.0,
-          "hit_rate_l20": 85.0,
+          "total_games": 148,
+          "hit_rate_all": 54.7,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 80.0,
+          "hit_rate_l20": 80.0,
           "recent_values": [
+            2,
+            1,
+            3,
             4,
             0,
             2,
             2,
             5,
             4,
-            2,
-            6,
-            3,
-            4
+            2
           ],
           "projection": null,
           "edge": null,
@@ -1187,24 +1220,24 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.94,
-          "over": 92,
+          "avg": 2.95,
+          "over": 95,
           "under": 53,
           "push": 0,
-          "total_games": 145,
-          "hit_rate_all": 63.4,
-          "hit_rate_l5": 60.0,
+          "total_games": 148,
+          "hit_rate_all": 64.2,
+          "hit_rate_l5": 80.0,
           "hit_rate_l10": 80.0,
-          "hit_rate_l20": 75.0,
+          "hit_rate_l20": 80.0,
           "recent_values": [
+            2,
+            2,
+            6,
             5,
             0,
             1,
             4,
             6,
-            5,
-            3,
-            8,
             5,
             3
           ],
@@ -1215,6 +1248,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "KT",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Doosan",
+          "h": 3,
+          "r": 2,
+          "rbi": 1,
+          "hrr": 6,
+          "tb": 3
+        },
         {
           "date": "2026-03-31",
           "opp": "Doosan",
@@ -1322,389 +1382,10 @@
           "rbi": 2,
           "hrr": 5,
           "tb": 3
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "NC",
-          "h": 2,
-          "r": 1,
-          "rbi": 3,
-          "hrr": 6,
-          "tb": 5
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Lotte",
-          "h": 2,
-          "r": 1,
-          "rbi": 4,
-          "hrr": 7,
-          "tb": 5
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "KT",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 5
         }
       ],
       "venue": "Suwon",
       "park_factor": 0.991
-    },
-    {
-      "name": "Ahn Hyun-min",
-      "team": "KT",
-      "opponent": "Samsung",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 2.56,
-          "over": 67,
-          "under": 45,
-          "push": 0,
-          "total_games": 112,
-          "hit_rate_all": 59.8,
-          "hit_rate_l5": 100.0,
-          "hit_rate_l10": 80.0,
-          "hit_rate_l20": 75.0,
-          "recent_values": [
-            5,
-            3,
-            4,
-            5,
-            5,
-            0,
-            1,
-            2,
-            4,
-            5
-          ],
-          "projection": 3.17,
-          "edge": 1.67,
-          "rating": 105.6,
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "Hanwha",
-          "h": 2,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 5,
-          "tb": 3
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "LG",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "LG",
-          "h": 1,
-          "r": 3,
-          "rbi": 0,
-          "hrr": 4,
-          "tb": 3
-        },
-        {
-          "date": "2025-10-03",
-          "opp": "Hanwha",
-          "h": 3,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 4
-        },
-        {
-          "date": "2025-10-01",
-          "opp": "Kia",
-          "h": 3,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-30",
-          "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-26",
-          "opp": "SSG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-25",
-          "opp": "SSG",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "Kiwoom",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-21",
-          "opp": "Samsung",
-          "h": 2,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 5,
-          "tb": 5
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Hanwha",
-          "h": 2,
-          "r": 1,
-          "rbi": 4,
-          "hrr": 7,
-          "tb": 5
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "LG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "LG",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-13",
-          "opp": "Samsung",
-          "h": 0,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 0
-        }
-      ],
-      "venue": "Suwon",
-      "park_factor": 0.991
-    },
-    {
-      "name": "Hong Chang-ki",
-      "team": "LG",
-      "opponent": "Kiwoom",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 1.9,
-          "over": 31,
-          "under": 21,
-          "push": 0,
-          "total_games": 52,
-          "hit_rate_all": 59.6,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 70.0,
-          "recent_values": [
-            0,
-            2,
-            2,
-            2,
-            0,
-            0,
-            5,
-            2,
-            4,
-            1
-          ],
-          "projection": 2.05,
-          "edge": 0.55,
-          "rating": 68.3,
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "KT",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "KT",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-01",
-          "opp": "NC",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-30",
-          "opp": "Doosan",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-29",
-          "opp": "Hanwha",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-27",
-          "opp": "Hanwha",
-          "h": 4,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 5,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-26",
-          "opp": "Hanwha",
-          "h": 2,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-25",
-          "opp": "Lotte",
-          "h": 1,
-          "r": 3,
-          "rbi": 0,
-          "hrr": 4,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-24",
-          "opp": "NC",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "KT",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "KT",
-          "h": 2,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 1,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-13",
-          "opp": "Kia",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        }
-      ],
-      "venue": "Seoul-Gocheok",
-      "park_factor": 0.904
     },
     {
       "name": "Koo Ja-wook",
@@ -1715,26 +1396,26 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 1.89,
-          "over": 66,
-          "under": 77,
+          "avg": 1.9,
+          "over": 68,
+          "under": 78,
           "push": 0,
-          "total_games": 143,
-          "hit_rate_all": 46.2,
-          "hit_rate_l5": 20.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 50.0,
+          "total_games": 146,
+          "hit_rate_all": 46.6,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 45.0,
           "recent_values": [
             2,
+            1,
+            4,
+            2,
             0,
             1,
             1,
             1,
             2,
-            2,
-            5,
-            0,
-            0
+            2
           ],
           "projection": 1.66,
           "edge": 0.16,
@@ -1744,26 +1425,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.6,
-          "over": 85,
+          "avg": 2.62,
+          "over": 88,
           "under": 58,
           "push": 0,
-          "total_games": 143,
-          "hit_rate_all": 59.4,
+          "total_games": 146,
+          "hit_rate_all": 60.3,
           "hit_rate_l5": 80.0,
-          "hit_rate_l10": 70.0,
+          "hit_rate_l10": 90.0,
           "hit_rate_l20": 65.0,
           "recent_values": [
+            2,
+            3,
+            5,
             3,
             0,
             3,
             2,
             2,
             3,
-            3,
-            8,
-            1,
-            0
+            3
           ],
           "projection": 2.3,
           "edge": 0.8,
@@ -1772,6 +1453,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "KT",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 1,
+          "rbi": 3,
+          "hrr": 5,
+          "tb": 4
+        },
         {
           "date": "2026-03-31",
           "opp": "Doosan",
@@ -1879,10 +1587,236 @@
           "rbi": 1,
           "hrr": 4,
           "tb": 4
+        }
+      ],
+      "venue": "Suwon",
+      "park_factor": 0.991
+    },
+    {
+      "name": "Hong Chang-ki",
+      "team": "LG",
+      "opponent": "Kiwoom",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 1.89,
+          "over": 33,
+          "under": 22,
+          "push": 0,
+          "total_games": 55,
+          "hit_rate_all": 60.0,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 65.0,
+          "recent_values": [
+            2,
+            0,
+            3,
+            0,
+            2,
+            2,
+            2,
+            0,
+            0,
+            5
+          ],
+          "projection": 2.05,
+          "edge": 0.55,
+          "rating": 68.3,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
         },
         {
-          "date": "2025-09-16",
+          "date": "2026-04-02",
+          "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "KT",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "KT",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-10-01",
+          "opp": "NC",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-30",
+          "opp": "Doosan",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-29",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "Hanwha",
+          "h": 4,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 5,
+          "tb": 4
+        },
+        {
+          "date": "2025-09-26",
+          "opp": "Hanwha",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-25",
           "opp": "Lotte",
+          "h": 1,
+          "r": 3,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-24",
+          "opp": "NC",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-20",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-18",
+          "opp": "KT",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        }
+      ],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Ahn Hyun-min",
+      "team": "KT",
+      "opponent": "Samsung",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.6,
+          "over": 69,
+          "under": 46,
+          "push": 0,
+          "total_games": 115,
+          "hit_rate_all": 60.0,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 70.0,
+          "hit_rate_l20": 70.0,
+          "recent_values": [
+            1,
+            6,
+            5,
+            5,
+            3,
+            4,
+            5,
+            5,
+            0,
+            1
+          ],
+          "projection": 3.17,
+          "edge": 1.67,
+          "rating": 105.6,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Hanwha",
           "h": 2,
           "r": 2,
           "rbi": 2,
@@ -1890,8 +1824,71 @@
           "tb": 2
         },
         {
-          "date": "2025-09-14",
-          "opp": "KT",
+          "date": "2026-04-01",
+          "opp": "Hanwha",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 5
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Hanwha",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "LG",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "LG",
+          "h": 1,
+          "r": 3,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 3
+        },
+        {
+          "date": "2025-10-03",
+          "opp": "Hanwha",
+          "h": 3,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 5,
+          "tb": 4
+        },
+        {
+          "date": "2025-10-01",
+          "opp": "Kia",
+          "h": 3,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 5,
+          "tb": 3
+        },
+        {
+          "date": "2025-09-30",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-26",
+          "opp": "SSG",
           "h": 1,
           "r": 0,
           "rbi": 0,
@@ -1899,13 +1896,49 @@
           "tb": 2
         },
         {
-          "date": "2025-09-13",
-          "opp": "KT",
+          "date": "2025-09-25",
+          "opp": "SSG",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-23",
+          "opp": "Kiwoom",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-21",
+          "opp": "Samsung",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 5
+        },
+        {
+          "date": "2025-09-20",
+          "opp": "Hanwha",
+          "h": 2,
+          "r": 1,
+          "rbi": 4,
+          "hrr": 7,
+          "tb": 5
+        },
+        {
+          "date": "2025-09-18",
+          "opp": "LG",
           "h": 1,
           "r": 0,
           "rbi": 0,
           "hrr": 1,
-          "tb": 1
+          "tb": 2
         }
       ],
       "venue": "Suwon",
@@ -1920,26 +1953,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.38,
-          "over": 76,
-          "under": 52,
+          "avg": 2.44,
+          "over": 78,
+          "under": 53,
           "push": 0,
-          "total_games": 128,
-          "hit_rate_all": 59.4,
-          "hit_rate_l5": 80.0,
+          "total_games": 131,
+          "hit_rate_all": 59.5,
+          "hit_rate_l5": 60.0,
           "hit_rate_l10": 80.0,
-          "hit_rate_l20": 75.0,
+          "hit_rate_l20": 80.0,
           "recent_values": [
+            1,
+            3,
+            11,
             4,
             0,
             3,
             4,
             3,
             4,
-            5,
-            5,
-            4,
-            1
+            5
           ],
           "projection": 2.1,
           "edge": 0.6,
@@ -1948,6 +1981,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Doosan",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Doosan",
+          "h": 4,
+          "r": 3,
+          "rbi": 4,
+          "hrr": 11,
+          "tb": 8
+        },
         {
           "date": "2026-03-31",
           "opp": "Doosan",
@@ -2055,33 +2115,6 @@
           "rbi": 0,
           "hrr": 3,
           "tb": 1
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "NC",
-          "h": 2,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Lotte",
-          "h": 1,
-          "r": 2,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "KT",
-          "h": 2,
-          "r": 1,
-          "rbi": 3,
-          "hrr": 6,
-          "tb": 5
         }
       ],
       "venue": "Suwon",
@@ -2096,26 +2129,26 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 1.45,
-          "over": 53,
+          "avg": 1.52,
+          "over": 56,
           "under": 66,
           "push": 0,
-          "total_games": 119,
-          "hit_rate_all": 44.5,
-          "hit_rate_l5": 20.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 45.0,
+          "total_games": 122,
+          "hit_rate_all": 45.9,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
+            4,
+            2,
+            7,
             0,
             3,
             0,
             0,
             0,
             2,
-            0,
-            0,
-            2,
-            3
+            0
           ],
           "projection": 1.74,
           "edge": 0.24,
@@ -2125,26 +2158,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.15,
-          "over": 69,
+          "avg": 2.24,
+          "over": 72,
           "under": 50,
           "push": 0,
-          "total_games": 119,
-          "hit_rate_all": 58.0,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 40.0,
+          "total_games": 122,
+          "hit_rate_all": 59.0,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
+            6,
+            4,
+            7,
             1,
             3,
             2,
             0,
             0,
             1,
-            0,
-            0,
-            3,
-            5
+            0
           ],
           "projection": 2.25,
           "edge": 0.75,
@@ -2153,6 +2186,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kia",
+          "h": 3,
+          "r": 0,
+          "rbi": 3,
+          "hrr": 6,
+          "tb": 4
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Lotte",
+          "h": 3,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 7,
+          "tb": 7
+        },
         {
           "date": "2026-03-31",
           "opp": "Lotte",
@@ -2260,33 +2320,6 @@
           "rbi": 0,
           "hrr": 0,
           "tb": 0
-        },
-        {
-          "date": "2025-08-28",
-          "opp": "LG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-08-27",
-          "opp": "LG",
-          "h": 2,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-08-26",
-          "opp": "LG",
-          "h": 3,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 4,
-          "tb": 3
         }
       ],
       "venue": "Gwangju",
@@ -2302,25 +2335,25 @@
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
           "avg": 2.34,
-          "over": 83,
-          "under": 63,
+          "over": 85,
+          "under": 64,
           "push": 0,
-          "total_games": 146,
-          "hit_rate_all": 56.8,
+          "total_games": 149,
+          "hit_rate_all": 57.0,
           "hit_rate_l5": 60.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 65.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
-            0,
-            4,
-            2,
-            1,
-            2,
-            1,
-            4,
-            0,
             3,
-            0
+            1,
+            2,
+            0,
+            4,
+            2,
+            1,
+            2,
+            1,
+            4
           ],
           "projection": 1.98,
           "edge": 0.48,
@@ -2329,6 +2362,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Doosan",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "KT",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "KT",
@@ -2436,213 +2496,10 @@
           "rbi": 2,
           "hrr": 5,
           "tb": 5
-        },
-        {
-          "date": "2025-09-17",
-          "opp": "Kia",
-          "h": 3,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 6,
-          "tb": 6
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Kia",
-          "h": 1,
-          "r": 2,
-          "rbi": 2,
-          "hrr": 5,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-15",
-          "opp": "Kiwoom",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
         }
       ],
       "venue": "Seoul-Jamsil",
       "park_factor": 0.906
-    },
-    {
-      "name": "Kim Ju-won",
-      "team": "NC",
-      "opponent": "Kia",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 2.21,
-          "over": 81,
-          "under": 64,
-          "push": 0,
-          "total_games": 145,
-          "hit_rate_all": 55.9,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 45.0,
-          "recent_values": [
-            0,
-            1,
-            1,
-            2,
-            3,
-            0,
-            2,
-            0,
-            0,
-            2
-          ],
-          "projection": 2.31,
-          "edge": 0.81,
-          "rating": 77.0,
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "Doosan",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "Doosan",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-04",
-          "opp": "SSG",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-01",
-          "opp": "LG",
-          "h": 1,
-          "r": 2,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-30",
-          "opp": "KT",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-29",
-          "opp": "Kia",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-27",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-26",
-          "opp": "Doosan",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-24",
-          "opp": "LG",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-21",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-19",
-          "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Samsung",
-          "h": 2,
-          "r": 0,
-          "rbi": 4,
-          "hrr": 6,
-          "tb": 4
-        }
-      ],
-      "venue": "Gwangju",
-      "park_factor": 0.985
     },
     {
       "name": "Moon Hyun-bin",
@@ -2653,26 +2510,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.28,
-          "over": 79,
-          "under": 64,
+          "avg": 2.32,
+          "over": 81,
+          "under": 65,
           "push": 0,
-          "total_games": 143,
-          "hit_rate_all": 55.2,
+          "total_games": 146,
+          "hit_rate_all": 55.5,
           "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 70.0,
+          "hit_rate_l10": 70.0,
+          "hit_rate_l20": 65.0,
           "recent_values": [
+            0,
+            7,
+            6,
             1,
             3,
             7,
             3,
             0,
             3,
-            3,
-            1,
-            0,
-            2
+            3
           ],
           "projection": 1.93,
           "edge": 0.43,
@@ -2681,6 +2538,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Doosan",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "KT",
+          "h": 3,
+          "r": 1,
+          "rbi": 3,
+          "hrr": 7,
+          "tb": 6
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "KT",
+          "h": 2,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 6,
+          "tb": 6
+        },
         {
           "date": "2026-03-31",
           "opp": "KT",
@@ -2788,194 +2672,95 @@
           "rbi": 1,
           "hrr": 3,
           "tb": 1
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Kia",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-15",
-          "opp": "Kiwoom",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "Kiwoom",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 2
         }
       ],
       "venue": "Seoul-Jamsil",
       "park_factor": 0.906
     },
     {
-      "name": "Choi Hyoung-woo",
-      "team": "Samsung",
-      "opponent": "KT",
+      "name": "Kim Ju-won",
+      "team": "NC",
+      "opponent": "Kia",
       "type": "batter",
       "props": [
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.28,
-          "over": 73,
-          "under": 61,
+          "avg": 2.18,
+          "over": 82,
+          "under": 66,
           "push": 0,
-          "total_games": 134,
-          "hit_rate_all": 54.5,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 60.0,
+          "total_games": 148,
+          "hit_rate_all": 55.4,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 35.0,
           "recent_values": [
-            5,
-            2,
             1,
-            5,
+            2,
             0,
             0,
-            2,
-            6,
             1,
-            3
+            1,
+            2,
+            3,
+            0,
+            2
           ],
-          "projection": 2.01,
-          "edge": 0.51,
-          "rating": 67.1,
+          "projection": 2.31,
+          "edge": 0.81,
+          "rating": 77.0,
           "recommendation": "OVER"
         }
       ],
       "games": [
         {
-          "date": "2026-03-31",
-          "opp": "Doosan",
-          "h": 3,
+          "date": "2026-04-03",
+          "opp": "Kia",
+          "h": 0,
           "r": 1,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 6
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Lotte",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Lotte",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Lotte",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
         },
         {
           "date": "2026-03-29",
-          "opp": "Lotte",
+          "opp": "Doosan",
           "h": 1,
-          "r": 1,
+          "r": 0,
           "rbi": 0,
-          "hrr": 2,
-          "tb": 1
+          "hrr": 1,
+          "tb": 2
         },
         {
           "date": "2026-03-28",
-          "opp": "Lotte",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-04",
-          "opp": "Samsung",
-          "h": 2,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 2
-        },
-        {
-          "date": "2025-10-02",
-          "opp": "SSG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-30",
-          "opp": "Samsung",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-21",
-          "opp": "NC",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "NC",
-          "h": 3,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 6,
-          "tb": 6
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-17",
-          "opp": "Hanwha",
-          "h": 2,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "LG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-13",
-          "opp": "LG",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-12",
           "opp": "Doosan",
           "h": 1,
           "r": 0,
@@ -2984,85 +2769,8 @@
           "tb": 1
         },
         {
-          "date": "2025-09-11",
-          "opp": "Lotte",
-          "h": 2,
-          "r": 1,
-          "rbi": 3,
-          "hrr": 6,
-          "tb": 5
-        }
-      ],
-      "venue": "Suwon",
-      "park_factor": 0.991
-    },
-    {
-      "name": "Park Chan-ho",
-      "team": "Doosan",
-      "opponent": "Hanwha",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 1.98,
-          "over": 74,
-          "under": 62,
-          "push": 0,
-          "total_games": 136,
-          "hit_rate_all": 54.4,
-          "hit_rate_l5": 80.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 50.0,
-          "recent_values": [
-            3,
-            3,
-            0,
-            2,
-            3,
-            1,
-            0,
-            1,
-            1,
-            0
-          ],
-          "projection": 1.05,
-          "edge": -0.45,
-          "rating": 35.0,
-          "recommendation": "UNDER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 0,
-          "rbi": 2,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "NC",
-          "h": 2,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
           "date": "2025-10-04",
-          "opp": "Samsung",
+          "opp": "SSG",
           "h": 1,
           "r": 1,
           "rbi": 0,
@@ -3070,26 +2778,35 @@
           "tb": 1
         },
         {
-          "date": "2025-10-02",
-          "opp": "SSG",
+          "date": "2025-10-01",
+          "opp": "LG",
           "h": 1,
-          "r": 0,
-          "rbi": 2,
+          "r": 2,
+          "rbi": 0,
           "hrr": 3,
           "tb": 1
         },
         {
           "date": "2025-09-30",
-          "opp": "Samsung",
-          "h": 1,
+          "opp": "KT",
+          "h": 0,
           "r": 0,
           "rbi": 0,
-          "hrr": 1,
-          "tb": 1
+          "hrr": 0,
+          "tb": 0
         },
         {
           "date": "2025-09-29",
-          "opp": "NC",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "Kia",
           "h": 0,
           "r": 0,
           "rbi": 0,
@@ -3097,26 +2814,26 @@
           "tb": 0
         },
         {
-          "date": "2025-09-27",
-          "opp": "NC",
-          "h": 1,
+          "date": "2025-09-26",
+          "opp": "Doosan",
+          "h": 0,
           "r": 0,
           "rbi": 0,
-          "hrr": 1,
-          "tb": 1
+          "hrr": 0,
+          "tb": 0
         },
         {
           "date": "2025-09-24",
-          "opp": "Kiwoom",
+          "opp": "LG",
           "h": 1,
           "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 2
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
         },
         {
           "date": "2025-09-23",
-          "opp": "SSG",
+          "opp": "Lotte",
           "h": 0,
           "r": 0,
           "rbi": 0,
@@ -3125,52 +2842,16 @@
         },
         {
           "date": "2025-09-21",
-          "opp": "NC",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "NC",
+          "opp": "Kia",
           "h": 0,
           "r": 0,
-          "rbi": 1,
-          "hrr": 1,
+          "rbi": 0,
+          "hrr": 0,
           "tb": 0
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-17",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.906
+      "venue": "Gwangju",
+      "park_factor": 0.985
     },
     {
       "name": "Shin Min-jae",
@@ -3181,26 +2862,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.16,
-          "over": 74,
-          "under": 62,
+          "avg": 2.15,
+          "over": 76,
+          "under": 63,
           "push": 0,
-          "total_games": 136,
-          "hit_rate_all": 54.4,
+          "total_games": 139,
+          "hit_rate_all": 54.7,
           "hit_rate_l5": 40.0,
           "hit_rate_l10": 50.0,
-          "hit_rate_l20": 65.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
+            2,
+            0,
+            3,
             1,
             0,
             2,
             3,
             0,
             0,
-            2,
-            0,
-            3,
-            4
+            2
           ],
           "projection": 2.33,
           "edge": 0.83,
@@ -3209,6 +2890,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kiwoom",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kia",
+          "h": 1,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Kia",
@@ -3316,87 +3024,87 @@
           "rbi": 5,
           "hrr": 9,
           "tb": 3
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "KT",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-14",
-          "opp": "Kia",
-          "h": 3,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 6,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-13",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
         }
       ],
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
     },
     {
-      "name": "Kim Sun-bin",
-      "team": "Kia",
-      "opponent": "NC",
+      "name": "Choi Hyoung-woo",
+      "team": "Samsung",
+      "opponent": "KT",
       "type": "batter",
       "props": [
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.04,
-          "over": 46,
-          "under": 39,
+          "avg": 2.26,
+          "over": 75,
+          "under": 62,
           "push": 0,
-          "total_games": 85,
-          "hit_rate_all": 54.1,
+          "total_games": 137,
+          "hit_rate_all": 54.7,
           "hit_rate_l5": 80.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 50.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
-            3,
-            2,
-            6,
             0,
+            2,
+            2,
+            5,
+            2,
+            1,
             5,
             0,
-            1,
-            1,
             0,
-            3
+            2
           ],
-          "projection": 2.28,
-          "edge": 0.78,
-          "rating": 75.9,
+          "projection": 2.01,
+          "edge": 0.51,
+          "rating": 67.1,
           "recommendation": "OVER"
         }
       ],
       "games": [
         {
-          "date": "2026-03-31",
-          "opp": "LG",
-          "h": 2,
+          "date": "2026-04-03",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Doosan",
+          "h": 1,
           "r": 1,
           "rbi": 0,
-          "hrr": 3,
-          "tb": 2
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Doosan",
+          "h": 3,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 5,
+          "tb": 6
         },
         {
           "date": "2026-03-29",
-          "opp": "SSG",
+          "opp": "Lotte",
           "h": 1,
           "r": 1,
           "rbi": 0,
@@ -3405,15 +3113,33 @@
         },
         {
           "date": "2026-03-28",
-          "opp": "SSG",
-          "h": 2,
+          "opp": "Lotte",
+          "h": 1,
           "r": 0,
-          "rbi": 4,
-          "hrr": 6,
-          "tb": 2
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
         },
         {
           "date": "2025-10-04",
+          "opp": "Samsung",
+          "h": 2,
+          "r": 2,
+          "rbi": 1,
+          "hrr": 5,
+          "tb": 2
+        },
+        {
+          "date": "2025-10-02",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-30",
           "opp": "Samsung",
           "h": 0,
           "r": 0,
@@ -3422,76 +3148,49 @@
           "tb": 0
         },
         {
-          "date": "2025-10-02",
-          "opp": "SSG",
-          "h": 2,
-          "r": 0,
-          "rbi": 3,
-          "hrr": 5,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-27",
-          "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "SSG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
           "date": "2025-09-21",
           "opp": "NC",
-          "h": 0,
+          "h": 1,
           "r": 1,
           "rbi": 0,
-          "hrr": 1,
-          "tb": 0
+          "hrr": 2,
+          "tb": 1
         },
         {
           "date": "2025-09-20",
           "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
+          "h": 3,
+          "r": 2,
+          "rbi": 1,
+          "hrr": 6,
+          "tb": 6
         },
         {
           "date": "2025-09-18",
           "opp": "Hanwha",
           "h": 1,
-          "r": 2,
+          "r": 0,
           "rbi": 0,
-          "hrr": 3,
+          "hrr": 1,
           "tb": 1
         },
         {
           "date": "2025-09-17",
           "opp": "Hanwha",
-          "h": 0,
+          "h": 2,
           "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 3
         },
         {
           "date": "2025-09-16",
           "opp": "Hanwha",
-          "h": 0,
+          "h": 1,
           "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 2
         },
         {
           "date": "2025-09-14",
@@ -3501,10 +3200,51 @@
           "rbi": 0,
           "hrr": 0,
           "tb": 0
-        },
+        }
+      ],
+      "venue": "Suwon",
+      "park_factor": 0.991
+    },
+    {
+      "name": "Park Chan-ho",
+      "team": "Doosan",
+      "opponent": "Hanwha",
+      "type": "batter",
+      "props": [
         {
-          "date": "2025-09-13",
-          "opp": "LG",
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 1.95,
+          "over": 75,
+          "under": 64,
+          "push": 0,
+          "total_games": 139,
+          "hit_rate_all": 54.0,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 40.0,
+          "recent_values": [
+            0,
+            0,
+            2,
+            3,
+            3,
+            0,
+            2,
+            3,
+            1,
+            0
+          ],
+          "projection": 1.05,
+          "edge": -0.45,
+          "rating": 35.0,
+          "recommendation": "UNDER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Hanwha",
           "h": 0,
           "r": 0,
           "rbi": 0,
@@ -3512,17 +3252,134 @@
           "tb": 0
         },
         {
-          "date": "2025-09-12",
-          "opp": "Doosan",
-          "h": 2,
+          "date": "2026-04-02",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Samsung",
+          "h": 1,
           "r": 0,
           "rbi": 2,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "NC",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-10-04",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-10-02",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 2,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-30",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-29",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "NC",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-24",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-23",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-21",
+          "opp": "NC",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
           "hrr": 4,
           "tb": 2
+        },
+        {
+          "date": "2025-09-20",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
         }
       ],
-      "venue": "Gwangju",
-      "park_factor": 0.985
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.906
     },
     {
       "name": "Yoon Dong-hee",
@@ -3533,26 +3390,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.09,
-          "over": 52,
-          "under": 46,
+          "avg": 2.08,
+          "over": 53,
+          "under": 48,
           "push": 0,
-          "total_games": 98,
-          "hit_rate_all": 53.1,
+          "total_games": 101,
+          "hit_rate_all": 52.5,
           "hit_rate_l5": 40.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 65.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
+            1,
+            1,
+            3,
             0,
             2,
             5,
             0,
             0,
             0,
-            2,
-            5,
-            2,
-            8
+            2
           ],
           "projection": 2.05,
           "edge": 0.55,
@@ -3561,6 +3418,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "NC",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "NC",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 4
+        },
         {
           "date": "2026-03-31",
           "opp": "NC",
@@ -3668,33 +3552,6 @@
           "rbi": 2,
           "hrr": 5,
           "tb": 4
-        },
-        {
-          "date": "2025-09-11",
-          "opp": "Kia",
-          "h": 2,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-10",
-          "opp": "Hanwha",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-09",
-          "opp": "Hanwha",
-          "h": 2,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 3
         }
       ],
       "venue": "Busan-Sajik",
@@ -3709,16 +3566,18 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 2.38,
-          "over": 74,
-          "under": 67,
+          "avg": 2.36,
+          "over": 75,
+          "under": 68,
           "push": 0,
-          "total_games": 141,
-          "hit_rate_all": 52.5,
-          "hit_rate_l5": 20.0,
+          "total_games": 143,
+          "hit_rate_all": 52.4,
+          "hit_rate_l5": 40.0,
           "hit_rate_l10": 20.0,
           "hit_rate_l20": 35.0,
           "recent_values": [
+            0,
+            2,
             0,
             1,
             5,
@@ -3726,8 +3585,6 @@
             0,
             1,
             0,
-            0,
-            2,
             0
           ],
           "projection": 2.57,
@@ -3737,6 +3594,24 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kiwoom",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Kia",
@@ -3853,10 +3728,51 @@
           "rbi": 0,
           "hrr": 1,
           "tb": 0
-        },
+        }
+      ],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Kim Sun-bin",
+      "team": "Kia",
+      "opponent": "NC",
+      "type": "batter",
+      "props": [
         {
-          "date": "2025-09-13",
-          "opp": "Kia",
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 1.99,
+          "over": 46,
+          "under": 42,
+          "push": 0,
+          "total_games": 88,
+          "hit_rate_all": 52.3,
+          "hit_rate_l5": 40.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 40.0,
+          "recent_values": [
+            1,
+            1,
+            0,
+            3,
+            2,
+            6,
+            0,
+            5,
+            0,
+            1
+          ],
+          "projection": 2.28,
+          "edge": 0.78,
+          "rating": 75.9,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "NC",
           "h": 1,
           "r": 0,
           "rbi": 0,
@@ -3864,84 +3780,115 @@
           "tb": 1
         },
         {
-          "date": "2025-09-11",
-          "opp": "KT",
+          "date": "2026-04-02",
+          "opp": "LG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "LG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "LG",
           "h": 2,
           "r": 1,
           "rbi": 0,
           "hrr": 3,
           "tb": 2
-        }
-      ],
-      "venue": "Seoul-Gocheok",
-      "park_factor": 0.904
-    },
-    {
-      "name": "Jeon Jun-woo",
-      "team": "Lotte",
-      "opponent": "SSG",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 2.12,
-          "over": 60,
-          "under": 55,
-          "push": 0,
-          "total_games": 115,
-          "hit_rate_all": 52.2,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 55.0,
-          "recent_values": [
-            3,
-            2,
-            3,
-            0,
-            0,
-            1,
-            2,
-            1,
-            2,
-            4
-          ],
-          "projection": 2.08,
-          "edge": 0.58,
-          "rating": 69.3,
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "NC",
-          "h": 2,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 3
         },
         {
           "date": "2026-03-29",
-          "opp": "Samsung",
-          "h": 2,
-          "r": 0,
+          "opp": "SSG",
+          "h": 1,
+          "r": 1,
           "rbi": 0,
           "hrr": 2,
-          "tb": 2
+          "tb": 1
         },
         {
           "date": "2026-03-28",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 4
+          "opp": "SSG",
+          "h": 2,
+          "r": 0,
+          "rbi": 4,
+          "hrr": 6,
+          "tb": 2
         },
         {
-          "date": "2025-09-30",
+          "date": "2025-10-04",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-10-02",
+          "opp": "SSG",
+          "h": 2,
+          "r": 0,
+          "rbi": 3,
+          "hrr": 5,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-23",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-21",
+          "opp": "NC",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-20",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-18",
+          "opp": "Hanwha",
+          "h": 1,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-17",
           "opp": "Hanwha",
           "h": 0,
           "r": 0,
@@ -3950,107 +3897,17 @@
           "tb": 0
         },
         {
-          "date": "2025-09-29",
-          "opp": "SSG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-28",
-          "opp": "Doosan",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-26",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-25",
-          "opp": "LG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-24",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "NC",
-          "h": 3,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Kiwoom",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-19",
-          "opp": "NC",
-          "h": 4,
-          "r": 2,
-          "rbi": 3,
-          "hrr": 9,
-          "tb": 7
-        },
-        {
           "date": "2025-09-16",
-          "opp": "Samsung",
+          "opp": "Hanwha",
           "h": 0,
           "r": 0,
           "rbi": 0,
           "hrr": 0,
           "tb": 0
-        },
-        {
-          "date": "2025-08-05",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-08-03",
-          "opp": "Kiwoom",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 1
         }
       ],
-      "venue": "Busan-Sajik",
-      "park_factor": 1.116
+      "venue": "Gwangju",
+      "park_factor": 0.985
     },
     {
       "name": "Jung Soo-bin",
@@ -4062,24 +3919,24 @@
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
           "avg": 1.87,
-          "over": 68,
-          "under": 66,
+          "over": 70,
+          "under": 67,
           "push": 0,
-          "total_games": 134,
-          "hit_rate_all": 50.7,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 35.0,
+          "total_games": 137,
+          "hit_rate_all": 51.1,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 40.0,
           "recent_values": [
+            2,
+            1,
+            2,
             2,
             3,
             0,
             2,
             0,
             2,
-            0,
-            0,
-            0,
             0
           ],
           "projection": 0.99,
@@ -4089,6 +3946,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Samsung",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
         {
           "date": "2026-03-31",
           "opp": "Samsung",
@@ -4196,37 +4080,186 @@
           "rbi": 0,
           "hrr": 0,
           "tb": 0
-        },
+        }
+      ],
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.906
+    },
+    {
+      "name": "Jeon Jun-woo",
+      "team": "Lotte",
+      "opponent": "SSG",
+      "type": "batter",
+      "props": [
         {
-          "date": "2025-09-05",
-          "opp": "NC",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 2
-        },
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.08,
+          "over": 60,
+          "under": 58,
+          "push": 0,
+          "total_games": 118,
+          "hit_rate_all": 50.8,
+          "hit_rate_l5": 40.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            0,
+            1,
+            1,
+            3,
+            2,
+            3,
+            0,
+            0,
+            1,
+            2
+          ],
+          "projection": 2.08,
+          "edge": 0.58,
+          "rating": 69.3,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
         {
-          "date": "2025-09-04",
-          "opp": "NC",
-          "h": 0,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 0
-        },
-        {
-          "date": "2025-08-30",
-          "opp": "Lotte",
+          "date": "2026-04-03",
+          "opp": "SSG",
           "h": 0,
           "r": 0,
           "rbi": 0,
           "hrr": 0,
           "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "NC",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "NC",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Samsung",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 4
+        },
+        {
+          "date": "2025-09-30",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-29",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-28",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-26",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-25",
+          "opp": "LG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-24",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-23",
+          "opp": "NC",
+          "h": 3,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 3
+        },
+        {
+          "date": "2025-09-20",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-19",
+          "opp": "NC",
+          "h": 4,
+          "r": 2,
+          "rbi": 3,
+          "hrr": 9,
+          "tb": 7
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.906
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
     },
     {
       "name": "Victor Reyes",
@@ -4237,34 +4270,61 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 2.5,
-          "avg": 2.54,
-          "over": 70,
-          "under": 75,
+          "avg": 2.53,
+          "over": 72,
+          "under": 76,
           "push": 0,
-          "total_games": 145,
-          "hit_rate_all": 48.3,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
+          "total_games": 148,
+          "hit_rate_all": 48.6,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 60.0,
           "hit_rate_l20": 45.0,
           "recent_values": [
+            0,
+            3,
+            3,
             0,
             5,
             5,
             1,
             1,
             5,
-            7,
-            2,
-            1,
-            1
+            7
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 2.49,
+          "edge": -0.01,
+          "rating": 49.9,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "NC",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "NC",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 4
+        },
         {
           "date": "2026-03-31",
           "opp": "NC",
@@ -4372,10 +4432,114 @@
           "rbi": 1,
           "hrr": 6,
           "tb": 4
+        }
+      ],
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
+    },
+    {
+      "name": "Park Kun-woo",
+      "team": "NC",
+      "opponent": "Kia",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 1.84,
+          "over": 62,
+          "under": 67,
+          "push": 0,
+          "total_games": 129,
+          "hit_rate_all": 48.1,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 70.0,
+          "hit_rate_l20": 55.0,
+          "recent_values": [
+            2,
+            4,
+            0,
+            4,
+            4,
+            6,
+            2,
+            1,
+            5,
+            1
+          ],
+          "projection": 1.93,
+          "edge": 0.43,
+          "rating": 64.2,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kia",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 3
         },
         {
-          "date": "2025-09-16",
-          "opp": "Samsung",
+          "date": "2026-04-02",
+          "opp": "Lotte",
+          "h": 1,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Lotte",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Doosan",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 5
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Doosan",
+          "h": 2,
+          "r": 1,
+          "rbi": 3,
+          "hrr": 6,
+          "tb": 5
+        },
+        {
+          "date": "2025-10-04",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2025-10-01",
+          "opp": "LG",
           "h": 1,
           "r": 0,
           "rbi": 0,
@@ -4383,26 +4547,71 @@
           "tb": 1
         },
         {
-          "date": "2025-09-13",
-          "opp": "SSG",
+          "date": "2025-09-30",
+          "opp": "KT",
           "h": 2,
-          "r": 0,
+          "r": 2,
           "rbi": 1,
-          "hrr": 3,
-          "tb": 2
+          "hrr": 5,
+          "tb": 6
         },
         {
-          "date": "2025-09-11",
+          "date": "2025-09-29",
           "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "Kia",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-09-26",
+          "opp": "Doosan",
           "h": 0,
           "r": 0,
           "rbi": 0,
           "hrr": 0,
           "tb": 0
+        },
+        {
+          "date": "2025-09-24",
+          "opp": "LG",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2025-09-23",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2025-09-21",
+          "opp": "Kia",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 2
         }
       ],
-      "venue": "Busan-Sajik",
-      "park_factor": 1.116
+      "venue": "Gwangju",
+      "park_factor": 0.985
     },
     {
       "name": "Matthew Davidson",
@@ -4413,25 +4622,25 @@
         {
           "stat": "Total Bases",
           "line": 1.5,
-          "avg": 2.12,
+          "avg": 2.09,
           "over": 55,
-          "under": 60,
+          "under": 63,
           "push": 0,
-          "total_games": 115,
-          "hit_rate_all": 47.8,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 70.0,
+          "total_games": 118,
+          "hit_rate_all": 46.6,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 50.0,
           "hit_rate_l20": 55.0,
           "recent_values": [
+            1,
+            1,
+            1,
             1,
             2,
             2,
             3,
             1,
             4,
-            6,
-            6,
-            1,
             6
           ],
           "projection": 2.55,
@@ -4442,26 +4651,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 2.5,
-          "avg": 2.43,
-          "over": 47,
-          "under": 68,
+          "avg": 2.42,
+          "over": 48,
+          "under": 70,
           "push": 0,
-          "total_games": 115,
-          "hit_rate_all": 40.9,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 40.0,
+          "total_games": 118,
+          "hit_rate_all": 40.7,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 45.0,
           "recent_values": [
+            1,
+            3,
+            1,
             2,
             2,
             3,
             4,
             2,
             6,
-            8,
-            4,
-            1,
-            6
+            8
           ],
           "projection": 2.55,
           "edge": 0.05,
@@ -4470,6 +4679,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Kia",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Lotte",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Lotte",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Lotte",
@@ -4577,113 +4813,95 @@
           "rbi": 1,
           "hrr": 2,
           "tb": 0
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Kia",
-          "h": 0,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-19",
-          "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 2
         }
       ],
       "venue": "Gwangju",
       "park_factor": 0.985
     },
     {
-      "name": "Park Kun-woo",
-      "team": "NC",
-      "opponent": "Kia",
+      "name": "Choi Won-jun",
+      "team": "KT",
+      "opponent": "Samsung",
       "type": "batter",
       "props": [
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 1.84,
+          "avg": 1.75,
           "over": 60,
-          "under": 66,
+          "under": 71,
           "push": 0,
-          "total_games": 126,
-          "hit_rate_all": 47.6,
+          "total_games": 131,
+          "hit_rate_all": 45.8,
           "hit_rate_l5": 80.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 55.0,
+          "hit_rate_l10": 70.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
-            4,
-            4,
-            6,
-            2,
             1,
             5,
+            11,
+            3,
+            2,
             1,
             1,
-            0,
-            1
+            6,
+            4,
+            5
           ],
-          "projection": 1.93,
-          "edge": 0.43,
-          "rating": 64.2,
+          "projection": 2.05,
+          "edge": 0.55,
+          "rating": 68.2,
           "recommendation": "OVER"
         }
       ],
       "games": [
         {
-          "date": "2026-03-31",
-          "opp": "Lotte",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 3
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "Doosan",
-          "h": 2,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 4,
-          "tb": 5
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "Doosan",
-          "h": 2,
-          "r": 1,
-          "rbi": 3,
-          "hrr": 6,
-          "tb": 5
-        },
-        {
-          "date": "2025-10-04",
-          "opp": "SSG",
+          "date": "2026-04-03",
+          "opp": "Samsung",
           "h": 1,
           "r": 0,
-          "rbi": 1,
-          "hrr": 2,
+          "rbi": 0,
+          "hrr": 1,
           "tb": 1
         },
         {
-          "date": "2025-10-01",
+          "date": "2026-04-02",
+          "opp": "Hanwha",
+          "h": 4,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 5,
+          "tb": 7
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Hanwha",
+          "h": 3,
+          "r": 3,
+          "rbi": 5,
+          "hrr": 11,
+          "tb": 5
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Hanwha",
+          "h": 1,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "LG",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-28",
           "opp": "LG",
           "h": 1,
           "r": 0,
@@ -4692,31 +4910,49 @@
           "tb": 1
         },
         {
-          "date": "2025-09-30",
-          "opp": "KT",
-          "h": 2,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 6
-        },
-        {
-          "date": "2025-09-29",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 1,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-27",
-          "opp": "Kia",
+          "date": "2025-10-04",
+          "opp": "SSG",
           "h": 1,
           "r": 0,
           "rbi": 0,
           "hrr": 1,
           "tb": 1
+        },
+        {
+          "date": "2025-10-01",
+          "opp": "LG",
+          "h": 3,
+          "r": 2,
+          "rbi": 1,
+          "hrr": 6,
+          "tb": 3
+        },
+        {
+          "date": "2025-09-30",
+          "opp": "KT",
+          "h": 2,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2025-09-29",
+          "opp": "Kia",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 4
+        },
+        {
+          "date": "2025-09-27",
+          "opp": "Kia",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
         },
         {
           "date": "2025-09-26",
@@ -4730,33 +4966,15 @@
         {
           "date": "2025-09-24",
           "opp": "LG",
-          "h": 0,
+          "h": 2,
           "r": 1,
           "rbi": 0,
-          "hrr": 1,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "Lotte",
-          "h": 2,
-          "r": 0,
-          "rbi": 1,
           "hrr": 3,
           "tb": 3
         },
         {
-          "date": "2025-09-21",
-          "opp": "Kia",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Kia",
+          "date": "2025-09-23",
+          "opp": "Lotte",
           "h": 1,
           "r": 0,
           "rbi": 1,
@@ -4766,15 +4984,6 @@
         {
           "date": "2025-09-19",
           "opp": "Lotte",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Samsung",
           "h": 0,
           "r": 0,
           "rbi": 0,
@@ -4782,8 +4991,8 @@
           "tb": 0
         }
       ],
-      "venue": "Gwangju",
-      "park_factor": 0.985
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Yang Suk-Hwan",
@@ -4794,26 +5003,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 1.79,
+          "avg": 1.72,
           "over": 34,
-          "under": 39,
+          "under": 42,
           "push": 0,
-          "total_games": 73,
-          "hit_rate_all": 46.6,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 70.0,
+          "total_games": 76,
+          "hit_rate_all": 44.7,
+          "hit_rate_l5": 40.0,
+          "hit_rate_l10": 40.0,
           "hit_rate_l20": 45.0,
           "recent_values": [
+            0,
+            0,
+            0,
             3,
             5,
             0,
             4,
             0,
             3,
-            0,
-            5,
-            3,
-            3
+            0
           ],
           "projection": 0.95,
           "edge": -0.55,
@@ -4822,6 +5031,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
         {
           "date": "2026-03-31",
           "opp": "Samsung",
@@ -4929,213 +5165,10 @@
           "rbi": 0,
           "hrr": 1,
           "tb": 0
-        },
-        {
-          "date": "2025-07-25",
-          "opp": "LG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-07-24",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2025-07-23",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 1
         }
       ],
       "venue": "Seoul-Jamsil",
       "park_factor": 0.906
-    },
-    {
-      "name": "Choi Won-jun",
-      "team": "KT",
-      "opponent": "Samsung",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "avg": 1.66,
-          "over": 58,
-          "under": 70,
-          "push": 0,
-          "total_games": 128,
-          "hit_rate_all": 45.3,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 60.0,
-          "recent_values": [
-            3,
-            2,
-            1,
-            1,
-            6,
-            4,
-            5,
-            0,
-            0,
-            3
-          ],
-          "projection": 2.05,
-          "edge": 0.55,
-          "rating": 68.2,
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [
-        {
-          "date": "2026-03-31",
-          "opp": "Hanwha",
-          "h": 1,
-          "r": 2,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-29",
-          "opp": "LG",
-          "h": 2,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 2,
-          "tb": 2
-        },
-        {
-          "date": "2026-03-28",
-          "opp": "LG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-04",
-          "opp": "SSG",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-10-01",
-          "opp": "LG",
-          "h": 3,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 6,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-30",
-          "opp": "KT",
-          "h": 2,
-          "r": 2,
-          "rbi": 0,
-          "hrr": 4,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-29",
-          "opp": "Kia",
-          "h": 2,
-          "r": 1,
-          "rbi": 2,
-          "hrr": 5,
-          "tb": 4
-        },
-        {
-          "date": "2025-09-27",
-          "opp": "Kia",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-26",
-          "opp": "Doosan",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-24",
-          "opp": "LG",
-          "h": 2,
-          "r": 1,
-          "rbi": 0,
-          "hrr": 3,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-23",
-          "opp": "Lotte",
-          "h": 1,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-19",
-          "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-18",
-          "opp": "Samsung",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-17",
-          "opp": "SSG",
-          "h": 2,
-          "r": 0,
-          "rbi": 1,
-          "hrr": 3,
-          "tb": 2
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "SSG",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        }
-      ],
-      "venue": "Suwon",
-      "park_factor": 0.991
     },
     {
       "name": "Guillermo Heredia",
@@ -5146,25 +5179,25 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 2.5,
-          "avg": 2.42,
-          "over": 41,
-          "under": 58,
+          "avg": 2.46,
+          "over": 43,
+          "under": 59,
           "push": 0,
-          "total_games": 99,
-          "hit_rate_all": 41.4,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
+          "total_games": 102,
+          "hit_rate_all": 42.2,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 50.0,
           "hit_rate_l20": 55.0,
           "recent_values": [
+            5,
+            5,
+            1,
             6,
             5,
             2,
             2,
             2,
             2,
-            5,
-            1,
-            1,
             5
           ],
           "projection": 1.97,
@@ -5174,6 +5207,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 5
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kiwoom",
+          "h": 2,
+          "r": 0,
+          "rbi": 3,
+          "hrr": 5,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Kiwoom",
@@ -5281,33 +5341,6 @@
           "rbi": 2,
           "hrr": 3,
           "tb": 1
-        },
-        {
-          "date": "2025-09-20",
-          "opp": "Doosan",
-          "h": 2,
-          "r": 0,
-          "rbi": 3,
-          "hrr": 5,
-          "tb": 3
-        },
-        {
-          "date": "2025-09-17",
-          "opp": "NC",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-16",
-          "opp": "NC",
-          "h": 2,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 5
         }
       ],
       "venue": "Busan-Sajik",
@@ -5322,26 +5355,26 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 2.5,
-          "avg": 2.12,
-          "over": 35,
-          "under": 61,
+          "avg": 2.16,
+          "over": 37,
+          "under": 62,
           "push": 0,
-          "total_games": 96,
-          "hit_rate_all": 36.5,
-          "hit_rate_l5": 20.0,
-          "hit_rate_l10": 20.0,
+          "total_games": 99,
+          "hit_rate_all": 37.4,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 40.0,
           "hit_rate_l20": 40.0,
           "recent_values": [
+            4,
+            5,
+            1,
             4,
             1,
             1,
             1,
             1,
             1,
-            5,
-            1,
-            0,
-            0
+            5
           ],
           "projection": 1.73,
           "edge": -0.77,
@@ -5350,6 +5383,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 4
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 4
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
         {
           "date": "2026-03-31",
           "opp": "Kiwoom",
@@ -5457,33 +5517,6 @@
           "rbi": 0,
           "hrr": 3,
           "tb": 2
-        },
-        {
-          "date": "2025-09-11",
-          "opp": "Samsung",
-          "h": 2,
-          "r": 2,
-          "rbi": 1,
-          "hrr": 5,
-          "tb": 5
-        },
-        {
-          "date": "2025-09-10",
-          "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-07",
-          "opp": "LG",
-          "h": 0,
-          "r": 1,
-          "rbi": 1,
-          "hrr": 2,
-          "tb": 0
         }
       ],
       "venue": "Busan-Sajik",
@@ -5498,24 +5531,24 @@
         {
           "stat": "Hits+Runs+RBIs",
           "line": 1.5,
-          "avg": 0.93,
-          "over": 16,
-          "under": 53,
+          "avg": 0.99,
+          "over": 17,
+          "under": 55,
           "push": 0,
-          "total_games": 69,
-          "hit_rate_all": 23.2,
+          "total_games": 72,
+          "hit_rate_all": 23.6,
           "hit_rate_l5": 40.0,
           "hit_rate_l10": 30.0,
           "hit_rate_l20": 20.0,
           "recent_values": [
+            1,
+            0,
+            6,
             2,
             1,
             4,
             0,
             1,
-            0,
-            0,
-            6,
             0,
             0
           ],
@@ -5526,6 +5559,33 @@
         }
       ],
       "games": [
+        {
+          "date": "2026-04-03",
+          "opp": "LG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "SSG",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "SSG",
+          "h": 2,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 6,
+          "tb": 3
+        },
         {
           "date": "2026-03-31",
           "opp": "SSG",
@@ -5628,33 +5688,6 @@
         {
           "date": "2025-09-09",
           "opp": "Lotte",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-09-07",
-          "opp": "Samsung",
-          "h": 1,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 1,
-          "tb": 1
-        },
-        {
-          "date": "2025-09-03",
-          "opp": "NC",
-          "h": 0,
-          "r": 0,
-          "rbi": 0,
-          "hrr": 0,
-          "tb": 0
-        },
-        {
-          "date": "2025-08-19",
-          "opp": "Doosan",
           "h": 0,
           "r": 0,
           "rbi": 0,
