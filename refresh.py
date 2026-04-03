@@ -1,126 +1,60 @@
 #!/usr/bin/env python3
 """
-Run all data pipeline scripts to update the KBO Props UI.
+KBO Props UI refresh dispatcher.
 
-Usage:
-  python refresh.py          # run all steps
-  python refresh.py --skip-odds   # skip PrizePicks scrape
-  python refresh.py --skip-lineups # skip lineup scrape
+The refresh system is now separated into two lightweight scripts:
+
+1. refresh_odds.py
+   - Lightweight, ~30 seconds
+   - Fetches only PrizePicks odds
+   - Run every ~10 minutes (automated via cron/GitHub Actions)
+   - python refresh_odds.py
+
+2. refresh_data.py
+   - Full pipeline, ~30 minutes
+   - Scrapes stats, generates projections, rankings
+   - Run once daily at off-hours (automated)
+   - python refresh_data.py
+
+This script (refresh.py) is DEPRECATED.
+Use refresh_odds.py or refresh_data.py directly going forward.
+
+For backward compatibility, this script will delegate:
+  python refresh.py         → python refresh_data.py (full pipeline)
+  python refresh.py --quick → python refresh_odds.py (odds only)
+
+Legacy usage (no longer recommended):
+  python refresh.py --skip-odds
+  python refresh.py --skip-supabase
 """
 import subprocess
 import sys
 import os
-import time
-import shutil
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-PYTHON = sys.executable  # works in both venv (local) and CI (system python)
-PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
-STEPS = [
-    {
-        "name": "PrizePicks Odds",
-        "cmd": [PYTHON, os.path.join(BASE, "KBO-Odds", "KBO_ODDS_2025.py")],
-        "skip_flag": "--skip-odds",
-    },
-    {
-        "name": "Daily Lineups",
-        "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "daily_pitchers2.py"),
-                "--output", os.path.join(BASE, "Pitchers-Data", "player_names.csv")],
-        "skip_flag": "--skip-lineups",
-    },
-    {
-        "name": "Pitcher Game Logs",
-        "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "NEWPITCHER_LOG25.py")],
-        "skip_flag": "--skip-logs",
-    },
-    {
-        "name": "Combine Pitcher Logs (2025 + 2026)",
-        "cmd": [PYTHON, os.path.join(BASE, "combine_pitcher_logs.py")],
-        "skip_flag": "--skip-combine-pitchers",
-    },
-    {
-        "name": "Batter Game Logs (2026)",
-        "cmd": [PYTHON, os.path.join(BASE, "Batters-Data", "batterlog.py"),
-                "--season", "2026"],
-        "skip_flag": "--skip-batter-logs",
-    },
-    {
-        "name": "Combine Batter Logs (2025 + 2026)",
-        "cmd": [PYTHON, os.path.join(BASE, "combine_batter_logs.py")],
-        "skip_flag": "--skip-combine-batters",
-    },
-    {
-        "name": "Strikeout Projections",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_projections.py")],
-        "skip_flag": None,
-    },
-    {
-        "name": "Batter H+R+RBI Projections",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_batter_projections.py")],
-        "skip_flag": None,
-    },
-    {
-        "name": "Pitcher Rankings",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_rankings.py")],
-        "skip_flag": None,
-    },
-    {
-        "name": "Matchup Deep Dive",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_matchups.py")],
-        "skip_flag": None,
-    },
-    {
-        "name": "Grade Props",
-        "cmd": [PYTHON, os.path.join(BASE, "grade_props.py")],
-        "skip_flag": "--skip-grade",
-    },
-    {
-        "name": "PrizePicks Props Cards",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_props.py")],
-        "skip_flag": None,
-    },
-]
+BASE = os.path.dirname(os.path.abspath(__file__))
+PYTHON = sys.executable
 
 
 def main():
-    skip_flags = set(sys.argv[1:])
-    failed = []
-
-    for i, step in enumerate(STEPS, 1):
-        if step["skip_flag"] and step["skip_flag"] in skip_flags:
-            print(f"\n[{i}/{len(STEPS)}] ⏭  Skipping {step['name']}")
-            continue
-
-        print(f"\n[{i}/{len(STEPS)}] ▶  {step['name']}")
-        print("=" * 50)
-        t0 = time.time()
-        result = subprocess.run(step["cmd"], cwd=BASE)
-        elapsed = time.time() - t0
-
-        if result.returncode != 0:
-            print(f"✗ {step['name']} failed (exit {result.returncode}) [{elapsed:.1f}s]")
-            failed.append(step["name"])
-        else:
-            print(f"✓ {step['name']} done [{elapsed:.1f}s]")
-
-    # Copy data files to public/data for the UI
-    copies = [
-        (os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json"),
-         os.path.join(PUBLIC_DATA, "pitcher_logs.json")),
-    ]
-    for src, dst in copies:
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
-            print(f"📋 Copied {os.path.basename(src)} → public/data/")
-
-    print("\n" + "=" * 50)
-    if failed:
-        print(f"⚠  {len(failed)} step(s) failed: {', '.join(failed)}")
-        sys.exit(1)
-    else:
-        print("✅ All steps complete — UI data refreshed!")
+    """Route to appropriate refresh script based on flags."""
+    args = sys.argv[1:]
+    
+    # Check for quick/odds-only mode
+    if "--quick" in args or "--odds-only" in args:
+        print("🚀 Running refresh_odds.py (quick mode)...\n")
+        cmd = [PYTHON, os.path.join(BASE, "refresh_odds.py")]
+        cmd.extend([a for a in args if a not in ("--quick", "--odds-only")])
+        sys.exit(subprocess.call(cmd))
+    
+    # Default: full data pipeline
+    print("📊 Running refresh_data.py (full pipeline)...\n")
+    cmd = [PYTHON, os.path.join(BASE, "refresh_data.py")]
+    cmd.extend(args)
+    sys.exit(subprocess.call(cmd))
 
 
 if __name__ == "__main__":
     main()
+
