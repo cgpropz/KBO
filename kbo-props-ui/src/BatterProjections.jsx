@@ -22,6 +22,7 @@ function BatterProjections() {
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
+  const [hitRateFilter, setHitRateFilter] = useState('all');
 
   useEffect(() => {
     fetchData('batter_projections.json')
@@ -60,9 +61,19 @@ function BatterProjections() {
     );
   }
 
-  const filtered = data.projections.filter(p =>
-    propFilter === 'all' || p.prop === propFilter
-  );
+  const getRateByFilter = (p) => {
+    if (hitRateFilter === 'l5') return p.hit_rate_l5;
+    if (hitRateFilter === 'l10') return p.hit_rate_l10;
+    if (hitRateFilter === 'full') return p.hit_rate_full;
+    return null;
+  };
+
+  const filtered = data.projections.filter((p) => {
+    if (propFilter !== 'all' && p.prop !== propFilter) return false;
+    const selectedRate = getRateByFilter(p);
+    if (selectedRate == null) return true;
+    return selectedRate >= 50;
+  });
 
   const projections = [...filtered].sort((a, b) => {
     let aVal = a[sortField], bVal = b[sortField];
@@ -93,6 +104,18 @@ function BatterProjections() {
               {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'Total Bases'}
             </button>
           ))}
+
+          <select
+            className="bp-hitrate-select"
+            value={hitRateFilter}
+            onChange={(e) => setHitRateFilter(e.target.value)}
+            title="Filter by hit-rate window"
+          >
+            <option value="all">Hit Rate: All</option>
+            <option value="l5">Hit Rate: L5 ≥ 50%</option>
+            <option value="l10">Hit Rate: L10 ≥ 50%</option>
+            <option value="full">Hit Rate: FULL ≥ 50%</option>
+          </select>
         </div>
       </header>
 
@@ -104,9 +127,14 @@ function BatterProjections() {
                 <th onClick={() => handleSort('name')}>Player {sortIcon('name')}</th>
                 <th onClick={() => handleSort('team')}>Team {sortIcon('team')}</th>
                 <th onClick={() => handleSort('opponent')}>Matchup {sortIcon('opponent')}</th>
+                <th onClick={() => handleSort('opp_pitcher')}>Opp Pitcher {sortIcon('opp_pitcher')}</th>
+                <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
                 <th onClick={() => handleSort('prop')}>Prop {sortIcon('prop')}</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('avg_per_g')} className="col-num">Avg/G {sortIcon('avg_per_g')}</th>
+                <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 {sortIcon('hit_rate_l5')}</th>
+                <th onClick={() => handleSort('hit_rate_l10')} className="col-num">L10 {sortIcon('hit_rate_l10')}</th>
+                <th onClick={() => handleSort('hit_rate_full')} className="col-num">FULL {sortIcon('hit_rate_full')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
                 <th onClick={() => handleSort('rating')} className="col-num">Rating {sortIcon('rating')}</th>
                 <th onClick={() => handleSort('edge')} className="col-num">Variance {sortIcon('edge')}</th>
@@ -119,12 +147,25 @@ function BatterProjections() {
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
+                  <td className="col-player">{p.opp_pitcher || '—'}</td>
+                  <td className={`col-num mono ${p.opp_pitcher_whip == null ? 'cell-na' : ''}`}>
+                    {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(3) : '#N/A'}
+                  </td>
                   <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'TB'}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>
                   </td>
                   <td className={`col-num mono ${p.avg_per_g == null ? 'cell-na' : ''}`}>
                     {p.avg_per_g != null ? p.avg_per_g.toFixed(2) : '#N/A'}
+                  </td>
+                  <td className={`col-num mono ${p.hit_rate_l5 == null ? 'cell-na' : ''}`}>
+                    {p.hit_rate_l5 != null ? `${p.hit_rate_l5.toFixed(1)}%` : '#N/A'}
+                  </td>
+                  <td className={`col-num mono ${p.hit_rate_l10 == null ? 'cell-na' : ''}`}>
+                    {p.hit_rate_l10 != null ? `${p.hit_rate_l10.toFixed(1)}%` : '#N/A'}
+                  </td>
+                  <td className={`col-num mono ${p.hit_rate_full == null ? 'cell-na' : ''}`}>
+                    {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '#N/A'}
                   </td>
                   <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
                     {p.projection != null ? p.projection.toFixed(2) : '#N/A'}

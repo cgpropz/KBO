@@ -22,6 +22,8 @@ import csv
 import json
 import os
 import unicodedata
+from datetime import datetime
+from difflib import get_close_matches
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
@@ -38,12 +40,24 @@ def name_parts(name):
     return frozenset(n.split())
 
 
+def parse_date(value):
+    text = str(value or "").strip().replace("\\/", "/")
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return datetime.min
+
+
 # ── Step 1: Determine today's matchups from pitcher starters ──
 starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
 starters = []
 with open(starters_path) as f:
     for row in csv.DictReader(f):
         starters.append({"name": row["Player"], "team": row["Team"]})
+
+starter_by_team = {s["team"]: s["name"] for s in starters}
 
 # Build matchups: every 2 rows = away/home pair
 matchups = []
@@ -148,8 +162,12 @@ if os.path.exists(park_factor_path):
 with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")) as f:
     batter_logs = list(csv.DictReader(f))
 
+with open(os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats_combined.csv")) as f:
+    pitcher_logs = list(csv.DictReader(f))
+
 # Build per-batter stats
 batter_stats = {}
+batter_games = {}
 for row in batter_logs:
     name = row["Name"]
     if name not in batter_stats:
@@ -160,6 +178,7 @@ for row in batter_logs:
             "walks": 0, "hbp": 0, "tb": 0,
             "doubles": 0, "triples": 0,
         }
+    batter_games.setdefault(name, []).append(row)
     bs = batter_stats[name]
     bs["games"] += 1
     bs["h"] += int(row["H"])
@@ -183,6 +202,89 @@ for name, bs in batter_stats.items():
     bs["tb_per_g"] = bs["tb"] / g
     bs["slg"] = bs["tb"] / bs["ab"] if bs["ab"] > 0 else 0
     bs["ba"] = bs["h"] / bs["ab"] if bs["ab"] > 0 else 0
+
+# Sort each batter's games newest-first for L5/L10 hit-rate splits
+for name, games in batter_games.items():
+    games.sort(key=lambda r: parse_date(r.get("DATE", "")), reverse=True)
+
+
+def calc_hit_rates(values, line):
+    total = len(values)
+    if total == 0:
+        return {
+            "hit_rate_full": None,
+            "hit_rate_l10": None,
+            "hit_rate_l5": None,
+            "hits_full": "0/0",
+            "hits_l10": "0/0",
+            "hits_l5": "0/0",
+        }
+
+    over_full = sum(1 for v in values if v > line)
+    l10 = values[:10]
+    l5 = values[:5]
+    over_l10 = sum(1 for v in l10 if v > line)
+    over_l5 = sum(1 for v in l5 if v > line)
+
+    return {
+        "hit_rate_full": round((over_full / total) * 100, 1),
+        "hit_rate_l10": round((over_l10 / len(l10)) * 100, 1) if l10 else None,
+        "hit_rate_l5": round((over_l5 / len(l5)) * 100, 1) if l5 else None,
+        "hits_full": f"{over_full}/{total}",
+        "hits_l10": f"{over_l10}/{len(l10)}",
+        "hits_l5": f"{over_l5}/{len(l5)}",
+    }
+
+
+def resolve_pitcher_name(name, norm_map, parts_map):
+    if not name:
+        return None
+    norm = normalize_name(name).lower()
+    if norm in norm_map:
+        return norm_map[norm]
+    parts = name_parts(name)
+    if parts in parts_map:
+        return parts_map[parts]
+
+    # Fallback for romanization differences (e.g., Gwak/Kwak).
+    candidates = get_close_matches(norm, list(norm_map.keys()), n=1, cutoff=0.72)
+    if candidates:
+        return norm_map[candidates[0]]
+    return name
+
+
+def build_pitcher_whip_index(rows):
+    by_name = {}
+    for row in rows:
+        nm = row.get("Name", "").strip()
+        if not nm:
+            continue
+        by_name.setdefault(nm, []).append(row)
+
+    for nm in by_name:
+        by_name[nm].sort(key=lambda r: parse_date(r.get("Date", "")), reverse=True)
+
+    norm_map = {normalize_name(n).lower(): n for n in by_name}
+    parts_map = {name_parts(n): n for n in by_name}
+
+    out = {}
+    for nm, games in by_name.items():
+        # Prefer current season samples, fallback to all-time if needed.
+        season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
+        use_games = season_games if season_games else games
+        whips = []
+        for g in use_games:
+            try:
+                whips.append(float(g.get("WHIP", 0)))
+            except (TypeError, ValueError):
+                continue
+        if whips:
+            out[nm] = round(sum(whips) / len(whips), 3)
+
+    return out, norm_map, parts_map
+
+
+pitcher_whip_by_name, pitcher_norm_map, pitcher_parts_map = build_pitcher_whip_index(pitcher_logs)
 
 # Build name matching indexes
 _batter_names = set(batter_stats.keys())
@@ -289,6 +391,16 @@ def build_hrr_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
+        opp_pitcher = starter_by_team.get(opp, "")
+        resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
+        opp_pitcher_whip = pitcher_whip_by_name.get(resolved_pitcher)
+
+        recent_games = batter_games.get(resolved, [])
+        hrr_values = [
+            int(g.get("H", 0)) + int(g.get("R", 0)) + int(g.get("RBI", 0))
+            for g in recent_games
+        ]
+        hit_rates = calc_hit_rates(hrr_values, line)
 
         if not bs:
             # Keep every PP batter in output with a neutral fallback when no logs exist.
@@ -306,6 +418,9 @@ def build_hrr_projections():
                 "venue": "",
                 "home_team": game_home_team.get(team, team),
                 "games_used": 0,
+                "opp_pitcher": opp_pitcher,
+                "opp_pitcher_whip": opp_pitcher_whip,
+                **hit_rates,
             })
             continue
 
@@ -329,6 +444,9 @@ def build_hrr_projections():
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
             "ba": round(bs["ba"], 3), "games_used": bs["games"],
+            "opp_pitcher": opp_pitcher,
+            "opp_pitcher_whip": opp_pitcher_whip,
+            **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
@@ -354,6 +472,13 @@ def build_tb_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
+        opp_pitcher = starter_by_team.get(opp, "")
+        resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
+        opp_pitcher_whip = pitcher_whip_by_name.get(resolved_pitcher)
+
+        recent_games = batter_games.get(resolved, [])
+        tb_values = [int(g.get("TB", 0)) for g in recent_games]
+        hit_rates = calc_hit_rates(tb_values, line)
 
         if not bs:
             print(f"  WARNING: No data for {pp_name} — using neutral fallback")
@@ -370,6 +495,9 @@ def build_tb_projections():
                 "venue": "",
                 "home_team": game_home_team.get(team, team),
                 "games_used": 0,
+                "opp_pitcher": opp_pitcher,
+                "opp_pitcher_whip": opp_pitcher_whip,
+                **hit_rates,
             })
             continue
 
@@ -393,6 +521,9 @@ def build_tb_projections():
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
             "games_used": bs["games"],
+            "opp_pitcher": opp_pitcher,
+            "opp_pitcher_whip": opp_pitcher_whip,
+            **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
