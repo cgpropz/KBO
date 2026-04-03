@@ -1,10 +1,14 @@
 import asyncio
 import argparse
 import os
+import json
 from datetime import datetime
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import pandas as pd
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HITTER_MAP_PATH = os.path.join(BASE_DIR, "mykbostats_hitter_map.json")
 
 # --- PLAYER DATA ---
 PLAYER_NAMES = {
@@ -58,6 +62,48 @@ KOR_TEAM_MAP = {
     'SSG': 'SSG'
 }
 
+
+def normalize_team_name(team):
+    t = (team or '').strip().upper()
+    mapping = {
+        'KIA': 'Kia',
+        'LG': 'LG',
+        'NC': 'NC',
+        'SSG': 'SSG',
+        'KT': 'KT',
+        'KIWOOM': 'Kiwoom',
+        'DOOSAN': 'Doosan',
+        'HANWHA': 'Hanwha',
+        'SAMSUNG': 'Samsung',
+        'LOTTE': 'Lotte',
+    }
+    return mapping.get(t, team)
+
+
+def load_mapped_hitters():
+    if not os.path.exists(HITTER_MAP_PATH):
+        return
+    try:
+        with open(HITTER_MAP_PATH, encoding='utf-8') as f:
+            rows = json.load(f)
+    except Exception as e:
+        print(f"⚠️ Could not read hitter map {HITTER_MAP_PATH}: {e}")
+        return
+
+    added = 0
+    for row in rows:
+        kbo_id = str(row.get('kbo_player_id', '')).strip()
+        if not kbo_id.isdigit():
+            continue
+        name = (row.get('name') or '').strip()
+        team = normalize_team_name(row.get('team') or '')
+        if name:
+            PLAYER_NAMES[kbo_id] = name
+        if team:
+            PLAYER_TEAMS[kbo_id] = team
+        added += 1
+    print(f"Loaded hitter map entries with KBO IDs: {added}")
+
 def convert_date(date_str):
     month, day = date_str.split('.')
     return f"{month}/{day}/2025"
@@ -93,30 +139,66 @@ def parse_int(value):
     return int(float(value))
 
 
+async def safe_scroll(page):
+    try:
+        await page.wait_for_timeout(750)
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    except Exception:
+        # KBO dropdowns trigger postback navigations; ignore scroll races.
+        pass
+
+
+async def wait_for_postback(page):
+    try:
+        await page.wait_for_load_state("domcontentloaded", timeout=10000)
+    except Exception:
+        pass
+    await page.wait_for_timeout(1200)
+
+
+async def selector_exists(page, selector, retries=3):
+    for _ in range(retries):
+        try:
+            return await page.query_selector(selector) is not None
+        except Exception:
+            await wait_for_postback(page)
+    return False
+
+
+async def read_selector_options(page, selector, expression, retries=3):
+    for _ in range(retries):
+        try:
+            return await page.eval_on_selector_all(f"{selector} option", expression)
+        except Exception:
+            await wait_for_postback(page)
+    return []
+
+
 async def scrape_kbo_player_logs(pcode, page, season, series_label="KBO 정규시즌"):
     url = f"https://www.koreabaseball.com/Record/Player/HitterDetail/Daily.aspx?playerId={pcode}"
     await page.goto(url, wait_until="domcontentloaded")
+    await safe_scroll(page)
     await page.wait_for_selector("select[id$='ddlYear']", timeout=10000)
 
     year_selector = "select[id$='ddlYear']"
-    year_options = await page.eval_on_selector_all(
-        f"{year_selector} option",
-        "opts => opts.map(o => o.value)"
-    )
+    year_options = await read_selector_options(page, year_selector, "opts => opts.map(o => o.value)")
     if str(season) in year_options:
         await page.select_option(year_selector, str(season))
-        await page.wait_for_load_state("networkidle")
+        await wait_for_postback(page)
+        await safe_scroll(page)
 
     series_selector = "select[id$='ddlSeries']"
-    if await page.query_selector(series_selector):
-        series_options = await page.eval_on_selector_all(
-            f"{series_selector} option",
+    if await selector_exists(page, series_selector):
+        series_options = await read_selector_options(
+            page,
+            series_selector,
             "opts => opts.map(o => ({value: o.value, text: o.textContent.trim()}))"
         )
         target_series = next((o["value"] for o in series_options if series_label in o["text"]), None)
         if target_series is not None:
             await page.select_option(series_selector, target_series)
-            await page.wait_for_load_state("networkidle")
+            await wait_for_postback(page)
+            await safe_scroll(page)
 
     await page.wait_for_selector("table tbody tr", timeout=10000)
     soup = BeautifulSoup(await page.content(), 'html.parser')
@@ -179,9 +261,16 @@ async def scrape_multiple_players(player_codes, season):
         page = await context.new_page()
         for pcode in player_codes:
             print(f"Scraping {PLAYER_NAMES.get(pcode, pcode)}")
-            df = await scrape_kbo_player_logs(pcode, page, season)
-            all_data = pd.concat([all_data, df], ignore_index=True)
-            await asyncio.sleep(1.2)
+            try:
+                df = await scrape_kbo_player_logs(pcode, page, season)
+                all_data = pd.concat([all_data, df], ignore_index=True)
+            except Exception as exc:
+                print(f"⚠️ Skipping {PLAYER_NAMES.get(pcode, pcode)} ({pcode}) — {exc}")
+                try:
+                    await page.goto("about:blank")
+                except Exception:
+                    pass
+            await asyncio.sleep(1.5)
         await browser.close()
     return all_data
 
@@ -196,7 +285,8 @@ def parse_args():
 
 async def main():
     args = parse_args()
-    player_codes = list(PLAYER_NAMES.keys())
+    load_mapped_hitters()
+    player_codes = sorted({str(x) for x in PLAYER_NAMES.keys() if str(x).isdigit()})
     if args.max_players:
         player_codes = player_codes[:args.max_players]
 
@@ -205,7 +295,7 @@ async def main():
     if not df.empty:
         df = df.sort_values("DATE")
         output_name = f"KBO_daily_batting_stats_{args.season}.csv"
-        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), output_name)
+        output_path = os.path.join(BASE_DIR, output_name)
         df.to_csv(output_path, index=False)
         print(f"✅ Saved to {output_path}")
     else:

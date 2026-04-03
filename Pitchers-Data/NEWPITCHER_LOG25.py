@@ -3,8 +3,12 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
+import json
 from playwright.sync_api import sync_playwright
 from datetime import datetime
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PITCHER_MAP_PATH = os.path.join(BASE_DIR, "mykbostats_pitcher_map.json")
 
 PLAYER_NAMES = {
     "54640": "Naile James",
@@ -112,6 +116,55 @@ NAME_ALIASES = {
     "Irvin Cole": "Cole Irvin",
     
 }
+
+
+def normalize_team_name(team):
+    t = (team or '').strip().upper()
+    mapping = {
+        'KIA': 'KIA',
+        'LG': 'LG',
+        'NC': 'NC',
+        'SSG': 'SSG',
+        'KT': 'KT',
+        'KIWOOM': 'Kiwoom',
+        'DOOSAN': 'DOOSAN',
+        'HANWHA': 'HANWHA',
+        'SAMSUNG': 'SAMSUNG',
+        'LOTTE': 'LOTTE',
+    }
+    return mapping.get(t, team)
+
+
+def load_mapped_pitchers():
+    if not os.path.exists(PITCHER_MAP_PATH):
+        return
+    try:
+        with open(PITCHER_MAP_PATH, encoding='utf-8') as f:
+            rows = json.load(f)
+    except Exception as e:
+        print(f"⚠️ Could not read pitcher map {PITCHER_MAP_PATH}: {e}")
+        return
+
+    mapped_teams = {}
+    added = 0
+    for row in rows:
+        kbo_id = str(row.get('kbo_player_id', '')).strip()
+        if not kbo_id.isdigit():
+            continue
+        name = (row.get('name') or '').strip()
+        team = normalize_team_name(row.get('team') or '')
+        if name:
+            PLAYER_NAMES[kbo_id] = name
+        if team:
+            mapped_teams.setdefault(team, [])
+            if kbo_id not in mapped_teams[team]:
+                mapped_teams[team].append(kbo_id)
+        added += 1
+
+    if mapped_teams:
+        PLAYER_TEAMS.clear()
+        PLAYER_TEAMS.update(mapped_teams)
+    print(f"Loaded pitcher map entries with KBO IDs: {added}")
 
 def convert_date(date_str, default_year=None):
     if default_year is None:
@@ -311,6 +364,8 @@ def scrape_kbo_pitcher_logs(pitcher):
 
         df = pd.DataFrame(data)
         print(f"Scraped data for {pitcher['name']}:\n", df)
+        if df.empty:
+            return df
         column_order = ['Name', 'Date', 'Tm', 'Home/Away', 'Opp', 'Role', 'Dec', 'ERA', 'WHIP',
                         'IP', 'R', 'ER', 'HA', 'HR', 'SO', 'BB', 'HBP', 'PitOuts', 'Season']
         return df[column_order]
@@ -410,10 +465,11 @@ def scrape_game_logs():
         print(df)
 
 def main():
+    load_mapped_pitchers()
     pitchers = get_pitcher_list()
     print(f"🔍 Found {len(pitchers)} pitchers to scrape...")
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = BASE_DIR
     output_file = os.path.join(base_dir, '..', 'KBO_daily_pitching_stats.csv')
     pitch_data_dir_file = os.path.join(base_dir, 'KBO_daily_pitching_stats.csv')
     legacy_file = os.path.join(base_dir, 'KBO_daily_pitching_stats_2025.csv')
