@@ -36,6 +36,15 @@ def fetch_odds():
     
     print("✓ PrizePicks odds fetched")
 
+    # Regenerate pitcher projections so Pitchers page lines stay intraday-fresh.
+    print("\n▶  Regenerating pitcher projections...")
+    proj_cmd = [PYTHON, os.path.join(BASE, "generate_projections.py")]
+    proj_result = subprocess.run(proj_cmd, cwd=BASE)
+    if proj_result.returncode != 0:
+        print("✗ Failed to regenerate pitcher projections — keeping previous file")
+    else:
+        print("✓ strikeout_projections.json regenerated")
+
     # Regenerate prizepicks_props.json from the fresh odds + game logs
     print("\n▶  Regenerating props cards...")
     props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py")]
@@ -46,6 +55,31 @@ def fetch_odds():
         print("✓ prizepicks_props.json regenerated")
 
     return True
+
+
+def _publish_snapshot(client, filename, table, dry_run=False):
+    """Publish one JSON snapshot file to a Supabase table."""
+    file_path = os.path.join(PUBLIC_DATA, filename)
+
+    if not os.path.exists(file_path):
+        print(f"⚠ {filename} not found at {file_path}")
+        return False
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+
+        if dry_run:
+            print(f"🔍 [DRY RUN] Would publish {filename} → {table} ({len(json.dumps(payload))} bytes)")
+            return True
+
+        print(f"\n📡 Publishing {filename} to Supabase table '{table}'...")
+        client.table(table).upsert({"id": 1, "data": payload}).execute()
+        print(f"  ✓ {table} table updated")
+        return True
+    except Exception as exc:
+        print(f"  ✗ Failed to publish {filename} to {table}: {exc}")
+        return False
 
 
 def publish_to_supabase(skip=False, dry_run=False):
@@ -72,26 +106,17 @@ def publish_to_supabase(skip=False, dry_run=False):
         print("   Run: pip install supabase")
         return False
     
-    filename = "prizepicks_props.json"
-    file_path = os.path.join(PUBLIC_DATA, filename)
-    
-    if not os.path.exists(file_path):
-        print(f"⚠ {filename} not found at {file_path}")
-        return False
-    
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
-        
-        if dry_run:
-            print(f"🔍 [DRY RUN] Would publish {filename} ({len(json.dumps(payload))} bytes)")
-            return True
-        
-        print(f"\n📡 Publishing {filename} to Supabase...")
         client = create_client(supabase_url, service_role_key)
-        resp = client.table("prizepicks_props").upsert({"id": 1, "data": payload}).execute()
-        print(f"  ✓ prizepicks_props table updated")
-        return True
+        targets = [
+            ("prizepicks_props.json", "prizepicks_props"),
+            ("strikeout_projections.json", "strikeout_projections"),
+        ]
+
+        ok = True
+        for filename, table in targets:
+            ok = _publish_snapshot(client, filename, table, dry_run=dry_run) and ok
+        return ok
     
     except Exception as exc:
         print(f"  ✗ Failed to publish: {exc}")

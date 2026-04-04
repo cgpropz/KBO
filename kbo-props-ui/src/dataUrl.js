@@ -1,8 +1,5 @@
 import { supabase } from './supabaseClient';
 
-// Transitional fallback so existing deployments still work while Supabase tables are being populated.
-const GITHUB_RAW = 'https://raw.githubusercontent.com/cgpropz/KBO/main/kbo-props-ui/public/data/';
-
 const FILE_TO_TABLE = {
   'strikeout_projections.json': 'strikeout_projections',
   'batter_projections.json': 'batter_projections',
@@ -14,11 +11,25 @@ const FILE_TO_TABLE = {
 };
 
 const PROTECTED_FILES = new Set(Object.keys(FILE_TO_TABLE));
+const STALE_SNAPSHOT_MINUTES = 90;
+
+function parseTimestampMs(value) {
+  if (!value) return NaN;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : NaN;
+}
+
+function snapshotDataTimestampMs(payloadData) {
+  if (!payloadData || typeof payloadData !== 'object') return NaN;
+  return (
+    parseTimestampMs(payloadData.generated_at) ||
+    parseTimestampMs(payloadData.updated_at) ||
+    parseTimestampMs(payloadData.last_updated)
+  );
+}
 
 export const dataUrl = (path) =>
-  import.meta.env.DEV
-    ? `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`
-    : `${GITHUB_RAW}${path}?v=${Date.now()}`;
+  `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`;
 
 async function fetchFromSupabase(path) {
   const table = FILE_TO_TABLE[path];
@@ -40,20 +51,39 @@ async function fetchFromSupabase(path) {
 
 export async function fetchDataSnapshot(path) {
   const supabasePayload = await fetchFromSupabase(path);
-  if (supabasePayload) return supabasePayload;
-
-  // In production, protected datasets must come from Supabase.
-  if (import.meta.env.PROD && PROTECTED_FILES.has(path)) {
-    throw new Error(`Protected dataset unavailable in Supabase: ${path}`);
+  if (import.meta.env.PROD && PROTECTED_FILES.has(path) && supabasePayload) {
+    return supabasePayload;
   }
 
-  const response = await fetch(dataUrl(path));
-  if (!response.ok) throw new Error(`Failed to load ${path}`);
-  return {
-    data: await response.json(),
-    updatedAt: null,
-    source: 'static',
-  };
+  const supabaseUpdatedAtMs = parseTimestampMs(supabasePayload?.updatedAt);
+  const payloadTimestampMs = snapshotDataTimestampMs(supabasePayload?.data);
+  const freshnessTimestampMs = Number.isFinite(payloadTimestampMs)
+    ? payloadTimestampMs
+    : supabaseUpdatedAtMs;
+
+  const supabaseAgeMinutes = Number.isFinite(freshnessTimestampMs)
+    ? (Date.now() - freshnessTimestampMs) / 60000
+    : NaN;
+
+  if (supabasePayload && Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes <= STALE_SNAPSHOT_MINUTES) {
+    return supabasePayload;
+  }
+
+  try {
+    const response = await fetch(dataUrl(path));
+    if (!response.ok) throw new Error(`Failed to load ${path}`);
+    return {
+      data: await response.json(),
+      updatedAt: null,
+      source: supabasePayload ? 'static_stale_fallback' : 'static',
+    };
+  } catch (err) {
+    if (supabasePayload) return supabasePayload;
+    if (import.meta.env.PROD && PROTECTED_FILES.has(path)) {
+      throw new Error(`Protected dataset unavailable in Supabase and static fallback failed: ${path}`);
+    }
+    throw err;
+  }
 }
 
 export async function fetchData(path) {
