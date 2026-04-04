@@ -1,24 +1,20 @@
-name: Refresh Data (No Deploy)
+name: Intraday Odds Refresh
 
 on:
   schedule:
-    # Core game window: every 30 min, 6am–2pm UTC = 3pm–11pm KST
-    - cron: "0,30 6-13 * * *"
-    # Shoulder hours: every hour, midnight–6am UTC (morning/off-peak KST)
-    - cron: "0 0-5 * * *"
-    # Post-game / late: every hour, 2pm–midnight UTC
-    - cron: "0 14-23 * * *"
+    # Keep PrizePicks/props snapshots fresh throughout the day.
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: data-refresh
+  group: intraday-odds-refresh
   cancel-in-progress: true
 
 jobs:
-  refresh:
+  refresh-odds:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -33,26 +29,10 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
-          playwright install chromium --with-deps
 
-      - name: Write credentials.json
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
-        continue-on-error: true
-
-      - name: Run data refresh pipeline
-        run: python refresh.py
-        timeout-minutes: 15
-        continue-on-error: true
-
-      - name: Commit data updates
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No data changes to commit"
-          else
-            # [skip vercel] prevents Vercel's GitHub integration from triggering a rebuild
-            git commit -m "chore: auto-refresh data $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip vercel]"
-            git push
-          fi
+      - name: Refresh odds + publish Supabase snapshot
+        run: python refresh_odds.py
+        timeout-minutes: 10
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
