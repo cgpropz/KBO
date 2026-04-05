@@ -9,10 +9,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: intraday-odds-refresh
-  cancel-in-progress: false
-
 jobs:
   refresh-odds:
     runs-on: ubuntu-latest
