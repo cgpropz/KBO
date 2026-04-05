@@ -8,6 +8,7 @@ import json
 import csv
 import os
 from collections import defaultdict
+from datetime import datetime
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UI_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
@@ -357,6 +358,7 @@ def main():
         matchups.append(matchup)
 
     output = {
+        "generated_at": datetime.now().isoformat(),
         "matchups": matchups,
         "league_batting": league_batting,
         "team_pitching": team_pitching,

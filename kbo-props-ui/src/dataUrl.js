@@ -60,9 +60,10 @@ async function fetchFromSupabase(path) {
 async function fetchStaticSnapshot(path, source = 'static') {
   const response = await fetch(dataUrl(path));
   if (!response.ok) throw new Error(`Failed to load ${path}`);
+  const lastModified = response.headers.get('last-modified');
   return {
     data: await response.json(),
-    updatedAt: null,
+    updatedAt: lastModified || null,
     source,
   };
 }

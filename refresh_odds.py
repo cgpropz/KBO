@@ -36,23 +36,22 @@ def fetch_odds():
     
     print("✓ PrizePicks odds fetched")
 
-    # Regenerate pitcher projections so Pitchers page lines stay intraday-fresh.
-    print("\n▶  Regenerating pitcher projections...")
-    proj_cmd = [PYTHON, os.path.join(BASE, "generate_projections.py")]
-    proj_result = subprocess.run(proj_cmd, cwd=BASE)
-    if proj_result.returncode != 0:
-        print("✗ Failed to regenerate pitcher projections — keeping previous file")
-    else:
-        print("✓ strikeout_projections.json regenerated")
+    refresh_steps = [
+        ("pitcher projections", "generate_projections.py", "strikeout_projections.json"),
+        ("batter projections", "generate_batter_projections.py", "batter_projections.json"),
+        ("pitcher rankings", "generate_rankings.py", "pitcher_rankings.json"),
+        ("matchup deep dive", "generate_matchups.py", "matchup_data.json"),
+        ("props cards", "generate_props.py", "prizepicks_props.json"),
+    ]
 
-    # Regenerate prizepicks_props.json from the fresh odds + game logs
-    print("\n▶  Regenerating props cards...")
-    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py")]
-    props_result = subprocess.run(props_cmd, cwd=BASE)
-    if props_result.returncode != 0:
-        print("✗ Failed to regenerate props — keeping previous file")
-    else:
-        print("✓ prizepicks_props.json regenerated")
+    for label, script, artifact in refresh_steps:
+        print(f"\n▶  Regenerating {label}...")
+        step_cmd = [PYTHON, os.path.join(BASE, script)]
+        step_result = subprocess.run(step_cmd, cwd=BASE)
+        if step_result.returncode != 0:
+            print(f"✗ Failed to regenerate {label} — keeping previous file")
+        else:
+            print(f"✓ {artifact} regenerated")
 
     return True
 
@@ -114,6 +113,11 @@ def publish_to_supabase(skip=False, dry_run=False):
         targets = [
             ("prizepicks_props.json", "prizepicks_props"),
             ("strikeout_projections.json", "strikeout_projections"),
+            ("batter_projections.json", "batter_projections"),
+            ("pitcher_rankings.json", "pitcher_rankings"),
+            ("matchup_data.json", "matchup_data"),
+            ("prop_results.json", "prop_results"),
+            ("pitcher_logs.json", "pitcher_logs"),
         ]
 
         ok = True
