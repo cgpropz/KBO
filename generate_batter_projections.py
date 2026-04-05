@@ -255,11 +255,36 @@ def resolve_pitcher_name(name, norm_map, parts_map):
 
 def build_pitcher_whip_index(rows):
     by_name = {}
+    by_team = {}
+    team_aliases = {
+        "DOOSAN": "Doosan", "HANWHA": "Hanwha", "KIA": "Kia", "KT": "KT",
+        "KIWOOM": "Kiwoom", "LG": "LG", "LOTTE": "Lotte", "NC": "NC",
+        "SAMSUNG": "Samsung", "SSG": "SSG",
+    }
+
+    def normalize_team_name(raw):
+        text = str(raw or "").strip()
+        if not text:
+            return ""
+        upper = text.upper()
+        if upper in team_aliases:
+            return team_aliases[upper]
+        if text in TEAM_NAME_MAP:
+            return text
+        if text in TEAM_NAME_MAP_REV:
+            return TEAM_NAME_MAP_REV[text]
+        return text
+
     for row in rows:
         nm = row.get("Name", "").strip()
         if not nm:
             continue
         by_name.setdefault(nm, []).append(row)
+
+        team_raw = row.get("Tm") or row.get("Team") or row.get("team")
+        team = normalize_team_name(team_raw)
+        if team:
+            by_team.setdefault(team, []).append(row)
 
     for nm in by_name:
         by_name[nm].sort(key=lambda r: parse_date(r.get("Date", "")), reverse=True)
@@ -268,6 +293,7 @@ def build_pitcher_whip_index(rows):
     parts_map = {name_parts(n): n for n in by_name}
 
     out = {}
+    team_out = {}
     for nm, games in by_name.items():
         # Prefer current season samples, fallback to all-time if needed.
         season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
@@ -281,10 +307,31 @@ def build_pitcher_whip_index(rows):
         if whips:
             out[nm] = round(sum(whips) / len(whips), 3)
 
-    return out, norm_map, parts_map
+    for team, games in by_team.items():
+        season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
+        use_games = season_games if season_games else games
+        whips = []
+        for g in use_games:
+            try:
+                whips.append(float(g.get("WHIP", 0)))
+            except (TypeError, ValueError):
+                continue
+        if whips:
+            team_out[team] = round(sum(whips) / len(whips), 3)
+
+    return out, norm_map, parts_map, team_out
 
 
-pitcher_whip_by_name, pitcher_norm_map, pitcher_parts_map = build_pitcher_whip_index(pitcher_logs)
+pitcher_whip_by_name, pitcher_norm_map, pitcher_parts_map, pitcher_whip_by_team = build_pitcher_whip_index(pitcher_logs)
+
+
+def resolve_opp_pitcher_context(opp_team):
+    opp_pitcher = starter_by_team.get(opp_team, "")
+    resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
+    whip = pitcher_whip_by_name.get(resolved_pitcher)
+    if whip is None:
+        whip = pitcher_whip_by_team.get(opp_team)
+    return opp_pitcher, whip
 
 # Build name matching indexes
 _batter_names = set(batter_stats.keys())
@@ -391,9 +438,7 @@ def build_hrr_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
-        opp_pitcher = starter_by_team.get(opp, "")
-        resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
-        opp_pitcher_whip = pitcher_whip_by_name.get(resolved_pitcher)
+        opp_pitcher, opp_pitcher_whip = resolve_opp_pitcher_context(opp)
 
         recent_games = batter_games.get(resolved, [])
         hrr_values = [
@@ -472,9 +517,7 @@ def build_tb_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
-        opp_pitcher = starter_by_team.get(opp, "")
-        resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
-        opp_pitcher_whip = pitcher_whip_by_name.get(resolved_pitcher)
+        opp_pitcher, opp_pitcher_whip = resolve_opp_pitcher_context(opp)
 
         recent_games = batter_games.get(resolved, [])
         tb_values = [int(g.get("TB", 0)) for g in recent_games]

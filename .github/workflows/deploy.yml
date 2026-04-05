@@ -2,20 +2,9 @@ name: Refresh Data & Deploy to Vercel
 
 on:
   schedule:
-    # Once daily full refresh + deploy for app code and baseline data hygiene.
-    # Intraday freshness is handled by data-refresh.yml publishing odds snapshots to Supabase.
-    - cron: "0 3 * * *" # 3:00 AM UTC = 12:00 PM KST
-  push:
-    branches: [main]
-    # Don't rebuild the site just because raw data files changed.
-    # Runtime protected datasets are read from Supabase snapshots.
-    paths-ignore:
-      - "kbo-props-ui/public/data/**"
-      - "Batters-Data/**"
-      - "Pitchers-Data/**"
-      - "KBO-Odds/**"
-      - "**.csv"
-      - "game_logs_2025.csv"
+    # Once daily full refresh + deploy.
+    # GitHub schedule uses UTC; 17:00 UTC = 12:00 PM EST.
+    - cron: "0 17 * * *"
   workflow_dispatch:
 
 permissions:

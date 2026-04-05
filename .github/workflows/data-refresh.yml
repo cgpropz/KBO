@@ -3,7 +3,7 @@ name: Intraday Odds Refresh
 on:
   schedule:
     # Keep PrizePicks/props snapshots fresh throughout the day.
-    - cron: "*/10 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 permissions:

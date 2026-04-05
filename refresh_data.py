@@ -108,7 +108,10 @@ def push_snapshots_to_supabase(skip_flags):
         return []
 
     supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
-    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    service_role_key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")
+    )
 
     if not supabase_url or not service_role_key:
         print("ℹ️  Supabase env vars not set; skipping publish")
