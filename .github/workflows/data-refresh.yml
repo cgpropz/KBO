@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: intraday-odds-refresh
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh-odds:
@@ -31,7 +31,19 @@ jobs:
           pip install -r requirements.txt
 
       - name: Refresh odds + publish Supabase snapshot
-        run: python refresh_odds.py
+        run: |
+          for attempt in 1 2 3; do
+            echo "Refresh attempt ${attempt}/3"
+            if python refresh_odds.py; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Refresh failed, retrying in 20s..."
+              sleep 20
+            fi
+          done
+          echo "Refresh failed after 3 attempts"
+          exit 1
         timeout-minutes: 10
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
