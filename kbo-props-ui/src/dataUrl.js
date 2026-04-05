@@ -28,6 +28,14 @@ function snapshotDataTimestampMs(payloadData) {
   );
 }
 
+function snapshotFreshnessMs(snapshot) {
+  if (!snapshot) return NaN;
+  return (
+    snapshotDataTimestampMs(snapshot.data) ||
+    parseTimestampMs(snapshot.updatedAt)
+  );
+}
+
 export const dataUrl = (path) =>
   `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`;
 
@@ -49,41 +57,62 @@ async function fetchFromSupabase(path) {
   };
 }
 
+async function fetchStaticSnapshot(path, source = 'static') {
+  const response = await fetch(dataUrl(path));
+  if (!response.ok) throw new Error(`Failed to load ${path}`);
+  return {
+    data: await response.json(),
+    updatedAt: null,
+    source,
+  };
+}
+
 export async function fetchDataSnapshot(path) {
   const supabasePayload = await fetchFromSupabase(path);
-  if (import.meta.env.PROD && PROTECTED_FILES.has(path) && supabasePayload) {
-    return supabasePayload;
+  let staticPayload = null;
+  let staticError = null;
+
+  try {
+    staticPayload = await fetchStaticSnapshot(path, supabasePayload ? 'static_fallback' : 'static');
+  } catch (err) {
+    staticError = err;
   }
 
-  const supabaseUpdatedAtMs = parseTimestampMs(supabasePayload?.updatedAt);
-  const payloadTimestampMs = snapshotDataTimestampMs(supabasePayload?.data);
-  const freshnessTimestampMs = Number.isFinite(payloadTimestampMs)
-    ? payloadTimestampMs
-    : supabaseUpdatedAtMs;
+  const supabaseFreshnessMs = snapshotFreshnessMs(supabasePayload);
+  const staticFreshnessMs = snapshotFreshnessMs(staticPayload);
 
-  const supabaseAgeMinutes = Number.isFinite(freshnessTimestampMs)
-    ? (Date.now() - freshnessTimestampMs) / 60000
+  if (
+    supabasePayload &&
+    staticPayload &&
+    Number.isFinite(staticFreshnessMs) &&
+    (!Number.isFinite(supabaseFreshnessMs) || staticFreshnessMs > supabaseFreshnessMs)
+  ) {
+    return {
+      ...staticPayload,
+      source: 'static_fresher',
+    };
+  }
+
+  const supabaseAgeMinutes = Number.isFinite(supabaseFreshnessMs)
+    ? (Date.now() - supabaseFreshnessMs) / 60000
     : NaN;
 
   if (supabasePayload && Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes <= STALE_SNAPSHOT_MINUTES) {
     return supabasePayload;
   }
 
-  try {
-    const response = await fetch(dataUrl(path));
-    if (!response.ok) throw new Error(`Failed to load ${path}`);
+  if (staticPayload) {
     return {
-      data: await response.json(),
-      updatedAt: null,
-      source: supabasePayload ? 'static_stale_fallback' : 'static',
+      ...staticPayload,
+      source: supabasePayload ? 'static_stale_fallback' : staticPayload.source,
     };
-  } catch (err) {
-    if (supabasePayload) return supabasePayload;
-    if (import.meta.env.PROD && PROTECTED_FILES.has(path)) {
-      throw new Error(`Protected dataset unavailable in Supabase and static fallback failed: ${path}`);
-    }
-    throw err;
   }
+
+  if (supabasePayload) return supabasePayload;
+  if (import.meta.env.PROD && PROTECTED_FILES.has(path)) {
+    throw new Error(`Protected dataset unavailable in Supabase and static fallback failed: ${path}`);
+  }
+  throw staticError || new Error(`Failed to load ${path}`);
 }
 
 export async function fetchData(path) {
