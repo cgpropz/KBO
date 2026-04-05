@@ -15,6 +15,18 @@ const TEAMS = {
   SSG:     '#ff5555',
 };
 
+const HITRATE_MIN = 30;
+const HITRATE_MID = 50;
+const HITRATE_MAX = 75;
+
+const WHIP_TOUGH = 1.1;
+const WHIP_NEUTRAL = 1.3;
+const WHIP_EASY = 1.45;
+
+const SCALE_RED = { r: 239, g: 68, b: 68 };
+const SCALE_NEUTRAL = { r: 203, g: 213, b: 225 };
+const SCALE_GREEN = { r: 34, g: 197, b: 94 };
+
 function BatterProjections() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +35,7 @@ function BatterProjections() {
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
   const [hitRateFilter, setHitRateFilter] = useState('all');
+  const [playerSearch, setPlayerSearch] = useState('');
 
   useEffect(() => {
     fetchData('batter_projections.json')
@@ -70,6 +83,10 @@ function BatterProjections() {
 
   const filtered = data.projections.filter((p) => {
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
+    if (playerSearch.trim()) {
+      const query = playerSearch.trim().toLowerCase();
+      if (!String(p.name || '').toLowerCase().includes(query)) return false;
+    }
     const selectedRate = getRateByFilter(p);
     if (selectedRate == null) return true;
     return selectedRate >= 50;
@@ -90,10 +107,60 @@ function BatterProjections() {
     return 'val-push';
   };
 
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  const blendColor = (from, to, t) => ({
+    r: Math.round(lerp(from.r, to.r, t)),
+    g: Math.round(lerp(from.g, to.g, t)),
+    b: Math.round(lerp(from.b, to.b, t)),
+  });
+
+  const getHitRateStyle = (rate) => {
+    if (rate == null || Number.isNaN(rate)) return undefined;
+
+    const clamped = Math.max(HITRATE_MIN, Math.min(HITRATE_MAX, rate));
+    let rgb;
+
+    if (clamped <= HITRATE_MID) {
+      const t = (clamped - HITRATE_MIN) / (HITRATE_MID - HITRATE_MIN);
+      rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
+    } else {
+      const t = (clamped - HITRATE_MID) / (HITRATE_MAX - HITRATE_MID);
+      rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
+    }
+
+    return {
+      color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`,
+      fontWeight: 700,
+    };
+  };
+
+  const getWhipStyle = (whip) => {
+    if (whip == null || Number.isNaN(whip)) return undefined;
+
+    const clamped = Math.max(WHIP_TOUGH, Math.min(WHIP_EASY, whip));
+    let rgb;
+
+    if (clamped <= WHIP_NEUTRAL) {
+      const t = (clamped - WHIP_TOUGH) / (WHIP_NEUTRAL - WHIP_TOUGH);
+      rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
+    } else {
+      const t = (clamped - WHIP_NEUTRAL) / (WHIP_EASY - WHIP_NEUTRAL);
+      rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
+    }
+
+    return {
+      color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`,
+      fontWeight: 700,
+    };
+  };
+
   return (
     <div className="bp-container">
       <header className="bp-header">
-        <h1 className="bp-title">🇰🇷 🏏 KBO Batter Projections 🏏 🇰🇷</h1>
+        <h1 className="bp-title">🇰🇷 ⚾️ KBO Batter Projections ⚾️ 🇰🇷</h1>
         <div className="bp-filter-bar">
           {['all', 'Hits+Runs+RBIs', 'Total Bases'].map(f => (
             <button
@@ -116,6 +183,15 @@ function BatterProjections() {
             <option value="l10">Hit Rate: L10 ≥ 50%</option>
             <option value="full">Hit Rate: FULL ≥ 50%</option>
           </select>
+
+          <input
+            className="bp-player-search"
+            type="text"
+            value={playerSearch}
+            onChange={(e) => setPlayerSearch(e.target.value)}
+            placeholder="Search player..."
+            aria-label="Search player"
+          />
         </div>
       </header>
 
@@ -131,11 +207,11 @@ function BatterProjections() {
                 <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
                 <th onClick={() => handleSort('prop')}>Prop {sortIcon('prop')}</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
+                <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
                 <th onClick={() => handleSort('avg_per_g')} className="col-num">Avg/G {sortIcon('avg_per_g')}</th>
                 <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 {sortIcon('hit_rate_l5')}</th>
                 <th onClick={() => handleSort('hit_rate_l10')} className="col-num">L10 {sortIcon('hit_rate_l10')}</th>
                 <th onClick={() => handleSort('hit_rate_full')} className="col-num">FULL {sortIcon('hit_rate_full')}</th>
-                <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
                 <th onClick={() => handleSort('rating')} className="col-num">Rating {sortIcon('rating')}</th>
                 <th onClick={() => handleSort('edge')} className="col-num">Variance {sortIcon('edge')}</th>
                 <th onClick={() => handleSort('recommendation')} className="col-center">VALUE {sortIcon('recommendation')}</th>
@@ -148,27 +224,39 @@ function BatterProjections() {
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
-                  <td className={`col-num mono ${p.opp_pitcher_whip == null ? 'cell-na' : ''}`}>
-                    {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(3) : '#N/A'}
+                  <td
+                    className={`col-num mono whip-cell ${p.opp_pitcher_whip == null ? 'cell-na' : ''}`}
+                    style={getWhipStyle(p.opp_pitcher_whip)}
+                  >
+                    {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(2) : '#N/A'}
                   </td>
                   <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'TB'}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>
                   </td>
+                  <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
+                    {p.projection != null ? p.projection.toFixed(2) : '#N/A'}
+                  </td>
                   <td className={`col-num mono ${p.avg_per_g == null ? 'cell-na' : ''}`}>
                     {p.avg_per_g != null ? p.avg_per_g.toFixed(2) : '#N/A'}
                   </td>
-                  <td className={`col-num mono ${p.hit_rate_l5 == null ? 'cell-na' : ''}`}>
+                  <td
+                    className={`col-num mono hitrate-cell ${p.hit_rate_l5 == null ? 'cell-na' : ''}`}
+                    style={getHitRateStyle(p.hit_rate_l5)}
+                  >
                     {p.hit_rate_l5 != null ? `${p.hit_rate_l5.toFixed(1)}%` : '#N/A'}
                   </td>
-                  <td className={`col-num mono ${p.hit_rate_l10 == null ? 'cell-na' : ''}`}>
+                  <td
+                    className={`col-num mono hitrate-cell ${p.hit_rate_l10 == null ? 'cell-na' : ''}`}
+                    style={getHitRateStyle(p.hit_rate_l10)}
+                  >
                     {p.hit_rate_l10 != null ? `${p.hit_rate_l10.toFixed(1)}%` : '#N/A'}
                   </td>
-                  <td className={`col-num mono ${p.hit_rate_full == null ? 'cell-na' : ''}`}>
+                  <td
+                    className={`col-num mono hitrate-cell ${p.hit_rate_full == null ? 'cell-na' : ''}`}
+                    style={getHitRateStyle(p.hit_rate_full)}
+                  >
                     {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '#N/A'}
-                  </td>
-                  <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
-                    {p.projection != null ? p.projection.toFixed(2) : '#N/A'}
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 55 ? 'rate-high' : p.rating < 45 ? 'rate-low' : '') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}

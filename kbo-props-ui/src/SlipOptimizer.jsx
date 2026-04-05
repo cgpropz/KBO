@@ -24,7 +24,8 @@ function SlipOptimizer() {
       const props = [];
       (k?.projections || []).forEach(p => {
         if (p.projection != null && p.edge != null) {
-          props.push({ ...p, propShort: 'K' });
+          const propShort = p.prop === 'Strikeouts' ? 'K' : p.prop === 'Hits Allowed' ? 'HA' : p.prop === 'Pitching Outs' ? 'OUTS' : 'P';
+          props.push({ ...p, propShort });
         }
       });
       (b?.projections || []).forEach(p => {

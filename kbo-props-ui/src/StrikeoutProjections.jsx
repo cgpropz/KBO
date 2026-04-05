@@ -18,14 +18,23 @@ const TEAMS = {
 
 function StrikeoutProjections() {
   const [data, setData] = useState(null);
+  const [matchupData, setMatchupData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedProp, setSelectedProp] = useState('all');
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
 
   useEffect(() => {
-    fetchData('strikeout_projections.json')
-      .then(d => { setData(d); setLoading(false); })
+    Promise.all([
+      fetchData('strikeout_projections.json'),
+      fetchData('matchup_data.json').catch(() => null),
+    ])
+      .then(([kData, mData]) => {
+        setData(kData);
+        setMatchupData(mData);
+        setLoading(false);
+      })
       .catch(err => { setError(err.message); setLoading(false); });
   }, []);
 
@@ -60,13 +69,74 @@ function StrikeoutProjections() {
     );
   }
 
-  const projections = [...data.projections].sort((a, b) => {
+  const slatePairs = new Set(
+    (matchupData?.matchups || []).flatMap((m) => {
+      const away = m?.away;
+      const home = m?.home;
+      if (!away || !home) return [];
+      return [`${away}@@${home}`, `${home}@@${away}`];
+    })
+  );
+
+  const scoped = (data.projections || []).filter((p) => {
+    if (slatePairs.size === 0) return true;
+    return slatePairs.has(`${p.team}@@${p.opponent}`);
+  });
+
+  const filtered = scoped.filter((p) => selectedProp === 'all' || p.prop === selectedProp);
+
+  const projections = [...filtered].sort((a, b) => {
     let aVal = a[sortField], bVal = b[sortField];
     if (aVal == null) return 1;
     if (bVal == null) return -1;
     if (typeof aVal === 'string') return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
   });
+
+  const propOptions = [
+    { key: 'all', label: 'All' },
+    { key: 'Strikeouts', label: 'Strikeouts' },
+    { key: 'Hits Allowed', label: 'Hits Allowed' },
+    { key: 'Pitching Outs', label: 'Pitching Outs' },
+  ];
+
+  const contextTitle = selectedProp === 'Hits Allowed'
+    ? 'Opponent Hit Rates (H/IP)'
+    : selectedProp === 'Pitching Outs'
+      ? 'Top Projected Outs'
+      : selectedProp === 'all'
+        ? 'Pitcher Prop Mix'
+        : 'Team K Rates (SO/G)';
+
+  const contextCards = selectedProp === 'Hits Allowed'
+    ? Object.entries(data.team_h_per_ip || {})
+        .sort((a, b) => b[1] - a[1])
+        .map(([team, rate]) => ({ label: team, value: rate.toFixed(3), color: TEAMS[team] || '#999' }))
+    : selectedProp === 'Pitching Outs'
+      ? [...projections]
+          .filter((p) => p.prop === 'Pitching Outs' && p.projection != null)
+          .sort((a, b) => b.projection - a.projection)
+          .slice(0, 10)
+          .map((p) => ({ label: p.name, value: p.projection.toFixed(1), color: TEAMS[p.team] || '#999' }))
+      : selectedProp === 'all'
+        ? propOptions
+            .filter((opt) => opt.key !== 'all')
+            .map((opt) => ({
+              label: opt.label,
+              value: scoped.filter((p) => p.prop === opt.key).length,
+              color: '#fff',
+            }))
+        : Object.entries(data.team_so_per_g || {})
+            .sort((a, b) => b[1] - a[1])
+            .map(([team, rate]) => ({ label: team, value: rate.toFixed(2), color: TEAMS[team] || '#999' }));
+
+  const formulaText = selectedProp === 'Hits Allowed'
+    ? '(H/IP x IP/G) x Opp H/IP ÷ Lg Avg H/IP, adjusted by WHIP and form'
+    : selectedProp === 'Pitching Outs'
+      ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
+      : selectedProp === 'all'
+        ? 'Filter by prop type to view the active pitcher model formula'
+        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by WHIP and form';
 
   const getValClass = (rec) => {
     if (rec === 'OVER') return 'val-over';
@@ -77,9 +147,20 @@ function StrikeoutProjections() {
   };
 
   return (
-    <div className="so-container">
+    <div className="so-container so-k-page">
       <header className="so-header">
-        <h1 className="so-title">🇰🇷 ⚾ KBO Pitcher Projections Chart ⚾ 🇰🇷</h1>
+        <h1 className="so-title">🇰🇷 ⚾ KBO Pitchers ⚾ 🇰🇷</h1>
+        <div className="so-filter-bar">
+          {propOptions.map((option) => (
+            <button
+              key={option.key}
+              className={`so-filter-btn ${selectedProp === option.key ? 'active' : ''}`}
+              onClick={() => setSelectedProp(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <main className="so-main">
@@ -106,7 +187,7 @@ function StrikeoutProjections() {
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
-                  <td className="col-prop">Strikeouts</td>
+                  <td className="col-prop">{p.prop}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>
                   </td>
@@ -141,14 +222,12 @@ function StrikeoutProjections() {
           </div>
 
           <div className="so-panel so-team-rates">
-            <h3 className="so-panel-title">Team K Rates <span className="so-panel-subtitle">(SO/G)</span></h3>
+            <h3 className="so-panel-title">{contextTitle}</h3>
             <div className="so-team-grid">
-              {Object.entries(data.team_so_per_g)
-                .sort((a, b) => b[1] - a[1])
-                .map(([team, rate]) => (
-                  <div key={team} className="so-team-card">
-                    <span className="so-team-name" style={{ color: TEAMS[team] || '#999' }}>{team}</span>
-                    <span className="so-team-rate">{rate.toFixed(2)}</span>
+              {contextCards.map((item) => (
+                  <div key={`${item.label}-${item.value}`} className="so-team-card">
+                    <span className="so-team-name" style={{ color: item.color }}>{item.label}</span>
+                    <span className="so-team-rate">{item.value}</span>
                   </div>
                 ))}
             </div>
@@ -157,7 +236,7 @@ function StrikeoutProjections() {
 
         <div className="so-formula-bar">
           <span className="so-formula-icon">ƒ</span>
-          <code>(SO/IP × IP/G) × Opp K/G ÷ Lg Avg K/G</code>
+          <code>{formulaText}</code>
         </div>
       </main>
     </div>

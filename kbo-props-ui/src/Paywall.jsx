@@ -1,7 +1,7 @@
 import { useAuth } from './AuthContext';
 import './Paywall.css';
 
-const OWNER_EMAILS = ['cgpropz@gmail.com'];
+const OWNER_EMAILS = ['cgpropz@gmail.com', 'vicelocksx@gmail.com'];
 
 export default function Paywall({ children, onNavigate }) {
   const { tier, user } = useAuth();

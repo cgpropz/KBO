@@ -38,19 +38,45 @@
 .so-error { color: #ef4444; font-weight: 600; }
 
 /* ==================== HEADER ==================== */
-.so-header {
-  background: linear-gradient(135deg, #7c3aed, #a855f7, #c084fc);
+.so-k-page .so-header {
+  background: #000 !important;
   padding: 1.5rem 2rem;
   text-align: center;
+  border-bottom: 2px solid #222;
 }
 
-.so-title {
+.so-k-page .so-title {
   font-size: 2.2rem;
   font-weight: 900;
   color: #fff;
   margin: 0;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
   letter-spacing: -0.5px;
+}
+
+.so-filter-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+
+.so-filter-btn {
+  border: 1px solid #333;
+  background: #0d0d0d;
+  color: #d6d6d6;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.so-filter-btn.active {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.18);
+  color: #e9d5ff;
 }
 
 /* ==================== MAIN ==================== */

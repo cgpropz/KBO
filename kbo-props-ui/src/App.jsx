@@ -83,7 +83,7 @@ function Nav({ view, setView }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'projections', label: 'K Projections' },
+    { id: 'projections', label: 'Pitchers' },
     { id: 'props', label: 'Player Props' },
     { id: 'batters', label: 'Batters' },
     { id: 'rankings', label: 'Pitcher Rankings' },

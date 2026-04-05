@@ -15,6 +15,41 @@ const TEAMS = {
   SSG:     { color: '#ff5555', full: 'SSG Landers' },
 };
 
+const SHOWCASE_SHOTS = [
+  {
+    image: '/showcase/power-play-slip.svg',
+    eyebrow: 'Winning Receipts',
+    title: 'Show new users what a settled slip looks like',
+    quote: 'The win screen gives people immediate context on how the picks translate into real payout screens and final results.',
+    route: 'tracker',
+    cta: 'Open Prop Tracker',
+  },
+  {
+    image: '/showcase/batter-prop-card.svg',
+    eyebrow: 'Card Breakdown',
+    title: 'Let them preview the exact prop card experience',
+    quote: 'Projection, score, edge, hit rates, and recent bars all sit in one view so the sell is visual before it is verbal.',
+    route: 'props',
+    cta: 'Open Player Props',
+  },
+  {
+    image: '/showcase/hit-rate-table.svg',
+    eyebrow: 'Scan Fast',
+    title: 'Surface the sortable model board up front',
+    quote: 'A clean heat-mapped table makes it obvious that users can sort by hit rate, rating, and value in seconds.',
+    route: 'batters',
+    cta: 'Open Batter Props',
+  },
+  {
+    image: '/showcase/pitcher-board.svg',
+    eyebrow: 'Pitcher Model',
+    title: 'Preview the strikeout board before signup',
+    quote: 'The pitcher screen immediately communicates that this is a model-driven board, not a thin picks page.',
+    route: 'projections',
+    cta: 'Open Pitchers',
+  },
+];
+
 function toNum(v, fallback = null) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -70,42 +105,11 @@ function selectBestValuePick(picks, filterFn = () => true) {
   return candidates[0] || null;
 }
 
-function freshnessInfo(updatedAt, source) {
-  if (!updatedAt) {
-    return source === 'static'
-      ? { tone: 'warn', text: 'Serving fallback static data' }
-      : { tone: 'warn', text: 'Freshness unavailable' };
-  }
-
-  const ageMinutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000));
-  if (ageMinutes <= 20) return { tone: 'fresh', text: `Live data updated ${ageMinutes}m ago` };
-  if (ageMinutes <= 120) return { tone: 'ok', text: `Data updated ${ageMinutes}m ago` };
-  return { tone: 'stale', text: `Stale data: last update ${ageMinutes}m ago` };
-}
-
-function deriveFreshness(kSnap, bSnap, rSnap) {
-  const snapshots = [kSnap, bSnap, rSnap].filter(Boolean);
-  const supaTimes = snapshots
-    .map(s => s?.updatedAt)
-    .filter(Boolean)
-    .map(ts => new Date(ts).getTime())
-    .filter(Number.isFinite);
-
-  if (supaTimes.length > 0) {
-    // Use oldest timestamp as conservative freshness for combined landing metrics.
-    return freshnessInfo(new Date(Math.min(...supaTimes)).toISOString(), 'supabase');
-  }
-
-  const staticOnly = snapshots.some(s => s?.source === 'static');
-  return freshnessInfo(null, staticOnly ? 'static' : 'unknown');
-}
-
 function LandingPage({ onNavigate }) {
   const [kData, setKData] = useState(null);
   const [batterData, setBatterData] = useState(null);
   const [rankings, setRankings] = useState(null);
   const [animate, setAnimate] = useState(false);
-  const [dataStatus, setDataStatus] = useState({ tone: 'ok', text: 'Checking data freshness...' });
 
   useEffect(() => {
     Promise.all([
@@ -116,7 +120,6 @@ function LandingPage({ onNavigate }) {
       setKData(kSnap?.data || null);
       setBatterData(bSnap?.data || null);
       setRankings(rSnap?.data || null);
-      setDataStatus(deriveFreshness(kSnap, bSnap, rSnap));
     });
     setTimeout(() => setAnimate(true), 50);
   }, []);
@@ -137,7 +140,7 @@ function LandingPage({ onNavigate }) {
   // Compute stats
   const totalProps = kProjections.length + batterProjections.length;
   const overPicks = [...kProjections, ...batterProjections].filter(p => p.recommendation === 'OVER');
-  const topKPick = selectBestValuePick(kProjections);
+  const topKPick = selectBestValuePick(kProjections, p => p.prop === 'Strikeouts');
   const topBatterPick = selectBestValuePick(batterProjections, p => p.prop === 'Hits+Runs+RBIs');
   const topTBPick = selectBestValuePick(batterProjections, p => p.prop === 'Total Bases');
 
@@ -154,7 +157,6 @@ function LandingPage({ onNavigate }) {
             <span className="lp-logo-sub">PROPS</span>
           </h1>
           <p className="lp-tagline">Daily KBO PrizePicks edges built from live data</p>
-          <div className={`lp-data-status lp-data-status-${dataStatus.tone}`}>{dataStatus.text}</div>
           <div className="lp-hero-stats">
             <div className="lp-stat-pill">
               <span className="lp-stat-num">{totalProps}</span>
@@ -175,7 +177,7 @@ function LandingPage({ onNavigate }) {
           </div>
           <div className="lp-hero-actions">
             <button className="lp-cta lp-cta-primary" onClick={() => onNavigate('projections')}>
-              ⚡ K Projections
+              ⚡ Pitchers
             </button>
             <button className="lp-cta lp-cta-secondary" onClick={() => onNavigate('batters')}>
               🏏 Batter Props
@@ -243,13 +245,13 @@ function LandingPage({ onNavigate }) {
           <button className="lp-nav-card" onClick={() => onNavigate('projections')}>
             <div className="lp-nav-icon">⚡</div>
             <div className="lp-nav-info">
-              <h3>K Projections</h3>
-              <p>Pitcher strikeout projections with opponent-adjusted models</p>
+              <h3>Pitchers</h3>
+              <p>Strikeouts, hits allowed, and pitching outs projections in one board</p>
               <span className="lp-nav-count">{kProjections.length} props</span>
             </div>
           </button>
           <button className="lp-nav-card" onClick={() => onNavigate('batters')}>
-            <div className="lp-nav-icon">🏏</div>
+            <div className="lp-nav-icon">⚾️</div>
             <div className="lp-nav-info">
               <h3>Batter Props</h3>
               <p>H+R+RBI and Total Bases projections with team matchup factors</p>
@@ -292,6 +294,40 @@ function LandingPage({ onNavigate }) {
               <p>Pitcher vs pitcher, team batting, park factors &amp; all props per game</p>
             </div>
           </button>
+        </div>
+      </section>
+
+      <section className="lp-section lp-showcase-section">
+        <div className="lp-showcase-heading">
+          <div>
+            <h2 className="lp-section-title">
+              <span className="lp-section-icon">🖼️</span> See The Product Before You Buy
+            </h2>
+            <p className="lp-section-subtitle">
+              These preview panels give new users a quick read on the UI, the visual language, and how the model presents edges.
+            </p>
+          </div>
+          <button className="lp-showcase-cta" onClick={() => onNavigate('pricing')}>
+            Unlock Full Access
+          </button>
+        </div>
+
+        <div className="lp-showcase-grid">
+          {SHOWCASE_SHOTS.map((shot) => (
+            <article key={shot.title} className="lp-showcase-card">
+              <div className="lp-showcase-frame">
+                <img src={shot.image} alt={shot.title} loading="lazy" />
+              </div>
+              <div className="lp-showcase-copy">
+                <span className="lp-showcase-eyebrow">{shot.eyebrow}</span>
+                <h3>{shot.title}</h3>
+                <p>{shot.quote}</p>
+                <button className="lp-showcase-link" onClick={() => onNavigate(shot.route)}>
+                  {shot.cta}
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 

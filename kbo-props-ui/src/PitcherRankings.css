@@ -52,6 +52,38 @@
   letter-spacing: -0.5px;
 }
 
+.rk-toolbar {
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.rk-chip {
+  border: 1px solid #333;
+  background: #0f0f0f;
+  color: #cfd3ff;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rk-chip-btn {
+  cursor: pointer;
+}
+
+.rk-chip-btn.active {
+  border-color: #0c7a45;
+  background: #0b2a1a;
+  color: #7ee2b8;
+}
+
+.rk-chip-muted {
+  color: #9aa1ac;
+}
+
 /* Main */
 .rk-main {
   max-width: 1400px;
@@ -133,6 +165,7 @@
 @media (max-width: 768px) {
   .rk-header { padding: 1rem; }
   .rk-title { font-size: 1.4rem; }
+  .rk-toolbar { margin-top: 0.6rem; }
   .rk-main { padding: 0.75rem; }
   .rk-table th, .rk-table td { padding: 0.45rem 0.5rem; font-size: 0.78rem; }
 }

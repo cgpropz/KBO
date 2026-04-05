@@ -205,7 +205,7 @@
 
 .mdd-slate-bottom {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 1.4fr 1.6fr 1.6fr 0.9fr;
   gap: 0.45rem;
   padding: 0.7rem 1rem 0.9rem;
   border-top: 1px solid rgba(17, 24, 39, 0.95);
@@ -226,6 +226,35 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.mdd-market-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.mdd-market-card {
+  background: linear-gradient(180deg, #121826, #0c1120);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.mdd-market-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.3rem;
+}
+
+.mdd-market-value {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #f8fafc;
 }
 
 /* Game Header - VS display */
@@ -690,6 +719,7 @@
   .mdd-slate-team-name { font-size: 1.5rem; }
   .mdd-slate-bottom { grid-template-columns: 1fr; }
   .mdd-game-header { flex-direction: column; gap: 0.75rem; }
+  .mdd-market-strip { grid-template-columns: 1fr; }
   .mdd-pitchers { flex-direction: column; }
   .mdd-pitcher-divider { width: 100%; height: 1px; margin: 0.75rem 0; }
   .mdd-prop-row { flex-wrap: wrap; gap: 0.4rem; }

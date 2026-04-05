@@ -10,19 +10,6 @@ const TEAM_COLORS = {
   KT: '#e0e0e0', NC: '#5b9bd5', Samsung: '#60a5fa', SSG: '#ff5555',
 };
 
-function freshnessInfo(updatedAt, source) {
-  if (!updatedAt) {
-    return source === 'static'
-      ? { tone: 'warn', text: 'Serving fallback static data' }
-      : { tone: 'warn', text: 'Freshness unavailable' };
-  }
-
-  const ageMinutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000));
-  if (ageMinutes <= 20) return { tone: 'fresh', text: `Live data updated ${ageMinutes}m ago` };
-  if (ageMinutes <= 120) return { tone: 'ok', text: `Data updated ${ageMinutes}m ago` };
-  return { tone: 'stale', text: `Stale data: last update ${ageMinutes}m ago` };
-}
-
 /* ============== Main Component ============== */
 const PlayerPropsUI = () => {
   const [data, setData] = useState(null);
@@ -31,13 +18,11 @@ const PlayerPropsUI = () => {
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('hit_rate');
-  const [dataStatus, setDataStatus] = useState({ tone: 'ok', text: 'Checking data freshness...' });
 
   useEffect(() => {
     fetchDataSnapshot('prizepicks_props.json')
       .then(snapshot => {
         setData(snapshot.data);
-        setDataStatus(freshnessInfo(snapshot.updatedAt, snapshot.source));
         setLoading(false);
       })
       .catch(err => { setError(err.message); setLoading(false); });
@@ -84,7 +69,6 @@ const PlayerPropsUI = () => {
       <div className="pp-header">
         <h1 className="pp-title">Player Props</h1>
         <p className="pp-subtitle">{data.total_props} PrizePicks lines with game log hit rates</p>
-        <div className={`pp-data-status pp-data-status-${dataStatus.tone}`}>{dataStatus.text}</div>
       </div>
 
       <div className="pp-controls">

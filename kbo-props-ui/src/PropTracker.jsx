@@ -322,6 +322,8 @@ function PropTracker() {
 
   const propLabel = (prop) => {
     if (prop === 'Strikeouts') return 'K';
+    if (prop === 'Hits Allowed') return 'HA';
+    if (prop === 'Pitching Outs') return 'OUTS';
     if (prop === 'Hits+Runs+RBIs') return 'HRR';
     if (prop === 'Total Bases') return 'TB';
     return prop;

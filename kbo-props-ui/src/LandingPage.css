@@ -96,35 +96,6 @@
   font-weight: 400;
 }
 
-.lp-data-status {
-  display: inline-flex;
-  margin-bottom: 1.1rem;
-  padding: 0.28rem 0.62rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  letter-spacing: 0.22px;
-  border: 1px solid transparent;
-}
-
-.lp-data-status-fresh {
-  color: #4ade80;
-  background: rgba(34, 197, 94, 0.14);
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.lp-data-status-ok {
-  color: #93c5fd;
-  background: rgba(96, 165, 250, 0.14);
-  border-color: rgba(96, 165, 250, 0.35);
-}
-
-.lp-data-status-warn,
-.lp-data-status-stale {
-  color: #fda4af;
-  background: rgba(244, 63, 94, 0.14);
-  border-color: rgba(244, 63, 94, 0.35);
-}
-
 /* Hero Stats */
 .lp-hero-stats {
   display: flex;
@@ -460,6 +431,142 @@
   letter-spacing: 0.5px;
 }
 
+/* ── Showcase ── */
+.lp-showcase-section {
+  padding-top: 3rem;
+}
+
+.lp-showcase-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.lp-showcase-cta {
+  padding: 0.72rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  background: rgba(124, 58, 237, 0.14);
+  color: #ddd6fe;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.lp-showcase-cta:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 181, 253, 0.7);
+  background: rgba(124, 58, 237, 0.22);
+}
+
+.lp-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.lp-showcase-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 36%),
+    linear-gradient(180deg, #11111a, #09090e);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.lp-showcase-card:nth-child(2n) {
+  background:
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 34%),
+    linear-gradient(180deg, #101018, #08090d);
+}
+
+.lp-showcase-frame {
+  position: relative;
+  border-radius: 18px;
+  padding: 0.65rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  min-height: 220px;
+}
+
+.lp-showcase-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(8, 8, 12, 0.24));
+  pointer-events: none;
+}
+
+.lp-showcase-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.lp-showcase-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.lp-showcase-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #c4b5fd;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.lp-showcase-copy h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: #f8fafc;
+}
+
+.lp-showcase-copy p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #9aa4ba;
+}
+
+.lp-showcase-link {
+  padding: 0.72rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #171726;
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.lp-showcase-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(167, 139, 250, 0.4);
+  background: #1d1d31;
+}
+
 /* ── Rankings Preview ── */
 .lp-rankings-preview {
   display: flex;
@@ -542,6 +649,10 @@
   .lp-picks-grid { grid-template-columns: 1fr; }
   .lp-pick-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-nav-grid { grid-template-columns: 1fr; }
+  .lp-showcase-heading { align-items: flex-start; flex-direction: column; }
+  .lp-showcase-grid { grid-template-columns: 1fr; }
+  .lp-showcase-card { grid-template-columns: 1fr; padding: 0.85rem; }
+  .lp-showcase-frame { min-height: 180px; }
   .lp-rank-stats { gap: 0.5rem; }
   .lp-rank-stat { font-size: 0.75rem; }
   .lp-rank-name { min-width: auto; }
