@@ -14,10 +14,21 @@ import sys
 import os
 import json
 import time
+from contextlib import contextmanager
+from datetime import datetime
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-PYTHON = sys.executable
+PROJECT_PYTHON = os.path.join(BASE, "venv", "bin", "python")
+PYTHON = PROJECT_PYTHON if os.path.exists(PROJECT_PYTHON) else sys.executable
 PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
+LOCK_DIR = os.path.join(BASE, ".locks")
+PIPELINE_LOCK = os.path.join(LOCK_DIR, "refresh_pipeline.lock")
+
+
+def ensure_project_python():
+    """Re-exec with project venv Python when available to avoid package drift."""
+    if os.path.exists(PROJECT_PYTHON) and os.path.realpath(sys.executable) != os.path.realpath(PROJECT_PYTHON):
+        os.execv(PROJECT_PYTHON, [PROJECT_PYTHON, __file__, *sys.argv[1:]])
 
 
 def fetch_odds():
@@ -89,6 +100,9 @@ def publish_to_supabase(skip=False, dry_run=False):
     )
     
     if not supabase_url or not service_role_key:
+        if dry_run:
+            print("ℹ️  Supabase env vars not set; dry-run will skip publish")
+            return True
         print("ℹ️  Supabase env vars not set; skipping publish")
         print("   Set: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY")
         return False
@@ -116,7 +130,49 @@ def publish_to_supabase(skip=False, dry_run=False):
         return False
 
 
+@contextmanager
+def pipeline_lock(lock_path, stale_seconds=3 * 60 * 60):
+    """Acquire lock to keep odds refresh isolated from full data refresh writes."""
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(f"pid={os.getpid()}\n")
+                f.write(f"created_at={datetime.utcnow().isoformat()}Z\n")
+            break
+        except FileExistsError:
+            try:
+                age = time.time() - os.path.getmtime(lock_path)
+            except OSError:
+                age = None
+
+            if age is not None and age > stale_seconds:
+                print(f"⚠ Removing stale lock: {lock_path} (age={int(age)}s)")
+                try:
+                    os.remove(lock_path)
+                    continue
+                except OSError:
+                    pass
+
+            raise RuntimeError(
+                "Another refresh job is running. "
+                "Skipping odds refresh to avoid overlapping writes."
+            )
+
+    try:
+        yield
+    finally:
+        try:
+            os.remove(lock_path)
+        except OSError:
+            pass
+
+
 def main():
+    ensure_project_python()
+
     skip_flags = set(sys.argv[1:])
     skip_supabase = "--skip-supabase" in skip_flags
     dry_run = "--dry-run" in skip_flags
@@ -124,17 +180,24 @@ def main():
     if dry_run:
         print("🔍 DRY RUN MODE — no data will be written")
     
-    # Step 1: Fetch odds
-    if not fetch_odds():
-        sys.exit(1)
-    
-    # Step 2: Publish to Supabase
-    if not publish_to_supabase(skip=skip_supabase, dry_run=dry_run):
-        if not skip_supabase:
+    try:
+        lock = pipeline_lock(PIPELINE_LOCK)
+    except RuntimeError as exc:
+        print(f"⏭ {exc}")
+        sys.exit(0)
+
+    with lock:
+        # Step 1: Fetch odds
+        if not fetch_odds():
             sys.exit(1)
-    
-    print("\n" + "=" * 50)
-    print("✅ PrizePicks odds refresh complete!")
+
+        # Step 2: Publish to Supabase
+        if not publish_to_supabase(skip=skip_supabase, dry_run=dry_run):
+            if not skip_supabase:
+                sys.exit(1)
+
+        print("\n" + "=" * 50)
+        print("✅ PrizePicks odds refresh complete!")
 
 
 if __name__ == "__main__":

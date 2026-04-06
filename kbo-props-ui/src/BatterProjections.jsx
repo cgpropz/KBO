@@ -157,6 +157,28 @@ function BatterProjections() {
     };
   };
 
+  const AVG_RED  = 0.200;
+  const AVG_MID  = 0.250;
+  const AVG_GREEN = 0.350;
+
+  const getSplitAvgStyle = (avg) => {
+    if (avg == null || Number.isNaN(avg)) return undefined;
+    const clamped = Math.max(AVG_RED, Math.min(AVG_GREEN, avg));
+    let rgb;
+    if (clamped <= AVG_MID) {
+      const t = (clamped - AVG_RED) / (AVG_MID - AVG_RED);
+      rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
+    } else {
+      const t = (clamped - AVG_MID) / (AVG_GREEN - AVG_MID);
+      rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
+    }
+    return {
+      color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`,
+      fontWeight: 700,
+    };
+  };
+
   return (
     <div className="bp-container">
       <header className="bp-header">
@@ -202,8 +224,13 @@ function BatterProjections() {
               <tr>
                 <th onClick={() => handleSort('name')}>Player {sortIcon('name')}</th>
                 <th onClick={() => handleSort('team')}>Team {sortIcon('team')}</th>
+                <th onClick={() => handleSort('batter_hand')} className="col-center">Bat {sortIcon('batter_hand')}</th>
                 <th onClick={() => handleSort('opponent')}>Matchup {sortIcon('opponent')}</th>
                 <th onClick={() => handleSort('opp_pitcher')}>Opp Pitcher {sortIcon('opp_pitcher')}</th>
+                <th onClick={() => handleSort('opp_pitcher_hand')} className="col-center">Opp Hand {sortIcon('opp_pitcher_hand')}</th>
+                <th onClick={() => handleSort('vs_opp_hand_avg')} className="col-num">vs Opp {sortIcon('vs_opp_hand_avg')}</th>
+                <th onClick={() => handleSort('vs_rhp_avg')} className="col-num">vs RHP {sortIcon('vs_rhp_avg')}</th>
+                <th onClick={() => handleSort('vs_lhp_avg')} className="col-num">vs LHP {sortIcon('vs_lhp_avg')}</th>
                 <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
                 <th onClick={() => handleSort('prop')}>Prop {sortIcon('prop')}</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
@@ -222,8 +249,13 @@ function BatterProjections() {
                 <tr key={i} className="bp-row">
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
+                  <td className={`col-center mono ${!p.batter_hand || p.batter_hand === 'UNK' ? 'cell-na' : ''}`}>{p.batter_hand && p.batter_hand !== 'UNK' ? p.batter_hand : '#N/A'}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
+                  <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : '#N/A'}</td>
+                  <td className={`col-num mono ${p.vs_opp_hand_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_opp_hand_avg)}>{p.vs_opp_hand_avg != null ? Number(p.vs_opp_hand_avg).toFixed(3) : '#N/A'}</td>
+                  <td className={`col-num mono ${p.vs_rhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_rhp_avg)}>{p.vs_rhp_avg != null ? Number(p.vs_rhp_avg).toFixed(3) : '#N/A'}</td>
+                  <td className={`col-num mono ${p.vs_lhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_lhp_avg)}>{p.vs_lhp_avg != null ? Number(p.vs_lhp_avg).toFixed(3) : '#N/A'}</td>
                   <td
                     className={`col-num mono whip-cell ${p.opp_pitcher_whip == null ? 'cell-na' : ''}`}
                     style={getWhipStyle(p.opp_pitcher_whip)}

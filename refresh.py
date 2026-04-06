@@ -32,9 +32,8 @@ import sys
 import os
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-PYTHON = sys.executable
+PROJECT_PYTHON = os.path.join(BASE, "venv", "bin", "python")
+PYTHON = PROJECT_PYTHON if os.path.exists(PROJECT_PYTHON) else sys.executable
 
 
 def main():

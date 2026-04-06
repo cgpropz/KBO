@@ -2,9 +2,6 @@ import os
 import time
 import requests
 import pandas as pd
-import gspread
-from gspread_dataframe import set_with_dataframe
-from oauth2client.service_account import ServiceAccountCredentials
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -69,7 +66,7 @@ def dfs_scraper():
         for e in pplist if e['League'] == 'KBO' and '+' not in e['Name']
     ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type'])
 
-    print("Scraping complete... uploading to Google Sheets 🧠📤")
+    print("Scraping complete... saving local odds files")
     return df
 
 
@@ -96,26 +93,7 @@ def save_to_json(df):
     print(f"Data saved to KBO_odds_2025.json + .csv ({len(df)} lines) ✅")
 
 
-def update_google_sheet(df):
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
-    creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
-    client = gspread.authorize(creds)
-
-    sheet = client.open_by_url('https://docs.google.com/spreadsheets/d/10QaTjfuRoKfc6rO12YOTuoYqOU90NbaD19bhjW7lymI/edit?gid=1994454357#gid=1994454357')
-    worksheet = sheet.worksheet('PP_ODDS')  # make sure the sheet/tab is named correctly
-
-    worksheet.batch_clear(['A1:G'])
-
-    set_with_dataframe(worksheet, df)
-    print("Google Sheet updated successfully! ✅")
-
-
 if __name__ == "__main__":
     df = dfs_scraper()
     save_to_json(df)
-    creds_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
-    if os.path.exists(creds_path):
-        update_google_sheet(df)
-    else:
-        print("Skipping Google Sheets update (no credentials.json found)")
+    print("Google Sheets sync disabled")

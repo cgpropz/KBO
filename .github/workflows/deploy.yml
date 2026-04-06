@@ -3,16 +3,16 @@ name: Refresh Data & Deploy to Vercel
 on:
   schedule:
     # Once daily full refresh + deploy.
-    # GitHub schedule uses UTC; 17:00 UTC = 12:00 PM EST.
-    - cron: "0 17 * * *"
+    # GitHub schedule uses UTC; 16:00 UTC is around noon US Eastern.
+    - cron: "0 16 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: deploy
-  cancel-in-progress: true
+  group: kbo-refresh-pipeline
+  cancel-in-progress: false
 
 jobs:
   refresh-and-deploy:

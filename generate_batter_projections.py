@@ -30,8 +30,11 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 def normalize_name(name):
     """Strip accents and normalize unicode for consistent matching."""
-    nfkd = unicodedata.normalize("NFKD", name)
-    return "".join(c for c in nfkd if not unicodedata.combining(c))
+    nfkd = unicodedata.normalize("NFKD", name or "")
+    text = "".join(c for c in nfkd if not unicodedata.combining(c))
+    # Unify common punctuation variants used across data sources.
+    text = text.replace("`", "'")
+    return text
 
 
 def name_parts(name):
@@ -48,6 +51,132 @@ def parse_date(value):
         except ValueError:
             continue
     return datetime.min
+
+
+def normalize_hand(value):
+    text = str(value or "").strip().upper()
+    if text in {"R", "RH", "RHP", "RHH", "RIGHT", "RIGHT-HANDED"}:
+        return "R"
+    if text in {"L", "LH", "LHP", "LHH", "LEFT", "LEFT-HANDED"}:
+        return "L"
+    if text in {"S", "SH", "SHH", "SWITCH"}:
+        return "S"
+    return "UNK"
+
+
+def load_batter_splits_current_season(season=None):
+    target_season = int(season) if season is not None else datetime.now().year
+    candidate_paths = [
+        (target_season, os.path.join(BASE, "Batters-Data", f"KBO_vs_hand_splits_{target_season}.csv")),
+        (None, os.path.join(BASE, "Batters-Data", "KBO_vs_hand_splits.csv")),
+        (2025, os.path.join(BASE, "Batters-Data", "KBO_vs_hand_splits_2025.csv")),
+    ]
+
+    selected_path = None
+    selected_season = None
+    for candidate_season, path in candidate_paths:
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            selected_path = path
+            selected_season = candidate_season
+            break
+
+    if not selected_path:
+        print("No batter split file found; continuing without vs-hand splits.")
+        return {}
+
+    by_name = {}
+    with open(selected_path) as f:
+        for row in csv.DictReader(f):
+            nm = (row.get("Name") or "").strip()
+            if not nm:
+                continue
+
+            def to_float(v):
+                txt = str(v or "").strip()
+                if not txt:
+                    return None
+                try:
+                    return float(txt)
+                except ValueError:
+                    return None
+
+            def to_int(v):
+                txt = str(v or "").strip()
+                if not txt:
+                    return None
+                try:
+                    return int(float(txt))
+                except ValueError:
+                    return None
+
+            by_name[nm] = {
+                "vs_lhp_avg": to_float(row.get("VS LEFTY_AVG")),
+                "vs_rhp_avg": to_float(row.get("VS RIGHTY_AVG")),
+                "vs_lhp_ab": to_int(row.get("VS LEFTY_AB")),
+                "vs_rhp_ab": to_int(row.get("VS RIGHTY_AB")),
+            }
+
+    season_label = selected_season if selected_season is not None else "unknown"
+    print(f"Loaded {len(by_name)} batter split rows from season {season_label} ({os.path.basename(selected_path)}).")
+    return by_name
+
+
+def load_batter_handedness():
+    by_name = {}
+
+    # Preferred source: dedicated cache built from KBO profile pages.
+    cache_path = os.path.join(BASE, "Batters-Data", "kbo_batter_hands.csv")
+    if os.path.exists(cache_path):
+        with open(cache_path) as f:
+            for row in csv.DictReader(f):
+                nm = (row.get("Player Name") or row.get("Player") or "").strip()
+                hand = normalize_hand(row.get("Batting Hand") or row.get("Handedness"))
+                if not nm or hand == "UNK":
+                    continue
+                by_name[nm] = hand
+
+    # Fallback source if cache does not exist or is incomplete.
+    legacy_path = os.path.join(BASE, "Batters-Data", "batter_stats_split.csv")
+    if os.path.exists(legacy_path):
+        with open(legacy_path) as f:
+            for row in csv.DictReader(f):
+                nm = (row.get("Player") or "").strip()
+                hand = normalize_hand(row.get("Handedness"))
+                if not nm or hand == "UNK" or nm in by_name:
+                    continue
+                by_name[nm] = hand
+
+    return by_name
+
+
+def load_pitcher_throwing_hands():
+    path = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_throwing_hands.csv")
+    if not os.path.exists(path):
+        by_name = {}
+    else:
+        by_name = {}
+        with open(path) as f:
+            for row in csv.DictReader(f):
+                nm = (row.get("Player Name") or row.get("Player") or "").strip()
+                hand = normalize_hand(row.get("Throwing Hand"))
+                if not nm or hand == "UNK":
+                    continue
+                by_name[nm] = hand
+
+    # Alias/fallback fixes for naming differences between sources.
+    if "Unknown_55633" in by_name and "Adam Oller" not in by_name:
+        by_name["Adam Oller"] = by_name["Unknown_55633"]
+        by_name["Oller Adam"] = by_name["Unknown_55633"]
+
+    # New 2026 pitchers that can appear before full map updates.
+    by_name.setdefault("Anders Tolhurst", "R")
+    by_name.setdefault("William Tolhurst", "R")
+    by_name.setdefault("Hwang Jun Seo", "L")
+    by_name.setdefault("Seo Hwang Jun", "L")
+    by_name.setdefault("Jack O'Loughlin", "L")
+    by_name.setdefault("Jack O`Loughlin", "L")
+
+    return by_name
 
 
 # ── Step 1: Determine today's matchups from pitcher starters ──
@@ -164,6 +293,10 @@ with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.c
 
 with open(os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats_combined.csv")) as f:
     pitcher_logs = list(csv.DictReader(f))
+
+batter_split_stats = load_batter_splits_current_season(2026)
+batter_handedness = load_batter_handedness()
+pitcher_handedness = load_pitcher_throwing_hands()
 
 # Build per-batter stats
 batter_stats = {}
@@ -331,7 +464,8 @@ def resolve_opp_pitcher_context(opp_team):
     whip = pitcher_whip_by_name.get(resolved_pitcher)
     if whip is None:
         whip = pitcher_whip_by_team.get(opp_team)
-    return opp_pitcher, whip
+    opp_pitcher_hand = get_pitcher_hand(opp_pitcher, resolved_pitcher)
+    return opp_pitcher, whip, opp_pitcher_hand
 
 # Build name matching indexes
 _batter_names = set(batter_stats.keys())
@@ -340,6 +474,13 @@ _parts_to_actual = {}
 for n in _batter_names:
     _norm_to_actual[normalize_name(n).lower()] = n
     _parts_to_actual[name_parts(n)] = n
+
+_split_norm = {normalize_name(n).lower(): v for n, v in batter_split_stats.items()}
+_split_parts = {name_parts(n): v for n, v in batter_split_stats.items()}
+_hand_norm = {normalize_name(n).lower(): v for n, v in batter_handedness.items()}
+_hand_parts = {name_parts(n): v for n, v in batter_handedness.items()}
+_pitch_hand_norm = {normalize_name(n).lower(): v for n, v in pitcher_handedness.items()}
+_pitch_hand_parts = {name_parts(n): v for n, v in pitcher_handedness.items()}
 
 
 def resolve_batter_name(name):
@@ -353,6 +494,44 @@ def resolve_batter_name(name):
     if parts in _parts_to_actual:
         return _parts_to_actual[parts]
     return name
+
+
+def get_batter_split_row(pp_name, resolved_name):
+    for candidate in (resolved_name, pp_name):
+        norm = normalize_name(candidate).lower()
+        if norm in _split_norm:
+            return _split_norm[norm]
+        parts = name_parts(candidate)
+        if parts in _split_parts:
+            return _split_parts[parts]
+    return {
+        "vs_lhp_avg": None,
+        "vs_rhp_avg": None,
+        "vs_lhp_ab": None,
+        "vs_rhp_ab": None,
+    }
+
+
+def get_batter_hand(pp_name, resolved_name):
+    for candidate in (resolved_name, pp_name):
+        norm = normalize_name(candidate).lower()
+        if norm in _hand_norm:
+            return _hand_norm[norm]
+        parts = name_parts(candidate)
+        if parts in _hand_parts:
+            return _hand_parts[parts]
+    return "UNK"
+
+
+def get_pitcher_hand(raw_name, resolved_name):
+    for candidate in (resolved_name, raw_name):
+        norm = normalize_name(candidate).lower()
+        if norm in _pitch_hand_norm:
+            return _pitch_hand_norm[norm]
+        parts = name_parts(candidate)
+        if parts in _pitch_hand_parts:
+            return _pitch_hand_parts[parts]
+    return "UNK"
 
 
 # ── Step 4: Load PrizePicks lines (H+R+RBI and Total Bases) ──
@@ -438,7 +617,14 @@ def build_hrr_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
-        opp_pitcher, opp_pitcher_whip = resolve_opp_pitcher_context(opp)
+        opp_pitcher, opp_pitcher_whip, opp_pitcher_hand = resolve_opp_pitcher_context(opp)
+        split_row = get_batter_split_row(pp_name, resolved)
+        batter_hand = get_batter_hand(pp_name, resolved)
+        selected_split_avg = (
+            split_row.get("vs_lhp_avg") if opp_pitcher_hand == "L"
+            else split_row.get("vs_rhp_avg") if opp_pitcher_hand == "R"
+            else None
+        )
 
         recent_games = batter_games.get(resolved, [])
         hrr_values = [
@@ -463,8 +649,15 @@ def build_hrr_projections():
                 "venue": "",
                 "home_team": game_home_team.get(team, team),
                 "games_used": 0,
+                "batter_hand": batter_hand,
                 "opp_pitcher": opp_pitcher,
                 "opp_pitcher_whip": opp_pitcher_whip,
+                "opp_pitcher_hand": opp_pitcher_hand,
+                "vs_lhp_avg": split_row.get("vs_lhp_avg"),
+                "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+                "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+                "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+                "vs_opp_hand_avg": selected_split_avg,
                 **hit_rates,
             })
             continue
@@ -489,8 +682,15 @@ def build_hrr_projections():
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
             "ba": round(bs["ba"], 3), "games_used": bs["games"],
+            "batter_hand": batter_hand,
             "opp_pitcher": opp_pitcher,
             "opp_pitcher_whip": opp_pitcher_whip,
+            "opp_pitcher_hand": opp_pitcher_hand,
+            "vs_lhp_avg": split_row.get("vs_lhp_avg"),
+            "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+            "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+            "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+            "vs_opp_hand_avg": selected_split_avg,
             **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
@@ -517,7 +717,14 @@ def build_tb_projections():
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
         line = pp_val["line"]
-        opp_pitcher, opp_pitcher_whip = resolve_opp_pitcher_context(opp)
+        opp_pitcher, opp_pitcher_whip, opp_pitcher_hand = resolve_opp_pitcher_context(opp)
+        split_row = get_batter_split_row(pp_name, resolved)
+        batter_hand = get_batter_hand(pp_name, resolved)
+        selected_split_avg = (
+            split_row.get("vs_lhp_avg") if opp_pitcher_hand == "L"
+            else split_row.get("vs_rhp_avg") if opp_pitcher_hand == "R"
+            else None
+        )
 
         recent_games = batter_games.get(resolved, [])
         tb_values = [int(g.get("TB", 0)) for g in recent_games]
@@ -538,8 +745,15 @@ def build_tb_projections():
                 "venue": "",
                 "home_team": game_home_team.get(team, team),
                 "games_used": 0,
+                "batter_hand": batter_hand,
                 "opp_pitcher": opp_pitcher,
                 "opp_pitcher_whip": opp_pitcher_whip,
+                "opp_pitcher_hand": opp_pitcher_hand,
+                "vs_lhp_avg": split_row.get("vs_lhp_avg"),
+                "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+                "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+                "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+                "vs_opp_hand_avg": selected_split_avg,
                 **hit_rates,
             })
             continue
@@ -564,8 +778,15 @@ def build_tb_projections():
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
             "games_used": bs["games"],
+            "batter_hand": batter_hand,
             "opp_pitcher": opp_pitcher,
             "opp_pitcher_whip": opp_pitcher_whip,
+            "opp_pitcher_hand": opp_pitcher_hand,
+            "vs_lhp_avg": split_row.get("vs_lhp_avg"),
+            "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+            "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+            "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+            "vs_opp_hand_avg": selected_split_avg,
             **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")

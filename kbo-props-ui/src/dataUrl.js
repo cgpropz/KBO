@@ -98,18 +98,19 @@ export async function fetchDataSnapshot(path) {
     ? (Date.now() - supabaseFreshnessMs) / 60000
     : NaN;
 
-  if (supabasePayload && Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes <= STALE_SNAPSHOT_MINUTES) {
+  if (supabasePayload) {
+    if (Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes > STALE_SNAPSHOT_MINUTES) {
+      console.warn(
+        `[data] ${path} supabase snapshot is stale (${Math.round(supabaseAgeMinutes)}m old), using latest available source`,
+      );
+    }
     return supabasePayload;
   }
 
   if (staticPayload) {
-    return {
-      ...staticPayload,
-      source: supabasePayload ? 'static_stale_fallback' : staticPayload.source,
-    };
+    return staticPayload;
   }
 
-  if (supabasePayload) return supabasePayload;
   if (import.meta.env.PROD && PROTECTED_FILES.has(path)) {
     throw new Error(`Protected dataset unavailable in Supabase and static fallback failed: ${path}`);
   }

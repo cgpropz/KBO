@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import './PlayerPropsUI.css';
@@ -13,20 +13,42 @@ const TEAM_COLORS = {
 /* ============== Main Component ============== */
 const PlayerPropsUI = () => {
   const [data, setData] = useState(null);
+  const [photos, setPhotos] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('hit_rate');
 
-  useEffect(() => {
-    fetchDataSnapshot('prizepicks_props.json')
-      .then(snapshot => {
-        setData(snapshot.data);
+  const loadProps = useCallback((background = false) => {
+    if (!background) setLoading(true);
+    return Promise.all([
+      fetchDataSnapshot('prizepicks_props.json'),
+      fetchDataSnapshot('player_photos.json'),
+    ])
+      .then(([propsSnapshot, photoSnapshot]) => {
+        setData(propsSnapshot.data);
+        setPhotos(photoSnapshot.data || {});
+        setLastUpdated(propsSnapshot.updatedAt || new Date().toISOString());
         setLoading(false);
       })
       .catch(err => { setError(err.message); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    loadProps(false);
+    const interval = setInterval(() => loadProps(true), 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadProps]);
+
+  const photoLookup = useMemo(() => {
+    const lookup = {};
+    for (const [name, url] of Object.entries(photos || {})) {
+      lookup[normalizePlayerName(name)] = url;
+    }
+    return lookup;
+  }, [photos]);
 
   /* Flatten cards: one card per prop line */
   const propCards = useMemo(() => {
@@ -69,6 +91,9 @@ const PlayerPropsUI = () => {
       <div className="pp-header">
         <h1 className="pp-title">Player Props</h1>
         <p className="pp-subtitle">{data.total_props} PrizePicks lines with game log hit rates</p>
+        {lastUpdated && (
+          <p className="pp-updated">Updated {formatUpdatedAt(lastUpdated)}</p>
+        )}
       </div>
 
       <div className="pp-controls">
@@ -91,7 +116,11 @@ const PlayerPropsUI = () => {
 
       <div className="pp-grid">
         {propCards.map((card, i) => (
-          <PropCard key={`${card.name}-${card.prop.stat}-${card.prop.line}-${i}`} card={card} />
+          <PropCard
+            key={`${card.name}-${card.prop.stat}-${card.prop.line}-${i}`}
+            card={card}
+            photoUrl={photoLookup[normalizePlayerName(card.name)]}
+          />
         ))}
         {propCards.length === 0 && <div className="pp-empty">No props match your filters.</div>}
       </div>
@@ -100,26 +129,41 @@ const PlayerPropsUI = () => {
 };
 
 /* ============== Individual Prop Card (NBA style) ============== */
-function PropCard({ card }) {
+function PropCard({ card, photoUrl }) {
   const { prop, name, team, opponent, type, games, venue, park_factor } = card;
   const teamColor = TEAM_COLORS[team] || '#888';
   const oppColor = TEAM_COLORS[opponent] || '#888';
   const edge = (prop.avg || 0) - prop.line;
   const rec = prop.recommendation || (edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH');
   const score = prop.hit_rate_all || 0;
+  const [imageFailed, setImageFailed] = useState(false);
 
   const recentVals = prop.recent_values || [];
   const gameDates = (games || []).slice(0, recentVals.length).map(g => fmtDate(g.date));
   const chartValues = [...recentVals].reverse();
   const chartDates = [...gameDates].reverse();
 
+  useEffect(() => {
+    setImageFailed(false);
+  }, [photoUrl, name]);
+
   return (
     <div className="pc-card">
       <div className="pc-header">
         <div className="pc-player-info">
-          <div className="pc-type-badge" data-type={type}>
-            {type === 'pitcher' ? 'P' : 'B'}
-          </div>
+          {photoUrl && !imageFailed ? (
+            <img
+              className="pc-avatar"
+              src={photoUrl}
+              alt={name}
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="pc-avatar-fallback" data-type={type}>
+              <span className="pc-avatar-initials">{playerInitials(name)}</span>
+            </div>
+          )}
           <div>
             <h3 className="pc-name">{name}</h3>
             <div className="pc-meta">
@@ -241,6 +285,17 @@ function GameChart({ values, dates, line }) {
 }
 
 /* ============== Helpers ============== */
+function formatUpdatedAt(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.round(diffMin / 60);
+  return `${diffH}h ago`;
+}
+
 function hitLevel(v) {
   if (v >= 70) return 'hot';
   if (v >= 50) return 'warm';
@@ -260,6 +315,23 @@ function fmtDate(d) {
   if (!d) return '';
   if (d.includes('/')) { const [m, day] = d.split('/'); return `${m}/${day}`; }
   const p = d.split('-'); return `${p[1]}/${p[2]}`;
+}
+
+function normalizePlayerName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’`]/g, "'")
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\bse woong\b/g, 'se woong')
+    .replace(/\bseong han\b/g, 'seong han')
+    .trim();
+}
+
+function playerInitials(name) {
+  const parts = String(name || '').split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map(part => part[0]?.toUpperCase() || '').join('') || '?';
 }
 
 export default PlayerPropsUI;

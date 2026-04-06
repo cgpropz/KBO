@@ -28,10 +28,20 @@ import shutil
 import json
 import csv
 from datetime import datetime
+from contextlib import contextmanager
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-PYTHON = sys.executable  # works in both venv (local) and CI (system python)
+PROJECT_PYTHON = os.path.join(BASE, "venv", "bin", "python")
+PYTHON = PROJECT_PYTHON if os.path.exists(PROJECT_PYTHON) else sys.executable
 PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
+LOCK_DIR = os.path.join(BASE, ".locks")
+PIPELINE_LOCK = os.path.join(LOCK_DIR, "refresh_pipeline.lock")
+
+
+def ensure_project_python():
+    """Re-exec with project venv Python when available to avoid package drift."""
+    if os.path.exists(PROJECT_PYTHON) and os.path.realpath(sys.executable) != os.path.realpath(PROJECT_PYTHON):
+        os.execv(PROJECT_PYTHON, [PROJECT_PYTHON, __file__, *sys.argv[1:]])
 
 # Snapshot tables updated by this pipeline (excludes prizepicks_props which is odds-only)
 DATA_SNAPSHOTS = [
@@ -97,6 +107,46 @@ STEPS = [
         "skip_flag": "--skip-grade",
     },
 ]
+
+
+@contextmanager
+def pipeline_lock(lock_path, stale_seconds=3 * 60 * 60):
+    """Acquire an exclusive file lock so refresh jobs never overlap writes."""
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(f"pid={os.getpid()}\n")
+                f.write(f"created_at={datetime.utcnow().isoformat()}Z\n")
+            break
+        except FileExistsError:
+            try:
+                age = time.time() - os.path.getmtime(lock_path)
+            except OSError:
+                age = None
+
+            if age is not None and age > stale_seconds:
+                print(f"⚠ Removing stale lock: {lock_path} (age={int(age)}s)")
+                try:
+                    os.remove(lock_path)
+                    continue
+                except OSError:
+                    pass
+
+            raise RuntimeError(
+                "Another refresh job is running. "
+                "Wait for it to finish before starting refresh_data.py."
+            )
+
+    try:
+        yield
+    finally:
+        try:
+            os.remove(lock_path)
+        except OSError:
+            pass
 
 
 def push_snapshots_to_supabase(skip_flags):
@@ -207,49 +257,58 @@ def summarize_gamelogs():
 
 
 def main():
+    ensure_project_python()
+
     skip_flags = set(sys.argv[1:])
     failed = []
 
-    for i, step in enumerate(STEPS, 1):
-        if step["skip_flag"] and step["skip_flag"] in skip_flags:
-            print(f"\n[{i}/{len(STEPS)}] ⏭  Skipping {step['name']}")
-            continue
+    try:
+        lock = pipeline_lock(PIPELINE_LOCK)
+    except RuntimeError as exc:
+        print(f"⏭ {exc}")
+        sys.exit(0)
 
-        print(f"\n[{i}/{len(STEPS)}] ▶  {step['name']}")
-        print("=" * 50)
-        t0 = time.time()
-        result = subprocess.run(step["cmd"], cwd=BASE)
-        elapsed = time.time() - t0
+    with lock:
+        for i, step in enumerate(STEPS, 1):
+            if step["skip_flag"] and step["skip_flag"] in skip_flags:
+                print(f"\n[{i}/{len(STEPS)}] ⏭  Skipping {step['name']}")
+                continue
 
-        if result.returncode != 0:
-            print(f"✗ {step['name']} failed (exit {result.returncode}) [{elapsed:.1f}s]")
-            failed.append(step["name"])
+            print(f"\n[{i}/{len(STEPS)}] ▶  {step['name']}")
+            print("=" * 50)
+            t0 = time.time()
+            result = subprocess.run(step["cmd"], cwd=BASE)
+            elapsed = time.time() - t0
+
+            if result.returncode != 0:
+                print(f"✗ {step['name']} failed (exit {result.returncode}) [{elapsed:.1f}s]")
+                failed.append(step["name"])
+            else:
+                print(f"✓ {step['name']} done [{elapsed:.1f}s]")
+
+        # Copy data files to public/data for the UI
+        copies = [
+            (os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json"),
+             os.path.join(PUBLIC_DATA, "pitcher_logs.json")),
+        ]
+        for src, dst in copies:
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                print(f"📋 Copied {os.path.basename(src)} → public/data/")
+
+        failed.extend(summarize_gamelogs())
+
+        if failed:
+            print("\n⚠ Skipping Supabase publish because one or more pipeline steps failed")
         else:
-            print(f"✓ {step['name']} done [{elapsed:.1f}s]")
+            failed.extend(push_snapshots_to_supabase(skip_flags))
 
-    # Copy data files to public/data for the UI
-    copies = [
-        (os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json"),
-         os.path.join(PUBLIC_DATA, "pitcher_logs.json")),
-    ]
-    for src, dst in copies:
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
-            print(f"📋 Copied {os.path.basename(src)} → public/data/")
-
-    failed.extend(summarize_gamelogs())
-
-    if failed:
-        print("\n⚠ Skipping Supabase publish because one or more pipeline steps failed")
-    else:
-        failed.extend(push_snapshots_to_supabase(skip_flags))
-
-    print("\n" + "=" * 50)
-    if failed:
-        print(f"⚠  {len(failed)} step(s) failed: {', '.join(failed)}")
-        sys.exit(1)
-    else:
-        print("✅ All steps complete — data snapshots refreshed!")
+        print("\n" + "=" * 50)
+        if failed:
+            print(f"⚠  {len(failed)} step(s) failed: {', '.join(failed)}")
+            sys.exit(1)
+        else:
+            print("✅ All steps complete — data snapshots refreshed!")
 
 
 if __name__ == "__main__":

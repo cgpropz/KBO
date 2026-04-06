@@ -48,6 +48,12 @@
   margin-top: 0.25rem;
 }
 
+.pp-updated {
+  font-size: 0.75rem;
+  color: #475569;
+  margin-top: 0.2rem;
+}
+
 /* ---- Controls ---- */
 .pp-controls {
   display: flex;
@@ -153,21 +159,41 @@
   gap: 0.6rem;
 }
 
-.pc-type-badge {
-  width: 30px;
-  height: 30px;
+.pc-avatar,
+.pc-avatar-fallback {
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #fff;
   flex-shrink: 0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: linear-gradient(135deg, #172033, #0f172a);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-.pc-type-badge[data-type="pitcher"] { background: #5b7cfa; }
-.pc-type-badge[data-type="batter"]  { background: #f59e0b; }
+.pc-avatar {
+  object-fit: cover;
+}
+
+.pc-avatar-fallback {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.pc-avatar-fallback[data-type="pitcher"] {
+  background: linear-gradient(135deg, rgba(91,124,250,0.55), rgba(30,41,59,0.95));
+}
+
+.pc-avatar-fallback[data-type="batter"] {
+  background: linear-gradient(135deg, rgba(245,158,11,0.55), rgba(30,41,59,0.95));
+}
+
+.pc-avatar-initials {
+  letter-spacing: 0.04em;
+}
 
 .pc-name {
   font-size: 1.05rem;
