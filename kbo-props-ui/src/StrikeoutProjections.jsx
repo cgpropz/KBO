@@ -19,20 +19,44 @@ const TEAMS = {
 function StrikeoutProjections() {
   const [data, setData] = useState(null);
   const [matchupData, setMatchupData] = useState(null);
+  const [prizepicksData, setPrizepicksData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
 
+  const normalizeName = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const nameSignature = (value) => normalizeName(value)
+    .split(' ')
+    .filter(Boolean)
+    .sort()
+    .join(' ');
+
+  const propToPrizepicksStat = {
+    Strikeouts: 'Pitcher Strikeouts',
+    'Hits Allowed': 'Hits Allowed',
+    'Pitching Outs': 'Pitching Outs',
+  };
+
   useEffect(() => {
     Promise.all([
       fetchData('strikeout_projections.json'),
       fetchData('matchup_data.json').catch(() => null),
+      fetchData('prizepicks_props.json').catch(() => null),
     ])
-      .then(([kData, mData]) => {
+      .then(([kData, mData, ppData]) => {
         setData(kData);
         setMatchupData(mData);
+        setPrizepicksData(ppData);
         setLoading(false);
       })
       .catch(err => { setError(err.message); setLoading(false); });
@@ -83,7 +107,59 @@ function StrikeoutProjections() {
     return slatePairs.has(`${p.team}@@${p.opponent}`);
   });
 
-  const filtered = scoped.filter((p) => selectedProp === 'all' || p.prop === selectedProp);
+  const ppLineByKey = (() => {
+    const map = new Map();
+    const cards = prizepicksData?.cards || [];
+    for (const card of cards) {
+      if (card?.type !== 'pitcher') continue;
+      const team = card?.team || '';
+      const opp = card?.opponent || '';
+      const norm = normalizeName(card?.name);
+      const sig = nameSignature(card?.name);
+
+      const buckets = new Map();
+      for (const prop of card?.props || []) {
+        const stat = prop?.stat;
+        const line = Number(prop?.line);
+        if (!Number.isFinite(line)) continue;
+        if (!['Pitcher Strikeouts', 'Hits Allowed', 'Pitching Outs'].includes(stat)) continue;
+        if (!buckets.has(stat)) buckets.set(stat, []);
+        buckets.get(stat).push(line);
+      }
+
+      for (const [stat, lines] of buckets.entries()) {
+        lines.sort((a, b) => a - b);
+        const canonicalLine = lines[Math.floor(lines.length / 2)];
+        const exactKey = `${stat}@@${team}@@${opp}@@${norm}`;
+        const sigKey = `${stat}@@${team}@@${opp}@@sig:${sig}`;
+        map.set(exactKey, canonicalLine);
+        map.set(sigKey, canonicalLine);
+      }
+    }
+    return map;
+  })();
+
+  const mergedScoped = scoped.map((p) => {
+    const ppStat = propToPrizepicksStat[p.prop];
+    if (!ppStat) return p;
+    const norm = normalizeName(p.name);
+    const sig = nameSignature(p.name);
+    const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
+    const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
+    const liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey);
+    if (!Number.isFinite(liveLine)) return p;
+
+    const projection = Number(p.projection);
+    const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    return {
+      ...p,
+      line: liveLine,
+      edge: edge != null ? Number(edge.toFixed(1)) : null,
+      rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
+    };
+  });
+
+  const filtered = mergedScoped.filter((p) => selectedProp === 'all' || p.prop === selectedProp);
 
   const projections = [...filtered].sort((a, b) => {
     let aVal = a[sortField], bVal = b[sortField];
