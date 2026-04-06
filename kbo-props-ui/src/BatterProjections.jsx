@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './BatterProjections.css';
-import { fetchData } from './dataUrl';
+import { fetchDataSnapshot } from './dataUrl';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -29,6 +29,8 @@ const SCALE_GREEN = { r: 34, g: 197, b: 94 };
 
 function BatterProjections() {
   const [data, setData] = useState(null);
+  const [prizepicksData, setPrizepicksData] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('edge');
@@ -37,11 +39,45 @@ function BatterProjections() {
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [playerSearch, setPlayerSearch] = useState('');
 
-  useEffect(() => {
-    fetchData('batter_projections.json')
-      .then(d => { setData(d); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
+  const loadBatterData = useCallback((background = false) => {
+    if (!background) setLoading(true);
+    return Promise.all([
+      fetchDataSnapshot('batter_projections.json'),
+      fetchDataSnapshot('prizepicks_props.json').catch(() => null),
+    ])
+      .then(([batterSnap, ppSnap]) => {
+        setData(batterSnap?.data || null);
+        setPrizepicksData(ppSnap?.data || null);
+        setLastUpdated(batterSnap?.updatedAt || batterSnap?.data?.generated_at || new Date().toISOString());
+        setError(null);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    loadBatterData(false);
+    const interval = setInterval(() => loadBatterData(true), 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadBatterData]);
+
+  const normalizeName = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const nameSignature = (value) => normalizeName(value)
+    .split(' ')
+    .filter(Boolean)
+    .sort()
+    .join(' ');
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -81,7 +117,77 @@ function BatterProjections() {
     return null;
   };
 
-  const filtered = data.projections.filter((p) => {
+  const propToPrizepicksStat = {
+    'Hits+Runs+RBIs': 'Hits+Runs+RBIs',
+    'Total Bases': 'Total Bases',
+  };
+
+  const ppLineByKey = (() => {
+    const map = new Map();
+    const cards = prizepicksData?.cards || [];
+    for (const card of cards) {
+      if (card?.type !== 'batter') continue;
+      const team = card?.team || '';
+      const opp = card?.opponent || '';
+      const norm = normalizeName(card?.name);
+      const sig = nameSignature(card?.name);
+      const byStat = new Map();
+
+      for (const prop of card?.props || []) {
+        const stat = prop?.stat;
+        const line = Number(prop?.line);
+        if (!Number.isFinite(line)) continue;
+        if (!['Hits+Runs+RBIs', 'Total Bases'].includes(stat)) continue;
+        if (!byStat.has(stat)) byStat.set(stat, []);
+        byStat.get(stat).push(line);
+      }
+
+      for (const [stat, lines] of byStat.entries()) {
+        lines.sort((a, b) => a - b);
+        const canonicalLine = lines[Math.floor(lines.length / 2)];
+        map.set(`${stat}@@${team}@@${opp}@@${norm}`, canonicalLine);
+        map.set(`${stat}@@${team}@@${opp}@@sig:${sig}`, canonicalLine);
+      }
+    }
+    return map;
+  })();
+
+  const mergedProjections = (data?.projections || []).map((p) => {
+    const ppStat = propToPrizepicksStat[p.prop];
+    if (!ppStat) return p;
+    const team = p.team || '';
+    const opp = p.opponent || '';
+    const norm = normalizeName(p.name);
+    const sig = nameSignature(p.name);
+    const liveLine =
+      ppLineByKey.get(`${ppStat}@@${team}@@${opp}@@${norm}`)
+      ?? ppLineByKey.get(`${ppStat}@@${team}@@${opp}@@sig:${sig}`);
+
+    if (!Number.isFinite(liveLine)) return p;
+
+    const projection = Number(p.projection);
+    const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    const recommendation =
+      edge == null
+        ? 'NO LINE'
+        : edge > 0.3
+          ? 'OVER'
+          : edge < -0.3
+            ? 'UNDER'
+            : 'PUSH';
+
+    return {
+      ...p,
+      line: liveLine,
+      edge: edge != null ? Number(edge.toFixed(2)) : null,
+      rating: Number.isFinite(projection) && liveLine
+        ? Number(((projection / liveLine) * 50).toFixed(1))
+        : null,
+      recommendation,
+    };
+  });
+
+  const filtered = mergedProjections.filter((p) => {
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
     if (playerSearch.trim()) {
       const query = playerSearch.trim().toLowerCase();
@@ -183,6 +289,7 @@ function BatterProjections() {
     <div className="bp-container">
       <header className="bp-header">
         <h1 className="bp-title">🇰🇷 ⚾️ KBO Batter Projections ⚾️ 🇰🇷</h1>
+        {lastUpdated ? <p className="bp-subtitle">Updated {new Date(lastUpdated).toLocaleString()}</p> : null}
         <div className="bp-filter-bar">
           {['all', 'Hits+Runs+RBIs', 'Total Bases'].map(f => (
             <button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './LandingPage.css';
 import { fetchDataSnapshot } from './dataUrl';
 
@@ -109,23 +109,128 @@ function LandingPage({ onNavigate }) {
   const [kData, setKData] = useState(null);
   const [batterData, setBatterData] = useState(null);
   const [rankings, setRankings] = useState(null);
+  const [prizepicksData, setPrizepicksData] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [animate, setAnimate] = useState(false);
 
-  useEffect(() => {
+  const loadLandingData = useCallback((background = false) => {
     Promise.all([
       fetchDataSnapshot('strikeout_projections.json').catch(() => null),
       fetchDataSnapshot('batter_projections.json').catch(() => null),
       fetchDataSnapshot('pitcher_rankings.json').catch(() => null),
-    ]).then(([kSnap, bSnap, rSnap]) => {
+      fetchDataSnapshot('prizepicks_props.json').catch(() => null),
+    ]).then(([kSnap, bSnap, rSnap, ppSnap]) => {
       setKData(kSnap?.data || null);
       setBatterData(bSnap?.data || null);
       setRankings(rSnap?.data || null);
+      setPrizepicksData(ppSnap?.data || null);
+      if (!background) {
+        const stamp = kSnap?.updatedAt || bSnap?.updatedAt || ppSnap?.updatedAt || new Date().toISOString();
+        setLastUpdated(stamp);
+      }
     });
+  }, []);
+
+  useEffect(() => {
+    loadLandingData(false);
+    const interval = setInterval(() => loadLandingData(true), 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadLandingData]);
+
+  useEffect(() => {
     setTimeout(() => setAnimate(true), 50);
   }, []);
 
-  const kProjections = kData?.projections || [];
-  const batterProjections = batterData?.projections || [];
+  const normalizeName = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const nameSignature = (value) => normalizeName(value)
+    .split(' ')
+    .filter(Boolean)
+    .sort()
+    .join(' ');
+
+  const lineMap = (() => {
+    const map = new Map();
+    const cards = prizepicksData?.cards || [];
+    for (const card of cards) {
+      const type = card?.type;
+      const team = card?.team || '';
+      const opp = card?.opponent || '';
+      const norm = normalizeName(card?.name);
+      const sig = nameSignature(card?.name);
+      const byStat = new Map();
+      for (const prop of card?.props || []) {
+        const stat = prop?.stat;
+        const line = Number(prop?.line);
+        if (!Number.isFinite(line)) continue;
+        if (!byStat.has(stat)) byStat.set(stat, []);
+        byStat.get(stat).push(line);
+      }
+      for (const [stat, lines] of byStat.entries()) {
+        lines.sort((a, b) => a - b);
+        const canonicalLine = lines[Math.floor(lines.length / 2)];
+        map.set(`${type}@@${stat}@@${team}@@${opp}@@${norm}`, canonicalLine);
+        map.set(`${type}@@${stat}@@${team}@@${opp}@@sig:${sig}`, canonicalLine);
+      }
+    }
+    return map;
+  })();
+
+  const kProjections = (kData?.projections || []).map((p) => {
+    const statMap = {
+      Strikeouts: 'Pitcher Strikeouts',
+      'Hits Allowed': 'Hits Allowed',
+      'Pitching Outs': 'Pitching Outs',
+    };
+    const stat = statMap[p.prop];
+    if (!stat) return p;
+    const norm = normalizeName(p.name);
+    const sig = nameSignature(p.name);
+    const liveLine =
+      lineMap.get(`pitcher@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@${norm}`)
+      ?? lineMap.get(`pitcher@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@sig:${sig}`);
+    if (!Number.isFinite(liveLine)) return p;
+    const projection = Number(p.projection);
+    const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    return {
+      ...p,
+      line: liveLine,
+      edge: edge != null ? Number(edge.toFixed(2)) : null,
+      recommendation: edge == null ? 'NO LINE' : edge > 0.45 ? 'OVER' : edge < -0.45 ? 'UNDER' : 'PUSH',
+      rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
+    };
+  });
+
+  const batterProjections = (batterData?.projections || []).map((p) => {
+    const statMap = {
+      'Hits+Runs+RBIs': 'Hits+Runs+RBIs',
+      'Total Bases': 'Total Bases',
+    };
+    const stat = statMap[p.prop];
+    if (!stat) return p;
+    const norm = normalizeName(p.name);
+    const sig = nameSignature(p.name);
+    const liveLine =
+      lineMap.get(`batter@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@${norm}`)
+      ?? lineMap.get(`batter@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@sig:${sig}`);
+    if (!Number.isFinite(liveLine)) return p;
+    const projection = Number(p.projection);
+    const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    return {
+      ...p,
+      line: liveLine,
+      edge: edge != null ? Number(edge.toFixed(2)) : null,
+      recommendation: edge == null ? 'NO LINE' : edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH',
+      rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
+    };
+  });
   const topPitchers = (rankings || []).slice(0, 5);
   const todaysGames = [];
   const seenGamePairs = new Set();
@@ -157,6 +262,7 @@ function LandingPage({ onNavigate }) {
             <span className="lp-logo-sub">PROPS</span>
           </h1>
           <p className="lp-tagline">Daily KBO PrizePicks edges built from live data</p>
+          {lastUpdated ? <p className="lp-tagline">Updated {new Date(lastUpdated).toLocaleString()}</p> : null}
           <div className="lp-hero-stats">
             <div className="lp-stat-pill">
               <span className="lp-stat-num">{totalProps}</span>
