@@ -52,10 +52,14 @@ def load_projections():
     return k_proj, b_proj
 
 def normalize(name):
-    """Normalize for fuzzy matching — lowercase, strip accents/diacritics."""
+    """Normalize for fuzzy matching — lowercase, strip accents/diacritics, treat hyphens as spaces."""
     import unicodedata
     n = unicodedata.normalize("NFD", name)
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+    # Treat hyphens and underscores as spaces so "Song Seung-ki" matches "Song Seung Ki"
+    n = n.replace("-", " ").replace("_", " ")
+    # Collapse multiple spaces
+    n = " ".join(n.split())
     return n.lower().strip()
 
 def _parse_date(d):
@@ -115,10 +119,10 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
 
         if stat == "Pitcher Strikeouts":
             values = [g["so"] for g in games]
-            key = "so"
         elif stat == "Pitching Outs":
             values = [g["outs"] for g in games]
-            key = "outs"
+        elif stat in ("Hits Allowed", "Pitcher Hits Allowed"):
+            values = [g["ha"] for g in games]
         else:
             continue
 
@@ -286,14 +290,20 @@ def main():
 
     cards = []
     for player_name, props in by_player.items():
-        is_pitcher = any("Pitcher" in p["stat"] or "Pitching" in p["stat"] for p in props)
+        is_pitcher = any(
+            p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")
+            for p in props
+        )
         is_batter = any(p["stat"] in ("Hits+Runs+RBIs", "Total Bases") for p in props)
 
         nn = normalize(player_name)
 
         if is_pitcher:
             log_name = norm_pitcher.get(nn, player_name)
-            pitcher_props = [p for p in props if "Pitcher" in p["stat"] or "Pitching" in p["stat"]]
+            pitcher_props = [
+                p for p in props
+                if p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")
+            ]
             card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj)
             card["name"] = player_name  # Use PP display name
             cards.append(card)

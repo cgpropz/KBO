@@ -43,22 +43,24 @@ async function fetchFromSupabase(path) {
   const table = FILE_TO_TABLE[path];
   if (!table || !supabase) return null;
 
-  const { data, error } = await supabase
+  const { data: rows, error } = await supabase
     .from(table)
     .select('data, updated_at')
     .eq('id', 1)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
+  if (error || !Array.isArray(rows) || rows.length === 0) return null;
+  const row = rows[0];
+
   return {
-    data: data.data,
-    updatedAt: data.updated_at || null,
+    data: row.data,
+    updatedAt: row.updated_at || null,
     source: 'supabase',
   };
 }
 
 async function fetchStaticSnapshot(path, source = 'static') {
-  const response = await fetch(dataUrl(path));
+  const response = await fetch(dataUrl(path), { cache: 'no-store' });
   if (!response.ok) throw new Error(`Failed to load ${path}`);
   const lastModified = response.headers.get('last-modified');
   return {
@@ -98,10 +100,25 @@ export async function fetchDataSnapshot(path) {
     ? (Date.now() - supabaseFreshnessMs) / 60000
     : NaN;
 
+  if (
+    supabasePayload &&
+    staticPayload &&
+    Number.isFinite(supabaseAgeMinutes) &&
+    supabaseAgeMinutes > STALE_SNAPSHOT_MINUTES
+  ) {
+    console.warn(
+      `[data] ${path} supabase snapshot is stale (${Math.round(supabaseAgeMinutes)}m old), using static fallback`,
+    );
+    return {
+      ...staticPayload,
+      source: 'static_due_to_stale_supabase',
+    };
+  }
+
   if (supabasePayload) {
     if (Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes > STALE_SNAPSHOT_MINUTES) {
       console.warn(
-        `[data] ${path} supabase snapshot is stale (${Math.round(supabaseAgeMinutes)}m old), using latest available source`,
+        `[data] ${path} supabase snapshot is stale (${Math.round(supabaseAgeMinutes)}m old), static fallback unavailable`,
       );
     }
     return supabasePayload;

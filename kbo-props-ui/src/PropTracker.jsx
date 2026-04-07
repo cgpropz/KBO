@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './PropTracker.css';
-import { fetchData } from './dataUrl';
+import { fetchDataSnapshot } from './dataUrl';
 
 const TEAMS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -55,12 +55,15 @@ function PropTracker() {
   const [grading, setGrading] = useState(false);
   const [gradeMsg, setGradeMsg] = useState('');
 
-  useEffect(() => {
+  const loadTrackerData = useCallback(() => {
     Promise.all([
-      fetchData('strikeout_projections.json').catch(() => null),
-      fetchData('batter_projections.json').catch(() => null),
-      fetchData('prop_results.json').catch(() => null),
-    ]).then(([k, b, results]) => {
+      fetchDataSnapshot('strikeout_projections.json').catch(() => null),
+      fetchDataSnapshot('batter_projections.json').catch(() => null),
+      fetchDataSnapshot('prop_results.json').catch(() => null),
+    ]).then(([kSnap, bSnap, resultsSnap]) => {
+      const k = kSnap?.data;
+      const b = bSnap?.data;
+      const results = resultsSnap?.data;
       const all = [
         ...(k?.projections || []).map(p => ({ ...p, source: 'K' })),
         ...(b?.projections || []).map(p => ({ ...p, source: 'Batter' })),
@@ -69,6 +72,12 @@ function PropTracker() {
       if (results?.stats) setGradeResults(results);
     });
   }, []);
+
+  useEffect(() => {
+    loadTrackerData();
+    const interval = setInterval(loadTrackerData, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadTrackerData]);
 
   const persist = useCallback((next) => {
     setTracked(next);

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './PitcherRankings.css';
-import { fetchData } from './dataUrl';
+import { fetchDataSnapshot } from './dataUrl';
 
 const TEAMS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -16,6 +16,7 @@ function PitcherRankings() {
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('rk');
   const [sortDir, setSortDir] = useState('asc');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const normalizeName = (value) => String(value || '')
     .normalize('NFD')
@@ -32,18 +33,36 @@ function PitcherRankings() {
     .sort()
     .join(' ');
 
-  useEffect(() => {
+  const loadRankings = useCallback((background = false) => {
+    if (!background) setLoading(true);
     Promise.all([
-      fetchData('pitcher_rankings.json'),
-      fetchData('strikeout_projections.json').catch(() => null),
+      fetchDataSnapshot('pitcher_rankings.json'),
+      fetchDataSnapshot('strikeout_projections.json').catch(() => null),
     ])
-      .then(([rankings, kData]) => {
-        setData(rankings);
-        setPpProjections((kData?.projections || []).filter((p) => p?.line != null));
+      .then(([rankingsSnap, kSnap]) => {
+        setData(rankingsSnap?.data || []);
+        setPpProjections((kSnap?.data?.projections || []).filter((p) => p?.line != null));
+        setLastUpdated(
+          kSnap?.updatedAt
+          || rankingsSnap?.updatedAt
+          || kSnap?.data?.generated_at
+          || rankingsSnap?.data?.generated_at
+          || new Date().toISOString(),
+        );
+        setError(null);
         setLoading(false);
       })
-      .catch(err => { setError(err.message); setLoading(false); });
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    loadRankings(false);
+    const interval = setInterval(() => loadRankings(true), 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadRankings]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -178,6 +197,7 @@ function PitcherRankings() {
     <div className="rk-container">
       <header className="rk-header">
         <h1 className="rk-title">KBO Pitcher Rankings</h1>
+        {lastUpdated ? <p className="rk-updated">Updated {new Date(lastUpdated).toLocaleString()}</p> : null}
         <div className="rk-toolbar">
           <span className="rk-chip">Season 2026</span>
           <button

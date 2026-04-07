@@ -21,6 +21,21 @@ const assetUrl = (path) => `${import.meta.env.BASE_URL}${String(path || '').repl
 
 const matchupKey = (away, home) => `${String(away || '').toLowerCase()}::${String(home || '').toLowerCase()}`;
 
+const normalizeName = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[’'`]/g, '')
+  .replace(/-/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .toLowerCase();
+
+const nameSignature = (value) => normalizeName(value)
+  .split(' ')
+  .filter(Boolean)
+  .sort()
+  .join(' ');
+
 const formatMoneyline = (value) => {
   if (value == null) return 'TBD';
   return value > 0 ? `+${value}` : String(value);
@@ -47,6 +62,139 @@ function attachMarkets(matchupData, linesData) {
       ...game,
       market: lineMap.get(matchupKey(game.away, game.home)) || null,
     })),
+  };
+}
+
+function mergeLivePrizePicks(matchupData, prizepicksData) {
+  const cards = prizepicksData?.cards || [];
+  if (!cards.length) return matchupData;
+
+  const statAlias = {
+    Strikeouts: ['Pitcher Strikeouts'],
+    'Pitching Outs': ['Pitching Outs'],
+    'Hits Allowed': ['Hits Allowed', 'Pitcher Hits Allowed'],
+    'Hits+Runs+RBIs': ['Hits+Runs+RBIs'],
+    'Total Bases': ['Total Bases'],
+  };
+
+  const thresholds = {
+    Strikeouts: 0.45,
+    'Pitching Outs': 1.0,
+    'Hits Allowed': 0.35,
+    'Hits+Runs+RBIs': 0.3,
+    'Total Bases': 0.3,
+  };
+
+  const lineMap = new Map();
+  const teamOppBuckets = new Map();
+
+  for (const card of cards) {
+    const team = card?.team || '';
+    const opp = card?.opponent || '';
+    const norm = normalizeName(card?.name);
+    const sig = nameSignature(card?.name);
+
+    const byStat = new Map();
+    for (const prop of card?.props || []) {
+      const stat = prop?.stat;
+      const line = Number(prop?.line);
+      if (!Number.isFinite(line)) continue;
+      if (!byStat.has(stat)) byStat.set(stat, []);
+      byStat.get(stat).push(line);
+    }
+
+    for (const [stat, lines] of byStat.entries()) {
+      lines.sort((a, b) => a - b);
+      const canonicalLine = lines[Math.floor(lines.length / 2)];
+      const exact = `${stat}@@${team}@@${opp}@@${norm}`;
+      const sigKey = `${stat}@@${team}@@${opp}@@sig:${sig}`;
+      const teamOpp = `${stat}@@${team}@@${opp}@@teamOpp`;
+      lineMap.set(exact, canonicalLine);
+      lineMap.set(sigKey, canonicalLine);
+      if (!teamOppBuckets.has(teamOpp)) teamOppBuckets.set(teamOpp, []);
+      teamOppBuckets.get(teamOpp).push(canonicalLine);
+    }
+  }
+
+  for (const [key, values] of teamOppBuckets.entries()) {
+    const unique = [...new Set(values)];
+    if (unique.length === 1) lineMap.set(key, unique[0]);
+  }
+
+  const getLine = ({ statNames, team, opponent, name }) => {
+    const norm = normalizeName(name);
+    const sig = nameSignature(name);
+    for (const stat of statNames) {
+      const exact = `${stat}@@${team}@@${opponent}@@${norm}`;
+      const sigKey = `${stat}@@${team}@@${opponent}@@sig:${sig}`;
+      const teamOpp = `${stat}@@${team}@@${opponent}@@teamOpp`;
+      const line = lineMap.get(exact) ?? lineMap.get(sigKey) ?? lineMap.get(teamOpp);
+      if (Number.isFinite(line)) return line;
+    }
+    return null;
+  };
+
+  return {
+    ...matchupData,
+    matchups: (matchupData?.matchups || []).map((game) => {
+      const awayPitcherName = game?.away_pitcher?.name;
+      const homePitcherName = game?.home_pitcher?.name;
+      const awayKLine = awayPitcherName
+        ? getLine({ statNames: ['Pitcher Strikeouts'], team: game.away, opponent: game.home, name: awayPitcherName })
+        : null;
+      const homeKLine = homePitcherName
+        ? getLine({ statNames: ['Pitcher Strikeouts'], team: game.home, opponent: game.away, name: homePitcherName })
+        : null;
+
+      const mergedProps = (game?.props || []).map((prop) => {
+        const mappedStats = statAlias[prop?.prop] || [];
+        if (!mappedStats.length) return prop;
+
+        const propTeam = prop?.team || '';
+        const inferredOpponent = prop?.opponent
+          || (propTeam && game?.away === propTeam ? game?.home : null)
+          || (propTeam && game?.home === propTeam ? game?.away : null)
+          || '';
+
+        const liveLine = getLine({
+          statNames: mappedStats,
+          team: propTeam,
+          opponent: inferredOpponent,
+          name: prop?.name || '',
+        });
+
+        if (!Number.isFinite(liveLine)) return prop;
+
+        const projection = Number(prop?.projection);
+        const edge = Number.isFinite(projection) ? projection - liveLine : null;
+        const threshold = thresholds[prop?.prop] ?? 0.3;
+        const recommendation = edge == null
+          ? prop?.recommendation || 'NO LINE'
+          : edge > threshold
+            ? 'OVER'
+            : edge < -threshold
+              ? 'UNDER'
+              : 'PUSH';
+
+        return {
+          ...prop,
+          line: liveLine,
+          edge: edge != null ? Number(edge.toFixed(2)) : prop?.edge,
+          recommendation,
+        };
+      });
+
+      return {
+        ...game,
+        away_pitcher: game?.away_pitcher
+          ? { ...game.away_pitcher, line: Number.isFinite(awayKLine) ? awayKLine : game.away_pitcher.line }
+          : game.away_pitcher,
+        home_pitcher: game?.home_pitcher
+          ? { ...game.home_pitcher, line: Number.isFinite(homeKLine) ? homeKLine : game.home_pitcher.line }
+          : game.home_pitcher,
+        props: mergedProps,
+      };
+    }),
   };
 }
 
@@ -92,11 +240,20 @@ function MatchupDeepDive() {
     return Promise.all([
       fetchDataSnapshot('matchup_data.json'),
       fetchDataSnapshot('game_lines.json').catch(() => ({ data: { games: [] }, updatedAt: null })),
+      fetchDataSnapshot('prizepicks_props.json').catch(() => ({ data: { cards: [] }, updatedAt: null })),
     ])
-      .then(([matchupSnap, linesSnap]) => {
-        const merged = attachMarkets(matchupSnap?.data || {}, linesSnap?.data || { games: [] });
+      .then(([matchupSnap, linesSnap, ppSnap]) => {
+        const withMarkets = attachMarkets(matchupSnap?.data || {}, linesSnap?.data || { games: [] });
+        const merged = mergeLivePrizePicks(withMarkets, ppSnap?.data || { cards: [] });
         setData(merged);
-        setRefreshedAt(matchupSnap?.updatedAt || matchupSnap?.data?.generated_at || new Date().toISOString());
+        setRefreshedAt(
+          ppSnap?.updatedAt
+          || linesSnap?.updatedAt
+          || matchupSnap?.updatedAt
+          || ppSnap?.data?.generated_at
+          || matchupSnap?.data?.generated_at
+          || new Date().toISOString(),
+        );
         setError(null);
         setLoading(false);
       })

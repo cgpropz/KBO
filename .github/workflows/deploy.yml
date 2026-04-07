@@ -36,8 +36,9 @@ jobs:
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         continue-on-error: true
 
-      - name: Run refresh pipeline
-        run: python refresh_data.py
+      - name: Run ordered release steps (data + build, no deploy)
+        run: |
+          bash pipeline/run_release.sh --skip-deploy
         timeout-minutes: 45
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
@@ -59,27 +60,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: kbo-props-ui/package-lock.json
-
-      - name: Install Node dependencies
-        run: npm ci
-        working-directory: kbo-props-ui
-
-      - name: Build site
-        run: npm run build
-        working-directory: kbo-props-ui
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to Vercel
         run: |
           npm i -g vercel
-          cd kbo-props-ui
-          vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-          vercel build --prod --token "$VERCEL_TOKEN"
-          vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+          bash pipeline/run_release.sh --skip-odds --skip-full-refresh --skip-build
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

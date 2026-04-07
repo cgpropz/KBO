@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/reconcile-subscriptions",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/data/(.*)",

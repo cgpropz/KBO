@@ -1,0 +1,55 @@
+{
+  "version": 3,
+  "routes": [
+    {
+      "src": "^/data(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache"
+      },
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/api(?:/(.*))$",
+      "dest": "/api/$1",
+      "check": true
+    },
+    {
+      "src": "^(?:/((?!api/).*))$",
+      "dest": "/index.html",
+      "check": true
+    },
+    {
+      "src": "^/api(/.*)?$",
+      "status": 404
+    },
+    {
+      "handle": "error"
+    },
+    {
+      "status": 404,
+      "src": "^(?!/api).*$",
+      "dest": "/404.html"
+    },
+    {
+      "handle": "miss"
+    },
+    {
+      "src": "^/api/(.+)(?:\\.(?:js))$",
+      "dest": "/api/$1",
+      "check": true
+    }
+  ],
+  "framework": {
+    "version": "7.3.1"
+  },
+  "crons": [
+    {
+      "path": "/api/reconcile-subscriptions",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

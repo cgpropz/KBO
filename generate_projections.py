@@ -10,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+PITCHER_HAND_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_handedness_map.json")
+PP_PITCHER_NAME_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "prizepicks_pitcher_name_map.json")
 
 
 def normalize_name(name):
@@ -37,6 +39,273 @@ def safe_float(v, default=None):
         return float(v)
     except Exception:
         return default
+
+
+def load_json_file(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def write_json_file(path, payload):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+
+def normalize_hand(value):
+    text = str(value or "").strip().upper()
+    if text in {"R", "RH", "RHP", "RHH", "RIGHT", "RIGHT-HANDED"}:
+        return "R"
+    if text in {"L", "LH", "LHP", "LHH", "LEFT", "LEFT-HANDED"}:
+        return "L"
+    if text in {"S", "SH", "SHH", "SWITCH"}:
+        return "S"
+    return "UNK"
+
+
+def load_pitcher_hands_index():
+    path = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_throwing_hands.csv")
+    by_name = {}
+    by_name_norm = {}
+    by_name_parts = {}
+    by_pcode = {}
+    if not os.path.exists(path):
+        return by_name, by_name_norm, by_name_parts, by_pcode
+
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            name = str(row.get("Player Name") or row.get("Player") or "").strip()
+            hand = normalize_hand(row.get("Throwing Hand"))
+            pcode = str(row.get("pcode") or "").strip()
+            if not name:
+                continue
+
+            by_name[name] = hand
+            by_name_norm[normalize_name(name).lower()] = (name, hand)
+            by_name_parts[name_parts(name)] = (name, hand)
+            if pcode:
+                by_pcode[pcode] = (name, hand)
+
+    return by_name, by_name_norm, by_name_parts, by_pcode
+
+
+def resolve_pitcher_alias(name, names, norm_map, parts_map):
+    nm = str(name or "").strip()
+    if not nm:
+        return None
+    if nm in names:
+        return nm
+    norm = normalize_name(nm).lower()
+    if norm in norm_map:
+        return norm_map[norm]
+    parts = name_parts(nm)
+    if parts in parts_map:
+        return parts_map[parts]
+    return None
+
+
+def build_pp_pitcher_entries(pp_maps):
+    entries = {}
+    for odds_by_name, _, _ in pp_maps:
+        for _, entry in odds_by_name.items():
+            pp_name = str(entry.get("pp_name") or "").strip()
+            if not pp_name:
+                continue
+            team = str(entry.get("team") or "").strip()
+            opp = str(entry.get("versus") or "").strip()
+            key = (pp_name, team, opp)
+            entries[key] = {
+                "pp_name": pp_name,
+                "team": team,
+                "opponent": opp,
+            }
+    return list(entries.values())
+
+
+def update_persistent_pitcher_maps(pp_maps, starters, games_by_name):
+    hands_by_name, hand_norm_idx, hand_parts_idx, hand_by_pcode = load_pitcher_hands_index()
+    game_names = set(games_by_name.keys())
+    game_norm_idx = {normalize_name(n).lower(): n for n in game_names}
+    game_parts_idx = {name_parts(n): n for n in game_names}
+
+    pp_entries = build_pp_pitcher_entries(pp_maps)
+    starter_by_team_opp = {
+        (str(s.get("team") or "").strip(), str(s.get("opponent") or "").strip()): s
+        for s in starters
+        if str(s.get("team") or "").strip() and str(s.get("opponent") or "").strip()
+    }
+
+    now = datetime.now().isoformat()
+    hand_payload = load_json_file(PITCHER_HAND_MAP_PATH, {})
+    hand_players = hand_payload.get("players", {}) if isinstance(hand_payload, dict) else {}
+    if not isinstance(hand_players, dict):
+        hand_players = {}
+
+    pp_payload = load_json_file(PP_PITCHER_NAME_MAP_PATH, {})
+    pp_map = pp_payload.get("map", {}) if isinstance(pp_payload, dict) else {}
+    if not isinstance(pp_map, dict):
+        pp_map = {}
+
+    updated_aliases = 0
+    unresolved_aliases = 0
+
+    # Seed canonical players from throwing-hand source and recent game logs.
+    all_seed_names = set(hands_by_name.keys()) | set(game_names) | set(hand_players.keys())
+    for seed_name in sorted(all_seed_names):
+        existing = hand_players.get(seed_name, {}) if isinstance(hand_players.get(seed_name), dict) else {}
+        discovered_hand = normalize_hand(hands_by_name.get(seed_name) or existing.get("hand"))
+        aliases = sorted(set((existing.get("aliases") or []) + [seed_name]))
+        sources = set(existing.get("sources") or [])
+        if seed_name in hands_by_name:
+            sources.add("kbo_pitcher_throwing_hands.csv")
+        if seed_name in game_names:
+            sources.add("pitcher_logs")
+
+        hand_players[seed_name] = {
+            "hand": discovered_hand,
+            "aliases": aliases,
+            "sources": sorted(sources),
+            "last_seen": now,
+        }
+
+    for item in pp_entries:
+        pp_name = item["pp_name"]
+        team = item["team"]
+        opp = item["opponent"]
+        prev_target = str(pp_map.get(pp_name) or "").strip()
+
+        target = resolve_pitcher_alias(pp_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
+        if not target:
+            target = resolve_pitcher_alias(pp_name, game_names, game_norm_idx, game_parts_idx)
+
+        starter = starter_by_team_opp.get((team, opp))
+        starter_name = str(starter.get("name") or "").strip() if starter else ""
+        starter_pcode = str(starter.get("pcode") or "").strip() if starter else ""
+
+        if not target and starter_name:
+            target = resolve_pitcher_alias(starter_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
+        if not target and starter_name:
+            target = resolve_pitcher_alias(starter_name, game_names, game_norm_idx, game_parts_idx)
+        if not target and starter_pcode and starter_pcode in hand_by_pcode:
+            target = hand_by_pcode[starter_pcode][0]
+
+        # Keep existing manual override if it still points to a known pitcher.
+        if prev_target and prev_target != pp_name and prev_target in hand_players:
+            target = prev_target
+
+        if not target:
+            target = prev_target or pp_name
+
+        pp_map[pp_name] = target
+        if prev_target != target:
+            updated_aliases += 1
+
+        player = hand_players.get(target, {}) if isinstance(hand_players.get(target), dict) else {}
+        if not player:
+            player = {
+                "hand": "UNK",
+                "aliases": [],
+                "sources": [],
+                "last_seen": now,
+            }
+
+        aliases = set(player.get("aliases") or [])
+        aliases.add(target)
+        aliases.add(pp_name)
+        if starter_name:
+            aliases.add(starter_name)
+
+        sources = set(player.get("sources") or [])
+        sources.add("prizepicks_props")
+        if starter_name:
+            sources.add("starter_feed")
+        if target in hands_by_name:
+            sources.add("kbo_pitcher_throwing_hands.csv")
+        if target in game_names:
+            sources.add("pitcher_logs")
+
+        resolved_hand = normalize_hand(player.get("hand"))
+        if resolved_hand == "UNK" and target in hands_by_name:
+            resolved_hand = normalize_hand(hands_by_name[target])
+        if resolved_hand == "UNK" and starter_pcode and starter_pcode in hand_by_pcode:
+            resolved_hand = normalize_hand(hand_by_pcode[starter_pcode][1])
+
+        if resolved_hand == "UNK":
+            unresolved_aliases += 1
+
+        hand_players[target] = {
+            "hand": resolved_hand,
+            "aliases": sorted(aliases),
+            "sources": sorted(sources),
+            "last_seen": now,
+        }
+
+    # Also absorb starter aliases even when a starter has no active PP line.
+    for starter in starters:
+        starter_name = str(starter.get("name") or "").strip()
+        starter_pcode = str(starter.get("pcode") or "").strip()
+        if not starter_name:
+            continue
+
+        target = None
+        if starter_pcode and starter_pcode in hand_by_pcode:
+            target = hand_by_pcode[starter_pcode][0]
+        if not target:
+            target = resolve_pitcher_alias(starter_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
+        if not target:
+            target = resolve_pitcher_alias(starter_name, game_names, game_norm_idx, game_parts_idx)
+        if not target:
+            target = starter_name
+
+        player = hand_players.get(target, {}) if isinstance(hand_players.get(target), dict) else {}
+        aliases = set(player.get("aliases") or [])
+        aliases.add(target)
+        aliases.add(starter_name)
+
+        sources = set(player.get("sources") or [])
+        sources.add("starter_feed")
+        if target in hands_by_name:
+            sources.add("kbo_pitcher_throwing_hands.csv")
+        if target in game_names:
+            sources.add("pitcher_logs")
+
+        resolved_hand = normalize_hand(player.get("hand"))
+        if resolved_hand == "UNK" and target in hands_by_name:
+            resolved_hand = normalize_hand(hands_by_name[target])
+        if resolved_hand == "UNK" and starter_pcode and starter_pcode in hand_by_pcode:
+            resolved_hand = normalize_hand(hand_by_pcode[starter_pcode][1])
+
+        hand_players[target] = {
+            "hand": resolved_hand,
+            "aliases": sorted(aliases),
+            "sources": sorted(sources),
+            "last_seen": now,
+        }
+
+    write_json_file(PITCHER_HAND_MAP_PATH, {
+        "updated_at": now,
+        "player_count": len(hand_players),
+        "players": hand_players,
+    })
+
+    write_json_file(PP_PITCHER_NAME_MAP_PATH, {
+        "updated_at": now,
+        "mapping_count": len(pp_map),
+        "map": dict(sorted(pp_map.items(), key=lambda x: x[0].lower())),
+    })
+
+    print(
+        f"Saved persistent pitcher handedness map: {len(hand_players)} players."
+    )
+    print(
+        f"Saved PrizePicks pitcher name map: {len(pp_map)} aliases "
+        f"({updated_aliases} updated, {unresolved_aliases} unresolved)."
+    )
 
 
 def weighted_blend(components):
@@ -477,6 +746,20 @@ def main():
     pp_strikeouts = load_pp_lines("Pitcher Strikeouts")
     pp_hits_allowed = load_pp_lines("Hits Allowed")
     pp_pitching_outs = load_pp_lines("Pitching Outs")
+
+    # Keep projection slate aligned with currently available PP matchups.
+    pp_matchups = set()
+    pp_starter_rows = {}
+    for _, _, team_opp_map in (pp_strikeouts, pp_hits_allowed, pp_pitching_outs):
+        pp_matchups.update(team_opp_map.keys())
+        for (team, opp), entry in team_opp_map.items():
+            pp_starter_rows[(team, opp)] = {
+                "name": entry.get("pp_name") or f"{team} Starter",
+                "team": team,
+                "opponent": opp,
+                "pcode": None,
+            }
+
     team_batting_ctx, league_avg_so_per_g, league_avg_h_per_ip = load_team_batting_context()
 
     starters = scrape_starters_with_pcodes()
@@ -493,7 +776,35 @@ def main():
             starters.append({"name": away["Player"], "team": away["Team"], "opponent": home["Team"], "pcode": None})
             starters.append({"name": home["Player"], "team": home["Team"], "opponent": away["Team"], "pcode": None})
 
+    starters_for_map = list(starters)
+    # Always include local starter file aliases so batter-side opponent lookups stay in sync.
+    try:
+        with open(os.path.join(BASE, "Pitchers-Data", "player_names.csv"), encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        for i in range(0, len(rows), 2):
+            away = rows[i]
+            home = rows[i + 1] if i + 1 < len(rows) else None
+            if not home:
+                continue
+            starters_for_map.append({"name": away.get("Player", ""), "team": away.get("Team", ""), "opponent": home.get("Team", ""), "pcode": None})
+            starters_for_map.append({"name": home.get("Player", ""), "team": home.get("Team", ""), "opponent": away.get("Team", ""), "pcode": None})
+    except Exception:
+        pass
+
+    if pp_matchups:
+        matched_starters = [s for s in starters if (s.get("team"), s.get("opponent")) in pp_matchups]
+        if matched_starters:
+            starters = matched_starters
+        elif pp_starter_rows:
+            starters = list(pp_starter_rows.values())
+
     games_by_name, norm_map, parts_map = load_pitcher_games()
+
+    update_persistent_pitcher_maps(
+        (pp_strikeouts, pp_hits_allowed, pp_pitching_outs),
+        starters_for_map,
+        games_by_name,
+    )
 
     # League pitcher baselines from all available games.
     all_games = [g for gs in games_by_name.values() for g in gs]

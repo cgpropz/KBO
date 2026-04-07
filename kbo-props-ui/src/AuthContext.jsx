@@ -38,12 +38,40 @@ export function AuthProvider({ children }) {
 
   async function fetchTier(userId) {
     if (!supabase) return;
-    const { data } = await supabase
+    const { data: rows } = await supabase
       .from('user_profiles')
       .select('tier')
       .eq('id', userId)
-      .single();
-    setTier(data?.tier || 'free');
+      .limit(1);
+
+    const dbTier = Array.isArray(rows) && rows.length > 0 ? rows[0]?.tier : null;
+
+    // If they already have a paid tier, we're done
+    if (dbTier && dbTier !== 'free') {
+      setTier(dbTier);
+      return;
+    }
+
+    // No paid tier in DB — ask the server to check Stripe and self-heal
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (token) {
+        const resp = await fetch('/api/sync-subscription', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (resp.ok) {
+          const { tier: syncedTier } = await resp.json();
+          setTier(syncedTier || 'free');
+          return;
+        }
+      }
+    } catch (_) {
+      // Sync failed (e.g. local dev with no API) — fall through to free
+    }
+
+    setTier(dbTier || 'free');
   }
 
   async function signOut() {

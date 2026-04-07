@@ -42,24 +42,41 @@ function StrikeoutProjections() {
     .join(' ');
 
   const propToPrizepicksStat = {
-    Strikeouts: 'Pitcher Strikeouts',
-    'Hits Allowed': 'Hits Allowed',
-    'Pitching Outs': 'Pitching Outs',
+    Strikeouts: ['Pitcher Strikeouts'],
+    'Hits Allowed': ['Hits Allowed', 'Pitcher Hits Allowed'],
+    'Pitching Outs': ['Pitching Outs'],
   };
 
   useEffect(() => {
-    Promise.all([
-      fetchData('strikeout_projections.json'),
-      fetchData('matchup_data.json').catch(() => null),
-      fetchData('prizepicks_props.json').catch(() => null),
-    ])
-      .then(([kData, mData, ppData]) => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [kData, mData, ppData] = await Promise.all([
+          fetchData('strikeout_projections.json'),
+          fetchData('matchup_data.json').catch(() => null),
+          fetchData('prizepicks_props.json').catch(() => null),
+        ]);
+        if (cancelled) return;
         setData(kData);
         setMatchupData(mData);
         setPrizepicksData(ppData);
-        setLoading(false);
-      })
-      .catch(err => { setError(err.message); setLoading(false); });
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    const interval = setInterval(load, 10 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const handleSort = (field) => {
@@ -109,6 +126,7 @@ function StrikeoutProjections() {
 
   const ppLineByKey = (() => {
     const map = new Map();
+    const teamOppBuckets = new Map();
     const cards = prizepicksData?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'pitcher') continue;
@@ -132,21 +150,36 @@ function StrikeoutProjections() {
         const canonicalLine = lines[Math.floor(lines.length / 2)];
         const exactKey = `${stat}@@${team}@@${opp}@@${norm}`;
         const sigKey = `${stat}@@${team}@@${opp}@@sig:${sig}`;
+        const teamOppKey = `${stat}@@${team}@@${opp}@@teamOpp`;
         map.set(exactKey, canonicalLine);
         map.set(sigKey, canonicalLine);
+        if (!teamOppBuckets.has(teamOppKey)) teamOppBuckets.set(teamOppKey, []);
+        teamOppBuckets.get(teamOppKey).push(canonicalLine);
+      }
+    }
+
+    for (const [key, values] of teamOppBuckets.entries()) {
+      const unique = [...new Set(values)];
+      if (unique.length === 1) {
+        map.set(key, unique[0]);
       }
     }
     return map;
   })();
 
   const mergedScoped = scoped.map((p) => {
-    const ppStat = propToPrizepicksStat[p.prop];
-    if (!ppStat) return p;
+    const ppStats = propToPrizepicksStat[p.prop];
+    if (!ppStats?.length) return p;
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
-    const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
-    const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
-    const liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey);
+    let liveLine = null;
+    for (const ppStat of ppStats) {
+      const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
+      const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
+      const teamOppKey = `${ppStat}@@${p.team}@@${p.opponent}@@teamOpp`;
+      liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey) ?? ppLineByKey.get(teamOppKey);
+      if (Number.isFinite(liveLine)) break;
+    }
     if (!Number.isFinite(liveLine)) return p;
 
     const projection = Number(p.projection);

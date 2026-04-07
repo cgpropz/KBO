@@ -26,6 +26,30 @@ from datetime import datetime
 from difflib import get_close_matches
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+BATTER_HAND_MAP_PATH = os.path.join(BASE, "Batters-Data", "kbo_batter_handedness_map.json")
+PP_BATTER_NAME_MAP_PATH = os.path.join(BASE, "Batters-Data", "prizepicks_batter_name_map.json")
+PITCHER_HAND_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_handedness_map.json")
+PP_PITCHER_NAME_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "prizepicks_pitcher_name_map.json")
+
+# Runtime PrizePicks -> KBO name alias maps (loaded/updated later in script).
+pp_batter_name_map = {}
+pp_batter_name_map_norm = {}
+
+
+def load_json_file(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def write_json_file(path, payload):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
 
 
 def normalize_name(name):
@@ -146,6 +170,22 @@ def load_batter_handedness():
                     continue
                 by_name[nm] = hand
 
+    # Durable source: persistent map that survives name/source churn.
+    persistent = load_json_file(BATTER_HAND_MAP_PATH, {})
+    players = persistent.get("players", {}) if isinstance(persistent, dict) else {}
+    for nm, info in players.items():
+        if not isinstance(info, dict):
+            continue
+        hand = normalize_hand(info.get("hand"))
+        if hand == "UNK":
+            continue
+        if nm and nm not in by_name:
+            by_name[nm] = hand
+        for alias in info.get("aliases", []):
+            alias_name = str(alias or "").strip()
+            if alias_name and alias_name not in by_name:
+                by_name[alias_name] = hand
+
     return by_name
 
 
@@ -162,6 +202,35 @@ def load_pitcher_throwing_hands():
                 if not nm or hand == "UNK":
                     continue
                 by_name[nm] = hand
+
+    # Durable source: persistent map with aliases accumulated from PP + starters.
+    persistent = load_json_file(PITCHER_HAND_MAP_PATH, {})
+    players = persistent.get("players", {}) if isinstance(persistent, dict) else {}
+    for nm, info in players.items():
+        if not isinstance(info, dict):
+            continue
+        hand = normalize_hand(info.get("hand"))
+        if hand == "UNK":
+            continue
+        if nm and nm not in by_name:
+            by_name[nm] = hand
+        for alias in info.get("aliases", []):
+            alias_name = str(alias or "").strip()
+            if alias_name and alias_name not in by_name:
+                by_name[alias_name] = hand
+
+    # Include explicit PP->canonical alias entries as a final fallback.
+    pp_alias_payload = load_json_file(PP_PITCHER_NAME_MAP_PATH, {})
+    pp_alias_map = pp_alias_payload.get("map", {}) if isinstance(pp_alias_payload, dict) else {}
+    if isinstance(pp_alias_map, dict):
+        for pp_name, canon in pp_alias_map.items():
+            left = str(pp_name or "").strip()
+            right = str(canon or "").strip()
+            if not left or not right:
+                continue
+            hand = by_name.get(right)
+            if hand and left not in by_name:
+                by_name[left] = hand
 
     # Alias/fallback fixes for naming differences between sources.
     if "Unknown_55633" in by_name and "Adam Oller" not in by_name:
@@ -336,6 +405,10 @@ for name, bs in batter_stats.items():
     bs["slg"] = bs["tb"] / bs["ab"] if bs["ab"] > 0 else 0
     bs["ba"] = bs["h"] / bs["ab"] if bs["ab"] > 0 else 0
 
+league_total_hits = sum(bs["h"] for bs in batter_stats.values())
+league_total_ab = sum(bs["ab"] for bs in batter_stats.values())
+league_avg_ba = (league_total_hits / league_total_ab) if league_total_ab > 0 else 0.250
+
 # Sort each batter's games newest-first for L5/L10 hit-rate splits
 for name, games in batter_games.items():
     games.sort(key=lambda r: parse_date(r.get("DATE", "")), reverse=True)
@@ -366,6 +439,48 @@ def calc_hit_rates(values, line):
         "hits_full": f"{over_full}/{total}",
         "hits_l10": f"{over_l10}/{len(l10)}",
         "hits_l5": f"{over_l5}/{len(l5)}",
+    }
+
+
+def _safe_avg(value):
+    if value is None:
+        return None
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    if out < 0:
+        return 0.0
+    if out > 1:
+        return 1.0
+    return round(out, 3)
+
+
+def resolve_split_avgs(split_row, batter_stats_row, opp_pitcher_hand, fallback_avg):
+    base_avg = _safe_avg((batter_stats_row or {}).get("ba"))
+    neutral_avg = _safe_avg(fallback_avg)
+
+    vs_rhp = _safe_avg(split_row.get("vs_rhp_avg"))
+    vs_lhp = _safe_avg(split_row.get("vs_lhp_avg"))
+
+    # Fill missing split with opposite split, then batter BA, then league BA.
+    if vs_rhp is None:
+        vs_rhp = vs_lhp if vs_lhp is not None else (base_avg if base_avg is not None else neutral_avg)
+    if vs_lhp is None:
+        vs_lhp = vs_rhp if vs_rhp is not None else (base_avg if base_avg is not None else neutral_avg)
+
+    if opp_pitcher_hand == "L":
+        vs_opp = vs_lhp
+    elif opp_pitcher_hand == "R":
+        vs_opp = vs_rhp
+    else:
+        candidates = [v for v in (vs_rhp, vs_lhp) if v is not None]
+        vs_opp = round(sum(candidates) / len(candidates), 3) if candidates else neutral_avg
+
+    return {
+        "vs_lhp_avg": _safe_avg(vs_lhp),
+        "vs_rhp_avg": _safe_avg(vs_rhp),
+        "vs_opp_hand_avg": _safe_avg(vs_opp),
     }
 
 
@@ -475,6 +590,12 @@ for n in _batter_names:
     _norm_to_actual[normalize_name(n).lower()] = n
     _parts_to_actual[name_parts(n)] = n
 
+_hand_norm_to_name = {}
+_hand_parts_to_name = {}
+for n in batter_handedness.keys():
+    _hand_norm_to_name[normalize_name(n).lower()] = n
+    _hand_parts_to_name[name_parts(n)] = n
+
 _split_norm = {normalize_name(n).lower(): v for n, v in batter_split_stats.items()}
 _split_parts = {name_parts(n): v for n, v in batter_split_stats.items()}
 _hand_norm = {normalize_name(n).lower(): v for n, v in batter_handedness.items()}
@@ -490,9 +611,13 @@ def resolve_batter_name(name):
     norm = normalize_name(name).lower()
     if norm in _norm_to_actual:
         return _norm_to_actual[norm]
+    if norm in _hand_norm_to_name:
+        return _hand_norm_to_name[norm]
     parts = name_parts(name)
     if parts in _parts_to_actual:
         return _parts_to_actual[parts]
+    if parts in _hand_parts_to_name:
+        return _hand_parts_to_name[parts]
     return name
 
 
@@ -513,7 +638,10 @@ def get_batter_split_row(pp_name, resolved_name):
 
 
 def get_batter_hand(pp_name, resolved_name):
-    for candidate in (resolved_name, pp_name):
+    mapped_name = pp_batter_name_map_norm.get(normalize_name(pp_name).lower())
+    for candidate in (resolved_name, mapped_name, pp_name):
+        if not candidate:
+            continue
         norm = normalize_name(candidate).lower()
         if norm in _hand_norm:
             return _hand_norm[norm]
@@ -532,6 +660,108 @@ def get_pitcher_hand(raw_name, resolved_name):
         if parts in _pitch_hand_parts:
             return _pitch_hand_parts[parts]
     return "UNK"
+
+
+def load_pp_batter_name_map():
+    raw = load_json_file(PP_BATTER_NAME_MAP_PATH, {})
+    mapping = raw.get("map", {}) if isinstance(raw, dict) else {}
+    out = {}
+    out_norm = {}
+    for pp_name, kbo_name in mapping.items():
+        left = str(pp_name or "").strip()
+        right = str(kbo_name or "").strip()
+        if not left or not right:
+            continue
+        out[left] = right
+        out_norm[normalize_name(left).lower()] = right
+    return out, out_norm
+
+
+def update_persistent_batter_maps(pp_name_entries):
+    hand_payload = load_json_file(BATTER_HAND_MAP_PATH, {})
+    hand_players = hand_payload.get("players", {}) if isinstance(hand_payload, dict) else {}
+    if not isinstance(hand_players, dict):
+        hand_players = {}
+
+    now = datetime.now().isoformat()
+    all_kbo_names = set(batter_stats.keys())
+    all_kbo_names.update(batter_split_stats.keys())
+    all_kbo_names.update(batter_handedness.keys())
+    all_kbo_names.update(hand_players.keys())
+
+    updated_hands = 0
+    for name in sorted(all_kbo_names):
+        existing = hand_players.get(name, {}) if isinstance(hand_players.get(name), dict) else {}
+        existing_hand = normalize_hand(existing.get("hand"))
+        discovered_hand = normalize_hand(batter_handedness.get(name))
+        if discovered_hand == "UNK":
+            discovered_hand = existing_hand
+        if discovered_hand == "UNK":
+            split_row = batter_split_stats.get(name, {})
+            if split_row.get("vs_rhp_avg") is not None or split_row.get("vs_lhp_avg") is not None:
+                discovered_hand = existing_hand if existing_hand != "UNK" else "UNK"
+
+        aliases = sorted(set((existing.get("aliases") or []) + [name]))
+        sources = set(existing.get("sources") or [])
+        if name in batter_stats:
+            sources.add("KBO_daily_batting_stats_combined.csv")
+        if name in batter_handedness:
+            sources.add("kbo_batter_hands.csv")
+        if name in batter_split_stats:
+            sources.add("KBO_vs_hand_splits_2026.csv")
+
+        hand_players[name] = {
+            "hand": discovered_hand,
+            "aliases": aliases,
+            "sources": sorted(sources),
+            "last_seen": now,
+        }
+        updated_hands += 1
+
+    write_json_file(BATTER_HAND_MAP_PATH, {
+        "updated_at": now,
+        "player_count": len(hand_players),
+        "players": hand_players,
+    })
+
+    pp_payload = load_json_file(PP_BATTER_NAME_MAP_PATH, {})
+    pp_map = pp_payload.get("map", {}) if isinstance(pp_payload, dict) else {}
+    if not isinstance(pp_map, dict):
+        pp_map = {}
+
+    added_aliases = 0
+    unresolved_aliases = 0
+    clean_pp_names = sorted({str(n).strip() for n in pp_name_entries if str(n or "").strip()})
+    for pp_name in clean_pp_names:
+        resolved = resolve_batter_name(pp_name)
+        prev = pp_map.get(pp_name)
+
+        # Respect existing manual override when it maps to a known KBO player.
+        if prev and prev != pp_name and (prev in batter_stats or prev in hand_players):
+            target = prev
+        else:
+            target = resolved
+
+        pp_map[pp_name] = target
+        if prev != target:
+            added_aliases += 1
+        if target not in batter_stats and target not in hand_players:
+            unresolved_aliases += 1
+
+    write_json_file(PP_BATTER_NAME_MAP_PATH, {
+        "updated_at": now,
+        "mapping_count": len(pp_map),
+        "map": dict(sorted(pp_map.items(), key=lambda x: x[0].lower())),
+    })
+
+    print(f"Saved persistent batter handedness map: {len(hand_players)} players ({updated_hands} refreshed).")
+    print(
+        f"Saved PrizePicks batter name map: {len(pp_map)} aliases "
+        f"({added_aliases} updated, {unresolved_aliases} unresolved)."
+    )
+
+    runtime_norm = {normalize_name(k).lower(): v for k, v in pp_map.items()}
+    return pp_map, runtime_norm
 
 
 # ── Step 4: Load PrizePicks lines (H+R+RBI and Total Bases) ──
@@ -582,6 +812,10 @@ def load_pp_lines(stat_name):
 pp_hrr, pp_hrr_parts = load_pp_lines("Hits+Runs+RBIs")
 pp_tb, pp_tb_parts = load_pp_lines("Total Bases")
 
+pp_batter_name_map, pp_batter_name_map_norm = load_pp_batter_name_map()
+pp_names_for_mapping = [v.get("pp_name") for v in pp_hrr.values()] + [v.get("pp_name") for v in pp_tb.values()]
+pp_batter_name_map, pp_batter_name_map_norm = update_persistent_batter_maps(pp_names_for_mapping)
+
 print(f"\nPP H+R+RBI standard lines: {len(pp_hrr)}")
 for v in pp_hrr.values():
     print(f"  {v['pp_name']:25s} line={v['line']}")
@@ -620,11 +854,7 @@ def build_hrr_projections():
         opp_pitcher, opp_pitcher_whip, opp_pitcher_hand = resolve_opp_pitcher_context(opp)
         split_row = get_batter_split_row(pp_name, resolved)
         batter_hand = get_batter_hand(pp_name, resolved)
-        selected_split_avg = (
-            split_row.get("vs_lhp_avg") if opp_pitcher_hand == "L"
-            else split_row.get("vs_rhp_avg") if opp_pitcher_hand == "R"
-            else None
-        )
+        split_avgs = resolve_split_avgs(split_row, bs, opp_pitcher_hand, league_avg_ba)
 
         recent_games = batter_games.get(resolved, [])
         hrr_values = [
@@ -653,11 +883,11 @@ def build_hrr_projections():
                 "opp_pitcher": opp_pitcher,
                 "opp_pitcher_whip": opp_pitcher_whip,
                 "opp_pitcher_hand": opp_pitcher_hand,
-                "vs_lhp_avg": split_row.get("vs_lhp_avg"),
-                "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+                "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+                "vs_rhp_avg": split_avgs["vs_rhp_avg"],
                 "vs_lhp_ab": split_row.get("vs_lhp_ab"),
                 "vs_rhp_ab": split_row.get("vs_rhp_ab"),
-                "vs_opp_hand_avg": selected_split_avg,
+                "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
                 **hit_rates,
             })
             continue
@@ -686,11 +916,11 @@ def build_hrr_projections():
             "opp_pitcher": opp_pitcher,
             "opp_pitcher_whip": opp_pitcher_whip,
             "opp_pitcher_hand": opp_pitcher_hand,
-            "vs_lhp_avg": split_row.get("vs_lhp_avg"),
-            "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+            "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+            "vs_rhp_avg": split_avgs["vs_rhp_avg"],
             "vs_lhp_ab": split_row.get("vs_lhp_ab"),
             "vs_rhp_ab": split_row.get("vs_rhp_ab"),
-            "vs_opp_hand_avg": selected_split_avg,
+            "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
             **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
@@ -720,11 +950,7 @@ def build_tb_projections():
         opp_pitcher, opp_pitcher_whip, opp_pitcher_hand = resolve_opp_pitcher_context(opp)
         split_row = get_batter_split_row(pp_name, resolved)
         batter_hand = get_batter_hand(pp_name, resolved)
-        selected_split_avg = (
-            split_row.get("vs_lhp_avg") if opp_pitcher_hand == "L"
-            else split_row.get("vs_rhp_avg") if opp_pitcher_hand == "R"
-            else None
-        )
+        split_avgs = resolve_split_avgs(split_row, bs, opp_pitcher_hand, league_avg_ba)
 
         recent_games = batter_games.get(resolved, [])
         tb_values = [int(g.get("TB", 0)) for g in recent_games]
@@ -749,11 +975,11 @@ def build_tb_projections():
                 "opp_pitcher": opp_pitcher,
                 "opp_pitcher_whip": opp_pitcher_whip,
                 "opp_pitcher_hand": opp_pitcher_hand,
-                "vs_lhp_avg": split_row.get("vs_lhp_avg"),
-                "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+                "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+                "vs_rhp_avg": split_avgs["vs_rhp_avg"],
                 "vs_lhp_ab": split_row.get("vs_lhp_ab"),
                 "vs_rhp_ab": split_row.get("vs_rhp_ab"),
-                "vs_opp_hand_avg": selected_split_avg,
+                "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
                 **hit_rates,
             })
             continue
@@ -782,11 +1008,11 @@ def build_tb_projections():
             "opp_pitcher": opp_pitcher,
             "opp_pitcher_whip": opp_pitcher_whip,
             "opp_pitcher_hand": opp_pitcher_hand,
-            "vs_lhp_avg": split_row.get("vs_lhp_avg"),
-            "vs_rhp_avg": split_row.get("vs_rhp_avg"),
+            "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+            "vs_rhp_avg": split_avgs["vs_rhp_avg"],
             "vs_lhp_ab": split_row.get("vs_lhp_ab"),
             "vs_rhp_ab": split_row.get("vs_rhp_ab"),
-            "vs_opp_hand_avg": selected_split_avg,
+            "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
             **hit_rates,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")

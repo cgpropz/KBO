@@ -61,13 +61,19 @@ def extract_hand_from_profile_text(lines, player_type="pitcher"):
     Parse KBO profile page text lines to extract throwing/batting hand.
     Looks for Korean position line: 포지션: 투수(좌투좌타) or 포지션: 내야수(우타)
     """
+    def detect_pitcher_hand(text):
+        if "좌투" in text or "좌언" in text:
+            return "L"
+        if "우투" in text or "우언" in text:
+            return "R"
+        return None
+
     for line in lines:
         if "포지션" in line or "position" in line.lower():
             if player_type == "pitcher":
-                if "좌투" in line:
-                    return "L"
-                elif "우투" in line:
-                    return "R"
+                hand = detect_pitcher_hand(line)
+                if hand:
+                    return hand
             elif player_type == "batter":
                 if "스위치" in line or "양타" in line:
                     return "S"
@@ -78,10 +84,9 @@ def extract_hand_from_profile_text(lines, player_type="pitcher"):
     # Fallback: search all lines
     for line in lines:
         if player_type == "pitcher":
-            if "좌투" in line:
-                return "L"
-            elif "우투" in line:
-                return "R"
+            hand = detect_pitcher_hand(line)
+            if hand:
+                return hand
         elif player_type == "batter":
             if "스위치" in line or "양타" in line:
                 return "S"

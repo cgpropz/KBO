@@ -356,52 +356,52 @@ function BatterProjections() {
                 <tr key={i} className="bp-row">
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
-                  <td className={`col-center mono ${!p.batter_hand || p.batter_hand === 'UNK' ? 'cell-na' : ''}`}>{p.batter_hand && p.batter_hand !== 'UNK' ? p.batter_hand : '#N/A'}</td>
+                  <td className={`col-center mono ${!p.batter_hand || p.batter_hand === 'UNK' ? 'cell-na' : ''}`}>{p.batter_hand && p.batter_hand !== 'UNK' ? p.batter_hand : 'UNK'}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
-                  <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : '#N/A'}</td>
-                  <td className={`col-num mono ${p.vs_opp_hand_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_opp_hand_avg)}>{p.vs_opp_hand_avg != null ? Number(p.vs_opp_hand_avg).toFixed(3) : '#N/A'}</td>
-                  <td className={`col-num mono ${p.vs_rhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_rhp_avg)}>{p.vs_rhp_avg != null ? Number(p.vs_rhp_avg).toFixed(3) : '#N/A'}</td>
-                  <td className={`col-num mono ${p.vs_lhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_lhp_avg)}>{p.vs_lhp_avg != null ? Number(p.vs_lhp_avg).toFixed(3) : '#N/A'}</td>
+                  <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : 'UNK'}</td>
+                  <td className={`col-num mono ${p.vs_opp_hand_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_opp_hand_avg)}>{p.vs_opp_hand_avg != null ? Number(p.vs_opp_hand_avg).toFixed(3) : '—'}</td>
+                  <td className={`col-num mono ${p.vs_rhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_rhp_avg)}>{p.vs_rhp_avg != null ? Number(p.vs_rhp_avg).toFixed(3) : '—'}</td>
+                  <td className={`col-num mono ${p.vs_lhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_lhp_avg)}>{p.vs_lhp_avg != null ? Number(p.vs_lhp_avg).toFixed(3) : '—'}</td>
                   <td
                     className={`col-num mono whip-cell ${p.opp_pitcher_whip == null ? 'cell-na' : ''}`}
                     style={getWhipStyle(p.opp_pitcher_whip)}
                   >
-                    {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(2) : '#N/A'}
+                    {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(2) : '—'}
                   </td>
                   <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'TB'}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>
                   </td>
                   <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
-                    {p.projection != null ? p.projection.toFixed(2) : '#N/A'}
+                    {p.projection != null ? p.projection.toFixed(2) : '—'}
                   </td>
                   <td className={`col-num mono ${p.avg_per_g == null ? 'cell-na' : ''}`}>
-                    {p.avg_per_g != null ? p.avg_per_g.toFixed(2) : '#N/A'}
+                    {p.avg_per_g != null ? p.avg_per_g.toFixed(2) : '—'}
                   </td>
                   <td
                     className={`col-num mono hitrate-cell ${p.hit_rate_l5 == null ? 'cell-na' : ''}`}
                     style={getHitRateStyle(p.hit_rate_l5)}
                   >
-                    {p.hit_rate_l5 != null ? `${p.hit_rate_l5.toFixed(1)}%` : '#N/A'}
+                    {p.hit_rate_l5 != null ? `${p.hit_rate_l5.toFixed(1)}%` : '—'}
                   </td>
                   <td
                     className={`col-num mono hitrate-cell ${p.hit_rate_l10 == null ? 'cell-na' : ''}`}
                     style={getHitRateStyle(p.hit_rate_l10)}
                   >
-                    {p.hit_rate_l10 != null ? `${p.hit_rate_l10.toFixed(1)}%` : '#N/A'}
+                    {p.hit_rate_l10 != null ? `${p.hit_rate_l10.toFixed(1)}%` : '—'}
                   </td>
                   <td
                     className={`col-num mono hitrate-cell ${p.hit_rate_full == null ? 'cell-na' : ''}`}
                     style={getHitRateStyle(p.hit_rate_full)}
                   >
-                    {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '#N/A'}
+                    {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '—'}
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 55 ? 'rate-high' : p.rating < 45 ? 'rate-low' : '') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
                   </td>
                   <td className={`col-num mono ${p.edge != null ? (p.edge > 0 ? 'var-pos' : p.edge < -0.3 ? 'var-neg' : '') : 'cell-na'}`}>
-                    {p.edge != null ? p.edge.toFixed(2) : '#N/A'}
+                    {p.edge != null ? p.edge.toFixed(2) : '—'}
                   </td>
                   <td className="col-center">
                     <span className={`val-badge ${getValClass(p.recommendation)}`}>{p.recommendation}</span>
