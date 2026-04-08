@@ -8,6 +8,7 @@ Outputs:
 """
 import json
 import os
+import csv
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,6 +17,33 @@ TEAM_SHORT = {
     "KT": "KT", "Kiwoom": "Kiwoom", "LG": "LG",
     "LOTTE": "Lotte", "NC": "NC", "SAMSUNG": "Samsung", "SSG": "SSG",
 }
+
+# Load team batting stats (BA and K%)
+def load_team_batting_stats():
+    """Load team batting average and strikeout % from league_batting_sorted.csv"""
+    team_stats = {}
+    league_path = os.path.join(BASE, "Batters-Data", "league_batting_sorted.csv")
+    if not os.path.exists(league_path):
+        return team_stats
+    
+    with open(league_path, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            team_name = row.get("Tm", "").strip()
+            if not team_name:
+                continue
+            try:
+                ba = float(row.get("BA", 0))
+                so = int(row.get("SO", 0))
+                pa = int(row.get("PA", 0) or 1)
+                k_pct = (so / pa * 100) if pa > 0 else 0
+                team_stats[team_name] = {"ba": ba, "k_pct": round(k_pct, 1)}
+            except (ValueError, TypeError):
+                continue
+    
+    return team_stats
+
+team_batting_stats = load_team_batting_stats()
 
 with open(os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")) as f:
     logs = json.load(f)
@@ -52,6 +80,18 @@ for name, games in pitchers.items():
 
     team_raw = games[0]["Tm"]
     team = TEAM_SHORT.get(team_raw, team_raw)
+    
+    # Get most common opponent
+    opps = [g.get("Opp", "") for g in games]
+    opp_raw = max(opps, key=opps.count) if opps else None
+    opp_team = TEAM_SHORT.get(opp_raw, opp_raw) if opp_raw else None
+    
+    # Get opponent team batting stats
+    opp_ba = None
+    opp_k_pct = None
+    if opp_team and opp_team in team_batting_stats:
+        opp_ba = team_batting_stats[opp_team]["ba"]
+        opp_k_pct = team_batting_stats[opp_team]["k_pct"]
 
     whip = (total_bb + total_ha) / total_ip if total_ip > 0 else 0
     era = (total_er / total_ip) * 9 if total_ip > 0 else 0
@@ -76,6 +116,9 @@ for name, games in pitchers.items():
         "w": wins,
         "l": losses,
         "wl_ratio": round(wl_ratio, 3),
+        "opp_team": opp_team,
+        "opp_ba": round(opp_ba, 3) if opp_ba else None,
+        "opp_k_pct": opp_k_pct,
     })
 
 # Sort by ERA (lower is better), then assign rank

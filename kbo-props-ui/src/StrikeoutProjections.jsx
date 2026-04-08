@@ -19,6 +19,7 @@ const TEAMS = {
 function StrikeoutProjections() {
   const [data, setData] = useState(null);
   const [matchupData, setMatchupData] = useState(null);
+  const [opponentStatsData, setOpponentStatsData] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,14 +53,16 @@ function StrikeoutProjections() {
 
     const load = async () => {
       try {
-        const [kData, mData, ppData] = await Promise.all([
+        const [kData, mData, oppData, ppData] = await Promise.all([
           fetchData('strikeout_projections.json'),
           fetchData('matchup_data.json').catch(() => null),
+          fetchData('team_opponent_stats_2026.json').catch(() => null),
           fetchData('prizepicks_props.json').catch(() => null),
         ]);
         if (cancelled) return;
         setData(kData);
         setMatchupData(mData);
+        setOpponentStatsData(oppData);
         setPrizepicksData(ppData);
         setError(null);
       } catch (err) {
@@ -167,9 +170,28 @@ function StrikeoutProjections() {
     return map;
   })();
 
+  // Safely get opponent team stats
+  const getOppStats = (opponent) => {
+    if (!opponentStatsData || !opponent) return {};
+    const stats = opponentStatsData[opponent];
+    if (!stats) return {};
+    return {
+      k_pct: stats.k_pct ?? null,
+      ba: stats.ba ?? null,
+    };
+  };
+
   const mergedScoped = scoped.map((p) => {
+    // Get opponent team stats first (for all projections)
+    const oppStats = getOppStats(p.opponent);
+    
     const ppStats = propToPrizepicksStat[p.prop];
-    if (!ppStats?.length) return p;
+    if (!ppStats?.length) return {
+      ...p,
+      opp_k_pct: oppStats.k_pct,
+      opp_ba: oppStats.ba,
+    };
+    
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
     let liveLine = null;
@@ -180,19 +202,25 @@ function StrikeoutProjections() {
       liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey) ?? ppLineByKey.get(teamOppKey);
       if (Number.isFinite(liveLine)) break;
     }
-    if (!Number.isFinite(liveLine)) return p;
-
+    
     const projection = Number(p.projection);
-    const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    const edge = Number.isFinite(projection) && liveLine ? projection - liveLine : null;
+
     return {
       ...p,
-      line: liveLine,
+      line: liveLine ?? null,
       edge: edge != null ? Number(edge.toFixed(1)) : null,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
+      opp_k_pct: oppStats.k_pct,
+      opp_ba: oppStats.ba,
     };
   });
 
-  const filtered = mergedScoped.filter((p) => selectedProp === 'all' || p.prop === selectedProp);
+  const filtered = mergedScoped.filter((p) => {
+    // Only show rows that have a prop and matchup in our data
+    if (selectedProp === 'all') return true;
+    return p.prop === selectedProp || p.opp_k_pct != null;
+  });
 
   const projections = [...filtered].sort((a, b) => {
     let aVal = a[sortField], bVal = b[sortField];
@@ -245,7 +273,7 @@ function StrikeoutProjections() {
       ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
       : selectedProp === 'all'
         ? 'Filter by prop type to view the active pitcher model formula'
-        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by WHIP and form';
+        : '(SO/IP x IP/G) x Opp K% ÷ Lg Avg K%, adjusted by WHIP and form';
 
   const getValClass = (rec) => {
     if (rec === 'OVER') return 'val-over';
@@ -253,6 +281,30 @@ function StrikeoutProjections() {
     if (rec === 'NO DATA') return 'val-nodata';
     if (rec === 'NO LINE') return 'val-noline';
     return 'val-push';
+  };
+
+  // Color scaling for opponent K% (strikeout rate)
+  // Low K% (like 21.5%) = Red (hard - fewer strikeouts)
+  // Mid K% (like 24%) = Neutral gray
+  // High K% (like 26.3%) = Green (easy - more strikeouts)
+  const oppKPctBg = (val) => {
+    if (val == null) return {};
+    if (val >= 25.0) return { backgroundColor: '#1a4d1a', color: '#fff' }; // Dark green - very easy
+    if (val >= 24.0) return { backgroundColor: '#2d7f2d', color: '#fff' }; // Green - easy
+    if (val >= 23.0) return { backgroundColor: '#4d4d4d', color: '#fff' }; // Gray - neutral
+    if (val >= 22.0) return { backgroundColor: '#8b5a5a', color: '#fff' }; // Dark gray - slightly tough
+    return { backgroundColor: '#802020', color: '#fff' }; // Red - tough
+  };
+
+  const oppBaBg = (val) => {
+    if (val == null) return {};
+    // Low BA = batter not hitting well = easier for pitcher = GREEN
+    // High BA = batter hitting well = harder for pitcher = RED
+    if (val < 0.235) return { backgroundColor: '#1a4d1a', color: '#fff' }; // Green - easy
+    if (val < 0.250) return { backgroundColor: '#2d7f2d', color: '#fff' }; // Green-yellow
+    if (val < 0.270) return { backgroundColor: '#4d4d4d', color: '#fff' }; // Gray - neutral
+    if (val < 0.285) return { backgroundColor: '#8b5a5a', color: '#fff' }; // Red-gray - tough
+    return { backgroundColor: '#802020', color: '#fff' }; // Dark red - very tough
   };
 
   return (
@@ -282,6 +334,8 @@ function StrikeoutProjections() {
                 <th onClick={() => handleSort('name')}>Player {sortIcon('name')}</th>
                 <th onClick={() => handleSort('team')}>Team {sortIcon('team')}</th>
                 <th onClick={() => handleSort('opponent')}>Matchup {sortIcon('opponent')}</th>
+                <th onClick={() => handleSort('opp_ba')} className="col-num">Opp BA {sortIcon('opp_ba')}</th>
+                <th onClick={() => handleSort('opp_k_pct')} className="col-num">Opp K% {sortIcon('opp_k_pct')}</th>
                 <th>Prop</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
@@ -296,6 +350,8 @@ function StrikeoutProjections() {
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
+                  <td className="col-num mono" style={oppBaBg(p.opp_ba)}>{p.opp_ba != null ? parseFloat(p.opp_ba).toFixed(3) : '—'}</td>
+                  <td className="col-num mono" style={oppKPctBg(p.opp_k_pct)}>{p.opp_k_pct != null ? parseFloat(p.opp_k_pct).toFixed(1) + '%' : '—'}</td>
                   <td className="col-prop">{p.prop}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>

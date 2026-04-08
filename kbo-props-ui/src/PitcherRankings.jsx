@@ -218,6 +218,7 @@ function PitcherRankings() {
                 <th onClick={() => handleSort('rk')} className="col-num">RK {sortIcon('rk')}</th>
                 <th onClick={() => handleSort('name')}>Player {sortIcon('name')}</th>
                 <th onClick={() => handleSort('team')}>Team {sortIcon('team')}</th>
+                <th onClick={() => handleSort('opp_team')}>Opp {sortIcon('opp_team')}</th>
                 <th onClick={() => handleSort('whip')} className="col-num">WHIP {sortIcon('whip')}</th>
                 <th onClick={() => handleSort('era')} className="col-num">ERA {sortIcon('era')}</th>
                 <th onClick={() => handleSort('k_pct')} className="col-num">K% {sortIcon('k_pct')}</th>
@@ -235,6 +236,7 @@ function PitcherRankings() {
                   <td className="col-num mono rk-rank">{p.rk ?? '—'}</td>
                   <td className="col-player">{p.name}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
+                  <td><span className="team-text" style={{ color: TEAMS[p.opp_team] || '#999' }}>{p.opp_team ?? '—'}</span></td>
                   <td className="col-num mono" style={whipBg(p.whip)}>{fmt(p.whip, 2)}</td>
                   <td className="col-num mono" style={eraBg(p.era)}>{fmt(p.era, 2)}</td>
                   <td className="col-num mono" style={kPctBg(p.k_pct)}>{p.k_pct == null ? '—' : `${fmt(p.k_pct, 1)}%`}</td>
