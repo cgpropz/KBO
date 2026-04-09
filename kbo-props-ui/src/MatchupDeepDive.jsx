@@ -51,6 +51,19 @@ const formatTotal = (value) => {
   return Number(value).toFixed(1);
 };
 
+const weatherIcon = (condition) => {
+  if (!condition) return '🌡️';
+  const c = condition.toLowerCase();
+  if (c.includes('thunder')) return '⛈️';
+  if (c.includes('rain') || c.includes('shower')) return '🌧️';
+  if (c.includes('drizzle')) return '🌦️';
+  if (c.includes('fog')) return '🌫️';
+  if (c.includes('cloudy')) return '☁️';
+  if (c.includes('partly')) return '⛅';
+  if (c.includes('clear')) return '☀️';
+  return '🌡️';
+};
+
 function attachMarkets(matchupData, linesData) {
   const lineMap = new Map(
     (linesData?.games || []).map((game) => [matchupKey(game.away, game.home), game])
@@ -60,7 +73,7 @@ function attachMarkets(matchupData, linesData) {
     ...matchupData,
     matchups: (matchupData?.matchups || []).map((game) => ({
       ...game,
-      market: lineMap.get(matchupKey(game.away, game.home)) || null,
+      market: lineMap.get(matchupKey(game.away, game.home)) || game.market || null,
     })),
   };
 }
@@ -378,6 +391,11 @@ function MatchupDeepDive() {
               <div className="mdd-slate-pill">ML {TEAMS[m.away]?.abbr || m.away} {formatMoneyline(m.market?.moneyline?.away)} / {TEAMS[m.home]?.abbr || m.home} {formatMoneyline(m.market?.moneyline?.home)}</div>
               <div className="mdd-slate-pill">RL {TEAMS[m.away]?.abbr || m.away} {formatSpread(m.market?.spread?.away)} / {TEAMS[m.home]?.abbr || m.home} {formatSpread(m.market?.spread?.home)}</div>
               <div className="mdd-slate-pill">TOT {formatTotal(m.market?.total)}</div>
+              {m.weather && (
+                <div className="mdd-slate-pill mdd-weather-pill">
+                  {weatherIcon(m.weather.condition)} {m.weather.temp_f}°F · {m.weather.precip_pct}% 💧
+                </div>
+              )}
             </div>
           </button>
         ))}
@@ -418,6 +436,16 @@ function MatchupDeepDive() {
           <div className="mdd-market-label">Total</div>
           <div className="mdd-market-value">O/U {formatTotal(game.market?.total)}</div>
         </div>
+        {game.weather && (
+          <div className="mdd-market-card mdd-weather-card">
+            <div className="mdd-market-label">Weather</div>
+            <div className="mdd-market-value mdd-weather-value">
+              <span className="mdd-weather-icon">{weatherIcon(game.weather.condition)}</span>
+              <span>{game.weather.temp_f}°F</span>
+              <span className="mdd-weather-sub">{game.weather.condition} · {game.weather.precip_pct}% rain · {game.weather.wind_kmh} km/h wind</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pitching Matchup */}

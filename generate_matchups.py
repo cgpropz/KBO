@@ -7,8 +7,10 @@ Combines: pitcher logs, team batting, park factors, and today's projections.
 import json
 import csv
 import os
+import urllib.parse
+import urllib.request
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UI_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
@@ -35,6 +37,299 @@ STADIUMS = {
     "Hanwha": "Daejeon", "Lotte": "Busan-Sajik", "NC": "Changwon",
     "Kiwoom": "Seoul-Gocheok",
 }
+
+# Coordinates for each KBO stadium (lat, lon)
+STADIUM_COORDS = {
+    "Seoul-Jamsil":   (37.5120, 127.0729),
+    "Suwon":          (37.2999, 127.0092),
+    "Seoul-Gocheok":  (37.4981, 126.8672),
+    "Incheon-Munhak": (37.4374, 126.6929),
+    "Daejeon":        (36.3176, 127.4283),
+    "Gwangju":        (35.1681, 126.8890),
+    "Daegu":          (35.8412, 128.6814),
+    "Busan-Sajik":    (35.1940, 129.0613),
+    "Changwon":       (35.2229, 128.5810),
+}
+
+TEAM_NAME_ALIASES = {
+    "doosan": "Doosan",
+    "doosan bears": "Doosan",
+    "hanwha": "Hanwha",
+    "hanwha eagles": "Hanwha",
+    "kia": "Kia",
+    "kia tigers": "Kia",
+    "kiwoom": "Kiwoom",
+    "kiwoom heroes": "Kiwoom",
+    "kt": "KT",
+    "kt wiz": "KT",
+    "wiz": "KT",
+    "lg": "LG",
+    "lg twins": "LG",
+    "lotte": "Lotte",
+    "lotte giants": "Lotte",
+    "nc": "NC",
+    "nc dinos": "NC",
+    "samsung": "Samsung",
+    "samsung lions": "Samsung",
+    "ssg": "SSG",
+    "ssg landers": "SSG",
+}
+
+
+def normalize_team_name(name):
+    text = str(name or "").strip()
+    if not text:
+        return None
+    lowered = " ".join(text.replace("-", " ").replace("_", " ").split()).lower()
+
+    if lowered in TEAM_NAME_ALIASES:
+        return TEAM_NAME_ALIASES[lowered]
+
+    for alias, short in TEAM_NAME_ALIASES.items():
+        if alias in lowered:
+            return short
+
+    title = text.title()
+    if title in FULL_TO_SHORT:
+        return FULL_TO_SHORT[title]
+    if text in FULL_TO_SHORT:
+        return FULL_TO_SHORT[text]
+    if text in TEAM_SHORT:
+        return TEAM_SHORT[text]
+    return text if text in STADIUMS else None
+
+
+def fetch_json(url, headers=None, timeout=12):
+    req = urllib.request.Request(url, headers=headers or {"User-Agent": "KBOProps/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read())
+
+
+def _normalize_market_record(raw):
+    away = normalize_team_name(raw.get("away") or raw.get("away_team") or raw.get("awayTeam"))
+    home = normalize_team_name(raw.get("home") or raw.get("home_team") or raw.get("homeTeam"))
+    if not away or not home:
+        return None
+
+    moneyline = raw.get("moneyline") or {}
+    spread = raw.get("spread") or {}
+    total = raw.get("total")
+
+    try:
+        ml_away = moneyline.get("away")
+        ml_home = moneyline.get("home")
+        sp_away = spread.get("away")
+        sp_home = spread.get("home")
+        total_val = float(total) if total is not None else None
+    except Exception:
+        return None
+
+    return {
+        "away": away,
+        "home": home,
+        "moneyline": {
+            "away": int(ml_away) if ml_away is not None else None,
+            "home": int(ml_home) if ml_home is not None else None,
+        },
+        "spread": {
+            "away": float(sp_away) if sp_away is not None else None,
+            "home": float(sp_home) if sp_home is not None else None,
+        },
+        "total": total_val,
+    }
+
+
+def parse_custom_game_lines(payload):
+    if isinstance(payload, dict):
+        games = payload.get("games") or payload.get("events") or payload.get("data") or []
+    elif isinstance(payload, list):
+        games = payload
+    else:
+        games = []
+
+    parsed = []
+    for raw in games:
+        if not isinstance(raw, dict):
+            continue
+        norm = _normalize_market_record(raw)
+        if norm:
+            parsed.append(norm)
+    return parsed
+
+
+def parse_the_odds_api_events(events):
+    parsed = []
+    for event in events or []:
+        away = normalize_team_name(event.get("away_team"))
+        home = normalize_team_name(event.get("home_team"))
+        if not away or not home:
+            continue
+
+        market = {
+            "away": away,
+            "home": home,
+            "moneyline": {"away": None, "home": None},
+            "spread": {"away": None, "home": None},
+            "total": None,
+        }
+
+        bookmakers = event.get("bookmakers") or []
+        if not bookmakers:
+            parsed.append(market)
+            continue
+
+        selected = bookmakers[0]
+        for m in selected.get("markets") or []:
+            key = m.get("key")
+            outcomes = m.get("outcomes") or []
+
+            if key == "h2h":
+                for o in outcomes:
+                    team = normalize_team_name(o.get("name"))
+                    if team == away:
+                        market["moneyline"]["away"] = o.get("price")
+                    elif team == home:
+                        market["moneyline"]["home"] = o.get("price")
+
+            elif key == "spreads":
+                for o in outcomes:
+                    team = normalize_team_name(o.get("name"))
+                    if team == away:
+                        market["spread"]["away"] = o.get("point")
+                    elif team == home:
+                        market["spread"]["home"] = o.get("point")
+
+            elif key == "totals":
+                for o in outcomes:
+                    name = str(o.get("name") or "").lower()
+                    if name in ("over", "under") and o.get("point") is not None:
+                        market["total"] = float(o.get("point"))
+                        break
+
+        parsed.append(_normalize_market_record(market))
+
+    return [p for p in parsed if p]
+
+
+def fetch_game_lines():
+    """
+    Fetch matchup betting lines for the Matchup page.
+
+    Priority:
+      1) Custom API: KBO_GAME_LINES_API_URL (+ optional token/header env vars)
+      2) The Odds API: ODDS_API_KEY/THE_ODDS_API_KEY
+    """
+    custom_url = os.environ.get("KBO_GAME_LINES_API_URL", "").strip()
+    custom_token = os.environ.get("KBO_GAME_LINES_API_TOKEN", "").strip()
+    custom_header = os.environ.get("KBO_GAME_LINES_API_HEADER", "Authorization").strip() or "Authorization"
+
+    if custom_url:
+        try:
+            headers = {"User-Agent": "KBOProps/1.0", "Accept": "application/json"}
+            if custom_token:
+                if custom_header.lower() == "authorization" and not custom_token.lower().startswith("bearer "):
+                    headers[custom_header] = f"Bearer {custom_token}"
+                else:
+                    headers[custom_header] = custom_token
+            payload = fetch_json(custom_url, headers=headers)
+            games = parse_custom_game_lines(payload)
+            if games:
+                print(f"Fetched {len(games)} game lines from custom API")
+                return games
+            print("Custom API returned no parseable game lines")
+        except Exception as exc:
+            print(f"  Game line fetch warning (custom API): {exc}")
+
+    odds_api_key = os.environ.get("ODDS_API_KEY") or os.environ.get("THE_ODDS_API_KEY")
+    if odds_api_key:
+        try:
+            sport_key = os.environ.get("KBO_ODDS_API_SPORT_KEY", "baseball_kbo")
+            params = {
+                "apiKey": odds_api_key,
+                "regions": os.environ.get("KBO_ODDS_API_REGIONS", "us"),
+                "markets": "h2h,spreads,totals",
+                "oddsFormat": "american",
+            }
+            bookmakers = os.environ.get("KBO_ODDS_API_BOOKMAKERS", "")
+            if bookmakers:
+                params["bookmakers"] = bookmakers
+            url = (
+                f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds?"
+                + urllib.parse.urlencode(params)
+            )
+            payload = fetch_json(url, headers={"User-Agent": "KBOProps/1.0", "Accept": "application/json"})
+            games = parse_the_odds_api_events(payload if isinstance(payload, list) else [])
+            if games:
+                print(f"Fetched {len(games)} game lines from The Odds API")
+                return games
+            print("The Odds API returned no parseable KBO game lines")
+        except Exception as exc:
+            print(f"  Game line fetch warning (The Odds API): {exc}")
+
+    print("No game-line API configured; matchup markets will default to TBD")
+    return []
+
+
+def _wmo_to_condition(code):
+    """Map WMO weather interpretation code to a short readable label."""
+    if code == 0:
+        return "Clear"
+    if code in (1, 2):
+        return "Partly Cloudy"
+    if code == 3:
+        return "Cloudy"
+    if code in (45, 48):
+        return "Foggy"
+    if code in (51, 53, 55, 56, 57):
+        return "Drizzle"
+    if code in (61, 63, 65):
+        return "Rain"
+    if code in (80, 81, 82):
+        return "Showers"
+    if code in (95, 96, 99):
+        return "Thunderstorm"
+    return "Cloudy"
+
+
+def fetch_weather(stadium):
+    """
+    Fetch game-time weather for a KBO stadium via Open-Meteo (free, no key).
+    KBO games start ~18:00 KST so we look up the 18:00 hourly slot.
+    Returns a dict or None on failure.
+    """
+    coords = STADIUM_COORDS.get(stadium)
+    if not coords:
+        return None
+    lat, lon = coords
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        f"&hourly=temperature_2m,precipitation_probability,rain,wind_speed_10m,weather_code"
+        f"&timezone=Asia%2FSeoul&forecast_days=1"
+    )
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "KBOProps/1.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        times = data["hourly"]["time"]
+        # Game time ~18:00 KST
+        idx = next((i for i, t in enumerate(times) if t.endswith("T18:00")), 18)
+        temp_c  = data["hourly"]["temperature_2m"][idx]
+        precip  = int(data["hourly"]["precipitation_probability"][idx])
+        rain_mm = round(float(data["hourly"]["rain"][idx]), 1)
+        wind    = round(float(data["hourly"]["wind_speed_10m"][idx]), 1)
+        code    = int(data["hourly"]["weather_code"][idx])
+        return {
+            "temp_f":    round(temp_c * 9 / 5 + 32, 1),
+            "temp_c":    round(temp_c, 1),
+            "precip_pct": precip,
+            "rain_mm":   rain_mm,
+            "wind_kmh":  wind,
+            "condition": _wmo_to_condition(code),
+        }
+    except Exception as exc:
+        print(f"  Weather fetch warning ({stadium}): {exc}")
+        return None
 
 
 def ip_to_outs(ip_value):
@@ -258,6 +553,20 @@ def main():
     b_projs = b_data.get("projections", [])
     team_batting_rates = b_data.get("team_batting", {})
 
+    # Fetch API-backed game lines for matchup page markets
+    game_lines = fetch_game_lines()
+    line_map = {
+        f"{g['away']}@{g['home']}": g
+        for g in game_lines
+        if g.get("away") and g.get("home")
+    }
+
+    # Pre-fetch weather for all unique stadiums on today's slate
+    print("Fetching weather data...")
+    weather_cache = {}
+    for stadium_name in set(STADIUMS.values()):
+        weather_cache[stadium_name] = fetch_weather(stadium_name)
+
     # Discover games from projections
     game_map = {}
     for p in k_projs:
@@ -334,6 +643,8 @@ def main():
             "away": away,
             "home": home,
             "stadium": STADIUMS.get(home, park.get("stadium", "Unknown")),
+            "weather": weather_cache.get(STADIUMS.get(home, ""), None),
+            "market": line_map.get(f"{away}@{home}") or line_map.get(f"{home}@{away}"),
             "away_pitcher": {
                 "name": away_pitcher["name"] if away_pitcher else None,
                 "line": away_pitcher["line"] if away_pitcher else None,
@@ -357,8 +668,10 @@ def main():
         }
         matchups.append(matchup)
 
+    generated_at = datetime.now(timezone.utc).isoformat()
+
     output = {
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": generated_at,
         "matchups": matchups,
         "league_batting": league_batting,
         "team_pitching": team_pitching,
@@ -368,7 +681,19 @@ def main():
     out_path = os.path.join(UI_DATA, "matchup_data.json")
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2)
+
+    # Keep a standalone game_lines snapshot for UI compatibility.
+    game_lines_path = os.path.join(UI_DATA, "game_lines.json")
+    game_lines_output = {
+        "generated_at": generated_at,
+        "source": "custom_api" if os.environ.get("KBO_GAME_LINES_API_URL") else "the_odds_api",
+        "games": game_lines,
+    }
+    with open(game_lines_path, "w") as f:
+        json.dump(game_lines_output, f, indent=2)
+
     print("Wrote " + out_path)
+    print("Wrote " + game_lines_path)
     print(str(len(matchups)) + " matchups generated")
 
 

@@ -113,6 +113,8 @@ else
   echo "Regenerating lightweight UI enrichments from current snapshots"
   "$PYTHON" "$BASE/build_opponent_stats.py"
   "$PYTHON" "$BASE/_build_player_photos.py"
+  # Keep matchup markets/weather fresh for quick-release runs.
+  "$PYTHON" "$BASE/generate_matchups.py"
 fi
 
 if [[ "$SKIP_BUILD" -eq 0 ]]; then
