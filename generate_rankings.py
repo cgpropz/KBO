@@ -14,14 +14,52 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 TEAM_SHORT = {
     "DOOSAN": "Doosan", "HANWHA": "Hanwha", "KIA": "Kia",
-    "KT": "KT", "Kiwoom": "Kiwoom", "LG": "LG",
+    "KT": "KT", "KIWOOM": "Kiwoom", "Kiwoom": "Kiwoom", "LG": "LG",
     "LOTTE": "Lotte", "NC": "NC", "SAMSUNG": "Samsung", "SSG": "SSG",
 }
 
+
+def canonical_team(name):
+    raw = str(name or "").strip()
+    if not raw:
+        return None
+    if raw in TEAM_SHORT:
+        return TEAM_SHORT[raw]
+    upper = raw.upper()
+    if upper in TEAM_SHORT:
+        return TEAM_SHORT[upper]
+    if raw in ("KT", "LG", "NC", "SSG"):
+        return raw
+    return raw
+
 # Load team batting stats (BA and K%)
 def load_team_batting_stats():
-    """Load team batting average and strikeout % from league_batting_sorted.csv"""
+    """Load team batting average and strikeout % from canonical team opponent stats."""
     team_stats = {}
+
+    # Preferred source: canonical per-team opponent stats used by the UI.
+    canonical_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "team_opponent_stats_2026.json")
+    if os.path.exists(canonical_path):
+        try:
+            with open(canonical_path, encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                for team_name, row in raw.items():
+                    team = canonical_team(team_name)
+                    if not team or not isinstance(row, dict):
+                        continue
+                    ba = row.get("ba")
+                    k_pct = row.get("k_pct")
+                    if ba is None or k_pct is None:
+                        continue
+                    team_stats[team] = {"ba": float(ba), "k_pct": float(k_pct)}
+        except Exception:
+            pass
+
+    if team_stats:
+        return team_stats
+
+    # Fallback source for resilience.
     league_path = os.path.join(BASE, "Batters-Data", "league_batting_sorted.csv")
     if not os.path.exists(league_path):
         return team_stats
@@ -29,21 +67,23 @@ def load_team_batting_stats():
     with open(league_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            team_name = row.get("Tm", "").strip()
-            if not team_name:
+            team = canonical_team(row.get("Tm", ""))
+            if not team:
                 continue
             try:
                 ba = float(row.get("BA", 0))
                 so = int(row.get("SO", 0))
                 pa = int(row.get("PA", 0) or 1)
                 k_pct = (so / pa * 100) if pa > 0 else 0
-                team_stats[team_name] = {"ba": ba, "k_pct": round(k_pct, 1)}
+                team_stats[team] = {"ba": ba, "k_pct": round(k_pct, 1)}
             except (ValueError, TypeError):
                 continue
     
     return team_stats
 
 team_batting_stats = load_team_batting_stats()
+avg_opp_ba = round(sum(v["ba"] for v in team_batting_stats.values()) / len(team_batting_stats), 3) if team_batting_stats else None
+avg_opp_k_pct = round(sum(v["k_pct"] for v in team_batting_stats.values()) / len(team_batting_stats), 1) if team_batting_stats else None
 
 with open(os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")) as f:
     logs = json.load(f)
@@ -79,16 +119,20 @@ for name, games in pitchers.items():
     losses = sum(1 for g in games if g.get("Dec") == "L")
 
     team_raw = games[0]["Tm"]
-    team = TEAM_SHORT.get(team_raw, team_raw)
+    team = canonical_team(team_raw) or team_raw
     
-    # Get most common opponent
-    opps = [g.get("Opp", "") for g in games]
-    opp_raw = max(opps, key=opps.count) if opps else None
-    opp_team = TEAM_SHORT.get(opp_raw, opp_raw) if opp_raw else None
+    # Use the latest non-empty opponent for current matchup context.
+    opp_team = None
+    for g in reversed(games):
+        opp_raw = g.get("Opp", "")
+        if opp_raw:
+            opp_team = canonical_team(opp_raw)
+            if opp_team:
+                break
     
     # Get opponent team batting stats
-    opp_ba = None
-    opp_k_pct = None
+    opp_ba = avg_opp_ba
+    opp_k_pct = avg_opp_k_pct
     if opp_team and opp_team in team_batting_stats:
         opp_ba = team_batting_stats[opp_team]["ba"]
         opp_k_pct = team_batting_stats[opp_team]["k_pct"]
@@ -117,7 +161,7 @@ for name, games in pitchers.items():
         "l": losses,
         "wl_ratio": round(wl_ratio, 3),
         "opp_team": opp_team,
-        "opp_ba": round(opp_ba, 3) if opp_ba else None,
+        "opp_ba": round(opp_ba, 3) if opp_ba is not None else None,
         "opp_k_pct": opp_k_pct,
     })
 

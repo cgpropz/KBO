@@ -32,6 +32,11 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium --with-deps
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Write credentials.json
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         continue-on-error: true
@@ -43,6 +48,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Verify generated local snapshots
+        run: |
+          python pipeline/verify_local_data.py --strict
 
       - name: Commit data updates
         run: |
@@ -56,11 +65,6 @@ jobs:
             git push
           fi
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Deploy to Vercel
         run: |
           npm i -g vercel
@@ -69,3 +73,18 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Verify production data (strict)
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            echo "Production verify attempt ${attempt}/6"
+            if python pipeline/verify_production_data.py --base-url https://mykboprops.com --strict; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 6 ]; then
+              echo "Verification not green yet, retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "Production verification failed after retries"
+          exit 1
