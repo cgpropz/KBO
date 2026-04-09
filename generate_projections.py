@@ -525,6 +525,30 @@ def load_pp_lines(stat_name):
 
 
 def load_team_batting_context():
+    canonical_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "team_opponent_stats_2026.json")
+    if os.path.exists(canonical_path):
+        try:
+            with open(canonical_path, encoding="utf-8") as f:
+                raw = json.load(f)
+            out = {}
+            if isinstance(raw, dict):
+                for team, row in raw.items():
+                    so_per_g = safe_float(row.get("so_per_g"), None)
+                    h_per_ip = safe_float(row.get("h_per_ip"), None)
+                    if so_per_g is None or h_per_ip is None:
+                        continue
+                    out[team] = {
+                        "so_per_g": so_per_g,
+                        "h_per_g": h_per_ip * 9.0,
+                        "h_per_ip": h_per_ip,
+                    }
+            if out:
+                league_avg_so = sum(v["so_per_g"] for v in out.values()) / max(1, len(out))
+                league_avg_h_per_ip = sum(v["h_per_ip"] for v in out.values()) / max(1, len(out))
+                return out, league_avg_so, league_avg_h_per_ip
+        except Exception:
+            pass
+
     team_map = {
         "LG Twins": "LG",
         "Samsung Lions": "Samsung",

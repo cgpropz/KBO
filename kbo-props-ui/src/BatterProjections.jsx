@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
 
@@ -30,6 +30,7 @@ const SCALE_GREEN = { r: 34, g: 197, b: 94 };
 function BatterProjections() {
   const [data, setData] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
+  const [photos, setPhotos] = useState({});
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,10 +45,12 @@ function BatterProjections() {
     return Promise.all([
       fetchDataSnapshot('batter_projections.json'),
       fetchDataSnapshot('prizepicks_props.json').catch(() => null),
+      fetchDataSnapshot('player_photos.json').catch(() => null),
     ])
-      .then(([batterSnap, ppSnap]) => {
+      .then(([batterSnap, ppSnap, photoSnap]) => {
         setData(batterSnap?.data || null);
         setPrizepicksData(ppSnap?.data || null);
+        setPhotos(photoSnap?.data || {});
         setLastUpdated(batterSnap?.updatedAt || batterSnap?.data?.generated_at || new Date().toISOString());
         setError(null);
         setLoading(false);
@@ -78,6 +81,21 @@ function BatterProjections() {
     .filter(Boolean)
     .sort()
     .join(' ');
+
+  const photoLookup = useMemo(() => {
+    const lookup = {};
+    for (const [name, url] of Object.entries(photos || {})) {
+      lookup[normalizeName(name)] = url;
+    }
+    return lookup;
+  }, [photos]);
+
+  const playerInitials = (name) => String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -354,7 +372,24 @@ function BatterProjections() {
             <tbody>
               {projections.map((p, i) => (
                 <tr key={i} className="bp-row">
-                  <td className="col-player">{p.name}</td>
+                  <td className="col-player">
+                    <div className="bp-player-cell">
+                      {photoLookup[normalizeName(p.name)] ? (
+                        <img
+                          className="bp-player-avatar"
+                          src={photoLookup[normalizeName(p.name)]}
+                          alt={p.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="bp-player-fallback">{playerInitials(p.name)}</div>
+                      )}
+                      <span>{p.name}</span>
+                    </div>
+                  </td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td className={`col-center mono ${!p.batter_hand || p.batter_hand === 'UNK' ? 'cell-na' : ''}`}>{p.batter_hand && p.batter_hand !== 'UNK' ? p.batter_hand : 'UNK'}</td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>

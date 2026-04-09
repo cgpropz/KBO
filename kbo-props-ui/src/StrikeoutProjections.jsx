@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 
@@ -21,6 +21,7 @@ function StrikeoutProjections() {
   const [matchupData, setMatchupData] = useState(null);
   const [opponentStatsData, setOpponentStatsData] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
+  const [photos, setPhotos] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
@@ -53,17 +54,19 @@ function StrikeoutProjections() {
 
     const load = async () => {
       try {
-        const [kData, mData, oppData, ppData] = await Promise.all([
+        const [kData, mData, oppData, ppData, photoData] = await Promise.all([
           fetchData('strikeout_projections.json'),
           fetchData('matchup_data.json').catch(() => null),
           fetchData('team_opponent_stats_2026.json').catch(() => null),
           fetchData('prizepicks_props.json').catch(() => null),
+          fetchData('player_photos.json').catch(() => ({})),
         ]);
         if (cancelled) return;
         setData(kData);
         setMatchupData(mData);
         setOpponentStatsData(oppData);
         setPrizepicksData(ppData);
+        setPhotos((photoData && typeof photoData === 'object') ? photoData : {});
         setError(null);
       } catch (err) {
         if (cancelled) return;
@@ -95,6 +98,23 @@ function StrikeoutProjections() {
     if (sortField !== field) return <span className="sort-icon dim">⇅</span>;
     return <span className="sort-icon active">{sortDir === 'asc' ? '▲' : '▼'}</span>;
   };
+
+  // Must be declared before early returns to satisfy Rules of Hooks
+  const photoLookup = useMemo(() => {
+    const lookup = {};
+    const raw = (photos && typeof photos === 'object') ? photos : {};
+    for (const [name, url] of Object.entries(raw)) {
+      lookup[normalizeName(name)] = url;
+    }
+    return lookup;
+  }, [photos]);
+
+  const playerInitials = (name) => String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
 
   if (loading) {
     return (
@@ -273,7 +293,7 @@ function StrikeoutProjections() {
       ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
       : selectedProp === 'all'
         ? 'Filter by prop type to view the active pitcher model formula'
-        : '(SO/IP x IP/G) x Opp K% ÷ Lg Avg K%, adjusted by WHIP and form';
+        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by WHIP and form';
 
   const getValClass = (rec) => {
     if (rec === 'OVER') return 'val-over';
@@ -347,7 +367,24 @@ function StrikeoutProjections() {
             <tbody>
               {projections.map((p, i) => (
                 <tr key={i} className="so-row">
-                  <td className="col-player">{p.name}</td>
+                  <td className="col-player">
+                    <div className="so-player-cell">
+                      {photoLookup[normalizeName(p.name)] ? (
+                        <img
+                          className="so-player-avatar"
+                          src={photoLookup[normalizeName(p.name)]}
+                          alt={p.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="so-player-fallback">{playerInitials(p.name)}</div>
+                      )}
+                      <span>{p.name}</span>
+                    </div>
+                  </td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
                   <td className="col-num mono" style={oppBaBg(p.opp_ba)}>{p.opp_ba != null ? parseFloat(p.opp_ba).toFixed(3) : '—'}</td>

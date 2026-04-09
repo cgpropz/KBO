@@ -131,6 +131,32 @@
 
 /* Columns */
 .col-player { font-weight: 600; color: #f1f5f9; white-space: nowrap; font-size: clamp(0.72rem, 0.72vw, 0.9rem); }
+.bp-player-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.bp-player-avatar,
+.bp-player-fallback {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.bp-player-avatar {
+  object-fit: cover;
+  border: 1px solid #2a2a2a;
+  background: #0f0f0f;
+}
+.bp-player-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+  color: #ddd;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
 .col-prop { color: #94a3b8; font-size: clamp(0.66rem, 0.66vw, 0.82rem); }
 .col-num { text-align: center; }
 .col-center { text-align: center; }

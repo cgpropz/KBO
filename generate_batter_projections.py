@@ -291,27 +291,55 @@ TEAM_NAME_MAP = {
 TEAM_NAME_MAP_REV = {v: k for k, v in TEAM_NAME_MAP.items()}
 
 # ── Step 2: Load team batting stats (opponent factor) ──
-# Each row = a team's OFFENSIVE output. To estimate what an opposing pitcher staff
-# allows, we use the league's team batting data. A team that scores more HRR/G means
-# its opponents' pitching is weaker at preventing HRR.
+# Primary source: canonical opponent stats file built from Baseball Reference.
 team_batting = {}
-with open(os.path.join(BASE, "Batters-Data", "league_batting.csv")) as f:
-    for row in csv.DictReader(f):
-        full = row["Tm"].strip()
-        short = TEAM_NAME_MAP_REV.get(full, full)
-        g = int(row["G"])
-        h = int(row["H"])
-        r = int(row["R"])
-        rbi = int(row["RBI"])
-        tb = int(row["TB"])
-        team_batting[short] = {
-            "games": g,
-            "h_per_g": h / g,
-            "r_per_g": r / g,
-            "rbi_per_g": rbi / g,
-            "hrr_per_g": (h + r + rbi) / g,
-            "tb_per_g": tb / g,
-        }
+canon_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "team_opponent_stats_2026.json")
+if os.path.exists(canon_path):
+    with open(canon_path, encoding="utf-8") as f:
+        raw = json.load(f)
+    if isinstance(raw, dict):
+        for short, row in raw.items():
+            g = float(row.get("games") or 0)
+            h = float(row.get("h") or 0)
+            r = float(row.get("r") or 0)
+            rbi = float(row.get("rbi") or 0)
+            tb = float(row.get("tb") or 0)
+            hrr_per_g = float(row.get("hrr_per_g") or 0)
+            tb_per_g = float(row.get("tb_per_g") or 0)
+            if g <= 0:
+                continue
+            if hrr_per_g <= 0:
+                hrr_per_g = (h + r + rbi) / g
+            if tb_per_g <= 0:
+                tb_per_g = tb / g
+            team_batting[short] = {
+                "games": g,
+                "h_per_g": (h / g) if g else 0,
+                "r_per_g": (r / g) if g else 0,
+                "rbi_per_g": (rbi / g) if g else 0,
+                "hrr_per_g": hrr_per_g,
+                "tb_per_g": tb_per_g,
+            }
+
+# Fallback if canonical file unavailable.
+if not team_batting:
+    with open(os.path.join(BASE, "Batters-Data", "league_batting.csv")) as f:
+        for row in csv.DictReader(f):
+            full = row["Tm"].strip()
+            short = TEAM_NAME_MAP_REV.get(full, full)
+            g = int(row["G"])
+            h = int(row["H"])
+            r = int(row["R"])
+            rbi = int(row["RBI"])
+            tb = int(row["TB"])
+            team_batting[short] = {
+                "games": g,
+                "h_per_g": h / g,
+                "r_per_g": r / g,
+                "rbi_per_g": rbi / g,
+                "hrr_per_g": (h + r + rbi) / g,
+                "tb_per_g": tb / g,
+            }
 
 league_avg_hrr_per_g = sum(t["hrr_per_g"] for t in team_batting.values()) / len(team_batting)
 league_avg_tb_per_g = sum(t["tb_per_g"] for t in team_batting.values()) / len(team_batting)
