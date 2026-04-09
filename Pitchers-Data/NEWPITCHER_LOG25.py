@@ -168,8 +168,13 @@ def load_mapped_pitchers():
         added += 1
 
     if mapped_teams:
-        PLAYER_TEAMS.clear()
-        PLAYER_TEAMS.update(mapped_teams)
+        # MERGE into PLAYER_TEAMS: add pcodes from the map without wiping manually-set entries.
+        for team, pcodes in mapped_teams.items():
+            if team not in PLAYER_TEAMS:
+                PLAYER_TEAMS[team] = []
+            for pcode in pcodes:
+                if pcode not in PLAYER_TEAMS[team]:
+                    PLAYER_TEAMS[team].append(pcode)
     print(f"Loaded pitcher map entries with KBO IDs: {added}")
 
 def convert_date(date_str, default_year=None):
@@ -184,6 +189,16 @@ def parse_innings(innings_str):
         return 1.0 / 3.0
     if s == '2/3':
         return 2.0 / 3.0
+    # Handle mixed format like "4 2/3" or "5 1/3"
+    if ' ' in s:
+        parts = s.split(' ', 1)
+        try:
+            whole = float(parts[0])
+            frac_parts = parts[1].split('/')
+            frac = float(frac_parts[0]) / float(frac_parts[1])
+            return whole + frac
+        except Exception:
+            pass
     try:
         return float(s)
     except Exception:
