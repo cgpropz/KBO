@@ -116,6 +116,13 @@ else
 fi
 
 if [[ "$SKIP_BUILD" -eq 0 ]]; then
+  if [[ -f "$BASE/pipeline/verify_local_data.py" ]]; then
+    echo ""
+    echo "Pre-deploy snapshot verification"
+    echo "--------------------------------------------------"
+    "$PYTHON" "$BASE/pipeline/verify_local_data.py" --strict
+  fi
+
   log_step 3 "Build UI"
   cd "$BASE/kbo-props-ui"
   npm ci

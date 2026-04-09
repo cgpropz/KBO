@@ -1,6 +1,20 @@
 name: Refresh Data & Deploy to Vercel
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'kbo-props-ui/public/data/**'
+      - 'pipeline/**'
+      - '.github/workflows/**'
+      - 'refresh_data.py'
+      - 'refresh_odds.py'
+      - 'generate_*.py'
+      - 'build_opponent_stats.py'
+      - '_build_player_photos.py'
+      - 'Pitchers-Data/**'
+      - 'Batters-Data/**'
   schedule:
     # Once daily full refresh + deploy.
     # GitHub schedule uses UTC; 16:00 UTC is around noon US Eastern.
