@@ -110,6 +110,9 @@ if [[ "$SKIP_FULL" -eq 0 ]]; then
   "$PYTHON" "$BASE/refresh_data.py" "${EXTRA_ARGS[@]}"
 else
   log_step 2 "Run full data refresh (skipped)"
+  echo "Regenerating lightweight UI enrichments from current snapshots"
+  "$PYTHON" "$BASE/build_opponent_stats.py"
+  "$PYTHON" "$BASE/_build_player_photos.py"
 fi
 
 if [[ "$SKIP_BUILD" -eq 0 ]]; then

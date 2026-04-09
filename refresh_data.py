@@ -102,6 +102,16 @@ STEPS = [
         "skip_flag": None,
     },
     {
+        "name": "Opponent Team Batting Stats",
+        "cmd": [PYTHON, os.path.join(BASE, "build_opponent_stats.py")],
+        "skip_flag": None,
+    },
+    {
+        "name": "Player Photos",
+        "cmd": [PYTHON, os.path.join(BASE, "_build_player_photos.py")],
+        "skip_flag": None,
+    },
+    {
         "name": "Grade Props",
         "cmd": [PYTHON, os.path.join(BASE, "grade_props.py")],
         "skip_flag": "--skip-grade",

@@ -13,6 +13,7 @@ import json
 import pathlib
 import re
 import sys
+import unicodedata
 
 BASE = pathlib.Path(__file__).parent
 
@@ -72,6 +73,55 @@ def photo_url(mykbo_id, kbo_player_id):
     return kbo_photo_url(kbo_player_id)
 
 
+def normalize_name(value):
+    return re.sub(r"[^a-z0-9]+", " ", unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode("ascii").lower()).strip()
+
+
+def load_prizepicks_aliases():
+    """Return alias map from PrizePicks display names to canonical internal names."""
+    aliases = {}
+    alias_files = [
+        BASE / "Batters-Data" / "prizepicks_batter_name_map.json",
+        BASE / "Pitchers-Data" / "prizepicks_pitcher_name_map.json",
+    ]
+    for path in alias_files:
+        if not path.exists():
+            continue
+        try:
+            raw = json.loads(path.read_text())
+        except Exception:
+            continue
+        mapping = raw.get("map", {}) if isinstance(raw, dict) else {}
+        for alias, canonical in mapping.items():
+            if alias and canonical:
+                aliases[str(alias)] = str(canonical)
+    return aliases
+
+
+def apply_aliases(photos, aliases):
+    """
+    Ensure both canonical and PrizePicks display name variants point to the same URL.
+    """
+    by_norm = {normalize_name(name): name for name in photos.keys()}
+    added = 0
+    for alias, canonical in aliases.items():
+        if alias in photos:
+            continue
+
+        src_name = None
+        if canonical in photos:
+            src_name = canonical
+        else:
+            src_name = by_norm.get(normalize_name(canonical))
+
+        if src_name and src_name in photos:
+            photos[alias] = photos[src_name]
+            by_norm[normalize_name(alias)] = alias
+            added += 1
+
+    print(f"From PrizePicks aliases: +{added} (total {len(photos)})")
+
+
 def build_from_kbo_cdn(photos, pcodes):
     """Build photo URLs for all players with known pcodes using KBO official CDN."""
     added = 0
@@ -119,6 +169,7 @@ _PITCHER_PCODE_MAP = {
     "56841": "Anthony Veneziano", "56036": "Caleb Boushley", "56334": "Nathan Wiles",
     "56911": "Natsuki Toda", "56464": "O`LOUGHLIN Jack", "55239": "Zach Logue",
     "55633": "Adam Oller", "55130": "Anders Tolhurst",  # was Unknown_55633
+    "68220": "Gwak Been",
 }
 
 
@@ -170,6 +221,31 @@ def load_pcodes():
                     pc = str(row.get("pcode") or "").strip()
                     if nm and pc and nm not in pcs:
                         pcs[nm] = pc
+
+    # Batter hands file contains current-season batters and pcode values.
+    for path in [BASE / "Batters-Data" / "kbo_batter_hands.csv"]:
+        if path.exists():
+            with open(path) as f:
+                for row in csv.DictReader(f):
+                    nm = (row.get("Name") or row.get("Player Name") or "").strip()
+                    pc = str(row.get("pcode") or "").strip()
+                    if nm and pc and nm not in pcs:
+                        pcs[nm] = pc
+
+    # mykbostats pitcher map can include KBO-only entries with no mykbo_id.
+    pmap = BASE / "Pitchers-Data" / "mykbostats_pitcher_map.json"
+    if pmap.exists():
+        try:
+            raw = json.loads(pmap.read_text())
+            items = raw if isinstance(raw, list) else list(raw.values())
+            for d in items:
+                nm = (d.get("name") or "").strip()
+                pc = str(d.get("kbo_player_id") or "").strip()
+                if nm and pc and nm not in pcs:
+                    pcs[nm] = pc
+        except Exception:
+            pass
+
     return pcs
 
 
@@ -322,11 +398,14 @@ async def scrape_from_direct_pages(photos, pcodes):
 async def main():
     pcodes = load_pcodes()
     print(f"Loaded {len(pcodes)} pcodes")
+    aliases = load_prizepicks_aliases()
+    print(f"Loaded {len(aliases)} PrizePicks aliases")
 
     photos = {}
     build_from_existing_maps(photos)
     build_from_foreign_urls(photos, pcodes)
     build_from_kbo_cdn(photos, pcodes)
+    apply_aliases(photos, aliases)
 
     props_path = BASE / "kbo-props-ui" / "public" / "data" / "prizepicks_props.json"
     targets = set()
