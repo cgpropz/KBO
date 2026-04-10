@@ -1,0 +1,356 @@
+.tutorial-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(34, 197, 94, 0.22), transparent 28%),
+    radial-gradient(circle at 88% 20%, rgba(14, 165, 233, 0.2), transparent 26%),
+    linear-gradient(160deg, #071019 0%, #101a2c 55%, #152136 100%);
+  color: #e5ecf4;
+  padding: 2.2rem 1.2rem 3rem;
+}
+
+.tutorial-hero,
+.tutorial-workflow,
+.tutorial-guides {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+}
+
+.tutorial-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.tutorial-hero-text,
+.tutorial-hero-score,
+.tutorial-workflow,
+.tutorial-guide-card {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.tutorial-hero-text {
+  padding: 1.6rem 1.7rem;
+}
+
+.tutorial-eyebrow {
+  color: #7dd3fc;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.tutorial-hero-text h1 {
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  line-height: 1.12;
+  color: #f8fafc;
+}
+
+.tutorial-hero-text p {
+  margin: 0;
+  color: #d4dde9;
+  line-height: 1.65;
+}
+
+.tutorial-hero-actions {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 1.1rem;
+}
+
+.tutorial-hero-actions button,
+.tutorial-hero-actions a {
+  border-radius: 999px;
+  border: 0;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.tutorial-hero-actions button {
+  background: linear-gradient(135deg, #10b981, #22c55e);
+  color: #051018;
+  padding: 0.56rem 1rem;
+}
+
+.tutorial-hero-actions a {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(125, 211, 252, 0.55);
+  color: #e2eef9;
+  padding: 0.5rem 1rem;
+}
+
+.tutorial-hero-actions button:hover,
+.tutorial-hero-actions a:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.tutorial-hero-score {
+  padding: 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tutorial-hero-score article {
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tutorial-hero-score strong {
+  font-size: 1.15rem;
+  color: #86efac;
+}
+
+.tutorial-hero-score span {
+  color: #bfd1e5;
+  font-size: 0.9rem;
+}
+
+.tutorial-workflow {
+  margin-top: 1rem;
+  padding: 1.2rem;
+}
+
+.tutorial-workflow h2 {
+  margin: 0 0 0.9rem;
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+
+.tutorial-workflow ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tutorial-workflow li {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  color: #d8e3f0;
+  line-height: 1.45;
+}
+
+.tutorial-workflow li span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #022c22;
+  background: linear-gradient(135deg, #34d399, #86efac);
+}
+
+.tutorial-guides {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.95rem;
+}
+
+.tutorial-guide-card {
+  padding: 1rem;
+}
+
+.tutorial-guide-head {
+  margin-bottom: 0.75rem;
+}
+
+.tutorial-guide-tag {
+  color: #7dd3fc;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  margin: 0 0 0.22rem;
+  font-weight: 700;
+}
+
+.tutorial-guide-head h3 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.3rem;
+}
+
+.tutorial-guide-head p {
+  margin: 0.35rem 0 0;
+  color: #bfd1e5;
+}
+
+.tutorial-guide-layout {
+  display: grid;
+  grid-template-columns: 0.95fr 1.25fr;
+  gap: 0.9rem;
+}
+
+.tutorial-snapshot {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(160deg, rgba(9, 15, 27, 0.95), rgba(15, 24, 39, 0.85));
+  padding: 0.7rem;
+  min-height: 285px;
+}
+
+.tutorial-snapshot-browser {
+  display: flex;
+  gap: 0.36rem;
+  margin-bottom: 0.6rem;
+}
+
+.tutorial-snapshot-browser span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.45);
+}
+
+.tutorial-snapshot-browser span:nth-child(1) {
+  background: #f87171;
+}
+
+.tutorial-snapshot-browser span:nth-child(2) {
+  background: #facc15;
+}
+
+.tutorial-snapshot-browser span:nth-child(3) {
+  background: #4ade80;
+}
+
+.tutorial-snapshot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tutorial-snapshot-header p {
+  margin: 0;
+  font-weight: 700;
+  color: #eaf2fb;
+}
+
+.tutorial-snapshot-header small {
+  color: #9fb2c9;
+}
+
+.tutorial-snapshot-header strong {
+  padding: 0.25rem 0.52rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: #03231a;
+  background: linear-gradient(135deg, #34d399, #6ee7b7);
+}
+
+.tutorial-snapshot-image {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  object-fit: cover;
+  background: #0f172a;
+}
+
+.tutorial-caption {
+  margin-top: 0.6rem;
+  color: #9cb2c9;
+  font-size: 0.78rem;
+}
+
+.tutorial-guide-content {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tutorial-guide-content section {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 13, 24, 0.56);
+  padding: 0.8rem 0.9rem;
+}
+
+.tutorial-guide-content h4 {
+  margin: 0 0 0.45rem;
+  color: #eaf2fb;
+  font-size: 0.96rem;
+}
+
+.tutorial-guide-content p {
+  margin: 0;
+  color: #d3deeb;
+  line-height: 1.55;
+}
+
+.tutorial-guide-content ul {
+  margin: 0;
+  padding-left: 1rem;
+  color: #d5e0ec;
+  display: grid;
+  gap: 0.4rem;
+  line-height: 1.45;
+}
+
+.tutorial-guide-card {
+  animation: tutorialFadeIn 0.45s ease both;
+}
+
+@keyframes tutorialFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1050px) {
+  .tutorial-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .tutorial-guide-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .tutorial-page {
+    padding: 1.2rem 0.7rem 2rem;
+  }
+
+  .tutorial-hero-text,
+  .tutorial-workflow,
+  .tutorial-guide-card {
+    padding: 0.9rem;
+  }
+
+  .tutorial-hero-actions {
+    flex-direction: column;
+  }
+
+  .tutorial-hero-actions button,
+  .tutorial-hero-actions a {
+    text-align: center;
+  }
+
+  .tutorial-guide-head h3 {
+    font-size: 1.05rem;
+  }
+}

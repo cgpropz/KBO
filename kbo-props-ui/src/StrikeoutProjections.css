@@ -71,6 +71,7 @@
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .so-filter-btn.active {
@@ -93,14 +94,46 @@
 /* ==================== TABLE ==================== */
 .so-table-wrap {
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #222;
 }
 
 .so-table {
   width: 100%;
+  min-width: 1120px;
   border-collapse: collapse;
   font-size: 0.95rem;
+}
+
+.so-scroll-hint {
+  display: none;
+  color: #b7b7b7;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  margin: -0.35rem 0 0.2rem;
+}
+
+.so-table th:first-child,
+.so-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.so-table thead th:first-child {
+  z-index: 3;
+  background: #1a1a2e;
+}
+
+.so-table tbody td:first-child {
+  background: #000;
+  box-shadow: 8px 0 14px rgba(0, 0, 0, 0.35);
+}
+
+.so-row:hover td:first-child {
+  background: #111;
 }
 
 .so-table thead {
@@ -401,6 +434,13 @@
   .so-header { padding: 1rem; }
   .so-title { font-size: 1.4rem; }
   .so-main { padding: 0.75rem; }
+  .so-filter-bar {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+  }
+  .so-scroll-hint { display: block; }
   .so-table th, .so-table td { padding: 0.45rem 0.5rem; font-size: 0.78rem; }
   .so-team-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
 }

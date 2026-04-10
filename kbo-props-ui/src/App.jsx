@@ -10,6 +10,7 @@ import SlipOptimizer from './SlipOptimizer'
 import MatchupDeepDive from './MatchupDeepDive'
 import LandingPage from './LandingPage'
 import SubscriptionPage from './SubscriptionPage'
+import TutorialPage from './TutorialPage'
 import Paywall from './Paywall'
 import './App.css'
 
@@ -61,6 +62,7 @@ function App() {
       case 'optimizer':   return <SlipOptimizer />;
       case 'matchups':    return <MatchupDeepDive />;
       case 'pricing':     return <SubscriptionPage />;
+      case 'tutorial':    return <TutorialPage onNavigate={setView} />;
       default:            return null;
     }
   })();
@@ -91,6 +93,10 @@ function Nav({ view, setView }) {
     { id: 'optimizer', label: 'Slip Builder' },
     { id: 'matchups', label: 'Matchups' },
   ];
+
+  if (import.meta.env.DEV) {
+    navItems.push({ id: 'tutorial', label: 'Tutorial' });
+  }
 
   const handleNav = (id) => {
     setView(id);

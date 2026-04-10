@@ -237,9 +237,9 @@ function StrikeoutProjections() {
   });
 
   const filtered = mergedScoped.filter((p) => {
-    // Only show rows that have a prop and matchup in our data
+    // Keep selected tab strict so filters only show the chosen prop type
     if (selectedProp === 'all') return true;
-    return p.prop === selectedProp || p.opp_k_pct != null;
+    return p.prop === selectedProp;
   });
 
   const projections = [...filtered].sort((a, b) => {
@@ -347,6 +347,7 @@ function StrikeoutProjections() {
       <main className="so-main">
 
         {/* Projection table */}
+        <div className="so-scroll-hint">Swipe left/right to view full pitcher table</div>
         <div className="so-table-wrap">
           <table className="so-table">
             <thead>
