@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-      - 'kbo-props-ui/public/data/**'
-      - 'pipeline/**'
-      - '.github/workflows/**'
-      - 'refresh_data.py'
-      - 'refresh_odds.py'
-      - 'generate_*.py'
-      - 'build_opponent_stats.py'
-      - '_build_player_photos.py'
-      - 'Pitchers-Data/**'
-      - 'Batters-Data/**'
+      - "kbo-props-ui/public/data/**"
+      - "pipeline/**"
+      - ".github/workflows/**"
+      - "refresh_data.py"
+      - "refresh_odds.py"
+      - "generate_*.py"
+      - "build_opponent_stats.py"
+      - "_build_player_photos.py"
+      - "Pitchers-Data/**"
+      - "Batters-Data/**"
   schedule:
     # Once daily full refresh + deploy.
     # GitHub schedule uses UTC; 16:00 UTC is around noon US Eastern.
@@ -55,9 +55,15 @@ jobs:
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         continue-on-error: true
 
-      - name: Run ordered release steps (data + build, no deploy)
+      - name: Run full data refresh (stats, logs, projections, player props)
         run: |
           bash pipeline/run_release.sh --skip-deploy
+
+      # Removed redundant odds refresh step to prevent stale data
+
+      - name: Verify all public data snapshots (fail if missing/stale)
+        run: |
+          python pipeline/verify_local_data.py --strict
         timeout-minutes: 45
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
