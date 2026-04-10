@@ -11,15 +11,6 @@ const FILE_TO_TABLE = {
 };
 
 const PROTECTED_FILES = new Set(Object.keys(FILE_TO_TABLE));
-const STATIC_FIRST_FILES = new Set([
-  'strikeout_projections.json',
-  'batter_projections.json',
-  'pitcher_rankings.json',
-  'matchup_data.json',
-  'prizepicks_props.json',
-  'prop_results.json',
-  'pitcher_logs.json',
-]);
 const DEV_STATIC_FIRST_FILES = new Set([
   'prizepicks_props.json',
   'prop_results.json',
@@ -85,7 +76,12 @@ async function fetchStaticSnapshot(path, source = 'static') {
 }
 
 export async function fetchDataSnapshot(path) {
-  const supabasePayload = await fetchFromSupabase(path);
+  let supabasePayload = null;
+  try {
+    supabasePayload = await fetchFromSupabase(path);
+  } catch (err) {
+    console.warn(`[data] ${path} supabase fetch failed:`, err.message);
+  }
   let staticPayload = null;
   let staticError = null;
 
@@ -102,13 +98,6 @@ export async function fetchDataSnapshot(path) {
     return {
       ...staticPayload,
       source: supabasePayload ? 'dev_static_preferred_over_supabase' : staticPayload.source,
-    };
-  }
-
-  if (staticPayload && STATIC_FIRST_FILES.has(path)) {
-    return {
-      ...staticPayload,
-      source: supabasePayload ? 'static_preferred_over_supabase' : staticPayload.source,
     };
   }
 
