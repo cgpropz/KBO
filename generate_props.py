@@ -27,7 +27,7 @@ def load_pitcher_aliases():
     try:
         with open(path) as f:
             data = json.load(f)
-        return {normalize(k): v for k, v in data.items() if k and v}
+        return {normalize(k): v for k, v in data.get("map", data).items() if isinstance(k, str) and isinstance(v, str) and k and v}
     except Exception:
         return {}
 
@@ -65,6 +65,9 @@ def load_projections():
         for p in d.get("projections", []):
             if p.get("name"):
                 k_proj[p["name"]] = p
+                # Also index by pp_name so lookup works with PrizePicks display names
+                if p.get("pp_name"):
+                    k_proj.setdefault(p["pp_name"], p)
     if os.path.exists(b_path):
         with open(b_path) as f:
             d = json.load(f)
@@ -81,6 +84,8 @@ def normalize(name):
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
     # Treat hyphens and underscores as spaces so "Song Seung-ki" matches "Song Seung Ki"
     n = n.replace("-", " ").replace("_", " ")
+    # Normalize all quote variants (smart quotes, backtick) to simple apostrophe
+    n = n.replace("\u2018", "'").replace("\u2019", "'").replace("`", "'")
     # Collapse multiple spaces
     n = " ".join(n.split())
     return n.lower().strip()
@@ -98,7 +103,7 @@ def _parse_date(d):
         pass
     return (0, 0, 0)
 
-def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
+def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, display_name=None):
     logs = pitcher_logs_by_name.get(name, [])
     # Sort by date descending (handles MM/DD/YYYY correctly)
     logs.sort(key=lambda x: _parse_date(x.get("Date", "")), reverse=True)
@@ -127,14 +132,46 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
         "games": games[:15],  # last 15 games
     }
 
-    # Projection data
-    proj = k_proj.get(name, {})
+    # Look up projection using multiple name variants
+    _lookup_names = [name]
+    if display_name and display_name != name:
+        _lookup_names.append(display_name)
+    _lookup_names.append(name_signature(name))
+    proj = {}
+    for _n in _lookup_names:
+        proj = k_proj.get(_n, {})
+        if proj:
+            break
+    # Also try normalized name-signature against k_proj keys
+    if not proj:
+        _sig = name_signature(name)
+        for k, v in k_proj.items():
+            if name_signature(k) == _sig:
+                proj = v
+                break
+
     if proj:
         card["projection_so"] = proj.get("projection")
         card["so_per_ip"] = proj.get("so_per_ip")
         card["ip_per_g"] = proj.get("ip_per_g")
         card["proj_rating"] = proj.get("rating")
         card["proj_rec"] = proj.get("recommendation")
+
+    # Build a dict of prop-type-specific projections from k_proj
+    # k_proj may have multiple entries per pitcher (one per prop type)
+    _prop_proj = {}
+    for _n in _lookup_names:
+        for k, v in k_proj.items():
+            if name_signature(k) == name_signature(_n):
+                prop_type = v.get("prop", "Strikeouts")
+                _prop_proj.setdefault(prop_type, v)
+
+    _stat_to_prop = {
+        "Pitcher Strikeouts": "Strikeouts",
+        "Pitching Outs": "Pitching Outs",
+        "Hits Allowed": "Hits Allowed",
+        "Pitcher Hits Allowed": "Hits Allowed",
+    }
 
     for p in props:
         stat = p["stat"]
@@ -164,10 +201,14 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
         hr10 = (sum(1 for v in l10 if v > line) / len(l10) * 100) if l10 else 0
         hr20 = (sum(1 for v in l20 if v > line) / len(l20) * 100) if l20 else 0
 
+        # Get prop-specific projection
+        stat_proj = _prop_proj.get(_stat_to_prop.get(stat, ""), {})
+        proj_val = stat_proj.get("projection")
+
         card["props"].append({
             "stat": stat,
             "line": line,
-            "avg": round(avg_val, 2),
+            "avg": round(proj_val, 2) if proj_val is not None else round(avg_val, 2),
             "over": over_count,
             "under": under_count,
             "push": push_count,
@@ -177,6 +218,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj):
             "hit_rate_l10": round(hr10, 1),
             "hit_rate_l20": round(hr20, 1),
             "recent_values": values[:10],
+            "recommendation": stat_proj.get("recommendation"),
         })
 
     return card
@@ -264,6 +306,59 @@ def main():
     batter_data = load_batter_logs()
     k_proj, b_proj = load_projections()
 
+    # --- Filter for today's slate ---
+    from datetime import datetime as _dt
+    today_str = _dt.now().strftime("%m/%d/%Y")
+    today_batters = set()
+    today_pitchers = set()
+
+    # Load PrizePicks pitcher aliases for name resolution
+    pitcher_aliases = load_pitcher_aliases()
+    # Build reverse alias map: canonical -> set of normalized aliases
+    _reverse_aliases = defaultdict(set)
+    for alias_norm, canonical in pitcher_aliases.items():
+        _reverse_aliases[normalize(canonical)].add(alias_norm)
+
+    # Batting stats (from Batters-Data)
+    batting_path = os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_2026.csv")
+    if os.path.exists(batting_path):
+        with open(batting_path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("DATE") == today_str:
+                    today_batters.add(normalize(row["Name"].strip()))
+
+    # Pitching stats (from daily CSV)
+    pitching_path = os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats.csv")
+    if os.path.exists(pitching_path):
+        with open(pitching_path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("Date") == today_str:
+                    nm = normalize(row["Name"].strip())
+                    today_pitchers.add(nm)
+                    # Also add any known aliases of this pitcher
+                    for alias in _reverse_aliases.get(nm, set()):
+                        today_pitchers.add(alias)
+
+    # Also add scheduled starters from player_names.csv (covers pre-game)
+    starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
+    if os.path.exists(starters_path):
+        with open(starters_path) as f:
+            for row in csv.DictReader(f):
+                nm = normalize(row.get("Player", "").strip())
+                if nm:
+                    today_pitchers.add(nm)
+                    for alias in _reverse_aliases.get(nm, set()):
+                        today_pitchers.add(alias)
+
+    # Add all PrizePicks alias names so odds match
+    for alias_norm, canonical in pitcher_aliases.items():
+        canon_norm = normalize(canonical)
+        if canon_norm in today_pitchers or alias_norm in today_pitchers:
+            today_pitchers.add(alias_norm)
+            today_pitchers.add(canon_norm)
+
     # Load park factors from batter projections
     park_factors = {}
     b_path = os.path.join(PUBLIC_DATA, "batter_projections.json")
@@ -301,17 +396,24 @@ def main():
     norm_pitcher = {normalize(n): n for n in pitcher_logs_by_name}
     sig_pitcher = {name_signature(n): n for n in pitcher_logs_by_name}
     norm_batter = {normalize(n): n for n in batter_logs_by_name}
-    pitcher_aliases = load_pitcher_aliases()
 
-    # Group odds by player
+    # Group odds by player, but only include if in today's slate
     by_player = defaultdict(list)
     for o in odds:
-        by_player[o["Name"]].append({
-            "stat": o["Stat"],
-            "line": o["Prizepicks"],
-            "vs": o["Versus"],
-            "team": o["Team"],
-        })
+        name = o["Name"].strip()
+        norm_name = normalize(name)
+        stat = o["Stat"]
+        # Only include if player is in today's logs (normalized)
+        if (
+            (stat in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed") and norm_name in today_pitchers)
+            or (stat in ("Hits+Runs+RBIs", "Total Bases") and norm_name in today_batters)
+        ):
+            by_player[name].append({
+                "stat": stat,
+                "line": o["Prizepicks"],
+                "vs": o["Versus"],
+                "team": o["Team"],
+            })
 
     cards = []
     for player_name, props in by_player.items():
@@ -341,7 +443,7 @@ def main():
                 p for p in props
                 if p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")
             ]
-            card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj)
+            card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj, display_name=player_name)
             card["name"] = player_name  # Use PP display name
             cards.append(card)
 
