@@ -304,16 +304,16 @@ function StrikeoutProjections() {
   };
 
   // Color scaling for opponent K% (strikeout rate)
-  // High K% (easier for pitcher, more strikeouts) = Green
-  // Mid K% (neutral) = Yellow
-  // Low K% (tough, fewer strikeouts) = Red
+  // Low K% (like 21.5%) = Red (hard - fewer strikeouts)
+  // Mid K% (like 24%) = Neutral gray
+  // High K% (like 26.3%) = Green (easy - more strikeouts)
   const oppKPctBg = (val) => {
     if (val == null) return {};
-    if (val >= 26.0) return { backgroundColor: '#1a4d1a', color: '#fff' }; // Dark green - very easy
-    if (val >= 25.0) return { backgroundColor: '#2ecc40', color: '#222' }; // Green - easy
-    if (val >= 24.0) return { backgroundColor: '#ffe066', color: '#222' }; // Yellow - neutral
-    if (val >= 23.0) return { backgroundColor: '#ffb347', color: '#222' }; // Orange - slightly tough
-    return { backgroundColor: '#ff2222', color: '#fff' }; // Red - very tough
+    if (val >= 25.0) return { backgroundColor: '#1a4d1a', color: '#fff' }; // Dark green - very easy
+    if (val >= 24.0) return { backgroundColor: '#2d7f2d', color: '#fff' }; // Green - easy
+    if (val >= 23.0) return { backgroundColor: '#4d4d4d', color: '#fff' }; // Gray - neutral
+    if (val >= 22.0) return { backgroundColor: '#8b5a5a', color: '#fff' }; // Dark gray - slightly tough
+    return { backgroundColor: '#802020', color: '#fff' }; // Red - tough
   };
 
   const oppBaBg = (val) => {
