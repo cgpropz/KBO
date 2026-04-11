@@ -53,6 +53,7 @@ KBO_SEASON_OVERRIDES = {
 
 DIRECT_PHOTO_OVERRIDES = {
     "Oh Jae-won": "https://mykbostats.com/system/players/photos/000/002/940/original/56754.jpg",
+    "John Cushing": f"{KBO_CDN}/no-Image.png",
 }
 
 
@@ -129,6 +130,11 @@ def build_from_kbo_cdn(photos, pcodes):
         if name not in photos and pcode:
             photos[name] = DIRECT_PHOTO_OVERRIDES.get(name, kbo_photo_url(pcode))
             added += 1
+    # Add any remaining direct overrides (players without pcodes)
+    for name, url in DIRECT_PHOTO_OVERRIDES.items():
+        if name not in photos:
+            photos[name] = url
+            added += 1
     print(f"From KBO CDN (pcode-based): +{added} (total {len(photos)})")
 
 
@@ -170,6 +176,7 @@ _PITCHER_PCODE_MAP = {
     "56911": "Natsuki Toda", "56464": "O`LOUGHLIN Jack", "55239": "Zach Logue",
     "55633": "Adam Oller", "55130": "Anders Tolhurst",  # was Unknown_55633
     "68220": "Gwak Been",
+    "68341": "An Woo-jin",
 }
 
 
@@ -209,6 +216,8 @@ def load_pcodes():
     pcs["Won Oh Jae"] = "56754"
     pcs["Park Seong Han"] = "67893"
     pcs["Park Seong-han"] = "67893"
+    pcs["An Woo-jin"] = "68341"
+    pcs["Woo-jin An"] = "68341"
 
     # From files (supplement/override)
     for path in [BASE / "Batters" / "players.json"]:
