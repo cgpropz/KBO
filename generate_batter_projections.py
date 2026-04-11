@@ -1045,7 +1045,7 @@ def build_tb_projections():
             "line": line, "pp_name": pp_name, "prop": "Total Bases",
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
-            "avg_per_g": round(base, 2), "slg": round(bs["slg"], 3),
+            "avg_per_g": round(base, 2), "ba": round(bs["ba"], 3), "slg": round(bs["slg"], 3),
             "ops": batter_ops_2026.get(resolved, round(bs["ops"], 3)),
             "opp_factor": round(opp_factor, 3), "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
