@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 
 # Configurable paths
 PROPS_PATH = "kbo-props-ui/public/data/prizepicks_props.json"
-BATTING_PATH = "KBO_daily_batting_stats_2026.csv"
+BATTING_PATH = "Batters-Data/KBO_daily_batting_stats_2026.csv"
 PITCHING_PATH = "KBO_daily_pitching_stats.csv"
 
 # Use KST (UTC+9) date since KBO game dates are in Korea Standard Time.
