@@ -242,13 +242,16 @@ function StrikeoutProjections() {
     return p.prop === selectedProp;
   });
 
+  // Always sort by highest rating by default
   const projections = [...filtered].sort((a, b) => {
     let aVal = a[sortField], bVal = b[sortField];
     if (aVal == null) return 1;
     if (bVal == null) return -1;
     if (typeof aVal === 'string') return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    return bVal - aVal; // Always descending by rating
   });
+  const debugLog = (...args) => { if (typeof window !== 'undefined') { console.log('[StrikeoutProjections]', ...args); } };
+  debugLog('Filtered projections:', projections);
 
   const propOptions = [
     { key: 'all', label: 'All' },

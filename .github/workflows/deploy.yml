@@ -59,6 +59,15 @@ jobs:
         run: |
           bash pipeline/run_release.sh --skip-deploy
 
+      - name: Check for duplicate data generation steps
+        run: |
+          if grep -E 'refresh_data.py|refresh_odds.py' .github/workflows/deploy.yml | grep -v 'pipeline/run_release.sh'; then
+            echo "ERROR: Data generation scripts must only be run once via pipeline/run_release.sh."
+            exit 1
+          fi
+        shell: bash
+        continue-on-error: false
+
       # Removed redundant odds refresh step to prevent stale data
 
       - name: Verify all public data snapshots (fail if missing/stale)

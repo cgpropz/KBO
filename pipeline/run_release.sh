@@ -117,6 +117,10 @@ else
   "$PYTHON" "$BASE/generate_matchups.py"
 fi
 
+# --- PREDEPLOY DATA VERIFICATION ---
+"$PYTHON" pipeline/predeploy_verify.py
+# --- END PREDEPLOY DATA VERIFICATION ---
+
 if [[ "$SKIP_BUILD" -eq 0 ]]; then
   if [[ -f "$BASE/pipeline/verify_local_data.py" ]]; then
     echo ""

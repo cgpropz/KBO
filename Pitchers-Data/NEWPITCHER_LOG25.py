@@ -27,7 +27,7 @@ PLAYER_NAMES = {
     "77829": "Kim Kwang Hyun",
     "69032": "Cuevas William",
     "77637": "Yang Hyeon Jong",
-    "556swering33": "Oller Adam",
+    "55633": "Oller Adam",
     "67263": "Choi Won Joon",
     "64021": "Park Se Woong",
     "50859": "OH Won Seok",
@@ -67,19 +67,24 @@ PLAYER_NAMES = {
     "56712": "Wilkel Hernandez",
     "56032": "Matthew Sauer",
     "65933": "Chang Mo Koo",
+    "56719": "WANG Yan Cheng",
+    "56334": "WILES Nathan",
+    "56523": "BEASLEY Jeremy",
+    "56464": "OLOUGHLIN Jack",
+    "56966": "TAYLOR Curtis",
 }
 
 PLAYER_TEAMS = {
     "KIA": ['54640', '77637', '55633', '69745','77637'],
     "LG": ['51111', '54119', '61101', '67143', '55146'],
     "KT": ['54354', '69032', '50859', '64001', '50030'],
-    "HANWHA": ['76715', '55730', '65056', '52701', '54755'],
-    "LOTTE": ['55536', '64021', '52528', '67539', '51516', '55532', '56531', '56712', '56032', '65933'],
-    "NC": ['55912', '68902', '53973', '55903'],
+    "HANWHA": ['76715', '55730', '65056', '52701', '54755', '56719'],
+    "LOTTE": ['55536', '64021', '52528', '67539', '51516', '55532', '56531', '56712', '56032', '65933', '56523'],
+    "NC": ['55912', '68902', '53973', '55903', '56966'],
     "SSG": ['62869', '77829', '54833', '60841', '55855'],
-    "SAMSUNG": ['53375', '60146', '54443', '69446', '65320', '68415'],
+    "SAMSUNG": ['53375', '60146', '54443', '69446', '65320', '68415', '56464'],
     "DOOSAN": ['55257', '67263', '51264', '55239'],
-    "Kiwoom": ['55313', "55322", "64350", "54319", "69045", "51761"],
+    "Kiwoom": ['55313', "55322", "64350", "54319", "69045", "51761", '56334'],
 }
 
 NAME_ALIASES = {
@@ -120,7 +125,11 @@ NAME_ALIASES = {
     "KIM Do Hyeon": "Kim Do-hyeon",
     "CHOI Won Tae": "Choi Won-tae",
     "Irvin Cole": "Cole Irvin",
-    
+    "WANG Yan Cheng": "Wang Yan-cheng",
+    "WILES Nathan": "Nathan Wiles",
+    "BEASLEY Jeremy": "Jeremy Beasley",
+    "OLOUGHLIN Jack": "Jack O'loughlin",
+    "TAYLOR Curtis": "Curtis Taylor",
 }
 
 
@@ -518,6 +527,12 @@ def main():
 
     all_data.to_csv(output_file, index=False)
     all_data.to_csv(pitch_data_dir_file, index=False)
+    # Also save a season-specific file for 2026
+    year_file = os.path.join(base_dir, f'KBO_daily_pitching_stats_{datetime.now().year}.csv')
+    current_year_data = all_data[all_data['Season'] == datetime.now().year]
+    if not current_year_data.empty:
+        current_year_data.to_csv(year_file, index=False)
+        print(f"✅ Saved {len(current_year_data)} rows to {year_file}")
     print(f"✅ Saved combined gamelogs to {output_file}")
     print(f"✅ Saved current-season gamelogs to {pitch_data_dir_file}")
 

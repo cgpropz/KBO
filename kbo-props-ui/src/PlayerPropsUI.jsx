@@ -75,16 +75,33 @@ const PlayerPropsUI = () => {
     return items;
   }, [data, filterType, searchTerm, sortBy]);
 
-  if (loading) return (
-    <div className="pp-container">
-      <div className="pp-loading"><div className="pp-spinner" /><p>Loading props...</p></div>
-    </div>
-  );
-  if (error) return (
-    <div className="pp-container">
-      <div className="pp-loading"><p style={{ color: '#ef476f' }}>Error: {error}</p></div>
-    </div>
-  );
+  // DEBUG: Add global logging utility
+  const debugLog = (...args) => { if (typeof window !== 'undefined') { console.log('[PlayerPropsUI]', ...args); } };
+
+  if (loading) {
+    debugLog('Loading state active');
+    return (
+      <div className="pp-container">
+        <div className="pp-loading"><div className="pp-spinner" /><p>Loading props...</p></div>
+      </div>
+    );
+  }
+  if (error) {
+    debugLog('Error state:', error);
+    return (
+      <div className="pp-container">
+        <div className="pp-loading"><p style={{ color: '#ef476f' }}>Error: {error}</p></div>
+      </div>
+    );
+  }
+  if (!data || !Array.isArray(data.cards) || data.cards.length === 0) {
+    debugLog('No props available for today:', data);
+    return (
+      <div className="pp-container">
+        <div className="pp-loading"><p style={{ color: '#ef476f' }}>No props available for today.</p></div>
+      </div>
+    );
+  }
 
   return (
     <div className="pp-container">

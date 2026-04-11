@@ -61,6 +61,24 @@ bash pipeline/run_release.sh --refresh-data-args "--skip-logs"
 - Daily full updates: run `pipeline/run_release.sh`.
 - If any new batter appears with missing logs, run `update_target_batter_logs.py` before re-running full refresh.
 
+## [2026-04-10] Workflow Fix: Prevent Stale Data in Deploys
+
+- Removed redundant 'Refresh PrizePicks odds and player props' step from `.github/workflows/deploy.yml`.
+- Only generate all data (odds, props, stats, photos) once via `pipeline/run_release.sh` before verification and deploy.
+- This prevents stale or inconsistent data from overwriting the latest generated files and causing verification failures (e.g., missing player photos for players not in the current props data).
+
+**Best Practice:**
+- Never run `refresh_odds.py` or any data generation script more than once in a single deploy workflow.
+- Always verify and deploy the exact data generated in the main refresh step.
+- If adding new data steps, ensure they do not overwrite or re-generate files already built in the main pipeline.
+
+## CI Safeguard: Prevent Duplicate Data Generation
+
+- The deploy workflow now includes a CI check that will fail if any data generation script (e.g., `refresh_data.py`, `refresh_odds.py`) is run more than once or outside the main `pipeline/run_release.sh` step.
+- This ensures future changes cannot accidentally re-introduce the bug that caused stale or inconsistent data to be verified or deployed.
+
+---
+
 ## Pre-Deploy Checklist
 
 1. Ensure environment variables exist for Supabase and Vercel.
