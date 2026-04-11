@@ -8,8 +8,8 @@ const TEAMS = {
 };
 
 const STAT_OPTIONS = ['All', 'HRR', 'TB', 'K', 'HA', 'OUTS'];
-const TYPE_OPTIONS = ['All', 'OVER', 'UNDER', 'SLIGHT OV', 'SLIGHT UN', 'PUSH'];
-const RESULT_OPTIONS = ['All', 'HIT', 'MISS', 'PUSH'];
+const TYPE_OPTIONS = ['All', 'OVER', 'UNDER', 'SLIGHT OV', 'SLIGHT UN'];
+const RESULT_OPTIONS = ['All', 'HIT', 'MISS'];
 const ROLE_OPTIONS = ['All', 'pitcher', 'batter'];
 const DATE_RANGES = ['1D', '7D', '30D', '90D', 'All'];
 
@@ -86,7 +86,6 @@ function PropTracker() {
     const resolved = filteredGraded.filter(g => g.result === 'HIT' || g.result === 'MISS');
     const hits = resolved.filter(g => g.result === 'HIT').length;
     const misses = resolved.length - hits;
-    const pushes = filteredGraded.filter(g => g.result === 'PUSH').length;
     const total = resolved.length;
     const overE = resolved.filter(g => g.type === 'OVER' || g.type === 'SLIGHT OV');
     const underE = resolved.filter(g => g.type === 'UNDER' || g.type === 'SLIGHT UN');
@@ -114,7 +113,7 @@ function PropTracker() {
       byRole[r].hit_rate = t > 0 ? (byRole[r].hits / t * 100).toFixed(1) : '0.0';
     }
     return {
-      hits, misses, pushes, total,
+      hits, misses, total,
       overall: total > 0 ? (hits / total * 100).toFixed(1) : '0.0',
       overRate: overE.length > 0 ? (overHits / overE.length * 100).toFixed(1) : '0.0',
       underRate: underE.length > 0 ? (underHits / underE.length * 100).toFixed(1) : '0.0',
@@ -235,7 +234,7 @@ function PropTracker() {
             <span className="gt-section-count">{gradedCount} Graded Props</span>
             <span className="gt-section-rate">
               Hit Rate: <strong className="gt-green">{summary.overall}%</strong>
-              <span className="gt-section-detail"> ({summary.hits} HIT / {summary.misses} MISS / {summary.pushes} PUSH)</span>
+              <span className="gt-section-detail"> ({summary.hits} HIT / {summary.misses} MISS)</span>
             </span>
           </div>
           <div className="gt-table-wrap">
@@ -284,7 +283,7 @@ function PropTracker() {
             <div className="gt-summary-card gt-card-overall">
               <span className="gt-card-label">OVERALL HIT RATE</span>
               <span className="gt-card-value gt-green">{summary.overall}%</span>
-              <span className="gt-card-detail">{summary.hits} HIT / {summary.misses} MISS / {summary.pushes} PUSH</span>
+              <span className="gt-card-detail">{summary.hits} HIT / {summary.misses} MISS</span>
             </div>
             <div className="gt-summary-card gt-card-under">
               <span className="gt-card-label">UNDER HIT RATE</span>
@@ -375,14 +374,14 @@ function PropTracker() {
 
 function TypeBadge({ type }) {
   const cls = type === 'OVER' ? 'type-over' : type === 'UNDER' ? 'type-under' :
-    type === 'SLIGHT OV' ? 'type-slight-ov' : type === 'SLIGHT UN' ? 'type-slight-un' : 'type-push';
+    type === 'SLIGHT OV' ? 'type-slight-ov' : 'type-slight-un';
   return <span className={'gt-type-badge ' + cls}>{type}</span>;
 }
 
 function ResultBadge({ result }) {
   if (result === 'HIT') return <span className="gt-result-badge gt-result-hit">{'\u2713'} HIT</span>;
   if (result === 'MISS') return <span className="gt-result-badge gt-result-miss">{'\u2715'} MISS</span>;
-  return <span className="gt-result-badge gt-result-push">{'\u2014'} PUSH</span>;
+  return <span className="gt-result-badge gt-result-hit">{'\u2713'} HIT</span>;
 }
 
 export default PropTracker;

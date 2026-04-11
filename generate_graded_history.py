@@ -51,17 +51,22 @@ def normalize_date(date_str):
     return date_str
 
 
-def classify_type(recommendation, rating):
-    """Classify recommendation with granularity based on model rating."""
-    if not recommendation or recommendation == "PUSH":
-        return "PUSH"
+def classify_type(recommendation, rating, edge):
+    """Classify recommendation — always pick a direction (no PUSH)."""
+    # If there's an edge, use its sign to determine direction
+    if edge is not None and edge != 0:
+        direction = "OVER" if edge > 0 else "UNDER"
+    elif recommendation and recommendation in ("OVER", "UNDER"):
+        direction = recommendation
+    else:
+        # No edge and no directional rec — default to OVER
+        direction = "OVER"
+
     if rating is not None and rating >= 65:
-        return recommendation  # Strong OVER or UNDER
-    if recommendation == "OVER":
+        return direction  # Strong OVER or UNDER
+    if direction == "OVER":
         return "SLIGHT OV"
-    if recommendation == "UNDER":
-        return "SLIGHT UN"
-    return "PUSH"
+    return "SLIGHT UN"
 
 
 def main():
@@ -92,7 +97,7 @@ def main():
             projection = prop.get("projection")
             edge = prop.get("edge")
             hit_pct = prop.get("hit_rate_all", 0)
-            prop_type = classify_type(rec, rating)
+            prop_type = classify_type(rec, rating, edge)
 
             # Always add to pending (today's props awaiting next game)
             pending.append({
@@ -121,24 +126,18 @@ def main():
                 game_date = normalize_date(game.get("date", ""))
                 opponent = game.get("opp", card_opponent)
 
-                # Determine outcome
+                # Determine outcome — skip true pushes (actual == line)
                 if actual > line:
                     outcome = "OVER"
                 elif actual < line:
                     outcome = "UNDER"
                 else:
-                    outcome = "PUSH"
+                    # True push (actual == line) — skip
+                    continue
 
-                # Grade vs model recommendation
-                if outcome == "PUSH":
-                    result = "PUSH"
-                elif not rec or rec == "PUSH":
-                    # No model call — grade as outcome but flag as unrated
-                    result = "PUSH"
-                elif outcome == rec:
-                    result = "HIT"
-                else:
-                    result = "MISS"
+                # Grade: does the outcome match the model's direction?
+                model_dir = "OVER" if prop_type in ("OVER", "SLIGHT OV") else "UNDER"
+                result = "HIT" if outcome == model_dir else "MISS"
 
                 graded.append({
                     "date": game_date,
@@ -165,7 +164,6 @@ def main():
     resolved = [g for g in graded if g["result"] in ("HIT", "MISS")]
     hits = sum(1 for g in resolved if g["result"] == "HIT")
     misses = len(resolved) - hits
-    pushes = sum(1 for g in graded if g["result"] == "PUSH")
     total_resolved = len(resolved)
 
     over_entries = [g for g in resolved if g["type"] in ("OVER", "SLIGHT OV")]
@@ -210,7 +208,6 @@ def main():
         "total_pending": len(pending),
         "hits": hits,
         "misses": misses,
-        "pushes": pushes,
         "overall_hit_rate": round(hits / total_resolved * 100, 1) if total_resolved else 0,
         "over_hit_rate": round(over_hits / len(over_entries) * 100, 1) if over_entries else 0,
         "under_hit_rate": round(under_hits / len(under_entries) * 100, 1) if under_entries else 0,
@@ -234,7 +231,7 @@ def main():
 
     print(f"Wrote {len(graded)} graded + {len(pending)} pending to {out_path}")
     print(f"  Hit Rate: {summary['overall_hit_rate']}%  "
-          f"({hits} HIT / {misses} MISS / {pushes} PUSH)")
+          f"({hits} HIT / {misses} MISS)")
     print(f"  Over:  {summary['over_hit_rate']}% ({len(over_entries)} props)")
     print(f"  Under: {summary['under_hit_rate']}% ({len(under_entries)} props)")
     print(f"  Avg Edge: {summary['avg_edge']}")
