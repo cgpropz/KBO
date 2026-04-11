@@ -244,6 +244,12 @@ def load_pitcher_throwing_hands():
     by_name.setdefault("Seo Hwang Jun", "L")
     by_name.setdefault("Jack O'Loughlin", "L")
     by_name.setdefault("Jack O`Loughlin", "L")
+    by_name.setdefault("Adam Oller", "R")
+    by_name.setdefault("Oller Adam", "R")
+    by_name.setdefault("An Woo-jin", "R")
+    by_name.setdefault("An Woo Jin", "R")
+    by_name.setdefault("John Cushing", "R")
+    by_name.setdefault("Caleb Boushley", "R")
 
     return by_name
 
