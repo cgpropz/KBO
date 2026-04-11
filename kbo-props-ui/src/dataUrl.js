@@ -118,6 +118,21 @@ export async function fetchDataSnapshot(path) {
     };
   }
 
+  // Prefer the snapshot with richer content (more cards) even if its timestamp is older
+  if (supabasePayload && staticPayload) {
+    const sbCards = Array.isArray(supabasePayload.data?.cards) ? supabasePayload.data.cards.length : -1;
+    const stCards = Array.isArray(staticPayload.data?.cards) ? staticPayload.data.cards.length : -1;
+    if (stCards > 0 && sbCards >= 0 && stCards > sbCards) {
+      console.warn(
+        `[data] ${path} static has ${stCards} cards vs supabase ${sbCards}, using richer static snapshot`,
+      );
+      return {
+        ...staticPayload,
+        source: 'static_richer_content',
+      };
+    }
+  }
+
   const supabaseAgeMinutes = Number.isFinite(supabaseFreshnessMs)
     ? (Date.now() - supabaseFreshnessMs) / 60000
     : NaN;
