@@ -409,6 +409,7 @@ def main():
     norm_pitcher = {normalize(n): n for n in pitcher_logs_by_name}
     sig_pitcher = {name_signature(n): n for n in pitcher_logs_by_name}
     norm_batter = {normalize(n): n for n in batter_logs_by_name}
+    sig_batter = {name_signature(n): n for n in batter_logs_by_name}
 
     # Group odds by player, but only include if in today's slate
     by_player = defaultdict(list)
@@ -461,7 +462,15 @@ def main():
             cards.append(card)
 
         if is_batter:
-            log_name = norm_batter.get(nn, player_name)
+            sig_name_b = sig_batter.get(name_signature(player_name))
+            if aliased_name and normalize(aliased_name) in norm_batter:
+                log_name = norm_batter[normalize(aliased_name)]
+            elif nn in norm_batter:
+                log_name = norm_batter[nn]
+            elif sig_name_b:
+                log_name = sig_name_b
+            else:
+                log_name = player_name
             batter_props = [p for p in props if p["stat"] in ("Hits+Runs+RBIs", "Total Bases")]
             card = build_batter_card(log_name, batter_props, batter_logs_by_name, b_proj)
             card["name"] = player_name
