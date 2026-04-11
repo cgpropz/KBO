@@ -20,7 +20,6 @@ const PlayerPropsUI = () => {
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('hit_rate');
-  const [hitRatePeriod, setHitRatePeriod] = useState(null);
 
   const loadProps = useCallback((background = false) => {
     if (!background) setLoading(true);
@@ -61,10 +60,6 @@ const PlayerPropsUI = () => {
       }
     }
     if (filterType !== 'all') items = items.filter(c => c.type === filterType);
-    if (hitRatePeriod) {
-      const key = hitRatePeriod === 'l5' ? 'hit_rate_l5' : hitRatePeriod === 'l10' ? 'hit_rate_l10' : 'hit_rate_all';
-      items = items.filter(c => (c.prop[key] || 0) >= 60);
-    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       items = items.filter(c =>
@@ -72,16 +67,13 @@ const PlayerPropsUI = () => {
       );
     }
     items.sort((a, b) => {
-      if (sortBy === 'hit_rate') {
-        const key = hitRatePeriod === 'l5' ? 'hit_rate_l5' : hitRatePeriod === 'l10' ? 'hit_rate_l10' : 'hit_rate_all';
-        return (b.prop[key] || 0) - (a.prop[key] || 0);
-      }
+      if (sortBy === 'hit_rate') return (b.prop.hit_rate_all || 0) - (a.prop.hit_rate_all || 0);
       if (sortBy === 'edge') return ((b.prop.avg || 0) - b.prop.line) - ((a.prop.avg || 0) - a.prop.line);
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
     return items;
-  }, [data, filterType, searchTerm, sortBy, hitRatePeriod]);
+  }, [data, filterType, searchTerm, sortBy]);
 
   // DEBUG: Add global logging utility
   const debugLog = (...args) => { if (typeof window !== 'undefined') { console.log('[PlayerPropsUI]', ...args); } };
@@ -137,14 +129,6 @@ const PlayerPropsUI = () => {
           <option value="edge">Sort: Edge</option>
           <option value="name">Sort: Name</option>
         </select>
-        <div className="pp-filters pp-hr-filters">
-          {['l5', 'l10'].map(p => (
-            <button key={p} className={`pp-filter-btn pp-hr-btn ${hitRatePeriod === p ? 'active' : ''}`}
-              onClick={() => setHitRatePeriod(prev => prev === p ? null : p)}>
-              {p.toUpperCase()} ≥ 60%
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="pp-grid">
@@ -153,8 +137,6 @@ const PlayerPropsUI = () => {
             key={`${card.name}-${card.prop.stat}-${card.prop.line}-${i}`}
             card={card}
             photoUrl={photoLookup[normalizePlayerName(card.name)]}
-            hitRatePeriod={hitRatePeriod}
-            onHitRatePeriod={setHitRatePeriod}
           />
         ))}
         {propCards.length === 0 && <div className="pp-empty">No props match your filters.</div>}
@@ -164,7 +146,7 @@ const PlayerPropsUI = () => {
 };
 
 /* ============== Individual Prop Card (NBA style) ============== */
-function PropCard({ card, photoUrl, hitRatePeriod, onHitRatePeriod }) {
+function PropCard({ card, photoUrl }) {
   const { prop, name, team, opponent, type, games, venue, park_factor } = card;
   const teamColor = TEAM_COLORS[team] || '#888';
   const oppColor = TEAM_COLORS[opponent] || '#888';
@@ -172,11 +154,13 @@ function PropCard({ card, photoUrl, hitRatePeriod, onHitRatePeriod }) {
   const rec = prop.recommendation || (edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH');
   const score = prop.hit_rate_all || 0;
   const [imageFailed, setImageFailed] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState(null);
 
   const recentVals = prop.recent_values || [];
   const gameDates = (games || []).slice(0, recentVals.length).map(g => fmtDate(g.date));
-  const chartValues = [...recentVals].reverse();
-  const chartDates = [...gameDates].reverse();
+  const limit = chartPeriod === 'l5' ? 5 : chartPeriod === 'l10' ? 10 : recentVals.length;
+  const chartValues = [...recentVals.slice(0, limit)].reverse();
+  const chartDates = [...gameDates.slice(0, limit)].reverse();
 
   useEffect(() => {
     setImageFailed(false);
@@ -243,14 +227,14 @@ function PropCard({ card, photoUrl, hitRatePeriod, onHitRatePeriod }) {
 
       <div className="pc-hitrates">
         <HitCircle label="L5" value={prop.hit_rate_l5}
-          active={hitRatePeriod === 'l5'}
-          onClick={() => onHitRatePeriod(hitRatePeriod === 'l5' ? null : 'l5')} />
+          active={chartPeriod === 'l5'}
+          onClick={() => setChartPeriod(chartPeriod === 'l5' ? null : 'l5')} />
         <HitCircle label="L10" value={prop.hit_rate_l10} highlight
-          active={hitRatePeriod === 'l10'}
-          onClick={() => onHitRatePeriod(hitRatePeriod === 'l10' ? null : 'l10')} />
+          active={chartPeriod === 'l10'}
+          onClick={() => setChartPeriod(chartPeriod === 'l10' ? null : 'l10')} />
         <HitCircle label="FULL" value={prop.hit_rate_all} count={`${prop.over}/${prop.total_games}`}
-          active={!hitRatePeriod}
-          onClick={() => onHitRatePeriod(null)} />
+          active={!chartPeriod}
+          onClick={() => setChartPeriod(null)} />
       </div>
 
       {chartValues.length > 0 && (
