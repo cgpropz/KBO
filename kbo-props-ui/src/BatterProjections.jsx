@@ -285,6 +285,10 @@ function BatterProjections() {
   const AVG_MID  = 0.250;
   const AVG_GREEN = 0.350;
 
+  const OPS_RED = 0.750;
+  const OPS_MID = 0.900;
+  const OPS_GREEN = 1.000;
+
   const getSplitAvgStyle = (avg) => {
     if (avg == null || Number.isNaN(avg)) return undefined;
     const clamped = Math.max(AVG_RED, Math.min(AVG_GREEN, avg));
@@ -294,6 +298,24 @@ function BatterProjections() {
       rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
     } else {
       const t = (clamped - AVG_MID) / (AVG_GREEN - AVG_MID);
+      rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
+    }
+    return {
+      color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`,
+      fontWeight: 700,
+    };
+  };
+
+  const getOpsStyle = (ops) => {
+    if (ops == null || Number.isNaN(ops)) return undefined;
+    const clamped = Math.max(OPS_RED, Math.min(OPS_GREEN, ops));
+    let rgb;
+    if (clamped <= OPS_MID) {
+      const t = (clamped - OPS_RED) / (OPS_MID - OPS_RED);
+      rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
+    } else {
+      const t = (clamped - OPS_MID) / (OPS_GREEN - OPS_MID);
       rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
     }
     return {
@@ -357,6 +379,7 @@ function BatterProjections() {
                 <th onClick={() => handleSort('vs_rhp_avg')} className="col-num">vs RHP {sortIcon('vs_rhp_avg')}</th>
                 <th onClick={() => handleSort('vs_lhp_avg')} className="col-num">vs LHP {sortIcon('vs_lhp_avg')}</th>
                 <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
+                <th onClick={() => handleSort('ops')} className="col-num">OPS {sortIcon('ops')}</th>
                 <th onClick={() => handleSort('prop')}>Prop {sortIcon('prop')}</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
@@ -403,6 +426,12 @@ function BatterProjections() {
                     style={getWhipStyle(p.opp_pitcher_whip)}
                   >
                     {p.opp_pitcher_whip != null ? Number(p.opp_pitcher_whip).toFixed(2) : '—'}
+                  </td>
+                  <td
+                    className={`col-num mono ${p.ops == null ? 'cell-na' : ''}`}
+                    style={getOpsStyle(p.ops)}
+                  >
+                    {p.ops != null ? Number(p.ops).toFixed(3) : '—'}
                   </td>
                   <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'TB'}</td>
                   <td className="col-num col-pp">

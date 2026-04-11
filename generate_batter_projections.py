@@ -432,6 +432,9 @@ for name, bs in batter_stats.items():
     bs["tb_per_g"] = bs["tb"] / g
     bs["slg"] = bs["tb"] / bs["ab"] if bs["ab"] > 0 else 0
     bs["ba"] = bs["h"] / bs["ab"] if bs["ab"] > 0 else 0
+    pa = bs["ab"] + bs["walks"] + bs["hbp"]
+    bs["obp"] = (bs["h"] + bs["walks"] + bs["hbp"]) / pa if pa > 0 else 0
+    bs["ops"] = bs["obp"] + bs["slg"]
 
 league_total_hits = sum(bs["h"] for bs in batter_stats.values())
 league_total_ab = sum(bs["ab"] for bs in batter_stats.values())
@@ -939,7 +942,8 @@ def build_hrr_projections():
             "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
-            "ba": round(bs["ba"], 3), "games_used": bs["games"],
+            "ba": round(bs["ba"], 3), "ops": round(bs["ops"], 3),
+            "games_used": bs["games"],
             "batter_hand": batter_hand,
             "opp_pitcher": opp_pitcher,
             "opp_pitcher_whip": opp_pitcher_whip,
@@ -1028,6 +1032,7 @@ def build_tb_projections():
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "slg": round(bs["slg"], 3),
+            "ops": round(bs["ops"], 3),
             "opp_factor": round(opp_factor, 3), "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
