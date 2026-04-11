@@ -17,6 +17,8 @@ function SlipOptimizer() {
   const [mode, setMode] = useState('build'); // 'build' | 'auto'
   const [filter, setFilter] = useState('all'); // all | K | HRR | TB
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
+  const [maxReuse, setMaxReuse] = useState(2); // max times a single prop can appear across slips
+  const [slipCount, setSlipCount] = useState(5); // how many slips to generate
 
   useEffect(() => {
     debugLog('Fetching projections for optimizer...');
@@ -101,7 +103,7 @@ function SlipOptimizer() {
     };
   };
 
-  // Auto-generate top combinations
+  // Auto-generate top combinations with mix-and-match diversity
   const autoSlips = useMemo(() => {
     if (mode !== 'auto' || allProps.length === 0) return [];
 
@@ -113,9 +115,8 @@ function SlipOptimizer() {
 
     if (candidates.length < legs) return [];
 
-    // Generate combinations using greedy approach with game diversity
-    const slips = [];
-    const n = Math.min(candidates.length, 12); // limit search space
+    // Expand search space for more diversity
+    const n = Math.min(candidates.length, 20);
 
     // Simple combination generator for small n
     function* combinations(arr, k) {
@@ -127,15 +128,40 @@ function SlipOptimizer() {
       }
     }
 
+    // Score all valid combinations
+    const allCombos = [];
     for (const combo of combinations(candidates.slice(0, n), legs)) {
       const indices = combo.map(c => c.idx);
       const score = computeSlipScore(indices);
-      slips.push({ indices, score });
+      allCombos.push({ indices, score });
+    }
+    allCombos.sort((a, b) => b.score.confidence - a.score.confidence);
+
+    // Greedy selection respecting maxReuse: pick slips top-down,
+    // skip any slip that would push a prop over the reuse limit
+    const propUsage = {}; // idx -> count of slips using it
+    const picked = [];
+    for (const combo of allCombos) {
+      if (picked.length >= slipCount) break;
+      // Check if any leg would exceed the reuse cap
+      const ok = combo.indices.every(idx => (propUsage[idx] || 0) < maxReuse);
+      if (!ok) continue;
+      // Accept this slip
+      combo.indices.forEach(idx => { propUsage[idx] = (propUsage[idx] || 0) + 1; });
+      picked.push(combo);
     }
 
-    slips.sort((a, b) => b.score.confidence - a.score.confidence);
-    return slips.slice(0, 10);
-  }, [mode, legs, allProps, sideOverrides]);
+    return picked;
+  }, [mode, legs, allProps, sideOverrides, maxReuse, slipCount]);
+
+  // Compute prop usage across auto slips for badges
+  const propUsageCounts = useMemo(() => {
+    const counts = {};
+    autoSlips.forEach(slip => {
+      slip.indices.forEach(idx => { counts[idx] = (counts[idx] || 0) + 1; });
+    });
+    return counts;
+  }, [autoSlips]);
 
   // Current manual slip stats
   const selectedArr = [...selected];
@@ -307,17 +333,47 @@ function SlipOptimizer() {
       {mode === 'auto' && (
         <div className="so-auto">
           <div className="so-auto-controls">
-            <label className="so-auto-label">Legs per slip:</label>
-            <div className="so-legs-btns">
-              {[2, 3, 4, 5, 6].map(n => (
-                <button
-                  key={n}
-                  className={`so-legs-btn ${legs === n ? 'active' : ''}`}
-                  onClick={() => setLegs(n)}
-                >
-                  {n}
-                </button>
-              ))}
+            <div className="so-control-group">
+              <label className="so-auto-label">Legs per slip</label>
+              <div className="so-legs-btns">
+                {[2, 3, 4, 5, 6].map(n => (
+                  <button
+                    key={n}
+                    className={`so-legs-btn ${legs === n ? 'active' : ''}`}
+                    onClick={() => setLegs(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="so-control-group">
+              <label className="so-auto-label">Max prop reuse</label>
+              <div className="so-legs-btns">
+                {[1, 2, 3, 4].map(n => (
+                  <button
+                    key={n}
+                    className={`so-legs-btn ${maxReuse === n ? 'active' : ''}`}
+                    onClick={() => setMaxReuse(n)}
+                  >
+                    {n}×
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="so-control-group">
+              <label className="so-auto-label"># of slips</label>
+              <div className="so-legs-btns">
+                {[3, 5, 8, 10].map(n => (
+                  <button
+                    key={n}
+                    className={`so-legs-btn ${slipCount === n ? 'active' : ''}`}
+                    onClick={() => setSlipCount(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -325,7 +381,12 @@ function SlipOptimizer() {
             <p className="so-auto-empty">Not enough props with edge to build {legs}-leg slips</p>
           ) : (
             <div className="so-auto-results">
-              <h3 className="so-auto-title">Top {autoSlips.length} Optimized Slips</h3>
+              <div className="so-auto-header-row">
+                <h3 className="so-auto-title">Top {autoSlips.length} Optimized Slips</h3>
+                <span className="so-diversity-badge">
+                  {Object.keys(propUsageCounts).length} unique props across {autoSlips.length} slips
+                </span>
+              </div>
               {autoSlips.map((slip, si) => (
                 <div key={si} className="so-auto-card">
                   <div className="so-auto-rank">
@@ -340,6 +401,7 @@ function SlipOptimizer() {
                       const p = allProps[idx];
                       const side = getSide(idx);
                       const sideEdge = side === 'OVER' ? p.edge : -p.edge;
+                      const usage = propUsageCounts[idx] || 0;
                       return (
                         <div key={idx} className="so-auto-leg">
                           <span className="so-auto-player">{p.name}</span>
@@ -349,6 +411,11 @@ function SlipOptimizer() {
                           <span className={`so-auto-edge ${sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                             {sideEdge > 0 ? '+' : ''}{sideEdge.toFixed(2)}
                           </span>
+                          {usage > 1 && (
+                            <span className={`so-reuse-badge ${usage >= maxReuse ? 'at-cap' : ''}`} title={`Used in ${usage} slips`}>
+                              {usage}×
+                            </span>
+                          )}
                         </div>
                       );
                     })}
@@ -375,7 +442,7 @@ function SlipOptimizer() {
 
       <div className="so-footer-note">
         Confidence score combines edge magnitude, rating, and game diversity. Higher = stronger slip.
-        Click OVER/UNDER on any prop to flip the side.
+        Click OVER/UNDER on any prop to flip the side. Max prop reuse limits how many slips share the same prop.
       </div>
     </div>
   );

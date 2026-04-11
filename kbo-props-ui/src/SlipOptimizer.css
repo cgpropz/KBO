@@ -297,11 +297,17 @@
 }
 .so-auto-controls {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: flex-end;
+  gap: 1.5rem;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
-.so-auto-label { font-size: 0.85rem; color: #999; font-weight: 600; }
+.so-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.so-auto-label { font-size: 0.75rem; color: #999; font-weight: 600; }
 .so-legs-btns { display: flex; gap: 0; }
 .so-legs-btn {
   width: 36px;
@@ -325,7 +331,41 @@
   font-size: 0.85rem;
   color: #888;
   font-weight: 700;
+  margin: 0;
+}
+
+.so-auto-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.so-diversity-badge {
+  font-size: 0.7rem;
+  color: #c084fc;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Prop reuse badge */
+.so-reuse-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.1);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  margin-left: 0.25rem;
+  flex-shrink: 0;
+}
+.so-reuse-badge.at-cap {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .so-auto-results {
