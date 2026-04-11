@@ -248,8 +248,11 @@ function MatchupDeepDive() {
     pitchers: true, batting: true, park: true, props: true,
   });
 
+  const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[MatchupDeepDive]', ...args); };
+
   const loadMatchups = useCallback((background = false) => {
     if (!background) setLoading(true);
+    debugLog('Fetching matchup data...', { background });
     return Promise.all([
       fetchDataSnapshot('matchup_data.json'),
       fetchDataSnapshot('game_lines.json').catch(() => ({ data: { games: [] }, updatedAt: null })),
@@ -258,6 +261,7 @@ function MatchupDeepDive() {
       .then(([matchupSnap, linesSnap, ppSnap]) => {
         const withMarkets = attachMarkets(matchupSnap?.data || {}, linesSnap?.data || { games: [] });
         const merged = mergeLivePrizePicks(withMarkets, ppSnap?.data || { cards: [] });
+        debugLog('Data loaded:', { matchups: merged?.matchups?.length || 0, lineGames: linesSnap?.data?.games?.length || 0, ppCards: ppSnap?.data?.cards?.length || 0, generatedAt: matchupSnap?.data?.generated_at });
         setData(merged);
         setRefreshedAt(
           ppSnap?.updatedAt
@@ -271,6 +275,7 @@ function MatchupDeepDive() {
         setLoading(false);
       })
       .catch((err) => {
+        debugLog('Error loading data:', err?.message);
         setError(err?.message || 'Failed to load matchup data');
         setLoading(false);
       });

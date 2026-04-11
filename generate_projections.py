@@ -666,6 +666,9 @@ def summarize_games(games, league_soip, league_ipg, league_hits_per_ip):
     if not season:
         season = games
 
+    # Report only 2026 game count for display accuracy
+    n_season = len([g for g in games if g.get("season") == 2026])
+
     def mean_soip(rows):
         ip = sum(g["ip"] for g in rows)
         so = sum(g["so"] for g in rows)
@@ -719,7 +722,7 @@ def summarize_games(games, league_soip, league_ipg, league_hits_per_ip):
     hits_per_ip = (hits_per_ip or league_hits_per_ip) * shrink + league_hits_per_ip * (1.0 - shrink)
 
     return {
-        "games": n,
+        "games": n_season,
         "so_per_ip": soip,
         "hits_per_ip": hits_per_ip,
         "ip_per_g": ipg,

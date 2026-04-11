@@ -86,12 +86,21 @@ avg_opp_ba = round(sum(v["ba"] for v in team_batting_stats.values()) / len(team_
 avg_opp_k_pct = round(sum(v["k_pct"] for v in team_batting_stats.values()) / len(team_batting_stats), 1) if team_batting_stats else None
 
 with open(os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")) as f:
-    logs = json.load(f)
+    all_logs = json.load(f)
+
+# Resolve known Unknown_XXXXX placeholders to real names
+PITCHER_NAME_FIXES = {
+    "Unknown_55633": "Adam Oller",
+}
+
+# Use only 2026 season data for rankings accuracy
+logs = [g for g in all_logs if str(g.get("Season", "")) == "2026"]
+print(f"Pitcher logs: {len(logs)} rows (2026 only) out of {len(all_logs)} total")
 
 # Group by pitcher
 pitchers = {}
 for g in logs:
-    name = g["Name"]
+    name = PITCHER_NAME_FIXES.get(g["Name"], g["Name"])
     if name not in pitchers:
         pitchers[name] = []
     pitchers[name].append(g)
@@ -100,8 +109,8 @@ rankings = []
 for name, games in pitchers.items():
     valid = [g for g in games if g.get("IP", 0) > 0]
     gs = len(games)
-    if gs < 5:
-        continue  # skip small sample sizes
+    if gs < 2:
+        continue  # skip pitchers with only 1 appearance
 
     total_ip = sum(g["IP"] for g in valid)
     total_so = sum(g["SO"] for g in valid)

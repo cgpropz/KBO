@@ -33,15 +33,21 @@ function PitcherRankings() {
     .sort()
     .join(' ');
 
+  const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[PitcherRankings]', ...args); };
+
   const loadRankings = useCallback((background = false) => {
     if (!background) setLoading(true);
+    debugLog('Fetching rankings...', { background });
     Promise.all([
       fetchDataSnapshot('pitcher_rankings.json'),
       fetchDataSnapshot('strikeout_projections.json').catch(() => null),
     ])
       .then(([rankingsSnap, kSnap]) => {
-        setData(rankingsSnap?.data || []);
-        setPpProjections((kSnap?.data?.projections || []).filter((p) => p?.line != null));
+        const rankings = rankingsSnap?.data || [];
+        const ppProj = (kSnap?.data?.projections || []).filter((p) => p?.line != null);
+        debugLog('Data loaded:', { rankings: rankings.length, ppProjections: ppProj.length, generatedAt: kSnap?.data?.generated_at });
+        setData(rankings);
+        setPpProjections(ppProj);
         setLastUpdated(
           kSnap?.updatedAt
           || rankingsSnap?.updatedAt
@@ -53,6 +59,7 @@ function PitcherRankings() {
         setLoading(false);
       })
       .catch(err => {
+        debugLog('Error loading data:', err.message);
         setError(err.message);
         setLoading(false);
       });

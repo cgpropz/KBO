@@ -386,7 +386,12 @@ if os.path.exists(park_factor_path):
 
 # ── Step 3: Load batter game logs ──
 with open(os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")) as f:
-    batter_logs = list(csv.DictReader(f))
+    batter_logs_all = list(csv.DictReader(f))
+
+# Use only 2026 season rows for base-rate stats and hit-rate windows.
+# Combined data inflates averages for returning players with 100+ 2025 games.
+batter_logs = [r for r in batter_logs_all if str(r.get("Season", "")) == "2026"]
+print(f"Batter logs: {len(batter_logs)} rows (2026 only) out of {len(batter_logs_all)} total")
 
 with open(os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats_combined.csv")) as f:
     pitcher_logs = list(csv.DictReader(f))
@@ -395,7 +400,7 @@ batter_split_stats = load_batter_splits_current_season(2026)
 batter_handedness = load_batter_handedness()
 pitcher_handedness = load_pitcher_throwing_hands()
 
-# Build per-batter stats
+# Build per-batter stats (2026 only)
 batter_stats = {}
 batter_games = {}
 for row in batter_logs:
@@ -436,25 +441,8 @@ for name, bs in batter_stats.items():
     bs["obp"] = (bs["h"] + bs["walks"] + bs["hbp"]) / pa if pa > 0 else 0
     bs["ops"] = bs["obp"] + bs["slg"]
 
-# Compute current-season OPS (2026 only) for display accuracy
-batter_ops_2026 = {}
-for row in batter_logs:
-    if row.get("Season", "") != "2026":
-        continue
-    name = row["Name"]
-    if name not in batter_ops_2026:
-        batter_ops_2026[name] = {"h": 0, "ab": 0, "walks": 0, "hbp": 0, "tb": 0}
-    s = batter_ops_2026[name]
-    s["h"] += int(row["H"])
-    s["ab"] += int(row["AB"])
-    s["walks"] += int(row["Walks"])
-    s["hbp"] += int(row["HBP"])
-    s["tb"] += int(row["TB"])
-for name, s in batter_ops_2026.items():
-    slg = s["tb"] / s["ab"] if s["ab"] > 0 else 0
-    pa = s["ab"] + s["walks"] + s["hbp"]
-    obp = (s["h"] + s["walks"] + s["hbp"]) / pa if pa > 0 else 0
-    batter_ops_2026[name] = round(obp + slg, 3)
+# batter_stats already uses 2026-only data, so OPS is inherently current-season.
+batter_ops_2026 = {name: round(bs["ops"], 3) for name, bs in batter_stats.items()}
 
 league_total_hits = sum(bs["h"] for bs in batter_stats.values())
 league_total_ab = sum(bs["ab"] for bs in batter_stats.values())

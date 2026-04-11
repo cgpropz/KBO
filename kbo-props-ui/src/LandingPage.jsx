@@ -113,13 +113,17 @@ function LandingPage({ onNavigate }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [animate, setAnimate] = useState(false);
 
+  const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[LandingPage]', ...args); };
+
   const loadLandingData = useCallback((background = false) => {
+    debugLog('Fetching landing data...', { background });
     Promise.all([
       fetchDataSnapshot('strikeout_projections.json').catch(() => null),
       fetchDataSnapshot('batter_projections.json').catch(() => null),
       fetchDataSnapshot('pitcher_rankings.json').catch(() => null),
       fetchDataSnapshot('prizepicks_props.json').catch(() => null),
     ]).then(([kSnap, bSnap, rSnap, ppSnap]) => {
+      debugLog('Data loaded:', { pitcherProj: kSnap?.data?.projections?.length || 0, batterProj: bSnap?.data?.projections?.length || 0, rankings: (rSnap?.data || []).length, ppCards: ppSnap?.data?.cards?.length || 0 });
       setKData(kSnap?.data || null);
       setBatterData(bSnap?.data || null);
       setRankings(rSnap?.data || null);

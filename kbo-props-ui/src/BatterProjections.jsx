@@ -40,14 +40,19 @@ function BatterProjections() {
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [playerSearch, setPlayerSearch] = useState('');
 
+  const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[BatterProjections]', ...args); };
+
   const loadBatterData = useCallback((background = false) => {
     if (!background) setLoading(true);
+    debugLog('Fetching batter data...', { background });
     return Promise.all([
       fetchDataSnapshot('batter_projections.json'),
       fetchDataSnapshot('prizepicks_props.json').catch(() => null),
       fetchDataSnapshot('player_photos.json').catch(() => null),
     ])
       .then(([batterSnap, ppSnap, photoSnap]) => {
+        const projections = batterSnap?.data?.projections || [];
+        debugLog('Data loaded:', { projections: projections.length, ppCards: ppSnap?.data?.cards?.length || 0, photos: Object.keys(photoSnap?.data || {}).length, generatedAt: batterSnap?.data?.generated_at });
         setData(batterSnap?.data || null);
         setPrizepicksData(ppSnap?.data || null);
         setPhotos(photoSnap?.data || {});
@@ -56,6 +61,7 @@ function BatterProjections() {
         setLoading(false);
       })
       .catch(err => {
+        debugLog('Error loading data:', err.message);
         setError(err.message);
         setLoading(false);
       });
@@ -112,6 +118,7 @@ function BatterProjections() {
   };
 
   if (loading) {
+    debugLog('Loading state active');
     return (
       <div className="bp-container">
         <div className="bp-loading">
@@ -121,6 +128,7 @@ function BatterProjections() {
     );
   }
   if (error) {
+    debugLog('Error state:', error);
     return (
       <div className="bp-container">
         <div className="bp-loading"><p className="bp-error">Error: {error}</p></div>

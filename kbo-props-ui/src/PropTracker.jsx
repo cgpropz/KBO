@@ -13,6 +13,8 @@ const RESULT_OPTIONS = ['All', 'HIT', 'MISS'];
 const ROLE_OPTIONS = ['All', 'pitcher', 'batter'];
 const DATE_RANGES = ['1D', '7D', '30D', '90D', 'All'];
 
+const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[PropTracker]', ...args); };
+
 function PropTracker() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +32,17 @@ function PropTracker() {
   const [sortDir, setSortDir] = useState('desc');
 
   useEffect(() => {
+    debugLog('Fetching graded props history...');
     fetch('/data/graded_props_history.json')
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(d => {
+        debugLog('Data loaded:', { pending: d?.pending?.length || 0, graded: d?.graded?.length || 0, generatedAt: d?.generated_at });
+        setData(d); setLoading(false);
+      })
+      .catch((err) => {
+        debugLog('Error loading data:', err.message);
+        setLoading(false);
+      });
   }, []);
 
   const filteredGraded = useMemo(() => {

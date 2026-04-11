@@ -8,6 +8,8 @@ const TEAMS = {
   Samsung: '#60a5fa', SSG: '#ff5555',
 };
 
+const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
+
 function SlipOptimizer() {
   const [allProps, setAllProps] = useState([]);
   const [selected, setSelected] = useState(new Set()); // Set of indices
@@ -17,6 +19,7 @@ function SlipOptimizer() {
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
 
   useEffect(() => {
+    debugLog('Fetching projections for optimizer...');
     Promise.all([
       fetchData('strikeout_projections.json').catch(() => null),
       fetchData('batter_projections.json').catch(() => null),
@@ -35,6 +38,7 @@ function SlipOptimizer() {
       });
       // Sort by absolute edge descending
       props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
+      debugLog('Data loaded:', { totalProps: props.length, pitcherProps: props.filter(p => ['K','HA','OUTS','P'].includes(p.propShort)).length, batterProps: props.filter(p => ['HRR','TB'].includes(p.propShort)).length });
       setAllProps(props);
     });
   }, []);
