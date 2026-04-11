@@ -328,6 +328,19 @@ def main():
                 if row.get("DATE") == today_str:
                     today_batters.add(normalize(row["Name"].strip()))
 
+    # Also add batters from today's batter projections (covers pre-game / stale CSV)
+    batter_proj_path = os.path.join(PUBLIC_DATA, "batter_projections.json")
+    if os.path.exists(batter_proj_path):
+        with open(batter_proj_path) as f:
+            bp = json.load(f)
+            for proj in bp.get("projections", []):
+                pp_name = proj.get("pp_name") or proj.get("name", "")
+                if pp_name:
+                    today_batters.add(normalize(pp_name))
+                name = proj.get("name", "")
+                if name:
+                    today_batters.add(normalize(name))
+
     # Pitching stats (from daily CSV)
     pitching_path = os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats.csv")
     if os.path.exists(pitching_path):

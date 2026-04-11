@@ -1,7 +1,102 @@
 {
-  "generated_at": "2026-04-10T23:54:02.133505",
-  "total_props": 66,
+  "generated_at": "2026-04-10T21:05:34.606655",
+  "total_props": 74,
   "cards": [
+    {
+      "name": "Nathan Wiles",
+      "team": "Kiwoom",
+      "opponent": "Lotte",
+      "type": "pitcher",
+      "props": [
+        {
+          "stat": "Pitching Outs",
+          "line": 16.5,
+          "avg": 14.19,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            15,
+            18
+          ],
+          "recommendation": "UNDER"
+        },
+        {
+          "stat": "Hits Allowed",
+          "line": 6.5,
+          "avg": 7.5,
+          "over": 2,
+          "under": 0,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 100.0,
+          "hit_rate_l5": 100.0,
+          "hit_rate_l10": 100.0,
+          "hit_rate_l20": 100.0,
+          "recent_values": [
+            8,
+            7
+          ],
+          "recommendation": null
+        },
+        {
+          "stat": "Pitcher Strikeouts",
+          "line": 4.5,
+          "avg": 4.5,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            5,
+            4
+          ],
+          "recommendation": null
+        }
+      ],
+      "games": [
+        {
+          "date": "04/05/2026",
+          "opp": "LG",
+          "ip": 5.0,
+          "so": 5,
+          "er": 4,
+          "ha": 8,
+          "bb": 2,
+          "era": 7.2,
+          "whip": 2.0,
+          "outs": 15
+        },
+        {
+          "date": "03/31/2026",
+          "opp": "SSG",
+          "ip": 6.0,
+          "so": 4,
+          "er": 2,
+          "ha": 7,
+          "bb": 0,
+          "era": 3.0,
+          "whip": 1.167,
+          "outs": 18
+        }
+      ],
+      "projection_so": 14.19,
+      "so_per_ip": null,
+      "ip_per_g": 5.079,
+      "proj_rating": 43.0,
+      "proj_rec": "UNDER",
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
     {
       "name": "So Hyeong-Jun",
       "team": "KT",
@@ -863,49 +958,83 @@
           "stat": "Pitching Outs",
           "line": 17.5,
           "avg": 14.7,
-          "over": 0,
-          "under": 0,
+          "over": 1,
+          "under": 1,
           "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            19,
+            16
+          ],
           "recommendation": "UNDER"
         },
         {
           "stat": "Hits Allowed",
           "line": 4.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
+          "avg": 4.5,
+          "over": 1,
+          "under": 1,
           "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            5,
+            4
+          ],
           "recommendation": null
         },
         {
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "avg": 4.3,
-          "over": 0,
-          "under": 0,
+          "over": 1,
+          "under": 1,
           "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            4,
+            5
+          ],
           "recommendation": "PUSH"
         }
       ],
-      "games": [],
+      "games": [
+        {
+          "date": "04/04/2026",
+          "opp": "Doosan",
+          "ip": 6.33,
+          "so": 4,
+          "er": 0,
+          "ha": 5,
+          "bb": 2,
+          "era": 0.0,
+          "whip": 1.105,
+          "outs": 19
+        },
+        {
+          "date": "03/29/2026",
+          "opp": "Kiwoom",
+          "ip": 5.33,
+          "so": 5,
+          "er": 3,
+          "ha": 4,
+          "bb": 1,
+          "era": 5.06,
+          "whip": 0.938,
+          "outs": 16
+        }
+      ],
       "projection_so": 4.3,
       "so_per_ip": 0.889,
       "ip_per_g": 4.868,
@@ -913,6 +1042,291 @@
       "proj_rec": "PUSH",
       "venue": "Daejeon",
       "park_factor": 0.887
+    },
+    {
+      "name": "Jeremy Beasley",
+      "team": "Lotte",
+      "opponent": "Kiwoom",
+      "type": "pitcher",
+      "props": [
+        {
+          "stat": "Pitching Outs",
+          "line": 16.5,
+          "avg": 13.25,
+          "over": 0,
+          "under": 2,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 0.0,
+          "hit_rate_l5": 0.0,
+          "hit_rate_l10": 0.0,
+          "hit_rate_l20": 0.0,
+          "recent_values": [
+            12,
+            15
+          ],
+          "recommendation": "UNDER"
+        },
+        {
+          "stat": "Hits Allowed",
+          "line": 4.5,
+          "avg": 6.0,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            10,
+            2
+          ],
+          "recommendation": null
+        },
+        {
+          "stat": "Pitcher Strikeouts",
+          "line": 5.0,
+          "avg": 4.5,
+          "over": 0,
+          "under": 1,
+          "push": 1,
+          "total_games": 2,
+          "hit_rate_all": 0.0,
+          "hit_rate_l5": 0.0,
+          "hit_rate_l10": 0.0,
+          "hit_rate_l20": 0.0,
+          "recent_values": [
+            4,
+            5
+          ],
+          "recommendation": null
+        }
+      ],
+      "games": [
+        {
+          "date": "04/04/2026",
+          "opp": "SSG",
+          "ip": 4.0,
+          "so": 4,
+          "er": 6,
+          "ha": 10,
+          "bb": 3,
+          "era": 13.5,
+          "whip": 3.25,
+          "outs": 12
+        },
+        {
+          "date": "03/29/2026",
+          "opp": "Samsung",
+          "ip": 5.0,
+          "so": 5,
+          "er": 0,
+          "ha": 2,
+          "bb": 1,
+          "era": 0.0,
+          "whip": 0.6,
+          "outs": 15
+        }
+      ],
+      "projection_so": 13.25,
+      "so_per_ip": null,
+      "ip_per_g": 4.745,
+      "proj_rating": 40.1,
+      "proj_rec": "UNDER",
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Jack O'loughlin",
+      "team": "Samsung",
+      "opponent": "NC",
+      "type": "pitcher",
+      "props": [
+        {
+          "stat": "Pitching Outs",
+          "line": 16.5,
+          "avg": 15.27,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            18,
+            11
+          ],
+          "recommendation": "UNDER"
+        },
+        {
+          "stat": "Hits Allowed",
+          "line": 5.0,
+          "avg": 5.5,
+          "over": 1,
+          "under": 0,
+          "push": 1,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            5,
+            6
+          ],
+          "recommendation": null
+        },
+        {
+          "stat": "Pitcher Strikeouts",
+          "line": 4.5,
+          "avg": 4.75,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            5,
+            3
+          ],
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [
+        {
+          "date": "04/05/2026",
+          "opp": "KT",
+          "ip": 6.0,
+          "so": 5,
+          "er": 2,
+          "ha": 5,
+          "bb": 2,
+          "era": 3.0,
+          "whip": 1.167,
+          "outs": 18
+        },
+        {
+          "date": "03/31/2026",
+          "opp": "Doosan",
+          "ip": 3.67,
+          "so": 3,
+          "er": 4,
+          "ha": 6,
+          "bb": 2,
+          "era": 9.82,
+          "whip": 2.182,
+          "outs": 11
+        }
+      ],
+      "projection_so": 4.75,
+      "so_per_ip": 0.889,
+      "ip_per_g": 4.868,
+      "proj_rating": 52.7,
+      "proj_rec": "PUSH",
+      "venue": "Daegu",
+      "park_factor": 1.146
+    },
+    {
+      "name": "Curtis Taylor",
+      "team": "NC",
+      "opponent": "Samsung",
+      "type": "pitcher",
+      "props": [
+        {
+          "stat": "Pitching Outs",
+          "line": 15.5,
+          "avg": 13.69,
+          "over": 0,
+          "under": 2,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 0.0,
+          "hit_rate_l5": 0.0,
+          "hit_rate_l10": 0.0,
+          "hit_rate_l20": 0.0,
+          "recent_values": [
+            15,
+            15
+          ],
+          "recommendation": "UNDER"
+        },
+        {
+          "stat": "Hits Allowed",
+          "line": 4.5,
+          "avg": 3.5,
+          "over": 0,
+          "under": 2,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 0.0,
+          "hit_rate_l5": 0.0,
+          "hit_rate_l10": 0.0,
+          "hit_rate_l20": 0.0,
+          "recent_values": [
+            3,
+            4
+          ],
+          "recommendation": null
+        },
+        {
+          "stat": "Pitcher Strikeouts",
+          "line": 4.5,
+          "avg": 5.0,
+          "over": 1,
+          "under": 1,
+          "push": 0,
+          "total_games": 2,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
+          "recent_values": [
+            4,
+            6
+          ],
+          "recommendation": null
+        }
+      ],
+      "games": [
+        {
+          "date": "04/04/2026",
+          "opp": "Kia",
+          "ip": 5.0,
+          "so": 4,
+          "er": 0,
+          "ha": 3,
+          "bb": 5,
+          "era": 0.0,
+          "whip": 1.6,
+          "outs": 15
+        },
+        {
+          "date": "03/29/2026",
+          "opp": "Doosan",
+          "ip": 5.0,
+          "so": 6,
+          "er": 2,
+          "ha": 4,
+          "bb": 2,
+          "era": 3.6,
+          "whip": 1.2,
+          "outs": 15
+        }
+      ],
+      "projection_so": 13.69,
+      "so_per_ip": null,
+      "ip_per_g": 4.912,
+      "proj_rating": 44.2,
+      "proj_rec": "UNDER",
+      "venue": "Daegu",
+      "park_factor": 1.146
     },
     {
       "name": "Lee Eui-lee",
@@ -946,248 +1360,125 @@
       "park_factor": 0.887
     },
     {
-      "name": "Nathan Wiles",
-      "team": "Kiwoom",
-      "opponent": "Lotte",
-      "type": "pitcher",
+      "name": "Park Seong-Han",
+      "team": "SSG",
+      "opponent": "LG",
+      "type": "batter",
       "props": [
         {
-          "stat": "Pitching Outs",
-          "line": 16.5,
-          "avg": 14.19,
-          "over": 0,
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 4.22,
+          "over": 9,
           "under": 0,
           "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "UNDER"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 6.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 4.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
+          "total_games": 9,
+          "hit_rate_all": 100.0,
+          "hit_rate_l5": 100.0,
+          "hit_rate_l10": 100.0,
+          "hit_rate_l20": 100.0,
+          "recent_values": [
+            2,
+            3,
+            3,
+            10,
+            8,
+            2,
+            3,
+            5,
+            2
+          ],
+          "projection": 5.51,
+          "edge": 4.01,
+          "rating": 183.7,
+          "recommendation": "OVER"
         }
       ],
-      "games": [],
-      "projection_so": 14.19,
-      "so_per_ip": null,
-      "ip_per_g": 5.079,
-      "proj_rating": 43.0,
-      "proj_rec": "UNDER",
-      "venue": "Seoul-Gocheok",
-      "park_factor": 0.904
-    },
-    {
-      "name": "Jeremy Beasley",
-      "team": "Lotte",
-      "opponent": "Kiwoom",
-      "type": "pitcher",
-      "props": [
+      "games": [
         {
-          "stat": "Pitching Outs",
-          "line": 16.5,
-          "avg": 13.25,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "UNDER"
+          "date": "2026-04-07",
+          "opp": "Hanwha",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
         },
         {
-          "stat": "Hits Allowed",
-          "line": 4.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
+          "date": "2026-04-05",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 2
         },
         {
-          "stat": "Pitcher Strikeouts",
-          "line": 5.0,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
+          "date": "2026-04-04",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "Lotte",
+          "h": 4,
+          "r": 2,
+          "rbi": 4,
+          "hrr": 10,
+          "tb": 6
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kiwoom",
+          "h": 3,
+          "r": 3,
+          "rbi": 2,
+          "hrr": 8,
+          "tb": 5
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kiwoom",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 2,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Kia",
+          "h": 1,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
         }
       ],
-      "games": [],
-      "projection_so": 13.25,
-      "so_per_ip": null,
-      "ip_per_g": 4.745,
-      "proj_rating": 40.1,
-      "proj_rec": "UNDER",
-      "venue": "Seoul-Gocheok",
-      "park_factor": 0.904
-    },
-    {
-      "name": "Jack O'loughlin",
-      "team": "Samsung",
-      "opponent": "NC",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Pitching Outs",
-          "line": 16.5,
-          "avg": 15.27,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "UNDER"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 5.0,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 4.5,
-          "avg": 4.75,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "PUSH"
-        }
-      ],
-      "games": [],
-      "projection_so": 4.75,
-      "so_per_ip": 0.889,
-      "ip_per_g": 4.868,
-      "proj_rating": 52.7,
-      "proj_rec": "PUSH",
-      "venue": "Daegu",
-      "park_factor": 1.146
-    },
-    {
-      "name": "Curtis Taylor",
-      "team": "NC",
-      "opponent": "Samsung",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Pitching Outs",
-          "line": 15.5,
-          "avg": 13.69,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "UNDER"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 4.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 4.5,
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": null
-        }
-      ],
-      "games": [],
-      "projection_so": 13.69,
-      "so_per_ip": null,
-      "ip_per_g": 4.912,
-      "proj_rating": 44.2,
-      "proj_rec": "UNDER",
-      "venue": "Daegu",
-      "park_factor": 1.146
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Yonathan Perlaza",
@@ -1219,10 +1510,10 @@
             3,
             5
           ],
-          "projection": 2.72,
-          "edge": 0.22,
-          "rating": 54.5,
-          "recommendation": "PUSH"
+          "projection": 3.04,
+          "edge": 0.54,
+          "rating": 60.8,
+          "recommendation": "OVER"
         },
         {
           "stat": "Total Bases",
@@ -1248,9 +1539,9 @@
             2,
             4
           ],
-          "projection": 1.9,
-          "edge": 0.4,
-          "rating": 63.2,
+          "projection": 2.26,
+          "edge": 0.76,
+          "rating": 75.4,
           "recommendation": "OVER"
         },
         {
@@ -1277,10 +1568,10 @@
             3,
             5
           ],
-          "projection": 2.72,
-          "edge": 0.22,
-          "rating": 54.5,
-          "recommendation": "PUSH"
+          "projection": 3.04,
+          "edge": 0.54,
+          "rating": 60.8,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -1388,6 +1679,238 @@
       "park_factor": 0.887
     },
     {
+      "name": "Ko Myeong-jun",
+      "team": "SSG",
+      "opponent": "LG",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 3.33,
+          "over": 7,
+          "under": 2,
+          "push": 0,
+          "total_games": 9,
+          "hit_rate_all": 77.8,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 77.8,
+          "hit_rate_l20": 77.8,
+          "recent_values": [
+            1,
+            2,
+            3,
+            5,
+            5,
+            1,
+            3,
+            8,
+            2
+          ],
+          "projection": 4.35,
+          "edge": 2.85,
+          "rating": 145.0,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-07",
+          "opp": "Hanwha",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-05",
+          "opp": "Lotte",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-04",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "Lotte",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 5
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Kiwoom",
+          "h": 2,
+          "r": 1,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Kiwoom",
+          "h": 3,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Kia",
+          "h": 3,
+          "r": 3,
+          "rbi": 2,
+          "hrr": 8,
+          "tb": 9
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Kia",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        }
+      ],
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
+    },
+    {
+      "name": "Jarryd Dale",
+      "team": "Kia",
+      "opponent": "Hanwha",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.0,
+          "over": 6,
+          "under": 2,
+          "push": 0,
+          "total_games": 8,
+          "hit_rate_all": 75.0,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 75.0,
+          "hit_rate_l20": 75.0,
+          "recent_values": [
+            2,
+            1,
+            1,
+            2,
+            2,
+            2,
+            4,
+            2
+          ],
+          "projection": 1.12,
+          "edge": -0.38,
+          "rating": 37.5,
+          "recommendation": "UNDER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-07",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-05",
+          "opp": "NC",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-04",
+          "opp": "NC",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "NC",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "LG",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "LG",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "LG",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 2
+        }
+      ],
+      "venue": "Daejeon",
+      "park_factor": 0.887
+    },
+    {
       "name": "Sam Hilliard",
       "team": "KT",
       "opponent": "Doosan",
@@ -1417,9 +1940,9 @@
             4,
             0
           ],
-          "projection": 2.42,
-          "edge": 0.92,
-          "rating": 80.6,
+          "projection": 3.11,
+          "edge": 1.61,
+          "rating": 103.5,
           "recommendation": "OVER"
         }
       ],
@@ -1528,6 +2051,369 @@
       "park_factor": 0.991
     },
     {
+      "name": "Oh Jae-won",
+      "team": "Hanwha",
+      "opponent": "Kia",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.22,
+          "over": 6,
+          "under": 3,
+          "push": 0,
+          "total_games": 9,
+          "hit_rate_all": 66.7,
+          "hit_rate_l5": 40.0,
+          "hit_rate_l10": 66.7,
+          "hit_rate_l20": 66.7,
+          "recent_values": [
+            1,
+            0,
+            2,
+            5,
+            0,
+            2,
+            3,
+            3,
+            4
+          ],
+          "projection": 1.96,
+          "edge": 0.46,
+          "rating": 65.2,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-07",
+          "opp": "SSG",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-05",
+          "opp": "Doosan",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-04",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "Doosan",
+          "h": 1,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 5,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "KT",
+          "h": 2,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "KT",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 0,
+          "rbi": 2,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Kiwoom",
+          "h": 3,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 3
+        }
+      ],
+      "venue": "Daejeon",
+      "park_factor": 0.887
+    },
+    {
+      "name": "An Jae-seok",
+      "team": "Doosan",
+      "opponent": "KT",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.22,
+          "over": 6,
+          "under": 3,
+          "push": 0,
+          "total_games": 9,
+          "hit_rate_all": 66.7,
+          "hit_rate_l5": 80.0,
+          "hit_rate_l10": 66.7,
+          "hit_rate_l20": 66.7,
+          "recent_values": [
+            2,
+            1,
+            4,
+            3,
+            3,
+            1,
+            2,
+            4,
+            0
+          ],
+          "projection": 1.79,
+          "edge": 0.29,
+          "rating": 59.6,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-07",
+          "opp": "Kiwoom",
+          "h": 1,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 2,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-05",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-04-04",
+          "opp": "Hanwha",
+          "h": 2,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 3
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "Hanwha",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 1
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 4
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 2,
+          "tb": 2
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "NC",
+          "h": 2,
+          "r": 2,
+          "rbi": 0,
+          "hrr": 4,
+          "tb": 3
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        }
+      ],
+      "venue": "Suwon",
+      "park_factor": 0.991
+    },
+    {
+      "name": "No Jin-hyuk",
+      "team": "Lotte",
+      "opponent": "Kiwoom",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 2.67,
+          "over": 6,
+          "under": 3,
+          "push": 0,
+          "total_games": 9,
+          "hit_rate_all": 66.7,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 66.7,
+          "hit_rate_l20": 66.7,
+          "recent_values": [
+            3,
+            1,
+            5,
+            1,
+            4,
+            0,
+            4,
+            3,
+            3
+          ],
+          "projection": 2.52,
+          "edge": 1.02,
+          "rating": 83.9,
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2026-04-07",
+          "opp": "KT",
+          "h": 2,
+          "r": 0,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-05",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-04",
+          "opp": "SSG",
+          "h": 1,
+          "r": 1,
+          "rbi": 3,
+          "hrr": 5,
+          "tb": 4
+        },
+        {
+          "date": "2026-04-03",
+          "opp": "SSG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 2
+        },
+        {
+          "date": "2026-04-02",
+          "opp": "NC",
+          "h": 2,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 4,
+          "tb": 6
+        },
+        {
+          "date": "2026-04-01",
+          "opp": "NC",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2026-03-31",
+          "opp": "NC",
+          "h": 2,
+          "r": 0,
+          "rbi": 2,
+          "hrr": 4,
+          "tb": 4
+        },
+        {
+          "date": "2026-03-29",
+          "opp": "Samsung",
+          "h": 1,
+          "r": 1,
+          "rbi": 1,
+          "hrr": 3,
+          "tb": 4
+        },
+        {
+          "date": "2026-03-28",
+          "opp": "Samsung",
+          "h": 2,
+          "r": 1,
+          "rbi": 0,
+          "hrr": 3,
+          "tb": 3
+        }
+      ],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
       "name": "Austin Dean",
       "team": "LG",
       "opponent": "SSG",
@@ -1557,10 +2443,10 @@
             0,
             6
           ],
-          "projection": 3.24,
-          "edge": 0.74,
-          "rating": 64.9,
-          "recommendation": "OVER"
+          "projection": 2.2,
+          "edge": -0.3,
+          "rating": 44.0,
+          "recommendation": "UNDER"
         },
         {
           "stat": "Total Bases",
@@ -1586,10 +2472,10 @@
             0,
             4
           ],
-          "projection": 1.91,
-          "edge": 0.41,
-          "rating": 63.5,
-          "recommendation": "OVER"
+          "projection": 1.27,
+          "edge": -0.23,
+          "rating": 42.3,
+          "recommendation": "PUSH"
         },
         {
           "stat": "Hits+Runs+RBIs",
@@ -1615,10 +2501,10 @@
             0,
             6
           ],
-          "projection": 3.24,
-          "edge": 0.74,
-          "rating": 64.9,
-          "recommendation": "OVER"
+          "projection": 2.2,
+          "edge": -0.3,
+          "rating": 44.0,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -1996,10 +2882,10 @@
             6,
             5
           ],
-          "projection": 2.13,
-          "edge": -0.37,
-          "rating": 42.7,
-          "recommendation": "UNDER"
+          "projection": 3.2,
+          "edge": 0.7,
+          "rating": 63.9,
+          "recommendation": "OVER"
         },
         {
           "stat": "Hits+Runs+RBIs",
@@ -2025,10 +2911,10 @@
             6,
             5
           ],
-          "projection": 2.13,
-          "edge": -0.37,
-          "rating": 42.7,
-          "recommendation": "UNDER"
+          "projection": 3.2,
+          "edge": 0.7,
+          "rating": 63.9,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2201,9 +3087,9 @@
             0,
             5
           ],
-          "projection": 2.15,
-          "edge": 0.65,
-          "rating": 71.8,
+          "projection": 2.39,
+          "edge": 0.89,
+          "rating": 79.8,
           "recommendation": "OVER"
         }
       ],
@@ -2377,10 +3263,10 @@
             3,
             2
           ],
-          "projection": 1.78,
-          "edge": 0.28,
-          "rating": 59.3,
-          "recommendation": "PUSH"
+          "projection": 2.29,
+          "edge": 0.79,
+          "rating": 76.2,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2553,9 +3439,9 @@
             3,
             0
           ],
-          "projection": 2.64,
-          "edge": 1.14,
-          "rating": 87.9,
+          "projection": 3.39,
+          "edge": 1.89,
+          "rating": 113.0,
           "recommendation": "OVER"
         }
       ],
@@ -2729,9 +3615,9 @@
             3,
             4
           ],
-          "projection": 2.08,
-          "edge": 0.58,
-          "rating": 69.3,
+          "projection": 2.67,
+          "edge": 1.17,
+          "rating": 89.0,
           "recommendation": "OVER"
         }
       ],
@@ -2905,10 +3791,10 @@
             1,
             3
           ],
-          "projection": 2.58,
-          "edge": 0.08,
-          "rating": 51.5,
-          "recommendation": "PUSH"
+          "projection": 3.34,
+          "edge": 0.84,
+          "rating": 66.7,
+          "recommendation": "OVER"
         },
         {
           "stat": "Total Bases",
@@ -2934,9 +3820,9 @@
             0,
             3
           ],
-          "projection": 2.4,
-          "edge": 0.9,
-          "rating": 80.0,
+          "projection": 2.85,
+          "edge": 1.35,
+          "rating": 95.0,
           "recommendation": "OVER"
         },
         {
@@ -2963,10 +3849,10 @@
             1,
             3
           ],
-          "projection": 2.58,
-          "edge": 0.08,
-          "rating": 51.5,
-          "recommendation": "PUSH"
+          "projection": 3.34,
+          "edge": 0.84,
+          "rating": 66.7,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -3139,10 +4025,10 @@
             7,
             1
           ],
-          "projection": 2.89,
-          "edge": 1.39,
-          "rating": 96.3,
-          "recommendation": "OVER"
+          "projection": 1.46,
+          "edge": -0.04,
+          "rating": 48.5,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -3315,10 +4201,10 @@
             0,
             2
           ],
-          "projection": 2.12,
-          "edge": 0.62,
-          "rating": 70.8,
-          "recommendation": "OVER"
+          "projection": 1.44,
+          "edge": -0.06,
+          "rating": 48.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -3491,9 +4377,9 @@
             2,
             2
           ],
-          "projection": 2.73,
-          "edge": 1.23,
-          "rating": 90.8,
+          "projection": 3.53,
+          "edge": 2.03,
+          "rating": 117.6,
           "recommendation": "OVER"
         }
       ],
@@ -3667,9 +4553,9 @@
             0,
             4
           ],
-          "projection": 1.81,
-          "edge": 0.31,
-          "rating": 60.2,
+          "projection": 2.02,
+          "edge": 0.52,
+          "rating": 67.2,
           "recommendation": "OVER"
         }
       ],
@@ -3843,10 +4729,10 @@
             3,
             3
           ],
-          "projection": 2.45,
-          "edge": 0.95,
-          "rating": 81.8,
-          "recommendation": "OVER"
+          "projection": 1.6,
+          "edge": 0.1,
+          "rating": 53.4,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -4019,9 +4905,9 @@
             0,
             1
           ],
-          "projection": 2.45,
-          "edge": 0.95,
-          "rating": 81.7,
+          "projection": 3.17,
+          "edge": 1.67,
+          "rating": 105.8,
           "recommendation": "OVER"
         }
       ],
@@ -4195,9 +5081,9 @@
             5,
             2
           ],
-          "projection": 2.33,
-          "edge": 0.83,
-          "rating": 77.5,
+          "projection": 2.99,
+          "edge": 1.49,
+          "rating": 99.7,
           "recommendation": "OVER"
         }
       ],
@@ -4371,10 +5257,10 @@
             6,
             5
           ],
-          "projection": 3.25,
-          "edge": 1.75,
-          "rating": 108.2,
-          "recommendation": "OVER"
+          "projection": 1.64,
+          "edge": 0.14,
+          "rating": 54.5,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -4511,10 +5397,10 @@
             2,
             4
           ],
-          "projection": 2.13,
-          "edge": 0.63,
-          "rating": 70.9,
-          "recommendation": "OVER"
+          "projection": 1.39,
+          "edge": -0.11,
+          "rating": 46.3,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -4827,9 +5713,9 @@
             1,
             5
           ],
-          "projection": 2.76,
-          "edge": 1.26,
-          "rating": 92.1,
+          "projection": 1.87,
+          "edge": 0.37,
+          "rating": 62.5,
           "recommendation": "OVER"
         }
       ],
@@ -5003,10 +5889,10 @@
             3,
             2
           ],
-          "projection": 2.23,
-          "edge": 0.73,
-          "rating": 74.4,
-          "recommendation": "OVER"
+          "projection": 1.12,
+          "edge": -0.38,
+          "rating": 37.5,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -5179,10 +6065,10 @@
             0,
             2
           ],
-          "projection": 1.72,
-          "edge": 0.22,
-          "rating": 57.4,
-          "recommendation": "PUSH"
+          "projection": 1.92,
+          "edge": 0.42,
+          "rating": 63.8,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -5355,10 +6241,10 @@
             1,
             3
           ],
-          "projection": 1.7,
-          "edge": 0.2,
-          "rating": 56.8,
-          "recommendation": "PUSH"
+          "projection": 1.9,
+          "edge": 0.4,
+          "rating": 63.4,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -5531,10 +6417,10 @@
             3,
             2
           ],
-          "projection": 1.75,
-          "edge": 0.25,
-          "rating": 58.2,
-          "recommendation": "PUSH"
+          "projection": 1.94,
+          "edge": 0.44,
+          "rating": 64.7,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -5707,10 +6593,10 @@
             2,
             3
           ],
-          "projection": 2.24,
-          "edge": 0.74,
-          "rating": 74.6,
-          "recommendation": "OVER"
+          "projection": 1.46,
+          "edge": -0.04,
+          "rating": 48.7,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -5883,9 +6769,9 @@
             4,
             4
           ],
-          "projection": 2.08,
-          "edge": 0.58,
-          "rating": 69.5,
+          "projection": 2.7,
+          "edge": 1.2,
+          "rating": 89.9,
           "recommendation": "OVER"
         }
       ],
@@ -6059,9 +6945,9 @@
             4,
             1
           ],
-          "projection": 1.91,
-          "edge": 0.41,
-          "rating": 63.7,
+          "projection": 2.86,
+          "edge": 1.36,
+          "rating": 95.4,
           "recommendation": "OVER"
         }
       ],
@@ -6235,10 +7121,10 @@
             1,
             3
           ],
-          "projection": 1.72,
-          "edge": 0.22,
-          "rating": 57.2,
-          "recommendation": "PUSH"
+          "projection": 2.21,
+          "edge": 0.71,
+          "rating": 73.6,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -6411,9 +7297,9 @@
             3,
             2
           ],
-          "projection": 1.39,
-          "edge": -0.11,
-          "rating": 46.2,
+          "projection": 1.78,
+          "edge": 0.28,
+          "rating": 59.4,
           "recommendation": "PUSH"
         }
       ],
@@ -6587,9 +7473,9 @@
             2,
             1
           ],
-          "projection": 1.85,
-          "edge": 0.35,
-          "rating": 61.5,
+          "projection": 1.87,
+          "edge": 0.37,
+          "rating": 62.2,
           "recommendation": "OVER"
         }
       ],
@@ -6870,6 +7756,175 @@
           "tb": 0
         }
       ],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Lee Ju-hyoung",
+      "team": "Kiwoom",
+      "opponent": "Lotte",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 0.82,
+          "over": 1,
+          "under": 10,
+          "push": 0,
+          "total_games": 11,
+          "hit_rate_all": 9.1,
+          "hit_rate_l5": 0.0,
+          "hit_rate_l10": 10.0,
+          "hit_rate_l20": 9.1,
+          "recent_values": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          "projection": 0.65,
+          "edge": -0.85,
+          "rating": 21.5,
+          "recommendation": "UNDER"
+        }
+      ],
+      "games": [
+        {
+          "date": "2025-07-24",
+          "opp": "Lotte",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-23",
+          "opp": "Lotte",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-20",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-09",
+          "opp": "LG",
+          "h": 1,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 1,
+          "tb": 1
+        },
+        {
+          "date": "2025-07-06",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-05",
+          "opp": "Hanwha",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-03",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-02",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-07-01",
+          "opp": "KT",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        },
+        {
+          "date": "2025-06-29",
+          "opp": "Samsung",
+          "h": 4,
+          "r": 2,
+          "rbi": 2,
+          "hrr": 8,
+          "tb": 4
+        },
+        {
+          "date": "2025-06-28",
+          "opp": "Samsung",
+          "h": 0,
+          "r": 0,
+          "rbi": 0,
+          "hrr": 0,
+          "tb": 0
+        }
+      ],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Hyeok Park Chan",
+      "team": "Kiwoom",
+      "opponent": "Lotte",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 1.49,
+          "edge": -0.01,
+          "rating": 49.7,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
     }
