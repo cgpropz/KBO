@@ -488,6 +488,20 @@ def main():
     }
 
     out_path = os.path.join(PUBLIC_DATA, "prizepicks_props.json")
+
+    # Guard: don't overwrite a richer snapshot with a smaller one
+    # (e.g. CI odds scraper didn't find batter lines this run)
+    if os.path.exists(out_path):
+        try:
+            with open(out_path) as f:
+                prev = json.load(f)
+            prev_cards = len(prev.get("cards", []))
+            if prev_cards > len(cards) and len(cards) > 0:
+                print(f"⚠ Skipping write: existing file has {prev_cards} cards vs {len(cards)} new — keeping richer snapshot")
+                return
+        except Exception:
+            pass
+
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2)
     print(f"Wrote {len(cards)} player cards ({output['total_props']} props) to {out_path}")
