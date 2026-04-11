@@ -436,6 +436,26 @@ for name, bs in batter_stats.items():
     bs["obp"] = (bs["h"] + bs["walks"] + bs["hbp"]) / pa if pa > 0 else 0
     bs["ops"] = bs["obp"] + bs["slg"]
 
+# Compute current-season OPS (2026 only) for display accuracy
+batter_ops_2026 = {}
+for row in batter_logs:
+    if row.get("Season", "") != "2026":
+        continue
+    name = row["Name"]
+    if name not in batter_ops_2026:
+        batter_ops_2026[name] = {"h": 0, "ab": 0, "walks": 0, "hbp": 0, "tb": 0}
+    s = batter_ops_2026[name]
+    s["h"] += int(row["H"])
+    s["ab"] += int(row["AB"])
+    s["walks"] += int(row["Walks"])
+    s["hbp"] += int(row["HBP"])
+    s["tb"] += int(row["TB"])
+for name, s in batter_ops_2026.items():
+    slg = s["tb"] / s["ab"] if s["ab"] > 0 else 0
+    pa = s["ab"] + s["walks"] + s["hbp"]
+    obp = (s["h"] + s["walks"] + s["hbp"]) / pa if pa > 0 else 0
+    batter_ops_2026[name] = round(obp + slg, 3)
+
 league_total_hits = sum(bs["h"] for bs in batter_stats.values())
 league_total_ab = sum(bs["ab"] for bs in batter_stats.values())
 league_avg_ba = (league_total_hits / league_total_ab) if league_total_ab > 0 else 0.250
@@ -942,7 +962,7 @@ def build_hrr_projections():
             "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
-            "ba": round(bs["ba"], 3), "ops": round(bs["ops"], 3),
+            "ba": round(bs["ba"], 3), "ops": batter_ops_2026.get(resolved, round(bs["ops"], 3)),
             "games_used": bs["games"],
             "batter_hand": batter_hand,
             "opp_pitcher": opp_pitcher,
@@ -1032,7 +1052,7 @@ def build_tb_projections():
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "slg": round(bs["slg"], 3),
-            "ops": round(bs["ops"], 3),
+            "ops": batter_ops_2026.get(resolved, round(bs["ops"], 3)),
             "opp_factor": round(opp_factor, 3), "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
             "home_team": home,
