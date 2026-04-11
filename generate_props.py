@@ -482,7 +482,7 @@ def main():
     cards.sort(key=sort_key)
 
     output = {
-        "generated_at": __import__("datetime").datetime.now().isoformat(),
+        "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         "total_props": sum(len(c["props"]) for c in cards),
         "cards": cards,
     }

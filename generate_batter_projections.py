@@ -22,7 +22,7 @@ import csv
 import json
 import os
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timezone
 from difflib import get_close_matches
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -1056,7 +1056,7 @@ projections.sort(key=lambda p: (p["prop"], p["team"], p["name"]))
 out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "batter_projections.json")
 with open(out_path, "w") as f:
     json.dump({
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "projections": projections,
         "league_avg_hrr_per_g": round(league_avg_hrr_per_g, 2),
         "league_avg_tb_per_g": round(league_avg_tb_per_g, 2),

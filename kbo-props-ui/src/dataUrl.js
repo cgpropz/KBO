@@ -20,7 +20,12 @@ const STALE_SNAPSHOT_MINUTES = 90;
 
 function parseTimestampMs(value) {
   if (!value) return NaN;
-  const ms = new Date(value).getTime();
+  let v = String(value);
+  // Treat timezone-naive ISO strings as UTC to avoid browser local-time drift
+  if (/^\d{4}-\d{2}-\d{2}T[\d:.]+$/.test(v)) {
+    v += 'Z';
+  }
+  const ms = new Date(v).getTime();
   return Number.isFinite(ms) ? ms : NaN;
 }
 

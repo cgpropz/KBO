@@ -4,7 +4,7 @@ import csv
 import json
 import os
 import unicodedata
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -1026,7 +1026,7 @@ def main():
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(
             {
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "projections": projections,
                 "league_avg_so_per_g": round(league_avg_so_per_g, 3),
                 "league_avg_h_per_ip": round(league_avg_h_per_ip, 3),
