@@ -106,6 +106,15 @@
 
 .pp-filter-btn:hover:not(.active) { color: #e2e8f0; }
 
+.pp-hr-filters {
+  margin-left: 0;
+}
+
+.pp-hr-btn {
+  font-size: 0.72rem;
+  padding: 0.35rem 0.7rem;
+}
+
 .pp-sort {
   padding: 0.6rem 0.75rem;
   background: #1e1e2e;
@@ -319,6 +328,15 @@
 
 .pc-circle-wrap.highlight .pc-circle {
   transform: scale(1.15);
+}
+
+.pc-circle-wrap.active .pc-circle {
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5);
+  transform: scale(1.15);
+}
+
+.pc-circle-wrap:hover .pc-circle {
+  transform: scale(1.1);
 }
 
 .pc-circle {
