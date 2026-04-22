@@ -75,6 +75,22 @@ def main() -> int:
                 continue
             if row.get("ba") is None or row.get("k_pct") is None:
                 failures.append(f"team stats missing ba/k_pct for: {team}")
+        # Freshness/sanity guard: catch the year-old 2025 CSV fallback bug.
+        # If this snapshot was hand-generated from the stale fallback, every
+        # team's `games` ends up at 14 and the BA spread looks wrong.
+        rows = [team_stats.get(t) for t in required_teams if isinstance(team_stats.get(t), dict)]
+        if rows:
+            games_vals = [int(r.get("games") or 0) for r in rows]
+            ba_vals = [float(r.get("ba") or 0) for r in rows]
+            max_games = max(games_vals) if games_vals else 0
+            if max_games and max_games < 5:
+                failures.append(
+                    f"team_opponent_stats looks stale (max games={max_games})"
+                )
+            if ba_vals and (max(ba_vals) < 0.18 or min(ba_vals) > 0.34):
+                failures.append(
+                    f"team_opponent_stats BA range looks off ({min(ba_vals):.3f}-{max(ba_vals):.3f})"
+                )
 
     if not isinstance(rankings, list) or not rankings:
         failures.append("pitcher_rankings.json is empty or not a list")

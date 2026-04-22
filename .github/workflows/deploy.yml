@@ -18,10 +18,10 @@ on:
   schedule:
     # Full refresh + deploy spread across the afternoon (US Eastern).
     # GitHub schedule uses UTC.
-    - cron: "0 16 * * *"   # 12:00 PM ET
-    - cron: "0 18 * * *"   # 2:00 PM ET
-    - cron: "0 19 * * *"   # 3:00 PM ET
-    - cron: "0 20 * * *"   # 4:00 PM ET
+    - cron: "0 16 * * *" # 12:00 PM ET
+    - cron: "0 18 * * *" # 2:00 PM ET
+    - cron: "0 19 * * *" # 3:00 PM ET
+    - cron: "0 20 * * *" # 4:00 PM ET
   workflow_dispatch:
 
 permissions:

@@ -11,6 +11,7 @@ import csv
 import io
 import json
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -20,6 +21,12 @@ BASE = Path(__file__).resolve().parent
 OUT_PATH = BASE / "kbo-props-ui" / "public" / "data" / "team_opponent_stats_2026.json"
 
 DEFAULT_BREF_URL = "https://www.baseball-reference.com/register/league.cgi?id=163dcec5"
+
+# Local fallback CSVs are only trusted if modified within this many days.
+# (They were last hand-refreshed in April 2025 and silently corrupted prod for
+# weeks when the BR fetch returned 403. Treat them as ground truth only when
+# they've been freshly rebuilt by another job.)
+LOCAL_CSV_MAX_AGE_DAYS = 7
 
 TEAM_MAP = {
     "DOOSAN BEARS": "Doosan",
@@ -65,44 +72,79 @@ def normalize_team(name):
 
 
 def load_rows_from_baseball_reference():
-    """Load team batting totals from Baseball Reference table."""
+    """Load team batting totals from Baseball Reference table.
+
+    Retries both the simple HTTP path and the Playwright fallback a few
+    times each. Raises RuntimeError if every attempt fails so callers can
+    decide whether to preserve the previous-good snapshot instead of
+    overwriting it with stale fallback data.
+    """
     url = os.environ.get("BREF_KBO_LEAGUE_URL", DEFAULT_BREF_URL).strip()
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.baseball-reference.com/",
-    }
+    user_agents = [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36",
+    ]
+
     html = None
-    try:
-        resp = requests.get(url, headers=headers, timeout=25)
-        resp.raise_for_status()
-        html = resp.text
-    except Exception:
-        # Baseball Reference can return 403 to non-browser requests. Fallback to Playwright.
+    last_err = None
+    for attempt, ua in enumerate(user_agents, start=1):
+        headers = {
+            "User-Agent": ua,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.baseball-reference.com/",
+        }
+        try:
+            resp = requests.get(url, headers=headers, timeout=25)
+            resp.raise_for_status()
+            html = resp.text
+            break
+        except Exception as exc:
+            last_err = exc
+            print(f"WARN: BR requests attempt {attempt} failed: {exc}")
+            time.sleep(2 * attempt)
+
+    if html is None:
+        # Baseball Reference often returns 403 to non-browser requests. Fall
+        # back to Playwright for a couple of attempts before giving up.
         try:
             from playwright.sync_api import sync_playwright
-
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                html = page.content()
-                browser.close()
         except Exception as exc:
-            raise RuntimeError(f"baseball-reference fetch failed via requests and playwright: {exc}")
+            raise RuntimeError(f"baseball-reference fetch failed and playwright unavailable: {exc}")
 
-    frames = pd.read_html(io.StringIO(html or ""))
+        for attempt in range(1, 3):
+            try:
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(headless=True)
+                    page = browser.new_page()
+                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    html = page.content()
+                    browser.close()
+                if html:
+                    break
+            except Exception as exc:
+                last_err = exc
+                print(f"WARN: BR playwright attempt {attempt} failed: {exc}")
+                time.sleep(3 * attempt)
+
+    if not html:
+        raise RuntimeError(f"baseball-reference fetch failed via requests and playwright: {last_err}")
+
+    frames = pd.read_html(io.StringIO(html))
     if not frames:
         raise ValueError("No tables found on Baseball Reference page")
 
-    # Pick the first table with expected batting columns.
+    # Pick the team batting table (must contain BA and PA but NOT pitching-only cols).
     target = None
     for df in frames:
         cols = {str(c) for c in df.columns}
-        if {"Tm", "G", "PA", "AB", "H", "RBI", "TB", "SO", "BA"}.issubset(cols):
-            target = df
-            break
+        if not {"Tm", "G", "PA", "AB", "H", "RBI", "TB", "SO", "BA"}.issubset(cols):
+            continue
+        if cols & {"IP", "ERA", "ER", "SV"}:
+            continue  # this is the pitching table, not batting
+        target = df
+        break
     if target is None:
         raise ValueError("Could not find league batting table with expected columns")
 
@@ -120,28 +162,52 @@ def load_rows_from_baseball_reference():
 
 
 def load_rows():
-    # Preferred source: live Baseball Reference KBO league table.
+    """Return (rows, source) or (None, None) if no trusted source is available.
+
+    Order of preference:
+      1. Live Baseball Reference fetch (with retries).
+      2. Local league_batting CSV — ONLY if modified within
+         LOCAL_CSV_MAX_AGE_DAYS. The hand-curated 2025 CSVs are stale and
+         silently corrupted production stats; we no longer trust them blindly.
+    """
     try:
         rows, source = load_rows_from_baseball_reference()
         return rows, source
     except Exception as exc:
-        print(f"WARN: Baseball Reference fetch failed, falling back to local files: {exc}")
+        print(f"WARN: Baseball Reference fetch failed after retries: {exc}")
 
+    cutoff = time.time() - (LOCAL_CSV_MAX_AGE_DAYS * 86400)
     candidates = [
         BASE / "Batters-Data" / "league_batting_sorted.csv",
         BASE / "Batters-Data" / "league_batting.csv",
     ]
     for path in candidates:
-        if path.exists():
-            with open(path, encoding="utf-8") as f:
-                return list(csv.DictReader(f)), path
-    return [], None
+        if not path.exists():
+            continue
+        mtime = path.stat().st_mtime
+        if mtime < cutoff:
+            age_days = (time.time() - mtime) / 86400
+            print(f"WARN: skipping stale local CSV {path} (age={age_days:.1f} days)")
+            continue
+        with open(path, encoding="utf-8") as f:
+            return list(csv.DictReader(f)), path
+
+    return None, None
 
 
 def main():
     rows, source_path = load_rows()
     if not rows:
-        raise SystemExit("No batting league totals file found.")
+        # Preserve the existing snapshot rather than wiping or overwriting it
+        # with stale fallback data. Exit non-zero so the pipeline surfaces the
+        # failure instead of silently shipping bad numbers.
+        if OUT_PATH.exists():
+            print(
+                f"ERROR: no fresh batting source available; preserving prior snapshot at {OUT_PATH}",
+                flush=True,
+            )
+            raise SystemExit(2)
+        raise SystemExit("No batting league totals file found and no prior snapshot to preserve.")
 
     team_stats = {}
 
@@ -201,6 +267,26 @@ def main():
             "hrr_per_g": round(hrr_per_g, 2),
             "tb_per_g": round(tb_per_g, 2),
         }
+
+    # Sanity check before overwriting the canonical file. We have been burned
+    # by a stale 2025 CSV being silently written here, so refuse anything that
+    # looks suspicious and preserve the prior snapshot.
+    sanity_problems = []
+    if len(team_stats) < 8:
+        sanity_problems.append(f"only {len(team_stats)} teams parsed")
+    bas = [s["ba"] for s in team_stats.values() if s.get("ba")]
+    if bas and (max(bas) < 0.18 or min(bas) > 0.34):
+        sanity_problems.append(f"BA range looks off ({min(bas):.3f}-{max(bas):.3f})")
+    games = [s["games"] for s in team_stats.values()]
+    if games and max(games) < 5:
+        sanity_problems.append(f"max games={max(games)} (likely stale or empty source)")
+
+    if sanity_problems:
+        print(f"ERROR: refusing to write team_opponent_stats — {'; '.join(sanity_problems)}")
+        if OUT_PATH.exists():
+            print(f"Preserving prior snapshot at {OUT_PATH}")
+            raise SystemExit(2)
+        raise SystemExit(1)
 
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(team_stats, f, indent=2)
