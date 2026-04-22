@@ -15,6 +15,52 @@ const TEAMS = {
   SSG:     { color: '#ff5555', full: 'SSG Landers' },
 };
 
+// Logos live under kbo-props-ui/public/team-logos/. Files match other pages
+// (PlayerPropsUI / MatchupDeepDive) so future deploys reuse the same assets.
+const TEAM_LOGOS = {
+  Doosan:  '/team-logos/doosan.svg',
+  Hanwha:  '/team-logos/hanwha.svg',
+  Kia:     '/team-logos/kia.png',
+  Kiwoom:  '/team-logos/kiwoom.png',
+  KT:      '/team-logos/kt.svg',
+  LG:      '/team-logos/lg.svg',
+  Lotte:   '/team-logos/lotte.svg',
+  NC:      '/team-logos/nc.svg',
+  Samsung: '/team-logos/samsung.svg',
+  SSG:     '/team-logos/ssg.png',
+};
+
+function normalizePhotoKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function buildPhotoLookup(photos) {
+  const map = new Map();
+  if (!photos || typeof photos !== 'object') return map;
+  for (const [name, url] of Object.entries(photos)) {
+    if (!url) continue;
+    map.set(normalizePhotoKey(name), url);
+  }
+  return map;
+}
+
+function playerInitials(name) {
+  return String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
 const SHOWCASE_SHOTS = [
   {
     image: '/showcase/power-play-slip.svg',
@@ -113,6 +159,7 @@ function LandingPage({ onNavigate }) {
   const [batterData, setBatterData] = useState(null);
   const [rankings, setRankings] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
+  const [photos, setPhotos] = useState({});
   const [lastUpdated, setLastUpdated] = useState(null);
   const [animate, setAnimate] = useState(false);
 
@@ -125,12 +172,14 @@ function LandingPage({ onNavigate }) {
       fetchDataSnapshot('batter_projections.json').catch(() => null),
       fetchDataSnapshot('pitcher_rankings.json').catch(() => null),
       fetchDataSnapshot('prizepicks_props.json').catch(() => null),
-    ]).then(([kSnap, bSnap, rSnap, ppSnap]) => {
+      fetchDataSnapshot('player_photos.json').catch(() => null),
+    ]).then(([kSnap, bSnap, rSnap, ppSnap, photoSnap]) => {
       debugLog('Data loaded:', { pitcherProj: kSnap?.data?.projections?.length || 0, batterProj: bSnap?.data?.projections?.length || 0, rankings: (rSnap?.data || []).length, ppCards: ppSnap?.data?.cards?.length || 0 });
       setKData(kSnap?.data || null);
       setBatterData(bSnap?.data || null);
       setRankings(rSnap?.data || null);
       setPrizepicksData(ppSnap?.data || null);
+      setPhotos((photoSnap?.data && typeof photoSnap.data === 'object') ? photoSnap.data : {});
       if (!background) {
         const stamp = kSnap?.updatedAt || bSnap?.updatedAt || ppSnap?.updatedAt || new Date().toISOString();
         setLastUpdated(stamp);
@@ -262,6 +311,9 @@ function LandingPage({ onNavigate }) {
   const topBatterPick = selectBestValuePick(batterProjections, p => p.prop === 'Hits+Runs+RBIs');
   const topTBPick = selectBestValuePick(batterProjections, p => p.prop === 'Total Bases');
 
+  const photoLookup = buildPhotoLookup(photos);
+  const resolvePhoto = (name) => photoLookup.get(normalizePhotoKey(name)) || null;
+
   return (
     <div className={`lp ${animate ? 'lp-visible' : ''}`}>
       {/* Hero */}
@@ -333,6 +385,7 @@ function LandingPage({ onNavigate }) {
               pick={topKPick}
               typeLabel="STRIKEOUTS"
               cardClass="lp-pick-k"
+              photoUrl={resolvePhoto(topKPick.name)}
               onClick={() => onNavigate('projections')}
             />
           )}
@@ -341,6 +394,7 @@ function LandingPage({ onNavigate }) {
               pick={topBatterPick}
               typeLabel="H+R+RBI"
               cardClass="lp-pick-hrr"
+              photoUrl={resolvePhoto(topBatterPick.name)}
               onClick={() => onNavigate('batters')}
             />
           )}
@@ -349,6 +403,7 @@ function LandingPage({ onNavigate }) {
               pick={topTBPick}
               typeLabel="TOTAL BASES"
               cardClass="lp-pick-tb"
+              photoUrl={resolvePhoto(topTBPick.name)}
               onClick={() => onNavigate('batters')}
             />
           )}
@@ -508,8 +563,16 @@ function LandingPage({ onNavigate }) {
   );
 }
 
-function ValuePickCard({ pick, typeLabel, cardClass, onClick }) {
+function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, onClick }) {
   const meterWidth = Math.max(8, Math.min(100, pick.valuePct * 4.2));
+  const teamMeta = TEAMS[pick.team];
+  const oppMeta = TEAMS[pick.opponent];
+  const teamColor = teamMeta?.color || '#94a3b8';
+  const oppColor = oppMeta?.color || '#94a3b8';
+  const teamLogo = TEAM_LOGOS[pick.team];
+  const oppLogo = TEAM_LOGOS[pick.opponent];
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = photoUrl && !photoFailed;
   return (
     <div className={`lp-pick-card ${cardClass}`} onClick={onClick}>
       <div className="lp-pick-type">
@@ -518,11 +581,51 @@ function ValuePickCard({ pick, typeLabel, cardClass, onClick }) {
           <span className={`lp-odds-badge ${pick.odds_type}`}>{pick.odds_type.toUpperCase()}</span>
         )}
       </div>
-      <div className="lp-pick-player">{pick.name}</div>
-      <div className="lp-pick-matchup">
-        <span style={{ color: TEAMS[pick.team]?.color }}>{pick.team}</span>
-        {' vs '}
-        <span style={{ color: TEAMS[pick.opponent]?.color }}>{pick.opponent}</span>
+
+      <div className="lp-pick-identity">
+        <div className="lp-pick-avatar-wrap" style={{ borderColor: teamColor }}>
+          {showPhoto ? (
+            <img
+              className="lp-pick-avatar-img"
+              src={photoUrl}
+              alt={pick.name}
+              loading="lazy"
+              onError={() => setPhotoFailed(true)}
+            />
+          ) : (
+            <div className="lp-pick-avatar-fallback" style={{ background: `linear-gradient(135deg, ${teamColor}33, ${teamColor}11)`, color: teamColor }}>
+              {playerInitials(pick.name)}
+            </div>
+          )}
+          {teamLogo && (
+            <img
+              className="lp-pick-avatar-team"
+              src={teamLogo}
+              alt={pick.team}
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          )}
+        </div>
+        <div className="lp-pick-identity-text">
+          <div className="lp-pick-player">{pick.name}</div>
+          <div className="lp-pick-matchup">
+            <span style={{ color: teamColor }}>{pick.team}</span>
+            <span className="lp-pick-vs">vs</span>
+            <span className="lp-pick-opp">
+              {oppLogo && (
+                <img
+                  className="lp-pick-opp-logo"
+                  src={oppLogo}
+                  alt={pick.opponent}
+                  loading="lazy"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              )}
+              <span style={{ color: oppColor }}>{pick.opponent}</span>
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="lp-pick-nums">
