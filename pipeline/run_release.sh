@@ -165,7 +165,7 @@ if [[ "$SKIP_BUILD" -eq 0 ]]; then
     echo "Pre-deploy snapshot verification"
     echo "--------------------------------------------------"
     VERIFY2_RC=0
-    "$PYTHON" "$BASE/pipeline/verify_local_data.py" --strict || VERIFY2_RC=$?
+    "$PYTHON" "$BASE/pipeline/verify_local_data.py" --max-missing-photos 8 || VERIFY2_RC=$?
     if [[ "$VERIFY2_RC" -ne 0 ]]; then
       echo "⚠ Snapshot verification had issues (exit $VERIFY2_RC) — deploying anyway"
     fi

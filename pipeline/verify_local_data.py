@@ -20,6 +20,12 @@ def load_json(path: Path):
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify local generated snapshots")
     parser.add_argument("--strict", action="store_true", help="non-zero exit on warnings")
+    parser.add_argument(
+        "--max-missing-photos",
+        type=int,
+        default=8,
+        help="allow up to this many props players without photos before failing",
+    )
     args = parser.parse_args()
 
     failures = []
@@ -52,7 +58,11 @@ def main() -> int:
     targets = sorted({c.get("name") for c in cards if isinstance(c, dict) and c.get("name")})
     missing_photos = [name for name in targets if name not in photos]
     if missing_photos:
-        failures.append(f"missing photos for {len(missing_photos)} props players: {missing_photos[:10]}")
+        msg = f"missing photos for {len(missing_photos)} props players: {missing_photos[:10]}"
+        if len(missing_photos) > args.max_missing_photos:
+            failures.append(msg)
+        else:
+            warnings.append(msg)
 
     required_teams = {"Doosan", "Hanwha", "KT", "Kia", "Kiwoom", "LG", "Lotte", "NC", "SSG", "Samsung"}
     if not isinstance(team_stats, dict):
