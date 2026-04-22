@@ -53,17 +53,20 @@ def write_json_file(path, payload):
 
 
 def normalize_name(name):
-    """Strip accents and normalize unicode for consistent matching."""
+    """Strip accents and normalize punctuation/spacing for matching."""
     nfkd = unicodedata.normalize("NFKD", name or "")
     text = "".join(c for c in nfkd if not unicodedata.combining(c))
     # Unify common punctuation variants used across data sources.
     text = text.replace("`", "'")
+    text = text.replace("-", " ")
+    text = text.replace("'", "")
+    text = " ".join(text.split())
     return text
 
 
 def name_parts(name):
     """Frozenset of lowercase name parts for order-independent matching."""
-    n = normalize_name(name).lower().replace("-", " ")
+    n = normalize_name(name).lower()
     return frozenset(n.split())
 
 

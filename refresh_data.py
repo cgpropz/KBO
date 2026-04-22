@@ -83,6 +83,11 @@ STEPS = [
         "skip_flag": "--skip-logs",
     },
     {
+        "name": "Opponent Team Batting Stats",
+        "cmd": [PYTHON, os.path.join(BASE, "build_opponent_stats.py")],
+        "skip_flag": None,
+    },
+    {
         "name": "Strikeout Projections",
         "cmd": [PYTHON, os.path.join(BASE, "generate_projections.py")],
         "skip_flag": None,
@@ -111,11 +116,6 @@ STEPS = [
         "cmd": [PYTHON, os.path.join(BASE, "generate_matchups.py")],
         "skip_flag": None,
         "depends_on": "Daily Lineups",
-    },
-    {
-        "name": "Opponent Team Batting Stats",
-        "cmd": [PYTHON, os.path.join(BASE, "build_opponent_stats.py")],
-        "skip_flag": None,
     },
     {
         "name": "Player Photos",
