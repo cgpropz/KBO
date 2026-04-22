@@ -33,6 +33,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
+          # Playwright is the fallback path for Baseball Reference (their CDN
+          # often returns 403 to GitHub Actions IPs). Without the browser,
+          # build_opponent_stats falls back to nothing and we'd preserve the
+          # prior snapshot — but that means stats stop refreshing entirely.
+          playwright install chromium --with-deps
 
       - name: Refresh odds + publish Supabase snapshot
         run: |

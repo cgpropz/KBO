@@ -22,12 +22,6 @@ OUT_PATH = BASE / "kbo-props-ui" / "public" / "data" / "team_opponent_stats_2026
 
 DEFAULT_BREF_URL = "https://www.baseball-reference.com/register/league.cgi?id=163dcec5"
 
-# Local fallback CSVs are only trusted if modified within this many days.
-# (They were last hand-refreshed in April 2025 and silently corrupted prod for
-# weeks when the BR fetch returned 403. Treat them as ground truth only when
-# they've been freshly rebuilt by another job.)
-LOCAL_CSV_MAX_AGE_DAYS = 7
-
 TEAM_MAP = {
     "DOOSAN BEARS": "Doosan",
     "HANWHA EAGLES": "Hanwha",
@@ -162,37 +156,21 @@ def load_rows_from_baseball_reference():
 
 
 def load_rows():
-    """Return (rows, source) or (None, None) if no trusted source is available.
+    """Return (rows, source) or (None, None) if no fresh BR data is available.
 
-    Order of preference:
-      1. Live Baseball Reference fetch (with retries).
-      2. Local league_batting CSV — ONLY if modified within
-         LOCAL_CSV_MAX_AGE_DAYS. The hand-curated 2025 CSVs are stale and
-         silently corrupted production stats; we no longer trust them blindly.
+    There is intentionally NO local-CSV fallback. The hand-curated
+    `Batters-Data/league_batting*.csv` files are last-year snapshots that
+    silently corrupted production for weeks. mtime is unreliable in CI
+    (git checkout resets it), so any size/age heuristic is unsafe. If the
+    Baseball Reference fetch fails, callers MUST preserve the existing
+    snapshot rather than overwrite it with stale data.
     """
     try:
         rows, source = load_rows_from_baseball_reference()
         return rows, source
     except Exception as exc:
-        print(f"WARN: Baseball Reference fetch failed after retries: {exc}")
-
-    cutoff = time.time() - (LOCAL_CSV_MAX_AGE_DAYS * 86400)
-    candidates = [
-        BASE / "Batters-Data" / "league_batting_sorted.csv",
-        BASE / "Batters-Data" / "league_batting.csv",
-    ]
-    for path in candidates:
-        if not path.exists():
-            continue
-        mtime = path.stat().st_mtime
-        if mtime < cutoff:
-            age_days = (time.time() - mtime) / 86400
-            print(f"WARN: skipping stale local CSV {path} (age={age_days:.1f} days)")
-            continue
-        with open(path, encoding="utf-8") as f:
-            return list(csv.DictReader(f)), path
-
-    return None, None
+        print(f"ERROR: Baseball Reference fetch failed after retries: {exc}")
+        return None, None
 
 
 def main():
