@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-22T16:43:24.603269+00:00",
-  "total_props": 69,
+  "generated_at": "2026-04-22T16:59:46.839079+00:00",
+  "total_props": 66,
   "cards": [
     {
       "name": "Raul Alc\u00e1ntara",
@@ -12,16 +12,17 @@
           "stat": "Pitching Outs",
           "line": 17.5,
           "odds_type": "goblin",
-          "avg": 19.19,
-          "over": 16,
+          "avg": 14.75,
+          "over": 17,
           "under": 4,
           "push": 0,
-          "total_games": 20,
-          "hit_rate_all": 80.0,
+          "total_games": 21,
+          "hit_rate_all": 81.0,
           "hit_rate_l5": 80.0,
           "hit_rate_l10": 90.0,
           "hit_rate_l20": 80.0,
           "recent_values": [
+            24,
             18,
             18,
             19,
@@ -30,25 +31,25 @@
             18,
             21,
             18,
-            18,
-            21
+            18
           ],
-          "recommendation": "OVER"
+          "recommendation": "PUSH"
         },
         {
           "stat": "Hits Allowed",
           "line": 6.0,
           "odds_type": "standard",
-          "avg": 6.99,
-          "over": 9,
+          "avg": 4.41,
+          "over": 10,
           "under": 7,
           "push": 4,
-          "total_games": 20,
-          "hit_rate_all": 45.0,
+          "total_games": 21,
+          "hit_rate_all": 47.6,
           "hit_rate_l5": 80.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 45.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
           "recent_values": [
+            7,
             7,
             10,
             6,
@@ -57,25 +58,25 @@
             6,
             5,
             5,
-            6,
-            5
+            6
           ],
-          "recommendation": "OVER"
+          "recommendation": "UNDER"
         },
         {
           "stat": "Pitcher Strikeouts",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 7.07,
+          "avg": 4.3,
           "over": 7,
-          "under": 13,
+          "under": 14,
           "push": 0,
-          "total_games": 20,
-          "hit_rate_all": 35.0,
-          "hit_rate_l5": 80.0,
-          "hit_rate_l10": 50.0,
+          "total_games": 21,
+          "hit_rate_all": 33.3,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 40.0,
           "hit_rate_l20": 35.0,
           "recent_values": [
+            5,
             6,
             11,
             7,
@@ -84,13 +85,24 @@
             5,
             3,
             2,
-            4,
-            7
+            4
           ],
-          "recommendation": "OVER"
+          "recommendation": "UNDER"
         }
       ],
       "games": [
+        {
+          "date": "04/22/2026",
+          "opp": "NC",
+          "ip": 8.0,
+          "so": 5,
+          "er": 0,
+          "ha": 7,
+          "bb": 1,
+          "era": 0.0,
+          "whip": 1.0,
+          "outs": 24
+        },
         {
           "date": "04/16/2026",
           "opp": "Kia",
@@ -258,27 +270,266 @@
           "era": 0.0,
           "whip": 0.625,
           "outs": 24
+        }
+      ],
+      "projection_so": 4.3,
+      "so_per_ip": 0.879,
+      "ip_per_g": 4.834,
+      "proj_rating": 39.1,
+      "proj_rec": "UNDER",
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
+    },
+    {
+      "name": "Choi Min-jun",
+      "team": "SSG",
+      "opponent": "Samsung",
+      "type": "pitcher",
+      "props": [
+        {
+          "stat": "Hits Allowed",
+          "line": 4.5,
+          "odds_type": "standard",
+          "avg": 6.12,
+          "over": 9,
+          "under": 15,
+          "push": 0,
+          "total_games": 24,
+          "hit_rate_all": 37.5,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 45.0,
+          "recent_values": [
+            2,
+            8,
+            6,
+            9,
+            4,
+            6,
+            1,
+            9,
+            4,
+            2
+          ],
+          "recommendation": "OVER"
         },
         {
-          "date": "07/26/2025",
-          "opp": "NC",
+          "stat": "Pitcher Strikeouts",
+          "line": 3.5,
+          "odds_type": "standard",
+          "avg": 4.3,
+          "over": 19,
+          "under": 5,
+          "push": 0,
+          "total_games": 24,
+          "hit_rate_all": 79.2,
+          "hit_rate_l5": 100.0,
+          "hit_rate_l10": 90.0,
+          "hit_rate_l20": 85.0,
+          "recent_values": [
+            5,
+            5,
+            4,
+            4,
+            5,
+            8,
+            6,
+            6,
+            9,
+            0
+          ],
+          "recommendation": "OVER"
+        }
+      ],
+      "games": [
+        {
+          "date": "04/16/2026",
+          "opp": "Doosan",
           "ip": 6.0,
+          "so": 5,
+          "er": 0,
+          "ha": 2,
+          "bb": 1,
+          "era": 0.0,
+          "whip": 0.5,
+          "outs": 18
+        },
+        {
+          "date": "04/10/2026",
+          "opp": "LG",
+          "ip": 3.67,
+          "so": 5,
+          "er": 5,
+          "ha": 8,
+          "bb": 3,
+          "era": 12.27,
+          "whip": 3.0,
+          "outs": 11
+        },
+        {
+          "date": "04/03/2026",
+          "opp": "Lotte",
+          "ip": 7.0,
+          "so": 4,
+          "er": 2,
+          "ha": 6,
+          "bb": 4,
+          "era": 2.57,
+          "whip": 1.429,
+          "outs": 21
+        },
+        {
+          "date": "03/28/2026",
+          "opp": "Kia",
+          "ip": 4.0,
+          "so": 4,
+          "er": 5,
+          "ha": 9,
+          "bb": 2,
+          "era": 11.25,
+          "whip": 2.75,
+          "outs": 12
+        },
+        {
+          "date": "09/26/2025",
+          "opp": "KT",
+          "ip": 5.0,
+          "so": 5,
+          "er": 0,
+          "ha": 4,
+          "bb": 1,
+          "era": 0.0,
+          "whip": 1.0,
+          "outs": 15
+        },
+        {
+          "date": "09/20/2025",
+          "opp": "Doosan",
+          "ip": 7.0,
+          "so": 8,
+          "er": 2,
+          "ha": 6,
+          "bb": 1,
+          "era": 2.57,
+          "whip": 1.0,
+          "outs": 21
+        },
+        {
+          "date": "08/29/2025",
+          "opp": "NC",
+          "ip": 7.0,
+          "so": 6,
+          "er": 0,
+          "ha": 1,
+          "bb": 2,
+          "era": 0.0,
+          "whip": 0.429,
+          "outs": 21
+        },
+        {
+          "date": "08/23/2025",
+          "opp": "Hanwha",
+          "ip": 7.0,
           "so": 6,
           "er": 4,
           "ha": 9,
-          "bb": 1,
-          "era": 6.0,
-          "whip": 1.667,
+          "bb": 2,
+          "era": 5.14,
+          "whip": 1.571,
+          "outs": 21
+        },
+        {
+          "date": "08/15/2025",
+          "opp": "LG",
+          "ip": 6.0,
+          "so": 9,
+          "er": 2,
+          "ha": 4,
+          "bb": 2,
+          "era": 3.0,
+          "whip": 1.0,
           "outs": 18
+        },
+        {
+          "date": "08/02/2025",
+          "opp": "Doosan",
+          "ip": 0.67,
+          "so": 0,
+          "er": 1,
+          "ha": 2,
+          "bb": 0,
+          "era": 13.5,
+          "whip": 3.0,
+          "outs": 2
+        },
+        {
+          "date": "07/27/2025",
+          "opp": "Hanwha",
+          "ip": 6.0,
+          "so": 4,
+          "er": 2,
+          "ha": 4,
+          "bb": 3,
+          "era": 3.0,
+          "whip": 1.167,
+          "outs": 18
+        },
+        {
+          "date": "07/22/2025",
+          "opp": "Samsung",
+          "ip": 5.0,
+          "so": 2,
+          "er": 4,
+          "ha": 9,
+          "bb": 3,
+          "era": 7.2,
+          "whip": 2.4,
+          "outs": 15
+        },
+        {
+          "date": "07/05/2025",
+          "opp": "NC",
+          "ip": 6.0,
+          "so": 7,
+          "er": 0,
+          "ha": 2,
+          "bb": 2,
+          "era": 0.0,
+          "whip": 0.667,
+          "outs": 18
+        },
+        {
+          "date": "06/29/2025",
+          "opp": "Hanwha",
+          "ip": 6.0,
+          "so": 10,
+          "er": 0,
+          "ha": 3,
+          "bb": 2,
+          "era": 0.0,
+          "whip": 0.833,
+          "outs": 18
+        },
+        {
+          "date": "06/24/2025",
+          "opp": "Doosan",
+          "ip": 5.0,
+          "so": 5,
+          "er": 5,
+          "ha": 9,
+          "bb": 1,
+          "era": 9.0,
+          "whip": 2.0,
+          "outs": 15
         }
       ],
-      "projection_so": 7.07,
-      "so_per_ip": 1.114,
-      "ip_per_g": 6.061,
-      "proj_rating": 64.2,
-      "proj_rec": "OVER",
-      "venue": "Seoul-Gocheok",
-      "park_factor": 0.904
+      "projection_so": 12.89,
+      "so_per_ip": null,
+      "ip_per_g": 4.757,
+      "proj_rating": null,
+      "proj_rec": "NO LINE",
+      "venue": "Daegu",
+      "park_factor": 1.146
     },
     {
       "name": "Gwak Been",
@@ -290,7 +541,7 @@
           "stat": "Pitching Outs",
           "line": 16.5,
           "odds_type": "standard",
-          "avg": 18.3,
+          "avg": 18.8,
           "over": 23,
           "under": 7,
           "push": 0,
@@ -317,7 +568,7 @@
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 5.36,
+          "avg": 5.73,
           "over": 11,
           "under": 19,
           "push": 0,
@@ -344,7 +595,7 @@
           "stat": "Pitcher Strikeouts",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 6.25,
+          "avg": 6.09,
           "over": 14,
           "under": 16,
           "push": 0,
@@ -550,10 +801,10 @@
           "outs": 21
         }
       ],
-      "projection_so": 18.3,
+      "projection_so": 18.8,
       "so_per_ip": null,
-      "ip_per_g": 5.454,
-      "proj_rating": 55.5,
+      "ip_per_g": 6.323,
+      "proj_rating": 57.0,
       "proj_rec": "OVER",
       "venue": "Busan-Sajik",
       "park_factor": 1.116
@@ -568,16 +819,17 @@
           "stat": "Pitching Outs",
           "line": 16.5,
           "odds_type": "standard",
-          "avg": 16.52,
+          "avg": 14.08,
           "over": 19,
-          "under": 8,
+          "under": 9,
           "push": 0,
-          "total_games": 27,
-          "hit_rate_all": 70.4,
+          "total_games": 28,
+          "hit_rate_all": 67.9,
           "hit_rate_l5": 40.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 65.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
+            15,
             15,
             21,
             15,
@@ -586,25 +838,25 @@
             15,
             21,
             15,
-            21,
             21
           ],
-          "recommendation": "PUSH"
+          "recommendation": "UNDER"
         },
         {
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 4.31,
-          "over": 12,
+          "avg": 4.75,
+          "over": 13,
           "under": 15,
           "push": 0,
-          "total_games": 27,
-          "hit_rate_all": 44.4,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 55.0,
+          "total_games": 28,
+          "hit_rate_all": 46.4,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 60.0,
           "recent_values": [
+            6,
             6,
             6,
             3,
@@ -613,8 +865,7 @@
             10,
             3,
             8,
-            6,
-            4
+            6
           ],
           "recommendation": "UNDER"
         },
@@ -622,16 +873,17 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 4.85,
+          "avg": 4.25,
           "over": 19,
-          "under": 8,
+          "under": 9,
           "push": 0,
-          "total_games": 27,
-          "hit_rate_all": 70.4,
-          "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 70.0,
+          "total_games": 28,
+          "hit_rate_all": 67.9,
+          "hit_rate_l5": 40.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 65.0,
           "recent_values": [
+            4,
             3,
             4,
             5,
@@ -640,13 +892,24 @@
             5,
             5,
             2,
-            4,
-            9
+            4
           ],
           "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "04/22/2026",
+          "opp": "KT",
+          "ip": 5.0,
+          "so": 4,
+          "er": 2,
+          "ha": 6,
+          "bb": 1,
+          "era": 3.6,
+          "whip": 1.4,
+          "outs": 15
+        },
         {
           "date": "04/16/2026",
           "opp": "Kiwoom",
@@ -814,24 +1077,12 @@
           "era": 0.0,
           "whip": 1.0,
           "outs": 18
-        },
-        {
-          "date": "07/04/2025",
-          "opp": "Lotte",
-          "ip": 6.0,
-          "so": 7,
-          "er": 0,
-          "ha": 3,
-          "bb": 0,
-          "era": 0.0,
-          "whip": 0.5,
-          "outs": 18
         }
       ],
-      "projection_so": 16.52,
-      "so_per_ip": null,
-      "ip_per_g": 5.758,
-      "proj_rating": 50.1,
+      "projection_so": 4.25,
+      "so_per_ip": 0.879,
+      "ip_per_g": 4.834,
+      "proj_rating": 47.2,
       "proj_rec": "PUSH",
       "venue": "Suwon",
       "park_factor": 0.991
@@ -846,17 +1097,18 @@
           "stat": "Pitching Outs",
           "line": 18.5,
           "odds_type": "demon",
-          "avg": 19.24,
-          "over": 16,
+          "avg": 14.37,
+          "over": 17,
           "under": 14,
           "push": 0,
-          "total_games": 30,
-          "hit_rate_all": 53.3,
+          "total_games": 31,
+          "hit_rate_all": 54.8,
           "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 60.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 65.0,
           "recent_values": [
             21,
+            21,
             18,
             18,
             18,
@@ -864,8 +1116,7 @@
             18,
             18,
             21,
-            21,
-            18
+            21
           ],
           "recommendation": "PUSH"
         },
@@ -873,16 +1124,17 @@
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 4.98,
+          "avg": 4.6,
           "over": 14,
-          "under": 16,
+          "under": 17,
           "push": 0,
-          "total_games": 30,
-          "hit_rate_all": 46.7,
+          "total_games": 31,
+          "hit_rate_all": 45.2,
           "hit_rate_l5": 60.0,
-          "hit_rate_l10": 60.0,
-          "hit_rate_l20": 55.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 50.0,
           "recent_values": [
+            4,
             6,
             6,
             5,
@@ -891,8 +1143,7 @@
             6,
             5,
             8,
-            2,
-            8
+            2
           ],
           "recommendation": "UNDER"
         },
@@ -900,16 +1151,17 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 5.1,
-          "over": 16,
+          "avg": 4.32,
+          "over": 17,
           "under": 14,
           "push": 0,
-          "total_games": 30,
-          "hit_rate_all": 53.3,
+          "total_games": 31,
+          "hit_rate_all": 54.8,
           "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 50.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
+            5,
             5,
             4,
             4,
@@ -918,13 +1170,24 @@
             5,
             1,
             6,
-            3,
             3
           ],
-          "recommendation": "OVER"
+          "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "04/22/2026",
+          "opp": "SSG",
+          "ip": 7.0,
+          "so": 5,
+          "er": 1,
+          "ha": 4,
+          "bb": 2,
+          "era": 1.29,
+          "whip": 0.857,
+          "outs": 21
+        },
         {
           "date": "04/16/2026",
           "opp": "Hanwha",
@@ -1092,24 +1355,12 @@
           "era": 5.4,
           "whip": 1.2,
           "outs": 15
-        },
-        {
-          "date": "07/26/2025",
-          "opp": "KT",
-          "ip": 9.0,
-          "so": 4,
-          "er": 0,
-          "ha": 2,
-          "bb": 0,
-          "era": 0.0,
-          "whip": 0.222,
-          "outs": 27
         }
       ],
-      "projection_so": 19.24,
-      "so_per_ip": null,
-      "ip_per_g": 6.388,
-      "proj_rating": 52.0,
+      "projection_so": 4.32,
+      "so_per_ip": 0.879,
+      "ip_per_g": 4.834,
+      "proj_rating": 48.0,
       "proj_rec": "PUSH",
       "venue": "Daegu",
       "park_factor": 1.146
@@ -1124,26 +1375,26 @@
           "stat": "Pitching Outs",
           "line": 15.5,
           "odds_type": "standard",
-          "avg": 16.51,
+          "avg": 16.82,
           "over": 8,
-          "under": 13,
+          "under": 14,
           "push": 0,
-          "total_games": 21,
-          "hit_rate_all": 38.1,
+          "total_games": 22,
+          "hit_rate_all": 36.4,
           "hit_rate_l5": 20.0,
-          "hit_rate_l10": 40.0,
+          "hit_rate_l10": 30.0,
           "hit_rate_l20": 40.0,
           "recent_values": [
-            18,
-            15,
-            15,
-            15,
-            15,
             15,
             18,
-            18,
             15,
-            18
+            15,
+            15,
+            15,
+            15,
+            18,
+            18,
+            15
           ],
           "recommendation": "OVER"
         },
@@ -1151,16 +1402,17 @@
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 4.79,
+          "avg": 3.92,
           "over": 8,
-          "under": 13,
+          "under": 14,
           "push": 0,
-          "total_games": 21,
-          "hit_rate_all": 38.1,
+          "total_games": 22,
+          "hit_rate_all": 36.4,
           "hit_rate_l5": 20.0,
           "hit_rate_l10": 40.0,
           "hit_rate_l20": 40.0,
           "recent_values": [
+            1,
             6,
             5,
             5,
@@ -1169,8 +1421,7 @@
             6,
             5,
             10,
-            6,
-            3
+            6
           ],
           "recommendation": "UNDER"
         },
@@ -1178,16 +1429,17 @@
           "stat": "Pitcher Strikeouts",
           "line": 3.5,
           "odds_type": "standard",
-          "avg": 2.49,
+          "avg": 4.1,
           "over": 8,
-          "under": 13,
+          "under": 14,
           "push": 0,
-          "total_games": 21,
-          "hit_rate_all": 38.1,
+          "total_games": 22,
+          "hit_rate_all": 36.4,
           "hit_rate_l5": 20.0,
           "hit_rate_l10": 30.0,
-          "hit_rate_l20": 35.0,
+          "hit_rate_l20": 30.0,
           "recent_values": [
+            3,
             0,
             4,
             3,
@@ -1196,13 +1448,24 @@
             4,
             3,
             3,
-            5,
-            2
+            5
           ],
-          "recommendation": "UNDER"
+          "recommendation": "OVER"
         }
       ],
       "games": [
+        {
+          "date": "04/22/2026",
+          "opp": "Kiwoom",
+          "ip": 5.0,
+          "so": 3,
+          "er": 2,
+          "ha": 1,
+          "bb": 2,
+          "era": 3.6,
+          "whip": 0.6,
+          "outs": 15
+        },
         {
           "date": "04/15/2026",
           "opp": "KT",
@@ -1370,25 +1633,13 @@
           "era": 0.0,
           "whip": 0.0,
           "outs": 0
-        },
-        {
-          "date": "05/27/2025",
-          "opp": "SSG",
-          "ip": 6.0,
-          "so": 4,
-          "er": 1,
-          "ha": 3,
-          "bb": 0,
-          "era": 1.5,
-          "whip": 0.5,
-          "outs": 18
         }
       ],
-      "projection_so": 2.49,
-      "so_per_ip": 0.458,
-      "ip_per_g": 5.347,
-      "proj_rating": 35.6,
-      "proj_rec": "UNDER",
+      "projection_so": 4.1,
+      "so_per_ip": 0.719,
+      "ip_per_g": 5.425,
+      "proj_rating": 58.6,
+      "proj_rec": "OVER",
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
     },
@@ -1402,16 +1653,17 @@
           "stat": "Pitching Outs",
           "line": 18.5,
           "odds_type": "demon",
-          "avg": 20.52,
+          "avg": 16.8,
           "over": 2,
-          "under": 10,
+          "under": 11,
           "push": 0,
-          "total_games": 12,
-          "hit_rate_all": 16.7,
+          "total_games": 13,
+          "hit_rate_all": 15.4,
           "hit_rate_l5": 40.0,
           "hit_rate_l10": 20.0,
-          "hit_rate_l20": 16.7,
+          "hit_rate_l20": 15.4,
           "recent_values": [
+            15,
             20,
             24,
             14,
@@ -1420,25 +1672,25 @@
             6,
             2,
             2,
-            0,
-            3
+            0
           ],
-          "recommendation": "OVER"
+          "recommendation": "PUSH"
         },
         {
           "stat": "Hits Allowed",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 3.71,
-          "over": 2,
+          "avg": 4.91,
+          "over": 3,
           "under": 10,
           "push": 0,
-          "total_games": 12,
-          "hit_rate_all": 16.7,
-          "hit_rate_l5": 0.0,
-          "hit_rate_l10": 10.0,
-          "hit_rate_l20": 16.7,
+          "total_games": 13,
+          "hit_rate_all": 23.1,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 20.0,
+          "hit_rate_l20": 23.1,
           "recent_values": [
+            8,
             3,
             3,
             4,
@@ -1447,25 +1699,25 @@
             9,
             1,
             2,
-            1,
-            3
+            1
           ],
-          "recommendation": "UNDER"
+          "recommendation": "OVER"
         },
         {
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 4.84,
-          "over": 3,
+          "avg": 4.67,
+          "over": 4,
           "under": 9,
           "push": 0,
-          "total_games": 12,
-          "hit_rate_all": 25.0,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 20.0,
-          "hit_rate_l20": 25.0,
+          "total_games": 13,
+          "hit_rate_all": 30.8,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 30.0,
+          "hit_rate_l20": 30.8,
           "recent_values": [
+            9,
             5,
             6,
             4,
@@ -1474,13 +1726,24 @@
             1,
             0,
             0,
-            0,
-            2
+            0
           ],
           "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "04/22/2026",
+          "opp": "Doosan",
+          "ip": 5.0,
+          "so": 9,
+          "er": 3,
+          "ha": 8,
+          "bb": 3,
+          "era": 5.4,
+          "whip": 2.2,
+          "outs": 15
+        },
         {
           "date": "04/15/2026",
           "opp": "LG",
@@ -1626,10 +1889,10 @@
           "outs": 18
         }
       ],
-      "projection_so": 4.84,
-      "so_per_ip": 0.787,
-      "ip_per_g": 6.102,
-      "proj_rating": 53.7,
+      "projection_so": 4.67,
+      "so_per_ip": 0.869,
+      "ip_per_g": 5.333,
+      "proj_rating": 51.9,
       "proj_rec": "PUSH",
       "venue": "Busan-Sajik",
       "park_factor": 1.116
@@ -1644,7 +1907,7 @@
           "stat": "Pitching Outs",
           "line": 16.5,
           "odds_type": "standard",
-          "avg": 16.24,
+          "avg": 19.37,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1654,13 +1917,13 @@
           "hit_rate_l10": 0,
           "hit_rate_l20": 0,
           "recent_values": [],
-          "recommendation": "PUSH"
+          "recommendation": "OVER"
         },
         {
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 5.31,
+          "avg": 6.43,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1670,13 +1933,13 @@
           "hit_rate_l10": 0,
           "hit_rate_l20": 0,
           "recent_values": [],
-          "recommendation": "PUSH"
+          "recommendation": "OVER"
         },
         {
           "stat": "Pitcher Strikeouts",
           "line": 4.0,
           "odds_type": "standard",
-          "avg": 4.62,
+          "avg": 4.72,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1690,77 +1953,13 @@
         }
       ],
       "games": [],
-      "projection_so": 16.24,
-      "so_per_ip": null,
-      "ip_per_g": 5.425,
-      "proj_rating": 49.2,
-      "proj_rec": "PUSH",
+      "projection_so": 4.72,
+      "so_per_ip": 0.905,
+      "ip_per_g": 5.904,
+      "proj_rating": 59.0,
+      "proj_rec": "OVER",
       "venue": "Suwon",
       "park_factor": 0.991
-    },
-    {
-      "name": "Lachlan Wells",
-      "team": "LG",
-      "opponent": "Hanwha",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Pitching Outs",
-          "line": 17.5,
-          "odds_type": "goblin",
-          "avg": 13.98,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "PUSH"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 4.5,
-          "odds_type": "standard",
-          "avg": 4.79,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "PUSH"
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 3.5,
-          "odds_type": "standard",
-          "avg": 4.38,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [],
-      "projection_so": 13.98,
-      "so_per_ip": null,
-      "ip_per_g": 4.831,
-      "proj_rating": 39.9,
-      "proj_rec": "PUSH",
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
     },
     {
       "name": "Wang Yan-cheng",
@@ -1772,7 +1971,7 @@
           "stat": "Pitching Outs",
           "line": 17.5,
           "odds_type": "standard",
-          "avg": 17.57,
+          "avg": 14.63,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1782,13 +1981,13 @@
           "hit_rate_l10": 0,
           "hit_rate_l20": 0,
           "recent_values": [],
-          "recommendation": "PUSH"
+          "recommendation": "UNDER"
         },
         {
           "stat": "Hits Allowed",
           "line": 5.5,
           "odds_type": "standard",
-          "avg": 5.15,
+          "avg": 4.47,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1804,7 +2003,7 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 4.53,
+          "avg": 4.09,
           "over": 0,
           "under": 0,
           "push": 0,
@@ -1818,61 +2017,13 @@
         }
       ],
       "games": [],
-      "projection_so": 4.53,
-      "so_per_ip": 0.836,
-      "ip_per_g": 5.749,
-      "proj_rating": 50.4,
+      "projection_so": 4.09,
+      "so_per_ip": 0.879,
+      "ip_per_g": 4.834,
+      "proj_rating": 45.4,
       "proj_rec": "PUSH",
       "venue": "Seoul-Jamsil",
       "park_factor": 0.964
-    },
-    {
-      "name": "Choi Min-jun",
-      "team": "SSG",
-      "opponent": "Samsung",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Hits Allowed",
-          "line": 4.5,
-          "odds_type": "standard",
-          "avg": 4.61,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "PUSH"
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 3.5,
-          "odds_type": "standard",
-          "avg": 4.02,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [],
-      "projection_so": 4.02,
-      "so_per_ip": 0.878,
-      "ip_per_g": 4.831,
-      "proj_rating": 57.4,
-      "proj_rec": "OVER",
-      "venue": "Daegu",
-      "park_factor": 1.146
     },
     {
       "name": "Jarryd Dale",
@@ -1905,10 +2056,10 @@
             3,
             2
           ],
-          "projection": 1.78,
-          "edge": 0.28,
-          "rating": 59.3,
-          "recommendation": "PUSH"
+          "projection": 2.25,
+          "edge": 0.75,
+          "rating": 75.1,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2082,9 +2233,9 @@
             3,
             1
           ],
-          "projection": 3.17,
-          "edge": 1.17,
-          "rating": 79.2,
+          "projection": 2.45,
+          "edge": 0.45,
+          "rating": 61.4,
           "recommendation": "OVER"
         }
       ],
@@ -2259,9 +2410,9 @@
             4,
             1
           ],
-          "projection": 4.43,
-          "edge": 2.43,
-          "rating": 110.8,
+          "projection": 4.74,
+          "edge": 2.74,
+          "rating": 118.5,
           "recommendation": "OVER"
         }
       ],
@@ -2436,9 +2587,9 @@
             4,
             3
           ],
-          "projection": 2.41,
-          "edge": 0.91,
-          "rating": 80.3,
+          "projection": 2.21,
+          "edge": 0.71,
+          "rating": 73.6,
           "recommendation": "OVER"
         }
       ],
@@ -2613,9 +2764,9 @@
             1,
             5
           ],
-          "projection": 2.21,
-          "edge": 0.71,
-          "rating": 73.6,
+          "projection": 2.84,
+          "edge": 1.34,
+          "rating": 94.5,
           "recommendation": "OVER"
         }
       ],
@@ -2790,9 +2941,9 @@
             3,
             4
           ],
-          "projection": 2.89,
-          "edge": 1.39,
-          "rating": 96.5,
+          "projection": 4.05,
+          "edge": 2.55,
+          "rating": 135.1,
           "recommendation": "OVER"
         }
       ],
@@ -2967,9 +3118,9 @@
             0,
             0
           ],
-          "projection": 1.52,
-          "edge": 0.02,
-          "rating": 50.8,
+          "projection": 1.63,
+          "edge": 0.13,
+          "rating": 54.4,
           "recommendation": "PUSH"
         }
       ],
@@ -3144,9 +3295,9 @@
             1,
             5
           ],
-          "projection": 2.65,
-          "edge": 1.15,
-          "rating": 88.3,
+          "projection": 2.69,
+          "edge": 1.19,
+          "rating": 89.7,
           "recommendation": "OVER"
         }
       ],
@@ -3321,9 +3472,9 @@
             6,
             5
           ],
-          "projection": 2.51,
-          "edge": 1.01,
-          "rating": 83.5,
+          "projection": 1.98,
+          "edge": 0.48,
+          "rating": 65.9,
           "recommendation": "OVER"
         }
       ],
@@ -3500,7 +3651,7 @@
           ],
           "projection": 1.42,
           "edge": -0.08,
-          "rating": 47.4,
+          "rating": 47.2,
           "recommendation": "PUSH"
         }
       ],
@@ -3675,9 +3826,9 @@
             4,
             6
           ],
-          "projection": 3.3,
-          "edge": 1.8,
-          "rating": 110.0,
+          "projection": 2.49,
+          "edge": 0.99,
+          "rating": 83.0,
           "recommendation": "OVER"
         }
       ],
@@ -3852,9 +4003,9 @@
             0,
             9
           ],
-          "projection": 2.35,
-          "edge": 0.85,
-          "rating": 78.2,
+          "projection": 2.64,
+          "edge": 1.14,
+          "rating": 88.0,
           "recommendation": "OVER"
         }
       ],
@@ -4029,10 +4180,10 @@
             3,
             0
           ],
-          "projection": 1.43,
-          "edge": -0.07,
-          "rating": 47.7,
-          "recommendation": "PUSH"
+          "projection": 1.19,
+          "edge": -0.31,
+          "rating": 39.7,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -4383,9 +4534,9 @@
             4,
             1
           ],
-          "projection": 1.82,
-          "edge": 0.32,
-          "rating": 60.8,
+          "projection": 1.81,
+          "edge": 0.31,
+          "rating": 60.3,
           "recommendation": "OVER"
         }
       ],
@@ -4560,9 +4711,9 @@
             0,
             4
           ],
-          "projection": 1.34,
-          "edge": -0.16,
-          "rating": 44.8,
+          "projection": 1.62,
+          "edge": 0.12,
+          "rating": 53.9,
           "recommendation": "PUSH"
         }
       ],
@@ -4737,10 +4888,10 @@
             6,
             5
           ],
-          "projection": 1.84,
-          "edge": 0.34,
-          "rating": 61.4,
-          "recommendation": "OVER"
+          "projection": 1.71,
+          "edge": 0.21,
+          "rating": 57.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -4914,9 +5065,9 @@
             2,
             3
           ],
-          "projection": 1.65,
-          "edge": 0.15,
-          "rating": 54.9,
+          "projection": 1.45,
+          "edge": -0.05,
+          "rating": 48.2,
           "recommendation": "PUSH"
         }
       ],
@@ -5091,10 +5242,10 @@
             4,
             4
           ],
-          "projection": 2.4,
-          "edge": 0.4,
-          "rating": 60.1,
-          "recommendation": "OVER"
+          "projection": 2.23,
+          "edge": 0.23,
+          "rating": 55.7,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -5268,9 +5419,9 @@
             2,
             0
           ],
-          "projection": 2.47,
-          "edge": 0.97,
-          "rating": 82.2,
+          "projection": 3.22,
+          "edge": 1.72,
+          "rating": 107.2,
           "recommendation": "OVER"
         }
       ],
@@ -5622,10 +5773,10 @@
             1,
             2
           ],
-          "projection": 2.26,
-          "edge": 0.76,
-          "rating": 75.4,
-          "recommendation": "OVER"
+          "projection": 1.69,
+          "edge": 0.19,
+          "rating": 56.3,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -5799,10 +5950,10 @@
             8,
             1
           ],
-          "projection": 2.58,
-          "edge": 0.58,
-          "rating": 64.4,
-          "recommendation": "OVER"
+          "projection": 1.96,
+          "edge": -0.04,
+          "rating": 49.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -5976,10 +6127,10 @@
             0,
             0
           ],
-          "projection": 2.08,
-          "edge": 0.58,
-          "rating": 69.2,
-          "recommendation": "OVER"
+          "projection": 1.4,
+          "edge": -0.1,
+          "rating": 46.6,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -6153,9 +6304,9 @@
             2,
             2
           ],
-          "projection": 4.84,
-          "edge": 2.84,
-          "rating": 121.0,
+          "projection": 4.14,
+          "edge": 2.14,
+          "rating": 103.6,
           "recommendation": "OVER"
         }
       ],
@@ -6330,9 +6481,9 @@
             4,
             1
           ],
-          "projection": 1.98,
-          "edge": 0.48,
-          "rating": 66.0,
+          "projection": 1.89,
+          "edge": 0.39,
+          "rating": 63.0,
           "recommendation": "OVER"
         }
       ],
@@ -6507,10 +6658,10 @@
             1,
             0
           ],
-          "projection": 1.21,
-          "edge": -0.29,
-          "rating": 40.4,
-          "recommendation": "PUSH"
+          "projection": 1.15,
+          "edge": -0.35,
+          "rating": 38.2,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -6684,10 +6835,10 @@
             2,
             1
           ],
-          "projection": 1.84,
-          "edge": -0.16,
-          "rating": 46.0,
-          "recommendation": "PUSH"
+          "projection": 1.29,
+          "edge": -0.71,
+          "rating": 32.2,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -6861,9 +7012,9 @@
             2,
             0
           ],
-          "projection": 1.1,
-          "edge": -0.4,
-          "rating": 36.8,
+          "projection": 0.87,
+          "edge": -0.63,
+          "rating": 29.1,
           "recommendation": "PUSH"
         }
       ],
@@ -7038,9 +7189,9 @@
             2,
             3
           ],
-          "projection": 2.97,
-          "edge": 0.97,
-          "rating": 74.4,
+          "projection": 2.48,
+          "edge": 0.48,
+          "rating": 62.1,
           "recommendation": "OVER"
         }
       ],
@@ -7215,10 +7366,10 @@
             1,
             1
           ],
-          "projection": 1.87,
-          "edge": 0.37,
-          "rating": 62.2,
-          "recommendation": "OVER"
+          "projection": 1.76,
+          "edge": 0.26,
+          "rating": 58.8,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -7392,10 +7543,10 @@
             2,
             4
           ],
-          "projection": 2.02,
-          "edge": 0.02,
-          "rating": 50.6,
-          "recommendation": "PUSH"
+          "projection": 2.94,
+          "edge": 0.94,
+          "rating": 73.5,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -7569,9 +7720,9 @@
             3,
             4
           ],
-          "projection": 1.07,
-          "edge": -0.43,
-          "rating": 35.6,
+          "projection": 1.17,
+          "edge": -0.33,
+          "rating": 39.1,
           "recommendation": "PUSH"
         }
       ],
@@ -7746,9 +7897,9 @@
             2,
             3
           ],
-          "projection": 2.4,
-          "edge": 0.4,
-          "rating": 60.0,
+          "projection": 2.39,
+          "edge": 0.39,
+          "rating": 59.8,
           "recommendation": "OVER"
         }
       ],
@@ -7923,9 +8074,9 @@
             2,
             5
           ],
-          "projection": 3.39,
-          "edge": 1.39,
-          "rating": 84.7,
+          "projection": 3.53,
+          "edge": 1.53,
+          "rating": 88.4,
           "recommendation": "OVER"
         }
       ],
