@@ -58,16 +58,18 @@ def load_batter_logs():
 def load_projections():
     k_path = os.path.join(PUBLIC_DATA, "strikeout_projections.json")
     b_path = os.path.join(PUBLIC_DATA, "batter_projections.json")
-    k_proj, b_proj = {}, {}
+    k_proj, k_proj_all, b_proj = {}, {}, {}
     if os.path.exists(k_path):
         with open(k_path) as f:
             d = json.load(f)
         for p in d.get("projections", []):
             if p.get("name"):
                 k_proj[p["name"]] = p
+                k_proj_all.setdefault(p["name"], []).append(p)
                 # Also index by pp_name so lookup works with PrizePicks display names
                 if p.get("pp_name"):
                     k_proj.setdefault(p["pp_name"], p)
+                    k_proj_all.setdefault(p["pp_name"], []).append(p)
     if os.path.exists(b_path):
         with open(b_path) as f:
             d = json.load(f)
@@ -75,7 +77,7 @@ def load_projections():
             if p.get("name"):
                 key = (p["name"], p.get("prop", ""))
                 b_proj[key] = p
-    return k_proj, b_proj
+    return k_proj, k_proj_all, b_proj
 
 def normalize(name):
     """Normalize for fuzzy matching — lowercase, strip accents/diacritics, treat hyphens as spaces."""
@@ -103,7 +105,7 @@ def _parse_date(d):
         pass
     return (0, 0, 0)
 
-def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, display_name=None):
+def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=None):
     logs = pitcher_logs_by_name.get(name, [])
     # Sort by date descending (handles MM/DD/YYYY correctly)
     logs.sort(key=lambda x: _parse_date(x.get("Date", "")), reverse=True)
@@ -157,14 +159,15 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, display_name=N
         card["proj_rating"] = proj.get("rating")
         card["proj_rec"] = proj.get("recommendation")
 
-    # Build a dict of prop-type-specific projections from k_proj
-    # k_proj may have multiple entries per pitcher (one per prop type)
+    # Build a dict of prop-type-specific projections from k_proj_all
+    # k_proj_all stores lists of entries per name (one per prop type)
     _prop_proj = {}
     for _n in _lookup_names:
-        for k, v in k_proj.items():
+        for k, vlist in k_proj_all.items():
             if name_signature(k) == name_signature(_n):
-                prop_type = v.get("prop", "Strikeouts")
-                _prop_proj.setdefault(prop_type, v)
+                for v in vlist:
+                    prop_type = v.get("prop", "Strikeouts")
+                    _prop_proj.setdefault(prop_type, v)
 
     _stat_to_prop = {
         "Pitcher Strikeouts": "Strikeouts",
@@ -208,6 +211,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, display_name=N
         card["props"].append({
             "stat": stat,
             "line": line,
+            "odds_type": p.get("odds_type", "standard"),
             "avg": round(proj_val, 2) if proj_val is not None else round(avg_val, 2),
             "over": over_count,
             "under": under_count,
@@ -282,6 +286,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         card["props"].append({
             "stat": stat,
             "line": line,
+            "odds_type": p.get("odds_type", "standard"),
             "avg": round(avg_val, 2),
             "over": over_count,
             "under": under_count,
@@ -304,7 +309,7 @@ def main():
     odds = load_odds()
     pitcher_logs = load_pitcher_logs()
     batter_data = load_batter_logs()
-    k_proj, b_proj = load_projections()
+    k_proj, k_proj_all, b_proj = load_projections()
 
     # --- Filter for today's slate ---
     from datetime import datetime as _dt
@@ -427,6 +432,7 @@ def main():
                 "line": o["Prizepicks"],
                 "vs": o["Versus"],
                 "team": o["Team"],
+                "odds_type": o.get("Odds Type", "standard").strip().lower(),
             })
 
     cards = []
@@ -457,7 +463,7 @@ def main():
                 p for p in props
                 if p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")
             ]
-            card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj, display_name=player_name)
+            card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=player_name)
             card["name"] = player_name  # Use PP display name
             cards.append(card)
 
@@ -499,15 +505,52 @@ def main():
     out_path = os.path.join(PUBLIC_DATA, "prizepicks_props.json")
 
     # Guard: don't overwrite a richer snapshot with a smaller one
-    # (e.g. CI odds scraper didn't find batter lines this run)
+    # UNLESS the matchups have changed (new slate) or the data is from a previous day.
     if os.path.exists(out_path):
         try:
             with open(out_path) as f:
                 prev = json.load(f)
             prev_cards = len(prev.get("cards", []))
             if prev_cards > len(cards) and len(cards) > 0:
-                print(f"⚠ Skipping write: existing file has {prev_cards} cards vs {len(cards)} new — keeping richer snapshot")
-                return
+                # Check if matchups (team+opponent pairs) have changed → new slate
+                prev_matchups = set()
+                for c in prev.get("cards", []):
+                    t, o = (c.get("team") or ""), (c.get("opponent") or "")
+                    if t and o:
+                        prev_matchups.add((t, o))
+                new_matchups = set()
+                for c in cards:
+                    t, o = (c.get("team") or ""), (c.get("opponent") or "")
+                    if t and o:
+                        new_matchups.add((t, o))
+                # Also check if pitcher names differ (same teams can play back-to-back with different starters)
+                prev_pitchers = frozenset(
+                    normalize(c.get("name") or "") for c in prev.get("cards", []) if c.get("type") == "pitcher"
+                )
+                new_pitchers = frozenset(
+                    normalize(c.get("name") or "") for c in cards if c.get("type") == "pitcher"
+                )
+                pitchers_changed = bool(prev_pitchers) and bool(new_pitchers) and prev_pitchers != new_pitchers
+
+                if prev_matchups != new_matchups or pitchers_changed:
+                    reason = "pitchers changed" if pitchers_changed else "matchups differ"
+                    print(f"ℹ Slate changed ({reason}) — overwriting ({prev_cards} → {len(cards)} cards)")
+                else:
+                    # Same slate: also check KST date as secondary guard
+                    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+                    _kst = _tz(_td(hours=9))
+                    _now_kst = _dt.now(_kst).date()
+                    _prev_date = None
+                    try:
+                        _prev_gen = prev.get("generated_at", "")
+                        _prev_date = _dt.fromisoformat(_prev_gen).astimezone(_kst).date()
+                    except Exception:
+                        pass
+                    if _prev_date and _prev_date < _now_kst:
+                        print(f"ℹ Existing data is from {_prev_date} (today={_now_kst}) — allowing overwrite ({prev_cards} → {len(cards)} cards)")
+                    else:
+                        print(f"⚠ Skipping write: existing file has {prev_cards} cards vs {len(cards)} new — keeping richer snapshot")
+                        return
         except Exception:
             pass
 
@@ -515,5 +558,89 @@ def main():
         json.dump(output, f, indent=2)
     print(f"Wrote {len(cards)} player cards ({output['total_props']} props) to {out_path}")
 
+
+def lines_only():
+    """Update only PrizePicks lines + odds_type in existing prizepicks_props.json.
+
+    Keeps all game logs, projections, hit rates, and other stats intact.
+    This is the lightweight path used by the intraday refresh cron.
+    """
+    out_path = os.path.join(PUBLIC_DATA, "prizepicks_props.json")
+    if not os.path.exists(out_path):
+        print("No existing prizepicks_props.json — falling back to full rebuild")
+        return main()
+
+    odds = load_odds()
+    if not odds:
+        print("No odds fetched — keeping existing file unchanged")
+        return
+
+    # Detect slate change: compare matchups in fresh odds vs existing cards.
+    # If the slate changed, a lines-only patch is insufficient — do a full rebuild.
+    fresh_matchups = set()
+    for o in odds:
+        t = (o.get("Team") or "").strip()
+        v = (o.get("Versus") or "").strip()
+        if t and v:
+            fresh_matchups.add((t, v))
+
+    with open(out_path) as f:
+        data = json.load(f)
+
+    existing_matchups = set()
+    for card in data.get("cards", []):
+        t, o = (card.get("team") or ""), (card.get("opponent") or "")
+        if t and o:
+            existing_matchups.add((t, o))
+
+    if fresh_matchups and existing_matchups and fresh_matchups != existing_matchups:
+        print(f"ℹ Slate changed (matchups differ) — falling back to full rebuild")
+        return main()
+
+    # Detect new players: if odds contain a player not in existing cards,
+    # lines-only can't add them — force a full rebuild so they appear on the site.
+    existing_names = {normalize(c.get("name", "")) for c in data.get("cards", [])}
+    fresh_names = {normalize((o.get("Name") or "").strip()) for o in odds if o.get("Name")}
+    new_players = fresh_names - existing_names
+    if new_players:
+        print(f"ℹ {len(new_players)} new player(s) in odds ({sorted(list(new_players))[:5]}...) — falling back to full rebuild")
+        return main()
+
+    # Index fresh odds: (normalized_name, stat) → {line, odds_type}
+    fresh = {}
+    for o in odds:
+        key = (normalize(o["Name"].strip()), o["Stat"])
+        fresh[key] = {
+            "line": float(o["Prizepicks"]),
+            "odds_type": o.get("Odds Type", "standard").strip().lower(),
+        }
+
+    updated = 0
+    for card in data.get("cards", []):
+        nn = normalize(card["name"])
+        for prop in card.get("props", []):
+            key = (nn, prop["stat"])
+            if key in fresh:
+                old_line = prop.get("line")
+                new_line = fresh[key]["line"]
+                new_ot = fresh[key]["odds_type"]
+                if old_line != new_line or prop.get("odds_type") != new_ot:
+                    prop["line"] = new_line
+                    prop["odds_type"] = new_ot
+                    updated += 1
+
+    data["generated_at"] = __import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc
+    ).isoformat()
+
+    with open(out_path, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Lines-only refresh: updated {updated} props across {len(data.get('cards', []))} cards")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--lines-only" in sys.argv:
+        lines_only()
+    else:
+        main()

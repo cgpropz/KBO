@@ -16,9 +16,12 @@ on:
       - "Pitchers-Data/**"
       - "Batters-Data/**"
   schedule:
-    # Once daily full refresh + deploy.
-    # GitHub schedule uses UTC; 16:00 UTC is around noon US Eastern.
-    - cron: "0 16 * * *"
+    # Full refresh + deploy spread across the afternoon (US Eastern).
+    # GitHub schedule uses UTC.
+    - cron: "0 16 * * *"   # 12:00 PM ET
+    - cron: "0 18 * * *"   # 2:00 PM ET
+    - cron: "0 19 * * *"   # 3:00 PM ET
+    - cron: "0 20 * * *"   # 4:00 PM ET
   workflow_dispatch:
 
 permissions:
@@ -97,8 +100,13 @@ jobs:
 
       - name: Deploy to Vercel
         run: |
-          npm i -g vercel
-          bash pipeline/run_release.sh --skip-odds --skip-full-refresh --skip-build
+          npm i -g vercel@latest
+          # IMPORTANT: do NOT pass --skip-build. We need to build locally so the
+          # VITE_* env vars below get baked into the bundle. If we skip the build,
+          # Vercel's own builder runs without our system env vars and the deployed
+          # JS may be missing Supabase config (root cause of GH-Actions deploys
+          # silently shipping a broken bundle).
+          bash pipeline/run_release.sh --skip-odds --skip-full-refresh
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

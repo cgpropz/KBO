@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: kbo-refresh-pipeline
@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -48,3 +51,33 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Commit refreshed odds snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kbo-props-ui/public/data/prizepicks_props.json KBO-Odds/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No odds changes to commit"
+          else
+            git commit -m "chore: intraday odds refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push || echo "Push failed (likely race with concurrent run) — continuing to deploy current build"
+          fi
+
+      - name: Build and deploy odds-only update to Vercel
+        run: |
+          npm i -g vercel@latest
+          # Lightweight: build with fresh prizepicks_props.json + ship to prod.
+          # Skip-odds avoids re-fetching (we already did it above) and
+          # skip-full-refresh avoids the 30+ min stat scrape pipeline.
+          bash pipeline/run_release.sh --skip-odds --skip-full-refresh
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        timeout-minutes: 10

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.kbo.props.odds</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/kahlilhodge/KBO/deploy_odds.sh</string>
+    </array>
+    <!--
+      Run every 15 minutes from 11:00 to 22:45 local time.
+      Lightweight: refresh_odds.py + npm build + vercel deploy (~60s typical).
+      Hard-capped at 10 minutes by deploy_odds.sh's perl alarm.
+      Skips automatically if the full pipeline holds .locks/refresh_pipeline.lock.
+    -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>14</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>14</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>14</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>45</integer></dict>
+        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>15</integer></dict>
+        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>45</integer></dict>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/kahlilhodge/KBO/deploy_odds.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/kahlilhodge/KBO/deploy_odds.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/kahlilhodge/KBO/venv/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/Users/kahlilhodge/.nvm/versions/node/v22.21.1/bin</string>
+        <key>HOME</key>
+        <string>/Users/kahlilhodge</string>
+    </dict>
+</dict>
+</plist>
