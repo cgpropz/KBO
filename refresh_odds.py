@@ -47,14 +47,14 @@ def fetch_odds():
     
     print("✓ PrizePicks odds fetched")
 
-    # Intraday job should stay lightweight: only refresh props cards from the latest odds.
-    print("\n▶  Regenerating props cards...")
-    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py")]
+    # Intraday job should stay lightweight: only update lines + odds_type.
+    print("\n▶  Updating lines (lines-only mode)...")
+    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py"), "--lines-only"]
     props_result = subprocess.run(props_cmd, cwd=BASE)
     if props_result.returncode != 0:
-        print("✗ Failed to regenerate props — keeping previous file")
+        print("✗ Failed to update lines — keeping previous file")
     else:
-        print("✓ prizepicks_props.json regenerated")
+        print("✓ prizepicks_props.json lines updated")
 
     return True
 

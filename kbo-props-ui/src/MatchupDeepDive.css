@@ -232,6 +232,15 @@
   background: linear-gradient(135deg, #1e3a5f, #0f2040);
   border-color: #3b82f6;
   color: #bfdbfe;
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.mdd-weather-pill .mdd-wind-arrow {
+  color: #93c5fd;
 }
 
 .mdd-market-strip {
@@ -285,6 +294,37 @@
   font-weight: 500;
   color: #93c5fd;
   width: 100%;
+}
+
+.mdd-weather-wind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 0.85rem;
+  color: #dbeafe;
+}
+
+.mdd-weather-wind strong {
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
+}
+
+.mdd-weather-windsub {
+  font-size: 0.72rem;
+  color: #7ea7d6;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.mdd-wind-arrow {
+  color: #60a5fa;
+  font-size: 0.95rem;
+  transition: transform 0.4s ease;
 }
 
 /* Game Header - VS display */

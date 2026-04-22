@@ -256,6 +256,23 @@ def load_pitcher_throwing_hands():
 
 # ── Step 1: Determine today's matchups from pitcher starters ──
 starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
+starters_meta_path = os.path.join(BASE, "Pitchers-Data", "player_names_meta.json")
+
+# Verify starters data freshness (< 18 hours old)
+if os.path.exists(starters_meta_path):
+    meta = load_json_file(starters_meta_path, {})
+    scraped_at = meta.get("scraped_at", "")
+    if scraped_at:
+        from datetime import timezone as tz
+        try:
+            scraped_dt = datetime.fromisoformat(scraped_at)
+            age_hours = (datetime.now(tz.utc) - scraped_dt).total_seconds() / 3600
+            print(f"Starters data age: {age_hours:.1f}h (scraped {scraped_at})")
+            if age_hours > 18:
+                print(f"⚠ WARNING: Starters data is {age_hours:.1f}h old — projections may use stale pitchers")
+        except Exception:
+            pass
+
 starters = []
 with open(starters_path) as f:
     for row in csv.DictReader(f):
@@ -585,32 +602,42 @@ def build_pitcher_whip_index(rows):
     norm_map = {normalize_name(n).lower(): n for n in by_name}
     parts_map = {name_parts(n): n for n in by_name}
 
+    def aggregate_whip(games):
+        """Compute WHIP as (total H + total BB) / total IP, not avg of per-game WHIPs."""
+        total_ip = 0.0
+        total_h = 0.0
+        total_bb = 0.0
+        for g in games:
+            try:
+                ip = float(g.get("IP", 0))
+                ha = float(g.get("HA", 0))
+                bb = float(g.get("BB", 0))
+            except (TypeError, ValueError):
+                continue
+            if ip > 0:
+                total_ip += ip
+                total_h += ha
+                total_bb += bb
+        if total_ip > 0:
+            return round((total_h + total_bb) / total_ip, 3)
+        return None
+
     out = {}
     team_out = {}
     for nm, games in by_name.items():
         # Prefer current season samples, fallback to all-time if needed.
         season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
         use_games = season_games if season_games else games
-        whips = []
-        for g in use_games:
-            try:
-                whips.append(float(g.get("WHIP", 0)))
-            except (TypeError, ValueError):
-                continue
-        if whips:
-            out[nm] = round(sum(whips) / len(whips), 3)
+        whip = aggregate_whip(use_games)
+        if whip is not None:
+            out[nm] = whip
 
     for team, games in by_team.items():
         season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
         use_games = season_games if season_games else games
-        whips = []
-        for g in use_games:
-            try:
-                whips.append(float(g.get("WHIP", 0)))
-            except (TypeError, ValueError):
-                continue
-        if whips:
-            team_out[team] = round(sum(whips) / len(whips), 3)
+        whip = aggregate_whip(use_games)
+        if whip is not None:
+            team_out[team] = whip
 
     return out, norm_map, parts_map, team_out
 
@@ -908,12 +935,63 @@ def build_hrr_projections():
         ]
         hit_rates = calc_hit_rates(hrr_values, line)
 
+        # ── PA-decomposition base (recency-weighted L3/L6/season) ──
+        # Projected PA: 0.50·L3 + 0.30·L6 + 0.20·season
+        # Per-PA rates for H, R, RBI: 0.30·L3 + 0.30·L6 + 0.40·season
+        # base_HRR = projPA · (rate_H + rate_R + rate_RBI)
+        def _pa_of(g):
+            return int(g.get("AB", 0) or 0) + int(g.get("Walks", 0) or 0) + int(g.get("HBP", 0) or 0)
+
+        def _window(games, n=None):
+            sub = games if n is None else games[:n]
+            return {
+                "g": len(sub),
+                "pa": sum(_pa_of(g) for g in sub),
+                "h": sum(int(g.get("H", 0) or 0) for g in sub),
+                "r": sum(int(g.get("R", 0) or 0) for g in sub),
+                "rbi": sum(int(g.get("RBI", 0) or 0) for g in sub),
+            }
+
+        def _safe_div(num, den):
+            return (num / den) if den > 0 else None
+
+        def _weighted(vals, weights):
+            tot_w = 0.0
+            tot = 0.0
+            for k, v in vals.items():
+                if v is None:
+                    continue
+                tot += v * weights[k]
+                tot_w += weights[k]
+            return (tot / tot_w) if tot_w > 0 else None
+
+        _pa_w = {"l3": 0.50, "l6": 0.30, "season": 0.20}
+        _rate_w = {"l3": 0.30, "l6": 0.30, "season": 0.40}
+        _w_season = _window(recent_games)
+        _w_l6 = _window(recent_games, 6)
+        _w_l3 = _window(recent_games, 3)
+        proj_pa = _weighted(
+            {"l3": _safe_div(_w_l3["pa"], _w_l3["g"]),
+             "l6": _safe_div(_w_l6["pa"], _w_l6["g"]),
+             "season": _safe_div(_w_season["pa"], _w_season["g"])},
+            _pa_w,
+        )
+        rates = {}
+        for stat in ("h", "r", "rbi"):
+            rates[stat] = _weighted(
+                {"l3": _safe_div(_w_l3[stat], _w_l3["pa"]),
+                 "l6": _safe_div(_w_l6[stat], _w_l6["pa"]),
+                 "season": _safe_div(_w_season[stat], _w_season["pa"])},
+                _rate_w,
+            ) or 0.0
+
         if not bs:
             # Keep every PP batter in output with a neutral fallback when no logs exist.
             print(f"  WARNING: No data for {pp_name} — using neutral fallback")
             projections.append({
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Hits+Runs+RBIs",
+                "odds_type": pp_val.get("odds_type", "standard"),
                 "projection": round(line, 2) if line is not None else None,
                 "edge": 0.0 if line is not None else None,
                 "rating": 50.0 if line is not None else None,
@@ -937,19 +1015,47 @@ def build_hrr_projections():
             })
             continue
 
-        base = bs["hrr_per_g"]
+        # Recency-weighted base rate via PA decomposition.
+        # base_HRR = projPA · (rate_H + rate_R + rate_RBI). Falls back to
+        # legacy season HRR/G if a batter has no PA recorded yet.
+        if proj_pa and proj_pa > 0:
+            base = proj_pa * (rates["h"] + rates["r"] + rates["rbi"])
+        else:
+            base = bs["hrr_per_g"]
+
+        # Dampened opponent factor (capped ±12%)
         opp_rate = team_batting.get(opp, {}).get("hrr_per_g", league_avg_hrr_per_g)
-        opp_factor = opp_rate / league_avg_hrr_per_g
+        raw_ratio = opp_rate / league_avg_hrr_per_g
+        opp_factor = max(0.88, min(1.12, 1.0 + 0.50 * (raw_ratio - 1.0)))
+
+        # vs-hand split factor
+        vs_opp_avg = split_avgs.get("vs_opp_hand_avg")
+        if vs_opp_avg and vs_opp_avg > 0 and league_avg_ba > 0:
+            raw_split = vs_opp_avg / league_avg_ba
+            split_factor = max(0.90, min(1.10, 1.0 + 0.40 * (raw_split - 1.0)))
+        else:
+            split_factor = 1.0
+
+        # Pitcher quality factor (higher opp WHIP = easier matchup)
+        if opp_pitcher_whip and opp_pitcher_whip > 0:
+            pitcher_factor = max(0.90, min(1.10, 1.0 + 0.20 * (opp_pitcher_whip - 1.25)))
+        else:
+            pitcher_factor = 1.0
+
         home = game_home_team.get(team, team)
         pf = park_factors.get(home, {}).get("pf_r", 1.0)
-        proj = base * opp_factor * pf
+        proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
         rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
+        # Demon/goblin props are over-only on PrizePicks
+        if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
+            rec = "PUSH"
         rating = round((proj / line) * 50, 1) if line else None
 
         projections.append({
             "name": pp_name, "team": team, "opponent": opp,
             "line": line, "pp_name": pp_name, "prop": "Hits+Runs+RBIs",
+            "odds_type": pp_val.get("odds_type", "standard"),
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "opp_factor": round(opp_factor, 3),
@@ -967,9 +1073,15 @@ def build_hrr_projections():
             "vs_lhp_ab": split_row.get("vs_lhp_ab"),
             "vs_rhp_ab": split_row.get("vs_rhp_ab"),
             "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
+            "projected_pa": round(proj_pa, 2) if proj_pa else None,
+            "h_per_pa": round(rates["h"], 4),
+            "r_per_pa": round(rates["r"], 4),
+            "rbi_per_pa": round(rates["rbi"], 4),
+            "split_factor": round(split_factor, 3),
+            "pitcher_factor": round(pitcher_factor, 3),
             **hit_rates,
         })
-        print(f"  {pp_name:25s} ({team} vs {opp}): HRR/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
+        print(f"  {pp_name:25s} ({team} vs {opp}): projPA={proj_pa or 0:.2f} base={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
 def build_tb_projections():
@@ -1007,6 +1119,7 @@ def build_tb_projections():
             projections.append({
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Total Bases",
+                "odds_type": pp_val.get("odds_type", "standard"),
                 "projection": round(line, 2) if line is not None else None,
                 "edge": 0.0 if line is not None else None,
                 "rating": 50.0 if line is not None else None,
@@ -1030,19 +1143,51 @@ def build_tb_projections():
             })
             continue
 
-        base = bs["tb_per_g"]
+        # Recency-weighted base rate
+        season_avg = bs["tb_per_g"]
+        if len(tb_values) >= 10:
+            l5_avg = sum(tb_values[:5]) / 5
+            l10_avg = sum(tb_values[:10]) / 10
+            base = l5_avg * 0.35 + l10_avg * 0.25 + season_avg * 0.40
+        elif len(tb_values) >= 5:
+            l5_avg = sum(tb_values[:5]) / 5
+            base = l5_avg * 0.40 + season_avg * 0.60
+        else:
+            base = season_avg
+
+        # Dampened opponent factor (capped ±12%)
         opp_rate = team_batting.get(opp, {}).get("tb_per_g", league_avg_tb_per_g)
-        opp_factor = opp_rate / league_avg_tb_per_g
+        raw_ratio = opp_rate / league_avg_tb_per_g
+        opp_factor = max(0.88, min(1.12, 1.0 + 0.50 * (raw_ratio - 1.0)))
+
+        # vs-hand split factor
+        vs_opp_avg = split_avgs.get("vs_opp_hand_avg")
+        if vs_opp_avg and vs_opp_avg > 0 and league_avg_ba > 0:
+            raw_split = vs_opp_avg / league_avg_ba
+            split_factor = max(0.90, min(1.10, 1.0 + 0.40 * (raw_split - 1.0)))
+        else:
+            split_factor = 1.0
+
+        # Pitcher quality factor (higher opp WHIP = easier matchup)
+        if opp_pitcher_whip and opp_pitcher_whip > 0:
+            pitcher_factor = max(0.90, min(1.10, 1.0 + 0.20 * (opp_pitcher_whip - 1.25)))
+        else:
+            pitcher_factor = 1.0
+
         home = game_home_team.get(team, team)
         pf = park_factors.get(home, {}).get("pf_hr", 1.0)
-        proj = base * opp_factor * pf
+        proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
         rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
+        # Demon/goblin props are over-only on PrizePicks
+        if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
+            rec = "PUSH"
         rating = round((proj / line) * 50, 1) if line else None
 
         projections.append({
             "name": pp_name, "team": team, "opponent": opp,
             "line": line, "pp_name": pp_name, "prop": "Total Bases",
+            "odds_type": pp_val.get("odds_type", "standard"),
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
             "avg_per_g": round(base, 2), "ba": round(bs["ba"], 3), "slg": round(bs["slg"], 3),
@@ -1062,7 +1207,7 @@ def build_tb_projections():
             "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
             **hit_rates,
         })
-        print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x {opp_factor:.3f} x PF={pf:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
+        print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
 build_hrr_projections()

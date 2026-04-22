@@ -40,7 +40,8 @@
   transition: all 0.15s;
 }
 .so-mode-btn:first-child { border-radius: 8px 0 0 8px; }
-.so-mode-btn:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.so-mode-btn:not(:first-child) { border-left: none; }
+.so-mode-btn:last-child { border-radius: 0 8px 8px 0; }
 .so-mode-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
 .so-mode-btn:hover:not(.active) { background: #161616; color: #ccc; }
 
@@ -458,6 +459,162 @@
   transition: all 0.15s;
 }
 .so-auto-use:hover { background: rgba(124,58,237,0.25); color: #fff; }
+
+/* Auto mode action row */
+.so-auto-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.so-auto-save {
+  padding: 0.4rem 1rem;
+  background: rgba(234,179,8,0.1);
+  border: 1px solid rgba(234,179,8,0.25);
+  border-radius: 6px;
+  color: #eab308;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-auto-save:hover { background: rgba(234,179,8,0.2); color: #fbbf24; }
+
+/* Build mode save button */
+.so-save-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(234,179,8,0.1);
+  border: 1px solid rgba(234,179,8,0.25);
+  border-radius: 8px;
+  color: #eab308;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-save-btn:hover { background: rgba(234,179,8,0.2); color: #fbbf24; }
+
+/* ── Saved Mode ── */
+.so-saved {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.so-saved-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.so-saved-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+.so-clear-all-btn {
+  padding: 0.3rem 0.8rem;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.so-clear-all-btn:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+.so-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.so-saved-card {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 1rem;
+  transition: border-color 0.15s;
+}
+.so-saved-card:hover { border-color: #333; }
+
+.so-saved-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+.so-saved-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.so-saved-date {
+  font-size: 0.7rem;
+  color: #555;
+  margin-left: 0.5rem;
+}
+.so-saved-delete {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #555;
+  padding: 0.2rem;
+  transition: color 0.15s;
+}
+.so-saved-delete:hover { color: #ef4444; }
+
+/* ── Hit / Miss result indicators ── */
+.so-result-hit { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.04); }
+.so-result-miss { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.04); }
+.so-result-partial { border-color: rgba(234,179,8,0.4); background: rgba(234,179,8,0.04); }
+.so-result-push { border-color: rgba(148,163,184,0.4); background: rgba(148,163,184,0.04); }
+
+.so-result-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.so-result-badge-hit { background: rgba(34,197,94,0.15); color: #22c55e; }
+.so-result-badge-miss { background: rgba(239,68,68,0.15); color: #ef4444; }
+.so-result-badge-partial { background: rgba(234,179,8,0.15); color: #eab308; }
+.so-result-badge-push { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.so-result-badge-pending { background: rgba(148,163,184,0.1); color: #64748b; }
+
+.so-leg-hit { background: rgba(34,197,94,0.08) !important; }
+.so-leg-miss { background: rgba(239,68,68,0.08) !important; }
+.so-leg-push { background: rgba(148,163,184,0.08) !important; }
+
+.so-leg-actual {
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.05);
+}
+
+.so-leg-result-icon {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.so-record {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.so-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .so-footer-note {
   text-align: center;

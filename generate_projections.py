@@ -748,12 +748,15 @@ def resolve_pp_entry(pp_maps, display_name, resolved_name, team, opponent):
     return pp
 
 
-def classify_recommendation(edge, threshold):
+def classify_recommendation(edge, threshold, odds_type="standard"):
     if edge is None:
         return "NO LINE"
     if edge > threshold:
         return "OVER"
     if edge < -threshold:
+        # Demon/goblin props are over-only on PrizePicks
+        if odds_type in ("demon", "goblin"):
+            return "PUSH"
         return "UNDER"
     return "PUSH"
 
@@ -789,11 +792,30 @@ def main():
 
     team_batting_ctx, league_avg_so_per_g, league_avg_h_per_ip = load_team_batting_context()
 
-    starters = scrape_starters_with_pcodes()
-    if not starters:
-        # Fallback to pre-generated starter file if GameCenter scrape fails.
-        starters = []
-        with open(os.path.join(BASE, "Pitchers-Data", "player_names.csv"), encoding="utf-8") as f:
+    # Prefer the pre-generated starters file (written by daily_pitchers2.py in the pipeline).
+    # Only fall back to a live scrape if the file is missing or stale (>18h).
+    starters = []
+    starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
+    starters_meta_path = os.path.join(BASE, "Pitchers-Data", "player_names_meta.json")
+    use_local = False
+
+    if os.path.exists(starters_path) and os.path.exists(starters_meta_path):
+        try:
+            with open(starters_meta_path) as _mf:
+                _meta = json.load(_mf)
+            scraped_at = _meta.get("scraped_at", "")
+            if scraped_at:
+                scraped_dt = datetime.fromisoformat(scraped_at)
+                from datetime import timezone as _tz
+                age_hours = (datetime.now(_tz.utc) - scraped_dt).total_seconds() / 3600
+                if age_hours < 18:
+                    use_local = True
+                    print(f"Using pre-scraped starters ({age_hours:.1f}h old)")
+        except Exception:
+            pass
+
+    if use_local:
+        with open(starters_path, encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
         for i in range(0, len(rows), 2):
             away = rows[i]
@@ -802,6 +824,20 @@ def main():
                 continue
             starters.append({"name": away["Player"], "team": away["Team"], "opponent": home["Team"], "pcode": None})
             starters.append({"name": home["Player"], "team": home["Team"], "opponent": away["Team"], "pcode": None})
+    else:
+        starters = scrape_starters_with_pcodes()
+        if not starters:
+            # Fallback to pre-generated starter file if GameCenter scrape fails.
+            starters = []
+            with open(starters_path, encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            for i in range(0, len(rows), 2):
+                away = rows[i]
+                home = rows[i + 1] if i + 1 < len(rows) else None
+                if not home:
+                    continue
+                starters.append({"name": away["Player"], "team": away["Team"], "opponent": home["Team"], "pcode": None})
+                starters.append({"name": home["Player"], "team": home["Team"], "opponent": away["Team"], "pcode": None})
 
     starters_for_map = list(starters)
     # Always include local starter file aliases so batter-side opponent lookups stay in sync.
@@ -903,7 +939,7 @@ def main():
         whip = stats.get("whip")
 
         base_k = so_per_ip * ip_per_g
-        k_opp_factor = clamp(1.0 + 0.55 * ((opp_so_g / league_avg_so_per_g) - 1.0), 0.85, 1.15)
+        k_opp_factor = clamp(1.0 + 0.35 * ((opp_so_g / league_avg_so_per_g) - 1.0), 0.85, 1.15)
 
         # Lower WHIP generally sustains longer outings and higher K chances.
         if whip is not None:
@@ -928,7 +964,7 @@ def main():
             outs_form_ratio = stats["recent_ipg"] / stats["season_ipg"]
         outs_form_factor = clamp(outs_form_ratio if outs_form_ratio else 1.0, 0.90, 1.10)
 
-        strikeout_projection = clamp(base_k * k_opp_factor * lower_whip_factor * strikeout_form_factor, 1.0, 10.5)
+        strikeout_projection = clamp(base_k * k_opp_factor * strikeout_form_factor, 1.0, 10.5)
 
         strikeout_pp = resolve_pp_entry(pp_strikeouts, display_name, resolved, p.get("team", ""), opp)
         strikeout_line = strikeout_pp["line"] if strikeout_pp else None
@@ -945,7 +981,7 @@ def main():
             "projection": round(strikeout_projection, 2),
             "edge": round(strikeout_edge, 2) if strikeout_edge is not None else None,
             "rating": round((strikeout_projection / strikeout_line) * 50, 1) if strikeout_line else None,
-            "recommendation": classify_recommendation(strikeout_edge, 0.45),
+            "recommendation": classify_recommendation(strikeout_edge, 0.45, strikeout_pp.get("odds_type", "standard") if strikeout_pp else "standard"),
             "so_per_ip": round(so_per_ip, 3),
             "ip_per_g": round(ip_per_g, 3),
             "opp_so_per_g": round(opp_so_g, 3),
@@ -953,14 +989,14 @@ def main():
             "games_used": stats["games"],
             "whip": round(whip, 3) if whip is not None else None,
             "opp_factor": round(k_opp_factor, 3),
-            "whip_factor": round(lower_whip_factor, 3),
+            "whip_factor": 1.0,
             "form_factor": round(strikeout_form_factor, 3),
             "source": source,
         })
 
         base_hits = hits_per_ip * ip_per_g
         hits_opp_factor = clamp(1.0 + 0.40 * ((opp_h_per_ip / league_avg_h_per_ip) - 1.0), 0.88, 1.12)
-        hits_projection = clamp(base_hits * hits_opp_factor * higher_whip_factor * hits_form_factor, 1.0, 12.5)
+        hits_projection = clamp(base_hits * hits_opp_factor * hits_form_factor, 1.0, 12.5)
         hits_pp = resolve_pp_entry(pp_hits_allowed, display_name, resolved, p.get("team", ""), opp)
         hits_line = hits_pp["line"] if hits_pp else None
         hits_edge = (hits_projection - hits_line) if hits_line is not None else None
@@ -976,7 +1012,7 @@ def main():
             "projection": round(hits_projection, 2),
             "edge": round(hits_edge, 2) if hits_edge is not None else None,
             "rating": round((hits_projection / hits_line) * 50, 1) if hits_line else None,
-            "recommendation": classify_recommendation(hits_edge, 0.35),
+            "recommendation": classify_recommendation(hits_edge, 0.35, hits_pp.get("odds_type", "standard") if hits_pp else "standard"),
             "hits_per_ip": round(hits_per_ip, 3),
             "ip_per_g": round(ip_per_g, 3),
             "opp_h_per_ip": round(opp_h_per_ip, 3),
@@ -984,18 +1020,18 @@ def main():
             "games_used": stats["games"],
             "whip": round(whip, 3) if whip is not None else None,
             "opp_factor": round(hits_opp_factor, 3),
-            "whip_factor": round(higher_whip_factor, 3),
+            "whip_factor": 1.0,
             "form_factor": round(hits_form_factor, 3),
             "source": source,
         })
 
         outs_base = ip_per_g * 3.0
         outs_opp_factor = clamp(
-            1.0 + 0.18 * ((opp_so_g / league_avg_so_per_g) - 1.0) - 0.12 * ((opp_h_per_ip / league_avg_h_per_ip) - 1.0),
+            1.0 - 0.25 * ((opp_h_per_ip / league_avg_h_per_ip) - 1.0),
             0.92,
             1.08,
         )
-        outs_projection = clamp(outs_base * outs_opp_factor * lower_whip_factor * outs_form_factor, 6.0, 24.0)
+        outs_projection = clamp(outs_base * outs_opp_factor * outs_form_factor, 6.0, 24.0)
         outs_pp = resolve_pp_entry(pp_pitching_outs, display_name, resolved, p.get("team", ""), opp)
         outs_line = outs_pp["line"] if outs_pp else None
         outs_edge = (outs_projection - outs_line) if outs_line is not None else None
@@ -1011,7 +1047,7 @@ def main():
             "projection": round(outs_projection, 2),
             "edge": round(outs_edge, 2) if outs_edge is not None else None,
             "rating": round((outs_projection / outs_line) * 50, 1) if outs_line else None,
-            "recommendation": classify_recommendation(outs_edge, 1.0),
+            "recommendation": classify_recommendation(outs_edge, 1.0, outs_pp.get("odds_type", "standard") if outs_pp else "standard"),
             "ip_per_g": round(ip_per_g, 3),
             "opp_so_per_g": round(opp_so_g, 3),
             "opp_h_per_ip": round(opp_h_per_ip, 3),
@@ -1020,7 +1056,7 @@ def main():
             "games_used": stats["games"],
             "whip": round(whip, 3) if whip is not None else None,
             "opp_factor": round(outs_opp_factor, 3),
-            "whip_factor": round(lower_whip_factor, 3),
+            "whip_factor": 1.0,
             "form_factor": round(outs_form_factor, 3),
             "source": source,
         })

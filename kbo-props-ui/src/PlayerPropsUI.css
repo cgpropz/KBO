@@ -142,16 +142,53 @@
 
 /* ============== PROP CARD (NBA style) ============== */
 .pc-card {
+  perspective: 1000px;
+  border-radius: 14px;
+}
+
+.pc-card-inner {
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.pc-card.flipped .pc-card-inner {
+  transform: rotateY(180deg);
+}
+
+.pc-card-front,
+.pc-card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   background: #0d0d1a;
   border: 1px solid #1e293b;
   border-radius: 14px;
   overflow: hidden;
+}
+
+.pc-card-front {
+  position: relative;
   transition: border-color 0.2s, transform 0.15s;
 }
 
-.pc-card:hover {
+.pc-card:not(.flipped) .pc-card-front:hover {
   border-color: #475569;
   transform: translateY(-2px);
+}
+
+.pc-card-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotateY(180deg);
+  overflow-y: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
 }
 
 /* ---- Card Header ---- */
@@ -276,6 +313,20 @@
 .pc-stat-banner.under { background: linear-gradient(135deg, #2e0a0a, #3d1414); color: #f87171; }
 .pc-stat-banner.push  { background: linear-gradient(135deg, #2e2a0a, #3d3514); color: #facc15; }
 
+/* ── Goblin / Demon badges ── */
+.pc-odds-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+.pc-odds-badge.goblin { background: #065f46; color: #6ee7b7; }
+.pc-odds-badge.demon  { background: #7f1d1d; color: #fca5a5; }
+
 /* ---- Stats Row ---- */
 .pc-stats-row {
   display: flex;
@@ -310,6 +361,7 @@
 .pc-stat-value[data-level="warm"] { color: #facc15; }
 .pc-stat-value[data-level="cool"] { color: #fb923c; }
 .pc-stat-value[data-level="cold"] { color: #ef4444; }
+/* Score color scale: >=75 green, >=50 yellow, >=30 orange, <30 red */
 
 /* ---- Hit Rate Circles ---- */
 .pc-hitrates {
@@ -376,6 +428,163 @@
 /* ---- Chart ---- */
 .pc-chart {
   padding: 0 0.5rem 0.5rem;
+}
+
+/* ---- Flip Button ---- */
+.pc-flip-btn {
+  display: block;
+  width: calc(100% - 1.5rem);
+  margin: 0 0.75rem 0.75rem;
+  padding: 0.5rem;
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pc-flip-btn:hover {
+  background: rgba(167, 139, 250, 0.18);
+  border-color: #a78bfa;
+}
+
+/* ---- Card Back Face ---- */
+.pc-back-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem 0.5rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.pc-back-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.pc-back-close {
+  font-size: 0.9rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.pc-back-close:hover {
+  color: #e2e8f0;
+}
+
+.pc-back-section {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.pc-back-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #a78bfa;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 0.45rem;
+}
+
+.pc-back-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 0.25rem;
+}
+
+.pc-back-stat {
+  text-align: center;
+  flex: 1;
+}
+
+.pc-back-stat-val {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.pc-back-stat-key {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.3px;
+  margin-top: 0.1rem;
+}
+
+.pc-back-muted {
+  font-size: 0.75rem;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Recent starts table */
+.pc-back-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.45rem;
+  font-size: 0.7rem;
+}
+
+.pc-back-table th {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0.25rem 0.3rem;
+  text-align: center;
+  border-bottom: 1px solid #1e293b;
+}
+
+.pc-back-table td {
+  color: #cbd5e1;
+  padding: 0.25rem 0.3rem;
+  text-align: center;
+}
+
+.pc-back-table tbody tr:nth-child(even) {
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.pc-back-k {
+  font-weight: 800;
+  color: #a78bfa;
+}
+
+/* Weather & Park pills */
+.pc-back-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+}
+
+.pc-back-pill {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+.pc-back-hint {
+  text-align: center;
+  font-size: 0.6rem;
+  color: #475569;
+  padding: 0.4rem 0 0.6rem;
+  margin-top: auto;
 }
 
 /* ---- Responsive ---- */

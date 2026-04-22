@@ -270,7 +270,9 @@
 
 /* Rating */
 .rate-high { color: #22c55e; font-weight: 700; }
-.rate-low { color: #ef4444; font-weight: 700; }
+.rate-mid  { color: #facc15; font-weight: 700; }
+.rate-cool { color: #fb923c; font-weight: 700; }
+.rate-low  { color: #ef4444; font-weight: 700; }
 
 /* Variance */
 .var-pos {
@@ -304,6 +306,20 @@
   background: rgba(234, 179, 8, 0.15);
   color: #eab308;
 }
+
+/* ── Goblin / Demon type badges ── */
+.odds-type-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+.odds-type-badge.goblin { background: #065f46; color: #6ee7b7; }
+.odds-type-badge.demon  { background: #7f1d1d; color: #fca5a5; }
 
 .val-nodata {
   background: rgba(150, 150, 150, 0.12);
@@ -452,4 +468,244 @@
   .so-table th, .so-table td { padding: 0.35rem 0.35rem; font-size: 0.7rem; }
   .so-team-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; }
   .so-formula-bar { flex-wrap: wrap; font-size: 0.72rem; }
+}
+
+/* ==================== PARLAY BUILDER ==================== */
+.col-pick { width: 32px; padding: 0 4px !important; text-align: center; }
+.parlay-check {
+  width: 22px; height: 22px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem; font-weight: 900;
+  color: #7c3aed;
+  transition: all 0.15s;
+  user-select: none;
+}
+.parlay-check:hover { border-color: #7c3aed; }
+.parlay-check.checked {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.2);
+}
+.so-row-picked { background: rgba(124, 58, 237, 0.06) !important; }
+.so-row-picked td:first-child { border-left: 2px solid #7c3aed; }
+
+/* ── Expanded row indicator ── */
+.so-row-expanded {
+  background: #0d0d0d !important;
+  border-bottom: none;
+}
+.expand-arrow {
+  color: #7c3aed;
+  font-size: 0.7rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+/* ── Detail panel (expand row) ── */
+.so-detail-row td {
+  padding: 0 !important;
+  border-top: none !important;
+}
+.so-detail-panel {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-top: 2px solid #7c3aed;
+  border-radius: 0 0 10px 10px;
+  padding: 1rem 1.25rem;
+  margin: 0 0.5rem 0.75rem;
+  animation: detailSlideDown 0.2s ease-out;
+}
+@keyframes detailSlideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 600px; }
+}
+
+.so-detail-section {
+  margin-bottom: 1rem;
+}
+.so-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.so-detail-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #151515;
+}
+
+.so-detail-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.so-detail-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 50px;
+}
+.so-detail-label {
+  font-size: 0.6rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.so-detail-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Recent starts mini-table */
+.so-recent-table-wrap {
+  overflow-x: auto;
+}
+.so-recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.so-recent-table th {
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+  color: #666;
+  font-weight: 600;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.so-recent-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  color: #ccc;
+  border-bottom: 1px solid #111;
+}
+.so-recent-table tbody tr:hover {
+  background: #111;
+}
+.so-recent-k {
+  color: #7c3aed;
+  font-weight: 800;
+}
+
+/* Context row: weather + park + opp */
+.so-detail-context {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.so-detail-context .so-detail-section {
+  flex: 1;
+  min-width: 180px;
+  background: #0f0f0f;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0;
+}
+
+.so-detail-empty {
+  color: #555;
+  font-size: 0.8rem;
+  font-style: italic;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+@media (max-width: 640px) {
+  .so-detail-stats { gap: 0.75rem; }
+  .so-detail-stat { min-width: 40px; }
+  .so-detail-val { font-size: 0.85rem; }
+  .so-detail-context { flex-direction: column; gap: 0.75rem; }
+  .so-detail-context .so-detail-section { min-width: auto; }
+}
+
+/* Floating Parlay Tray */
+.parlay-tray {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #0a0a0a;
+  border-top: 2px solid #7c3aed;
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  max-height: 45vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(124, 58, 237, 0.2);
+  animation: traySlideUp 0.2s ease-out;
+}
+@keyframes traySlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.parlay-tray-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.parlay-tray-title {
+  font-size: 0.9rem; font-weight: 800; color: #fff;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.parlay-tray-count {
+  font-size: 0.65rem; font-weight: 700;
+  background: #7c3aed; color: #fff;
+  padding: 0.1rem 0.45rem; border-radius: 10px;
+}
+.parlay-tray-clear {
+  padding: 0.2rem 0.5rem;
+  background: #222; border: none; border-radius: 4px;
+  color: #888; font-size: 0.7rem; font-weight: 600;
+  cursor: pointer;
+}
+.parlay-tray-clear:hover { background: #333; color: #ccc; }
+.parlay-tray-legs {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+.parlay-tray-leg {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  background: #111; border-radius: 5px; font-size: 0.8rem;
+}
+.parlay-tray-name { font-weight: 700; color: #fff; min-width: 120px; }
+.parlay-tray-prop {
+  font-size: 0.6rem; font-weight: 700; color: #999;
+  background: #1a1a1a; padding: 0.1rem 0.3rem; border-radius: 3px;
+}
+.parlay-tray-line { color: #ccc; font-weight: 600; font-size: 0.8rem; white-space: nowrap; }
+.parlay-tray-side {
+  display: inline-block; cursor: pointer; transition: all 0.15s;
+}
+.parlay-tray-side:hover { opacity: 0.7; }
+.side-over { background: rgba(34,197,94,0.15); color: #22c55e; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.side-under { background: rgba(239,68,68,0.15); color: #ef4444; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; }
+.edge-pos { color: #22c55e; }
+.edge-neg { color: #ef4444; }
+.parlay-tray-edge { font-size: 0.8rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+.parlay-tray-remove {
+  background: none; border: none; color: #555;
+  font-size: 0.9rem; cursor: pointer; padding: 0 0.2rem;
+}
+.parlay-tray-remove:hover { color: #ef4444; }
+.parlay-tray-send {
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: #7c3aed; border: none; border-radius: 8px;
+  color: #fff; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+}
+.parlay-tray-send:hover { background: #6d28d9; }
+
+@media (max-width: 640px) {
+  .parlay-tray-leg { flex-wrap: wrap; gap: 0.3rem; }
+  .parlay-tray-name { min-width: auto; }
 }

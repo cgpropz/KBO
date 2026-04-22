@@ -23,6 +23,16 @@
       "requirePath": "/opt/homebrew/lib/node_modules/vercel/node_modules/@vercel/node/dist/index",
       "apiVersion": 3,
       "use": "@vercel/node",
+      "src": "api/saved-slips.js",
+      "config": {
+        "zeroConfig": true
+      }
+    },
+    {
+      "require": "@vercel/node",
+      "requirePath": "/opt/homebrew/lib/node_modules/vercel/node_modules/@vercel/node/dist/index",
+      "apiVersion": 3,
+      "use": "@vercel/node",
       "src": "api/stripe-webhook.js",
       "config": {
         "zeroConfig": true

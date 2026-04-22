@@ -77,6 +77,7 @@ PLAYER_NAMES = {
     "56911": "TODA Natsuki",
     "56036": "BOUSHLEY Caleb",
     "68341": "AN Woo Jin",
+    "68220": "GWAK Been",
 }
 
 PLAYER_TEAMS = {
@@ -88,7 +89,7 @@ PLAYER_TEAMS = {
     "NC": ['55912', '68902', '53973', '55903', '56966', '56911'],
     "SSG": ['62869', '77829', '54833', '60841', '55855', '56841'],
     "SAMSUNG": ['53375', '60146', '54443', '69446', '65320', '68415', '56464'],
-    "DOOSAN": ['55257', '67263', '51264', '55239'],
+    "DOOSAN": ['55257', '67263', '51264', '55239', '68220'],
     "Kiwoom": ['55313', "55322", "64350", "54319", "69045", "51761", '56334', '68341'],
 }
 
@@ -140,6 +141,7 @@ NAME_ALIASES = {
     "TODA Natsuki": "Natsuki Toda",
     "BOUSHLEY Caleb": "Caleb Boushley",
     "AN Woo Jin": "An Woo-jin",
+    "GWAK Been": "Gwak Been",
 }
 
 

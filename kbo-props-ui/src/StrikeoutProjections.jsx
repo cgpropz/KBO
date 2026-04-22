@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 
@@ -16,7 +16,7 @@ const TEAMS = {
   SSG:     '#ff5555',
 };
 
-function StrikeoutProjections() {
+function StrikeoutProjections({ onNavigate }) {
   const [data, setData] = useState(null);
   const [matchupData, setMatchupData] = useState(null);
   const [opponentStatsData, setOpponentStatsData] = useState(null);
@@ -27,6 +27,8 @@ function StrikeoutProjections() {
   const [selectedProp, setSelectedProp] = useState('all');
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
+  const [parlayPicks, setParlayPicks] = useState([]); // array of {name, team, opponent, prop, line, projection, edge, side}
+  const [expandedRow, setExpandedRow] = useState(null); // index of expanded row or null
 
   const normalizeName = (value) => String(value || '')
     .normalize('NFD')
@@ -97,6 +99,30 @@ function StrikeoutProjections() {
   const sortIcon = (field) => {
     if (sortField !== field) return <span className="sort-icon dim">⇅</span>;
     return <span className="sort-icon active">{sortDir === 'asc' ? '▲' : '▼'}</span>;
+  };
+
+  // Parlay builder helpers
+  const pickKey = (p) => `${p.name}@@${p.prop}@@${p.team}@@${p.opponent}`;
+  const isPicked = (p) => parlayPicks.some(pk => pickKey(pk) === pickKey(p));
+
+  const togglePick = (p) => {
+    const key = pickKey(p);
+    if (parlayPicks.some(pk => pickKey(pk) === key)) {
+      setParlayPicks(prev => prev.filter(pk => pickKey(pk) !== key));
+    } else {
+      const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+      const side = isPromo ? 'OVER' : (p.edge != null && p.edge >= 0) ? 'OVER' : 'UNDER';
+      setParlayPicks(prev => [...prev, {
+        name: p.name, team: p.team, opponent: p.opponent,
+        prop: p.prop, line: p.line, projection: p.projection,
+        edge: p.edge, rating: p.rating, side, odds_type: p.odds_type,
+      }]);
+    }
+  };
+
+  const sendToSlipBuilder = () => {
+    try { localStorage.setItem('kbo_parlay_import', JSON.stringify(parlayPicks)); } catch {}
+    if (onNavigate) onNavigate('optimizer');
   };
 
   // Must be declared before early returns to satisfy Rules of Hooks
@@ -174,8 +200,13 @@ function StrikeoutProjections() {
         const exactKey = `${stat}@@${team}@@${opp}@@${norm}`;
         const sigKey = `${stat}@@${team}@@${opp}@@sig:${sig}`;
         const teamOppKey = `${stat}@@${team}@@${opp}@@teamOpp`;
+        // Fallback: match by name+team only (no opponent) for cross-slate resilience
+        const nameTeamKey = `${stat}@@${team}@@${norm}`;
+        const sigTeamKey = `${stat}@@${team}@@sig:${sig}`;
         map.set(exactKey, canonicalLine);
         map.set(sigKey, canonicalLine);
+        if (!map.has(nameTeamKey)) map.set(nameTeamKey, canonicalLine);
+        if (!map.has(sigTeamKey)) map.set(sigTeamKey, canonicalLine);
         if (!teamOppBuckets.has(teamOppKey)) teamOppBuckets.set(teamOppKey, []);
         teamOppBuckets.get(teamOppKey).push(canonicalLine);
       }
@@ -219,7 +250,10 @@ function StrikeoutProjections() {
       const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
       const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
       const teamOppKey = `${ppStat}@@${p.team}@@${p.opponent}@@teamOpp`;
-      liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey) ?? ppLineByKey.get(teamOppKey);
+      // Fallback: name+team only (no opponent) for cross-slate resilience
+      const nameTeamKey = `${ppStat}@@${p.team}@@${norm}`;
+      const sigTeamKey = `${ppStat}@@${p.team}@@sig:${sig}`;
+      liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey) ?? ppLineByKey.get(teamOppKey) ?? ppLineByKey.get(nameTeamKey) ?? ppLineByKey.get(sigTeamKey);
       if (Number.isFinite(liveLine)) break;
     }
     
@@ -298,11 +332,16 @@ function StrikeoutProjections() {
         ? 'Filter by prop type to view the active pitcher model formula'
         : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by WHIP and form';
 
-  const getValClass = (rec) => {
-    if (rec === 'OVER') return 'val-over';
-    if (rec === 'UNDER') return 'val-under';
-    if (rec === 'NO DATA') return 'val-nodata';
-    if (rec === 'NO LINE') return 'val-noline';
+  const deriveValue = (proj, line) => {
+    if (proj == null || line == null) return 'PUSH';
+    if (proj > line) return 'OVER';
+    if (proj < line) return 'UNDER';
+    return 'PUSH';
+  };
+
+  const getValClass = (val) => {
+    if (val === 'OVER') return 'val-over';
+    if (val === 'UNDER') return 'val-under';
     return 'val-push';
   };
 
@@ -330,6 +369,32 @@ function StrikeoutProjections() {
     return { backgroundColor: '#802020', color: '#fff' }; // Dark red - very tough
   };
 
+  // Matchup detail lookup: find the matchup + pitcher data for a projection row
+  const getMatchupDetail = (p) => {
+    const matchups = matchupData?.matchups || [];
+    for (const m of matchups) {
+      // Determine if this pitcher is home or away
+      if (m.home_pitcher?.profile?.name && normalizeName(m.home_pitcher.profile.name) === normalizeName(p.name) && m.home === p.team) {
+        return { matchup: m, pitcher: m.home_pitcher, oppBatting: m.away_batting, side: 'home' };
+      }
+      if (m.away_pitcher?.profile?.name && normalizeName(m.away_pitcher.profile.name) === normalizeName(p.name) && m.away === p.team) {
+        return { matchup: m, pitcher: m.away_pitcher, oppBatting: m.home_batting, side: 'away' };
+      }
+    }
+    return null;
+  };
+
+  const weatherIcon = (condition) => {
+    if (!condition) return '🌤';
+    const c = condition.toLowerCase();
+    if (c.includes('rain') || c.includes('shower')) return '🌧';
+    if (c.includes('cloud') || c.includes('overcast')) return '☁️';
+    if (c.includes('clear') || c.includes('sunny')) return '☀️';
+    if (c.includes('partly')) return '⛅';
+    if (c.includes('fog') || c.includes('mist')) return '🌫';
+    return '🌤';
+  };
+
   return (
     <div className="so-container so-k-page">
       <header className="so-header">
@@ -355,6 +420,7 @@ function StrikeoutProjections() {
           <table className="so-table">
             <thead>
               <tr>
+                <th className="col-pick"></th>
                 <th onClick={() => handleSort('name')}>Player {sortIcon('name')}</th>
                 <th onClick={() => handleSort('team')}>Team {sortIcon('team')}</th>
                 <th onClick={() => handleSort('opponent')}>Matchup {sortIcon('opponent')}</th>
@@ -369,8 +435,28 @@ function StrikeoutProjections() {
               </tr>
             </thead>
             <tbody>
-              {projections.map((p, i) => (
-                <tr key={i} className="so-row">
+              {projections.map((p, i) => {
+                const isExpanded = expandedRow === i;
+                const detail = isExpanded ? getMatchupDetail(p) : null;
+                const profile = detail?.pitcher?.profile || {};
+                const recent = profile.recent || [];
+                const weather = detail?.matchup?.weather;
+                const park = detail?.matchup?.park_factor;
+                const oppBat = detail?.oppBatting;
+                return (
+                <React.Fragment key={i}>
+                <tr className={`so-row ${isPicked(p) ? 'so-row-picked' : ''} ${isExpanded ? 'so-row-expanded' : ''}`}
+                    onClick={(e) => { if (!e.target.closest('.parlay-check')) setExpandedRow(isExpanded ? null : i); }}
+                    style={{ cursor: 'pointer' }}
+                >
+                  <td className="col-pick">
+                    <div
+                      className={`parlay-check ${isPicked(p) ? 'checked' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); togglePick(p); }}
+                    >
+                      {isPicked(p) && '✓'}
+                    </div>
+                  </td>
                   <td className="col-player">
                     <div className="so-player-cell">
                       {photoLookup[normalizeName(p.name)] ? (
@@ -387,6 +473,7 @@ function StrikeoutProjections() {
                         <div className="so-player-fallback">{playerInitials(p.name)}</div>
                       )}
                       <span>{p.name}</span>
+                      <span className="expand-arrow">{isExpanded ? '▾' : '▸'}</span>
                     </div>
                   </td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
@@ -400,17 +487,176 @@ function StrikeoutProjections() {
                   <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
                     {p.projection != null ? p.projection.toFixed(1) : '#N/A'}
                   </td>
-                  <td className={`col-num mono ${p.rating != null ? (p.rating >= 55 ? 'rate-high' : p.rating < 45 ? 'rate-low' : '') : ''}`}>
+                  <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
                   </td>
                   <td className={`col-num mono ${p.edge != null ? (p.edge > 0 ? 'var-pos' : p.edge < -0.5 ? 'var-neg' : '') : 'cell-na'}`}>
                     {p.edge != null ? p.edge.toFixed(1) : '#N/A'}
                   </td>
                   <td className="col-center">
-                    <span className={`val-badge ${getValClass(p.recommendation)}`}>{p.recommendation}</span>
+                    {(() => { const val = deriveValue(p.projection, p.line); return (
+                    <span className={`val-badge ${getValClass(val)}`}>
+                      {val}
+                    </span>
+                    ); })()}
+                    {(p.odds_type === 'demon' || p.odds_type === 'goblin') && (
+                      <span className={`odds-type-badge ${p.odds_type}`}>{p.odds_type.toUpperCase()}</span>
+                    )}
                   </td>
                 </tr>
-              ))}
+                {isExpanded && (
+                  <tr className="so-detail-row">
+                    <td colSpan="12">
+                      <div className="so-detail-panel">
+                        {detail ? (
+                          <>
+                            {/* Pitcher profile stats */}
+                            <div className="so-detail-section">
+                              <h4 className="so-detail-heading">📊 Season Profile</h4>
+                              <div className="so-detail-stats">
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">ERA</span>
+                                  <span className="so-detail-val">{profile.era != null ? Number(profile.era).toFixed(2) : '—'}</span>
+                                </div>
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">WHIP</span>
+                                  <span className="so-detail-val">{profile.whip != null ? Number(profile.whip).toFixed(2) : '—'}</span>
+                                </div>
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">K/9</span>
+                                  <span className="so-detail-val">{profile.k_per_9 != null ? Number(profile.k_per_9).toFixed(1) : '—'}</span>
+                                </div>
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">IP/G</span>
+                                  <span className="so-detail-val">{profile.ip_per_g != null ? Number(profile.ip_per_g).toFixed(1) : '—'}</span>
+                                </div>
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">Starts</span>
+                                  <span className="so-detail-val">{profile.starts ?? '—'}</span>
+                                </div>
+                                <div className="so-detail-stat">
+                                  <span className="so-detail-label">Total K</span>
+                                  <span className="so-detail-val">{profile.total_so ?? '—'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Recent games */}
+                            {recent.length > 0 && (
+                              <div className="so-detail-section">
+                                <h4 className="so-detail-heading">🔥 Recent Starts</h4>
+                                <div className="so-recent-table-wrap">
+                                  <table className="so-recent-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Date</th>
+                                        <th>Opp</th>
+                                        <th>IP</th>
+                                        <th>K</th>
+                                        <th>HA</th>
+                                        <th>BB</th>
+                                        <th>ER</th>
+                                        <th>ERA</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {recent.slice(0, 5).map((g, gi) => (
+                                        <tr key={gi}>
+                                          <td className="mono">{g.date}</td>
+                                          <td><span style={{ color: TEAMS[g.opp] || '#999' }}>{g.opp}</span></td>
+                                          <td className="mono">{g.ip}</td>
+                                          <td className="mono so-recent-k">{g.so}</td>
+                                          <td className="mono">{g.ha}</td>
+                                          <td className="mono">{g.bb}</td>
+                                          <td className="mono">{g.er}</td>
+                                          <td className="mono">{Number(g.era).toFixed(2)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Weather + Park Factor row */}
+                            <div className="so-detail-context">
+                              {weather && (
+                                <div className="so-detail-section so-detail-weather">
+                                  <h4 className="so-detail-heading">{weatherIcon(weather.condition)} Weather</h4>
+                                  <div className="so-detail-stats">
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">Temp</span>
+                                      <span className="so-detail-val">{weather.temp_f}°F</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">Wind</span>
+                                      <span className="so-detail-val">{weather.wind_kmh} km/h</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">Rain</span>
+                                      <span className="so-detail-val">{weather.precip_pct}%</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">Sky</span>
+                                      <span className="so-detail-val">{weather.condition}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {park && (
+                                <div className="so-detail-section so-detail-park">
+                                  <h4 className="so-detail-heading">🏟 {park.stadium}</h4>
+                                  <div className="so-detail-stats">
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">R Factor</span>
+                                      <span className={`so-detail-val ${park.r_factor > 1 ? 'var-pos' : park.r_factor < 1 ? 'edge-neg' : ''}`}>{Number(park.r_factor).toFixed(3)}</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">HR Factor</span>
+                                      <span className={`so-detail-val ${park.hr_factor > 1 ? 'var-pos' : park.hr_factor < 1 ? 'edge-neg' : ''}`}>{Number(park.hr_factor).toFixed(3)}</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">H/G</span>
+                                      <span className="so-detail-val">{Number(park.h_per_g).toFixed(1)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {oppBat && (
+                                <div className="so-detail-section so-detail-opp">
+                                  <h4 className="so-detail-heading">🏏 vs {p.opponent} Lineup</h4>
+                                  <div className="so-detail-stats">
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">BA</span>
+                                      <span className="so-detail-val">{Number(oppBat.ba).toFixed(3)}</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">OPS</span>
+                                      <span className="so-detail-val">{Number(oppBat.ops).toFixed(3)}</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">K/G</span>
+                                      <span className="so-detail-val">{Number(oppBat.so_per_g).toFixed(1)}</span>
+                                    </div>
+                                    <div className="so-detail-stat">
+                                      <span className="so-detail-label">R/G</span>
+                                      <span className="so-detail-val">{Number(oppBat.r_per_g).toFixed(1)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="so-detail-empty">No matchup data available for this pitcher today.</p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -420,10 +666,9 @@ function StrikeoutProjections() {
           <div className="so-panel so-legend">
             <h3 className="so-panel-title">Legend</h3>
             <div className="so-legend-items">
-              <div className="so-legend-item"><span className="val-badge val-over">OVER</span><span>Proj &gt; Line + 0.5</span></div>
-              <div className="so-legend-item"><span className="val-badge val-under">UNDER</span><span>Proj &lt; Line - 0.5</span></div>
-              <div className="so-legend-item"><span className="val-badge val-push">PUSH</span><span>Within ±0.5</span></div>
-              <div className="so-legend-item"><span className="val-badge val-nodata">NO DATA</span><span>No logs</span></div>
+              <div className="so-legend-item"><span className="val-badge val-over">OVER</span><span>Projection &gt; Line</span></div>
+              <div className="so-legend-item"><span className="val-badge val-under">UNDER</span><span>Projection &lt; Line</span></div>
+              <div className="so-legend-item"><span className="val-badge val-push">PUSH</span><span>Projection = Line</span></div>
             </div>
           </div>
 
@@ -444,6 +689,38 @@ function StrikeoutProjections() {
           <span className="so-formula-icon">ƒ</span>
           <code>{formulaText}</code>
         </div>
+
+        {/* Parlay Builder Tray */}
+        {parlayPicks.length > 0 && (
+          <div className="parlay-tray">
+            <div className="parlay-tray-header">
+              <span className="parlay-tray-title">
+                Parlay Builder
+                <span className="parlay-tray-count">{parlayPicks.length}</span>
+              </span>
+              <button className="parlay-tray-clear" onClick={() => setParlayPicks([])}>Clear</button>
+            </div>
+            <div className="parlay-tray-legs">
+              {parlayPicks.map((pk, i) => (
+                <div key={i} className="parlay-tray-leg">
+                  <span className="parlay-tray-name">{pk.name}</span>
+                  <span className="parlay-tray-prop">{pk.prop === 'Strikeouts' ? 'K' : pk.prop === 'Hits Allowed' ? 'HA' : 'OUTS'}</span>
+                  <span className="parlay-tray-line"><span className="pp-icon-sm">P</span>{pk.line != null ? pk.line.toFixed(1) : '—'}</span>
+                  <span className={`parlay-tray-side ${pk.side === 'OVER' ? 'side-over' : 'side-under'}`}
+                    onClick={() => setParlayPicks(prev => prev.map((p, j) => j === i ? { ...p, side: p.side === 'OVER' ? 'UNDER' : 'OVER' } : p))}
+                  >{pk.side}</span>
+                  <span className={`parlay-tray-edge ${pk.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                    {pk.edge != null ? (pk.edge > 0 ? '+' : '') + pk.edge.toFixed(1) : ''}
+                  </span>
+                  <button className="parlay-tray-remove" onClick={() => setParlayPicks(prev => prev.filter((_, j) => j !== i))}>×</button>
+                </div>
+              ))}
+            </div>
+            <button className="parlay-tray-send" onClick={sendToSlipBuilder}>
+              Send to Slip Builder →
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

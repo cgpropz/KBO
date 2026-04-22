@@ -66,7 +66,10 @@ function enrichPick(pick) {
   const line = toNum(pick.line);
   const projection = toNum(pick.projection);
   const edge = toNum(pick.edge);
-  const rec = String(pick.recommendation || '').toUpperCase();
+  const oddsType = (pick.odds_type || 'standard').toLowerCase();
+  const isPromo = oddsType === 'demon' || oddsType === 'goblin';
+  let rec = String(pick.recommendation || '').toUpperCase();
+  if (isPromo && rec === 'UNDER') rec = 'PUSH';
 
   if (!Number.isFinite(line) || !Number.isFinite(projection) || !Number.isFinite(edge)) return null;
   if (rec !== 'OVER' && rec !== 'UNDER') return null;
@@ -203,11 +206,14 @@ function LandingPage({ onNavigate }) {
     if (!Number.isFinite(liveLine)) return p;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+    let pitcherRec = edge == null ? 'NO LINE' : edge > 0.45 ? 'OVER' : edge < -0.45 ? 'UNDER' : 'PUSH';
+    if (isPromo && pitcherRec === 'UNDER') pitcherRec = 'PUSH';
     return {
       ...p,
       line: liveLine,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
-      recommendation: edge == null ? 'NO LINE' : edge > 0.45 ? 'OVER' : edge < -0.45 ? 'UNDER' : 'PUSH',
+      recommendation: pitcherRec,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
     };
   });
@@ -227,11 +233,14 @@ function LandingPage({ onNavigate }) {
     if (!Number.isFinite(liveLine)) return p;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
+    const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+    let batterRec = edge == null ? 'NO LINE' : edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH';
+    if (isPromo && batterRec === 'UNDER') batterRec = 'PUSH';
     return {
       ...p,
       line: liveLine,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
-      recommendation: edge == null ? 'NO LINE' : edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH',
+      recommendation: batterRec,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
     };
   });
@@ -503,7 +512,12 @@ function ValuePickCard({ pick, typeLabel, cardClass, onClick }) {
   const meterWidth = Math.max(8, Math.min(100, pick.valuePct * 4.2));
   return (
     <div className={`lp-pick-card ${cardClass}`} onClick={onClick}>
-      <div className="lp-pick-type">{typeLabel}</div>
+      <div className="lp-pick-type">
+        {typeLabel}
+        {(pick.odds_type === 'demon' || pick.odds_type === 'goblin') && (
+          <span className={`lp-odds-badge ${pick.odds_type}`}>{pick.odds_type.toUpperCase()}</span>
+        )}
+      </div>
       <div className="lp-pick-player">{pick.name}</div>
       <div className="lp-pick-matchup">
         <span style={{ color: TEAMS[pick.team]?.color }}>{pick.team}</span>

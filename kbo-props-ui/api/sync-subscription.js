@@ -56,17 +56,20 @@ export default async function handler(req, res) {
     return res.status(200).json({ tier: currentTier, synced: false });
   }
 
-  // Look up active Stripe subscription by the user's email
+  // Look up active Stripe subscription by the user's email.
+  // Accept both `active` and `trialing` so 3-day free trial users get instant access.
   let tier = null;
   try {
     const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     outer: for (const customer of customers.data) {
+      // status:'all' lets us filter in code for active OR trialing in one call
       const subs = await stripe.subscriptions.list({
         customer: customer.id,
-        status: 'active',
-        limit: 5,
+        status: 'all',
+        limit: 10,
       });
       for (const sub of subs.data) {
+        if (sub.status !== 'active' && sub.status !== 'trialing') continue;
         const price = sub.items.data[0]?.price;
         tier = inferTier(price?.id, price?.unit_amount);
         break outer;

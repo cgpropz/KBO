@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import './SlipOptimizer.css';
 import { fetchData } from './dataUrl';
+import { useAuth } from './AuthContext';
+import { supabase } from './supabaseClient';
 
 const TEAMS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -10,15 +12,156 @@ const TEAMS = {
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 
-function SlipOptimizer() {
+function SlipOptimizer({ onNavigate }) {
+  const { user } = useAuth();
   const [allProps, setAllProps] = useState([]);
   const [selected, setSelected] = useState(new Set()); // Set of indices
   const [legs, setLegs] = useState(3); // target legs for auto-optimizer
-  const [mode, setMode] = useState('build'); // 'build' | 'auto'
+  const [mode, setMode] = useState('build'); // 'build' | 'auto' | 'saved'
   const [filter, setFilter] = useState('all'); // all | K | HRR | TB
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
   const [maxReuse, setMaxReuse] = useState(2); // max times a single prop can appear across slips
+  const [importedPicks, setImportedPicks] = useState(null); // picks from Pitchers page
   const [slipCount, setSlipCount] = useState(5); // how many slips to generate
+  const [savedSlips, setSavedSlips] = useState([]);
+  const [slipsLoading, setSlipsLoading] = useState(false);
+  const [savingSlip, setSavingSlip] = useState(false);
+
+  // Today's date in YYYY-MM-DD (KST, which is where KBO games are)
+  const gameDate = useMemo(() => {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    return kst.toISOString().slice(0, 10);
+  }, []);
+
+  // ── Supabase-backed slip persistence ──
+  const getAuthToken = useCallback(async () => {
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  }, []);
+
+  const loadSavedSlips = useCallback(async () => {
+    const token = await getAuthToken();
+    if (!token) return;
+    setSlipsLoading(true);
+    try {
+      const resp = await fetch('/api/saved-slips', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const { slips } = await resp.json();
+        setSavedSlips(slips || []);
+      }
+    } catch (err) {
+      debugLog('Failed to load saved slips:', err.message);
+    } finally {
+      setSlipsLoading(false);
+    }
+  }, [getAuthToken]);
+
+  // Load saved slips when user logs in or switches to saved tab
+  useEffect(() => {
+    if (user && mode === 'saved') loadSavedSlips();
+  }, [user, mode, loadSavedSlips]);
+
+  const saveSlipToDb = useCallback(async (slipData) => {
+    const token = await getAuthToken();
+    if (!token) { debugLog('Not logged in, cannot save'); return null; }
+    setSavingSlip(true);
+    try {
+      const resp = await fetch('/api/saved-slips', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(slipData),
+      });
+      if (resp.ok) {
+        const { slip } = await resp.json();
+        setSavedSlips(prev => [slip, ...prev]);
+        return slip;
+      }
+    } catch (err) {
+      debugLog('Failed to save slip:', err.message);
+    } finally {
+      setSavingSlip(false);
+    }
+    return null;
+  }, [getAuthToken]);
+
+  const saveCurrentSlip = async () => {
+    if (selectedArr.length === 0) return;
+    await saveSlipToDb({
+      game_date: gameDate,
+      confidence: slipScore.confidence,
+      avg_edge: slipScore.avgEdge,
+      total_edge: slipScore.totalEdge,
+      unique_games: slipScore.uniqueGames,
+      legs: selectedArr.map(idx => {
+        const p = allProps[idx];
+        const side = getSide(idx);
+        return {
+          name: p.name, team: p.team, opponent: p.opponent,
+          prop: p.prop, propShort: p.propShort,
+          line: p.line, projection: p.projection,
+          edge: p.edge, side,
+        };
+      }),
+    });
+    setMode('saved');
+  };
+
+  const saveAutoSlip = async (slipData) => {
+    await saveSlipToDb({
+      game_date: gameDate,
+      confidence: slipData.score.confidence,
+      avg_edge: slipData.score.avgEdge,
+      total_edge: slipData.score.totalEdge,
+      unique_games: slipData.score.uniqueGames,
+      legs: slipData.indices.map(idx => {
+        const p = allProps[idx];
+        const side = getSide(idx);
+        return {
+          name: p.name, team: p.team, opponent: p.opponent,
+          prop: p.prop, propShort: p.propShort,
+          line: p.line, projection: p.projection,
+          edge: p.edge, side,
+        };
+      }),
+    });
+  };
+
+  const deleteSavedSlip = async (id) => {
+    const token = await getAuthToken();
+    if (!token) return;
+    setSavedSlips(prev => prev.filter(s => s.id !== id));
+    try {
+      await fetch(`/api/saved-slips?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      debugLog('Failed to delete slip:', err.message);
+      loadSavedSlips(); // re-sync on error
+    }
+  };
+
+  const clearAllSlips = async () => {
+    if (!confirm('Delete all saved slips?')) return;
+    const token = await getAuthToken();
+    if (!token) return;
+    const ids = savedSlips.map(s => s.id);
+    setSavedSlips([]);
+    for (const id of ids) {
+      try {
+        await fetch(`/api/saved-slips?id=${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     debugLog('Fetching projections for optimizer...');
@@ -42,16 +185,56 @@ function SlipOptimizer() {
       props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
       debugLog('Data loaded:', { totalProps: props.length, pitcherProps: props.filter(p => ['K','HA','OUTS','P'].includes(p.propShort)).length, batterProps: props.filter(p => ['HRR','TB'].includes(p.propShort)).length });
       setAllProps(props);
+
+      // Check for imported picks from Pitchers page
+      try {
+        const raw = localStorage.getItem('kbo_parlay_import');
+        if (raw) {
+          localStorage.removeItem('kbo_parlay_import');
+          const picks = JSON.parse(raw);
+          if (Array.isArray(picks) && picks.length > 0) {
+            const matched = new Set();
+            const overrides = {};
+            picks.forEach(pk => {
+              const idx = props.findIndex(p =>
+                p.name === pk.name && p.prop === pk.prop &&
+                p.team === pk.team && p.opponent === pk.opponent
+              );
+              if (idx !== -1) {
+                matched.add(idx);
+                const p = props[idx];
+                const promo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+                if (!promo && pk.side && pk.side !== (p.edge >= 0 ? 'OVER' : 'UNDER')) {
+                  overrides[idx] = pk.side;
+                }
+              }
+            });
+            if (matched.size > 0) {
+              setSelected(matched);
+              setSideOverrides(overrides);
+              setMode('build');
+              debugLog('Imported picks from Pitchers page:', matched.size);
+            }
+          }
+        }
+      } catch {}
     });
   }, []);
 
-  // Determine the natural side for a prop
-  const naturalSide = (p) => p.edge >= 0 ? 'OVER' : 'UNDER';
-  const getSide = (idx) => sideOverrides[idx] || naturalSide(allProps[idx]);
+  // Determine the natural side for a prop (demon/goblin are over-only)
+  const isPromo = (p) => p.odds_type === 'demon' || p.odds_type === 'goblin';
+  const naturalSide = (p) => isPromo(p) ? 'OVER' : (p.edge >= 0 ? 'OVER' : 'UNDER');
+  const getSide = (idx) => {
+    const p = allProps[idx];
+    if (isPromo(p)) return 'OVER'; // demon/goblin locked to OVER
+    return sideOverrides[idx] || naturalSide(p);
+  };
 
   const toggleSide = (idx) => {
+    const p = allProps[idx];
+    if (isPromo(p)) return; // demon/goblin can't toggle
     setSideOverrides(prev => {
-      const nat = naturalSide(allProps[idx]);
+      const nat = naturalSide(p);
       const current = prev[idx] || nat;
       const flipped = current === 'OVER' ? 'UNDER' : 'OVER';
       if (flipped === nat) {
@@ -202,6 +385,12 @@ function SlipOptimizer() {
         >
           ⚡ Auto Optimizer
         </button>
+        <button
+          className={`so-mode-btn ${mode === 'saved' ? 'active' : ''}`}
+          onClick={() => setMode('saved')}
+        >
+          💾 Saved{savedSlips.length > 0 ? ` (${savedSlips.length})` : ''}
+        </button>
       </div>
 
       {mode === 'build' && (
@@ -265,6 +454,9 @@ function SlipOptimizer() {
                     <span className="so-stat-val">{slipScore.uniqueGames}</span>
                   </div>
                 </div>
+                <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user}>
+                  {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
+                </button>
               </>
             )}
           </div>
@@ -424,17 +616,116 @@ function SlipOptimizer() {
                     <span>Avg Edge: <strong className={slip.score.avgEdge > 0 ? 'edge-pos' : ''}>{slip.score.avgEdge > 0 ? '+' : ''}{slip.score.avgEdge}</strong></span>
                     <span>Games: <strong>{slip.score.uniqueGames}</strong></span>
                   </div>
-                  <button
-                    className="so-auto-use"
-                    onClick={() => {
-                      setSelected(new Set(slip.indices));
-                      setMode('build');
-                    }}
-                  >
-                    Use This Slip →
-                  </button>
+                  <div className="so-auto-actions">
+                    <button
+                      className="so-auto-use"
+                      onClick={() => {
+                        setSelected(new Set(slip.indices));
+                        setMode('build');
+                      }}
+                    >
+                      Use This Slip →
+                    </button>
+                    <button
+                      className="so-auto-save"
+                      onClick={() => saveAutoSlip(slip)}
+                    >
+                      💾 Save
+                    </button>
+                  </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === 'saved' && (
+        <div className="so-saved">
+          <div className="so-saved-header">
+            <h3 className="so-saved-title">Saved Slips</h3>
+            {savedSlips.length > 0 && (
+              <button className="so-clear-all-btn" onClick={clearAllSlips}>
+                Clear All
+              </button>
+            )}
+          </div>
+          {!user ? (
+            <p className="so-auto-empty">Log in to save and track your slips.</p>
+          ) : slipsLoading ? (
+            <p className="so-auto-empty">Loading your slips...</p>
+          ) : savedSlips.length === 0 ? (
+            <p className="so-auto-empty">No saved slips yet. Build or auto-generate a slip, then save it.</p>
+          ) : (
+            <div className="so-saved-list">
+              {savedSlips.map((slip) => {
+                const slipLegs = Array.isArray(slip.legs) ? slip.legs : [];
+                const isGraded = slip.graded;
+                const resultClass = isGraded
+                  ? slip.result === 'hit' ? 'so-result-hit'
+                    : slip.result === 'miss' ? 'so-result-miss'
+                    : slip.result === 'partial' ? 'so-result-partial'
+                    : slip.result === 'push' ? 'so-result-push'
+                    : ''
+                  : '';
+                return (
+                  <div key={slip.id} className={`so-saved-card ${resultClass}`}>
+                    <div className="so-saved-card-header">
+                      <div className="so-saved-meta">
+                        {isGraded && (
+                          <span className={`so-result-badge so-result-badge-${slip.result}`}>
+                            {slip.result === 'hit' ? '✅ HIT' : slip.result === 'miss' ? '❌ MISS' : slip.result === 'partial' ? `⚠️ ${slip.hits}/${slipLegs.length}` : slip.result === 'push' ? '➡️ PUSH' : '⏳'}
+                          </span>
+                        )}
+                        <span className={`so-auto-conf ${getConfidenceClass(slip.confidence)}`}>
+                          {slip.confidence}
+                        </span>
+                        <span className="so-auto-conf-label">confidence</span>
+                        <span className="so-saved-date">
+                          {slip.game_date} 
+                        </span>
+                      </div>
+                      <button className="so-saved-delete" onClick={() => deleteSavedSlip(slip.id)} title="Delete slip">🗑</button>
+                    </div>
+                    <div className="so-auto-legs">
+                      {slipLegs.map((leg, li) => {
+                        const legResult = leg.result || 'pending';
+                        const legClass = legResult === 'hit' ? 'so-leg-hit'
+                          : legResult === 'miss' ? 'so-leg-miss'
+                          : legResult === 'push' ? 'so-leg-push'
+                          : '';
+                        return (
+                          <div key={li} className={`so-auto-leg ${legClass}`}>
+                            <span className="so-auto-player">{leg.name}</span>
+                            <span className="so-auto-prop">{leg.propShort}</span>
+                            <span className="so-auto-line"><span className="pp-mini">P</span>{leg.line != null ? leg.line : '—'}</span>
+                            <span className={`so-auto-side ${leg.side === 'OVER' ? 'side-over' : 'side-under'}`}>{leg.side}</span>
+                            {leg.actual != null && (
+                              <span className={`so-leg-actual ${legResult === 'hit' ? 'edge-pos' : legResult === 'miss' ? 'edge-neg' : ''}`}>
+                                {leg.actual}
+                              </span>
+                            )}
+                            <span className={`so-auto-edge ${(leg.edge || 0) > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                              {leg.edge != null ? (leg.edge > 0 ? '+' : '') + Number(leg.edge).toFixed(2) : ''}
+                            </span>
+                            {legResult !== 'pending' && (
+                              <span className={`so-leg-result-icon so-leg-result-${legResult}`}>
+                                {legResult === 'hit' ? '✅' : legResult === 'miss' ? '❌' : '➡️'}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="so-auto-stats">
+                      <span>Avg Edge: <strong className={slip.avg_edge > 0 ? 'edge-pos' : ''}>{slip.avg_edge > 0 ? '+' : ''}{slip.avg_edge}</strong></span>
+                      <span>Games: <strong>{slip.unique_games}</strong></span>
+                      <span>{slipLegs.length} legs</span>
+                      {isGraded && <span className={`so-record ${slip.result === 'hit' ? 'edge-pos' : 'edge-neg'}`}>{slip.hits}✅ {slip.misses}❌ {slip.pushes}➡️</span>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

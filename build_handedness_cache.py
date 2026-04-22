@@ -27,7 +27,7 @@ BATTER_PCODES = {
     "79192": "Eun-seong Chae", "66715": "Kim In-Hwan", "66704": "Kim Tae-yean", "69737": "Roh Si-Hwan",
     "54730": "Yonathan Perlaza", "55645": "Patrick Wisdom", "72443": "Choi Hyoung-woo", "66606": "Choi Won-jun",
     "52605": "Kim Do-yeong", "78603": "Kim Sun-bin", "63260": "Lee Woo-sung", "62947": "Na Sung-bum",
-    "64646": "Park Chan-ho", "52630": "Socrates Brito", "65357": "Song Sung-mun", "51302": "Lee Ju-hyoung",
+    "64646": "Park Chan-ho", "52630": "Socrates Brito", "65357": "Song Sung-mun", "50167": "Lee Ju-hyoung",
     "52366": "Yasiel Puig", "54444": "Ruben Cardenas", "67304": "Kim Hye-Seong", "53327": "Ronnie Dawson",
     "78135": "Lee Hyung-jong", "50054": "Cheon Seong-ho", "78548": "Jang Sung-woo", "68050": "Kang Baek-ho",
     "64004": "Kim Min-hyuck", "67025": "Mel Rojas Jr.", "79402": "Sang-su Kim", "53123": "Austin Dean",
@@ -41,6 +41,8 @@ BATTER_PCODES = {
     "54805": "Park Ji-hwan", "76267": "Choi Joo-hwan", "53764": "Moon Hyun-bin", "67449": "Kim Seong-yoon",
     "52001": "Ahn Hyun-min", "55392": "Eo Joon-seo", "55703": "Liberato Luis", "64340": "Im Ji-yeol",
     "69636": "Oh Sun-woo",
+    "53554": "Kim Min-suk", "55252": "Park Jun-soon", "79109": "Oh Ji-hwan",
+    "68525": "Han Dong-hui", "69992": "Choi Jeong-won",
     # Additional batters from current rosters
     "50500": "Hwang Seong-bin", "79608": "An Chi-Hong", "55208": "Jake Cave",
     "52025": "Henry Ramos", "52366": "Yasiel Puig", "54529": "Victor Reyes",

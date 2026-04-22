@@ -111,7 +111,7 @@ def load_rows_from_baseball_reference():
         tm = str(row.get("Tm", "")).strip()
         if not tm or tm == "League Totals":
             continue
-        rows.append({k: row.get(k) for k in ["Tm", "G", "PA", "AB", "R", "H", "RBI", "TB", "SO", "BA"]})
+        rows.append({k: row.get(k) for k in ["Tm", "G", "PA", "AB", "R", "H", "HR", "BB", "SB", "RBI", "TB", "SO", "BA", "OBP", "SLG", "OPS"]})
 
     if len(rows) < 10:
         raise ValueError(f"Unexpected table size from Baseball Reference: {len(rows)} teams")
@@ -159,6 +159,12 @@ def main():
         r = safe_int(row.get("R"), 0)
         rbi = safe_int(row.get("RBI"), 0)
         tb = safe_int(row.get("TB"), 0)
+        hr = safe_int(row.get("HR"), 0)
+        bb = safe_int(row.get("BB"), 0)
+        sb = safe_int(row.get("SB"), 0)
+        obp = safe_float(row.get("OBP"), 0.0)
+        slg = safe_float(row.get("SLG"), 0.0)
+        ops = safe_float(row.get("OPS"), 0.0)
 
         # Canonical K% uses plate appearances.
         k_pct = (so / pa * 100.0) if pa > 0 else 0.0
@@ -166,22 +172,34 @@ def main():
         h_per_ip = ((h / g) / 9.0) if g > 0 else 0.0
         hrr_per_g = ((h + r + rbi) / g) if g > 0 else 0.0
         tb_per_g = (tb / g) if g > 0 else 0.0
+        hr_per_g = (hr / g) if g > 0 else 0.0
+        r_per_g = (r / g) if g > 0 else 0.0
+        h_per_g = (h / g) if g > 0 else 0.0
 
         team_stats[team] = {
             "ba": round(ba, 3),
+            "obp": round(obp, 3),
+            "slg": round(slg, 3),
+            "ops": round(ops, 3),
             "k_pct": round(k_pct, 1),
             "so": so,
             "pa": pa,
             "ab": ab,
             "h": h,
             "r": r,
+            "hr": hr,
+            "bb": bb,
+            "sb": sb,
             "rbi": rbi,
             "tb": tb,
             "games": g,
-            "so_per_g": round(so_per_g, 3),
+            "so_per_g": round(so_per_g, 2),
+            "r_per_g": round(r_per_g, 2),
+            "h_per_g": round(h_per_g, 2),
+            "hr_per_g": round(hr_per_g, 2),
             "h_per_ip": round(h_per_ip, 3),
-            "hrr_per_g": round(hrr_per_g, 3),
-            "tb_per_g": round(tb_per_g, 3),
+            "hrr_per_g": round(hrr_per_g, 2),
+            "tb_per_g": round(tb_per_g, 2),
         }
 
     with open(OUT_PATH, "w", encoding="utf-8") as f:

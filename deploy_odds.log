@@ -1,0 +1,316 @@
+==========================================
+Odds deploy started: 2026-04-21 19:45:01 EDT
+==========================================
+==================================================
+KBO Odds-Only Fast Deploy
+Repo: /Users/kahlilhodge/KBO
+When: 2026-04-21 19:45:01 EDT
+==================================================
+
+[1/3] Refresh PrizePicks odds
+--------------------------------------------------
+/Users/kahlilhodge/KBO/refresh_odds.py:143: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  f.write(f"created_at={datetime.utcnow().isoformat()}Z\n")
+Scraping complete... saving local odds files
+Data saved to KBO_odds_2025.json + .csv (69 lines) ✅
+Google Sheets sync disabled
+Lines-only refresh: updated 0 props across 50 cards
+
+▶  Fetching PrizePicks odds...
+==================================================
+✓ PrizePicks odds fetched
+
+▶  Updating lines (lines-only mode)...
+✓ prizepicks_props.json lines updated
+⏭  Skipping Supabase publish (--skip-supabase)
+
+==================================================
+✅ PrizePicks odds refresh complete!
+
+[2/3] Build UI
+--------------------------------------------------
+
+> kbo-props-ui@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 103 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.48 kB │ gzip:   0.31 kB
+dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+dist/assets/index-BPE-cU2M.js   827.02 kB │ gzip: 259.16 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.31s
+
+[3/3] Deploy to Vercel
+--------------------------------------------------
+Retrieving project…
+Deploying cgpropzs-projects/kbo-props
+Uploading [--------------------] (0.0B/326.2KB)
+Uploading [=====---------------] (96.0KB/326.2KB)
+Uploading [==========----------] (176.0KB/326.2KB)
+Uploading [===============-----] (256.0KB/326.2KB)
+Uploading [====================] (326.2KB/326.2KB)
+Inspect: https://vercel.com/cgpropzs-projects/kbo-props/D8KiiXCYz2Pztxz56eBHPxUT1jMi [2s]
+Production: https://kbo-props-390u06p1b-cgpropzs-projects.vercel.app [2s]
+https://kbo-props-390u06p1b-cgpropzs-projects.vercel.appBuilding...
+Building...
+Building: Running build in Washington, D.C., USA (East) – iad1
+Building: Build machine configuration: 2 cores, 8 GB
+Building: Retrieving list of deployment files...
+Building: Downloading 138 deployment files...
+Building: Restored build cache from previous deployment (2rqgfYomzVh2ZwFdUEMDfaV6XRMA)
+Building: Running "vercel build"
+Building: Vercel CLI 51.6.1
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Installing dependencies...
+Building: up to date in 619ms
+Building: 33 packages are looking for funding
+Building: run `npm fund` for details
+Building: Running "npm run build"
+Building: > kbo-props-ui@0.0.0 build
+Building: > vite build
+Building: vite v7.3.1 building client environment for production...
+Building: transforming...
+Building: ✓ 103 modules transformed.
+Building: rendering chunks...
+Building: computing gzip size...
+Building: dist/index.html                   0.48 kB │ gzip:   0.31 kB
+Building: dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+Building: dist/assets/index-BZxWqD9f.js   827.01 kB │ gzip: 259.16 kB
+Building: (!) Some chunks are larger than 500 kB after minification. Consider:
+Building: - Using dynamic import() to code-split the application
+Building: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Building: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Building: ✓ built in 3.34s
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Build Completed in /vercel/output [9s]
+Building: Deploying outputs...
+[2K[1A[2K[GProduction: https://kbo-props-390u06p1b-cgpropzs-projects.vercel.app [23s]
+Completing...
+Aliased: https://mykboprops.com [23s]
+> Tip: Run `npx plugins add vercel/vercel-plugin` to enhance your agent experience
+
+Odds-only fast deploy complete.
+==========================================
+Odds deploy started: 2026-04-21 20:00:04 EDT
+==========================================
+==================================================
+KBO Odds-Only Fast Deploy
+Repo: /Users/kahlilhodge/KBO
+When: 2026-04-21 20:00:04 EDT
+==================================================
+
+[1/3] Refresh PrizePicks odds
+--------------------------------------------------
+/Users/kahlilhodge/KBO/refresh_odds.py:143: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  f.write(f"created_at={datetime.utcnow().isoformat()}Z\n")
+Scraping complete... saving local odds files
+Data saved to KBO_odds_2025.json + .csv (69 lines) ✅
+Google Sheets sync disabled
+Lines-only refresh: updated 0 props across 50 cards
+
+▶  Fetching PrizePicks odds...
+==================================================
+✓ PrizePicks odds fetched
+
+▶  Updating lines (lines-only mode)...
+✓ prizepicks_props.json lines updated
+⏭  Skipping Supabase publish (--skip-supabase)
+
+==================================================
+✅ PrizePicks odds refresh complete!
+
+[2/3] Build UI
+--------------------------------------------------
+
+> kbo-props-ui@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 103 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.48 kB │ gzip:   0.31 kB
+dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+dist/assets/index-BPE-cU2M.js   827.02 kB │ gzip: 259.16 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.73s
+
+[3/3] Deploy to Vercel
+--------------------------------------------------
+Retrieving project…
+Deploying cgpropzs-projects/kbo-props
+Uploading [--------------------] (0.0B/326.2KB)
+Uploading [=====---------------] (96.0KB/326.2KB)
+Uploading [==========----------] (176.0KB/326.2KB)
+Uploading [===============-----] (256.0KB/326.2KB)
+Uploading [====================] (326.2KB/326.2KB)
+Inspect: https://vercel.com/cgpropzs-projects/kbo-props/GixmC68DgYRCdWuc8zpXGgo5ZNmP [4s]
+Production: https://kbo-props-f80yjetc8-cgpropzs-projects.vercel.app [4s]
+https://kbo-props-f80yjetc8-cgpropzs-projects.vercel.appBuilding...
+Building...
+Building: Running build in Washington, D.C., USA (East) – iad1
+Building: Build machine configuration: 2 cores, 8 GB
+Building: Retrieving list of deployment files...
+Building: Downloading 138 deployment files...
+Building: Restored build cache from previous deployment (D8KiiXCYz2Pztxz56eBHPxUT1jMi)
+Building: Running "vercel build"
+Building: Vercel CLI 51.6.1
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Installing dependencies...
+Building: up to date in 652ms
+Building: 33 packages are looking for funding
+Building: run `npm fund` for details
+Building: Running "npm run build"
+Building: > kbo-props-ui@0.0.0 build
+Building: > vite build
+Building: vite v7.3.1 building client environment for production...
+Building: transforming...
+Building: ✓ 103 modules transformed.
+Building: rendering chunks...
+Building: computing gzip size...
+Building: dist/index.html                   0.48 kB │ gzip:   0.31 kB
+Building: dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+Building: dist/assets/index-BZxWqD9f.js   827.01 kB │ gzip: 259.16 kB
+Building: (!) Some chunks are larger than 500 kB after minification. Consider:
+Building: - Using dynamic import() to code-split the application
+Building: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Building: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Building: ✓ built in 3.28s
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Build Completed in /vercel/output [8s]
+Building: Deploying outputs...
+Building: Deployment completed
+Building: Creating build cache...
+[2K[1A[2K[GProduction: https://kbo-props-f80yjetc8-cgpropzs-projects.vercel.app [26s]
+Completing...
+Aliased: https://mykboprops.com [26s]
+> Tip: Run `npx plugins add vercel/vercel-plugin` to enhance your agent experience
+
+Odds-only fast deploy complete.
+==========================================
+Odds deploy started: 2026-04-21 20:15:01 EDT
+==========================================
+==================================================
+KBO Odds-Only Fast Deploy
+Repo: /Users/kahlilhodge/KBO
+When: 2026-04-21 20:15:01 EDT
+==================================================
+
+[1/3] Refresh PrizePicks odds
+--------------------------------------------------
+/Users/kahlilhodge/KBO/refresh_odds.py:143: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  f.write(f"created_at={datetime.utcnow().isoformat()}Z\n")
+Scraping complete... saving local odds files
+Data saved to KBO_odds_2025.json + .csv (69 lines) ✅
+Google Sheets sync disabled
+Lines-only refresh: updated 0 props across 50 cards
+
+▶  Fetching PrizePicks odds...
+==================================================
+✓ PrizePicks odds fetched
+
+▶  Updating lines (lines-only mode)...
+✓ prizepicks_props.json lines updated
+⏭  Skipping Supabase publish (--skip-supabase)
+
+==================================================
+✅ PrizePicks odds refresh complete!
+
+[2/3] Build UI
+--------------------------------------------------
+
+> kbo-props-ui@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 103 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.48 kB │ gzip:   0.31 kB
+dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+dist/assets/index-BPE-cU2M.js   827.02 kB │ gzip: 259.16 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.25s
+
+[3/3] Deploy to Vercel
+--------------------------------------------------
+Retrieving project…
+Deploying cgpropzs-projects/kbo-props
+Uploading [--------------------] (0.0B/326.2KB)
+Uploading [=====---------------] (96.0KB/326.2KB)
+Uploading [==========----------] (176.0KB/326.2KB)
+Uploading [===============-----] (256.0KB/326.2KB)
+Uploading [====================] (326.2KB/326.2KB)
+Inspect: https://vercel.com/cgpropzs-projects/kbo-props/H8cxVojaRPWx6U1pZBRnqqaJ7CfQ [2s]
+Production: https://kbo-props-8gn7tbs85-cgpropzs-projects.vercel.app [2s]
+https://kbo-props-8gn7tbs85-cgpropzs-projects.vercel.appBuilding...
+Building...
+Building: Running build in Washington, D.C., USA (East) – iad1
+Building: Build machine configuration: 2 cores, 8 GB
+Building: Retrieving list of deployment files...
+Building: Downloading 138 deployment files...
+Building: Restored build cache from previous deployment (GixmC68DgYRCdWuc8zpXGgo5ZNmP)
+Building: Running "vercel build"
+Building: Vercel CLI 51.6.1
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Installing dependencies...
+Building: up to date in 696ms
+Building: 33 packages are looking for funding
+Building: run `npm fund` for details
+Building: Running "npm run build"
+Building: > kbo-props-ui@0.0.0 build
+Building: > vite build
+Building: vite v7.3.1 building client environment for production...
+Building: transforming...
+Building: ✓ 103 modules transformed.
+Building: rendering chunks...
+Building: computing gzip size...
+Building: dist/index.html                   0.48 kB │ gzip:   0.31 kB
+Building: dist/assets/index-BvKVIQ7n.css   88.22 kB │ gzip:  17.02 kB
+Building: dist/assets/index-BZxWqD9f.js   827.01 kB │ gzip: 259.16 kB
+Building: (!) Some chunks are larger than 500 kB after minification. Consider:
+Building: - Using dynamic import() to code-split the application
+Building: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Building: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Building: ✓ built in 3.38s
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Warning: Detected "engines": { "node": ">=22" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: https://vercel.link/node-version
+Building: Build Completed in /vercel/output [8s]
+Building: Deploying outputs...
+Building: Deployment completed
+Building: Creating build cache...
+[2K[1A[2K[GProduction: https://kbo-props-8gn7tbs85-cgpropzs-projects.vercel.app [23s]
+Completing...
+Aliased: https://mykboprops.com [23s]
+> Tip: Run `npx plugins add vercel/vercel-plugin` to enhance your agent experience
+
+Odds-only fast deploy complete.

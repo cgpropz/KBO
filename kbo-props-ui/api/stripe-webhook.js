@@ -81,6 +81,20 @@ async function clearTierByCustomer(customerId) {
   else console.log(`[webhook] cleared tier for ${email} (subscription cancelled)`);
 }
 
+// Read the raw body from the request stream (Vercel serverless doesn't
+// honour the Next.js bodyParser:false config, so we must collect it manually).
+function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+      return resolve(req.body);
+    }
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -90,9 +104,12 @@ export default async function handler(req, res) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = cleanEnv(process.env.STRIPE_WEBHOOK_SECRET);
 
+  // Stripe signature verification MUST use the raw, unparsed request body.
+  const rawBody = await getRawBody(req);
+
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
   } catch (err) {
     console.error('[webhook] signature verification failed:', err.message);
     return res.status(400).json({ error: 'Invalid signature' });
@@ -152,10 +169,3 @@ export default async function handler(req, res) {
 
   return res.status(200).json({ received: true });
 }
-
-// Tell Vercel not to parse the body — Stripe needs the raw buffer for signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

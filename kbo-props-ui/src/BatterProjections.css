@@ -87,7 +87,7 @@
 
 /* Main */
 .bp-main {
-  max-width: 1680px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   padding: 1.25rem clamp(0.35rem, 1.2vw, 1rem);
@@ -192,8 +192,10 @@
 }
 
 /* Rate color */
-.rate-high { color: #34d399; font-weight: 700; }
-.rate-low { color: #f87171; font-weight: 700; }
+.rate-high { color: #22c55e; font-weight: 700; }
+.rate-mid  { color: #facc15; font-weight: 700; }
+.rate-cool { color: #fb923c; font-weight: 700; }
+.rate-low  { color: #ef4444; font-weight: 700; }
 
 /* Variance color */
 .var-pos { color: #34d399; font-weight: 600; }
@@ -208,6 +210,20 @@
 .val-under { background: #7f1d1d; color: #fca5a5; }
 .val-push { background: #713f12; color: #fbbf24; }
 .val-nodata { background: #374151; color: #9ca3af; }
+
+/* ── Goblin / Demon type badges ── */
+.odds-type-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+.odds-type-badge.goblin { background: #065f46; color: #6ee7b7; }
+.odds-type-badge.demon  { background: #7f1d1d; color: #fca5a5; }
 
 /* Sort icon */
 .sort-icon { margin-left: 2px; font-size: 0.7rem; }

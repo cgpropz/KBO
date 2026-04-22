@@ -25,8 +25,10 @@
 .lp-hero-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #1a0533 0%, #2d1065 30%, #7c3aed 70%, #a855f7 100%);
-  opacity: 0.95;
+  background-image: url('/hero-stadium.jpg');
+  background-size: cover;
+  background-position: center 40%;
+  background-repeat: no-repeat;
   z-index: 0;
 }
 .lp-hero-bg::after {
@@ -34,8 +36,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 600px 400px at 20% 50%, rgba(124, 58, 237, 0.3), transparent),
-    radial-gradient(ellipse 500px 300px at 80% 30%, rgba(168, 85, 247, 0.2), transparent);
+    linear-gradient(180deg, rgba(10, 2, 30, 0.55) 0%, rgba(30, 8, 70, 0.65) 50%, rgba(10, 2, 30, 0.8) 100%),
+    radial-gradient(ellipse 700px 400px at 50% 0%, rgba(168, 85, 247, 0.18), transparent);
 }
 .lp-hero-content {
   position: relative;
@@ -168,8 +170,11 @@
 .lp-ticker {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
-  padding: 0.75rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
   background: #0a0a0a;
   border-top: 1px solid #1a1a1a;
   border-bottom: 1px solid #1a1a1a;
@@ -187,6 +192,7 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .lp-game-chip {
   display: flex;
@@ -272,6 +278,20 @@
   color: #999;
   margin-bottom: 0.5rem;
 }
+
+/* ── Goblin / Demon badges ── */
+.lp-odds-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+.lp-odds-badge.goblin { background: #065f46; color: #6ee7b7; }
+.lp-odds-badge.demon  { background: #7f1d1d; color: #fca5a5; }
 .lp-pick-player {
   font-size: 1.25rem;
   font-weight: 800;

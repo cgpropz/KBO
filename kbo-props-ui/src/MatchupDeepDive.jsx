@@ -64,6 +64,39 @@ const weatherIcon = (condition) => {
   return '🌡️';
 };
 
+// Field-relative wind arrow. `arrowDeg` is 0 when the wind blows straight
+// toward CF (visual: arrow points UP), 90 = blowing toward RF (arrow right),
+// 180 = blowing in from CF toward home (arrow down), 270 = toward LF (left).
+// The ➤ glyph natively points right, so we subtract 90° to align "up = CF".
+function WindArrow({ arrowDeg, deg, size = 14 }) {
+  let rotate;
+  if (arrowDeg != null) {
+    rotate = (Number(arrowDeg) - 90 + 360) % 360;
+  } else if (deg != null) {
+    // Fallback (dome / unknown CF bearing): use absolute compass direction
+    // wind is BLOWING TOWARD. ➤ points right = E (90°), so subtract 90°.
+    rotate = ((Number(deg) + 180) - 90 + 360) % 360;
+  } else {
+    return null;
+  }
+  return (
+    <span
+      className="mdd-wind-arrow"
+      style={{ display: 'inline-block', transform: `rotate(${rotate}deg)`, width: size, height: size, lineHeight: 1 }}
+      aria-hidden="true"
+    >➤</span>
+  );
+}
+
+const formatWindLine = (w) => {
+  if (!w) return null;
+  const speed = `${w.wind_mph ?? 0} mph`;
+  if (w.is_dome) return `Dome · wind n/a`;
+  if (w.wind_effect) return `${w.wind_effect} · ${speed}`;
+  if (w.wind_compass) return `${w.wind_compass} · ${speed}`;
+  return speed;
+};
+
 function attachMarkets(matchupData, linesData) {
   const lineMap = new Map(
     (linesData?.games || []).map((game) => [matchupKey(game.away, game.home), game])
@@ -399,6 +432,13 @@ function MatchupDeepDive() {
               {m.weather && (
                 <div className="mdd-slate-pill mdd-weather-pill">
                   {weatherIcon(m.weather.condition)} {m.weather.temp_f}°F · {m.weather.precip_pct}% 💧
+                  {!m.weather.is_dome && m.weather.wind_deg != null && (
+                    <>
+                      {' · '}
+                      <WindArrow arrowDeg={m.weather.wind_arrow_deg} deg={m.weather.wind_deg} />
+                      {' '}{m.weather.wind_mph} mph
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -443,11 +483,28 @@ function MatchupDeepDive() {
         </div>
         {game.weather && (
           <div className="mdd-market-card mdd-weather-card">
-            <div className="mdd-market-label">Weather</div>
+            <div className="mdd-market-label">Conditions</div>
             <div className="mdd-market-value mdd-weather-value">
               <span className="mdd-weather-icon">{weatherIcon(game.weather.condition)}</span>
               <span>{game.weather.temp_f}°F</span>
-              <span className="mdd-weather-sub">{game.weather.condition} · {game.weather.precip_pct}% rain · {game.weather.wind_kmh} km/h wind</span>
+              <span className="mdd-weather-sub">
+                {game.weather.condition} · {game.weather.precip_pct}% rain
+              </span>
+              <span className="mdd-weather-wind">
+                {game.weather.is_dome ? (
+                  <>🏟️ Dome · wind n/a</>
+                ) : (
+                  <>
+                    <WindArrow arrowDeg={game.weather.wind_arrow_deg} deg={game.weather.wind_deg} size={16} />
+                    <strong>{formatWindLine(game.weather)}</strong>
+                    {game.weather.wind_compass && (
+                      <span className="mdd-weather-windsub">
+                        from {game.weather.wind_compass} ({game.weather.wind_deg}°)
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
             </div>
           </div>
         )}

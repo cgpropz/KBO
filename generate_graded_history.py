@@ -62,7 +62,7 @@ def classify_type(recommendation, rating, edge):
         # No edge and no directional rec — default to OVER
         direction = "OVER"
 
-    if rating is not None and rating >= 65:
+    if rating is not None and rating >= 75:
         return direction  # Strong OVER or UNDER
     if direction == "OVER":
         return "SLIGHT OV"

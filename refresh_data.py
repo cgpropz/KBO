@@ -43,12 +43,12 @@ def ensure_project_python():
     if os.path.exists(PROJECT_PYTHON) and os.path.realpath(sys.executable) != os.path.realpath(PROJECT_PYTHON):
         os.execv(PROJECT_PYTHON, [PROJECT_PYTHON, __file__, *sys.argv[1:]])
 
-# Snapshot tables updated by this pipeline (excludes prizepicks_props which is odds-only)
 DATA_SNAPSHOTS = [
     ("strikeout_projections.json", "strikeout_projections"),
     ("batter_projections.json", "batter_projections"),
     ("pitcher_rankings.json", "pitcher_rankings"),
     ("matchup_data.json", "matchup_data"),
+    ("prizepicks_props.json", "prizepicks_props"),
     ("prop_results.json", "prop_results"),
     ("pitcher_logs.json", "pitcher_logs"),
 ]
@@ -59,6 +59,7 @@ STEPS = [
         "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "daily_pitchers2.py"),
                 "--output", os.path.join(BASE, "Pitchers-Data", "player_names.csv")],
         "skip_flag": "--skip-lineups",
+        "critical": True,
     },
     {
         "name": "Pitcher Game Logs",
@@ -85,21 +86,31 @@ STEPS = [
         "name": "Strikeout Projections",
         "cmd": [PYTHON, os.path.join(BASE, "generate_projections.py")],
         "skip_flag": None,
+        "depends_on": "Daily Lineups",
     },
     {
         "name": "Batter H+R+RBI Projections",
         "cmd": [PYTHON, os.path.join(BASE, "generate_batter_projections.py")],
         "skip_flag": None,
+        "depends_on": "Daily Lineups",
     },
     {
         "name": "Pitcher Rankings",
         "cmd": [PYTHON, os.path.join(BASE, "generate_rankings.py")],
         "skip_flag": None,
+        "depends_on": "Daily Lineups",
+    },
+    {
+        "name": "Player Props (full rebuild)",
+        "cmd": [PYTHON, os.path.join(BASE, "generate_props.py")],
+        "skip_flag": None,
+        "depends_on": "Daily Lineups",
     },
     {
         "name": "Matchup Deep Dive",
         "cmd": [PYTHON, os.path.join(BASE, "generate_matchups.py")],
         "skip_flag": None,
+        "depends_on": "Daily Lineups",
     },
     {
         "name": "Opponent Team Batting Stats",
@@ -282,6 +293,13 @@ def main():
         for i, step in enumerate(STEPS, 1):
             if step["skip_flag"] and step["skip_flag"] in skip_flags:
                 print(f"\n[{i}/{len(STEPS)}] ⏭  Skipping {step['name']}")
+                continue
+
+            # Skip steps whose critical dependency failed
+            dep = step.get("depends_on")
+            if dep and dep in failed:
+                print(f"\n[{i}/{len(STEPS)}] ⏭  Skipping {step['name']} (depends on failed '{dep}')")
+                failed.append(step["name"])
                 continue
 
             print(f"\n[{i}/{len(STEPS)}] ▶  {step['name']}")

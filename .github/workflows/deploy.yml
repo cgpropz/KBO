@@ -26,6 +26,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: kbo-refresh-pipeline
@@ -126,3 +127,25 @@ jobs:
           done
           echo "Production verification failed after retries"
           exit 1
+
+      # Email-on-failure: open or update a GitHub issue when this scheduled
+      # full pipeline fails. GitHub's default notification settings will email
+      # the repo owner whenever an issue is opened or commented on.
+      - name: Notify on failure (open/update issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TITLE="🚨 Full refresh + deploy FAILED"
+          BODY="Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          Branch: $GITHUB_REF_NAME
+          Commit: $GITHUB_SHA"
+          EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY" --label "ci-failure" 2>/dev/null \
+              || gh issue create --title "$TITLE" --body "$BODY"
+          fi

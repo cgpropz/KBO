@@ -132,43 +132,62 @@ def lookup_english_name(page, pcode, timeout_ms):
     return None
 
 
+def scrape_starters(args, max_retries=3):
+    """Scrape today's starters with retry logic for flaky Playwright sessions."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context(ignore_https_errors=True)
+                page = context.new_page()
+
+                games = get_upcoming_games(page, args.timeout)
+                print(f"Found {len(games)} games.")
+
+                if not games:
+                    print("No games scheduled today.")
+                    browser.close()
+                    return [], {}
+
+                pcodes = set()
+                for g in games:
+                    if g["away_pcode"]:
+                        pcodes.add(g["away_pcode"])
+                    if g["home_pcode"]:
+                        pcodes.add(g["home_pcode"])
+
+                lookup_timeout = args.lookup_timeout
+                print(f"Looking up {len(pcodes)} pitcher names (timeout {lookup_timeout}ms each)...")
+                name_cache = {}
+                for pcode in pcodes:
+                    eng_name = lookup_english_name(page, pcode, lookup_timeout)
+                    if eng_name:
+                        name_cache[pcode] = eng_name
+                        print(f"  {pcode} → {eng_name}")
+                    else:
+                        print(f"  {pcode} → (lookup failed)")
+
+                browser.close()
+                return games, name_cache
+
+        except Exception as exc:
+            print(f"⚠ Attempt {attempt}/{max_retries} failed: {exc}")
+            if attempt < max_retries:
+                wait = attempt * 5
+                print(f"  Retrying in {wait}s...")
+                import time
+                time.sleep(wait)
+            else:
+                raise
+
+
 def main():
     args = parse_args()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(ignore_https_errors=True)
-        page = context.new_page()
+    games, name_cache = scrape_starters(args)
 
-        # Step 1: Get upcoming games from the KBO Game Center
-        games = get_upcoming_games(page, args.timeout)
-        print(f"Found {len(games)} games.")
-
-        if not games:
-            print("No games scheduled today.")
-            browser.close()
-            return
-
-        # Step 2: Collect unique pcodes and look up English names
-        pcodes = set()
-        for g in games:
-            if g["away_pcode"]:
-                pcodes.add(g["away_pcode"])
-            if g["home_pcode"]:
-                pcodes.add(g["home_pcode"])
-
-        lookup_timeout = args.lookup_timeout
-        print(f"Looking up {len(pcodes)} pitcher names (timeout {lookup_timeout}ms each)...")
-        name_cache = {}
-        for pcode in pcodes:
-            eng_name = lookup_english_name(page, pcode, lookup_timeout)
-            if eng_name:
-                name_cache[pcode] = eng_name
-                print(f"  {pcode} → {eng_name}")
-            else:
-                print(f"  {pcode} → (lookup failed)")
-
-        browser.close()
+    if not games:
+        return
 
     # Step 3: Build output rows
     rows = []
@@ -182,6 +201,20 @@ def main():
     df = pd.DataFrame(rows)
     df.to_csv(args.output, index=False)
     print(f"\nSaved {len(rows)} starters to {args.output}")
+
+    # Write a timestamp sidecar so downstream scripts can verify freshness
+    import json
+    from datetime import datetime, timezone
+    meta_path = args.output.replace(".csv", "_meta.json")
+    meta = {
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
+        "game_date": games[0].get("date", ""),
+        "num_games": len(games),
+        "num_starters": len(rows),
+    }
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
+    print(f"Wrote freshness metadata to {meta_path}")
 
 
 if __name__ == "__main__":

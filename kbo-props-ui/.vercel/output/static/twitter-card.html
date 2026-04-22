@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>KBO Props – Daily Fire Picks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 1200px;
+    height: 675px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #09090b;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .card {
+    width: 1200px;
+    height: 675px;
+    background: linear-gradient(135deg, #09090b 0%, #18082e 40%, #0d0d14 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Glow accents */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    left: 200px;
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 48px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-logo {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .brand-logo span { color: #a78bfa; }
+  .brand-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #7c3aed;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .header-date {
+    font-size: 13px;
+    font-weight: 700;
+    color: #a1a1aa;
+    letter-spacing: 1px;
+  }
+  .header-games {
+    font-size: 11px;
+    color: #71717a;
+    margin-top: 4px;
+  }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3) 20%, rgba(124,58,237,0.3) 80%, transparent);
+    margin: 18px 48px 0;
+  }
+
+  /* Section title */
+  .section-title {
+    padding: 16px 48px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .section-title h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #e4e4e7;
+    letter-spacing: 0.5px;
+  }
+  .section-title .fire { font-size: 20px; }
+  .section-subtitle {
+    font-size: 11px;
+    color: #71717a;
+    padding: 4px 48px 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* Picks grid */
+  .picks {
+    display: flex;
+    gap: 14px;
+    padding: 16px 48px 0;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+  }
+
+  .pick {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 18px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .pick::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .pick.over::before { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .pick.under::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+  .pick-rank {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 1px;
+  }
+
+  .pick-player {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f4f4f5;
+    margin-bottom: 2px;
+    line-height: 1.2;
+  }
+  .pick-matchup {
+    font-size: 11px;
+    font-weight: 600;
+    color: #71717a;
+    margin-bottom: 10px;
+  }
+  .pick-matchup .team-color { font-weight: 700; }
+
+  .pick-prop {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .pick-side {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .pick-side.over { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .pick-side.under { background: rgba(239,68,68,0.15); color: #f87171; }
+  .pick-stat {
+    font-size: 11px;
+    font-weight: 700;
+    color: #a1a1aa;
+    letter-spacing: 0.5px;
+  }
+
+  .pick-nums {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .pick-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+  }
+  .pp-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: #6d28d9;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .pick-proj {
+    font-size: 12px;
+    color: #a1a1aa;
+    font-weight: 600;
+  }
+  .pick-proj strong {
+    color: #d4d4d8;
+    font-weight: 800;
+  }
+
+  .pick-edge {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .pick-edge.pos { color: #4ade80; }
+  .pick-edge.neg { color: #f87171; }
+
+  .pick-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+  .pick-pill {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    color: #a1a1aa;
+    letter-spacing: 0.3px;
+  }
+  .pick-pill.hot {
+    background: rgba(250,204,21,0.12);
+    color: #facc15;
+  }
+  .pick-pill.fire {
+    background: rgba(249,115,22,0.12);
+    color: #fb923c;
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 48px 22px;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-url {
+    font-size: 16px;
+    font-weight: 800;
+    color: #a78bfa;
+    letter-spacing: 0.5px;
+  }
+  .footer-cta {
+    font-size: 12px;
+    font-weight: 700;
+    color: #71717a;
+    letter-spacing: 0.5px;
+  }
+  .footer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.25);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #c4b5fd;
+    letter-spacing: 0.5px;
+  }
+  .footer-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-logo">KBO <span>PROPS</span></div>
+      <div class="brand-tag">2026 Season</div>
+    </div>
+    <div class="header-right">
+      <div class="header-date">APRIL 13, 2026</div>
+      <div class="header-games">Lotte @ LG · Doosan @ SSG · KT @ NC · Kiwoom @ Kia · Samsung @ Hanwha</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="section-title">
+    <span class="fire">🔥</span>
+    <h2>TOP 5 FIRE PICKS</h2>
+  </div>
+  <div class="section-subtitle">Model-driven edges from live KBO game logs &amp; PrizePicks lines</div>
+
+  <!-- Picks -->
+  <div class="picks">
+
+    <!-- Pick 1: Kang Baek-ho -->
+    <div class="pick over">
+      <div class="pick-rank">#1</div>
+      <div class="pick-player">Kang Baek-ho</div>
+      <div class="pick-matchup"><span class="team-color" style="color:#ff8c00">Hanwha</span> vs <span class="team-color" style="color:#60a5fa">Samsung</span></div>
+      <div class="pick-prop">
+        <span class="pick-side over">OVER</span>
+        <span class="pick-stat">H+R+RBI</span>
+      </div>
+      <div class="pick-nums">
+        <div class="pick-line"><span class="pp-icon">P</span> 1.5</div>
+        <div class="pick-proj">Proj: <strong>3.36</strong></div>
+      </div>
+      <div class="pick-edge pos">+1.86</div>
+      <div class="pick-meta">
+        <span class="pick-pill fire">L5: 80%</span>
+        <span class="pick-pill hot">L10: 80%</span>
+        <span class="pick-pill">13 GP</span>
+      </div>
+    </div>
+
+    <!-- Pick 2: Ahn Hyun-min -->
+    <div class="pick over">
+      <div class="pick-rank">#2</div>
+      <div class="pick-player">Ahn Hyun-min</div>
+      <div class="pick-matchup"><span class="team-color" style="color:#e0e0e0">KT</span> vs <span class="team-color" style="color:#5b9bd5">NC</span></div>
+      <div class="pick-prop">
+        <span class="pick-side over">OVER</span>
+        <span class="pick-stat">H+R+RBI</span>
+      </div>
+      <div class="pick-nums">
+        <div class="pick-line"><span class="pp-icon">P</span> 1.5</div>
+        <div class="pick-proj">Proj: <strong>3.49</strong></div>
+      </div>
+      <div class="pick-edge pos">+1.99</div>
+      <div class="pick-meta">
+        <span class="pick-pill">L10: 60%</span>
+        <span class="pick-pill">12 GP</span>
+      </div>
+    </div>
+
+    <!-- Pick 3: Moon Hyun-bin -->
+    <div class="pick over">
+      <div class="pick-rank">#3</div>
+      <div class="pick-player">Moon Hyun-bin</div>
+      <div class="pick-matchup"><span class="team-color" style="color:#ff8c00">Hanwha</span> vs <span class="team-color" style="color:#60a5fa">Samsung</span></div>
+      <div class="pick-prop">
+        <span class="pick-side over">OVER</span>
+        <span class="pick-stat">H+R+RBI</span>
+      </div>
+      <div class="pick-nums">
+        <div class="pick-line"><span class="pp-icon">P</span> 1.5</div>
+        <div class="pick-proj">Proj: <strong>3.33</strong></div>
+      </div>
+      <div class="pick-edge pos">+1.83</div>
+      <div class="pick-meta">
+        <span class="pick-pill fire">L5: 80%</span>
+        <span class="pick-pill hot">L10: 70%</span>
+        <span class="pick-pill">12 GP</span>
+      </div>
+    </div>
+
+    <!-- Pick 4: Lewin Díaz -->
+    <div class="pick over">
+      <div class="pick-rank">#4</div>
+      <div class="pick-player">Lewin Díaz</div>
+      <div class="pick-matchup"><span class="team-color" style="color:#60a5fa">Samsung</span> vs <span class="team-color" style="color:#ff8c00">Hanwha</span></div>
+      <div class="pick-prop">
+        <span class="pick-side over">OVER</span>
+        <span class="pick-stat">H+R+RBI</span>
+      </div>
+      <div class="pick-nums">
+        <div class="pick-line"><span class="pp-icon">P</span> 1.5</div>
+        <div class="pick-proj">Proj: <strong>3.18</strong></div>
+      </div>
+      <div class="pick-edge pos">+1.68</div>
+      <div class="pick-meta">
+        <span class="pick-pill hot">64% All</span>
+        <span class="pick-pill">L10: 70%</span>
+        <span class="pick-pill">13 GP</span>
+      </div>
+    </div>
+
+    <!-- Pick 5: Song Seung-ki -->
+    <div class="pick over">
+      <div class="pick-rank">#5</div>
+      <div class="pick-player">Song Seung-ki</div>
+      <div class="pick-matchup"><span class="team-color" style="color:#e8557a">LG</span> vs <span class="team-color" style="color:#ff6666">Lotte</span></div>
+      <div class="pick-prop">
+        <span class="pick-side over">OVER</span>
+        <span class="pick-stat">STRIKEOUTS</span>
+      </div>
+      <div class="pick-nums">
+        <div class="pick-line"><span class="pp-icon">P</span> 4.0</div>
+        <div class="pick-proj">Proj: <strong>4.83</strong></div>
+      </div>
+      <div class="pick-edge pos">+0.83</div>
+      <div class="pick-meta">
+        <span class="pick-pill">53% All</span>
+        <span class="pick-pill">19 GS</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-url">mykboprops.com</div>
+    <div class="footer-badge">
+      <span class="dot"></span>
+      LIVE PROJECTIONS · GAME LOGS · HIT RATES
+    </div>
+    <div class="footer-cta">Free daily edges — updated every 10 min</div>
+  </div>
+
+</div>
+</body>
+</html>

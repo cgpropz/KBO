@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 
-const AuthContext = createContext({ user: null, tier: 'free', loading: true, signOut: () => {} });
+const AuthContext = createContext({ user: null, tier: 'free', loading: true, signOut: () => {}, refreshTier: () => {} });
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -11,33 +11,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [tier, setTier] = useState('free');
   const [loading, setLoading] = useState(true);
+  const userRef = useRef(null);
 
-  useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchTier(session.user.id);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchTier(session.user.id);
-      } else {
-        setTier('free');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function fetchTier(userId) {
-    if (!supabase) return;
+  const fetchTier = useCallback(async (userId) => {
+    if (!supabase || !userId) return;
     const { data: rows } = await supabase
       .from('user_profiles')
       .select('tier')
@@ -72,16 +49,63 @@ export function AuthProvider({ children }) {
     }
 
     setTier(dbTier || 'free');
-  }
+  }, []);
+
+  // Public method: force a tier re-check (e.g. after payment)
+  const refreshTier = useCallback(() => {
+    const uid = userRef.current?.id;
+    if (uid) return fetchTier(uid);
+  }, [fetchTier]);
+
+  useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    // Wait for BOTH session + tier before clearing loading
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      userRef.current = u;
+      if (u) await fetchTier(u.id);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      userRef.current = u;
+      if (u) {
+        fetchTier(u.id);
+      } else {
+        setTier('free');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchTier]);
+
+  // Re-check tier when user returns to the tab (e.g. after paying in Stripe tab)
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible' && userRef.current?.id) {
+        fetchTier(userRef.current.id);
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchTier]);
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
     setUser(null);
+    userRef.current = null;
     setTier('free');
   }
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signOut }}>
+    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier }}>
       {children}
     </AuthContext.Provider>
   );

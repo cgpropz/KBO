@@ -54,12 +54,12 @@ function App() {
 
   const content = (() => {
     switch (view) {
-      case 'projections': return <StrikeoutProjections />;
+      case 'projections': return <StrikeoutProjections onNavigate={setView} />;
       case 'batters':     return <BatterProjections />;
       case 'props':       return <PlayerPropsUI />;
       case 'rankings':    return <PitcherRankings />;
       case 'tracker':     return <PropTracker />;
-      case 'optimizer':   return <SlipOptimizer />;
+      case 'optimizer':   return <SlipOptimizer onNavigate={setView} />;
       case 'matchups':    return <MatchupDeepDive />;
       case 'pricing':     return <SubscriptionPage />;
       case 'tutorial':    return <TutorialPage onNavigate={setView} />;
@@ -81,8 +81,10 @@ function App() {
 
 /* ── Nav bar (extracted for readability) ── */
 function Nav({ view, setView }) {
-  const { signOut, user } = useAuth();
+  const { signOut, user, tier } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const isPaid = tier && tier !== 'free';
 
   const navItems = [
     { id: 'projections', label: 'Pitchers' },
@@ -120,7 +122,11 @@ function Nav({ view, setView }) {
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        <button className="nav-upgrade" onClick={() => handleNav('pricing')}>Upgrade</button>
+        {isPaid ? (
+          <button className="nav-manage" onClick={() => handleNav('pricing')}>Manage Subscription</button>
+        ) : (
+          <button className="nav-upgrade" onClick={() => handleNav('pricing')}>Upgrade</button>
+        )}
         <button className="nav-signout" onClick={signOut} title={user?.email}>Sign Out</button>
         <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
           {menuOpen ? '✕' : '☰'}
@@ -138,7 +144,11 @@ function Nav({ view, setView }) {
             </button>
           ))}
           <div className="nav-mobile-divider" />
-          <button className="nav-mobile-btn" onClick={() => handleNav('pricing')}>Upgrade</button>
+          {isPaid ? (
+            <button className="nav-mobile-btn" onClick={() => handleNav('pricing')}>Manage Subscription</button>
+          ) : (
+            <button className="nav-mobile-btn" onClick={() => handleNav('pricing')}>Upgrade</button>
+          )}
           <button className="nav-mobile-btn nav-mobile-signout" onClick={() => { signOut(); setMenuOpen(false); }}>
             Sign Out
           </button>

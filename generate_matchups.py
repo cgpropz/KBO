@@ -51,6 +51,69 @@ STADIUM_COORDS = {
     "Changwon":       (35.2229, 128.5810),
 }
 
+# Compass bearing (deg, 0=N, 90=E) from home plate to straightaway center field.
+# Per MLB Rule 1.04, CF should ideally point ENE; most KBO parks follow this.
+# Values verified from OpenStreetMap pitch-polygon PCA where noted; others are
+# satellite-imagery estimates rounded to the nearest 15°. Used to translate raw
+# wind direction into "out to RF / in from CF / crosswind" semantics.
+# Gocheok Sky Dome is indoors -> wind effect not applicable.
+STADIUM_CF_BEARING = {
+    "Seoul-Jamsil":   30,    # NNE (satellite estimate)
+    "Suwon":          45,    # NE  (satellite estimate)
+    "Seoul-Gocheok":  None,  # dome
+    "Incheon-Munhak": 60,    # ENE (OSM PCA verified)
+    "Daejeon":        30,    # NNE (satellite estimate)
+    "Gwangju":        35,    # NE  (satellite estimate)
+    "Daegu":          10,    # NNE (OSM PCA verified)
+    "Busan-Sajik":    45,    # NE  (satellite estimate)
+    "Changwon":       80,    # E   (satellite estimate; NC Park has CF nearly due east)
+}
+
+# 8-point compass for human-readable wind FROM direction.
+_COMPASS_8 = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+
+def _deg_to_compass(deg):
+    if deg is None:
+        return None
+    idx = int((float(deg) + 22.5) // 45) % 8
+    return _COMPASS_8[idx]
+
+
+def _wind_effect(wind_from_deg, cf_bearing):
+    """
+    Translate raw wind direction (degrees the wind is COMING FROM, met. convention)
+    into a baseball-relative phrase using the stadium's home-plate-to-CF bearing.
+    Returns a short string like "Out to CF", "In from RF", "Crosswind L->R".
+    """
+    if wind_from_deg is None or cf_bearing is None:
+        return None
+    # Angle of wind source relative to CF axis (0 = wind from straight CF).
+    rel = (float(wind_from_deg) - float(cf_bearing)) % 360
+    # Bucket into 8 sectors of 45 deg, centered on each cardinal.
+    sector = int((rel + 22.5) // 45) % 8
+    # 0:from CF, 1:from RCF, 2:from RF (1B side), 3:to LF (wind from behind 3B-LF? no -> see mapping)
+    # Simpler: derive both source and destination relative to stadium axes.
+    # rel = where wind comes FROM, measured from CF axis.
+    # 0   -> from CF        => "In from CF"
+    # 45  -> from RCF       => "In from RCF"
+    # 90  -> from RF/1B side => "Crosswind R->L"
+    # 135 -> from RF foul/behind home-1B => "Out to LF"
+    # 180 -> from behind home plate => "Out to CF"
+    # 225 -> from LF foul/behind home-3B => "Out to RF"
+    # 270 -> from LF/3B side => "Crosswind L->R"
+    # 315 -> from LCF       => "In from LCF"
+    return [
+        "In from CF",
+        "In from RCF",
+        "Crosswind R->L",
+        "Out to LF",
+        "Out to CF",
+        "Out to RF",
+        "Crosswind L->R",
+        "In from LCF",
+    ][sector]
+
 TEAM_NAME_ALIASES = {
     "doosan": "Doosan",
     "doosan bears": "Doosan",
@@ -304,7 +367,7 @@ def fetch_weather(stadium):
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
-        f"&hourly=temperature_2m,precipitation_probability,rain,wind_speed_10m,weather_code"
+        f"&hourly=temperature_2m,precipitation_probability,rain,wind_speed_10m,wind_direction_10m,weather_code"
         f"&timezone=Asia%2FSeoul&forecast_days=1"
     )
     try:
@@ -314,18 +377,34 @@ def fetch_weather(stadium):
         times = data["hourly"]["time"]
         # Game time ~18:00 KST
         idx = next((i for i, t in enumerate(times) if t.endswith("T18:00")), 18)
-        temp_c  = data["hourly"]["temperature_2m"][idx]
-        precip  = int(data["hourly"]["precipitation_probability"][idx])
-        rain_mm = round(float(data["hourly"]["rain"][idx]), 1)
-        wind    = round(float(data["hourly"]["wind_speed_10m"][idx]), 1)
-        code    = int(data["hourly"]["weather_code"][idx])
+        temp_c   = data["hourly"]["temperature_2m"][idx]
+        precip   = int(data["hourly"]["precipitation_probability"][idx])
+        rain_mm  = round(float(data["hourly"]["rain"][idx]), 1)
+        wind     = round(float(data["hourly"]["wind_speed_10m"][idx]), 1)
+        wind_deg = int(round(float(data["hourly"]["wind_direction_10m"][idx])))
+        code     = int(data["hourly"]["weather_code"][idx])
+        cf_bearing = STADIUM_CF_BEARING.get(stadium)
+        is_dome = cf_bearing is None and stadium in STADIUM_CF_BEARING
+        # Field-relative arrow rotation (deg, 0 = up/toward CF, 90 = right/RF,
+        # 180 = down/toward home, 270 = left/LF). Lets the UI render an arrow
+        # that always reads as "this is where the wind is pushing the ball".
+        wind_arrow_deg = None
+        if not is_dome and cf_bearing is not None:
+            wind_to = (wind_deg + 180) % 360  # direction wind is BLOWING TO
+            wind_arrow_deg = (wind_to - cf_bearing) % 360
         return {
-            "temp_f":    round(temp_c * 9 / 5 + 32, 1),
-            "temp_c":    round(temp_c, 1),
+            "temp_f":     round(temp_c * 9 / 5 + 32, 1),
+            "temp_c":     round(temp_c, 1),
             "precip_pct": precip,
-            "rain_mm":   rain_mm,
-            "wind_kmh":  wind,
-            "condition": _wmo_to_condition(code),
+            "rain_mm":    rain_mm,
+            "wind_kmh":   wind,
+            "wind_mph":   round(wind * 0.621371, 1),
+            "wind_deg":   wind_deg,
+            "wind_compass": _deg_to_compass(wind_deg),
+            "wind_effect": None if is_dome else _wind_effect(wind_deg, cf_bearing),
+            "wind_arrow_deg": wind_arrow_deg,
+            "is_dome":    is_dome,
+            "condition":  _wmo_to_condition(code),
         }
     except Exception as exc:
         print(f"  Weather fetch warning ({stadium}): {exc}")
@@ -541,6 +620,20 @@ def build_team_pitching(logs):
     return result
 
 
+def _name_parts(name):
+    """Normalize a name to a frozenset of lowercase parts, ignoring hyphens."""
+    return frozenset(name.lower().replace("-", " ").split())
+
+
+def _fuzzy_profile(query_name, profiles):
+    """Find a pitcher profile by matching name parts regardless of order/hyphens."""
+    q = _name_parts(query_name)
+    for pname, profile in profiles.items():
+        if _name_parts(pname) == q:
+            return profile
+    return None
+
+
 def main():
     logs = load_pitcher_logs()
     league_batting = load_league_batting()
@@ -567,13 +660,26 @@ def main():
     for stadium_name in set(STADIUMS.values()):
         weather_cache[stadium_name] = fetch_weather(stadium_name)
 
-    # Discover games from projections
+    # Discover games from all available slate sources so the matchup page never
+    # drops a game just because pitcher data is missing (TBD starters, name
+    # mismatches, etc.). Priority: K projections, batter projections, then game
+    # lines from the odds API.
     game_map = {}
-    for p in k_projs:
-        key = p["team"] + "@" + p["opponent"]
-        rev = p["opponent"] + "@" + p["team"]
+
+    def _add_game(team, opp):
+        if not team or not opp:
+            return
+        key = f"{team}@{opp}"
+        rev = f"{opp}@{team}"
         if key not in game_map and rev not in game_map:
-            game_map[key] = {"away": p["team"], "home": p["opponent"]}
+            game_map[key] = {"away": team, "home": opp}
+
+    for p in k_projs:
+        _add_game(p.get("team"), p.get("opponent"))
+    for p in b_projs:
+        _add_game(p.get("team"), p.get("opponent"))
+    for g in game_lines:
+        _add_game(g.get("away"), g.get("home"))
 
     matchups = []
     for key, game in game_map.items():
@@ -593,8 +699,12 @@ def main():
         home_profile = None
         if away_pitcher:
             away_profile = pitcher_profiles.get(away_pitcher["name"])
+            if not away_profile:
+                away_profile = _fuzzy_profile(away_pitcher["name"], pitcher_profiles)
         if home_pitcher:
             home_profile = pitcher_profiles.get(home_pitcher["name"])
+            if not home_profile:
+                home_profile = _fuzzy_profile(home_pitcher["name"], pitcher_profiles)
 
         # Collect all props for this game
         game_props = []

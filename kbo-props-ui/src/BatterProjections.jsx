@@ -27,10 +27,30 @@ const SCALE_RED = { r: 239, g: 68, b: 68 };
 const SCALE_NEUTRAL = { r: 203, g: 213, b: 225 };
 const SCALE_GREEN = { r: 34, g: 197, b: 94 };
 
+// Field-relative wind arrow. arrowDeg=0 → up = Out to CF, 90 → right = Out to RF.
+// Falls back to absolute compass if arrowDeg is unavailable.
+function WindArrow({ arrowDeg, deg, size = 12 }) {
+  let rotate;
+  if (arrowDeg != null) {
+    rotate = (Number(arrowDeg) - 90 + 360) % 360;
+  } else if (deg != null) {
+    rotate = ((Number(deg) + 180) - 90 + 360) % 360;
+  } else {
+    return null;
+  }
+  return (
+    <span
+      style={{ display: 'inline-block', transform: `rotate(${rotate}deg)`, width: size, height: size, lineHeight: 1, fontSize: size }}
+      aria-hidden="true"
+    >➤</span>
+  );
+}
+
 function BatterProjections() {
   const [data, setData] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
   const [photos, setPhotos] = useState({});
+  const [matchupData, setMatchupData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,13 +69,15 @@ function BatterProjections() {
       fetchDataSnapshot('batter_projections.json'),
       fetchDataSnapshot('prizepicks_props.json').catch(() => null),
       fetchDataSnapshot('player_photos.json').catch(() => null),
+      fetchDataSnapshot('matchup_data.json').catch(() => null),
     ])
-      .then(([batterSnap, ppSnap, photoSnap]) => {
+      .then(([batterSnap, ppSnap, photoSnap, matchupSnap]) => {
         const projections = batterSnap?.data?.projections || [];
         debugLog('Data loaded:', { projections: projections.length, ppCards: ppSnap?.data?.cards?.length || 0, photos: Object.keys(photoSnap?.data || {}).length, generatedAt: batterSnap?.data?.generated_at });
         setData(batterSnap?.data || null);
         setPrizepicksData(ppSnap?.data || null);
         setPhotos(photoSnap?.data || {});
+        setMatchupData(matchupSnap?.data || null);
         setLastUpdated(batterSnap?.updatedAt || batterSnap?.data?.generated_at || new Date().toISOString());
         setError(null);
         setLoading(false);
@@ -95,6 +117,16 @@ function BatterProjections() {
     }
     return lookup;
   }, [photos]);
+
+  // Map home_team -> weather (used for wind column)
+  const weatherByHome = useMemo(() => {
+    const map = {};
+    const list = matchupData?.matchups || [];
+    for (const m of list) {
+      if (m?.home && m?.weather) map[m.home] = m.weather;
+    }
+    return map;
+  }, [matchupData]);
 
   const playerInitials = (name) => String(name || '')
     .split(/\s+/)
@@ -193,14 +225,17 @@ function BatterProjections() {
 
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const recommendation =
+    const oddsType = p.odds_type || 'standard';
+    const isPromo = oddsType === 'demon' || oddsType === 'goblin';
+    let recommendation =
       edge == null
         ? 'NO LINE'
-        : edge > 0.3
+        : edge > 0
           ? 'OVER'
-          : edge < -0.3
+          : edge < 0
             ? 'UNDER'
             : 'PUSH';
+    if (isPromo && recommendation === 'UNDER') recommendation = 'PUSH';
 
     return {
       ...p,
@@ -237,6 +272,13 @@ function BatterProjections() {
     if (rec === 'UNDER') return 'val-under';
     if (rec === 'NO DATA') return 'val-nodata';
     return 'val-push';
+  };
+
+  const oddsTypeBadge = (oddsType) => {
+    if (oddsType === 'demon' || oddsType === 'goblin') {
+      return <span className={`odds-type-badge ${oddsType}`}>{oddsType.toUpperCase()}</span>;
+    }
+    return null;
   };
 
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -383,7 +425,8 @@ function BatterProjections() {
                 <th onClick={() => handleSort('opponent')}>Matchup {sortIcon('opponent')}</th>
                 <th onClick={() => handleSort('opp_pitcher')}>Opp Pitcher {sortIcon('opp_pitcher')}</th>
                 <th onClick={() => handleSort('opp_pitcher_hand')} className="col-center">Opp Hand {sortIcon('opp_pitcher_hand')}</th>
-                <th onClick={() => handleSort('vs_opp_hand_avg')} className="col-num">vs Opp {sortIcon('vs_opp_hand_avg')}</th>
+                <th className="col-center" title="Wind direction at home stadium (field-relative)">Wind</th>
+                <th onClick={() => handleSort('ba')} className="col-num">2026{sortIcon('ba')}</th>
                 <th onClick={() => handleSort('vs_rhp_avg')} className="col-num">vs RHP {sortIcon('vs_rhp_avg')}</th>
                 <th onClick={() => handleSort('vs_lhp_avg')} className="col-num">vs LHP {sortIcon('vs_lhp_avg')}</th>
                 <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
@@ -426,7 +469,22 @@ function BatterProjections() {
                   <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
                   <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : 'UNK'}</td>
-                  <td className={`col-num mono ${p.vs_opp_hand_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_opp_hand_avg)}>{p.vs_opp_hand_avg != null ? Number(p.vs_opp_hand_avg).toFixed(3) : '—'}</td>
+                  {(() => {
+                    const w = weatherByHome[p.home_team];
+                    if (!w) return <td className="col-center cell-na">—</td>;
+                    if (w.is_dome) return <td className="col-center mono" title="Dome — no wind"><span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Dome</span></td>;
+                    const effect = w.wind_effect || w.wind_compass || '';
+                    const mph = w.wind_mph != null ? `${Math.round(w.wind_mph)}` : '';
+                    return (
+                      <td className="col-center mono" title={`${effect} · ${mph} mph`}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: '#cbd5e1' }}>
+                          <WindArrow arrowDeg={w.wind_arrow_deg} deg={w.wind_deg} />
+                          <span>{mph} mph</span>
+                        </span>
+                      </td>
+                    );
+                  })()}
+                  <td className={`col-num mono ${p.ba == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.ba)}>{p.ba != null ? Number(p.ba).toFixed(3) : '—'}</td>
                   <td className={`col-num mono ${p.vs_rhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_rhp_avg)}>{p.vs_rhp_avg != null ? Number(p.vs_rhp_avg).toFixed(3) : '—'}</td>
                   <td className={`col-num mono ${p.vs_lhp_avg == null ? 'cell-na' : ''}`} style={getSplitAvgStyle(p.vs_lhp_avg)}>{p.vs_lhp_avg != null ? Number(p.vs_lhp_avg).toFixed(3) : '—'}</td>
                   <td
@@ -469,7 +527,7 @@ function BatterProjections() {
                   >
                     {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '—'}
                   </td>
-                  <td className={`col-num mono ${p.rating != null ? (p.rating >= 55 ? 'rate-high' : p.rating < 45 ? 'rate-low' : '') : ''}`}>
+                  <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
                   </td>
                   <td className={`col-num mono ${p.edge != null ? (p.edge > 0 ? 'var-pos' : p.edge < -0.3 ? 'var-neg' : '') : 'cell-na'}`}>
@@ -477,6 +535,7 @@ function BatterProjections() {
                   </td>
                   <td className="col-center">
                     <span className={`val-badge ${getValClass(p.recommendation)}`}>{p.recommendation}</span>
+                    {oddsTypeBadge(p.odds_type)}
                   </td>
                 </tr>
               ))}
@@ -489,10 +548,9 @@ function BatterProjections() {
           <div className="bp-panel bp-legend">
             <h3 className="bp-panel-title">LEGEND</h3>
             <div className="bp-legend-items">
-              <div className="bp-legend-item"><span className="val-badge val-over">OVER</span><span>Proj &gt; Line + 0.3</span></div>
-              <div className="bp-legend-item"><span className="val-badge val-under">UNDER</span><span>Proj &lt; Line - 0.3</span></div>
-              <div className="bp-legend-item"><span className="val-badge val-push">PUSH</span><span>Within ±0.3</span></div>
-              <div className="bp-legend-item"><span className="val-badge val-nodata">NO DATA</span><span>No game logs</span></div>
+              <div className="bp-legend-item"><span className="val-badge val-over">OVER</span><span>Projection &gt; Line</span></div>
+              <div className="bp-legend-item"><span className="val-badge val-under">UNDER</span><span>Projection &lt; Line</span></div>
+              <div className="bp-legend-item"><span className="val-badge val-push">PUSH</span><span>Projection = Line</span></div>
             </div>
           </div>
 
