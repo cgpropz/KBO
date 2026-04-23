@@ -473,6 +473,16 @@
 .edge-pos { color: #22c55e; }
 .edge-neg { color: #ef4444; }
 
+/* Last-10 mini chart on landing value-pick cards */
+.lp-pick-chart {
+  margin: 0.4rem 0 0.6rem;
+  padding: 0.35rem 0.25rem 0.1rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 8px;
+}
+.lp-pick-chart .highcharts-container { width: 100% !important; }
+
 .lp-pick-badge {
   display: inline-block;
   padding: 0.28rem 0.62rem;

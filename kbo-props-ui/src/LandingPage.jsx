@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import './LandingPage.css';
 import { fetchDataSnapshot } from './dataUrl';
 
@@ -239,6 +241,43 @@ function LandingPage({ onNavigate }) {
     return map;
   })();
 
+  // Per-card game log lookup mirroring lineMap so the landing cards can show
+  // the same L10 mini-chart that PlayerPropsUI renders. Keyed by
+  // `${type}@@${stat}@@${team}@@${opp}@@${nameKey}`.
+  const propInfoLookup = (() => {
+    const map = new Map();
+    const cards = prizepicksData?.cards || [];
+    for (const card of cards) {
+      const type = card?.type;
+      const team = card?.team || '';
+      const opp = card?.opponent || '';
+      const norm = normalizeName(card?.name);
+      const sig = nameSignature(card?.name);
+      const games = Array.isArray(card?.games) ? card.games : [];
+      for (const prop of card?.props || []) {
+        const stat = prop?.stat;
+        const recentValues = Array.isArray(prop?.recent_values) ? prop.recent_values : [];
+        if (!stat || recentValues.length === 0) continue;
+        const info = { recentValues, games };
+        const k1 = `${type}@@${stat}@@${team}@@${opp}@@${norm}`;
+        const k2 = `${type}@@${stat}@@${team}@@${opp}@@sig:${sig}`;
+        if (!map.has(k1)) map.set(k1, info);
+        if (!map.has(k2)) map.set(k2, info);
+      }
+    }
+    return map;
+  })();
+
+  const lookupGameLog = (type, stat, team, opp, name) => {
+    const norm = normalizeName(name);
+    const sig = nameSignature(name);
+    return (
+      propInfoLookup.get(`${type}@@${stat}@@${team}@@${opp}@@${norm}`)
+      || propInfoLookup.get(`${type}@@${stat}@@${team}@@${opp}@@sig:${sig}`)
+      || null
+    );
+  };
+
   const kProjections = (kData?.projections || []).map((p) => {
     const statMap = {
       Strikeouts: 'Pitcher Strikeouts',
@@ -314,6 +353,14 @@ function LandingPage({ onNavigate }) {
   const photoLookup = buildPhotoLookup(photos);
   const resolvePhoto = (name) => photoLookup.get(normalizePhotoKey(name)) || null;
 
+  const pickGameLog = (pick, type, ppStat) => {
+    if (!pick) return null;
+    return lookupGameLog(type, ppStat, pick.team, pick.opponent, pick.name);
+  };
+  const topKGameLog = pickGameLog(topKPick, 'pitcher', 'Pitcher Strikeouts');
+  const topBatterGameLog = pickGameLog(topBatterPick, 'batter', 'Hits+Runs+RBIs');
+  const topTBGameLog = pickGameLog(topTBPick, 'batter', 'Total Bases');
+
   return (
     <div className={`lp ${animate ? 'lp-visible' : ''}`}>
       {/* Hero */}
@@ -386,6 +433,7 @@ function LandingPage({ onNavigate }) {
               typeLabel="STRIKEOUTS"
               cardClass="lp-pick-k"
               photoUrl={resolvePhoto(topKPick.name)}
+              gameLog={topKGameLog}
               onClick={() => onNavigate('projections')}
             />
           )}
@@ -395,6 +443,7 @@ function LandingPage({ onNavigate }) {
               typeLabel="H+R+RBI"
               cardClass="lp-pick-hrr"
               photoUrl={resolvePhoto(topBatterPick.name)}
+              gameLog={topBatterGameLog}
               onClick={() => onNavigate('batters')}
             />
           )}
@@ -404,6 +453,7 @@ function LandingPage({ onNavigate }) {
               typeLabel="TOTAL BASES"
               cardClass="lp-pick-tb"
               photoUrl={resolvePhoto(topTBPick.name)}
+              gameLog={topTBGameLog}
               onClick={() => onNavigate('batters')}
             />
           )}
@@ -563,7 +613,7 @@ function LandingPage({ onNavigate }) {
   );
 }
 
-function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, onClick }) {
+function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick }) {
   const meterWidth = Math.max(8, Math.min(100, pick.valuePct * 4.2));
   const teamMeta = TEAMS[pick.team];
   const oppMeta = TEAMS[pick.opponent];
@@ -658,9 +708,118 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, onClick }) {
         <span style={{ width: `${meterWidth}%` }} />
       </div>
 
+      {gameLog && gameLog.recentValues && gameLog.recentValues.length > 0 && (
+        <ValuePickMiniChart gameLog={gameLog} line={pick.line} />
+      )}
+
       <div className={`lp-pick-badge ${pick.recommendation === 'OVER' ? 'badge-over' : pick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
         {pick.recommendation} · Raw Edge {formatSigned(pick.edge)}
       </div>
+    </div>
+  );
+}
+
+function fmtChartDate(d) {
+  if (!d) return '';
+  const s = String(d);
+  if (s.includes('/')) {
+    const [m, day] = s.split('/');
+    return `${m}/${day}`;
+  }
+  const p = s.split('-');
+  return p.length >= 3 ? `${p[1]}/${p[2]}` : s;
+}
+
+function ValuePickMiniChart({ gameLog, line }) {
+  const basePath = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/';
+  const limit = 10;
+  const recent = (gameLog.recentValues || []).slice(0, limit);
+  const games = (gameLog.games || []).slice(0, recent.length);
+  const values = [...recent].reverse();
+  const dates = [...games.map((g) => fmtChartDate(g?.date))].reverse();
+  const opps = [...games.map((g) => g?.opp || '')].reverse();
+
+  const options = useMemo(() => {
+    const colors = values.map((v) => (v > line ? '#22c55e' : v === line ? '#64748b' : '#ef4444'));
+    return {
+      chart: {
+        type: 'column',
+        backgroundColor: 'transparent',
+        height: 150,
+        spacing: [4, 0, 0, 0],
+        style: { fontFamily: 'inherit' },
+      },
+      title: { text: null },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      xAxis: {
+        categories: dates,
+        lineColor: '#1e293b',
+        tickLength: 0,
+        labels: {
+          useHTML: true,
+          rotation: 0,
+          style: { color: '#64748b', fontSize: '8px', textAlign: 'center' },
+          formatter: function () {
+            const opp = (opps || [])[this.pos] || '';
+            const logo = TEAM_LOGOS[opp];
+            const logoHtml = logo
+              ? `<img src="${basePath}${logo.replace(/^\//, '')}" style="width:12px;height:12px;display:block;margin:0 auto 1px;" />`
+              : '';
+            return `<div style="text-align:center;line-height:1.05">${logoHtml}<span>${this.value}</span></div>`;
+          },
+        },
+      },
+      yAxis: {
+        title: { text: null },
+        gridLineColor: '#1e293b',
+        labels: { enabled: false },
+        plotLines: [
+          {
+            value: line,
+            color: '#a78bfa',
+            width: 2,
+            dashStyle: 'Dash',
+            zIndex: 5,
+            label: {
+              text: `Line: ${line}`,
+              align: 'right',
+              style: { color: '#a78bfa', fontSize: '9px', fontWeight: '700' },
+              y: -2,
+            },
+          },
+        ],
+      },
+      plotOptions: {
+        column: {
+          borderWidth: 0,
+          borderRadius: 3,
+          colorByPoint: true,
+          colors,
+          dataLabels: {
+            enabled: true,
+            style: { color: '#e2e8f0', fontSize: '9px', fontWeight: '700', textOutline: 'none' },
+            format: '{y}',
+          },
+        },
+      },
+      tooltip: {
+        backgroundColor: '#1a1a2e',
+        borderColor: '#334155',
+        style: { color: '#e2e8f0', fontSize: '11px' },
+        formatter: function () {
+          const v = this.y;
+          const st = v > line ? 'OVER ✅' : v === line ? 'PUSH' : 'UNDER ❌';
+          return `<b>${this.x}</b><br/>Value: <b>${v}</b><br/>${st}`;
+        },
+      },
+      series: [{ data: values }],
+    };
+  }, [values, dates, opps, line, basePath]);
+
+  return (
+    <div className="lp-pick-chart" onClick={(e) => e.stopPropagation()}>
+      <HighchartsReact highcharts={Highcharts} options={options} />
     </div>
   );
 }
