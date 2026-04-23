@@ -648,12 +648,57 @@ def build_pitcher_whip_index(rows):
 pitcher_whip_by_name, pitcher_norm_map, pitcher_parts_map, pitcher_whip_by_team = build_pitcher_whip_index(pitcher_logs)
 
 
+def load_pitcher_rankings_whip():
+    """Secondary WHIP source: pitcher_rankings.json (built by generate_rankings.py).
+
+    Same underlying logs feed both, but rankings are computed against the
+    full combined log set so this catches cases where a pitcher rolls into
+    the qualified board first. Returns {normalized_name: whip}.
+    """
+    path = os.path.join(BASE, "kbo-props-ui", "public", "data", "pitcher_rankings.json")
+    out = {}
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception:
+        return out
+    rows = data if isinstance(data, list) else data.get("data", [])
+    for entry in rows or []:
+        nm = (entry or {}).get("name", "").strip()
+        whip = (entry or {}).get("whip")
+        if not nm or whip in (None, ""):
+            continue
+        try:
+            out[normalize_name(nm).lower()] = float(whip)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+pitcher_whip_by_rankings = load_pitcher_rankings_whip()
+
+
 def resolve_opp_pitcher_context(opp_team):
+    """Resolve today's opposing starter and his individual season WHIP.
+
+    Priority order:
+      1. Per-pitcher WHIP from combined game logs (pitcher_logs.json).
+      2. Per-pitcher WHIP from pitcher_rankings.json (qualified board).
+      3. None — UI/projection treats as neutral. We intentionally do NOT
+         fall back to team-aggregate WHIP because that conflates the
+         starter with relievers / other rotation arms and ships a number
+         that the column header presents as the starter's own.
+    """
     opp_pitcher = starter_by_team.get(opp_team, "")
     resolved_pitcher = resolve_pitcher_name(opp_pitcher, pitcher_norm_map, pitcher_parts_map)
     whip = pitcher_whip_by_name.get(resolved_pitcher)
     if whip is None:
-        whip = pitcher_whip_by_team.get(opp_team)
+        # Try rankings board by normalized name (covers minor casing/spacing diffs).
+        for candidate in (resolved_pitcher, opp_pitcher):
+            key = normalize_name(candidate).lower()
+            if key in pitcher_whip_by_rankings:
+                whip = pitcher_whip_by_rankings[key]
+                break
     opp_pitcher_hand = get_pitcher_hand(opp_pitcher, resolved_pitcher)
     return opp_pitcher, whip, opp_pitcher_hand
 

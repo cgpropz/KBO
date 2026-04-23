@@ -103,6 +103,31 @@ def main() -> int:
         if missing_ctx:
             failures.append(f"pitcher rankings missing opponent context for {len(missing_ctx)} rows")
 
+    # Today's-starter WHIP coverage: warn if a starter on today's batter
+    # projections has no WHIP source (individual logs OR rankings). This is
+    # intentionally a warning, not a failure — production used to silently
+    # substitute team-aggregate WHIP, which shipped misleading per-pitcher
+    # numbers (e.g. Lee Eui-lee 0.96 when his real season WHIP was 2.20).
+    # Now we leave WHIP null when no per-pitcher source exists.
+    batter_proj_path = PUBLIC / "batter_projections.json"
+    if batter_proj_path.exists():
+        bproj = load_json(batter_proj_path)
+        bproj_data = bproj.get("data", bproj) if isinstance(bproj, dict) else {}
+        projs = bproj_data.get("projections", []) if isinstance(bproj_data, dict) else []
+        missing_whip = sorted({
+            (p.get("opp_pitcher"), p.get("opponent"))
+            for p in projs
+            if isinstance(p, dict)
+            and p.get("opp_pitcher")
+            and (p.get("opp_pitcher_whip") is None)
+        })
+        if missing_whip:
+            preview = [f"{name} ({team})" for name, team in missing_whip[:6]]
+            warnings.append(
+                f"batter_projections: {len(missing_whip)} starters lack per-pitcher WHIP "
+                f"(rendered as '—' in UI): {preview}"
+            )
+
     if not props.get("generated_at"):
         warnings.append("prizepicks_props.json missing generated_at")
 
