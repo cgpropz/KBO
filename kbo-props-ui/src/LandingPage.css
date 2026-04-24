@@ -172,14 +172,16 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0.75rem 1.5rem;
   background: #0a0a0a;
   border-top: 1px solid #1a1a1a;
   border-bottom: 1px solid #1a1a1a;
   overflow-x: auto;
+  scrollbar-width: none;
 }
+.lp-ticker::-webkit-scrollbar { display: none; }
 .lp-ticker-label {
   font-size: 0.65rem;
   font-weight: 700;
@@ -214,7 +216,7 @@
 
 /* ── Sections ── */
 .lp-section {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 1rem;
 }
@@ -245,19 +247,21 @@
   gap: 1rem;
 }
 .lp-pick-card {
-  background: radial-gradient(120% 180% at 0% 0%, rgba(124, 58, 237, 0.12), rgba(17, 17, 17, 0.96));
+  background:
+    radial-gradient(120% 180% at 0% 0%, rgba(124, 58, 237, 0.12), rgba(17, 17, 17, 0.96));
   border: 1px solid #2a2a35;
-  border-radius: 12px;
-  padding: 1.1rem;
+  border-radius: 14px;
+  padding: 1.15rem 1.15rem 1.1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(6px);
 }
 .lp-pick-card:hover {
   border-color: #7c3aed;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.22);
 }
 .lp-pick-card::before {
   content: '';
@@ -750,17 +754,34 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .lp-section { padding: 2rem 1.25rem 1rem; }
+  .lp-hero { padding: 3rem 1.5rem 2.5rem; }
+}
+
+@media (max-width: 768px) {
   .lp-hero { padding: 2.5rem 1rem 2rem; }
-  .lp-hero-content { padding: 1rem 0.95rem; }
+  .lp-hero-content { padding: 1.1rem 1rem; }
+  .lp-logo-k, .lp-logo-sub { font-size: 3rem; }
+  .lp-section { padding: 1.75rem 1rem 0.75rem; }
+  .lp-section-title { font-size: 1.05rem; }
+  .lp-picks-grid { grid-template-columns: 1fr; }
+  .lp-ticker { padding: 0.6rem 1rem; gap: 0.6rem; }
+  .lp-ticker-games { justify-content: flex-start; flex-wrap: nowrap; }
+  .lp-game-chip { font-size: 0.75rem; padding: 0.28rem 0.6rem; }
+}
+
+@media (max-width: 640px) {
+  .lp-hero { padding: 2.25rem 0.85rem 1.75rem; }
+  .lp-hero-content { padding: 0.95rem 0.85rem; }
   .lp-logo-k, .lp-logo-sub { font-size: 2.5rem; }
   .lp-logo-sub { letter-spacing: 4px; }
   .lp-logo-divider { height: 2rem; }
   .lp-hero-stats { gap: 0.5rem; }
   .lp-stat-pill { padding: 0.4rem 0.8rem; min-width: 70px; }
   .lp-stat-num { font-size: 1.2rem; }
-  .lp-section { padding: 1.5rem 1rem 0.5rem; }
-  .lp-picks-grid { grid-template-columns: 1fr; }
+  .lp-section { padding: 1.5rem 0.85rem 0.5rem; }
+  .lp-pick-card { padding: 0.95rem; }
   .lp-pick-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-nav-grid { grid-template-columns: 1fr; }
   .lp-showcase-heading { align-items: flex-start; flex-direction: column; }

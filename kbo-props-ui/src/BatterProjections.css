@@ -108,12 +108,20 @@
 
 /* Table */
 .bp-table-wrap {
-  width: min(100%, calc(100vw - 0.75rem));
+  width: 100%;
   margin: 0 auto;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border-radius: 12px;
   border: 1px solid #222;
+  background: #000;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #000;
 }
+.bp-table-wrap::-webkit-scrollbar { height: 8px; }
+.bp-table-wrap::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+.bp-table-wrap::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 .bp-table {
   width: 100%; border-collapse: collapse; font-size: clamp(0.72rem, 0.72vw, 0.88rem);
 }
@@ -279,14 +287,9 @@
 @media (max-width: 768px) {
   .bp-bottom-panels { grid-template-columns: 1fr; }
   .bp-title { font-size: 1.2rem; }
-  .bp-main { padding: 1rem 0.3rem; }
-  .bp-table-wrap {
-    width: calc(100vw - 0.5rem);
-    margin-left: calc(50% - 50vw + 0.25rem);
-    margin-right: calc(50% - 50vw + 0.25rem);
-  }
-  .bp-table { font-size: 0.72rem; }
-  .bp-table th, .bp-table td { padding: 0.42rem 0.28rem; }
+  .bp-main { padding: 0.75rem 0.4rem; }
+  .bp-table { font-size: 0.78rem; }
+  .bp-table th, .bp-table td { padding: 0.45rem 0.4rem; }
   .bp-player-search { min-width: 140px; }
 }
 
