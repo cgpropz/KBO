@@ -62,6 +62,11 @@ STEPS = [
         "critical": True,
     },
     {
+        "name": "Resolve Missing Pitcher pcodes",
+        "cmd": [PYTHON, os.path.join(BASE, "find_missing_pcodes.py"), "--apply"],
+        "skip_flag": "--skip-pcodes",
+    },
+    {
         "name": "Pitcher Game Logs",
         "cmd": [PYTHON, os.path.join(BASE, "Pitchers-Data", "NEWPITCHER_LOG25.py")],
         "skip_flag": "--skip-logs",
