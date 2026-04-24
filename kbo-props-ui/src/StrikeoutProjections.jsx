@@ -2,6 +2,34 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 
+// Hit rate color scale (matches BatterProjections)
+const HITRATE_MIN = 30;
+const HITRATE_MID = 50;
+const HITRATE_MAX = 75;
+const SCALE_RED = [239, 68, 68];
+const SCALE_NEUTRAL = [203, 213, 225];
+const SCALE_GREEN = [34, 197, 94];
+const lerp = (a, b, t) => a + (b - a) * t;
+const blendColor = (c1, c2, t) => c1.map((v, i) => Math.round(lerp(v, c2[i], t)));
+const getHitRateStyle = (rate) => {
+  if (rate == null || !Number.isFinite(Number(rate))) return {};
+  const r = Math.max(HITRATE_MIN, Math.min(HITRATE_MAX, Number(rate)));
+  let rgb;
+  if (r <= HITRATE_MID) {
+    const t = (r - HITRATE_MIN) / (HITRATE_MID - HITRATE_MIN);
+    rgb = blendColor(SCALE_RED, SCALE_NEUTRAL, t);
+  } else {
+    const t = (r - HITRATE_MID) / (HITRATE_MAX - HITRATE_MID);
+    rgb = blendColor(SCALE_NEUTRAL, SCALE_GREEN, t);
+  }
+  const [rr, gg, bb] = rgb;
+  return {
+    color: `rgb(${rr}, ${gg}, ${bb})`,
+    backgroundColor: `rgba(${rr}, ${gg}, ${bb}, 0.18)`,
+    fontWeight: 700,
+  };
+};
+
 // KBO Team text colors (visible on dark backgrounds)
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -429,6 +457,8 @@ function StrikeoutProjections({ onNavigate }) {
                 <th>Prop</th>
                 <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
+                <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 Hit% {sortIcon('hit_rate_l5')}</th>
+                <th onClick={() => handleSort('hit_rate_full')} className="col-num">Full Hit% {sortIcon('hit_rate_full')}</th>
                 <th onClick={() => handleSort('rating')} className="col-num">Rating {sortIcon('rating')}</th>
                 <th onClick={() => handleSort('edge')} className="col-num">Variance {sortIcon('edge')}</th>
                 <th onClick={() => handleSort('recommendation')} className="col-center">VALUE {sortIcon('recommendation')}</th>
@@ -487,6 +517,12 @@ function StrikeoutProjections({ onNavigate }) {
                   <td className={`col-num mono ${p.projection == null ? 'cell-na' : 'col-projection'}`}>
                     {p.projection != null ? p.projection.toFixed(1) : '#N/A'}
                   </td>
+                  <td className="col-num mono" style={getHitRateStyle(p.hit_rate_l5)}>
+                    {p.hit_rate_l5 != null ? `${Math.round(p.hit_rate_l5)}%` : '—'}
+                  </td>
+                  <td className="col-num mono" style={getHitRateStyle(p.hit_rate_full)}>
+                    {p.hit_rate_full != null ? `${Math.round(p.hit_rate_full)}%` : '—'}
+                  </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
                   </td>
@@ -506,7 +542,7 @@ function StrikeoutProjections({ onNavigate }) {
                 </tr>
                 {isExpanded && (
                   <tr className="so-detail-row">
-                    <td colSpan="12">
+                    <td colSpan="14">
                       <div className="so-detail-panel">
                         {detail ? (
                           <>

@@ -656,6 +656,39 @@ def resolve_name(name, norm_map, parts_map):
     return name
 
 
+def _stat_value_for_prop(game, prop_key):
+    if prop_key == "strikeouts":
+        return game.get("so", 0)
+    if prop_key == "hits_allowed":
+        return game.get("ha", 0)
+    if prop_key == "pitching_outs":
+        ip = game.get("ip", 0) or 0
+        return round(ip * 3)
+    return None
+
+
+def compute_hit_rates(games, prop_key, line):
+    """Return (hit_rate_l5, hit_rate_full, recent_values_l10) vs OVER `line`.
+
+    games: list (already ordered most-recent-first) of pitcher game dicts.
+    Returns None for a rate when no games are available.
+    """
+    if line is None or not games:
+        return None, None, []
+    season_games = [g for g in games if g.get("season") == 2026] or games
+    values_full = [_stat_value_for_prop(g, prop_key) for g in season_games]
+    values_full = [v for v in values_full if v is not None]
+    values_l5 = values_full[:5]
+    recent_l10 = values_full[:10]
+    hr_l5 = (sum(1 for v in values_l5 if v > line) / len(values_l5) * 100) if values_l5 else None
+    hr_full = (sum(1 for v in values_full if v > line) / len(values_full) * 100) if values_full else None
+    return (
+        round(hr_l5, 1) if hr_l5 is not None else None,
+        round(hr_full, 1) if hr_full is not None else None,
+        recent_l10,
+    )
+
+
 def summarize_games(games, league_soip, league_ipg, league_hits_per_ip):
     if not games:
         return None
@@ -969,6 +1002,7 @@ def main():
         strikeout_pp = resolve_pp_entry(pp_strikeouts, display_name, resolved, p.get("team", ""), opp)
         strikeout_line = strikeout_pp["line"] if strikeout_pp else None
         strikeout_edge = (strikeout_projection - strikeout_line) if strikeout_line is not None else None
+        so_hr_l5, so_hr_full, so_recent = compute_hit_rates(games, "strikeouts", strikeout_line)
         projections.append({
             "name": display_name,
             "team": p.get("team", ""),
@@ -991,6 +1025,9 @@ def main():
             "opp_factor": round(k_opp_factor, 3),
             "whip_factor": 1.0,
             "form_factor": round(strikeout_form_factor, 3),
+            "hit_rate_l5": so_hr_l5,
+            "hit_rate_full": so_hr_full,
+            "recent_values": so_recent,
             "source": source,
         })
 
@@ -1000,6 +1037,7 @@ def main():
         hits_pp = resolve_pp_entry(pp_hits_allowed, display_name, resolved, p.get("team", ""), opp)
         hits_line = hits_pp["line"] if hits_pp else None
         hits_edge = (hits_projection - hits_line) if hits_line is not None else None
+        ha_hr_l5, ha_hr_full, ha_recent = compute_hit_rates(games, "hits_allowed", hits_line)
         projections.append({
             "name": display_name,
             "team": p.get("team", ""),
@@ -1022,6 +1060,9 @@ def main():
             "opp_factor": round(hits_opp_factor, 3),
             "whip_factor": 1.0,
             "form_factor": round(hits_form_factor, 3),
+            "hit_rate_l5": ha_hr_l5,
+            "hit_rate_full": ha_hr_full,
+            "recent_values": ha_recent,
             "source": source,
         })
 
@@ -1035,6 +1076,7 @@ def main():
         outs_pp = resolve_pp_entry(pp_pitching_outs, display_name, resolved, p.get("team", ""), opp)
         outs_line = outs_pp["line"] if outs_pp else None
         outs_edge = (outs_projection - outs_line) if outs_line is not None else None
+        outs_hr_l5, outs_hr_full, outs_recent = compute_hit_rates(games, "pitching_outs", outs_line)
         projections.append({
             "name": display_name,
             "team": p.get("team", ""),
@@ -1058,6 +1100,9 @@ def main():
             "opp_factor": round(outs_opp_factor, 3),
             "whip_factor": 1.0,
             "form_factor": round(outs_form_factor, 3),
+            "hit_rate_l5": outs_hr_l5,
+            "hit_rate_full": outs_hr_full,
+            "recent_values": outs_recent,
             "source": source,
         })
 
