@@ -402,7 +402,10 @@ def main():
     # Index pitcher logs by name
     pitcher_logs_by_name = defaultdict(list)
     for log in pitcher_logs:
-        pitcher_logs_by_name[log["Name"]].append(log)
+        nm = log.get("Name")
+        if not nm:
+            continue
+        pitcher_logs_by_name[nm].append(log)
 
     # Index batter logs by name
     batter_logs_by_name = defaultdict(list)
@@ -449,16 +452,33 @@ def main():
         if is_pitcher:
             shared_alias_name = pitcher_aliases.get(nn)
             sig_name = sig_pitcher.get(name_signature(player_name))
-            if shared_alias_name:
-                log_name = shared_alias_name
-            elif aliased_name:
-                log_name = aliased_name
-            elif nn in norm_pitcher:
-                log_name = norm_pitcher[nn]
-            elif sig_name:
-                log_name = sig_name
-            else:
-                log_name = player_name
+            # Build candidate chain; pick the first one that actually has logs,
+            # falling back to the original PP name if nothing matches.
+            _candidates = [
+                shared_alias_name,
+                aliased_name,
+                norm_pitcher.get(nn),
+                sig_name,
+            ]
+            log_name = next(
+                (c for c in _candidates if c and pitcher_logs_by_name.get(c)),
+                None,
+            )
+            if log_name is None:
+                # No candidate has logs — keep original alias resolution order
+                # so the card still renders (just with empty games).
+                log_name = (
+                    shared_alias_name
+                    or aliased_name
+                    or norm_pitcher.get(nn)
+                    or sig_name
+                    or player_name
+                )
+                if not pitcher_logs_by_name.get(log_name):
+                    print(
+                        f"  ⚠️  No pitcher logs for {player_name!r} "
+                        f"(resolved to {log_name!r}); chart will be empty."
+                    )
             pitcher_props = [
                 p for p in props
                 if p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")

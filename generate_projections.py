@@ -179,18 +179,21 @@ def update_persistent_pitcher_maps(pp_maps, starters, games_by_name):
         opp = item["opponent"]
         prev_target = str(pp_map.get(pp_name) or "").strip()
 
-        target = resolve_pitcher_alias(pp_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
+        # Prefer a target that exists in pitcher_logs (game_names) since that's
+        # what downstream consumers (generate_props.py) key off of. Fall back
+        # to the handedness map keys only if no log entry exists.
+        target = resolve_pitcher_alias(pp_name, game_names, game_norm_idx, game_parts_idx)
         if not target:
-            target = resolve_pitcher_alias(pp_name, game_names, game_norm_idx, game_parts_idx)
+            target = resolve_pitcher_alias(pp_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
 
         starter = starter_by_team_opp.get((team, opp))
         starter_name = str(starter.get("name") or "").strip() if starter else ""
         starter_pcode = str(starter.get("pcode") or "").strip() if starter else ""
 
         if not target and starter_name:
-            target = resolve_pitcher_alias(starter_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
-        if not target and starter_name:
             target = resolve_pitcher_alias(starter_name, game_names, game_norm_idx, game_parts_idx)
+        if not target and starter_name:
+            target = resolve_pitcher_alias(starter_name, set(hands_by_name.keys()), {k: v[0] for k, v in hand_norm_idx.items()}, {k: v[0] for k, v in hand_parts_idx.items()})
         if not target and starter_pcode and starter_pcode in hand_by_pcode:
             target = hand_by_pcode[starter_pcode][0]
 
