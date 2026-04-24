@@ -57,6 +57,7 @@ function BatterProjections() {
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
+  const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [playerSearch, setPlayerSearch] = useState('');
 
@@ -180,7 +181,10 @@ function BatterProjections() {
     'Total Bases': 'Total Bases',
   };
 
-  const ppLineByKey = (() => {
+  // Map keyed by `${stat}@@${team}@@${opp}@@${nameKey}` -> array of
+  // { line, odds_type } variants from the live PrizePicks card. Multiple
+  // variants exist when PP offers standard + goblin/demon for the same prop.
+  const ppVariantsByKey = (() => {
     const map = new Map();
     const cards = prizepicksData?.cards || [];
     for (const card of cards) {
@@ -197,18 +201,41 @@ function BatterProjections() {
         if (!Number.isFinite(line)) continue;
         if (!['Hits+Runs+RBIs', 'Total Bases'].includes(stat)) continue;
         if (!byStat.has(stat)) byStat.set(stat, []);
-        byStat.get(stat).push(line);
+        byStat.get(stat).push({
+          line,
+          odds_type: (prop?.odds_type || 'standard').toLowerCase(),
+        });
       }
 
-      for (const [stat, lines] of byStat.entries()) {
-        lines.sort((a, b) => a - b);
-        const canonicalLine = lines[Math.floor(lines.length / 2)];
-        map.set(`${stat}@@${team}@@${opp}@@${norm}`, canonicalLine);
-        map.set(`${stat}@@${team}@@${opp}@@sig:${sig}`, canonicalLine);
+      for (const [stat, variants] of byStat.entries()) {
+        // Sort by line ascending so picks are stable.
+        variants.sort((a, b) => a.line - b.line);
+        map.set(`${stat}@@${team}@@${opp}@@${norm}`, variants);
+        map.set(`${stat}@@${team}@@${opp}@@sig:${sig}`, variants);
       }
     }
     return map;
   })();
+
+  // Pick the variant that best matches the projection's stored line/odds_type.
+  // 1) Exact line match preferred (and odds_type-equal break-tie if duplicates)
+  // 2) Same odds_type if the projection's odds_type appears live
+  // 3) Otherwise: median variant
+  const pickVariant = (variants, projLine, projOddsType) => {
+    if (!variants?.length) return null;
+    if (Number.isFinite(projLine)) {
+      const exact = variants.filter((v) => v.line === projLine);
+      if (exact.length) {
+        const match = exact.find((v) => v.odds_type === projOddsType);
+        return match || exact[0];
+      }
+    }
+    if (projOddsType) {
+      const sameType = variants.find((v) => v.odds_type === projOddsType);
+      if (sameType) return sameType;
+    }
+    return variants[Math.floor(variants.length / 2)];
+  };
 
   const mergedProjections = (data?.projections || []).map((p) => {
     const ppStat = propToPrizepicksStat[p.prop];
@@ -217,15 +244,22 @@ function BatterProjections() {
     const opp = p.opponent || '';
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
-    const liveLine =
-      ppLineByKey.get(`${ppStat}@@${team}@@${opp}@@${norm}`)
-      ?? ppLineByKey.get(`${ppStat}@@${team}@@${opp}@@sig:${sig}`);
+    const variants =
+      ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@${norm}`)
+      ?? ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@sig:${sig}`);
 
-    if (!Number.isFinite(liveLine)) return p;
+    const variant = pickVariant(
+      variants,
+      Number(p.line),
+      (p.odds_type || 'standard').toLowerCase(),
+    );
+    if (!variant) return p;
+
+    const liveLine = variant.line;
+    const oddsType = variant.odds_type;
 
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const oddsType = p.odds_type || 'standard';
     const isPromo = oddsType === 'demon' || oddsType === 'goblin';
     let recommendation =
       edge == null
@@ -240,6 +274,7 @@ function BatterProjections() {
     return {
       ...p,
       line: liveLine,
+      odds_type: oddsType,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
       rating: Number.isFinite(projection) && liveLine
         ? Number(((projection / liveLine) * 50).toFixed(1))
@@ -250,6 +285,11 @@ function BatterProjections() {
 
   const filtered = mergedProjections.filter((p) => {
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
+    if (oddsTypeFilter !== 'all') {
+      const ot = (p.odds_type || 'standard').toLowerCase();
+      if (oddsTypeFilter === 'promo' && ot !== 'goblin' && ot !== 'demon') return false;
+      if (oddsTypeFilter !== 'promo' && ot !== oddsTypeFilter) return false;
+    }
     if (playerSearch.trim()) {
       const query = playerSearch.trim().toLowerCase();
       if (!String(p.name || '').toLowerCase().includes(query)) return false;
@@ -388,6 +428,29 @@ function BatterProjections() {
               onClick={() => setPropFilter(f)}
             >
               {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'Total Bases'}
+            </button>
+          ))}
+
+          {[
+            { key: 'all', label: 'Any Line' },
+            { key: 'standard', label: 'Standard' },
+            { key: 'goblin', label: '🟢 Goblin' },
+            { key: 'demon', label: '🔴 Demon' },
+            { key: 'promo', label: 'Promos' },
+          ].map(({ key, label }) => (
+            <button
+              key={`ot-${key}`}
+              className={`bp-filter-btn bp-filter-btn-ot ${oddsTypeFilter === key ? 'active' : ''}`}
+              onClick={() => setOddsTypeFilter(key)}
+              title={
+                key === 'goblin' ? 'Easier line / lower payout'
+                : key === 'demon' ? 'Harder line / higher payout'
+                : key === 'promo' ? 'Goblin or Demon'
+                : key === 'standard' ? 'Standard PrizePicks line'
+                : 'Show all line types'
+              }
+            >
+              {label}
             </button>
           ))}
 

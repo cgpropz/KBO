@@ -53,6 +53,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
+  const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
   const [sortField, setSortField] = useState('edge');
   const [sortDir, setSortDir] = useState('desc');
   const [parlayPicks, setParlayPicks] = useState([]); // array of {name, team, opponent, prop, line, projection, edge, side}
@@ -201,7 +202,7 @@ function StrikeoutProjections({ onNavigate }) {
     return slatePairs.has(`${p.team}@@${p.opponent}`);
   });
 
-  const ppLineByKey = (() => {
+  const ppVariantsByKey = (() => {
     const map = new Map();
     const teamOppBuckets = new Map();
     const cards = prizepicksData?.cards || [];
@@ -219,35 +220,53 @@ function StrikeoutProjections({ onNavigate }) {
         if (!Number.isFinite(line)) continue;
         if (!['Pitcher Strikeouts', 'Hits Allowed', 'Pitching Outs'].includes(stat)) continue;
         if (!buckets.has(stat)) buckets.set(stat, []);
-        buckets.get(stat).push(line);
+        buckets.get(stat).push({
+          line,
+          odds_type: (prop?.odds_type || 'standard').toLowerCase(),
+        });
       }
 
-      for (const [stat, lines] of buckets.entries()) {
-        lines.sort((a, b) => a - b);
-        const canonicalLine = lines[Math.floor(lines.length / 2)];
+      for (const [stat, variants] of buckets.entries()) {
+        variants.sort((a, b) => a.line - b.line);
         const exactKey = `${stat}@@${team}@@${opp}@@${norm}`;
         const sigKey = `${stat}@@${team}@@${opp}@@sig:${sig}`;
         const teamOppKey = `${stat}@@${team}@@${opp}@@teamOpp`;
-        // Fallback: match by name+team only (no opponent) for cross-slate resilience
         const nameTeamKey = `${stat}@@${team}@@${norm}`;
         const sigTeamKey = `${stat}@@${team}@@sig:${sig}`;
-        map.set(exactKey, canonicalLine);
-        map.set(sigKey, canonicalLine);
-        if (!map.has(nameTeamKey)) map.set(nameTeamKey, canonicalLine);
-        if (!map.has(sigTeamKey)) map.set(sigTeamKey, canonicalLine);
+        map.set(exactKey, variants);
+        map.set(sigKey, variants);
+        if (!map.has(nameTeamKey)) map.set(nameTeamKey, variants);
+        if (!map.has(sigTeamKey)) map.set(sigTeamKey, variants);
         if (!teamOppBuckets.has(teamOppKey)) teamOppBuckets.set(teamOppKey, []);
-        teamOppBuckets.get(teamOppKey).push(canonicalLine);
+        teamOppBuckets.get(teamOppKey).push(variants);
       }
     }
 
-    for (const [key, values] of teamOppBuckets.entries()) {
-      const unique = [...new Set(values)];
-      if (unique.length === 1) {
-        map.set(key, unique[0]);
+    for (const [key, lists] of teamOppBuckets.entries()) {
+      // Only safe to use if exactly one variant-list across the bucket
+      const flat = lists.flat();
+      if (lists.length === 1) {
+        map.set(key, flat);
       }
     }
     return map;
   })();
+
+  const pickVariant = (variants, projLine, projOddsType) => {
+    if (!variants?.length) return null;
+    if (Number.isFinite(projLine)) {
+      const exact = variants.filter((v) => v.line === projLine);
+      if (exact.length) {
+        const match = exact.find((v) => v.odds_type === projOddsType);
+        return match || exact[0];
+      }
+    }
+    if (projOddsType) {
+      const sameType = variants.find((v) => v.odds_type === projOddsType);
+      if (sameType) return sameType;
+    }
+    return variants[Math.floor(variants.length / 2)];
+  };
 
   // Safely get opponent team stats
   const getOppStats = (opponent) => {
@@ -273,24 +292,37 @@ function StrikeoutProjections({ onNavigate }) {
     
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
-    let liveLine = null;
+    let variants = null;
     for (const ppStat of ppStats) {
       const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
       const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
       const teamOppKey = `${ppStat}@@${p.team}@@${p.opponent}@@teamOpp`;
-      // Fallback: name+team only (no opponent) for cross-slate resilience
       const nameTeamKey = `${ppStat}@@${p.team}@@${norm}`;
       const sigTeamKey = `${ppStat}@@${p.team}@@sig:${sig}`;
-      liveLine = ppLineByKey.get(exactKey) ?? ppLineByKey.get(sigKey) ?? ppLineByKey.get(teamOppKey) ?? ppLineByKey.get(nameTeamKey) ?? ppLineByKey.get(sigTeamKey);
-      if (Number.isFinite(liveLine)) break;
+      variants =
+        ppVariantsByKey.get(exactKey)
+        ?? ppVariantsByKey.get(sigKey)
+        ?? ppVariantsByKey.get(teamOppKey)
+        ?? ppVariantsByKey.get(nameTeamKey)
+        ?? ppVariantsByKey.get(sigTeamKey);
+      if (variants?.length) break;
     }
-    
+
+    const variant = pickVariant(
+      variants,
+      Number(p.line),
+      (p.odds_type || 'standard').toLowerCase(),
+    );
+    const liveLine = variant?.line ?? null;
+    const liveOddsType = variant?.odds_type ?? p.odds_type ?? 'standard';
+
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) && liveLine ? projection - liveLine : null;
 
     return {
       ...p,
-      line: liveLine ?? null,
+      line: liveLine,
+      odds_type: liveOddsType,
       edge: edge != null ? Number(edge.toFixed(1)) : null,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
       opp_k_pct: oppStats.k_pct,
@@ -299,9 +331,13 @@ function StrikeoutProjections({ onNavigate }) {
   });
 
   const filtered = mergedScoped.filter((p) => {
-    // Keep selected tab strict so filters only show the chosen prop type
-    if (selectedProp === 'all') return true;
-    return p.prop === selectedProp;
+    if (selectedProp !== 'all' && p.prop !== selectedProp) return false;
+    if (oddsTypeFilter !== 'all') {
+      const ot = (p.odds_type || 'standard').toLowerCase();
+      if (oddsTypeFilter === 'promo' && ot !== 'goblin' && ot !== 'demon') return false;
+      if (oddsTypeFilter !== 'promo' && ot !== oddsTypeFilter) return false;
+    }
+    return true;
   });
 
   // Always sort by highest rating by default
@@ -435,6 +471,29 @@ function StrikeoutProjections({ onNavigate }) {
               onClick={() => setSelectedProp(option.key)}
             >
               {option.label}
+            </button>
+          ))}
+          <span className="so-filter-divider" aria-hidden="true" />
+          {[
+            { key: 'all', label: 'Any Line' },
+            { key: 'standard', label: 'Standard' },
+            { key: 'goblin', label: '\uD83D\uDFE2 Goblin' },
+            { key: 'demon', label: '\uD83D\uDD34 Demon' },
+            { key: 'promo', label: 'Promos' },
+          ].map(({ key, label }) => (
+            <button
+              key={`ot-${key}`}
+              className={`so-filter-btn ${oddsTypeFilter === key ? 'active' : ''}`}
+              onClick={() => setOddsTypeFilter(key)}
+              title={
+                key === 'goblin' ? 'Easier line / lower payout'
+                : key === 'demon' ? 'Harder line / higher payout'
+                : key === 'promo' ? 'Goblin or Demon'
+                : key === 'standard' ? 'Standard PrizePicks line'
+                : 'Show all line types'
+              }
+            >
+              {label}
             </button>
           ))}
         </div>
