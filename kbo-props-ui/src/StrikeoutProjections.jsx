@@ -257,10 +257,15 @@ function StrikeoutProjections({ onNavigate }) {
     if (Number.isFinite(projLine)) {
       const exact = variants.filter((v) => v.line === projLine);
       if (exact.length) {
-        const match = exact.find((v) => v.odds_type === projOddsType);
-        return match || exact[0];
+        return (
+          exact.find((v) => v.odds_type === projOddsType)
+          || exact.find((v) => v.odds_type === 'standard')
+          || exact[0]
+        );
       }
     }
+    const standard = variants.find((v) => v.odds_type === 'standard');
+    if (standard) return standard;
     if (projOddsType) {
       const sameType = variants.find((v) => v.odds_type === projOddsType);
       if (sameType) return sameType;

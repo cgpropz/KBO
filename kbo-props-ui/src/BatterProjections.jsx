@@ -218,18 +218,24 @@ function BatterProjections() {
   })();
 
   // Pick the variant that best matches the projection's stored line/odds_type.
-  // 1) Exact line match preferred (and odds_type-equal break-tie if duplicates)
-  // 2) Same odds_type if the projection's odds_type appears live
-  // 3) Otherwise: median variant
+  // 1) Exact line match preferred (prefer same odds_type, then standard, then any)
+  // 2) Otherwise: prefer the Standard variant if PP offers one
+  // 3) Otherwise: same odds_type as the projection
+  // 4) Otherwise: median fallback
   const pickVariant = (variants, projLine, projOddsType) => {
     if (!variants?.length) return null;
     if (Number.isFinite(projLine)) {
       const exact = variants.filter((v) => v.line === projLine);
       if (exact.length) {
-        const match = exact.find((v) => v.odds_type === projOddsType);
-        return match || exact[0];
+        return (
+          exact.find((v) => v.odds_type === projOddsType)
+          || exact.find((v) => v.odds_type === 'standard')
+          || exact[0]
+        );
       }
     }
+    const standard = variants.find((v) => v.odds_type === 'standard');
+    if (standard) return standard;
     if (projOddsType) {
       const sameType = variants.find((v) => v.odds_type === projOddsType);
       if (sameType) return sameType;
