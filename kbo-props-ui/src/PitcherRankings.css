@@ -86,23 +86,32 @@
 
 /* Main */
 .rk-main {
-  max-width: 1400px;
+  max-width: 1680px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.25rem 1.25rem 2rem;
 }
 
 /* Table */
 .rk-table-wrap {
-  border-radius: 8px;
-  overflow: hidden;
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #222;
+  background: #000;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #000;
 }
+.rk-table-wrap::-webkit-scrollbar { height: 8px; }
+.rk-table-wrap::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+.rk-table-wrap::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 
 .rk-table {
   width: 100%;
+  min-width: 1180px;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .rk-table thead {
@@ -110,15 +119,17 @@
 }
 
 .rk-table th {
-  padding: 0.85rem 1rem;
+  padding: 0.7rem 0.7rem;
   text-align: left;
   font-weight: 700;
-  font-size: 0.85rem;
-  color: #fff;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #c4b5fd;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  border-bottom: 2px solid #333;
+  border-bottom: 2px solid #2a2a3e;
 }
 
 .rk-table th:hover { color: #a78bfa; }
@@ -128,9 +139,10 @@
 .sort-icon.active { color: #a78bfa; opacity: 1; }
 
 .rk-table td {
-  padding: 0.7rem 1rem;
+  padding: 0.6rem 0.7rem;
   white-space: nowrap;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid #161616;
+  font-size: 0.88rem;
 }
 
 .rk-row-even td { background: #0a0a0a; }
@@ -162,18 +174,24 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .rk-main { padding: 1rem; }
+}
+
 @media (max-width: 768px) {
-  .rk-header { padding: 1rem; }
-  .rk-title { font-size: 1.4rem; }
+  .rk-header { padding: 0.9rem 1rem; }
+  .rk-title { font-size: 1.35rem; }
   .rk-toolbar { margin-top: 0.6rem; }
-  .rk-main { padding: 0.75rem; }
-  .rk-table th, .rk-table td { padding: 0.45rem 0.5rem; font-size: 0.78rem; }
+  .rk-main { padding: 0.6rem; }
+  .rk-table { font-size: 0.8rem; }
+  .rk-table th { padding: 0.55rem 0.55rem; font-size: 0.7rem; }
+  .rk-table td { padding: 0.5rem 0.55rem; font-size: 0.78rem; }
 }
 
 @media (max-width: 480px) {
-  .rk-header { padding: 0.75rem; }
-  .rk-title { font-size: 1.15rem; }
-  .rk-main { padding: 0.5rem; }
-  .rk-table th, .rk-table td { padding: 0.3rem 0.3rem; font-size: 0.68rem; }
-  .rk-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rk-header { padding: 0.6rem 0.75rem; }
+  .rk-title { font-size: 1.05rem; }
+  .rk-main { padding: 0.4rem; }
+  .rk-table th { padding: 0.4rem 0.4rem; font-size: 0.66rem; }
+  .rk-table td { padding: 0.4rem 0.4rem; font-size: 0.74rem; }
 }
