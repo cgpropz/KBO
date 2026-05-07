@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-07T19:35:04.809576+00:00",
+  "generated_at": "2026-05-07T19:47:21.835536+00:00",
   "total_props": 57,
   "cards": [
     {
@@ -33,12 +33,12 @@
         },
         {
           "stat": "Hits Allowed",
-          "line": 5.5,
+          "line": 5.0,
           "odds_type": "standard",
           "avg": 6.71,
           "over": 4,
-          "under": 2,
-          "push": 0,
+          "under": 1,
+          "push": 1,
           "total_games": 6,
           "hit_rate_all": 66.7,
           "hit_rate_l5": 60.0,
@@ -504,8 +504,8 @@
           "odds_type": "standard",
           "avg": 4.0,
           "over": 7,
-          "under": 12,
-          "push": 8,
+          "under": 20,
+          "push": 0,
           "total_games": 27,
           "hit_rate_all": 25.9,
           "hit_rate_l5": 40.0,
@@ -711,7 +711,7 @@
       "projection_so": 4.0,
       "so_per_ip": 0.771,
       "ip_per_g": 5.608,
-      "proj_rating": 40.0,
+      "proj_rating": 36.4,
       "proj_rec": "UNDER",
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
@@ -779,7 +779,7 @@
         {
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
-          "odds_type": "standard",
+          "odds_type": "goblin",
           "avg": 3.57,
           "over": 9,
           "under": 12,
@@ -801,7 +801,7 @@
             7,
             6
           ],
-          "recommendation": "UNDER"
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -990,7 +990,7 @@
       "so_per_ip": 0.656,
       "ip_per_g": 6.083,
       "proj_rating": 39.6,
-      "proj_rec": "UNDER",
+      "proj_rec": "PUSH",
       "venue": "Busan-Sajik",
       "park_factor": 1.116
     },
@@ -3812,12 +3812,12 @@
       "props": [
         {
           "stat": "Hits+Runs+RBIs",
-          "line": 2.0,
+          "line": 2.5,
           "odds_type": "standard",
           "avg": 2.57,
           "over": 65,
-          "under": 63,
-          "push": 28,
+          "under": 91,
+          "push": 0,
           "total_games": 156,
           "hit_rate_all": 41.7,
           "hit_rate_l5": 40.0,
@@ -3836,9 +3836,9 @@
             2
           ],
           "projection": 2.35,
-          "edge": 0.35,
-          "rating": 58.7,
-          "recommendation": "OVER"
+          "edge": -0.15,
+          "rating": 47.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
