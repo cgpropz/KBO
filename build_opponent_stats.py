@@ -46,7 +46,7 @@ def scrape_data():
 
     try:
         # Locate the league batting table and load it into a dataframe
-        table = driver.find_element(By.XPATH, "//table[contains(@id, 'league_batting')]")
+        table = driver.find_element(By.XPATH, "//table[contains(@id, 'all_league_batting')]")
         html_table = table.get_attribute("outerHTML")
         df = pd.read_html(html_table)[0]
     finally:
