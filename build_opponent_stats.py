@@ -61,30 +61,53 @@ def process_data(df):
     if not columns_needed.issubset(df.columns):
         raise ValueError(f"Table columns do not match expected structure: {df.columns}")
 
-    rows = []
+    rows = {}
     for _, row in df.iterrows():
         team = row.get("Tm", "").strip()
         if not team or team == "League Totals":
             continue
         normalized_team = normalize_team(team)
-        rows.append({
-            "team": normalized_team,
-            "games": int(row.get("G", 0)),
-            "pa": int(row.get("PA", 0)),
-            "ab": int(row.get("AB", 0)),
-            "h": int(row.get("H", 0)),
-            "r": int(row.get("R", 0)),
-            "rbi": int(row.get("RBI", 0)),
-            "tb": int(row.get("TB", 0)),
-            "hr": int(row.get("HR", 0)),
-            "bb": int(row.get("BB", 0)),
-            "sb": int(row.get("SB", 0)),
-            "so": int(row.get("SO", 0)),
+        games = int(row.get("G", 0) or 0)
+        pa = int(row.get("PA", 0) or 0)
+        ab = int(row.get("AB", 0) or 0)
+        h = int(row.get("H", 0) or 0)
+        runs = int(row.get("R", 0) or 0)
+        rbi = int(row.get("RBI", 0) or 0)
+        tb = int(row.get("TB", 0) or 0)
+        hr = int(row.get("HR", 0) or 0)
+        bb = int(row.get("BB", 0) or 0)
+        sb = int(row.get("SB", 0) or 0)
+        so = int(row.get("SO", 0) or 0)
+
+        k_pct = round((so / pa) * 100, 1) if pa > 0 else 0.0
+        h_per_g = round(h / games, 2) if games > 0 else 0.0
+        h_per_ip = round(h / (games * 9.0), 3) if games > 0 else 0.0
+
+        rows[normalized_team] = {
             "ba": round(float(row.get("BA", 0.0)), 3),
             "obp": round(float(row.get("OBP", 0.0)), 3),
             "slg": round(float(row.get("SLG", 0.0)), 3),
             "ops": round(float(row.get("OPS", 0.0)), 3),
-        })
+            "k_pct": k_pct,
+            "so": so,
+            "pa": pa,
+            "ab": ab,
+            "h": h,
+            "r": runs,
+            "hr": hr,
+            "bb": bb,
+            "sb": sb,
+            "rbi": rbi,
+            "tb": tb,
+            "games": games,
+            "so_per_g": round(so / games, 2) if games > 0 else 0.0,
+            "r_per_g": round(runs / games, 2) if games > 0 else 0.0,
+            "h_per_g": h_per_g,
+            "hr_per_g": round(hr / games, 2) if games > 0 else 0.0,
+            "h_per_ip": h_per_ip,
+            "hrr_per_g": round((h + runs + rbi) / games, 2) if games > 0 else 0.0,
+            "tb_per_g": round(tb / games, 2) if games > 0 else 0.0,
+        }
 
     return rows
 
