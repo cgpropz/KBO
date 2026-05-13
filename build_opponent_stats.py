@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.options import Options
 import pandas as pd
 import json
 from pathlib import Path
+from io import StringIO
 import time
 
 # Output File Path
@@ -48,7 +49,7 @@ def scrape_data():
         # Locate the league batting table and load it into a dataframe
         table = driver.find_element(By.XPATH, "//table[contains(@id, 'league_batting')]")
         html_table = table.get_attribute("outerHTML")
-        df = pd.read_html(html_table)[0]
+        df = pd.read_html(StringIO(html_table))[0]
     finally:
         driver.quit()
 
