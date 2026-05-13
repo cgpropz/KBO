@@ -44,6 +44,26 @@ const TEAMS = {
   SSG:     '#ff5555',
 };
 
+const TEAM_ALIASES = {
+  DOO: 'Doosan',
+  DOOSAN: 'Doosan',
+  HAN: 'Hanwha',
+  HANWHA: 'Hanwha',
+  KIA: 'Kia',
+  KIW: 'Kiwoom',
+  KIWOOM: 'Kiwoom',
+  KT: 'KT',
+  KTW: 'KT',
+  LG: 'LG',
+  LOT: 'Lotte',
+  LOTTE: 'Lotte',
+  NC: 'NC',
+  NCD: 'NC',
+  SAM: 'Samsung',
+  SAMSUNG: 'Samsung',
+  SSG: 'SSG',
+};
+
 function StrikeoutProjections({ onNavigate }) {
   const [data, setData] = useState(null);
   const [matchupData, setMatchupData] = useState(null);
@@ -73,6 +93,12 @@ function StrikeoutProjections({ onNavigate }) {
     .filter(Boolean)
     .sort()
     .join(' ');
+
+  const canonicalTeam = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return TEAM_ALIASES[text] || TEAM_ALIASES[text.toUpperCase()] || text;
+  };
 
   const propToPrizepicksStat = {
     Strikeouts: ['Pitcher Strikeouts'],
@@ -164,6 +190,39 @@ function StrikeoutProjections({ onNavigate }) {
     return lookup;
   }, [photos]);
 
+  const matchupIndex = useMemo(() => {
+    const byPitcher = new Map();
+    const byTeam = new Map();
+
+    const addTeamOpponent = (team, opponent) => {
+      if (!team || !opponent) return;
+      if (!byTeam.has(team)) byTeam.set(team, new Set());
+      byTeam.get(team).add(opponent);
+    };
+
+    const addPitcherOpponent = (pitcher, team, opponent) => {
+      const pitcherName = normalizeName(pitcher?.profile?.name || pitcher?.name);
+      if (!pitcherName || !team || !opponent) return;
+      byPitcher.set(`${team}@@${pitcherName}`, opponent);
+    };
+
+    for (const matchup of matchupData?.matchups || []) {
+      const away = canonicalTeam(matchup?.away);
+      const home = canonicalTeam(matchup?.home);
+      if (!away || !home) continue;
+
+      addTeamOpponent(away, home);
+      addTeamOpponent(home, away);
+      addPitcherOpponent(matchup?.away_pitcher, away, home);
+      addPitcherOpponent(matchup?.home_pitcher, home, away);
+    }
+
+    return {
+      byPitcher,
+      byTeam,
+    };
+  }, [matchupData]);
+
   const playerInitials = (name) => String(name || '')
     .split(/\s+/)
     .filter(Boolean)
@@ -190,8 +249,8 @@ function StrikeoutProjections({ onNavigate }) {
 
   const slatePairs = new Set(
     (matchupData?.matchups || []).flatMap((m) => {
-      const away = m?.away;
-      const home = m?.home;
+      const away = canonicalTeam(m?.away);
+      const home = canonicalTeam(m?.home);
       if (!away || !home) return [];
       return [`${away}@@${home}`, `${home}@@${away}`];
     })
@@ -199,7 +258,7 @@ function StrikeoutProjections({ onNavigate }) {
 
   const scoped = (data.projections || []).filter((p) => {
     if (slatePairs.size === 0) return true;
-    return slatePairs.has(`${p.team}@@${p.opponent}`);
+    return slatePairs.has(`${canonicalTeam(p.team)}@@${canonicalTeam(p.opponent)}`);
   });
 
   const ppVariantsByKey = (() => {
@@ -273,10 +332,24 @@ function StrikeoutProjections({ onNavigate }) {
     return variants[Math.floor(variants.length / 2)];
   };
 
+  const resolveOpponent = (projection) => {
+    const team = canonicalTeam(projection?.team);
+    const projectionOpponent = canonicalTeam(projection?.opponent);
+    const pitcherKey = `${team}@@${normalizeName(projection?.name)}`;
+    const pitcherOpponent = matchupIndex.byPitcher.get(pitcherKey);
+    if (pitcherOpponent) return pitcherOpponent;
+
+    const teamOpponents = [...(matchupIndex.byTeam.get(team) || [])];
+    if (projectionOpponent && teamOpponents.includes(projectionOpponent)) return projectionOpponent;
+    if (teamOpponents.length === 1) return teamOpponents[0];
+    return projectionOpponent || projection?.opponent || '';
+  };
+
   // Safely get opponent team stats
   const getOppStats = (opponent) => {
     if (!opponentStatsData || !opponent) return {};
-    const stats = opponentStatsData[opponent];
+    const canonicalOpponent = canonicalTeam(opponent);
+    const stats = opponentStatsData[canonicalOpponent];
     if (!stats) return {};
     return {
       k_pct: stats.k_pct ?? null,
@@ -285,12 +358,15 @@ function StrikeoutProjections({ onNavigate }) {
   };
 
   const mergedScoped = scoped.map((p) => {
+    const resolvedOpponent = resolveOpponent(p);
     // Get opponent team stats first (for all projections)
-    const oppStats = getOppStats(p.opponent);
+    const oppStats = getOppStats(resolvedOpponent);
     
     const ppStats = propToPrizepicksStat[p.prop];
     if (!ppStats?.length) return {
       ...p,
+      team: canonicalTeam(p.team),
+      opponent: resolvedOpponent,
       opp_k_pct: oppStats.k_pct,
       opp_ba: oppStats.ba,
     };
@@ -299,11 +375,11 @@ function StrikeoutProjections({ onNavigate }) {
     const sig = nameSignature(p.name);
     let variants = null;
     for (const ppStat of ppStats) {
-      const exactKey = `${ppStat}@@${p.team}@@${p.opponent}@@${norm}`;
-      const sigKey = `${ppStat}@@${p.team}@@${p.opponent}@@sig:${sig}`;
-      const teamOppKey = `${ppStat}@@${p.team}@@${p.opponent}@@teamOpp`;
-      const nameTeamKey = `${ppStat}@@${p.team}@@${norm}`;
-      const sigTeamKey = `${ppStat}@@${p.team}@@sig:${sig}`;
+      const exactKey = `${ppStat}@@${canonicalTeam(p.team)}@@${resolvedOpponent}@@${norm}`;
+      const sigKey = `${ppStat}@@${canonicalTeam(p.team)}@@${resolvedOpponent}@@sig:${sig}`;
+      const teamOppKey = `${ppStat}@@${canonicalTeam(p.team)}@@${resolvedOpponent}@@teamOpp`;
+      const nameTeamKey = `${ppStat}@@${canonicalTeam(p.team)}@@${norm}`;
+      const sigTeamKey = `${ppStat}@@${canonicalTeam(p.team)}@@sig:${sig}`;
       variants =
         ppVariantsByKey.get(exactKey)
         ?? ppVariantsByKey.get(sigKey)
@@ -326,6 +402,8 @@ function StrikeoutProjections({ onNavigate }) {
 
     return {
       ...p,
+      team: canonicalTeam(p.team),
+      opponent: resolvedOpponent,
       line: liveLine,
       odds_type: liveOddsType,
       edge: edge != null ? Number(edge.toFixed(1)) : null,
@@ -443,10 +521,10 @@ function StrikeoutProjections({ onNavigate }) {
     const matchups = matchupData?.matchups || [];
     for (const m of matchups) {
       // Determine if this pitcher is home or away
-      if (m.home_pitcher?.profile?.name && normalizeName(m.home_pitcher.profile.name) === normalizeName(p.name) && m.home === p.team) {
+      if (m.home_pitcher?.profile?.name && normalizeName(m.home_pitcher.profile.name) === normalizeName(p.name) && canonicalTeam(m.home) === canonicalTeam(p.team)) {
         return { matchup: m, pitcher: m.home_pitcher, oppBatting: m.away_batting, side: 'home' };
       }
-      if (m.away_pitcher?.profile?.name && normalizeName(m.away_pitcher.profile.name) === normalizeName(p.name) && m.away === p.team) {
+      if (m.away_pitcher?.profile?.name && normalizeName(m.away_pitcher.profile.name) === normalizeName(p.name) && canonicalTeam(m.away) === canonicalTeam(p.team)) {
         return { matchup: m, pitcher: m.away_pitcher, oppBatting: m.home_batting, side: 'away' };
       }
     }

@@ -13,6 +13,26 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 PUBLIC = BASE / "kbo-props-ui" / "public" / "data"
 
+TEAM_ALIASES = {
+    "DOO": "Doosan",
+    "DOOSAN": "Doosan",
+    "HAN": "Hanwha",
+    "HANWHA": "Hanwha",
+    "KIA": "Kia",
+    "KIW": "Kiwoom",
+    "KIWOOM": "Kiwoom",
+    "KT": "KT",
+    "KTW": "KT",
+    "LG": "LG",
+    "LOT": "Lotte",
+    "LOTTE": "Lotte",
+    "NC": "NC",
+    "NCD": "NC",
+    "SAM": "Samsung",
+    "SAMSUNG": "Samsung",
+    "SSG": "SSG",
+}
+
 
 def load_json(path: Path):
     with open(path, "r", encoding="utf-8") as f:
@@ -23,6 +43,13 @@ def normalize_name(value: str) -> str:
     text = unicodedata.normalize("NFKD", str(value or ""))
     text = text.encode("ascii", "ignore").decode("ascii").lower()
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+def canonical_team(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return TEAM_ALIASES.get(text, TEAM_ALIASES.get(text.upper(), text))
 
 
 def main() -> int:
@@ -44,6 +71,8 @@ def main() -> int:
         PUBLIC / "player_photos.json",
         PUBLIC / "team_opponent_stats_2026.json",
         PUBLIC / "pitcher_rankings.json",
+        PUBLIC / "strikeout_projections.json",
+        PUBLIC / "matchup_data.json",
     ]
     for path in required_files:
         if not path.exists():
@@ -58,6 +87,8 @@ def main() -> int:
     photos = load_json(PUBLIC / "player_photos.json")
     team_stats = load_json(PUBLIC / "team_opponent_stats_2026.json")
     rankings = load_json(PUBLIC / "pitcher_rankings.json")
+    strikeout_data = load_json(PUBLIC / "strikeout_projections.json")
+    matchup_data = load_json(PUBLIC / "matchup_data.json")
 
     cards = props.get("cards", []) if isinstance(props, dict) else []
     if not isinstance(cards, list) or not cards:
@@ -111,6 +142,51 @@ def main() -> int:
         ]
         if missing_ctx:
             failures.append(f"pitcher rankings missing opponent context for {len(missing_ctx)} rows")
+
+    matchup_pairs = set()
+    matchup_opponents_by_team = {}
+    for matchup in matchup_data.get("matchups", []) if isinstance(matchup_data, dict) else []:
+        if not isinstance(matchup, dict):
+            continue
+        away = canonical_team(matchup.get("away"))
+        home = canonical_team(matchup.get("home"))
+        if not away or not home:
+            continue
+        matchup_pairs.add((away, home))
+        matchup_pairs.add((home, away))
+        matchup_opponents_by_team.setdefault(away, set()).add(home)
+        matchup_opponents_by_team.setdefault(home, set()).add(away)
+
+    projections = strikeout_data.get("projections", []) if isinstance(strikeout_data, dict) else []
+    if not isinstance(projections, list) or not projections:
+        failures.append("strikeout_projections.json missing non-empty projections list")
+    else:
+        bad_pairs = []
+        missing_opp_stats = []
+        for row in projections:
+            if not isinstance(row, dict):
+                continue
+            team = canonical_team(row.get("team"))
+            opponent = canonical_team(row.get("opponent"))
+            if not team or not opponent:
+                bad_pairs.append(f"{row.get('name', '<unknown>')} ({team or '?'} vs {opponent or '?'})")
+                continue
+            if matchup_pairs and (team, opponent) not in matchup_pairs:
+                allowed = sorted(matchup_opponents_by_team.get(team, set()))
+                bad_pairs.append(
+                    f"{row.get('name', '<unknown>')} ({team} vs {opponent}; expected one of {allowed or ['<none>']})"
+                )
+            if isinstance(team_stats, dict) and opponent not in team_stats:
+                missing_opp_stats.append(f"{row.get('name', '<unknown>')} ({team} vs {opponent})")
+
+        if bad_pairs:
+            failures.append(
+                f"strikeout projections contain {len(bad_pairs)} matchup pairs not present in matchup_data: {bad_pairs[:6]}"
+            )
+        if missing_opp_stats:
+            failures.append(
+                f"strikeout projections contain {len(missing_opp_stats)} opponents missing from team_opponent_stats_2026.json: {missing_opp_stats[:6]}"
+            )
 
     # Today's-starter WHIP coverage: warn if a starter on today's batter
     # projections has no WHIP source (individual logs OR rankings). This is

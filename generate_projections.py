@@ -13,10 +13,37 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 PITCHER_HAND_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_handedness_map.json")
 PP_PITCHER_NAME_MAP_PATH = os.path.join(BASE, "Pitchers-Data", "prizepicks_pitcher_name_map.json")
 
+TEAM_ALIASES = {
+    "DOO": "Doosan",
+    "DOOSAN": "Doosan",
+    "HAN": "Hanwha",
+    "HANWHA": "Hanwha",
+    "KIA": "Kia",
+    "KIW": "Kiwoom",
+    "KIWOOM": "Kiwoom",
+    "KT": "KT",
+    "KTW": "KT",
+    "LG": "LG",
+    "LOT": "Lotte",
+    "LOTTE": "Lotte",
+    "NC": "NC",
+    "NCD": "NC",
+    "SAM": "Samsung",
+    "SAMSUNG": "Samsung",
+    "SSG": "SSG",
+}
+
 
 def normalize_name(name):
     nfkd = unicodedata.normalize("NFKD", str(name or ""))
     return "".join(c for c in nfkd if not unicodedata.combining(c)).strip()
+
+
+def canonical_team(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return TEAM_ALIASES.get(text, TEAM_ALIASES.get(text.upper(), text))
 
 
 def name_parts(name):
@@ -116,8 +143,8 @@ def build_pp_pitcher_entries(pp_maps):
             pp_name = str(entry.get("pp_name") or "").strip()
             if not pp_name:
                 continue
-            team = str(entry.get("team") or "").strip()
-            opp = str(entry.get("versus") or "").strip()
+            team = canonical_team(entry.get("team"))
+            opp = canonical_team(entry.get("versus"))
             key = (pp_name, team, opp)
             entries[key] = {
                 "pp_name": pp_name,
@@ -135,9 +162,9 @@ def update_persistent_pitcher_maps(pp_maps, starters, games_by_name):
 
     pp_entries = build_pp_pitcher_entries(pp_maps)
     starter_by_team_opp = {
-        (str(s.get("team") or "").strip(), str(s.get("opponent") or "").strip()): s
+        (canonical_team(s.get("team")), canonical_team(s.get("opponent"))): s
         for s in starters
-        if str(s.get("team") or "").strip() and str(s.get("opponent") or "").strip()
+        if canonical_team(s.get("team")) and canonical_team(s.get("opponent"))
     }
 
     now = datetime.now().isoformat()
@@ -495,8 +522,8 @@ def load_pp_lines(stat_name):
                 "pp_name": row.get("Name", ""),
                 "line": safe_float(row.get("Prizepicks"), None),
                 "odds_type": row.get("Odds Type", ""),
-                "team": row.get("Team", ""),
-                "versus": row.get("Versus", ""),
+                "team": canonical_team(row.get("Team", "")),
+                "versus": canonical_team(row.get("Versus", "")),
             }
             if key and (key not in odds_by_name or better(odds_by_name[key], entry["odds_type"])):
                 odds_by_name[key] = entry
@@ -511,8 +538,8 @@ def load_pp_lines(stat_name):
                     "pp_name": row.get("Name", ""),
                     "line": safe_float(row.get("Prizepicks"), None),
                     "odds_type": row.get("Odds Type", ""),
-                    "team": row.get("Team", ""),
-                    "versus": row.get("Versus", ""),
+                    "team": canonical_team(row.get("Team", "")),
+                    "versus": canonical_team(row.get("Versus", "")),
                 }
                 if key and (key not in odds_by_name or better(odds_by_name[key], entry["odds_type"])):
                     odds_by_name[key] = entry
@@ -520,8 +547,8 @@ def load_pp_lines(stat_name):
     pp_by_parts = {name_parts(v["pp_name"]): v for v in odds_by_name.values() if v.get("pp_name")}
     pp_by_team_opp = {}
     for v in odds_by_name.values():
-        team = (v.get("team") or "").strip()
-        opp = (v.get("versus") or "").strip()
+        team = canonical_team(v.get("team"))
+        opp = canonical_team(v.get("versus"))
         if team and opp:
             pp_by_team_opp[(team, opp)] = v
     return odds_by_name, pp_by_parts, pp_by_team_opp
@@ -536,6 +563,7 @@ def load_team_batting_context():
             out = {}
             if isinstance(raw, dict):
                 for team, row in raw.items():
+                    team = canonical_team(team)
                     so_per_g = safe_float(row.get("so_per_g"), None)
                     h_per_ip = safe_float(row.get("h_per_ip"), None)
                     if so_per_g is None or h_per_ip is None:
@@ -567,7 +595,7 @@ def load_team_batting_context():
     out = {}
     with open(os.path.join(BASE, "Batters-Data", "league_batting.csv"), encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            tm = team_map.get(str(row.get("Tm", "")).strip(), str(row.get("Tm", "")).strip())
+            tm = canonical_team(team_map.get(str(row.get("Tm", "")).strip(), str(row.get("Tm", "")).strip()))
             g = safe_float(row.get("G"), 0)
             so = safe_float(row.get("SO"), 0)
             hits = safe_float(row.get("H"), 0)
@@ -774,6 +802,8 @@ def summarize_games(games, league_soip, league_ipg, league_hits_per_ip):
 
 def resolve_pp_entry(pp_maps, display_name, resolved_name, team, opponent):
     odds_by_name, pp_by_parts, pp_by_team_opp = pp_maps
+    team = canonical_team(team)
+    opponent = canonical_team(opponent)
     pp = odds_by_name.get(normalize_name(display_name).lower())
     if not pp:
         pp = odds_by_name.get(normalize_name(resolved_name).lower())
@@ -821,8 +851,8 @@ def main():
         for (team, opp), entry in team_opp_map.items():
             pp_starter_rows[(team, opp)] = {
                 "name": entry.get("pp_name") or f"{team} Starter",
-                "team": team,
-                "opponent": opp,
+                "team": canonical_team(team),
+                "opponent": canonical_team(opp),
                 "pcode": None,
             }
 
@@ -858,8 +888,8 @@ def main():
             home = rows[i + 1] if i + 1 < len(rows) else None
             if not home:
                 continue
-            starters.append({"name": away["Player"], "team": away["Team"], "opponent": home["Team"], "pcode": None})
-            starters.append({"name": home["Player"], "team": home["Team"], "opponent": away["Team"], "pcode": None})
+            starters.append({"name": away["Player"], "team": canonical_team(away["Team"]), "opponent": canonical_team(home["Team"]), "pcode": None})
+            starters.append({"name": home["Player"], "team": canonical_team(home["Team"]), "opponent": canonical_team(away["Team"]), "pcode": None})
     else:
         starters = scrape_starters_with_pcodes()
         if not starters:
@@ -872,8 +902,8 @@ def main():
                 home = rows[i + 1] if i + 1 < len(rows) else None
                 if not home:
                     continue
-                starters.append({"name": away["Player"], "team": away["Team"], "opponent": home["Team"], "pcode": None})
-                starters.append({"name": home["Player"], "team": home["Team"], "opponent": away["Team"], "pcode": None})
+                starters.append({"name": away["Player"], "team": canonical_team(away["Team"]), "opponent": canonical_team(home["Team"]), "pcode": None})
+                starters.append({"name": home["Player"], "team": canonical_team(home["Team"]), "opponent": canonical_team(away["Team"]), "pcode": None})
 
     starters_for_map = list(starters)
     # Always include local starter file aliases so batter-side opponent lookups stay in sync.
@@ -885,8 +915,8 @@ def main():
             home = rows[i + 1] if i + 1 < len(rows) else None
             if not home:
                 continue
-            starters_for_map.append({"name": away.get("Player", ""), "team": away.get("Team", ""), "opponent": home.get("Team", ""), "pcode": None})
-            starters_for_map.append({"name": home.get("Player", ""), "team": home.get("Team", ""), "opponent": away.get("Team", ""), "pcode": None})
+            starters_for_map.append({"name": away.get("Player", ""), "team": canonical_team(away.get("Team", "")), "opponent": canonical_team(home.get("Team", "")), "pcode": None})
+            starters_for_map.append({"name": home.get("Player", ""), "team": canonical_team(home.get("Team", "")), "opponent": canonical_team(away.get("Team", "")), "pcode": None})
     except Exception:
         pass
 
@@ -928,6 +958,7 @@ def main():
     projections = []
     for p in all_pitchers:
         display_name = p["name"]
+        team = canonical_team(p.get("team", ""))
         resolved = resolve_name(display_name, norm_map, parts_map)
         games = games_by_name.get(resolved, [])
 
@@ -952,7 +983,7 @@ def main():
                 }, league_soip, league_ipg, league_hits_per_ip)
                 source = pcode_stats["source"]
 
-        opp = p.get("opponent", "")
+        opp = canonical_team(p.get("opponent", ""))
         opp_ctx = team_batting_ctx.get(opp, {})
         opp_so_g = opp_ctx.get("so_per_g", league_avg_so_per_g)
         opp_h_per_ip = opp_ctx.get("h_per_ip", league_avg_h_per_ip)
@@ -1010,13 +1041,13 @@ def main():
 
         strikeout_projection = clamp(base_k * k_opp_factor * strikeout_form_factor, 1.0, 10.5)
 
-        strikeout_pp = resolve_pp_entry(pp_strikeouts, display_name, resolved, p.get("team", ""), opp)
+        strikeout_pp = resolve_pp_entry(pp_strikeouts, display_name, resolved, team, opp)
         strikeout_line = strikeout_pp["line"] if strikeout_pp else None
         strikeout_edge = (strikeout_projection - strikeout_line) if strikeout_line is not None else None
         so_hr_l5, so_hr_full, so_recent = compute_hit_rates(games, "strikeouts", strikeout_line)
         projections.append({
             "name": display_name,
-            "team": p.get("team", ""),
+            "team": team,
             "opponent": opp,
             "line": strikeout_line,
             "odds_type": strikeout_pp["odds_type"] if strikeout_pp else None,
@@ -1045,13 +1076,13 @@ def main():
         base_hits = hits_per_ip * ip_per_g
         hits_opp_factor = clamp(1.0 + 0.40 * ((opp_h_per_ip / league_avg_h_per_ip) - 1.0), 0.88, 1.12)
         hits_projection = clamp(base_hits * hits_opp_factor * hits_form_factor, 1.0, 12.5)
-        hits_pp = resolve_pp_entry(pp_hits_allowed, display_name, resolved, p.get("team", ""), opp)
+        hits_pp = resolve_pp_entry(pp_hits_allowed, display_name, resolved, team, opp)
         hits_line = hits_pp["line"] if hits_pp else None
         hits_edge = (hits_projection - hits_line) if hits_line is not None else None
         ha_hr_l5, ha_hr_full, ha_recent = compute_hit_rates(games, "hits_allowed", hits_line)
         projections.append({
             "name": display_name,
-            "team": p.get("team", ""),
+            "team": team,
             "opponent": opp,
             "line": hits_line,
             "odds_type": hits_pp["odds_type"] if hits_pp else None,
@@ -1084,13 +1115,13 @@ def main():
             1.08,
         )
         outs_projection = clamp(outs_base * outs_opp_factor * outs_form_factor, 6.0, 24.0)
-        outs_pp = resolve_pp_entry(pp_pitching_outs, display_name, resolved, p.get("team", ""), opp)
+        outs_pp = resolve_pp_entry(pp_pitching_outs, display_name, resolved, team, opp)
         outs_line = outs_pp["line"] if outs_pp else None
         outs_edge = (outs_projection - outs_line) if outs_line is not None else None
         outs_hr_l5, outs_hr_full, outs_recent = compute_hit_rates(games, "pitching_outs", outs_line)
         projections.append({
             "name": display_name,
-            "team": p.get("team", ""),
+            "team": team,
             "opponent": opp,
             "line": outs_line,
             "odds_type": outs_pp["odds_type"] if outs_pp else None,
