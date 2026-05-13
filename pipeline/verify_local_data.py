@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import unicodedata
 from pathlib import Path
 
 
@@ -15,6 +17,12 @@ PUBLIC = BASE / "kbo-props-ui" / "public" / "data"
 def load_json(path: Path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def normalize_name(value: str) -> str:
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = text.encode("ascii", "ignore").decode("ascii").lower()
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def main() -> int:
@@ -56,7 +64,8 @@ def main() -> int:
         failures.append("prizepicks_props.json missing non-empty cards list")
 
     targets = sorted({c.get("name") for c in cards if isinstance(c, dict) and c.get("name")})
-    missing_photos = [name for name in targets if name not in photos]
+    photo_norm_keys = {normalize_name(name) for name in photos.keys()}
+    missing_photos = [name for name in targets if normalize_name(name) not in photo_norm_keys]
     if missing_photos:
         msg = f"missing photos for {len(missing_photos)} props players: {missing_photos[:10]}"
         if len(missing_photos) > args.max_missing_photos:

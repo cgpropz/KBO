@@ -646,6 +646,23 @@ def main():
     b_projs = b_data.get("projections", [])
     team_batting_rates = b_data.get("team_batting", {})
 
+    # Load pre-scraped starters from player_names.csv as a fallback for games
+    # where PrizePicks has no pitcher strikeout lines (e.g. evening slate).
+    local_starters = []  # list of {"name", "team", "opponent"}
+    local_starters_path = os.path.join(BASE, "Pitchers-Data", "player_names.csv")
+    try:
+        with open(local_starters_path, encoding="utf-8") as _sf:
+            _rows = list(csv.DictReader(_sf))
+        for _i in range(0, len(_rows), 2):
+            _away = _rows[_i]
+            _home = _rows[_i + 1] if _i + 1 < len(_rows) else None
+            if not _home:
+                continue
+            local_starters.append({"name": _away.get("Player", "").strip(), "team": _away.get("Team", "").strip(), "opponent": _home.get("Team", "").strip(), "line": None, "projection": None})
+            local_starters.append({"name": _home.get("Player", "").strip(), "team": _home.get("Team", "").strip(), "opponent": _away.get("Team", "").strip(), "line": None, "projection": None})
+    except Exception:
+        pass
+
     # Fetch API-backed game lines for matchup page markets
     game_lines = fetch_game_lines()
     line_map = {
@@ -680,12 +697,14 @@ def main():
         _add_game(p.get("team"), p.get("opponent"))
     for g in game_lines:
         _add_game(g.get("away"), g.get("home"))
+    for p in local_starters:
+        _add_game(p.get("team"), p.get("opponent"))
 
     matchups = []
     for key, game in game_map.items():
         away, home = game["away"], game["home"]
 
-        # Find starting pitchers from K projections
+        # Find starting pitchers from K projections, falling back to local starters file
         away_pitcher = None
         home_pitcher = None
         for p in k_projs:
@@ -693,6 +712,17 @@ def main():
                 away_pitcher = p
             elif p["team"] == home and p["opponent"] == away:
                 home_pitcher = p
+        # Fallback: use pre-scraped starters for games with no PP pitcher lines
+        if not away_pitcher:
+            for p in local_starters:
+                if p["team"] == away and p["opponent"] == home:
+                    away_pitcher = p
+                    break
+        if not home_pitcher:
+            for p in local_starters:
+                if p["team"] == home and p["opponent"] == away:
+                    home_pitcher = p
+                    break
 
         # Build pitcher profiles for this game
         away_profile = None

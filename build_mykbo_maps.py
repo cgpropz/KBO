@@ -261,6 +261,12 @@ def collect_foreign_urls(page) -> List[str]:
 def extract_kbo_id(page, url: str) -> Optional[str]:
     for _ in range(3):
         page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        # Wait for the MyKBO page to finish any Cloudflare challenge and render the player links.
+        try:
+            page.wait_for_selector('a[href*="playerId"], a[href*="pcode"]', timeout=20000)
+        except Exception:
+            # If the selector never appears, keep going to inspect what we have.
+            pass
         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         page.wait_for_timeout(3500)
         html = page.content()
@@ -324,11 +330,17 @@ def build_map(targets: List[Dict], candidates: List[Dict], page, label: str) -> 
         if best and score >= 0.66:
             row["mykbo_url"] = best["mykbo_url"]
             row["mykbo_id"] = best["mykbo_id"]
-            row["kbo_player_id"] = extract_kbo_id(page, best["mykbo_url"]) or ""
-            if row["kbo_player_id"]:
+            # Skip Playwright page scrape when we already have the KBO player ID.
+            # This avoids indefinite hangs on Cloudflare-protected pages.
+            if row["existing_kbo_id"].isdigit():
+                row["kbo_player_id"] = row["existing_kbo_id"]
                 row["status"] = "mapped"
             else:
-                row["status"] = "mapped_missing_kbo_id"
+                row["kbo_player_id"] = extract_kbo_id(page, best["mykbo_url"]) or ""
+                if row["kbo_player_id"]:
+                    row["status"] = "mapped"
+                else:
+                    row["status"] = "mapped_missing_kbo_id"
         else:
             unresolved += 1
 
@@ -360,10 +372,16 @@ def main() -> None:
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
 
-        # Prime challenge on a known player page.
-        page.goto("https://mykbostats.com/players/2949-Castro-Harold-Kia-Tigers", wait_until="domcontentloaded", timeout=60000)
-        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        page.wait_for_timeout(4500)
+        # Prime challenge on a known player page (best-effort; non-blocking).
+        # mykbostats.com may be behind Cloudflare which can hold TCP connections
+        # open indefinitely, so we use a short timeout and swallow any failure.
+        try:
+            page.set_default_navigation_timeout(20000)
+            page.goto("https://mykbostats.com/players/2949-Castro-Harold-Kia-Tigers", wait_until="domcontentloaded", timeout=20000)
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            page.wait_for_timeout(3000)
+        except Exception as prime_err:
+            print(f"[build_mykbo_maps] Prime challenge skipped ({prime_err.__class__.__name__}), using cached data")
 
         if os.path.exists(FOREIGN_CACHE):
             with open(FOREIGN_CACHE, encoding="utf-8") as f:

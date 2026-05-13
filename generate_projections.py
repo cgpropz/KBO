@@ -892,10 +892,18 @@ def main():
 
     if pp_matchups:
         matched_starters = [s for s in starters if (s.get("team"), s.get("opponent")) in pp_matchups]
+        # Include pp_starter_rows for any matchups NOT covered by player_names.csv starters
+        covered_matchups = {(s.get("team"), s.get("opponent")) for s in starters}
+        extra_starters = [v for k, v in pp_starter_rows.items() if k not in covered_matchups]
         if matched_starters:
-            starters = matched_starters
-        elif pp_starter_rows:
-            starters = list(pp_starter_rows.values())
+            # player_names.csv covers some PP matchups; add any extras PP has beyond that
+            covered_matched = {(s.get("team"), s.get("opponent")) for s in matched_starters}
+            extra_pp = [v for k, v in pp_starter_rows.items() if k not in covered_matched]
+            starters = matched_starters + extra_pp
+        else:
+            # player_names.csv has a different slate (e.g. next day); include all:
+            # player_names.csv starters (for batter opp_pitcher lookups) + pp_starter_rows
+            starters = list(starters) + extra_starters
 
     games_by_name, norm_map, parts_map = load_pitcher_games()
 

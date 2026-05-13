@@ -36,6 +36,7 @@ PD = os.path.join(BASE, "Pitchers-Data")
 HANDS_CSV = os.path.join(PD, "kbo_pitcher_throwing_hands.csv")
 LOG25_PY = os.path.join(PD, "NEWPITCHER_LOG25.py")
 LOGS_JSON = os.path.join(BASE, "kbo-props-ui", "public", "data", "pitcher_logs.json")
+MYKBO_MAP = os.path.join(PD, "mykbostats_pitcher_map.json")
 SLATE_CSV = os.path.join(PD, "player_names.csv")
 MATCHUP_JSON = os.path.join(BASE, "kbo-props-ui", "public", "data", "matchup_data.json")
 LEADER_URL = "https://eng.koreabaseball.com/stats/PitchingLeaders.aspx"
@@ -81,11 +82,32 @@ def load_log25_player_names() -> Dict[str, str]:
     return out
 
 
+def load_mykbo_pitcher_map() -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    if not os.path.exists(MYKBO_MAP):
+        return out
+    try:
+        with open(MYKBO_MAP, encoding="utf-8") as f:
+            rows = json.load(f)
+    except Exception:
+        return out
+
+    for row in rows:
+        pcode = str(row.get("kbo_player_id") or row.get("existing_kbo_id", "")).strip()
+        name = (row.get("name") or "").strip()
+        if pcode.isdigit() and name:
+            out[pcode] = name
+    return out
+
+
 def build_unified_index() -> Tuple[Dict[str, str], Dict[str, str]]:
     """Return (pcode->name, name_key->pcode)."""
     unified = load_throwing_hands()
     for pc, nm in load_log25_player_names().items():
         unified.setdefault(pc, nm)
+    for pc, nm in load_mykbo_pitcher_map().items():
+        unified.setdefault(pc, nm)
+
     name_to_pcode: Dict[str, str] = {}
     for pc, nm in unified.items():
         name_to_pcode.setdefault(norm(nm), pc)

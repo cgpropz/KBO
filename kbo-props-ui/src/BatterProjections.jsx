@@ -119,12 +119,16 @@ function BatterProjections() {
     return lookup;
   }, [photos]);
 
-  // Map home_team -> weather (used for wind column)
+  // Map team -> weather for both home and away teams in each game
   const weatherByHome = useMemo(() => {
     const map = {};
     const list = matchupData?.matchups || [];
     for (const m of list) {
-      if (m?.home && m?.weather) map[m.home] = m.weather;
+      if (!m?.weather) continue;
+      // Index by home team (canonical)
+      if (m.home) map[m.home] = m.weather;
+      // Also index by away team so batters with flipped home_team still find weather
+      if (m.away) map[m.away] = m.weather;
     }
     return map;
   }, [matchupData]);

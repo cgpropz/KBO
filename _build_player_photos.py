@@ -138,6 +138,50 @@ def build_from_kbo_cdn(photos, pcodes):
     print(f"From KBO CDN (pcode-based): +{added} (total {len(photos)})")
 
 
+def backfill_props_targets(photos, pcodes, targets):
+    """Ensure PrizePicks display names resolve to a photo entry.
+
+    Adds exact target-name keys by reusing normalized existing photo entries,
+    and falls back to pcode-based CDN URLs when a normalized pcode match exists.
+    """
+    by_photo_norm = {normalize_name(name): name for name in photos.keys()}
+    by_pcode_norm = {normalize_name(name): name for name in pcodes.keys()}
+
+    added_alias = 0
+    added_pcode = 0
+    unresolved = []
+
+    for target in sorted(targets):
+        if not target or target in photos:
+            continue
+
+        n_target = normalize_name(target)
+
+        src_photo_name = by_photo_norm.get(n_target)
+        if src_photo_name and photos.get(src_photo_name):
+            photos[target] = photos[src_photo_name]
+            by_photo_norm[n_target] = target
+            added_alias += 1
+            continue
+
+        src_pcode_name = by_pcode_norm.get(n_target)
+        if src_pcode_name:
+            pcode = pcodes.get(src_pcode_name)
+            if pcode:
+                photos[target] = DIRECT_PHOTO_OVERRIDES.get(target, kbo_photo_url(pcode))
+                by_photo_norm[n_target] = target
+                added_pcode += 1
+                continue
+
+        unresolved.append(target)
+
+    print(
+        f"Props target backfill: +{added_alias} alias, +{added_pcode} pcode fallback "
+        f"(unresolved {len(unresolved)})"
+    )
+    return unresolved
+
+
 
 
 # Comprehensive batter pcode map (pcode -> name) from build_handedness_cache.py
@@ -427,8 +471,12 @@ async def main():
         for card in json.loads(props_path.read_text()).get("cards", []):
             targets.add(card["name"])
 
+    unresolved = backfill_props_targets(photos, pcodes, targets)
+
     missing = [n for n in sorted(targets) if n not in photos]
     print(f"\nCoverage: {len(targets)-len(missing)}/{len(targets)}  missing={missing}")
+    if unresolved:
+        print(f"Unresolved props names ({len(unresolved)}): {unresolved[:20]}")
 
     if "--scrape" in sys.argv:
         await scrape_from_direct_pages(photos, pcodes)

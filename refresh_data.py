@@ -6,6 +6,7 @@ Run once daily or manually via:
 
 This includes:
 - Pitcher/Batter game logs and stats
+- Batter hand splits (vs Lefty/Righty)
 - Strikeout & HR+R+RBI projections
 - Pitcher rankings
 - Matchup deep dive data
@@ -15,10 +16,11 @@ NOTE: PrizePicks odds are no longer included here.
 Use refresh_odds.py (runs every ~10 min) for odds-only updates.
 
 Usage:
-  python refresh_data.py              # run all steps
-  python refresh_data.py --skip-lineups   # skip lineup scrape
-  python refresh_data.py --skip-logs  # skip all game log scrapes
-  python refresh_data.py --skip-supabase  # skip Supabase publish
+  python refresh_data.py                # run all steps
+  python refresh_data.py --skip-lineups # skip lineup scrape
+  python refresh_data.py --skip-logs    # skip all game log scrapes
+  python refresh_data.py --skip-splits  # skip batter hand splits scrape
+  python refresh_data.py --skip-supabase # skip Supabase publish
 """
 import subprocess
 import sys
@@ -62,6 +64,12 @@ STEPS = [
         "critical": True,
     },
     {
+        "name": "Build MyKBO Maps",
+        "cmd": [PYTHON, os.path.join(BASE, "build_mykbo_maps.py")],
+        "skip_flag": "--skip-maps",
+        "timeout": 300,  # 5-minute hard cap; non-critical so pipeline continues on timeout
+    },
+    {
         "name": "Resolve Missing Pitcher pcodes",
         "cmd": [PYTHON, os.path.join(BASE, "find_missing_pcodes.py"), "--apply"],
         "skip_flag": "--skip-pcodes",
@@ -86,6 +94,12 @@ STEPS = [
         "name": "Combine Batter Logs (2025 + 2026)",
         "cmd": [PYTHON, os.path.join(BASE, "combine_batter_logs.py")],
         "skip_flag": "--skip-logs",
+    },
+    {
+        "name": "Batter Hand Splits (vs L/R)",
+        "cmd": [PYTHON, os.path.join(BASE, "Batters-Data", "scrape_batter_hand_splits_2026.py")],
+        "skip_flag": "--skip-splits",
+        "timeout": 600,  # 10-minute hard cap for all 97 players
     },
     {
         "name": "Opponent Team Batting Stats",
@@ -310,14 +324,20 @@ def main():
             print(f"\n[{i}/{len(STEPS)}] ▶  {step['name']}")
             print("=" * 50)
             t0 = time.time()
-            result = subprocess.run(step["cmd"], cwd=BASE)
-            elapsed = time.time() - t0
-
-            if result.returncode != 0:
-                print(f"✗ {step['name']} failed (exit {result.returncode}) [{elapsed:.1f}s]")
-                failed.append(step["name"])
-            else:
-                print(f"✓ {step['name']} done [{elapsed:.1f}s]")
+            step_timeout = step.get("timeout")
+            try:
+                result = subprocess.run(step["cmd"], cwd=BASE, timeout=step_timeout)
+                elapsed = time.time() - t0
+                if result.returncode != 0:
+                    print(f"✗ {step['name']} failed (exit {result.returncode}) [{elapsed:.1f}s]")
+                    failed.append(step["name"])
+                else:
+                    print(f"✓ {step['name']} done [{elapsed:.1f}s]")
+            except subprocess.TimeoutExpired:
+                elapsed = time.time() - t0
+                print(f"⏱ {step['name']} timed out after {step_timeout}s [{elapsed:.1f}s] — skipping")
+                if step.get("critical"):
+                    failed.append(step["name"])
 
         # Copy data files to public/data for the UI
         copies = [

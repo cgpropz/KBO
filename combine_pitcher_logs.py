@@ -35,6 +35,15 @@ FIELDS = [
     "R", "ER", "HA", "HR", "SO", "BB", "HBP", "PitOuts", "Season",
 ]
 
+# Name aliases: map legacy/reversed names to canonical form
+NAME_ALIASES = {
+    "Oller Adam": "Adam Oller",
+    "Naile James": "James Naile",
+    "Cuevas William": "William Cuevas",
+    "Barnes Charlie": "Charlie Barnes",
+    "Chirinos Yonny": "Yonny Chirinos",
+}
+
 
 def to_int(v, default=0):
     try:
@@ -87,6 +96,8 @@ def outs_to_ip(outs):
 
 def normalize_row(row):
     out = {k: row.get(k, "") for k in FIELDS}
+    # Normalize reversed/legacy names to canonical form
+    out["Name"] = NAME_ALIASES.get(out["Name"], out["Name"])
     out["Date"] = str(out["Date"]).replace('\\/', '/').strip()
 
     pitouts = to_int(out.get("PitOuts", 0), 0)
