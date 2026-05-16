@@ -43,6 +43,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -92,6 +95,7 @@ jobs:
 
       - name: Commit data updates
         run: |
+          git pull --rebase origin main
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -99,7 +103,7 @@ jobs:
             echo "No data changes to commit"
           else
             git commit -m "chore: auto-refresh data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            git push
+            git push origin HEAD:main || echo "Push failed (likely race with a newer commit) — continuing to deploy current build"
           fi
 
       - name: Deploy to Vercel
