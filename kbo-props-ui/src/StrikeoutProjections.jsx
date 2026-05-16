@@ -267,8 +267,8 @@ function StrikeoutProjections({ onNavigate }) {
     const cards = prizepicksData?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'pitcher') continue;
-      const team = card?.team || '';
-      const opp = card?.opponent || '';
+      const team = canonicalTeam(card?.team || '');
+      const opp = canonicalTeam(card?.opponent || '');
       const norm = normalizeName(card?.name);
       const sig = nameSignature(card?.name);
 

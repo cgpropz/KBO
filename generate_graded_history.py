@@ -30,6 +30,8 @@ STAT_KEY = {
     "Pitching Outs": "outs",
     "Hits+Runs+RBIs": "hrr",
     "Total Bases": "tb",
+    "Fantasy Score": "fantasy_score",
+    "Hitter Fantasy Score": "fantasy_score",
 }
 
 STAT_SHORT = {
@@ -38,6 +40,8 @@ STAT_SHORT = {
     "Pitching Outs": "OUTS",
     "Hits+Runs+RBIs": "HRR",
     "Total Bases": "TB",
+    "Fantasy Score": "FS",
+    "Hitter Fantasy Score": "FS",
 }
 
 

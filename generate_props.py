@@ -15,6 +15,24 @@ PP_NAME_ALIASES = {
     "hyeok park chan": "Park Chan-hyeok",
 }
 
+TEAM_ALIASES = {
+    "DOO": "Doosan", "DOOSAN": "Doosan",
+    "HAN": "Hanwha", "HANWHA": "Hanwha",
+    "KIA": "Kia",
+    "KIW": "Kiwoom", "KIWOOM": "Kiwoom",
+    "KT": "KT", "KTW": "KT",
+    "LG": "LG",
+    "LOT": "Lotte", "LOTTE": "Lotte",
+    "NC": "NC", "NCD": "NC",
+    "SAM": "Samsung", "SAMSUNG": "Samsung",
+    "SSG": "SSG",
+}
+
+def canonical_team(name):
+    """Convert PP team abbreviation to canonical team name used in projections."""
+    t = str(name or "").strip()
+    return TEAM_ALIASES.get(t) or TEAM_ALIASES.get(t.upper()) or t
+
 def name_signature(name):
     """Word-order agnostic normalized signature for robust name matching."""
     return " ".join(sorted(normalize(name).split()))
@@ -127,8 +145,8 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
 
     card = {
         "name": name,
-        "team": props[0]["team"],
-        "opponent": props[0]["vs"],
+        "team": canonical_team(props[0]["team"]),
+        "opponent": canonical_team(props[0]["vs"]),
         "type": "pitcher",
         "props": [],
         "games": games[:15],  # last 15 games
@@ -234,20 +252,32 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
 
     games = []
     for g in logs:
+        h = g.get("h", 0) or 0
+        doubles = g.get("2b", 0) or g.get("doubles", 0) or 0
+        triples = g.get("3b", 0) or g.get("triples", 0) or 0
+        hr = g.get("hr", 0) or 0
+        singles = max(0, h - doubles - triples - hr)
+        r = g.get("r", 0) or 0
+        rbi = g.get("rbi", 0) or 0
+        bb = g.get("bb", 0) or g.get("walks", 0) or 0
+        hbp = g.get("hbp", 0) or 0
+        sb = g.get("sb", 0) or 0
+        fs = singles * 3 + doubles * 5 + triples * 8 + hr * 10 + r * 2 + rbi * 2 + bb * 2 + hbp * 2 + sb * 2
         games.append({
             "date": g.get("date", ""),
             "opp": g.get("opponent", ""),
-            "h": g.get("h", 0),
-            "r": g.get("r", 0),
-            "rbi": g.get("rbi", 0),
+            "h": h,
+            "r": r,
+            "rbi": rbi,
             "hrr": g.get("hrr", 0),
             "tb": g.get("tb", 0),
+            "fs": fs,
         })
 
     card = {
         "name": name,
-        "team": props[0]["team"],
-        "opponent": props[0]["vs"],
+        "team": canonical_team(props[0]["team"]),
+        "opponent": canonical_team(props[0]["vs"]),
         "type": "batter",
         "props": [],
         "games": games[:15],
@@ -263,6 +293,9 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         elif stat == "Total Bases":
             values = [g["tb"] for g in games]
             key = "tb"
+        elif stat == "Hitter Fantasy Score":
+            values = [g.get("fs", 0) for g in games]
+            key = "fs"
         else:
             continue
 
@@ -428,7 +461,7 @@ def main():
         # Only include if player is in today's logs (normalized)
         if (
             (stat in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed") and norm_name in today_pitchers)
-            or (stat in ("Hits+Runs+RBIs", "Total Bases") and norm_name in today_batters)
+            or (stat in ("Hits+Runs+RBIs", "Total Bases", "Hitter Fantasy Score") and norm_name in today_batters)
         ):
             by_player[name].append({
                 "stat": stat,
@@ -444,7 +477,7 @@ def main():
             p["stat"] in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed")
             for p in props
         )
-        is_batter = any(p["stat"] in ("Hits+Runs+RBIs", "Total Bases") for p in props)
+        is_batter = any(p["stat"] in ("Hits+Runs+RBIs", "Total Bases", "Hitter Fantasy Score") for p in props)
 
         nn = normalize(player_name)
         aliased_name = PP_NAME_ALIASES.get(nn)
@@ -497,7 +530,7 @@ def main():
                 log_name = sig_name_b
             else:
                 log_name = player_name
-            batter_props = [p for p in props if p["stat"] in ("Hits+Runs+RBIs", "Total Bases")]
+            batter_props = [p for p in props if p["stat"] in ("Hits+Runs+RBIs", "Total Bases", "Hitter Fantasy Score")]
             card = build_batter_card(log_name, batter_props, batter_logs_by_name, b_proj)
             card["name"] = player_name
             cards.append(card)
@@ -595,8 +628,9 @@ def lines_only():
         print("No odds fetched — keeping existing file unchanged")
         return
 
-    # Detect slate change: compare matchups in fresh odds vs existing cards.
-    # If the slate changed, a lines-only patch is insufficient — do a full rebuild.
+    # Detect slate/name/stat drift for logging only.
+    # In lines-only mode we intentionally do NOT rebuild cards.
+    # This keeps all non-line fields stable and only patches line + odds_type.
     fresh_matchups = set()
     for o in odds:
         t = (o.get("Team") or "").strip()
@@ -614,17 +648,21 @@ def lines_only():
             existing_matchups.add((t, o))
 
     if fresh_matchups and existing_matchups and fresh_matchups != existing_matchups:
-        print(f"ℹ Slate changed (matchups differ) — falling back to full rebuild")
-        return main()
+        print("ℹ Slate changed (matchups differ) — lines-only mode will patch existing cards only")
 
-    # Detect new players: if odds contain a player not in existing cards,
-    # lines-only can't add them — force a full rebuild so they appear on the site.
+    # Detect new players for observability only; lines-only mode won't add cards.
     existing_names = {normalize(c.get("name", "")) for c in data.get("cards", [])}
     fresh_names = {normalize((o.get("Name") or "").strip()) for o in odds if o.get("Name")}
     new_players = fresh_names - existing_names
     if new_players:
-        print(f"ℹ {len(new_players)} new player(s) in odds ({sorted(list(new_players))[:5]}...) — falling back to full rebuild")
-        return main()
+        print(f"ℹ {len(new_players)} new player(s) in odds ({sorted(list(new_players))[:5]}...) — preserving existing cards in lines-only mode")
+
+    # Detect new stat types for observability only; lines-only mode won't add props.
+    existing_stats = {prop["stat"] for card in data.get("cards", []) for prop in card.get("props", [])}
+    fresh_stats = {o.get("Stat") for o in odds if o.get("Stat")}
+    new_stats = fresh_stats - existing_stats
+    if new_stats:
+        print(f"ℹ New stat type(s) in odds ({sorted(new_stats)}) — preserving existing props in lines-only mode")
 
     # Index fresh odds: (normalized_name, stat) → {line, odds_type}
     fresh = {}

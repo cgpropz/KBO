@@ -15,6 +15,26 @@ const TEAMS = {
   SSG:     '#ff5555',
 };
 
+const TEAM_ALIASES = {
+  DOO: 'Doosan',
+  DOOSAN: 'Doosan',
+  HAN: 'Hanwha',
+  HANWHA: 'Hanwha',
+  KIA: 'Kia',
+  KIW: 'Kiwoom',
+  KIWOOM: 'Kiwoom',
+  KT: 'KT',
+  KTW: 'KT',
+  LG: 'LG',
+  LOT: 'Lotte',
+  LOTTE: 'Lotte',
+  NC: 'NC',
+  NCD: 'NC',
+  SAM: 'Samsung',
+  SAMSUNG: 'Samsung',
+  SSG: 'SSG',
+};
+
 const HITRATE_MIN = 30;
 const HITRATE_MID = 50;
 const HITRATE_MAX = 75;
@@ -111,6 +131,12 @@ function BatterProjections() {
     .sort()
     .join(' ');
 
+  const canonicalTeam = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return TEAM_ALIASES[text] || TEAM_ALIASES[text.toUpperCase()] || text;
+  };
+
   const photoLookup = useMemo(() => {
     const lookup = {};
     for (const [name, url] of Object.entries(photos || {})) {
@@ -126,9 +152,9 @@ function BatterProjections() {
     for (const m of list) {
       if (!m?.weather) continue;
       // Index by home team (canonical)
-      if (m.home) map[m.home] = m.weather;
+      if (m.home) map[canonicalTeam(m.home)] = m.weather;
       // Also index by away team so batters with flipped home_team still find weather
-      if (m.away) map[m.away] = m.weather;
+      if (m.away) map[canonicalTeam(m.away)] = m.weather;
     }
     return map;
   }, [matchupData]);
@@ -181,8 +207,9 @@ function BatterProjections() {
   };
 
   const propToPrizepicksStat = {
-    'Hits+Runs+RBIs': 'Hits+Runs+RBIs',
-    'Total Bases': 'Total Bases',
+    'Hits+Runs+RBIs': ['Hits+Runs+RBIs'],
+    'Total Bases': ['Total Bases'],
+    'Fantasy Score': ['Fantasy Score', 'Hitter Fantasy Score'],
   };
 
   // Map keyed by `${stat}@@${team}@@${opp}@@${nameKey}` -> array of
@@ -193,8 +220,8 @@ function BatterProjections() {
     const cards = prizepicksData?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'batter') continue;
-      const team = card?.team || '';
-      const opp = card?.opponent || '';
+      const team = canonicalTeam(card?.team || '');
+      const opp = canonicalTeam(card?.opponent || '');
       const norm = normalizeName(card?.name);
       const sig = nameSignature(card?.name);
       const byStat = new Map();
@@ -203,7 +230,7 @@ function BatterProjections() {
         const stat = prop?.stat;
         const line = Number(prop?.line);
         if (!Number.isFinite(line)) continue;
-        if (!['Hits+Runs+RBIs', 'Total Bases'].includes(stat)) continue;
+        if (!['Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score', 'Hitter Fantasy Score'].includes(stat)) continue;
         if (!byStat.has(stat)) byStat.set(stat, []);
         byStat.get(stat).push({
           line,
@@ -248,22 +275,27 @@ function BatterProjections() {
   };
 
   const mergedProjections = (data?.projections || []).map((p) => {
-    const ppStat = propToPrizepicksStat[p.prop];
-    if (!ppStat) return p;
-    const team = p.team || '';
-    const opp = p.opponent || '';
+    const ppStats = propToPrizepicksStat[p.prop] || [];
+    const team = canonicalTeam(p.team || '');
+    const opp = canonicalTeam(p.opponent || '');
+    const home = canonicalTeam(p.home_team || team);
+    if (!ppStats.length) return { ...p, team, opponent: opp, home_team: home };
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
-    const variants =
-      ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@${norm}`)
-      ?? ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@sig:${sig}`);
+    let variants = null;
+    for (const ppStat of ppStats) {
+      variants =
+        ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@${norm}`)
+        ?? ppVariantsByKey.get(`${ppStat}@@${team}@@${opp}@@sig:${sig}`);
+      if (variants?.length) break;
+    }
 
     const variant = pickVariant(
       variants,
       Number(p.line),
       (p.odds_type || 'standard').toLowerCase(),
     );
-    if (!variant) return p;
+    if (!variant) return { ...p, team, opponent: opp, home_team: home };
 
     const liveLine = variant.line;
     const oddsType = variant.odds_type;
@@ -283,6 +315,9 @@ function BatterProjections() {
 
     return {
       ...p,
+      team,
+      opponent: opp,
+      home_team: home,
       line: liveLine,
       odds_type: oddsType,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
@@ -431,13 +466,13 @@ function BatterProjections() {
         <h1 className="bp-title">🇰🇷 ⚾️ KBO Batter Projections ⚾️ 🇰🇷</h1>
         {lastUpdated ? <p className="bp-subtitle">Updated {new Date(lastUpdated).toLocaleString()}</p> : null}
         <div className="bp-filter-bar">
-          {['all', 'Hits+Runs+RBIs', 'Total Bases'].map(f => (
+          {['all', 'Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score'].map(f => (
             <button
               key={f}
               className={`bp-filter-btn ${propFilter === f ? 'active' : ''}`}
               onClick={() => setPropFilter(f)}
             >
-              {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'Total Bases'}
+              {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : f === 'Total Bases' ? 'Total Bases' : 'Fantasy Score'}
             </button>
           ))}
 
@@ -543,7 +578,7 @@ function BatterProjections() {
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
                   <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : 'UNK'}</td>
                   {(() => {
-                    const w = weatherByHome[p.home_team];
+                    const w = weatherByHome[canonicalTeam(p.home_team)];
                     if (!w) return <td className="col-center cell-na">—</td>;
                     if (w.is_dome) return <td className="col-center mono" title="Dome — no wind"><span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Dome</span></td>;
                     const effect = w.wind_effect || w.wind_compass || '';
@@ -572,7 +607,7 @@ function BatterProjections() {
                   >
                     {p.ops != null ? Number(p.ops).toFixed(3) : '—'}
                   </td>
-                  <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : 'TB'}</td>
+                  <td className="col-prop">{p.prop === 'Hits+Runs+RBIs' ? 'H+R+RBI' : p.prop === 'Total Bases' ? 'TB' : 'FS'}</td>
                   <td className="col-num col-pp">
                     <span className="pp-cell"><span className="pp-icon-sm">P</span><span className="mono">{p.line != null ? p.line.toFixed(1) : '—'}</span></span>
                   </td>
@@ -637,7 +672,7 @@ function BatterProjections() {
                 })
                 .map(([team, rates]) => {
                   const rate = propFilter === 'Total Bases' ? rates.tb_per_g : rates.hrr_per_g;
-                  const label = propFilter === 'Total Bases' ? 'TB/G' : 'HRR/G';
+                  const label = propFilter === 'Total Bases' ? 'TB/G' : propFilter === 'Fantasy Score' ? 'HRR/G' : 'HRR/G';
                   return (
                     <div key={team} className="bp-team-card">
                       <span className="bp-team-name" style={{ color: TEAMS[team] || '#999' }}>{team}</span>
@@ -653,7 +688,9 @@ function BatterProjections() {
           <span className="bp-formula-icon">ƒ</span>
           {propFilter === 'Total Bases'
             ? <code>TB/G × (Opp Team TB/G ÷ League Avg TB/G)</code>
-            : <code>HRR/G × (Opp Team HRR/G ÷ League Avg HRR/G)</code>
+            : propFilter === 'Fantasy Score'
+              ? <code>FS = 3×1B + 5×2B + 8×3B + 10×HR + 2×R + 2×RBI + 2×BB + 2×HBP + 2×SB</code>
+              : <code>HRR/G × (Opp Team HRR/G ÷ League Avg HRR/G)</code>
           }
         </div>
       </main>

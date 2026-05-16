@@ -1,4 +1,4 @@
-"""Generate batter projections for KBO: H+R+RBI and Total Bases.
+"""Generate batter projections for KBO: H+R+RBI, Total Bases, and Fantasy Score.
 
 H+R+RBI Formula:
   Base_HRR/G × (Opp_Team_HRR/G ÷ League_Avg_HRR/G)
@@ -316,6 +316,19 @@ TEAM_NAME_MAP = {
 }
 TEAM_NAME_MAP_REV = {v: k for k, v in TEAM_NAME_MAP.items()}
 
+TEAM_ALIASES = {
+    "DOO": "Doosan", "DOOSAN": "Doosan",
+    "HAN": "Hanwha", "HANWHA": "Hanwha",
+    "KIA": "Kia",
+    "KIW": "Kiwoom", "KIWOOM": "Kiwoom",
+    "KT": "KT", "KTW": "KT",
+    "LG": "LG",
+    "LOT": "Lotte", "LOTTE": "Lotte",
+    "NC": "NC", "NCD": "NC",
+    "SAM": "Samsung", "SAMSUNG": "Samsung",
+    "SSG": "SSG",
+}
+
 # ── Step 2: Load team batting stats (opponent factor) ──
 # Primary source: canonical opponent stats file built from Baseball Reference.
 team_batting = {}
@@ -437,7 +450,7 @@ for row in batter_logs:
             "games": 0,
             "h": 0, "r": 0, "rbi": 0, "ab": 0, "hr": 0,
             "walks": 0, "hbp": 0, "tb": 0,
-            "doubles": 0, "triples": 0,
+            "doubles": 0, "triples": 0, "sb": 0,
         }
     batter_games.setdefault(name, []).append(row)
     bs = batter_stats[name]
@@ -452,6 +465,7 @@ for row in batter_logs:
     bs["tb"] += int(row["TB"])
     bs["doubles"] += int(row["2B"])
     bs["triples"] += int(row["3B"])
+    bs["sb"] += int(row.get("SB", 0) or 0)
 
 # Compute per-game averages
 for name, bs in batter_stats.items():
@@ -886,8 +900,9 @@ def update_persistent_batter_maps(pp_name_entries):
 
 # ── Step 4: Load PrizePicks lines (H+R+RBI and Total Bases) ──
 def load_pp_lines(stat_name):
-    """Load PrizePicks lines for a given stat type (all odds types, prefer standard)."""
+    """Load PrizePicks lines for one or many stat labels (prefer standard)."""
     lines = {}
+    stat_names = {stat_name} if isinstance(stat_name, str) else set(stat_name)
     _odds_priority = {"standard": 0, "demon": 1, "goblin": 2}
 
     def _should_replace(existing, new_type):
@@ -898,7 +913,7 @@ def load_pp_lines(stat_name):
     if os.path.exists(pp_json):
         with open(pp_json) as f:
             for row in json.load(f):
-                if row.get("Stat") == stat_name:
+                if row.get("Stat") in stat_names:
                     key = normalize_name(row["Name"]).lower()
                     entry = {
                         "pp_name": row["Name"],
@@ -912,7 +927,7 @@ def load_pp_lines(stat_name):
     if not lines and os.path.exists(pp_csv_path):
         with open(pp_csv_path) as f:
             for row in csv.DictReader(f):
-                if row["Stat"] == stat_name:
+                if row["Stat"] in stat_names:
                     key = normalize_name(row["Name"]).lower()
                     entry = {
                         "pp_name": row["Name"],
@@ -931,9 +946,10 @@ def load_pp_lines(stat_name):
 
 pp_hrr, pp_hrr_parts = load_pp_lines("Hits+Runs+RBIs")
 pp_tb, pp_tb_parts = load_pp_lines("Total Bases")
+pp_fs, pp_fs_parts = load_pp_lines(["Fantasy Score", "Hitter Fantasy Score"])
 
 pp_batter_name_map, pp_batter_name_map_norm = load_pp_batter_name_map()
-pp_names_for_mapping = [v.get("pp_name") for v in pp_hrr.values()] + [v.get("pp_name") for v in pp_tb.values()]
+pp_names_for_mapping = [v.get("pp_name") for v in pp_hrr.values()] + [v.get("pp_name") for v in pp_tb.values()] + [v.get("pp_name") for v in pp_fs.values()]
 pp_batter_name_map, pp_batter_name_map_norm = update_persistent_batter_maps(pp_names_for_mapping)
 
 print(f"\nPP H+R+RBI standard lines: {len(pp_hrr)}")
@@ -942,17 +958,32 @@ for v in pp_hrr.values():
 print(f"\nPP Total Bases standard lines: {len(pp_tb)}")
 for v in pp_tb.values():
     print(f"  {v['pp_name']:25s} line={v['line']}")
+print(f"\nPP Fantasy Score standard lines: {len(pp_fs)}")
+for v in pp_fs.values():
+    print(f"  {v['pp_name']:25s} line={v['line']}")
 
 # ── Step 5: Build projections for both prop types ──
 projections = []
 
 
 def resolve_team(pp_team_raw):
-    """Map PrizePicks team name to short name."""
+    """Map team tokens from odds feed to canonical short names used in projections."""
+    text = str(pp_team_raw or "").strip()
+    if not text:
+        return ""
+
+    if text in TEAM_ALIASES:
+        return TEAM_ALIASES[text]
+
+    upper = text.upper()
+    if upper in TEAM_ALIASES:
+        return TEAM_ALIASES[upper]
+
     for full, short in TEAM_NAME_MAP_REV.items():
-        if pp_team_raw in full or full in pp_team_raw or pp_team_raw == short:
+        if text in full or full in text or text == short:
             return short
-    return pp_team_raw
+
+    return text
 
 
 def build_hrr_projections():
@@ -1258,24 +1289,335 @@ def build_tb_projections():
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
+def build_fantasy_projections():
+    """Build fantasy-score projections from weighted component stats.
+
+    Fantasy score weights:
+      1B=3, 2B=5, 3B=8, HR=10, R=2, RBI=2, BB=2, HBP=2, SB=2
+    """
+    print("\n── Fantasy Score Projections ──")
+
+    def _pa_of(g):
+        return int(g.get("AB", 0) or 0) + int(g.get("Walks", 0) or 0) + int(g.get("HBP", 0) or 0)
+
+    def _single_of(g):
+        h = int(g.get("H", 0) or 0)
+        d = int(g.get("2B", 0) or 0)
+        t = int(g.get("3B", 0) or 0)
+        hr = int(g.get("HR", 0) or 0)
+        return max(0, h - d - t - hr)
+
+    def _window(games, n=None):
+        sub = games if n is None else games[:n]
+        return {
+            "g": len(sub),
+            "pa": sum(_pa_of(g) for g in sub),
+            "single": sum(_single_of(g) for g in sub),
+            "double": sum(int(g.get("2B", 0) or 0) for g in sub),
+            "triple": sum(int(g.get("3B", 0) or 0) for g in sub),
+            "hr": sum(int(g.get("HR", 0) or 0) for g in sub),
+            "r": sum(int(g.get("R", 0) or 0) for g in sub),
+            "rbi": sum(int(g.get("RBI", 0) or 0) for g in sub),
+            "bb": sum(int(g.get("Walks", 0) or 0) for g in sub),
+            "hbp": sum(int(g.get("HBP", 0) or 0) for g in sub),
+            "sb": sum(int(g.get("SB", 0) or 0) for g in sub),
+        }
+
+    def _safe_div(num, den):
+        return (num / den) if den > 0 else None
+
+    def _weighted(vals, weights):
+        tot_w = 0.0
+        tot = 0.0
+        for k, v in vals.items():
+            if v is None:
+                continue
+            tot += v * weights[k]
+            tot_w += weights[k]
+        return (tot / tot_w) if tot_w > 0 else None
+
+    pa_w = {"l3": 0.50, "l6": 0.30, "season": 0.20}
+    rate_w = {"l3": 0.30, "l6": 0.30, "season": 0.40}
+    score_weights = {
+        "single": 3,
+        "double": 5,
+        "triple": 8,
+        "hr": 10,
+        "r": 2,
+        "rbi": 2,
+        "bb": 2,
+        "hbp": 2,
+        "sb": 2,
+    }
+
+    # Only project batters who have an actual Fantasy Score line on PrizePicks
+    fs_candidates = dict(pp_fs)
+
+    for key, pp_val in fs_candidates.items():
+        pp_name = pp_val["pp_name"]
+        team = resolve_team(pp_val["team"])
+        opp = team_opponent.get(team)
+        if not opp:
+            opp = resolve_team(pp_val.get("versus", ""))
+        if not opp:
+            opp = pp_val.get("versus", "") or "Unknown"
+
+        resolved = resolve_batter_name(pp_name)
+        bs = batter_stats.get(resolved)
+        line = pp_val.get("line")
+        opp_pitcher, opp_pitcher_whip, opp_pitcher_hand = resolve_opp_pitcher_context(opp)
+        split_row = get_batter_split_row(pp_name, resolved)
+        batter_hand = get_batter_hand(pp_name, resolved)
+        split_avgs = resolve_split_avgs(split_row, bs, opp_pitcher_hand, league_avg_ba)
+
+        recent_games = batter_games.get(resolved, [])
+        fantasy_values = []
+        for g in recent_games:
+            one_b = _single_of(g)
+            two_b = int(g.get("2B", 0) or 0)
+            three_b = int(g.get("3B", 0) or 0)
+            hr = int(g.get("HR", 0) or 0)
+            r = int(g.get("R", 0) or 0)
+            rbi = int(g.get("RBI", 0) or 0)
+            bb = int(g.get("Walks", 0) or 0)
+            hbp = int(g.get("HBP", 0) or 0)
+            sb = int(g.get("SB", 0) or 0)
+            fantasy_values.append(
+                one_b * 3 + two_b * 5 + three_b * 8 + hr * 10 + r * 2 + rbi * 2 + bb * 2 + hbp * 2 + sb * 2
+            )
+        if line is None:
+            hit_rates = {
+                "hit_rate_full": None,
+                "hit_rate_l10": None,
+                "hit_rate_l5": None,
+                "hits_full": "0/0",
+                "hits_l10": "0/0",
+                "hits_l5": "0/0",
+            }
+        else:
+            hit_rates = calc_hit_rates(fantasy_values, line)
+
+        if not bs:
+            print(f"  WARNING: No data for {pp_name} — using neutral fallback")
+            projections.append({
+                "name": pp_name, "team": team, "opponent": opp,
+                "line": line, "pp_name": pp_name, "prop": "Fantasy Score",
+                "odds_type": pp_val.get("odds_type", "standard"),
+                "projection": round(line, 2) if line is not None else 0.0,
+                "edge": 0.0 if line is not None else None,
+                "rating": 50.0 if line is not None else None,
+                "recommendation": "PUSH" if line is not None else "NO LINE",
+                "avg_per_g": None,
+                "opp_factor": 1.0,
+                "park_factor": 1.0,
+                "venue": "",
+                "home_team": game_home_team.get(team, team),
+                "games_used": 0,
+                "batter_hand": batter_hand,
+                "opp_pitcher": opp_pitcher,
+                "opp_pitcher_whip": opp_pitcher_whip,
+                "opp_pitcher_hand": opp_pitcher_hand,
+                "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+                "vs_rhp_avg": split_avgs["vs_rhp_avg"],
+                "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+                "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+                "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
+                **hit_rates,
+            })
+            continue
+
+        w_season = _window(recent_games)
+        w_l6 = _window(recent_games, 6)
+        w_l3 = _window(recent_games, 3)
+        proj_pa = _weighted(
+            {
+                "l3": _safe_div(w_l3["pa"], w_l3["g"]),
+                "l6": _safe_div(w_l6["pa"], w_l6["g"]),
+                "season": _safe_div(w_season["pa"], w_season["g"]),
+            },
+            pa_w,
+        )
+
+        comp_rates = {}
+        for stat in score_weights:
+            comp_rates[stat] = _weighted(
+                {
+                    "l3": _safe_div(w_l3[stat], w_l3["pa"]),
+                    "l6": _safe_div(w_l6[stat], w_l6["pa"]),
+                    "season": _safe_div(w_season[stat], w_season["pa"]),
+                },
+                rate_w,
+            ) or 0.0
+
+        if proj_pa and proj_pa > 0:
+            base_components = {k: max(0.0, proj_pa * v) for k, v in comp_rates.items()}
+        else:
+            g = max(1, bs["games"])
+            season_one_b = max(0, bs["h"] - bs["doubles"] - bs["triples"] - bs["hr"])
+            base_components = {
+                "single": season_one_b / g,
+                "double": bs["doubles"] / g,
+                "triple": bs["triples"] / g,
+                "hr": bs["hr"] / g,
+                "r": bs["r"] / g,
+                "rbi": bs["rbi"] / g,
+                "bb": bs["walks"] / g,
+                "hbp": bs["hbp"] / g,
+                "sb": bs["sb"] / g,
+            }
+
+        base_fantasy = sum(base_components[k] * score_weights[k] for k in score_weights)
+
+        # Blend environment factors from existing prop contexts.
+        opp_hrr = team_batting.get(opp, {}).get("hrr_per_g", league_avg_hrr_per_g)
+        opp_tb = team_batting.get(opp, {}).get("tb_per_g", league_avg_tb_per_g)
+        raw_hrr = opp_hrr / league_avg_hrr_per_g
+        raw_tb = opp_tb / league_avg_tb_per_g
+        blended_raw = (raw_hrr + raw_tb) / 2.0
+        opp_factor = max(0.88, min(1.12, 1.0 + 0.50 * (blended_raw - 1.0)))
+
+        vs_opp_avg = split_avgs.get("vs_opp_hand_avg")
+        if vs_opp_avg and vs_opp_avg > 0 and league_avg_ba > 0:
+            raw_split = vs_opp_avg / league_avg_ba
+            split_factor = max(0.90, min(1.10, 1.0 + 0.40 * (raw_split - 1.0)))
+        else:
+            split_factor = 1.0
+
+        if opp_pitcher_whip and opp_pitcher_whip > 0:
+            pitcher_factor = max(0.90, min(1.10, 1.0 + 0.20 * (opp_pitcher_whip - 1.25)))
+        else:
+            pitcher_factor = 1.0
+
+        home = game_home_team.get(team, team)
+        pf_r = park_factors.get(home, {}).get("pf_r", 1.0)
+        pf_hr = park_factors.get(home, {}).get("pf_hr", 1.0)
+        context_core = opp_factor * split_factor * pitcher_factor
+        context_contact = context_core * pf_r
+        context_power = context_core * pf_hr
+        context_mild = max(0.92, min(1.08, 1.0 + 0.25 * (context_core - 1.0)))
+
+        adjusted_components = {
+            "single": base_components["single"] * context_contact,
+            "double": base_components["double"] * context_power,
+            "triple": base_components["triple"] * context_power,
+            "hr": base_components["hr"] * context_power,
+            "r": base_components["r"] * context_contact,
+            "rbi": base_components["rbi"] * context_contact,
+            "bb": base_components["bb"] * context_mild,
+            "hbp": base_components["hbp"] * context_mild,
+            "sb": base_components["sb"] * context_mild,
+        }
+
+        proj = sum(adjusted_components[k] * score_weights[k] for k in score_weights)
+        edge = (proj - line) if line is not None else None
+        if edge is None:
+            rec = "NO LINE"
+        else:
+            rec = "OVER" if edge > 0.5 else "UNDER" if edge < -0.5 else "PUSH"
+            if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
+                rec = "PUSH"
+        rating = round((proj / line) * 50, 1) if line else None
+
+        projections.append({
+            "name": pp_name, "team": team, "opponent": opp,
+            "line": line, "pp_name": pp_name, "prop": "Fantasy Score",
+            "odds_type": pp_val.get("odds_type", "standard"),
+            "projection": round(proj, 2), "edge": round(edge, 2) if edge is not None else None,
+            "rating": rating, "recommendation": rec,
+            "avg_per_g": round(base_fantasy, 2),
+            "opp_factor": round(opp_factor, 3), "park_factor": round((pf_r + pf_hr) / 2.0, 3),
+            "venue": park_factors.get(home, {}).get("venue", ""),
+            "home_team": home,
+            "ba": round(bs["ba"], 3), "ops": batter_ops_2026.get(resolved, round(bs["ops"], 3)),
+            "games_used": bs["games"],
+            "batter_hand": batter_hand,
+            "opp_pitcher": opp_pitcher,
+            "opp_pitcher_whip": opp_pitcher_whip,
+            "opp_pitcher_hand": opp_pitcher_hand,
+            "vs_lhp_avg": split_avgs["vs_lhp_avg"],
+            "vs_rhp_avg": split_avgs["vs_rhp_avg"],
+            "vs_lhp_ab": split_row.get("vs_lhp_ab"),
+            "vs_rhp_ab": split_row.get("vs_rhp_ab"),
+            "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
+            "projected_pa": round(proj_pa, 2) if proj_pa else None,
+            "proj_1b": round(adjusted_components["single"], 3),
+            "proj_2b": round(adjusted_components["double"], 3),
+            "proj_3b": round(adjusted_components["triple"], 3),
+            "proj_hr": round(adjusted_components["hr"], 3),
+            "proj_r": round(adjusted_components["r"], 3),
+            "proj_rbi": round(adjusted_components["rbi"], 3),
+            "proj_bb": round(adjusted_components["bb"], 3),
+            "proj_hbp": round(adjusted_components["hbp"], 3),
+            "proj_sb": round(adjusted_components["sb"], 3),
+            "split_factor": round(split_factor, 3),
+            "pitcher_factor": round(pitcher_factor, 3),
+            **hit_rates,
+        })
+        edge_txt = f"{edge:+.2f}" if edge is not None else "N/A"
+        line_txt = f"{line}" if line is not None else "None"
+        print(f"  {pp_name:25s} ({team} vs {opp}): FS={proj:.2f} (Line={line_txt}, Edge={edge_txt} => {rec})")
+
+
 build_hrr_projections()
 build_tb_projections()
+build_fantasy_projections()
 
 # Sort by prop type then team then name
 projections.sort(key=lambda p: (p["prop"], p["team"], p["name"]))
 
 # ── Step 6: Write output JSON ──
 out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "batter_projections.json")
-with open(out_path, "w") as f:
-    json.dump({
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "projections": projections,
-        "league_avg_hrr_per_g": round(league_avg_hrr_per_g, 2),
-        "league_avg_tb_per_g": round(league_avg_tb_per_g, 2),
-        "team_batting": {k: {"hrr_per_g": round(v["hrr_per_g"], 1), "tb_per_g": round(v["tb_per_g"], 1)} for k, v in team_batting.items()},
-        "park_factors": park_factors,
-    }, f, indent=2)
+backup_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "batter_projections.last_good.json")
+payload = {
+    "generated_at": datetime.now(timezone.utc).isoformat(),
+    "projections": projections,
+    "league_avg_hrr_per_g": round(league_avg_hrr_per_g, 2),
+    "league_avg_tb_per_g": round(league_avg_tb_per_g, 2),
+    "team_batting": {k: {"hrr_per_g": round(v["hrr_per_g"], 1), "tb_per_g": round(v["tb_per_g"], 1)} for k, v in team_batting.items()},
+    "park_factors": park_factors,
+}
+
+# Safety guard: do not replace a populated snapshot with an empty one.
+existing_count = 0
+if os.path.exists(out_path):
+    try:
+        with open(out_path) as f:
+            existing_payload = json.load(f)
+        existing_count = len((existing_payload or {}).get("projections", []))
+    except Exception:
+        existing_count = 0
+
+backup_count = 0
+if os.path.exists(backup_path):
+    try:
+        with open(backup_path) as f:
+            backup_payload = json.load(f)
+        backup_count = len((backup_payload or {}).get("projections", []))
+    except Exception:
+        backup_count = 0
+
+if len(projections) == 0 and existing_count > 0:
+    print(
+        f"\nWARNING: New batter projection build is empty; preserving existing snapshot "
+        f"with {existing_count} rows at {out_path}."
+    )
+elif len(projections) == 0 and backup_count > 0:
+    with open(backup_path) as f:
+        backup_payload = json.load(f)
+    with open(out_path, "w") as f:
+        json.dump(backup_payload, f, indent=2)
+    print(
+        f"\nWARNING: New batter projection build is empty; restored last-good snapshot "
+        f"with {backup_count} rows from {backup_path}."
+    )
+else:
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    if len(projections) > 0:
+        with open(backup_path, "w") as f:
+            json.dump(payload, f, indent=2)
 
 hrr_count = sum(1 for p in projections if p["prop"] == "Hits+Runs+RBIs")
 tb_count = sum(1 for p in projections if p["prop"] == "Total Bases")
-print(f"\nWrote {len(projections)} batter projections ({hrr_count} H+R+RBI, {tb_count} TB) to {out_path}")
+fs_count = sum(1 for p in projections if p["prop"] == "Fantasy Score")
+print(f"\nWrote {len(projections)} batter projections ({hrr_count} H+R+RBI, {tb_count} TB, {fs_count} Fantasy) to {out_path}")

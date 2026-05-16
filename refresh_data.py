@@ -13,7 +13,9 @@ This includes:
 - Prop grades
 
 NOTE: PrizePicks odds are no longer included here.
-Use refresh_odds.py (runs every ~10 min) for odds-only updates.
+refresh_data.py now fetches fresh odds and performs a lines-only props patch
+so PrizePicks lines stay current without rewriting other props fields.
+Use refresh_odds.py (runs every ~10 min) for odds-only updates between full refreshes.
 
 Usage:
   python refresh_data.py                # run all steps
@@ -102,6 +104,11 @@ STEPS = [
         "timeout": 600,  # 10-minute hard cap for all 97 players
     },
     {
+        "name": "PrizePicks Odds Fetch",
+        "cmd": [PYTHON, os.path.join(BASE, "KBO-Odds", "KBO_ODDS_2025.py")],
+        "skip_flag": "--skip-odds",
+    },
+    {
         "name": "Opponent Team Batting Stats",
         "cmd": [PYTHON, os.path.join(BASE, "build_opponent_stats.py")],
         "skip_flag": None,
@@ -125,8 +132,8 @@ STEPS = [
         "depends_on": "Daily Lineups",
     },
     {
-        "name": "Player Props (full rebuild)",
-        "cmd": [PYTHON, os.path.join(BASE, "generate_props.py")],
+        "name": "Player Props (lines-only refresh)",
+        "cmd": [PYTHON, os.path.join(BASE, "generate_props.py"), "--lines-only"],
         "skip_flag": None,
         "depends_on": "Daily Lineups",
     },
@@ -296,6 +303,26 @@ def summarize_gamelogs():
     return season_errors
 
 
+def validate_ui_snapshots():
+    """Return validation errors for critical UI snapshot payloads."""
+    errors = []
+
+    batter_path = os.path.join(PUBLIC_DATA, "batter_projections.json")
+    if os.path.exists(batter_path):
+        try:
+            with open(batter_path, "r", encoding="utf-8") as f:
+                batter = json.load(f)
+            count = len((batter or {}).get("projections", []))
+            if count == 0:
+                errors.append("batter_projections.json has 0 rows")
+        except Exception as exc:
+            errors.append(f"batter_projections.json unreadable: {exc}")
+    else:
+        errors.append("batter_projections.json missing")
+
+    return errors
+
+
 def main():
     ensure_project_python()
 
@@ -350,6 +377,7 @@ def main():
                 print(f"📋 Copied {os.path.basename(src)} → public/data/")
 
         failed.extend(summarize_gamelogs())
+        failed.extend(validate_ui_snapshots())
 
         if failed:
             print("\n⚠ Skipping Supabase publish because one or more pipeline steps failed")

@@ -46,6 +46,18 @@ function snapshotFreshnessMs(snapshot) {
   );
 }
 
+function snapshotContentScore(snapshot) {
+  if (!snapshot?.data || typeof snapshot.data !== 'object') return -1;
+  const d = snapshot.data;
+  const counts = [
+    Array.isArray(d.cards) ? d.cards.length : -1,
+    Array.isArray(d.projections) ? d.projections.length : -1,
+    Array.isArray(d.matchups) ? d.matchups.length : -1,
+    Array.isArray(d.stats) ? d.stats.length : -1,
+  ];
+  return Math.max(...counts);
+}
+
 export const dataUrl = (path) =>
   `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`;
 
@@ -118,17 +130,26 @@ export async function fetchDataSnapshot(path) {
     };
   }
 
-  // Prefer the snapshot with richer content (more cards) even if its timestamp is older
+  // Prefer the snapshot with richer non-empty content even if its timestamp is older.
   if (supabasePayload && staticPayload) {
-    const sbCards = Array.isArray(supabasePayload.data?.cards) ? supabasePayload.data.cards.length : -1;
-    const stCards = Array.isArray(staticPayload.data?.cards) ? staticPayload.data.cards.length : -1;
-    if (stCards > 0 && sbCards >= 0 && stCards > sbCards) {
+    const sbScore = snapshotContentScore(supabasePayload);
+    const stScore = snapshotContentScore(staticPayload);
+    if (stScore > 0 && sbScore >= 0 && stScore > sbScore) {
       console.warn(
-        `[data] ${path} static has ${stCards} cards vs supabase ${sbCards}, using richer static snapshot`,
+        `[data] ${path} static has richer content (${stScore} vs ${sbScore}), using static snapshot`,
       );
       return {
         ...staticPayload,
         source: 'static_richer_content',
+      };
+    }
+    if (sbScore > 0 && stScore >= 0 && sbScore > stScore) {
+      console.warn(
+        `[data] ${path} supabase has richer content (${sbScore} vs ${stScore}), using supabase snapshot`,
+      );
+      return {
+        ...supabasePayload,
+        source: 'supabase_richer_content',
       };
     }
   }
