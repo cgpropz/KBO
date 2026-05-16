@@ -93,8 +93,14 @@ def load_projections():
             d = json.load(f)
         for p in d.get("projections", []):
             if p.get("name"):
-                key = (p["name"], p.get("prop", ""))
+                prop = p.get("prop", "")
+                key = (p["name"], prop)
                 b_proj[key] = p
+                # Fantasy prop names differ across files; index both aliases.
+                if prop == "Fantasy Score":
+                    b_proj[(p["name"], "Hitter Fantasy Score")] = p
+                elif prop == "Hitter Fantasy Score":
+                    b_proj[(p["name"], "Fantasy Score")] = p
     return k_proj, k_proj_all, b_proj
 
 def normalize(name):

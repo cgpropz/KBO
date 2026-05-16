@@ -30,8 +30,9 @@ STAT_KEY = {
     "Pitching Outs": "outs",
     "Hits+Runs+RBIs": "hrr",
     "Total Bases": "tb",
-    "Fantasy Score": "fantasy_score",
-    "Hitter Fantasy Score": "fantasy_score",
+    # Batter game logs store fantasy as `fs`.
+    "Fantasy Score": "fs",
+    "Hitter Fantasy Score": "fs",
 }
 
 STAT_SHORT = {
