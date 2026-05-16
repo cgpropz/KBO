@@ -11,8 +11,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: kbo-refresh-pipeline
-  cancel-in-progress: false
+  # Separate group from the full deploy so odds refreshes don't queue
+  # behind a 14-minute pipeline run. cancel-in-progress: true means if a
+  # new odds refresh is triggered while one is already queued, the queued
+  # one is dropped and only the freshest run executes.
+  group: kbo-odds-refresh
+  cancel-in-progress: true
 
 jobs:
   refresh-odds:

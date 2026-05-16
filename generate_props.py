@@ -648,7 +648,8 @@ def lines_only():
             existing_matchups.add((t, o))
 
     if fresh_matchups and existing_matchups and fresh_matchups != existing_matchups:
-        print("ℹ Slate changed (matchups differ) — lines-only mode will patch existing cards only")
+        print("ℹ Slate changed (matchups differ) — triggering full rebuild for new slate")
+        return main()
 
     # Detect new players for observability only; lines-only mode won't add cards.
     existing_names = {normalize(c.get("name", "")) for c in data.get("cards", [])}
