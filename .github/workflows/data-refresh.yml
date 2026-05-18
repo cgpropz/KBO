@@ -92,10 +92,15 @@ jobs:
       - name: Build and deploy odds-only update to Vercel
         run: |
           npm i -g vercel@latest
-          # Pull latest committed data so the build uses fresh projections that the
-          # full refresh workflow may have just committed (e.g. batter/pitcher
-          # projections that it generates once per full-refresh cycle).
-          git pull --rebase origin main 2>/dev/null || true
+          # Pull latest committed data so the build always includes fresh projections
+          # from the most recent full-refresh run (batter/pitcher projections, etc.).
+          # --ff-only first (fast, no rebase needed if remote is strictly ahead);
+          # fall back to --rebase if we have local commits ahead of remote.
+          # Never let a pull failure block the deploy — worst case we deploy with
+          # the last committed projections which are at most a few hours old.
+          git pull --ff-only origin main 2>/dev/null \
+            || git pull --rebase origin main 2>/dev/null \
+            || echo "git pull skipped (no-op or minor conflict) — continuing with current checkout"
           # Lightweight: build with fresh prizepicks_props.json + ship to prod.
           # Skip-odds avoids re-fetching (we already did it above) and
           # skip-full-refresh avoids the 30+ min stat scrape pipeline.
