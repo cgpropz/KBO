@@ -70,6 +70,9 @@ jobs:
       - name: Run full data refresh (stats, logs, projections, player props)
         run: |
           bash pipeline/run_release.sh --skip-deploy
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Check for duplicate data generation steps
         run: |
@@ -103,14 +106,30 @@ jobs:
           else
             git commit -m "chore: auto-refresh data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             if ! git push origin HEAD:main; then
-              echo "Push rejected; attempting one rebase+push retry"
-              if git pull --rebase origin main && git push origin HEAD:main; then
-                echo "Retry push succeeded"
+              echo "Push rejected; attempting rebase+push retry"
+              if git pull --rebase origin main; then
+                # Clean rebase — just push
+                git push origin HEAD:main && echo "Retry push succeeded" \
+                  || echo "Second push also rejected — deploying from workspace"
               else
-                # Never continue with a conflicted worktree; downstream steps read JSON files.
-                git rebase --abort >/dev/null 2>&1 || true
-                git reset --hard HEAD >/dev/null 2>&1 || true
-                echo "Retry push failed (likely race/merge conflict) — continuing to deploy current build"
+                # Rebase conflict (most likely prizepicks_props.json raced with intraday
+                # odds refresh). Take OUR version for every conflicted file — the full
+                # rebuild has today's correct cards + lines and must not be discarded.
+                echo "Rebase conflict — auto-resolving with our full-refresh version..."
+                CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+                if [ -n "$CONFLICTS" ]; then
+                  echo "Conflicted files: $CONFLICTS"
+                  # --theirs in a rebase = the commit being replayed = OUR local commit
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                fi
+                GIT_EDITOR=true git rebase --continue \
+                  && git push origin HEAD:main \
+                  && echo "Push succeeded after auto-conflict-resolution" \
+                  || {
+                    git rebase --abort >/dev/null 2>&1 || true
+                    echo "Push failed after conflict resolution — deploying from workspace"
+                  }
               fi
             fi
           fi
