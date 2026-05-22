@@ -74,7 +74,7 @@ function BatterProjections() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortField, setSortField] = useState('edge');
+  const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
   const [oddsTypeFilter, setOddsTypeFilter] = useState('all');

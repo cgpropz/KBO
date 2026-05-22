@@ -74,7 +74,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
   const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
-  const [sortField, setSortField] = useState('edge');
+  const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
   const [parlayPicks, setParlayPicks] = useState([]); // array of {name, team, opponent, prop, line, projection, edge, side}
   const [expandedRow, setExpandedRow] = useState(null); // index of expanded row or null
