@@ -248,6 +248,39 @@ function BatterProjections() {
     return map;
   })();
 
+  // Fallback index used when exact team+opponent matching drifts between
+  // projection snapshots and live PrizePicks cards.
+  const ppFallbackEntries = (() => {
+    const entries = [];
+    const cards = prizepicksData?.cards || [];
+    for (const card of cards) {
+      if (card?.type !== 'batter') continue;
+      const team = canonicalTeam(card?.team || '');
+      const opp = canonicalTeam(card?.opponent || '');
+      const norm = normalizeName(card?.name);
+      const sig = nameSignature(card?.name);
+      const byStat = new Map();
+
+      for (const prop of card?.props || []) {
+        const stat = prop?.stat;
+        const line = Number(prop?.line);
+        if (!Number.isFinite(line)) continue;
+        if (!['Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score', 'Hitter Fantasy Score'].includes(stat)) continue;
+        if (!byStat.has(stat)) byStat.set(stat, []);
+        byStat.get(stat).push({
+          line,
+          odds_type: (prop?.odds_type || 'standard').toLowerCase(),
+        });
+      }
+
+      for (const [stat, variants] of byStat.entries()) {
+        variants.sort((a, b) => a.line - b.line);
+        entries.push({ team, opp, norm, sig, stat, variants });
+      }
+    }
+    return entries;
+  })();
+
   // Pick the variant that best matches the projection's stored line/odds_type.
   // 1) Exact line match preferred (prefer same odds_type, then standard, then any)
   // 2) Otherwise: prefer the Standard variant if PP offers one
@@ -274,12 +307,55 @@ function BatterProjections() {
     return variants[Math.floor(variants.length / 2)];
   };
 
+  // Relaxed matcher for cases where team/opponent on projections lag behind
+  // the live card metadata. Prefer strongest key agreement first.
+  const pickFallbackVariants = (ppStats, team, opp, norm, sig, projLine) => {
+    const candidates = [];
+    for (const stat of ppStats) {
+      for (const entry of ppFallbackEntries) {
+        if (entry.stat !== stat) continue;
+        if (entry.norm !== norm && entry.sig !== sig) continue;
+
+        let score = 0;
+        if (entry.team === team) score += 4;
+        if (entry.opp === opp) score += 2;
+        if (entry.norm === norm) score += 1;
+
+        const medianLine = entry.variants[Math.floor(entry.variants.length / 2)]?.line;
+        const lineDelta = Number.isFinite(projLine) && Number.isFinite(medianLine)
+          ? Math.abs(projLine - medianLine)
+          : 999;
+
+        candidates.push({ score, lineDelta, variants: entry.variants });
+      }
+    }
+
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.lineDelta - b.lineDelta;
+    });
+    return candidates[0].variants;
+  };
+
   const mergedProjections = (data?.projections || []).map((p) => {
     const ppStats = propToPrizepicksStat[p.prop] || [];
     const team = canonicalTeam(p.team || '');
     const opp = canonicalTeam(p.opponent || '');
     const home = canonicalTeam(p.home_team || team);
-    if (!ppStats.length) return { ...p, team, opponent: opp, home_team: home };
+    if (!ppStats.length) {
+      return {
+        ...p,
+        team,
+        opponent: opp,
+        home_team: home,
+        line: null,
+        odds_type: null,
+        edge: null,
+        rating: null,
+        recommendation: 'NO LINE',
+      };
+    }
     const norm = normalizeName(p.name);
     const sig = nameSignature(p.name);
     let variants = null;
@@ -290,12 +366,28 @@ function BatterProjections() {
       if (variants?.length) break;
     }
 
+    if (!variants?.length) {
+      variants = pickFallbackVariants(ppStats, team, opp, norm, sig, Number(p.line));
+    }
+
     const variant = pickVariant(
       variants,
       Number(p.line),
       (p.odds_type || 'standard').toLowerCase(),
     );
-    if (!variant) return { ...p, team, opponent: opp, home_team: home };
+    if (!variant) {
+      return {
+        ...p,
+        team,
+        opponent: opp,
+        home_team: home,
+        line: null,
+        odds_type: null,
+        edge: null,
+        rating: null,
+        recommendation: 'NO LINE',
+      };
+    }
 
     const liveLine = variant.line;
     const oddsType = variant.odds_type;
@@ -329,6 +421,8 @@ function BatterProjections() {
   });
 
   const filtered = mergedProjections.filter((p) => {
+    // Only show props that currently exist on the live PrizePicks board.
+    if (p.line == null) return false;
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
     if (oddsTypeFilter !== 'all') {
       const ot = (p.odds_type || 'standard').toLowerCase();
