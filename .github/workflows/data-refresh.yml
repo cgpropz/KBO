@@ -112,6 +112,31 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         timeout-minutes: 10
 
+      - name: Commit regenerated data snapshots
+        run: |
+          # Persist all freshly-generated data files so the next run (full or intraday)
+          # starts from the latest slate — not a previous day's cached state.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kbo-props-ui/public/data/ Pitchers-Data/player_names.csv \
+                  Pitchers-Data/player_names_meta.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No generated data changes to commit"
+          else
+            git commit -m "chore: refresh generated snapshots $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            if git push origin HEAD:main; then
+              echo "Push succeeded"
+            else
+              echo "Push rejected; attempting rebase+push retry"
+              if git pull --rebase origin main && git push origin HEAD:main; then
+                echo "Retry push succeeded"
+              else
+                git rebase --abort >/dev/null 2>&1 || true
+                echo "Retry push failed — data deployed but not committed (non-fatal)"
+              fi
+            fi
+          fi
+
       # Email-on-failure: create/update a GitHub issue when this scheduled
       # job fails. GitHub's default notification settings will email the repo
       # owner whenever an issue is opened or commented on.
