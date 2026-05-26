@@ -8,8 +8,25 @@ import requests
 
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ocaqjkfdjqxszevtllew.supabase.co")
-SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or "https://ocaqjkfdjqxszevtllew.supabase.co"
+
+
+def _clean_secret(value):
+    return str(value or "").strip().strip('"').strip("'").replace("\\n", "\n")
+
+
+def _get_service_role_key():
+    candidates = [
+        _clean_secret(os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
+        _clean_secret(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")),
+    ]
+    for candidate in candidates:
+        if candidate:
+            return candidate
+    return ""
+
+
+SERVICE_ROLE_KEY = _get_service_role_key()
 DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
 TABLES = {
@@ -25,7 +42,7 @@ TABLES = {
 
 def main():
     if not SERVICE_ROLE_KEY:
-        print("✗ SUPABASE_SERVICE_ROLE_KEY is not set")
+        print("✗ SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_SERVICE_ROLE_KEY is not set")
         sys.exit(1)
 
     headers = {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import './PitcherRankings.css';
 import { fetchDataSnapshot } from './dataUrl';
 
@@ -8,9 +8,37 @@ const TEAMS = {
   Samsung: '#60a5fa', SSG: '#ff5555',
 };
 
+const TEAM_ALIASES = {
+  DOO: 'Doosan',
+  DOOSAN: 'Doosan',
+  HAN: 'Hanwha',
+  HANWHA: 'Hanwha',
+  KIA: 'Kia',
+  KIW: 'Kiwoom',
+  KIWOOM: 'Kiwoom',
+  KT: 'KT',
+  KTW: 'KT',
+  LG: 'LG',
+  LOT: 'Lotte',
+  LOTTE: 'Lotte',
+  NC: 'NC',
+  NCD: 'NC',
+  SAM: 'Samsung',
+  SAMSUNG: 'Samsung',
+  SSG: 'SSG',
+};
+
+const canonicalTeam = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return TEAM_ALIASES[text] || TEAM_ALIASES[text.toUpperCase()] || text;
+};
+
 function PitcherRankings() {
   const [data, setData] = useState(null);
   const [ppProjections, setPpProjections] = useState([]);
+  const [prizepicksData, setPrizepicksData] = useState(null);
+  const [matchupData, setMatchupData] = useState(null);
   const [ppOnly, setPpOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +61,12 @@ function PitcherRankings() {
     .sort()
     .join(' ');
 
+  const parseIso = (value) => {
+    if (!value) return null;
+    const dt = new Date(value);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  };
+
   const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[PitcherRankings]', ...args); };
 
   const loadRankings = useCallback((background = false) => {
@@ -41,15 +75,31 @@ function PitcherRankings() {
     Promise.all([
       fetchDataSnapshot('pitcher_rankings.json'),
       fetchDataSnapshot('strikeout_projections.json').catch(() => null),
+      fetchDataSnapshot('prizepicks_props.json').catch(() => null),
+      fetchDataSnapshot('matchup_data.json').catch(() => null),
     ])
-      .then(([rankingsSnap, kSnap]) => {
-        const rankings = rankingsSnap?.data || [];
+      .then(([rankingsSnap, kSnap, ppSnap, matchupSnap]) => {
+        const rankings = (rankingsSnap?.data || []).map((row) => ({
+          ...row,
+          team: canonicalTeam(row?.team || ''),
+          opp_team: canonicalTeam(row?.opp_team || ''),
+        }));
         const ppProj = (kSnap?.data?.projections || []).filter((p) => p?.line != null);
-        debugLog('Data loaded:', { rankings: rankings.length, ppProjections: ppProj.length, generatedAt: kSnap?.data?.generated_at });
+        debugLog('Data loaded:', {
+          rankings: rankings.length,
+          ppProjections: ppProj.length,
+          ppCards: ppSnap?.data?.cards?.length || 0,
+          slateGames: matchupSnap?.data?.matchups?.length || 0,
+          generatedAt: kSnap?.data?.generated_at,
+        });
         setData(rankings);
         setPpProjections(ppProj);
+        setPrizepicksData(ppSnap?.data || null);
+        setMatchupData(matchupSnap?.data || null);
         setLastUpdated(
-          kSnap?.updatedAt
+          ppSnap?.updatedAt
+          || matchupSnap?.updatedAt
+          || kSnap?.updatedAt
           || rankingsSnap?.updatedAt
           || kSnap?.data?.generated_at
           || rankingsSnap?.data?.generated_at
@@ -87,31 +137,135 @@ function PitcherRankings() {
     return <span className="sort-icon active">{sortDir === 'asc' ? '▲' : '▼'}</span>;
   };
 
-  if (loading) {
-    return <div className="rk-container"><div className="rk-loading"><div className="rk-spinner" /><p>Loading rankings...</p></div></div>;
-  }
-  if (error) {
-    return <div className="rk-container"><div className="rk-loading"><p className="rk-error">Error: {error}</p></div></div>;
-  }
-
   const rankings = data || [];
-  const byNorm = new Map(rankings.map((p) => [normalizeName(p.name), p]));
-  const bySig = new Map(rankings.map((p) => [nameSignature(p.name), p]));
+  const slateOppByTeam = useMemo(() => {
+    const map = new Map();
+    const games = matchupData?.matchups || [];
+    for (const game of games) {
+      const away = canonicalTeam(game?.away || '');
+      const home = canonicalTeam(game?.home || '');
+      if (!away || !home) continue;
+      map.set(away, home);
+      map.set(home, away);
+    }
+    return map;
+  }, [matchupData]);
+
+  const slatePairSet = useMemo(() => {
+    const set = new Set();
+    for (const [team, opp] of slateOppByTeam.entries()) {
+      if (!team || !opp) continue;
+      set.add(`${team}@@${opp}`);
+    }
+    return set;
+  }, [slateOppByTeam]);
+
+  const prizepicksIsFresh = useMemo(() => {
+    const ppTs = parseIso(prizepicksData?.generated_at);
+    if (!ppTs) return false;
+
+    const matchupTs = parseIso(matchupData?.generated_at);
+    const now = new Date();
+    const ageHours = (now.getTime() - ppTs.getTime()) / (1000 * 60 * 60);
+    if (ageHours > 18) return false;
+
+    if (matchupTs) {
+      const driftHours = Math.abs(ppTs.getTime() - matchupTs.getTime()) / (1000 * 60 * 60);
+      if (driftHours > 8) return false;
+    }
+    return true;
+  }, [prizepicksData, matchupData]);
+
+  const rankingsWithSlateOpp = rankings.map((row) => ({
+      ...row,
+      team: canonicalTeam(row?.team || ''),
+      opp_team: slateOppByTeam.get(canonicalTeam(row?.team || '')) || canonicalTeam(row?.opp_team || ''),
+    }));
+
+  const byNormTeam = new Map(rankingsWithSlateOpp.map((p) => [`${normalizeName(p.name)}@@${canonicalTeam(p.team)}`, p]));
+  const bySigTeam = new Map(rankingsWithSlateOpp.map((p) => [`${nameSignature(p.name)}@@${canonicalTeam(p.team)}`, p]));
+  const byNorm = new Map();
+  const bySig = new Map();
+  const normCounts = new Map();
+  const sigCounts = new Map();
+
+  for (const p of rankingsWithSlateOpp) {
+    const norm = normalizeName(p?.name);
+    const sig = nameSignature(p?.name);
+    if (norm) {
+      normCounts.set(norm, (normCounts.get(norm) || 0) + 1);
+      if (!byNorm.has(norm)) byNorm.set(norm, p);
+    }
+    if (sig) {
+      sigCounts.set(sig, (sigCounts.get(sig) || 0) + 1);
+      if (!bySig.has(sig)) bySig.set(sig, p);
+    }
+  }
+  const bestProjectionByKey = (() => {
+    const map = new Map();
+    for (const pp of ppProjections) {
+      const team = canonicalTeam(pp?.team || '');
+      const key = `${normalizeName(pp?.name)}@@${team}`;
+      const score =
+        (String(pp?.prop_key || '').toLowerCase() === 'strikeouts' ? 4 : 0)
+        + (pp?.so_per_ip != null ? 2 : 0)
+        + (pp?.ip_per_g != null ? 1 : 0);
+      const existing = map.get(key);
+      if (!existing || score > existing.score) {
+        map.set(key, { score, row: pp });
+      }
+    }
+    return map;
+  })();
 
   const ppRows = (() => {
+    const hasLivePitcherLine = (card) => (card?.props || []).some((prop) => Number.isFinite(Number(prop?.line)));
+    const livePitcherCards = (prizepicksData?.cards || []).filter((card) => {
+      if (card?.type !== 'pitcher' || !hasLivePitcherLine(card)) return false;
+      const team = canonicalTeam(card?.team || '');
+      const opponent = canonicalTeam(card?.opponent || '');
+      if (!team || !opponent) return false;
+      return slatePairSet.has(`${team}@@${opponent}`);
+    });
+    const useLiveCards = prizepicksIsFresh && livePitcherCards.length > 0;
+    const sourceRows = useLiveCards
+      ? livePitcherCards.map((card) => ({
+        name: card?.name,
+        team: canonicalTeam(card?.team || ''),
+        opponent: canonicalTeam(card?.opponent || ''),
+      }))
+      : ppProjections
+          .filter((p) => slateOppByTeam.has(canonicalTeam(p?.team || '')))
+          .map((p) => ({
+            name: p?.name,
+            team: canonicalTeam(p?.team || ''),
+            opponent: canonicalTeam(p?.opponent || ''),
+          }));
+
     const out = [];
     const seen = new Set();
-    for (const pp of ppProjections) {
-      const norm = normalizeName(pp.name);
-      const sig = nameSignature(pp.name);
-      const match = byNorm.get(norm) || bySig.get(sig);
-      const projectedSoPerG = (pp.so_per_ip != null && pp.ip_per_g != null)
-        ? Number((pp.so_per_ip * pp.ip_per_g).toFixed(1))
+    for (const src of sourceRows) {
+      const name = src?.name || '';
+      const team = canonicalTeam(src?.team || '');
+      if (!name || !team) continue;
+
+      const norm = normalizeName(name);
+      const sig = nameSignature(name);
+      const ppStat = bestProjectionByKey.get(`${norm}@@${team}`)?.row || null;
+      const match =
+        byNormTeam.get(`${norm}@@${team}`)
+        || bySigTeam.get(`${sig}@@${team}`);
+      const uniqueNameFallback =
+        (normCounts.get(norm) === 1 ? byNorm.get(norm) : null)
+        || (sigCounts.get(sig) === 1 ? bySig.get(sig) : null);
+      const statsSource = match || uniqueNameFallback;
+      const projectedSoPerG = (ppStat?.so_per_ip != null && ppStat?.ip_per_g != null)
+        ? Number((ppStat.so_per_ip * ppStat.ip_per_g).toFixed(1))
         : null;
 
-      const base = match || {
-        name: pp.name,
-        team: pp.team,
+      const base = statsSource || {
+        name,
+        team,
         gs: null,
         rk: null,
         whip: null,
@@ -124,16 +278,21 @@ function PitcherRankings() {
         wl_ratio: null,
       };
 
+      const oppFromSlate = slateOppByTeam.get(team);
+      const opp = oppFromSlate || src?.opponent || base?.opp_team || null;
+
       const row = {
         ...base,
-        team: base.team || pp.team,
-        gs: base.gs ?? pp.games_used ?? null,
-        whip: base.whip ?? pp.whip ?? null,
-        ip_per_g: base.ip_per_g ?? pp.ip_per_g ?? null,
+        name,
+        team,
+        opp_team: canonicalTeam(opp),
+        gs: base.gs ?? ppStat?.games_used ?? null,
+        whip: base.whip ?? ppStat?.whip ?? null,
+        ip_per_g: base.ip_per_g ?? ppStat?.ip_per_g ?? null,
         so_per_g: base.so_per_g ?? projectedSoPerG,
       };
 
-      const key = `${normalizeName(row.name)}@@${row.team || ''}`;
+      const key = `${normalizeName(row.name)}@@${canonicalTeam(row.team || '')}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);
@@ -141,7 +300,7 @@ function PitcherRankings() {
     return out;
   })();
 
-  const visibleRows = ppOnly ? ppRows : rankings;
+  const visibleRows = ppOnly ? ppRows : rankingsWithSlateOpp;
 
   const sorted = [...visibleRows].sort((a, b) => {
     let aV = a[sortField], bV = b[sortField];
@@ -199,6 +358,13 @@ function PitcherRankings() {
   };
 
   const fmt = (val, digits) => (val == null ? '—' : Number(val).toFixed(digits));
+
+  if (loading) {
+    return <div className="rk-container"><div className="rk-loading"><div className="rk-spinner" /><p>Loading rankings...</p></div></div>;
+  }
+  if (error) {
+    return <div className="rk-container"><div className="rk-loading"><p className="rk-error">Error: {error}</p></div></div>;
+  }
 
   return (
     <div className="rk-container">

@@ -924,11 +924,25 @@ def main():
         matched_starters = [s for s in starters if (s.get("team"), s.get("opponent")) in pp_matchups]
         # Include pp_starter_rows for any matchups NOT covered by player_names.csv starters
         covered_matchups = {(s.get("team"), s.get("opponent")) for s in starters}
-        extra_starters = [v for k, v in pp_starter_rows.items() if k not in covered_matchups]
+        # Teams already on today's slate — don't add stale PP entries for these teams
+        covered_teams = {t for (t, o) in covered_matchups} | {o for (t, o) in covered_matchups}
+        extra_starters = [
+            v for (team, opp), v in pp_starter_rows.items()
+            if (team, opp) not in covered_matchups
+            and team not in covered_teams
+            and opp not in covered_teams
+        ]
         if matched_starters:
             # player_names.csv covers some PP matchups; add any extras PP has beyond that
+            # Only include PP entries for entirely new teams (not teams already on today's slate)
             covered_matched = {(s.get("team"), s.get("opponent")) for s in matched_starters}
-            extra_pp = [v for k, v in pp_starter_rows.items() if k not in covered_matched]
+            matched_teams = {t for (t, o) in covered_matched} | {o for (t, o) in covered_matched}
+            extra_pp = [
+                v for (team, opp), v in pp_starter_rows.items()
+                if (team, opp) not in covered_matched
+                and team not in matched_teams
+                and opp not in matched_teams
+            ]
             starters = matched_starters + extra_pp
         else:
             # player_names.csv has a different slate (e.g. next day); include all:

@@ -159,6 +159,40 @@ function BatterProjections() {
     return map;
   }, [matchupData]);
 
+  // Live slate context by batter team, used to keep opponent pitcher fields current
+  // even when projection snapshots lag behind the latest matchup_data refresh.
+  const liveCtxByTeam = useMemo(() => {
+    const map = {};
+    const list = matchupData?.matchups || [];
+    for (const m of list) {
+      const away = canonicalTeam(m?.away || '');
+      const home = canonicalTeam(m?.home || '');
+      if (!away || !home) continue;
+
+      const awayPitcher = m?.away_pitcher || {};
+      const homePitcher = m?.home_pitcher || {};
+
+      map[away] = {
+        opponent: home,
+        home_team: home,
+        opp_pitcher: homePitcher?.name || '',
+        opp_pitcher_whip: Number.isFinite(Number(homePitcher?.profile?.whip))
+          ? Number(homePitcher.profile.whip)
+          : null,
+      };
+
+      map[home] = {
+        opponent: away,
+        home_team: home,
+        opp_pitcher: awayPitcher?.name || '',
+        opp_pitcher_whip: Number.isFinite(Number(awayPitcher?.profile?.whip))
+          ? Number(awayPitcher.profile.whip)
+          : null,
+      };
+    }
+    return map;
+  }, [matchupData]);
+
   const playerInitials = (name) => String(name || '')
     .split(/\s+/)
     .filter(Boolean)
@@ -356,14 +390,21 @@ function BatterProjections() {
   const mergedProjections = (data?.projections || []).map((p) => {
     const ppStats = propToPrizepicksStat[p.prop] || [];
     const team = canonicalTeam(p.team || '');
-    const opp = canonicalTeam(p.opponent || '');
-    const home = canonicalTeam(p.home_team || team);
+    const liveCtx = liveCtxByTeam[team] || null;
+    const opp = canonicalTeam(liveCtx?.opponent || p.opponent || '');
+    const home = canonicalTeam(liveCtx?.home_team || p.home_team || team);
+    const oppPitcher = String(liveCtx?.opp_pitcher || p.opp_pitcher || '').trim();
+    const oppPitcherWhip = liveCtx?.opp_pitcher_whip != null
+      ? liveCtx.opp_pitcher_whip
+      : p.opp_pitcher_whip;
     if (!ppStats.length) {
       return {
         ...p,
         team,
         opponent: opp,
         home_team: home,
+        opp_pitcher: oppPitcher,
+        opp_pitcher_whip: oppPitcherWhip,
         line: null,
         odds_type: null,
         edge: null,
@@ -407,6 +448,8 @@ function BatterProjections() {
         team,
         opponent: opp,
         home_team: home,
+        opp_pitcher: oppPitcher,
+        opp_pitcher_whip: oppPitcherWhip,
         line: null,
         odds_type: null,
         edge: null,
@@ -436,6 +479,8 @@ function BatterProjections() {
       team,
       opponent: opp,
       home_team: home,
+      opp_pitcher: oppPitcher,
+      opp_pitcher_whip: oppPitcherWhip,
       line: liveLine,
       odds_type: oddsType,
       edge: edge != null ? Number(edge.toFixed(2)) : null,

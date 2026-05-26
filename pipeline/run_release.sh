@@ -39,6 +39,7 @@ SKIP_FULL=0
 SKIP_BUILD=0
 SKIP_DEPLOY=0
 REFRESH_DATA_ARGS=""
+ALLOW_STALE_DEPLOY="${ALLOW_STALE_DEPLOY:-0}"
 VERCEL_HAS_TOKEN=0
 if [[ -n "${VERCEL_TOKEN:-}" ]]; then
   VERCEL_HAS_TOKEN=1
@@ -90,6 +91,7 @@ echo "=================================================="
 echo "KBO Release Pipeline"
 echo "Repo: $BASE"
 echo "Python: $PYTHON"
+echo "Allow stale deploy: $ALLOW_STALE_DEPLOY"
 echo "=================================================="
 
 if [[ "$SKIP_ODDS" -eq 0 ]]; then
@@ -127,23 +129,88 @@ if [[ "$SKIP_FULL" -eq 0 ]]; then
     "$PYTHON" "$BASE/refresh_data.py" || REFRESH_RC=$?
   fi
   if [[ "$REFRESH_RC" -ne 0 ]]; then
-    echo "⚠ refresh_data.py exited with code $REFRESH_RC (some steps may have failed)"
-    echo "  Continuing to deploy with best-available data..."
+    if [[ "$ALLOW_STALE_DEPLOY" == "1" ]]; then
+      echo "⚠ refresh_data.py exited with code $REFRESH_RC (some steps may have failed)"
+      echo "  ALLOW_STALE_DEPLOY=1 -> continuing with best-available data..."
+    else
+      echo "FATAL: refresh_data.py exited with code $REFRESH_RC"
+      echo "Refusing to deploy partial/stale data. Re-run with ALLOW_STALE_DEPLOY=1 to override."
+      exit 1
+    fi
   fi
 else
   log_step 2 "Run full data refresh (skipped)"
-  echo "Regenerating lightweight UI enrichments from current snapshots"
-  "$PYTHON" "$BASE/build_opponent_stats.py"
-  "$PYTHON" "$BASE/_build_player_photos.py"
+  echo "Regenerating core UI snapshots from current local data"
+  # Keep primary pages current in quick-release mode too (without full scrape).
+  QUICK_RC=0
+
+  # Step A: Refresh today's starters FIRST — everything downstream depends on this.
+  if ! "$PYTHON" "$BASE/Pitchers-Data/daily_pitchers2.py" --output "$BASE/Pitchers-Data/player_names.csv"; then
+    echo "⚠ daily_pitchers2.py failed in quick mode"
+    QUICK_RC=1
+    # Abort if existing starters meta is stale (> 18h) — deploying with wrong pitchers is worse than not deploying.
+    if ! "$PYTHON" - <<'PYEOF'
+import json, sys
+from datetime import datetime, timezone
+try:
+    meta = json.load(open("Pitchers-Data/player_names_meta.json"))
+    scraped_dt = datetime.fromisoformat(meta["scraped_at"])
+    age_h = (datetime.now(timezone.utc) - scraped_dt).total_seconds() / 3600
+    sys.exit(0 if age_h < 18 else 1)
+except Exception:
+    sys.exit(1)
+PYEOF
+    then
+      echo "FATAL: starters scrape failed and cached starters are stale (>18h). Aborting to avoid deploying wrong pitchers."
+      exit 1
+    fi
+    echo "  Continuing with recent cached starters (<18h old)"
+  fi
+
+  # Step B: Refresh opponent stats BEFORE projections so projections use current team data.
+  "$PYTHON" "$BASE/build_opponent_stats.py" || { echo "⚠ build_opponent_stats.py failed in quick mode"; QUICK_RC=1; }
+
+  # Step C: Regenerate all projection/ranking snapshots.
+  "$PYTHON" "$BASE/generate_projections.py" || { echo "⚠ generate_projections.py failed in quick mode"; QUICK_RC=1; }
+  "$PYTHON" "$BASE/generate_batter_projections.py" || { echo "⚠ generate_batter_projections.py failed in quick mode"; QUICK_RC=1; }
+  "$PYTHON" "$BASE/generate_rankings.py" || { echo "⚠ generate_rankings.py failed in quick mode"; QUICK_RC=1; }
+
+  # Step D: Refresh PrizePicks props lines (without re-scraping heavy stats).
+  "$PYTHON" "$BASE/generate_props.py" --lines-only || { echo "⚠ generate_props.py --lines-only failed in quick mode"; QUICK_RC=1; }
+
+  # Step E: Player photos + matchup data.
+  "$PYTHON" "$BASE/_build_player_photos.py" || echo "⚠ _build_player_photos.py failed (non-fatal)"
   # Keep matchup markets/weather fresh for quick-release runs.
-  "$PYTHON" "$BASE/generate_matchups.py"
+  "$PYTHON" "$BASE/generate_matchups.py" || { echo "⚠ generate_matchups.py failed in quick mode"; QUICK_RC=1; }
+
+  # Step F: Push fresh snapshots to Supabase so DB and static stay in sync.
+  if [[ "$SUPABASE_READY" -eq 1 ]]; then
+    echo "Pushing fresh snapshots to Supabase..."
+    "$PYTHON" "$BASE/publish_supabase.py" || echo "⚠ publish_supabase.py failed (non-fatal; static files still deploy)"
+  fi
+
+  if [[ "$QUICK_RC" -ne 0 ]]; then
+    if [[ "$ALLOW_STALE_DEPLOY" == "1" ]]; then
+      echo "⚠ One or more quick-mode snapshot refresh steps failed; ALLOW_STALE_DEPLOY=1 so continuing"
+    else
+      echo "FATAL: one or more quick-mode snapshot refresh steps failed"
+      echo "Refusing to deploy partial/stale data. Re-run with ALLOW_STALE_DEPLOY=1 to override."
+      exit 1
+    fi
+  fi
 fi
 
 # --- PREDEPLOY DATA VERIFICATION ---
 VERIFY_RC=0
 "$PYTHON" pipeline/predeploy_verify.py || VERIFY_RC=$?
 if [[ "$VERIFY_RC" -ne 0 ]]; then
-  echo "⚠ Predeploy verification had warnings (exit $VERIFY_RC) — continuing deploy"
+  if [[ "$ALLOW_STALE_DEPLOY" == "1" ]]; then
+    echo "⚠ Predeploy verification failed (exit $VERIFY_RC), but ALLOW_STALE_DEPLOY=1 so continuing"
+  else
+    echo "FATAL: predeploy freshness verification failed (exit $VERIFY_RC)"
+    echo "Refusing to deploy stale data. Re-run with ALLOW_STALE_DEPLOY=1 to override."
+    exit 1
+  fi
 fi
 # --- END PREDEPLOY DATA VERIFICATION ---
 

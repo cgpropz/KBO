@@ -634,6 +634,10 @@ def _fuzzy_profile(query_name, profiles):
     return None
 
 
+def _parts_match(name_a, name_b):
+    return _name_parts(name_a or "") == _name_parts(name_b or "")
+
+
 def main():
     logs = load_pitcher_logs()
     league_batting = load_league_batting()
@@ -679,8 +683,8 @@ def main():
 
     # Discover games from all available slate sources so the matchup page never
     # drops a game just because pitcher data is missing (TBD starters, name
-    # mismatches, etc.). Priority: K projections, batter projections, then game
-    # lines from the odds API.
+    # mismatches, etc.). Priority: local_starters (authoritative), then K/batter
+    # projections and game lines for any teams NOT already on the slate.
     game_map = {}
 
     def _add_game(team, opp):
@@ -691,38 +695,74 @@ def main():
         if key not in game_map and rev not in game_map:
             game_map[key] = {"away": team, "home": opp}
 
-    for p in k_projs:
-        _add_game(p.get("team"), p.get("opponent"))
-    for p in b_projs:
-        _add_game(p.get("team"), p.get("opponent"))
-    for g in game_lines:
-        _add_game(g.get("away"), g.get("home"))
+    # local_starters from player_names.csv is the authoritative today-only source.
+    # Add these first so projections with stale opponent pairings can't override them.
     for p in local_starters:
         _add_game(p.get("team"), p.get("opponent"))
+
+    # Build the set of teams already locked onto the slate so we can reject
+    # stale pairings (e.g. NC@KT when today NC plays Hanwha).
+    slate_teams = set()
+    for g in game_map.values():
+        slate_teams.add(g["away"])
+        slate_teams.add(g["home"])
+
+    def _add_game_if_new_teams(team, opp):
+        """Only add a game if neither team already has a matchup on the slate."""
+        if team in slate_teams or opp in slate_teams:
+            return
+        _add_game(team, opp)
+        if team:
+            slate_teams.add(team)
+        if opp:
+            slate_teams.add(opp)
+
+    for p in k_projs:
+        _add_game_if_new_teams(p.get("team"), p.get("opponent"))
+    for p in b_projs:
+        _add_game_if_new_teams(p.get("team"), p.get("opponent"))
+    for g in game_lines:
+        _add_game_if_new_teams(g.get("away"), g.get("home"))
 
     matchups = []
     for key, game in game_map.items():
         away, home = game["away"], game["home"]
 
-        # Find starting pitchers from K projections, falling back to local starters file
-        away_pitcher = None
-        home_pitcher = None
+        # Prefer lineup-derived starters when available; K projections can lag
+        # and carry stale opponent/pitcher assignments.
+        away_local = None
+        home_local = None
+        for p in local_starters:
+            if p["team"] == away and p["opponent"] == home:
+                away_local = p
+            elif p["team"] == home and p["opponent"] == away:
+                home_local = p
+
+        away_k = None
+        home_k = None
         for p in k_projs:
             if p["team"] == away and p["opponent"] == home:
-                away_pitcher = p
+                away_k = p
             elif p["team"] == home and p["opponent"] == away:
-                home_pitcher = p
-        # Fallback: use pre-scraped starters for games with no PP pitcher lines
-        if not away_pitcher:
-            for p in local_starters:
-                if p["team"] == away and p["opponent"] == home:
-                    away_pitcher = p
-                    break
-        if not home_pitcher:
-            for p in local_starters:
-                if p["team"] == home and p["opponent"] == away:
-                    home_pitcher = p
-                    break
+                home_k = p
+
+        away_pitcher = away_local or away_k
+        home_pitcher = home_local or home_k
+
+        # If using lineup starters, only borrow line/projection from K props
+        # when the pitcher names actually align.
+        if away_pitcher and away_local and away_k and _parts_match(away_local.get("name"), away_k.get("name")):
+            away_pitcher = {
+                **away_local,
+                "line": away_k.get("line"),
+                "projection": away_k.get("projection"),
+            }
+        if home_pitcher and home_local and home_k and _parts_match(home_local.get("name"), home_k.get("name")):
+            home_pitcher = {
+                **home_local,
+                "line": home_k.get("line"),
+                "projection": home_k.get("projection"),
+            }
 
         # Build pitcher profiles for this game
         away_profile = None

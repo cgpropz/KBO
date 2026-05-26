@@ -9,6 +9,7 @@ Outputs:
 import json
 import os
 import csv
+from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
@@ -183,7 +184,12 @@ out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "pitcher_ranking
 with open(out_path, "w") as f:
     json.dump(rankings, f, indent=2)
 
+meta_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "pitcher_rankings_meta.json")
+with open(meta_path, "w") as f:
+    json.dump({"generated_at": datetime.now(timezone.utc).isoformat()}, f, indent=2)
+
 print("Wrote %d pitcher rankings to %s" % (len(rankings), out_path))
+print("Wrote rankings metadata to %s" % meta_path)
 for p in rankings[:15]:
     print("  #%d %s (%s) GS=%d ERA=%.2f WHIP=%.2f K%%=%.1f%% SO/G=%.1f W/L=%.3f" % (
         p["rk"], p["name"], p["team"], p["gs"], p["era"], p["whip"],

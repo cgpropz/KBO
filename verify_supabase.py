@@ -3,10 +3,17 @@
 import os
 from supabase import create_client
 
-supabase_url = os.environ.get("SUPABASE_URL", "https://ocaqjkfdjqxszevtllew.supabase.co")
-service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
+def _clean_secret(value):
+    return str(value or "").strip().strip('"').strip("'").replace("\\n", "\n")
+
+
+supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or "https://ocaqjkfdjqxszevtllew.supabase.co"
+service_role_key = _clean_secret(
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")
+)
 if not service_role_key:
-    print("✗ SUPABASE_SERVICE_ROLE_KEY env var is not set")
+    print("✗ SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_SERVICE_ROLE_KEY env var is not set")
     exit(1)
 
 client = create_client(supabase_url, service_role_key)

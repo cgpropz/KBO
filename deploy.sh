@@ -20,18 +20,24 @@ export PATH="$DIR/venv/bin:$PATH"
 
 # ── Load Supabase env vars from Vercel env file if not already set ──
 VERCEL_ENV="$DIR/kbo-props-ui/.vercel/.env.production.local"
+clean_env_value() {
+  local value="$1"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  value="${value//\\n/}"
+  printf '%s' "$value"
+}
+
 if [[ -z "${SUPABASE_URL:-}" && -z "${VITE_SUPABASE_URL:-}" ]] && [[ -f "$VERCEL_ENV" ]]; then
   while IFS='=' read -r key value; do
     # Skip comments/blank lines
     [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
-    # Strip surrounding quotes from value
-    value="${value%\"}"
-    value="${value#\"}"
-    value="${value%\'}"
-    value="${value#\'}"
+    value="$(clean_env_value "$value")"
     # Only load Supabase vars
     case "$key" in
-      VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)
+      VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY|VITE_SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY)
         export "$key=$value"
         ;;
     esac
@@ -39,8 +45,8 @@ if [[ -z "${SUPABASE_URL:-}" && -z "${VITE_SUPABASE_URL:-}" ]] && [[ -f "$VERCEL
 fi
 
 # Map VITE_ variants for Python scripts that expect bare names
-export SUPABASE_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
-export SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
+export SUPABASE_URL="$(clean_env_value "${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}")"
+export SUPABASE_SERVICE_ROLE_KEY="$(clean_env_value "${SUPABASE_SERVICE_ROLE_KEY:-${VITE_SUPABASE_SERVICE_ROLE_KEY:-}}")"
 
 # ── Rotate deploy log to prevent unbounded growth ──
 LOG="$DIR/deploy.log"
