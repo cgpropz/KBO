@@ -647,6 +647,10 @@ def lines_only():
     with open(out_path) as f:
         data = json.load(f)
 
+    if not isinstance(data, dict) or not data.get("cards"):
+        print("No existing PrizePicks cards in prizepicks_props.json — falling back to full rebuild")
+        return main()
+
     existing_matchups = set()
     for card in data.get("cards", []):
         t, o = (card.get("team") or ""), (card.get("opponent") or "")
