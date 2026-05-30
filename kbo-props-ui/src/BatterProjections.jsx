@@ -212,6 +212,21 @@ function BatterProjections() {
     'Fantasy Score': ['Fantasy Score', 'Hitter Fantasy Score'],
   };
 
+  const validPrizePicksStats = new Set([
+    'Hits+Runs+RBIs',
+    'Total Bases',
+    'Fantasy Score',
+    'Hitter Fantasy Score',
+  ]);
+
+  const hasLiveBatterBoard = (prizepicksData?.cards || []).some((card) => {
+    if ((card?.type || '').toLowerCase() !== 'batter') return false;
+    return (card?.props || []).some((prop) => (
+      validPrizePicksStats.has(prop?.stat)
+      && Number.isFinite(Number(prop?.line))
+    ));
+  });
+
   // Map keyed by `${stat}@@${team}@@${opp}@@${nameKey}` -> array of
   // { line, odds_type } variants from the live PrizePicks card. Multiple
   // variants exist when PP offers standard + goblin/demon for the same prop.
@@ -230,7 +245,7 @@ function BatterProjections() {
         const stat = prop?.stat;
         const line = Number(prop?.line);
         if (!Number.isFinite(line)) continue;
-        if (!['Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score', 'Hitter Fantasy Score'].includes(stat)) continue;
+        if (!validPrizePicksStats.has(stat)) continue;
         if (!byStat.has(stat)) byStat.set(stat, []);
         byStat.get(stat).push({
           line,
@@ -265,7 +280,7 @@ function BatterProjections() {
         const stat = prop?.stat;
         const line = Number(prop?.line);
         if (!Number.isFinite(line)) continue;
-        if (!['Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score', 'Hitter Fantasy Score'].includes(stat)) continue;
+        if (!validPrizePicksStats.has(stat)) continue;
         if (!byStat.has(stat)) byStat.set(stat, []);
         byStat.get(stat).push({
           line,
@@ -376,6 +391,17 @@ function BatterProjections() {
       (p.odds_type || 'standard').toLowerCase(),
     );
     if (!variant) {
+      if (!hasLiveBatterBoard) {
+        // No live batter board right now: keep snapshot line/rating so UI remains usable.
+        return {
+          ...p,
+          team,
+          opponent: opp,
+          home_team: home,
+          opp_pitcher: oppPitcher,
+          opp_pitcher_whip: oppPitcherWhip,
+        };
+      }
       return {
         ...p,
         team,
@@ -421,8 +447,8 @@ function BatterProjections() {
   });
 
   const filtered = mergedProjections.filter((p) => {
-    // Only show props that currently exist on the live PrizePicks board.
-    if (p.line == null) return false;
+    // Only enforce live-line visibility when a live batter board exists.
+    if (hasLiveBatterBoard && p.line == null) return false;
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
     if (oddsTypeFilter !== 'all') {
       const ot = (p.odds_type || 'standard').toLowerCase();

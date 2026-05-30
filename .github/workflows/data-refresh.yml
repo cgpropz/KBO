@@ -82,8 +82,9 @@ jobs:
                 echo "Retry push succeeded"
               else
                 # Never continue with a conflicted worktree; downstream steps read JSON files.
+                # Keep locally-refreshed odds files so deploy still ships fresh data
+                # even when committing back to main loses a race.
                 git rebase --abort >/dev/null 2>&1 || true
-                git reset --hard HEAD >/dev/null 2>&1 || true
                 echo "Retry push failed (likely race/merge conflict) — continuing to deploy current build"
               fi
             fi

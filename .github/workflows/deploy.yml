@@ -100,7 +100,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Never commit credential material generated from secrets.
+          if git ls-files --error-unmatch credentials.json >/dev/null 2>&1; then
+            git checkout -- credentials.json
+          else
+            rm -f credentials.json
+          fi
+
           git add -A
+          git restore --staged credentials.json >/dev/null 2>&1 || true
+
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else
