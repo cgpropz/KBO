@@ -1,180 +1,306 @@
 {
-  "generated_at": "2026-06-13T20:44:20.976647+00:00",
+  "generated_at": "2026-06-14T16:46:46.752367+00:00",
   "matchups": [
     {
-      "away": "Hanwha",
-      "home": "Kiwoom",
-      "stadium": "Seoul-Gocheok",
+      "away": "KT",
+      "home": "Doosan",
+      "stadium": "Seoul-Jamsil",
       "weather": {
-        "temp_f": 74.1,
-        "temp_c": 23.4,
-        "precip_pct": 27,
+        "temp_f": 85.5,
+        "temp_c": 29.7,
+        "precip_pct": 43,
         "rain_mm": 0.0,
-        "wind_kmh": 4.1,
-        "wind_mph": 2.5,
-        "wind_deg": 285,
-        "wind_compass": "W",
-        "wind_effect": null,
-        "wind_arrow_deg": null,
-        "is_dome": true,
+        "wind_kmh": 2.5,
+        "wind_mph": 1.6,
+        "wind_deg": 225,
+        "wind_compass": "SW",
+        "wind_effect": "Out to CF",
+        "wind_arrow_deg": 15,
+        "is_dome": false,
+        "condition": "Clear"
+      },
+      "market": null,
+      "away_pitcher": {
+        "name": "",
+        "line": null,
+        "k_projection": 13.94,
+        "profile": null
+      },
+      "home_pitcher": {
+        "name": "",
+        "line": null,
+        "k_projection": 13.6,
+        "profile": null
+      },
+      "away_batting": {
+        "ba": ".245",
+        "obp": ".329",
+        "slg": ".347",
+        "ops": ".676",
+        "r_per_g": 3.73,
+        "hr": 5,
+        "hr_per_g": 0.45,
+        "so": 84,
+        "so_per_g": 7.64,
+        "h": 93,
+        "h_per_g": 8.45,
+        "bb": 45,
+        "sb": 5,
+        "games": 11
+      },
+      "home_batting": {
+        "ba": ".247",
+        "obp": ".314",
+        "slg": ".355",
+        "ops": ".670",
+        "r_per_g": 4.36,
+        "hr": 6,
+        "hr_per_g": 0.55,
+        "so": 99,
+        "so_per_g": 9.0,
+        "h": 93,
+        "h_per_g": 8.45,
+        "bb": 32,
+        "sb": 7,
+        "games": 11
+      },
+      "away_batting_rates": {
+        "hrr_per_g": 20.7,
+        "tb_per_g": 13.9
+      },
+      "home_batting_rates": {
+        "hrr_per_g": 18.0,
+        "tb_per_g": 13.3
+      },
+      "away_pitching": {
+        "era": 3.69,
+        "whip": 1.3,
+        "k_per_9": 8.18,
+        "so_per_g": 5.1,
+        "hr_per_g": 0.43,
+        "games": 147
+      },
+      "home_pitching": {
+        "era": 3.53,
+        "whip": 1.26,
+        "k_per_9": 7.29,
+        "so_per_g": 4.0,
+        "hr_per_g": 0.38,
+        "games": 125
+      },
+      "park_factor": {
+        "stadium": "Seoul-Jamsil",
+        "r_per_g": 39.0,
+        "hr_per_g": 8.16,
+        "h_per_g": 3.88,
+        "r_factor": 0.681,
+        "hr_factor": 0.93
+      },
+      "props": [
+        {
+          "name": "",
+          "team": "KT",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 3.95,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "KT",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.5,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "KT",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.94,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Doosan",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 4.05,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Doosan",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.67,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Doosan",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.6,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "Daz Cameron",
+          "team": "Doosan",
+          "prop": "Fantasy Score",
+          "line": 6.5,
+          "projection": 4.72,
+          "edge": -1.78,
+          "recommendation": "UNDER",
+          "rating": 36.3
+        },
+        {
+          "name": "Choi Won-jun",
+          "team": "KT",
+          "prop": "Fantasy Score",
+          "line": 7.5,
+          "projection": 8.81,
+          "edge": 1.31,
+          "recommendation": "OVER",
+          "rating": 58.7
+        },
+        {
+          "name": "Sam Hilliard",
+          "team": "KT",
+          "prop": "Fantasy Score",
+          "line": 6.5,
+          "projection": 7.13,
+          "edge": 0.63,
+          "recommendation": "OVER",
+          "rating": 54.8
+        },
+        {
+          "name": "Daz Cameron",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.49,
+          "edge": -0.51,
+          "recommendation": "UNDER",
+          "rating": 37.2
+        },
+        {
+          "name": "Jung Soo-bin",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.37,
+          "edge": -0.63,
+          "recommendation": "UNDER",
+          "rating": 34.3
+        },
+        {
+          "name": "Yang Eui-ji",
+          "team": "Doosan",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.34,
+          "edge": 0.34,
+          "recommendation": "OVER",
+          "rating": 58.6
+        },
+        {
+          "name": "Choi Won-jun",
+          "team": "KT",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.65,
+          "edge": 0.15,
+          "recommendation": "PUSH",
+          "rating": 52.9
+        },
+        {
+          "name": "Kim Hyun-Soo",
+          "team": "KT",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.46,
+          "edge": 0.46,
+          "recommendation": "OVER",
+          "rating": 61.4
+        },
+        {
+          "name": "Kim Min-hyuck",
+          "team": "KT",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.29,
+          "edge": -0.71,
+          "recommendation": "UNDER",
+          "rating": 32.2
+        },
+        {
+          "name": "Sam Hilliard",
+          "team": "KT",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.16,
+          "edge": 0.16,
+          "recommendation": "PUSH",
+          "rating": 54.0
+        },
+        {
+          "name": "Lee Yu-chan",
+          "team": "Doosan",
+          "prop": "Total Bases",
+          "line": 0.5,
+          "projection": 0.5,
+          "edge": 0.0,
+          "recommendation": "PUSH",
+          "rating": 50.0
+        }
+      ]
+    },
+    {
+      "away": "Kiwoom",
+      "home": "Samsung",
+      "stadium": "Daegu",
+      "weather": {
+        "temp_f": 77.4,
+        "temp_c": 25.2,
+        "precip_pct": 10,
+        "rain_mm": 0.0,
+        "wind_kmh": 12.8,
+        "wind_mph": 8.0,
+        "wind_deg": 112,
+        "wind_compass": "E",
+        "wind_effect": "Crosswind R->L",
+        "wind_arrow_deg": 282,
+        "is_dome": false,
         "condition": "Partly Cloudy"
       },
       "market": null,
       "away_pitcher": {
-        "name": "Wang Yan-Cheng",
-        "line": 14.5,
-        "k_projection": 13.03,
-        "profile": {
-          "name": "Wang Yan-cheng",
-          "team": "Hanwha",
-          "era": 3.49,
-          "whip": 1.46,
-          "k_per_9": 7.66,
-          "ip_per_g": 5.2,
-          "starts": 13,
-          "total_ip": 67.0,
-          "total_so": 57,
-          "total_hr": 5,
-          "recent": [
-            {
-              "date": "06/09/2026",
-              "opp": "Kia",
-              "ip": 3.67,
-              "er": 4,
-              "so": 3,
-              "ha": 5,
-              "bb": 4,
-              "era": 9.82
-            },
-            {
-              "date": "06/03/2026",
-              "opp": "Doosan",
-              "ip": 5.0,
-              "er": 1,
-              "so": 4,
-              "ha": 7,
-              "bb": 0,
-              "era": 1.8
-            },
-            {
-              "date": "05/28/2026",
-              "opp": "NC",
-              "ip": 2.0,
-              "er": 4,
-              "so": 2,
-              "ha": 4,
-              "bb": 2,
-              "era": 18.0
-            },
-            {
-              "date": "05/22/2026",
-              "opp": "Doosan",
-              "ip": 7.0,
-              "er": 2,
-              "so": 6,
-              "ha": 5,
-              "bb": 1,
-              "era": 2.57
-            },
-            {
-              "date": "05/15/2026",
-              "opp": "KT",
-              "ip": 5.0,
-              "er": 2,
-              "so": 8,
-              "ha": 5,
-              "bb": 3,
-              "era": 3.6
-            }
-          ]
-        }
+        "name": "",
+        "line": null,
+        "k_projection": 13.77,
+        "profile": null
       },
       "home_pitcher": {
-        "name": "Kenny Rosenberg",
-        "line": 16.5,
-        "k_projection": 16.23,
-        "profile": {
-          "name": "Kenny Rosenberg",
-          "team": "Kiwoom",
-          "era": 3.76,
-          "whip": 1.3,
-          "k_per_9": 10.03,
-          "ip_per_g": 5.3,
-          "starts": 15,
-          "total_ip": 79.0,
-          "total_so": 88,
-          "total_hr": 5,
-          "recent": [
-            {
-              "date": "06/09/2026",
-              "opp": "NC",
-              "ip": 5.0,
-              "er": 5,
-              "so": 5,
-              "ha": 10,
-              "bb": 2,
-              "era": 9.0
-            },
-            {
-              "date": "06/03/2026",
-              "opp": "SSG",
-              "ip": 5.67,
-              "er": 2,
-              "so": 5,
-              "ha": 4,
-              "bb": 2,
-              "era": 3.18
-            },
-            {
-              "date": "05/28/2026",
-              "opp": "Kia",
-              "ip": 5.0,
-              "er": 3,
-              "so": 5,
-              "ha": 9,
-              "bb": 0,
-              "era": 5.4
-            },
-            {
-              "date": "05/22/2026",
-              "opp": "LG",
-              "ip": 4.0,
-              "er": 0,
-              "so": 6,
-              "ha": 3,
-              "bb": 2,
-              "era": 0.0
-            },
-            {
-              "date": "05/16/2026",
-              "opp": "NC",
-              "ip": 2.33,
-              "er": 1,
-              "so": 3,
-              "ha": 2,
-              "bb": 2,
-              "era": 3.86
-            }
-          ]
-        }
+        "name": "",
+        "line": null,
+        "k_projection": 14.38,
+        "profile": null
       },
       "away_batting": {
-        "ba": ".173",
-        "obp": ".251",
-        "slg": ".257",
-        "ops": ".507",
-        "r_per_g": 2.55,
-        "hr": 4,
-        "hr_per_g": 0.36,
-        "so": 80,
-        "so_per_g": 7.27,
-        "h": 60,
-        "h_per_g": 5.45,
-        "bb": 31,
-        "sb": 10,
-        "games": 11
-      },
-      "home_batting": {
         "ba": ".288",
         "obp": ".364",
         "slg": ".430",
@@ -190,367 +316,217 @@
         "sb": 2,
         "games": 11
       },
-      "away_batting_rates": {
-        "hrr_per_g": 21.9,
-        "tb_per_g": 15.2
+      "home_batting": {
+        "ba": ".271",
+        "obp": ".355",
+        "slg": ".447",
+        "ops": ".802",
+        "r_per_g": 6.82,
+        "hr": 14,
+        "hr_per_g": 1.27,
+        "so": 81,
+        "so_per_g": 7.36,
+        "h": 102,
+        "h_per_g": 9.27,
+        "bb": 44,
+        "sb": 8,
+        "games": 11
       },
-      "home_batting_rates": {
+      "away_batting_rates": {
         "hrr_per_g": 14.7,
         "tb_per_g": 11.1
       },
-      "away_pitching": {
-        "era": 3.07,
-        "whip": 1.17,
-        "k_per_9": 9.57,
-        "so_per_g": 5.6,
-        "hr_per_g": 0.36,
-        "games": 149
+      "home_batting_rates": {
+        "hrr_per_g": 20.2,
+        "tb_per_g": 14.3
       },
-      "home_pitching": {
-        "era": 4.35,
+      "away_pitching": {
+        "era": 4.34,
         "whip": 1.4,
-        "k_per_9": 7.52,
+        "k_per_9": 7.54,
         "so_per_g": 4.6,
         "hr_per_g": 0.53,
-        "games": 140
+        "games": 141
+      },
+      "home_pitching": {
+        "era": 3.69,
+        "whip": 1.22,
+        "k_per_9": 7.01,
+        "so_per_g": 4.2,
+        "hr_per_g": 0.54,
+        "games": 149
       },
       "park_factor": {
-        "stadium": "Seoul-Gocheok",
-        "r_per_g": 51.0,
-        "hr_per_g": 7.24,
-        "h_per_g": 3.3,
-        "r_factor": 0.89,
-        "hr_factor": 0.826
+        "stadium": "Daegu",
+        "r_per_g": 96.0,
+        "hr_per_g": 9.72,
+        "h_per_g": 6.09,
+        "r_factor": 1.675,
+        "hr_factor": 1.108
       },
       "props": [
         {
-          "name": "Wang Yan-Cheng",
-          "team": "Hanwha",
+          "name": "",
+          "team": "Kiwoom",
           "prop": "Strikeouts",
-          "line": 4.0,
+          "line": null,
+          "projection": 3.91,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Kiwoom",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.58,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Kiwoom",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.77,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Samsung",
+          "prop": "Strikeouts",
+          "line": null,
           "projection": 4.28,
-          "edge": 0.28,
-          "recommendation": "PUSH",
-          "rating": 53.5
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Wang Yan-Cheng",
-          "team": "Hanwha",
+          "name": "",
+          "team": "Samsung",
           "prop": "Hits Allowed",
-          "line": 5.5,
-          "projection": 5.43,
-          "edge": -0.07,
-          "recommendation": "PUSH",
-          "rating": 49.4
+          "line": null,
+          "projection": 4.27,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Wang Yan-Cheng",
-          "team": "Hanwha",
+          "name": "",
+          "team": "Samsung",
           "prop": "Pitching Outs",
-          "line": 14.5,
-          "projection": 13.03,
-          "edge": -1.47,
-          "recommendation": "PUSH",
-          "rating": 44.9
+          "line": null,
+          "projection": 14.38,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Kenny Rosenberg",
-          "team": "Kiwoom",
-          "prop": "Strikeouts",
-          "line": 5.0,
-          "projection": 5.16,
-          "edge": 0.16,
-          "recommendation": "PUSH",
-          "rating": 51.6
-        },
-        {
-          "name": "Kenny Rosenberg",
-          "team": "Kiwoom",
-          "prop": "Hits Allowed",
-          "line": 5.5,
-          "projection": 6.13,
-          "edge": 0.63,
-          "recommendation": "OVER",
-          "rating": 55.7
-        },
-        {
-          "name": "Kenny Rosenberg",
-          "team": "Kiwoom",
-          "prop": "Pitching Outs",
-          "line": 16.5,
-          "projection": 16.23,
-          "edge": -0.27,
-          "recommendation": "PUSH",
-          "rating": 49.2
-        },
-        {
-          "name": "Yonathan Perlaza",
-          "team": "Hanwha",
+          "name": "Koo Ja-wook",
+          "team": "Samsung",
           "prop": "Fantasy Score",
-          "line": 6.5,
-          "projection": 7.63,
-          "edge": 1.13,
+          "line": 7.5,
+          "projection": 9.12,
+          "edge": 1.62,
           "recommendation": "OVER",
-          "rating": 58.7
+          "rating": 60.8
         },
         {
-          "name": "Keston Hiura",
-          "team": "Kiwoom",
+          "name": "Lewin Diaz",
+          "team": "Samsung",
           "prop": "Fantasy Score",
-          "line": 6.0,
-          "projection": 6.0,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Kang Baek-ho",
-          "team": "Hanwha",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.7,
-          "edge": -0.3,
-          "recommendation": "PUSH",
-          "rating": 42.5
-        },
-        {
-          "name": "Lee Won-seok",
-          "team": "Hanwha",
-          "prop": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "projection": 1.5,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Moon Hyun-bin",
-          "team": "Hanwha",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.81,
-          "edge": -0.19,
-          "recommendation": "PUSH",
-          "rating": 45.3
-        },
-        {
-          "name": "Roh Si-hwan",
-          "team": "Hanwha",
-          "prop": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "projection": 1.85,
-          "edge": 0.35,
+          "line": 7.5,
+          "projection": 13.42,
+          "edge": 5.92,
           "recommendation": "OVER",
-          "rating": 61.5
+          "rating": 89.5
         },
         {
-          "name": "Yonathan Perlaza",
-          "team": "Hanwha",
+          "name": "Choi Hyoung-woo",
+          "team": "Samsung",
           "prop": "Hits+Runs+RBIs",
           "line": 2.0,
-          "projection": 1.82,
-          "edge": -0.18,
+          "projection": 2.26,
+          "edge": 0.26,
           "recommendation": "PUSH",
-          "rating": 45.4
+          "rating": 56.4
         },
         {
-          "name": "Choi Joo-hwan",
-          "team": "Kiwoom",
+          "name": "Kim Seong-Yoon",
+          "team": "Samsung",
           "prop": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "projection": 1.31,
-          "edge": -0.19,
-          "recommendation": "PUSH",
-          "rating": 43.6
+          "line": 2.0,
+          "projection": 2.67,
+          "edge": 0.67,
+          "recommendation": "OVER",
+          "rating": 66.7
         },
         {
-          "name": "Keston Hiura",
-          "team": "Kiwoom",
+          "name": "Koo Ja-wook",
+          "team": "Samsung",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 2.67,
+          "edge": 0.17,
+          "recommendation": "PUSH",
+          "rating": 53.4
+        },
+        {
+          "name": "Lewin Diaz",
+          "team": "Samsung",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 3.75,
+          "edge": 1.25,
+          "recommendation": "OVER",
+          "rating": 75.0
+        },
+        {
+          "name": "Park Seung-kyu",
+          "team": "Samsung",
           "prop": "Hits+Runs+RBIs",
           "line": 2.0,
           "projection": 2.0,
           "edge": 0.0,
           "recommendation": "PUSH",
           "rating": 50.0
-        },
-        {
-          "name": "Seo Geon-chang",
-          "team": "Kiwoom",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.0,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Lee Hyung-jong",
-          "team": "Kiwoom",
-          "prop": "Total Bases",
-          "line": 0.5,
-          "projection": 0.68,
-          "edge": 0.18,
-          "recommendation": "PUSH",
-          "rating": 68.5
         }
       ]
     },
     {
       "away": "Lotte",
-      "home": "LG",
-      "stadium": "Seoul-Jamsil",
+      "home": "SSG",
+      "stadium": "Incheon-Munhak",
       "weather": {
-        "temp_f": 75.0,
-        "temp_c": 23.9,
-        "precip_pct": 45,
+        "temp_f": 78.4,
+        "temp_c": 25.8,
+        "precip_pct": 59,
         "rain_mm": 0.0,
-        "wind_kmh": 7.8,
-        "wind_mph": 4.8,
-        "wind_deg": 283,
-        "wind_compass": "W",
-        "wind_effect": "Crosswind L->R",
-        "wind_arrow_deg": 73,
+        "wind_kmh": 7.2,
+        "wind_mph": 4.5,
+        "wind_deg": 297,
+        "wind_compass": "NW",
+        "wind_effect": "Out to RF",
+        "wind_arrow_deg": 57,
         "is_dome": false,
-        "condition": "Partly Cloudy"
+        "condition": "Clear"
       },
       "market": null,
       "away_pitcher": {
-        "name": "Jeremy Beasley",
-        "line": 17.5,
-        "k_projection": 14.04,
-        "profile": {
-          "name": "Jeremy Beasley",
-          "team": "Lotte",
-          "era": 4.86,
-          "whip": 1.51,
-          "k_per_9": 10.57,
-          "ip_per_g": 5.2,
-          "starts": 12,
-          "total_ip": 63.0,
-          "total_so": 74,
-          "total_hr": 5,
-          "recent": [
-            {
-              "date": "06/07/2026",
-              "opp": "Hanwha",
-              "ip": 5.0,
-              "er": 5,
-              "so": 5,
-              "ha": 10,
-              "bb": 2,
-              "era": 9.0
-            },
-            {
-              "date": "05/31/2026",
-              "opp": "NC",
-              "ip": 4.67,
-              "er": 7,
-              "so": 5,
-              "ha": 9,
-              "bb": 2,
-              "era": 13.5
-            },
-            {
-              "date": "05/26/2026",
-              "opp": "LG",
-              "ip": 6.0,
-              "er": 1,
-              "so": 8,
-              "ha": 2,
-              "bb": 0,
-              "era": 1.5
-            },
-            {
-              "date": "05/19/2026",
-              "opp": "Hanwha",
-              "ip": 5.0,
-              "er": 4,
-              "so": 4,
-              "ha": 5,
-              "bb": 3,
-              "era": 7.2
-            },
-            {
-              "date": "05/13/2026",
-              "opp": "NC",
-              "ip": 6.0,
-              "er": 4,
-              "so": 7,
-              "ha": 11,
-              "bb": 3,
-              "era": 6.0
-            }
-          ]
-        }
+        "name": "",
+        "line": null,
+        "k_projection": 13.97,
+        "profile": null
       },
       "home_pitcher": {
-        "name": "Im Chan Kyu",
-        "line": 17.5,
-        "k_projection": 17.64,
-        "profile": {
-          "name": "Im Chan Kyu",
-          "team": "LG",
-          "era": 3.04,
-          "whip": 1.29,
-          "k_per_9": 5.81,
-          "ip_per_g": 5.8,
-          "starts": 34,
-          "total_ip": 198.3,
-          "total_so": 128,
-          "total_hr": 13,
-          "recent": [
-            {
-              "date": "06/09/2026",
-              "opp": "SSG",
-              "ip": 5.0,
-              "er": 1,
-              "so": 3,
-              "ha": 4,
-              "bb": 4,
-              "era": 1.8
-            },
-            {
-              "date": "06/02/2026",
-              "opp": "KT",
-              "ip": 6.0,
-              "er": 0,
-              "so": 4,
-              "ha": 4,
-              "bb": 3,
-              "era": 0.0
-            },
-            {
-              "date": "05/23/2026",
-              "opp": "Kiwoom",
-              "ip": 6.0,
-              "er": 2,
-              "so": 4,
-              "ha": 6,
-              "bb": 3,
-              "era": 3.0
-            },
-            {
-              "date": "05/17/2026",
-              "opp": "SSG",
-              "ip": 6.0,
-              "er": 3,
-              "so": 3,
-              "ha": 6,
-              "bb": 1,
-              "era": 4.5
-            },
-            {
-              "date": "05/12/2026",
-              "opp": "Samsung",
-              "ip": 5.67,
-              "er": 1,
-              "so": 2,
-              "ha": 6,
-              "bb": 1,
-              "era": 1.59
-            }
-          ]
-        }
+        "name": "",
+        "line": null,
+        "k_projection": 13.91,
+        "profile": null
       },
       "away_batting": {
         "ba": ".227",
@@ -569,6 +545,278 @@
         "games": 11
       },
       "home_batting": {
+        "ba": ".232",
+        "obp": ".327",
+        "slg": ".321",
+        "ops": ".648",
+        "r_per_g": 4.0,
+        "hr": 6,
+        "hr_per_g": 0.67,
+        "so": 70,
+        "so_per_g": 7.78,
+        "h": 68,
+        "h_per_g": 7.56,
+        "bb": 39,
+        "sb": 7,
+        "games": 9
+      },
+      "away_batting_rates": {
+        "hrr_per_g": 17.5,
+        "tb_per_g": 13.4
+      },
+      "home_batting_rates": {
+        "hrr_per_g": 18.8,
+        "tb_per_g": 13.9
+      },
+      "away_pitching": {
+        "era": 4.28,
+        "whip": 1.39,
+        "k_per_9": 8.17,
+        "so_per_g": 6.1,
+        "hr_per_g": 0.73,
+        "games": 133
+      },
+      "home_pitching": {
+        "era": 4.02,
+        "whip": 1.32,
+        "k_per_9": 8.32,
+        "so_per_g": 4.9,
+        "hr_per_g": 0.5,
+        "games": 133
+      },
+      "park_factor": {
+        "stadium": "Incheon-Munhak",
+        "r_per_g": 76.0,
+        "hr_per_g": 8.4,
+        "h_per_g": 4.25,
+        "r_factor": 1.326,
+        "hr_factor": 0.958
+      },
+      "props": [
+        {
+          "name": "",
+          "team": "Lotte",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 4.02,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Lotte",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.48,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Lotte",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.97,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "SSG",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 4.04,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "SSG",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.51,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "SSG",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.91,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "Victor Reyes",
+          "team": "Lotte",
+          "prop": "Fantasy Score",
+          "line": 6.5,
+          "projection": 12.65,
+          "edge": 6.15,
+          "recommendation": "OVER",
+          "rating": 97.3
+        },
+        {
+          "name": "Choi Jeong",
+          "team": "SSG",
+          "prop": "Fantasy Score",
+          "line": 7.5,
+          "projection": 8.94,
+          "edge": 1.44,
+          "recommendation": "OVER",
+          "rating": 59.6
+        },
+        {
+          "name": "Guillermo Heredia",
+          "team": "SSG",
+          "prop": "Fantasy Score",
+          "line": 6.5,
+          "projection": 10.91,
+          "edge": 4.41,
+          "recommendation": "OVER",
+          "rating": 84.0
+        },
+        {
+          "name": "Park Seong-Han",
+          "team": "SSG",
+          "prop": "Fantasy Score",
+          "line": 7.0,
+          "projection": 6.0,
+          "edge": -1.0,
+          "recommendation": "UNDER",
+          "rating": 42.8
+        },
+        {
+          "name": "Go Seung-min",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.96,
+          "edge": -0.04,
+          "recommendation": "PUSH",
+          "rating": 49.1
+        },
+        {
+          "name": "Hwang Seong-bin",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "projection": 2.65,
+          "edge": 1.15,
+          "recommendation": "OVER",
+          "rating": 88.2
+        },
+        {
+          "name": "Na Seung-Yeup",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "projection": 1.65,
+          "edge": 0.15,
+          "recommendation": "PUSH",
+          "rating": 55.0
+        },
+        {
+          "name": "Victor Reyes",
+          "team": "Lotte",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 3.29,
+          "edge": 1.29,
+          "recommendation": "OVER",
+          "rating": 82.1
+        },
+        {
+          "name": "Choi Jeong",
+          "team": "SSG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.94,
+          "edge": -0.56,
+          "recommendation": "UNDER",
+          "rating": 38.8
+        },
+        {
+          "name": "Guillermo Heredia",
+          "team": "SSG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.64,
+          "edge": 0.64,
+          "recommendation": "OVER",
+          "rating": 66.1
+        },
+        {
+          "name": "Jeong Jun-jae",
+          "team": "SSG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.0,
+          "edge": 0.0,
+          "recommendation": "PUSH",
+          "rating": 50.0
+        },
+        {
+          "name": "Park Seong-Han",
+          "team": "SSG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 1.57,
+          "edge": -0.93,
+          "recommendation": "UNDER",
+          "rating": 31.4
+        },
+        {
+          "name": "Son Ho-young",
+          "team": "Lotte",
+          "prop": "Total Bases",
+          "line": 0.5,
+          "projection": 1.75,
+          "edge": 1.25,
+          "recommendation": "OVER",
+          "rating": 175.2
+        }
+      ]
+    },
+    {
+      "away": "LG",
+      "home": "Kia",
+      "stadium": "Gwangju",
+      "weather": {
+        "temp_f": 78.4,
+        "temp_c": 25.8,
+        "precip_pct": 31,
+        "rain_mm": 0.0,
+        "wind_kmh": 10.6,
+        "wind_mph": 6.6,
+        "wind_deg": 156,
+        "wind_compass": "SE",
+        "wind_effect": "Out to LF",
+        "wind_arrow_deg": 301,
+        "is_dome": false,
+        "condition": "Partly Cloudy"
+      },
+      "market": null,
+      "away_pitcher": {
+        "name": "",
+        "line": null,
+        "k_projection": 13.98,
+        "profile": null
+      },
+      "home_pitcher": {
+        "name": "",
+        "line": null,
+        "k_projection": 13.9,
+        "profile": null
+      },
+      "away_batting": {
         "ba": ".294",
         "obp": ".394",
         "slg": ".468",
@@ -583,341 +831,6 @@
         "bb": 52,
         "sb": 15,
         "games": 10
-      },
-      "away_batting_rates": {
-        "hrr_per_g": 17.6,
-        "tb_per_g": 13.4
-      },
-      "home_batting_rates": {
-        "hrr_per_g": 19.2,
-        "tb_per_g": 13.2
-      },
-      "away_pitching": {
-        "era": 4.29,
-        "whip": 1.39,
-        "k_per_9": 8.17,
-        "so_per_g": 6.1,
-        "hr_per_g": 0.73,
-        "games": 132
-      },
-      "home_pitching": {
-        "era": 3.18,
-        "whip": 1.23,
-        "k_per_9": 7.18,
-        "so_per_g": 4.5,
-        "hr_per_g": 0.37,
-        "games": 147
-      },
-      "park_factor": {
-        "stadium": "Seoul-Jamsil",
-        "r_per_g": 55.0,
-        "hr_per_g": 9.39,
-        "h_per_g": 5.2,
-        "r_factor": 0.96,
-        "hr_factor": 1.071
-      },
-      "props": [
-        {
-          "name": "Jeremy Beasley",
-          "team": "Lotte",
-          "prop": "Strikeouts",
-          "line": 6.0,
-          "projection": 4.93,
-          "edge": -1.07,
-          "recommendation": "UNDER",
-          "rating": 41.1
-        },
-        {
-          "name": "Jeremy Beasley",
-          "team": "Lotte",
-          "prop": "Hits Allowed",
-          "line": 6.0,
-          "projection": 6.99,
-          "edge": 0.99,
-          "recommendation": "OVER",
-          "rating": 58.2
-        },
-        {
-          "name": "Jeremy Beasley",
-          "team": "Lotte",
-          "prop": "Pitching Outs",
-          "line": 17.5,
-          "projection": 14.04,
-          "edge": -3.46,
-          "recommendation": "UNDER",
-          "rating": 40.1
-        },
-        {
-          "name": "Im Chan Kyu",
-          "team": "LG",
-          "prop": "Strikeouts",
-          "line": 3.5,
-          "projection": 3.28,
-          "edge": -0.22,
-          "recommendation": "PUSH",
-          "rating": 46.9
-        },
-        {
-          "name": "Im Chan Kyu",
-          "team": "LG",
-          "prop": "Hits Allowed",
-          "line": 6.0,
-          "projection": 5.17,
-          "edge": -0.83,
-          "recommendation": "UNDER",
-          "rating": 43.1
-        },
-        {
-          "name": "Im Chan Kyu",
-          "team": "LG",
-          "prop": "Pitching Outs",
-          "line": 17.5,
-          "projection": 17.64,
-          "edge": 0.14,
-          "recommendation": "PUSH",
-          "rating": 50.4
-        },
-        {
-          "name": "Austin Dean",
-          "team": "LG",
-          "prop": "Fantasy Score",
-          "line": 7.5,
-          "projection": 13.6,
-          "edge": 6.1,
-          "recommendation": "OVER",
-          "rating": 90.7
-        },
-        {
-          "name": "Victor Reyes",
-          "team": "Lotte",
-          "prop": "Fantasy Score",
-          "line": 6.5,
-          "projection": 13.61,
-          "edge": 7.11,
-          "recommendation": "OVER",
-          "rating": 104.7
-        },
-        {
-          "name": "Austin Dean",
-          "team": "LG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 4.62,
-          "edge": 2.12,
-          "recommendation": "OVER",
-          "rating": 92.5
-        },
-        {
-          "name": "Hong Chang-Ki",
-          "team": "LG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.75,
-          "edge": 0.75,
-          "recommendation": "OVER",
-          "rating": 68.8
-        },
-        {
-          "name": "Moon Bo-Gyeong",
-          "team": "LG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.18,
-          "edge": 0.18,
-          "recommendation": "PUSH",
-          "rating": 54.6
-        },
-        {
-          "name": "Oh Ji-hwan",
-          "team": "LG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.21,
-          "edge": 0.21,
-          "recommendation": "PUSH",
-          "rating": 55.2
-        },
-        {
-          "name": "Park Hae-min",
-          "team": "LG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.9,
-          "edge": 0.9,
-          "recommendation": "OVER",
-          "rating": 72.6
-        },
-        {
-          "name": "Go Seung-min",
-          "team": "Lotte",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 3.31,
-          "edge": 1.31,
-          "recommendation": "OVER",
-          "rating": 82.8
-        },
-        {
-          "name": "Hwang Seong-bin",
-          "team": "Lotte",
-          "prop": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "projection": 3.7,
-          "edge": 2.2,
-          "recommendation": "OVER",
-          "rating": 123.3
-        },
-        {
-          "name": "Na Seung-Yeup",
-          "team": "Lotte",
-          "prop": "Hits+Runs+RBIs",
-          "line": 1.5,
-          "projection": 2.13,
-          "edge": 0.63,
-          "recommendation": "OVER",
-          "rating": 71.1
-        },
-        {
-          "name": "Victor Reyes",
-          "team": "Lotte",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 4.47,
-          "edge": 2.47,
-          "recommendation": "OVER",
-          "rating": 111.7
-        },
-        {
-          "name": "Gu Bon-Hyeok",
-          "team": "LG",
-          "prop": "Total Bases",
-          "line": 0.5,
-          "projection": 0.5,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Son Ho-young",
-          "team": "Lotte",
-          "prop": "Total Bases",
-          "line": 0.5,
-          "projection": 1.26,
-          "edge": 0.76,
-          "recommendation": "OVER",
-          "rating": 125.8
-        }
-      ]
-    },
-    {
-      "away": "Doosan",
-      "home": "Kia",
-      "stadium": "Gwangju",
-      "weather": {
-        "temp_f": 68.7,
-        "temp_c": 20.4,
-        "precip_pct": 29,
-        "rain_mm": 4.8,
-        "wind_kmh": 11.9,
-        "wind_mph": 7.4,
-        "wind_deg": 166,
-        "wind_compass": "S",
-        "wind_effect": "Out to LF",
-        "wind_arrow_deg": 311,
-        "is_dome": false,
-        "condition": "Rain"
-      },
-      "market": null,
-      "away_pitcher": {
-        "name": "Gwak Been",
-        "line": 17.5,
-        "k_projection": 17.39,
-        "profile": {
-          "name": "Gwak Been",
-          "team": "Doosan",
-          "era": 3.38,
-          "whip": 1.38,
-          "k_per_9": 10.66,
-          "ip_per_g": 5.6,
-          "starts": 12,
-          "total_ip": 66.7,
-          "total_so": 79,
-          "total_hr": 4,
-          "recent": [
-            {
-              "date": "06/09/2026",
-              "opp": "Lotte",
-              "ip": 6.0,
-              "er": 3,
-              "so": 4,
-              "ha": 9,
-              "bb": 2,
-              "era": 4.5
-            },
-            {
-              "date": "05/28/2026",
-              "opp": "KT",
-              "ip": 6.0,
-              "er": 1,
-              "so": 9,
-              "ha": 4,
-              "bb": 2,
-              "era": 1.5
-            },
-            {
-              "date": "05/22/2026",
-              "opp": "Hanwha",
-              "ip": 5.0,
-              "er": 1,
-              "so": 9,
-              "ha": 5,
-              "bb": 0,
-              "era": 1.8
-            },
-            {
-              "date": "05/15/2026",
-              "opp": "Lotte",
-              "ip": 5.0,
-              "er": 3,
-              "so": 5,
-              "ha": 7,
-              "bb": 2,
-              "era": 5.4
-            },
-            {
-              "date": "05/09/2026",
-              "opp": "SSG",
-              "ip": 5.0,
-              "er": 2,
-              "so": 1,
-              "ha": 6,
-              "bb": 4,
-              "era": 3.6
-            }
-          ]
-        }
-      },
-      "home_pitcher": {
-        "name": "Kim Tae Hyeong",
-        "line": null,
-        "k_projection": null,
-        "profile": null
-      },
-      "away_batting": {
-        "ba": ".247",
-        "obp": ".314",
-        "slg": ".355",
-        "ops": ".670",
-        "r_per_g": 4.36,
-        "hr": 6,
-        "hr_per_g": 0.55,
-        "so": 99,
-        "so_per_g": 9.0,
-        "h": 93,
-        "h_per_g": 8.45,
-        "bb": 32,
-        "sb": 7,
-        "games": 11
       },
       "home_batting": {
         "ba": ".259",
@@ -936,20 +849,20 @@
         "games": 11
       },
       "away_batting_rates": {
-        "hrr_per_g": 18.1,
-        "tb_per_g": 13.4
+        "hrr_per_g": 19.2,
+        "tb_per_g": 13.2
       },
       "home_batting_rates": {
-        "hrr_per_g": 18.8,
-        "tb_per_g": 14.3
+        "hrr_per_g": 18.6,
+        "tb_per_g": 14.2
       },
       "away_pitching": {
-        "era": 3.55,
-        "whip": 1.26,
-        "k_per_9": 7.26,
-        "so_per_g": 4.0,
-        "hr_per_g": 0.38,
-        "games": 124
+        "era": 3.16,
+        "whip": 1.22,
+        "k_per_9": 7.16,
+        "so_per_g": 4.5,
+        "hr_per_g": 0.37,
+        "games": 148
       },
       "home_pitching": {
         "era": 3.44,
@@ -969,44 +882,64 @@
       },
       "props": [
         {
-          "name": "Gwak Been",
-          "team": "Doosan",
+          "name": "",
+          "team": "LG",
           "prop": "Strikeouts",
-          "line": 6.5,
-          "projection": 5.56,
-          "edge": -0.94,
-          "recommendation": "UNDER",
-          "rating": 42.8
+          "line": null,
+          "projection": 4.08,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Gwak Been",
-          "team": "Doosan",
+          "name": "",
+          "team": "LG",
           "prop": "Hits Allowed",
-          "line": 5.5,
-          "projection": 6.63,
-          "edge": 1.13,
-          "recommendation": "OVER",
-          "rating": 60.3
+          "line": null,
+          "projection": 4.47,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Gwak Been",
-          "team": "Doosan",
+          "name": "",
+          "team": "LG",
           "prop": "Pitching Outs",
-          "line": 17.5,
-          "projection": 17.39,
-          "edge": -0.11,
-          "recommendation": "PUSH",
-          "rating": 49.7
+          "line": null,
+          "projection": 13.98,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
-          "name": "Daz Cameron",
-          "team": "Doosan",
-          "prop": "Fantasy Score",
-          "line": 6.5,
-          "projection": 5.25,
-          "edge": -1.25,
-          "recommendation": "UNDER",
-          "rating": 40.4
+          "name": "",
+          "team": "Kia",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 3.99,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Kia",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.52,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Kia",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.9,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
         },
         {
           "name": "Aderlin Rodriguez",
@@ -1019,34 +952,14 @@
           "rating": 50.0
         },
         {
-          "name": "Daz Cameron",
-          "team": "Doosan",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.51,
-          "edge": -0.49,
-          "recommendation": "UNDER",
-          "rating": 37.7
-        },
-        {
-          "name": "Jung Soo-bin",
-          "team": "Doosan",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.6,
-          "edge": -0.4,
-          "recommendation": "UNDER",
-          "rating": 40.0
-        },
-        {
-          "name": "Yang Eui-ji",
-          "team": "Doosan",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.49,
-          "edge": 0.49,
+          "name": "Austin Dean",
+          "team": "LG",
+          "prop": "Fantasy Score",
+          "line": 7.5,
+          "projection": 13.11,
+          "edge": 5.61,
           "recommendation": "OVER",
-          "rating": 62.2
+          "rating": 87.4
         },
         {
           "name": "Aderlin Rodriguez",
@@ -1073,20 +986,20 @@
           "team": "Kia",
           "prop": "Hits+Runs+RBIs",
           "line": 2.0,
-          "projection": 2.4,
-          "edge": 0.4,
-          "recommendation": "OVER",
-          "rating": 60.1
+          "projection": 1.81,
+          "edge": -0.19,
+          "recommendation": "PUSH",
+          "rating": 45.3
         },
         {
           "name": "Na Sung-bum",
           "team": "Kia",
           "prop": "Hits+Runs+RBIs",
           "line": 2.0,
-          "projection": 1.87,
-          "edge": -0.13,
-          "recommendation": "PUSH",
-          "rating": 46.7
+          "projection": 1.64,
+          "edge": -0.36,
+          "recommendation": "UNDER",
+          "rating": 41.1
         },
         {
           "name": "Park Jae-hyun",
@@ -1099,8 +1012,58 @@
           "rating": 50.0
         },
         {
-          "name": "Lee Yu-chan",
-          "team": "Doosan",
+          "name": "Austin Dean",
+          "team": "LG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.5,
+          "projection": 3.82,
+          "edge": 1.32,
+          "recommendation": "OVER",
+          "rating": 76.4
+        },
+        {
+          "name": "Hong Chang-Ki",
+          "team": "LG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 3.03,
+          "edge": 1.03,
+          "recommendation": "OVER",
+          "rating": 75.6
+        },
+        {
+          "name": "Moon Bo-Gyeong",
+          "team": "LG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.74,
+          "edge": -0.26,
+          "recommendation": "PUSH",
+          "rating": 43.6
+        },
+        {
+          "name": "Oh Ji-hwan",
+          "team": "LG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 1.43,
+          "edge": -0.57,
+          "recommendation": "UNDER",
+          "rating": 35.8
+        },
+        {
+          "name": "Park Hae-min",
+          "team": "LG",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.71,
+          "edge": 0.71,
+          "recommendation": "OVER",
+          "rating": 67.7
+        },
+        {
+          "name": "Gu Bon-Hyeok",
+          "team": "LG",
           "prop": "Total Bases",
           "line": 0.5,
           "projection": 0.5,
@@ -1111,28 +1074,236 @@
       ]
     },
     {
-      "away": "KT",
+      "away": "Hanwha",
       "home": "NC",
       "stadium": "Changwon",
       "weather": {
-        "temp_f": 74.5,
-        "temp_c": 23.6,
-        "precip_pct": 0,
+        "temp_f": 75.2,
+        "temp_c": 24.0,
+        "precip_pct": 6,
         "rain_mm": 0.0,
-        "wind_kmh": 7.6,
-        "wind_mph": 4.7,
-        "wind_deg": 155,
-        "wind_compass": "SE",
+        "wind_kmh": 6.9,
+        "wind_mph": 4.3,
+        "wind_deg": 171,
+        "wind_compass": "S",
         "wind_effect": "Crosswind R->L",
-        "wind_arrow_deg": 255,
+        "wind_arrow_deg": 271,
         "is_dome": false,
         "condition": "Clear"
       },
       "market": null,
       "away_pitcher": {
-        "name": "Ko Young Pyo",
+        "name": "",
+        "line": null,
+        "k_projection": 13.76,
+        "profile": null
+      },
+      "home_pitcher": {
+        "name": "",
+        "line": null,
+        "k_projection": 13.59,
+        "profile": null
+      },
+      "away_batting": {
+        "ba": ".173",
+        "obp": ".251",
+        "slg": ".257",
+        "ops": ".507",
+        "r_per_g": 2.55,
+        "hr": 4,
+        "hr_per_g": 0.36,
+        "so": 80,
+        "so_per_g": 7.27,
+        "h": 60,
+        "h_per_g": 5.45,
+        "bb": 31,
+        "sb": 10,
+        "games": 11
+      },
+      "home_batting": {
+        "ba": ".294",
+        "obp": ".371",
+        "slg": ".423",
+        "ops": ".794",
+        "r_per_g": 5.0,
+        "hr": 6,
+        "hr_per_g": 0.75,
+        "so": 68,
+        "so_per_g": 8.5,
+        "h": 82,
+        "h_per_g": 10.25,
+        "bb": 31,
+        "sb": 5,
+        "games": 8
+      },
+      "away_batting_rates": {
+        "hrr_per_g": 21.6,
+        "tb_per_g": 15.1
+      },
+      "home_batting_rates": {
+        "hrr_per_g": 19.2,
+        "tb_per_g": 13.9
+      },
+      "away_pitching": {
+        "era": 3.08,
+        "whip": 1.18,
+        "k_per_9": 9.54,
+        "so_per_g": 5.6,
+        "hr_per_g": 0.35,
+        "games": 150
+      },
+      "home_pitching": {
+        "era": 3.9,
+        "whip": 1.25,
+        "k_per_9": 8.1,
+        "so_per_g": 4.8,
+        "hr_per_g": 0.58,
+        "games": 111
+      },
+      "park_factor": {
+        "stadium": "Changwon",
+        "r_per_g": 66.0,
+        "hr_per_g": 8.63,
+        "h_per_g": 5.37,
+        "r_factor": 1.152,
+        "hr_factor": 0.984
+      },
+      "props": [
+        {
+          "name": "",
+          "team": "Hanwha",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 4.05,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Hanwha",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.59,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "Hanwha",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.76,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "NC",
+          "prop": "Strikeouts",
+          "line": null,
+          "projection": 4.1,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "NC",
+          "prop": "Hits Allowed",
+          "line": null,
+          "projection": 4.68,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "",
+          "team": "NC",
+          "prop": "Pitching Outs",
+          "line": null,
+          "projection": 13.59,
+          "edge": null,
+          "recommendation": "NO LINE",
+          "rating": null
+        },
+        {
+          "name": "Matt Davidson",
+          "team": "NC",
+          "prop": "Fantasy Score",
+          "line": 6.0,
+          "projection": 6.0,
+          "edge": 0.0,
+          "recommendation": "PUSH",
+          "rating": 50.0
+        },
+        {
+          "name": "Kim Ju-Won",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 3.73,
+          "edge": 1.73,
+          "recommendation": "OVER",
+          "rating": 93.3
+        },
+        {
+          "name": "Matt Davidson",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.0,
+          "edge": 0.0,
+          "recommendation": "PUSH",
+          "rating": 50.0
+        },
+        {
+          "name": "Park Kun-woo",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 2.96,
+          "edge": 0.96,
+          "recommendation": "OVER",
+          "rating": 74.1
+        },
+        {
+          "name": "Park Min-woo",
+          "team": "NC",
+          "prop": "Hits+Runs+RBIs",
+          "line": 2.0,
+          "projection": 3.25,
+          "edge": 1.25,
+          "recommendation": "OVER",
+          "rating": 81.2
+        }
+      ]
+    },
+    {
+      "away": "KT",
+      "home": "NC",
+      "stadium": "Changwon",
+      "weather": {
+        "temp_f": 75.2,
+        "temp_c": 24.0,
+        "precip_pct": 6,
+        "rain_mm": 0.0,
+        "wind_kmh": 6.9,
+        "wind_mph": 4.3,
+        "wind_deg": 171,
+        "wind_compass": "S",
+        "wind_effect": "Crosswind R->L",
+        "wind_arrow_deg": 271,
+        "is_dome": false,
+        "condition": "Clear"
+      },
+      "market": null,
+      "away_pitcher": {
+        "name": "Ko Young-Pyo",
         "line": 17.5,
-        "k_projection": 19.73,
+        "k_projection": 19.7,
         "profile": {
           "name": "Ko Young-pyo",
           "team": "KT",
@@ -1198,12 +1369,7 @@
           ]
         }
       },
-      "home_pitcher": {
-        "name": "Kim Jun Won",
-        "line": null,
-        "k_projection": null,
-        "profile": null
-      },
+      "home_pitcher": null,
       "away_batting": {
         "ba": ".245",
         "obp": ".329",
@@ -1237,12 +1403,12 @@
         "games": 8
       },
       "away_batting_rates": {
-        "hrr_per_g": 20.5,
-        "tb_per_g": 13.8
+        "hrr_per_g": 20.7,
+        "tb_per_g": 13.9
       },
       "home_batting_rates": {
-        "hrr_per_g": 19.0,
-        "tb_per_g": 13.8
+        "hrr_per_g": 19.2,
+        "tb_per_g": 13.9
       },
       "away_pitching": {
         "era": 3.69,
@@ -1270,445 +1436,504 @@
       },
       "props": [
         {
-          "name": "Ko Young Pyo",
+          "name": "Ko Young-Pyo",
           "team": "KT",
           "prop": "Strikeouts",
-          "line": 6.0,
+          "line": 5.5,
           "projection": 6.02,
-          "edge": 0.02,
-          "recommendation": "PUSH",
-          "rating": 50.2
+          "edge": 0.52,
+          "recommendation": "OVER",
+          "rating": 54.7
         },
         {
-          "name": "Ko Young Pyo",
+          "name": "Ko Young-Pyo",
           "team": "KT",
           "prop": "Hits Allowed",
           "line": 5.5,
-          "projection": 5.29,
-          "edge": -0.21,
+          "projection": 5.3,
+          "edge": -0.2,
           "recommendation": "PUSH",
-          "rating": 48.1
+          "rating": 48.2
         },
         {
-          "name": "Ko Young Pyo",
+          "name": "Ko Young-Pyo",
           "team": "KT",
           "prop": "Pitching Outs",
           "line": 17.5,
-          "projection": 19.73,
-          "edge": 2.23,
+          "projection": 19.7,
+          "edge": 2.2,
           "recommendation": "OVER",
-          "rating": 56.4
-        },
-        {
-          "name": "Choi Won-jun",
-          "team": "KT",
-          "prop": "Fantasy Score",
-          "line": 7.5,
-          "projection": 10.21,
-          "edge": 2.71,
-          "recommendation": "OVER",
-          "rating": 68.1
-        },
-        {
-          "name": "Sam Hilliard",
-          "team": "KT",
-          "prop": "Fantasy Score",
-          "line": 6.5,
-          "projection": 8.37,
-          "edge": 1.87,
-          "recommendation": "OVER",
-          "rating": 64.4
-        },
-        {
-          "name": "Matt Davidson",
-          "team": "NC",
-          "prop": "Fantasy Score",
-          "line": 6.0,
-          "projection": 6.0,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Choi Won-jun",
-          "team": "KT",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 2.97,
-          "edge": 0.47,
-          "recommendation": "OVER",
-          "rating": 59.5
-        },
-        {
-          "name": "Kim Hyun-Soo",
-          "team": "KT",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.76,
-          "edge": 0.76,
-          "recommendation": "OVER",
-          "rating": 69.0
-        },
-        {
-          "name": "Kim Min-hyuck",
-          "team": "KT",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.45,
-          "edge": -0.55,
-          "recommendation": "UNDER",
-          "rating": 36.2
-        },
-        {
-          "name": "Sam Hilliard",
-          "team": "KT",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.43,
-          "edge": 0.43,
-          "recommendation": "OVER",
-          "rating": 60.7
-        },
-        {
-          "name": "Kim Ju-Won",
-          "team": "NC",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 3.11,
-          "edge": 1.11,
-          "recommendation": "OVER",
-          "rating": 77.7
-        },
-        {
-          "name": "Matt Davidson",
-          "team": "NC",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.0,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
-        },
-        {
-          "name": "Park Kun-woo",
-          "team": "NC",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.32,
-          "edge": 0.32,
-          "recommendation": "OVER",
-          "rating": 58.1
-        },
-        {
-          "name": "Park Min-woo",
-          "team": "NC",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.41,
-          "edge": 0.41,
-          "recommendation": "OVER",
-          "rating": 60.2
+          "rating": 56.3
         }
       ]
     },
     {
-      "away": "SSG",
-      "home": "Samsung",
-      "stadium": "Daegu",
+      "away": "Doosan",
+      "home": "Kia",
+      "stadium": "Gwangju",
       "weather": {
-        "temp_f": 77.9,
-        "temp_c": 25.5,
-        "precip_pct": 2,
+        "temp_f": 78.4,
+        "temp_c": 25.8,
+        "precip_pct": 31,
         "rain_mm": 0.0,
-        "wind_kmh": 7.6,
-        "wind_mph": 4.7,
-        "wind_deg": 149,
+        "wind_kmh": 10.6,
+        "wind_mph": 6.6,
+        "wind_deg": 156,
         "wind_compass": "SE",
         "wind_effect": "Out to LF",
-        "wind_arrow_deg": 319,
+        "wind_arrow_deg": 301,
+        "is_dome": false,
+        "condition": "Partly Cloudy"
+      },
+      "market": null,
+      "away_pitcher": {
+        "name": "Gwak Been",
+        "line": 17.5,
+        "k_projection": 18.91,
+        "profile": {
+          "name": "Gwak Been",
+          "team": "Doosan",
+          "era": 3.22,
+          "whip": 1.33,
+          "k_per_9": 10.65,
+          "ip_per_g": 5.6,
+          "starts": 13,
+          "total_ip": 72.7,
+          "total_so": 86,
+          "total_hr": 5,
+          "recent": [
+            {
+              "date": "06/14/2026",
+              "opp": "Kia",
+              "ip": 6.0,
+              "er": 1,
+              "so": 7,
+              "ha": 4,
+              "bb": 1,
+              "era": 1.5
+            },
+            {
+              "date": "06/09/2026",
+              "opp": "Lotte",
+              "ip": 6.0,
+              "er": 3,
+              "so": 4,
+              "ha": 9,
+              "bb": 2,
+              "era": 4.5
+            },
+            {
+              "date": "05/28/2026",
+              "opp": "KT",
+              "ip": 6.0,
+              "er": 1,
+              "so": 9,
+              "ha": 4,
+              "bb": 2,
+              "era": 1.5
+            },
+            {
+              "date": "05/22/2026",
+              "opp": "Hanwha",
+              "ip": 5.0,
+              "er": 1,
+              "so": 9,
+              "ha": 5,
+              "bb": 0,
+              "era": 1.8
+            },
+            {
+              "date": "05/15/2026",
+              "opp": "Lotte",
+              "ip": 5.0,
+              "er": 3,
+              "so": 5,
+              "ha": 7,
+              "bb": 2,
+              "era": 5.4
+            }
+          ]
+        }
+      },
+      "home_pitcher": null,
+      "away_batting": {
+        "ba": ".247",
+        "obp": ".314",
+        "slg": ".355",
+        "ops": ".670",
+        "r_per_g": 4.36,
+        "hr": 6,
+        "hr_per_g": 0.55,
+        "so": 99,
+        "so_per_g": 9.0,
+        "h": 93,
+        "h_per_g": 8.45,
+        "bb": 32,
+        "sb": 7,
+        "games": 11
+      },
+      "home_batting": {
+        "ba": ".259",
+        "obp": ".348",
+        "slg": ".435",
+        "ops": ".783",
+        "r_per_g": 5.0,
+        "hr": 14,
+        "hr_per_g": 1.27,
+        "so": 83,
+        "so_per_g": 7.55,
+        "h": 97,
+        "h_per_g": 8.82,
+        "bb": 52,
+        "sb": 5,
+        "games": 11
+      },
+      "away_batting_rates": {
+        "hrr_per_g": 18.0,
+        "tb_per_g": 13.3
+      },
+      "home_batting_rates": {
+        "hrr_per_g": 18.6,
+        "tb_per_g": 14.2
+      },
+      "away_pitching": {
+        "era": 3.53,
+        "whip": 1.26,
+        "k_per_9": 7.29,
+        "so_per_g": 4.0,
+        "hr_per_g": 0.38,
+        "games": 125
+      },
+      "home_pitching": {
+        "era": 3.44,
+        "whip": 1.18,
+        "k_per_9": 8.07,
+        "so_per_g": 5.6,
+        "hr_per_g": 0.46,
+        "games": 124
+      },
+      "park_factor": {
+        "stadium": "Gwangju",
+        "r_per_g": 68.0,
+        "hr_per_g": 9.0,
+        "h_per_g": 4.58,
+        "r_factor": 1.187,
+        "hr_factor": 1.026
+      },
+      "props": [
+        {
+          "name": "Gwak Been",
+          "team": "Doosan",
+          "prop": "Strikeouts",
+          "line": 6.5,
+          "projection": 7.21,
+          "edge": 0.71,
+          "recommendation": "OVER",
+          "rating": 55.4
+        },
+        {
+          "name": "Gwak Been",
+          "team": "Doosan",
+          "prop": "Hits Allowed",
+          "line": 5.5,
+          "projection": 5.94,
+          "edge": 0.44,
+          "recommendation": "OVER",
+          "rating": 54.0
+        },
+        {
+          "name": "Gwak Been",
+          "team": "Doosan",
+          "prop": "Pitching Outs",
+          "line": 17.5,
+          "projection": 18.91,
+          "edge": 1.41,
+          "recommendation": "OVER",
+          "rating": 54.0
+        }
+      ]
+    },
+    {
+      "away": "Lotte",
+      "home": "LG",
+      "stadium": "Seoul-Jamsil",
+      "weather": {
+        "temp_f": 85.5,
+        "temp_c": 29.7,
+        "precip_pct": 43,
+        "rain_mm": 0.0,
+        "wind_kmh": 2.5,
+        "wind_mph": 1.6,
+        "wind_deg": 225,
+        "wind_compass": "SW",
+        "wind_effect": "Out to CF",
+        "wind_arrow_deg": 15,
         "is_dome": false,
         "condition": "Clear"
       },
       "market": null,
       "away_pitcher": {
-        "name": "Thomas Hatch",
-        "line": null,
-        "k_projection": null,
-        "profile": null
-      },
-      "home_pitcher": {
-        "name": "Yang Chang Seop",
-        "line": null,
-        "k_projection": null,
+        "name": "Jeremy Beasley",
+        "line": 17.5,
+        "k_projection": 17.38,
         "profile": {
-          "name": "Yang Chang-seop",
-          "team": "Samsung",
-          "era": 4.44,
-          "whip": 1.28,
-          "k_per_9": 7.82,
-          "ip_per_g": 4.2,
-          "starts": 12,
-          "total_ip": 50.7,
-          "total_so": 44,
+          "name": "Jeremy Beasley",
+          "team": "Lotte",
+          "era": 4.63,
+          "whip": 1.5,
+          "k_per_9": 10.29,
+          "ip_per_g": 5.4,
+          "starts": 13,
+          "total_ip": 70.0,
+          "total_so": 80,
           "total_hr": 5,
           "recent": [
             {
+              "date": "06/14/2026",
+              "opp": "LG",
+              "ip": 7.0,
+              "er": 2,
+              "so": 6,
+              "ha": 7,
+              "bb": 3,
+              "era": 2.57
+            },
+            {
               "date": "06/07/2026",
-              "opp": "Kia",
+              "opp": "Hanwha",
               "ip": 5.0,
-              "er": 6,
-              "so": 7,
-              "ha": 11,
+              "er": 5,
+              "so": 5,
+              "ha": 10,
               "bb": 2,
-              "era": 10.8
+              "era": 9.0
             },
             {
               "date": "05/31/2026",
-              "opp": "Doosan",
-              "ip": 6.0,
-              "er": 2,
+              "opp": "NC",
+              "ip": 4.67,
+              "er": 7,
               "so": 5,
-              "ha": 4,
-              "bb": 1,
-              "era": 3.0
+              "ha": 9,
+              "bb": 2,
+              "era": 13.5
             },
             {
-              "date": "05/24/2026",
-              "opp": "Lotte",
-              "ip": 9.0,
-              "er": 0,
-              "so": 6,
-              "ha": 1,
-              "bb": 0,
-              "era": 0.0
-            },
-            {
-              "date": "05/14/2026",
+              "date": "05/26/2026",
               "opp": "LG",
+              "ip": 6.0,
+              "er": 1,
+              "so": 8,
+              "ha": 2,
+              "bb": 0,
+              "era": 1.5
+            },
+            {
+              "date": "05/19/2026",
+              "opp": "Hanwha",
+              "ip": 5.0,
+              "er": 4,
+              "so": 4,
+              "ha": 5,
+              "bb": 3,
+              "era": 7.2
+            }
+          ]
+        }
+      },
+      "home_pitcher": {
+        "name": "Im Chan-Kyu",
+        "line": 17.5,
+        "k_projection": 19.04,
+        "profile": {
+          "name": "Im Chan Kyu",
+          "team": "LG",
+          "era": 2.98,
+          "whip": 1.27,
+          "k_per_9": 5.7,
+          "ip_per_g": 5.9,
+          "starts": 35,
+          "total_ip": 205.3,
+          "total_so": 130,
+          "total_hr": 13,
+          "recent": [
+            {
+              "date": "06/14/2026",
+              "opp": "Lotte",
+              "ip": 7.0,
+              "er": 1,
+              "so": 2,
+              "ha": 6,
+              "bb": 0,
+              "era": 1.29
+            },
+            {
+              "date": "06/09/2026",
+              "opp": "SSG",
               "ip": 5.0,
               "er": 1,
               "so": 3,
               "ha": 4,
-              "bb": 1,
+              "bb": 4,
               "era": 1.8
             },
             {
-              "date": "05/10/2026",
-              "opp": "NC",
-              "ip": 1.67,
+              "date": "06/02/2026",
+              "opp": "KT",
+              "ip": 6.0,
               "er": 0,
-              "so": 2,
-              "ha": 1,
-              "bb": 0,
+              "so": 4,
+              "ha": 4,
+              "bb": 3,
               "era": 0.0
+            },
+            {
+              "date": "05/23/2026",
+              "opp": "Kiwoom",
+              "ip": 6.0,
+              "er": 2,
+              "so": 4,
+              "ha": 6,
+              "bb": 3,
+              "era": 3.0
+            },
+            {
+              "date": "05/17/2026",
+              "opp": "SSG",
+              "ip": 6.0,
+              "er": 3,
+              "so": 3,
+              "ha": 6,
+              "bb": 1,
+              "era": 4.5
             }
           ]
         }
       },
       "away_batting": {
-        "ba": ".232",
-        "obp": ".327",
-        "slg": ".321",
-        "ops": ".648",
-        "r_per_g": 4.0,
-        "hr": 6,
-        "hr_per_g": 0.67,
-        "so": 70,
-        "so_per_g": 7.78,
-        "h": 68,
-        "h_per_g": 7.56,
-        "bb": 39,
-        "sb": 7,
-        "games": 9
-      },
-      "home_batting": {
-        "ba": ".271",
-        "obp": ".355",
-        "slg": ".447",
-        "ops": ".802",
-        "r_per_g": 6.82,
-        "hr": 14,
-        "hr_per_g": 1.27,
-        "so": 81,
-        "so_per_g": 7.36,
-        "h": 102,
-        "h_per_g": 9.27,
-        "bb": 44,
-        "sb": 8,
+        "ba": ".227",
+        "obp": ".299",
+        "slg": ".320",
+        "ops": ".619",
+        "r_per_g": 2.73,
+        "hr": 4,
+        "hr_per_g": 0.36,
+        "so": 86,
+        "so_per_g": 7.82,
+        "h": 82,
+        "h_per_g": 7.45,
+        "bb": 33,
+        "sb": 5,
         "games": 11
       },
+      "home_batting": {
+        "ba": ".294",
+        "obp": ".394",
+        "slg": ".468",
+        "ops": ".861",
+        "r_per_g": 7.3,
+        "hr": 13,
+        "hr_per_g": 1.3,
+        "so": 75,
+        "so_per_g": 7.5,
+        "h": 100,
+        "h_per_g": 10.0,
+        "bb": 52,
+        "sb": 15,
+        "games": 10
+      },
       "away_batting_rates": {
-        "hrr_per_g": 18.8,
-        "tb_per_g": 13.9
+        "hrr_per_g": 17.5,
+        "tb_per_g": 13.4
       },
       "home_batting_rates": {
-        "hrr_per_g": 20.1,
-        "tb_per_g": 14.3
+        "hrr_per_g": 19.2,
+        "tb_per_g": 13.2
       },
       "away_pitching": {
-        "era": 4.02,
-        "whip": 1.32,
-        "k_per_9": 8.32,
-        "so_per_g": 4.9,
-        "hr_per_g": 0.5,
+        "era": 4.28,
+        "whip": 1.39,
+        "k_per_9": 8.17,
+        "so_per_g": 6.1,
+        "hr_per_g": 0.73,
         "games": 133
       },
       "home_pitching": {
-        "era": 3.64,
-        "whip": 1.21,
-        "k_per_9": 7.01,
-        "so_per_g": 4.2,
-        "hr_per_g": 0.53,
+        "era": 3.16,
+        "whip": 1.22,
+        "k_per_9": 7.16,
+        "so_per_g": 4.5,
+        "hr_per_g": 0.37,
         "games": 148
       },
       "park_factor": {
-        "stadium": "Daegu",
-        "r_per_g": 96.0,
-        "hr_per_g": 9.72,
-        "h_per_g": 6.09,
-        "r_factor": 1.675,
-        "hr_factor": 1.108
+        "stadium": "Seoul-Jamsil",
+        "r_per_g": 55.0,
+        "hr_per_g": 9.39,
+        "h_per_g": 5.2,
+        "r_factor": 0.96,
+        "hr_factor": 1.071
       },
       "props": [
         {
-          "name": "Choi Jeong",
-          "team": "SSG",
-          "prop": "Fantasy Score",
-          "line": 7.5,
-          "projection": 14.04,
-          "edge": 6.54,
-          "recommendation": "OVER",
-          "rating": 93.6
+          "name": "Jeremy Beasley",
+          "team": "Lotte",
+          "prop": "Strikeouts",
+          "line": 6.0,
+          "projection": 5.33,
+          "edge": -0.67,
+          "recommendation": "UNDER",
+          "rating": 44.4
         },
         {
-          "name": "Guillermo Heredia",
-          "team": "SSG",
-          "prop": "Fantasy Score",
-          "line": 6.5,
-          "projection": 11.01,
-          "edge": 4.51,
+          "name": "Jeremy Beasley",
+          "team": "Lotte",
+          "prop": "Hits Allowed",
+          "line": 5.0,
+          "projection": 7.49,
+          "edge": 2.49,
           "recommendation": "OVER",
-          "rating": 84.7
+          "rating": 74.9
         },
         {
-          "name": "Park Seong-Han",
-          "team": "SSG",
-          "prop": "Fantasy Score",
-          "line": 7.0,
-          "projection": 8.57,
-          "edge": 1.57,
-          "recommendation": "OVER",
-          "rating": 61.2
-        },
-        {
-          "name": "Koo Ja-wook",
-          "team": "Samsung",
-          "prop": "Fantasy Score",
-          "line": 7.5,
-          "projection": 10.59,
-          "edge": 3.09,
-          "recommendation": "OVER",
-          "rating": 70.6
-        },
-        {
-          "name": "Lewin Diaz",
-          "team": "Samsung",
-          "prop": "Fantasy Score",
-          "line": 7.5,
-          "projection": 9.56,
-          "edge": 2.06,
-          "recommendation": "OVER",
-          "rating": 63.7
-        },
-        {
-          "name": "Choi Jeong",
-          "team": "SSG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 3.52,
-          "edge": 1.02,
-          "recommendation": "OVER",
-          "rating": 70.3
-        },
-        {
-          "name": "Guillermo Heredia",
-          "team": "SSG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 3.04,
-          "edge": 1.04,
-          "recommendation": "OVER",
-          "rating": 75.9
-        },
-        {
-          "name": "Jeong Jun-jae",
-          "team": "SSG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.0,
-          "edge": 0.0,
+          "name": "Jeremy Beasley",
+          "team": "Lotte",
+          "prop": "Pitching Outs",
+          "line": 17.5,
+          "projection": 17.38,
+          "edge": -0.12,
           "recommendation": "PUSH",
-          "rating": 50.0
+          "rating": 49.7
         },
         {
-          "name": "Park Seong-Han",
-          "team": "SSG",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 2.47,
-          "edge": -0.03,
+          "name": "Im Chan-Kyu",
+          "team": "LG",
+          "prop": "Strikeouts",
+          "line": 3.5,
+          "projection": 3.24,
+          "edge": -0.26,
           "recommendation": "PUSH",
-          "rating": 49.3
+          "rating": 46.3
         },
         {
-          "name": "Choi Hyoung-woo",
-          "team": "Samsung",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 1.8,
-          "edge": -0.2,
+          "name": "Im Chan-Kyu",
+          "team": "LG",
+          "prop": "Hits Allowed",
+          "line": 5.5,
+          "projection": 5.2,
+          "edge": -0.3,
           "recommendation": "PUSH",
-          "rating": 45.1
+          "rating": 47.3
         },
         {
-          "name": "Kim Seong-Yoon",
-          "team": "Samsung",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.95,
-          "edge": 0.95,
+          "name": "Im Chan-Kyu",
+          "team": "LG",
+          "prop": "Pitching Outs",
+          "line": 17.5,
+          "projection": 19.04,
+          "edge": 1.54,
           "recommendation": "OVER",
-          "rating": 73.9
-        },
-        {
-          "name": "Koo Ja-wook",
-          "team": "Samsung",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 2.98,
-          "edge": 0.48,
-          "recommendation": "OVER",
-          "rating": 59.6
-        },
-        {
-          "name": "Lewin Diaz",
-          "team": "Samsung",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.5,
-          "projection": 2.93,
-          "edge": 0.43,
-          "recommendation": "OVER",
-          "rating": 58.6
-        },
-        {
-          "name": "Park Seung-kyu",
-          "team": "Samsung",
-          "prop": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "projection": 2.0,
-          "edge": 0.0,
-          "recommendation": "PUSH",
-          "rating": 50.0
+          "rating": 54.4
         }
       ]
     }
@@ -1893,28 +2118,28 @@
       "games": 111
     },
     "Kiwoom": {
-      "era": 4.35,
+      "era": 4.34,
       "whip": 1.4,
-      "k_per_9": 7.52,
+      "k_per_9": 7.54,
       "so_per_g": 4.6,
       "hr_per_g": 0.53,
-      "games": 140
+      "games": 141
     },
     "Doosan": {
-      "era": 3.55,
+      "era": 3.53,
       "whip": 1.26,
-      "k_per_9": 7.26,
+      "k_per_9": 7.29,
       "so_per_g": 4.0,
       "hr_per_g": 0.38,
-      "games": 124
+      "games": 125
     },
     "Hanwha": {
-      "era": 3.07,
-      "whip": 1.17,
-      "k_per_9": 9.57,
+      "era": 3.08,
+      "whip": 1.18,
+      "k_per_9": 9.54,
       "so_per_g": 5.6,
-      "hr_per_g": 0.36,
-      "games": 149
+      "hr_per_g": 0.35,
+      "games": 150
     },
     "KT": {
       "era": 3.69,
@@ -1925,28 +2150,28 @@
       "games": 147
     },
     "Lotte": {
-      "era": 4.29,
+      "era": 4.28,
       "whip": 1.39,
       "k_per_9": 8.17,
       "so_per_g": 6.1,
       "hr_per_g": 0.73,
-      "games": 132
+      "games": 133
     },
     "Samsung": {
-      "era": 3.64,
-      "whip": 1.21,
+      "era": 3.69,
+      "whip": 1.22,
       "k_per_9": 7.01,
       "so_per_g": 4.2,
-      "hr_per_g": 0.53,
-      "games": 148
+      "hr_per_g": 0.54,
+      "games": 149
     },
     "LG": {
-      "era": 3.18,
-      "whip": 1.23,
-      "k_per_9": 7.18,
+      "era": 3.16,
+      "whip": 1.22,
+      "k_per_9": 7.16,
       "so_per_g": 4.5,
       "hr_per_g": 0.37,
-      "games": 147
+      "games": 148
     },
     "SSG": {
       "era": 4.02,
