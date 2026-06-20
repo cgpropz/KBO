@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-20T04:56:05.447822+00:00",
-  "total_props": 89,
+  "generated_at": "2026-06-20T06:29:52.140309+00:00",
+  "total_props": 90,
   "cards": [
     {
       "name": "Gwak Been",
@@ -11,7 +11,7 @@
         {
           "stat": "Pitching Outs",
           "line": 17.5,
-          "odds_type": "goblin",
+          "odds_type": "standard",
           "avg": 18.79,
           "over": 27,
           "under": 12,
@@ -343,7 +343,7 @@
         {
           "stat": "Pitcher Strikeouts",
           "line": 3.5,
-          "odds_type": "goblin",
+          "odds_type": "standard",
           "avg": 3.17,
           "over": 19,
           "under": 16,
@@ -611,7 +611,7 @@
         {
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
-          "odds_type": "demon",
+          "odds_type": "standard",
           "avg": 3.81,
           "over": 3,
           "under": 2,
@@ -1563,7 +1563,7 @@
         },
         {
           "stat": "Pitcher Strikeouts",
-          "line": 4.5,
+          "line": 4.0,
           "odds_type": "standard",
           "avg": 4.03,
           "over": 0,
@@ -2586,13 +2586,43 @@
       "type": "batter",
       "props": [
         {
+          "stat": "Hitter Fantasy Score",
+          "line": 7.0,
+          "odds_type": "standard",
+          "avg": 6.4,
+          "over": 86,
+          "under": 111,
+          "push": 13,
+          "total_games": 210,
+          "hit_rate_all": 41.0,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 35.0,
+          "recent_values": [
+            0,
+            5,
+            0,
+            16,
+            3,
+            15,
+            15,
+            16,
+            3,
+            6
+          ],
+          "projection": null,
+          "edge": null,
+          "rating": null,
+          "recommendation": null
+        },
+        {
           "stat": "Hits+Runs+RBIs",
-          "line": 2.0,
+          "line": 2.5,
           "odds_type": "standard",
           "avg": 2.54,
           "over": 100,
-          "under": 78,
-          "push": 32,
+          "under": 110,
+          "push": 0,
           "total_games": 210,
           "hit_rate_all": 47.6,
           "hit_rate_l5": 20.0,
@@ -4435,12 +4465,12 @@
         },
         {
           "stat": "Hits+Runs+RBIs",
-          "line": 2.0,
+          "line": 2.5,
           "odds_type": "standard",
           "avg": 2.62,
           "over": 81,
-          "under": 76,
-          "push": 33,
+          "under": 109,
+          "push": 0,
           "total_games": 190,
           "hit_rate_all": 42.6,
           "hit_rate_l5": 40.0,
@@ -6091,12 +6121,12 @@
       "props": [
         {
           "stat": "Hits+Runs+RBIs",
-          "line": 2.0,
+          "line": 2.5,
           "odds_type": "standard",
           "avg": 2.36,
           "over": 66,
-          "under": 67,
-          "push": 32,
+          "under": 99,
+          "push": 0,
           "total_games": 165,
           "hit_rate_all": 40.0,
           "hit_rate_l5": 40.0,
@@ -9738,36 +9768,6 @@
       "park_factor": 0.991
     },
     {
-      "name": "Ryu Hyun-in",
-      "team": "KT",
-      "opponent": "Kia",
-      "type": "batter",
-      "props": [
-        {
-          "stat": "Hits+Runs+RBIs",
-          "line": 2.0,
-          "odds_type": "standard",
-          "avg": 0,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "projection": 2.0,
-          "edge": 0.0,
-          "rating": 50.0,
-          "recommendation": "PUSH"
-        }
-      ],
-      "games": [],
-      "venue": "Suwon",
-      "park_factor": 0.991
-    },
-    {
       "name": "Park Jae-hyun",
       "team": "Kia",
       "opponent": "KT",
@@ -9788,6 +9788,36 @@
           "hit_rate_l20": 0,
           "recent_values": [],
           "projection": 1.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Suwon",
+      "park_factor": 0.991
+    },
+    {
+      "name": "Ryu Hyun-in",
+      "team": "KT",
+      "opponent": "Kia",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Hits+Runs+RBIs",
+          "line": 1.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 2.0,
           "edge": 0.0,
           "rating": 50.0,
           "recommendation": "PUSH"
