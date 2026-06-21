@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-21T16:39:03.373215+00:00",
-  "total_props": 67,
+  "generated_at": "2026-06-21T16:49:51.516102+00:00",
+  "total_props": 61,
   "cards": [
     {
       "name": "Choi Min-jun",
@@ -12,7 +12,7 @@
           "stat": "Pitching Outs",
           "line": 14.5,
           "odds_type": "goblin",
-          "avg": 10.72,
+          "avg": 12.19,
           "over": 22,
           "under": 4,
           "push": 0,
@@ -39,7 +39,7 @@
           "stat": "Hits Allowed",
           "line": 5.0,
           "odds_type": "standard",
-          "avg": 4.94,
+          "avg": 6.37,
           "over": 10,
           "under": 15,
           "push": 1,
@@ -66,7 +66,7 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.0,
           "odds_type": "standard",
-          "avg": 3.91,
+          "avg": 3.02,
           "over": 17,
           "under": 5,
           "push": 4,
@@ -87,7 +87,7 @@
             6,
             6
           ],
-          "recommendation": "PUSH"
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -272,13 +272,13 @@
           "outs": 18
         }
       ],
-      "projection_so": 3.91,
-      "so_per_ip": 0.888,
-      "ip_per_g": 4.016,
-      "proj_rating": 48.9,
+      "projection_so": 12.19,
+      "so_per_ip": null,
+      "ip_per_g": 4.342,
+      "proj_rating": 42.0,
       "proj_rec": "PUSH",
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Zach Logue",
@@ -290,16 +290,17 @@
           "stat": "Pitching Outs",
           "line": 17.5,
           "odds_type": "goblin",
-          "avg": 14.6,
+          "avg": 12.5,
           "over": 27,
-          "under": 12,
+          "under": 13,
           "push": 0,
-          "total_games": 39,
-          "hit_rate_all": 69.2,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 50.0,
-          "hit_rate_l20": 60.0,
+          "total_games": 40,
+          "hit_rate_all": 67.5,
+          "hit_rate_l5": 20.0,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 55.0,
           "recent_values": [
+            3,
             18,
             12,
             15,
@@ -308,8 +309,7 @@
             19,
             17,
             18,
-            12,
-            21
+            12
           ],
           "recommendation": "PUSH"
         },
@@ -317,16 +317,17 @@
           "stat": "Hits Allowed",
           "line": 6.5,
           "odds_type": "standard",
-          "avg": 7.57,
+          "avg": 6.69,
           "over": 13,
-          "under": 26,
+          "under": 27,
           "push": 0,
-          "total_games": 39,
-          "hit_rate_all": 33.3,
-          "hit_rate_l5": 80.0,
-          "hit_rate_l10": 70.0,
-          "hit_rate_l20": 45.0,
+          "total_games": 40,
+          "hit_rate_all": 32.5,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 60.0,
+          "hit_rate_l20": 40.0,
           "recent_values": [
+            4,
             9,
             2,
             9,
@@ -335,25 +336,25 @@
             6,
             8,
             4,
-            9,
-            8
+            9
           ],
-          "recommendation": "OVER"
+          "recommendation": "PUSH"
         },
         {
           "stat": "Pitcher Strikeouts",
           "line": 5.0,
           "odds_type": "standard",
-          "avg": 3.83,
+          "avg": 3.58,
           "over": 17,
-          "under": 16,
+          "under": 17,
           "push": 6,
-          "total_games": 39,
-          "hit_rate_all": 43.6,
+          "total_games": 40,
+          "hit_rate_all": 42.5,
           "hit_rate_l5": 20.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 45.0,
+          "hit_rate_l10": 30.0,
+          "hit_rate_l20": 40.0,
           "recent_values": [
+            0,
             2,
             3,
             3,
@@ -362,13 +363,24 @@
             5,
             6,
             8,
-            2,
-            8
+            2
           ],
           "recommendation": "UNDER"
         }
       ],
       "games": [
+        {
+          "date": "06/21/2026",
+          "opp": "LG",
+          "ip": 1.0,
+          "so": 0,
+          "er": 4,
+          "ha": 4,
+          "bb": 0,
+          "era": 36.0,
+          "whip": 4.0,
+          "outs": 3
+        },
         {
           "date": "06/10/2026",
           "opp": "Lotte",
@@ -536,27 +548,15 @@
           "era": 0.0,
           "whip": 1.0,
           "outs": 3
-        },
-        {
-          "date": "09/25/2025",
-          "opp": "Hanwha",
-          "ip": 8.0,
-          "so": 9,
-          "er": 0,
-          "ha": 4,
-          "bb": 1,
-          "era": 0.0,
-          "whip": 0.625,
-          "outs": 24
         }
       ],
-      "projection_so": 14.6,
+      "projection_so": 12.5,
       "so_per_ip": null,
-      "ip_per_g": 5.396,
-      "proj_rating": 41.7,
+      "ip_per_g": 4.617,
+      "proj_rating": 35.7,
       "proj_rec": "PUSH",
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     },
     {
       "name": "Yang Chang-seop",
@@ -568,16 +568,17 @@
           "stat": "Pitching Outs",
           "line": 14.5,
           "odds_type": "goblin",
-          "avg": 13.72,
-          "over": 8,
+          "avg": 13.37,
+          "over": 9,
           "under": 5,
           "push": 0,
-          "total_games": 13,
-          "hit_rate_all": 61.5,
+          "total_games": 14,
+          "hit_rate_all": 64.3,
           "hit_rate_l5": 80.0,
           "hit_rate_l10": 50.0,
-          "hit_rate_l20": 61.5,
+          "hit_rate_l20": 64.3,
           "recent_values": [
+            15,
             12,
             15,
             18,
@@ -586,8 +587,7 @@
             5,
             1,
             6,
-            5,
-            15
+            5
           ],
           "recommendation": "PUSH"
         },
@@ -595,16 +595,17 @@
           "stat": "Hits Allowed",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 3.89,
-          "over": 6,
+          "avg": 3.92,
+          "over": 7,
           "under": 7,
           "push": 0,
-          "total_games": 13,
-          "hit_rate_all": 46.2,
-          "hit_rate_l5": 40.0,
+          "total_games": 14,
+          "hit_rate_all": 50.0,
+          "hit_rate_l5": 60.0,
           "hit_rate_l10": 30.0,
-          "hit_rate_l20": 46.2,
+          "hit_rate_l20": 50.0,
           "recent_values": [
+            6,
             6,
             11,
             4,
@@ -613,8 +614,7 @@
             1,
             2,
             2,
-            4,
-            5
+            4
           ],
           "recommendation": "UNDER"
         },
@@ -622,16 +622,17 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.0,
           "odds_type": "standard",
-          "avg": 3.64,
+          "avg": 3.79,
           "over": 5,
           "under": 7,
-          "push": 1,
-          "total_games": 13,
-          "hit_rate_all": 38.5,
+          "push": 2,
+          "total_games": 14,
+          "hit_rate_all": 35.7,
           "hit_rate_l5": 60.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 38.5,
+          "hit_rate_l10": 30.0,
+          "hit_rate_l20": 35.7,
           "recent_values": [
+            4,
             4,
             7,
             5,
@@ -640,13 +641,24 @@
             2,
             0,
             1,
-            2,
-            6
+            2
           ],
           "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "06/21/2026",
+          "opp": "Hanwha",
+          "ip": 5.0,
+          "so": 4,
+          "er": 1,
+          "ha": 6,
+          "bb": 2,
+          "era": 1.8,
+          "whip": 1.6,
+          "outs": 15
+        },
         {
           "date": "06/14/2026",
           "opp": "SSG",
@@ -804,13 +816,13 @@
           "outs": 15
         }
       ],
-      "projection_so": 3.64,
-      "so_per_ip": 0.876,
-      "ip_per_g": 4.226,
-      "proj_rating": 45.5,
+      "projection_so": 13.37,
+      "so_per_ip": null,
+      "ip_per_g": 4.111,
+      "proj_rating": 46.1,
       "proj_rec": "PUSH",
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Lachlan Wells",
@@ -822,16 +834,17 @@
           "stat": "Pitching Outs",
           "line": 17.5,
           "odds_type": "goblin",
-          "avg": 14.18,
+          "avg": 15.19,
           "over": 6,
-          "under": 5,
+          "under": 6,
           "push": 0,
-          "total_games": 11,
-          "hit_rate_all": 54.5,
+          "total_games": 12,
+          "hit_rate_all": 50.0,
           "hit_rate_l5": 40.0,
           "hit_rate_l10": 50.0,
-          "hit_rate_l20": 54.5,
+          "hit_rate_l20": 50.0,
           "recent_values": [
+            15,
             18,
             13,
             15,
@@ -840,8 +853,7 @@
             15,
             18,
             24,
-            21,
-            12
+            21
           ],
           "recommendation": "PUSH"
         },
@@ -849,16 +861,17 @@
           "stat": "Hits Allowed",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 5.11,
-          "over": 4,
+          "avg": 5.8,
+          "over": 5,
           "under": 7,
           "push": 0,
-          "total_games": 11,
-          "hit_rate_all": 36.4,
+          "total_games": 12,
+          "hit_rate_all": 41.7,
           "hit_rate_l5": 60.0,
-          "hit_rate_l10": 30.0,
-          "hit_rate_l20": 36.4,
+          "hit_rate_l10": 40.0,
+          "hit_rate_l20": 41.7,
           "recent_values": [
+            5,
             3,
             7,
             7,
@@ -867,8 +880,7 @@
             4,
             3,
             1,
-            3,
-            4
+            3
           ],
           "recommendation": "OVER"
         },
@@ -876,16 +888,17 @@
           "stat": "Pitcher Strikeouts",
           "line": 4.5,
           "odds_type": "standard",
-          "avg": 4.84,
-          "over": 4,
+          "avg": 4.7,
+          "over": 5,
           "under": 7,
           "push": 0,
-          "total_games": 11,
-          "hit_rate_all": 36.4,
-          "hit_rate_l5": 40.0,
-          "hit_rate_l10": 40.0,
-          "hit_rate_l20": 36.4,
+          "total_games": 12,
+          "hit_rate_all": 41.7,
+          "hit_rate_l5": 60.0,
+          "hit_rate_l10": 50.0,
+          "hit_rate_l20": 41.7,
           "recent_values": [
+            5,
             4,
             4,
             5,
@@ -894,13 +907,24 @@
             2,
             8,
             7,
-            3,
-            4
+            3
           ],
           "recommendation": "PUSH"
         }
       ],
       "games": [
+        {
+          "date": "06/21/2026",
+          "opp": "Doosan",
+          "ip": 5.0,
+          "so": 5,
+          "er": 0,
+          "ha": 5,
+          "bb": 0,
+          "era": 0.0,
+          "whip": 1.0,
+          "outs": 15
+        },
         {
           "date": "06/16/2026",
           "opp": "Kia",
@@ -1034,190 +1058,13 @@
           "outs": 18
         }
       ],
-      "projection_so": 14.18,
+      "projection_so": 15.19,
       "so_per_ip": null,
-      "ip_per_g": 5.072,
-      "proj_rating": 40.5,
+      "ip_per_g": 5.174,
+      "proj_rating": 43.4,
       "proj_rec": "PUSH",
       "venue": "Seoul-Jamsil",
       "park_factor": 0.964
-    },
-    {
-      "name": "Owen White",
-      "team": "Hanwha",
-      "opponent": "Samsung",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Pitching Outs",
-          "line": 17.5,
-          "odds_type": "goblin",
-          "avg": 16.67,
-          "over": 1,
-          "under": 2,
-          "push": 0,
-          "total_games": 3,
-          "hit_rate_all": 33.3,
-          "hit_rate_l5": 33.3,
-          "hit_rate_l10": 33.3,
-          "hit_rate_l20": 33.3,
-          "recent_values": [
-            15,
-            19,
-            7
-          ],
-          "recommendation": "PUSH"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 5.5,
-          "odds_type": "standard",
-          "avg": 4.48,
-          "over": 0,
-          "under": 3,
-          "push": 0,
-          "total_games": 3,
-          "hit_rate_all": 0.0,
-          "hit_rate_l5": 0.0,
-          "hit_rate_l10": 0.0,
-          "hit_rate_l20": 0.0,
-          "recent_values": [
-            5,
-            3,
-            4
-          ],
-          "recommendation": "UNDER"
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 4.0,
-          "odds_type": "standard",
-          "avg": 3.47,
-          "over": 0,
-          "under": 2,
-          "push": 1,
-          "total_games": 3,
-          "hit_rate_all": 0.0,
-          "hit_rate_l5": 0.0,
-          "hit_rate_l10": 0.0,
-          "hit_rate_l20": 0.0,
-          "recent_values": [
-            3,
-            4,
-            2
-          ],
-          "recommendation": "UNDER"
-        }
-      ],
-      "games": [
-        {
-          "date": "05/23/2026",
-          "opp": "Doosan",
-          "ip": 5.0,
-          "so": 3,
-          "er": 1,
-          "ha": 5,
-          "bb": 0,
-          "era": 1.8,
-          "whip": 1.0,
-          "outs": 15
-        },
-        {
-          "date": "05/16/2026",
-          "opp": "KT",
-          "ip": 6.33,
-          "so": 4,
-          "er": 1,
-          "ha": 3,
-          "bb": 1,
-          "era": 1.42,
-          "whip": 0.632,
-          "outs": 19
-        },
-        {
-          "date": "03/31/2026",
-          "opp": "KT",
-          "ip": 2.33,
-          "so": 2,
-          "er": 1,
-          "ha": 4,
-          "bb": 1,
-          "era": 3.86,
-          "whip": 2.143,
-          "outs": 7
-        }
-      ],
-      "projection_so": 16.67,
-      "so_per_ip": null,
-      "ip_per_g": 5.084,
-      "proj_rating": 47.6,
-      "proj_rec": "PUSH",
-      "venue": "Daejeon",
-      "park_factor": 0.887
-    },
-    {
-      "name": "Kim Tae-hyeong",
-      "team": "Kia",
-      "opponent": "KT",
-      "type": "pitcher",
-      "props": [
-        {
-          "stat": "Pitching Outs",
-          "line": 12.5,
-          "odds_type": "standard",
-          "avg": 13.56,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "OVER"
-        },
-        {
-          "stat": "Hits Allowed",
-          "line": 5.0,
-          "odds_type": "standard",
-          "avg": 4.68,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "PUSH"
-        },
-        {
-          "stat": "Pitcher Strikeouts",
-          "line": 2.5,
-          "odds_type": "standard",
-          "avg": 4.03,
-          "over": 0,
-          "under": 0,
-          "push": 0,
-          "total_games": 0,
-          "hit_rate_all": 0,
-          "hit_rate_l5": 0,
-          "hit_rate_l10": 0,
-          "hit_rate_l20": 0,
-          "recent_values": [],
-          "recommendation": "OVER"
-        }
-      ],
-      "games": [],
-      "projection_so": 4.03,
-      "so_per_ip": 0.872,
-      "ip_per_g": 4.619,
-      "proj_rating": 80.6,
-      "proj_rec": "OVER",
-      "venue": "Suwon",
-      "park_factor": 0.991
     },
     {
       "name": "Yang Eui-ji",
@@ -1250,9 +1097,9 @@
             6,
             0
           ],
-          "projection": 1.29,
-          "edge": -0.21,
-          "rating": 42.9,
+          "projection": 1.21,
+          "edge": -0.29,
+          "rating": 40.5,
           "recommendation": "PUSH"
         }
       ],
@@ -1408,8 +1255,8 @@
           "fs": 7
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     },
     {
       "name": "Park Chan-ho",
@@ -1442,9 +1289,9 @@
             0,
             0
           ],
-          "projection": 1.51,
-          "edge": 0.01,
-          "rating": 50.5,
+          "projection": 1.6,
+          "edge": 0.1,
+          "rating": 53.4,
           "recommendation": "PUSH"
         }
       ],
@@ -1600,8 +1447,8 @@
           "fs": 0
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     },
     {
       "name": "Moon Bo-Gyeong",
@@ -1826,9 +1673,9 @@
             3,
             5
           ],
-          "projection": 10.32,
-          "edge": 3.32,
-          "rating": 73.7,
+          "projection": 10.25,
+          "edge": 3.25,
+          "rating": 73.2,
           "recommendation": "OVER"
         },
         {
@@ -1856,9 +1703,9 @@
             1,
             2
           ],
-          "projection": 2.61,
-          "edge": 0.11,
-          "rating": 52.2,
+          "projection": 2.49,
+          "edge": -0.01,
+          "rating": 49.9,
           "recommendation": "PUSH"
         }
       ],
@@ -2048,10 +1895,10 @@
             21,
             25
           ],
-          "projection": 7.97,
-          "edge": 0.47,
-          "rating": 53.2,
-          "recommendation": "PUSH"
+          "projection": 8.75,
+          "edge": 1.25,
+          "rating": 58.3,
+          "recommendation": "OVER"
         },
         {
           "stat": "Hits+Runs+RBIs",
@@ -2078,10 +1925,10 @@
             9,
             11
           ],
-          "projection": 2.19,
-          "edge": -0.31,
-          "rating": 43.7,
-          "recommendation": "UNDER"
+          "projection": 2.53,
+          "edge": 0.03,
+          "rating": 50.5,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -2270,9 +2117,9 @@
             14,
             0
           ],
-          "projection": 10.04,
-          "edge": 3.54,
-          "rating": 77.2,
+          "projection": 8.14,
+          "edge": 1.64,
+          "rating": 62.6,
           "recommendation": "OVER"
         },
         {
@@ -2300,9 +2147,9 @@
             6,
             0
           ],
-          "projection": 2.92,
-          "edge": 0.92,
-          "rating": 73.1,
+          "projection": 2.49,
+          "edge": 0.49,
+          "rating": 62.1,
           "recommendation": "OVER"
         }
       ],
@@ -2458,8 +2305,8 @@
           "fs": 9
         }
       ],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Sam Hilliard",
@@ -2492,9 +2339,9 @@
             0,
             8
           ],
-          "projection": 2.37,
-          "edge": 0.37,
-          "rating": 59.3,
+          "projection": 2.44,
+          "edge": 0.44,
+          "rating": 60.9,
           "recommendation": "OVER"
         }
       ],
@@ -2684,9 +2531,9 @@
             5,
             0
           ],
-          "projection": 1.06,
-          "edge": -0.94,
-          "rating": 26.6,
+          "projection": 0.81,
+          "edge": -1.19,
+          "rating": 20.2,
           "recommendation": "UNDER"
         }
       ],
@@ -2842,8 +2689,8 @@
           "fs": 7
         }
       ],
-      "venue": "Suwon",
-      "park_factor": 0.991
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     },
     {
       "name": "Kim Do-yeong",
@@ -2876,9 +2723,9 @@
             2,
             0
           ],
-          "projection": 2.98,
-          "edge": 0.98,
-          "rating": 74.5,
+          "projection": 2.58,
+          "edge": 0.58,
+          "rating": 64.4,
           "recommendation": "OVER"
         }
       ],
@@ -3034,8 +2881,8 @@
           "fs": 12
         }
       ],
-      "venue": "Suwon",
-      "park_factor": 0.991
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     },
     {
       "name": "Park Seong-Han",
@@ -3068,9 +2915,9 @@
             1,
             2
           ],
-          "projection": 2.77,
-          "edge": 0.77,
-          "rating": 69.2,
+          "projection": 2.9,
+          "edge": 0.9,
+          "rating": 72.6,
           "recommendation": "OVER"
         }
       ],
@@ -3226,8 +3073,8 @@
           "fs": 5
         }
       ],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Son Ah-seop",
@@ -3260,9 +3107,9 @@
             1,
             3
           ],
-          "projection": 1.05,
-          "edge": -0.45,
-          "rating": 35.1,
+          "projection": 1.14,
+          "edge": -0.36,
+          "rating": 38.0,
           "recommendation": "UNDER"
         }
       ],
@@ -3418,8 +3265,8 @@
           "fs": 0
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     },
     {
       "name": "Koo Ja-wook",
@@ -3452,10 +3299,10 @@
             0,
             5
           ],
-          "projection": 6.04,
-          "edge": -0.46,
-          "rating": 46.4,
-          "recommendation": "PUSH"
+          "projection": 7.64,
+          "edge": 1.14,
+          "rating": 58.7,
+          "recommendation": "OVER"
         },
         {
           "stat": "Hits+Runs+RBIs",
@@ -3482,10 +3329,10 @@
             0,
             2
           ],
-          "projection": 1.79,
-          "edge": -0.21,
-          "rating": 44.6,
-          "recommendation": "PUSH"
+          "projection": 2.37,
+          "edge": 0.37,
+          "rating": 59.2,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -3640,8 +3487,8 @@
           "fs": 5
         }
       ],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Kim Ju-Won",
@@ -3862,8 +3709,8 @@
           "fs": 12
         }
       ],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
     },
     {
       "name": "Park Min-woo",
@@ -3896,9 +3743,9 @@
             2,
             1
           ],
-          "projection": 3.95,
-          "edge": 1.95,
-          "rating": 98.8,
+          "projection": 3.14,
+          "edge": 1.14,
+          "rating": 78.5,
           "recommendation": "OVER"
         }
       ],
@@ -4054,8 +3901,8 @@
           "fs": 5
         }
       ],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
     },
     {
       "name": "Moon Hyun-bin",
@@ -4088,9 +3935,9 @@
             0,
             5
           ],
-          "projection": 1.76,
-          "edge": -0.24,
-          "rating": 44.0,
+          "projection": 1.7,
+          "edge": -0.3,
+          "rating": 42.6,
           "recommendation": "PUSH"
         }
       ],
@@ -4280,10 +4127,10 @@
             2,
             1
           ],
-          "projection": 2.47,
-          "edge": 0.47,
-          "rating": 61.8,
-          "recommendation": "OVER"
+          "projection": 2.2,
+          "edge": 0.2,
+          "rating": 55.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -4630,8 +4477,8 @@
           "fs": 2
         }
       ],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Guillermo Heredia",
@@ -4664,9 +4511,9 @@
             0,
             6
           ],
-          "projection": 2.71,
-          "edge": 0.71,
-          "rating": 67.7,
+          "projection": 2.75,
+          "edge": 0.75,
+          "rating": 68.7,
           "recommendation": "OVER"
         }
       ],
@@ -4822,8 +4669,8 @@
           "fs": 0
         }
       ],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Roh Si-hwan",
@@ -5048,10 +4895,10 @@
             1,
             2
           ],
-          "projection": 2.5,
-          "edge": 0.5,
-          "rating": 62.6,
-          "recommendation": "OVER"
+          "projection": 1.92,
+          "edge": -0.08,
+          "rating": 48.0,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -5206,8 +5053,8 @@
           "fs": 0
         }
       ],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Kim Hyun-Soo",
@@ -5432,9 +5279,9 @@
             0,
             2
           ],
-          "projection": 10.57,
-          "edge": 3.57,
-          "rating": 75.5,
+          "projection": 8.45,
+          "edge": 1.45,
+          "rating": 60.4,
           "recommendation": "OVER"
         },
         {
@@ -5462,10 +5309,10 @@
             0,
             1
           ],
-          "projection": 2.23,
-          "edge": -0.27,
-          "rating": 44.5,
-          "recommendation": "PUSH"
+          "projection": 1.86,
+          "edge": -0.64,
+          "rating": 37.3,
+          "recommendation": "UNDER"
         }
       ],
       "games": [
@@ -5620,8 +5467,8 @@
           "fs": 19
         }
       ],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Daz Cameron",
@@ -5654,9 +5501,9 @@
             5,
             8
           ],
-          "projection": 4.65,
-          "edge": -1.35,
-          "rating": 38.7,
+          "projection": 4.9,
+          "edge": -1.1,
+          "rating": 40.9,
           "recommendation": "UNDER"
         },
         {
@@ -5684,9 +5531,9 @@
             2,
             3
           ],
-          "projection": 1.47,
-          "edge": -0.53,
-          "rating": 36.7,
+          "projection": 1.48,
+          "edge": -0.52,
+          "rating": 37.0,
           "recommendation": "UNDER"
         }
       ],
@@ -5842,8 +5689,8 @@
           "fs": 3
         }
       ],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     },
     {
       "name": "Choi Won-jun",
@@ -5876,9 +5723,9 @@
             10,
             7
           ],
-          "projection": 8.63,
-          "edge": 1.13,
-          "rating": 57.6,
+          "projection": 10.88,
+          "edge": 3.38,
+          "rating": 72.5,
           "recommendation": "OVER"
         },
         {
@@ -5906,10 +5753,10 @@
             4,
             3
           ],
-          "projection": 2.32,
-          "edge": -0.18,
-          "rating": 46.4,
-          "recommendation": "PUSH"
+          "projection": 2.84,
+          "edge": 0.34,
+          "rating": 56.8,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -6098,10 +5945,10 @@
             1,
             2
           ],
-          "projection": 1.39,
-          "edge": -0.61,
-          "rating": 34.7,
-          "recommendation": "UNDER"
+          "projection": 2.17,
+          "edge": 0.17,
+          "rating": 54.3,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -6256,8 +6103,8 @@
           "fs": 0
         }
       ],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Na Sung-bum",
@@ -6290,9 +6137,9 @@
             1,
             3
           ],
-          "projection": 2.59,
-          "edge": 0.59,
-          "rating": 64.7,
+          "projection": 3.0,
+          "edge": 1.0,
+          "rating": 74.9,
           "recommendation": "OVER"
         }
       ],
@@ -6448,8 +6295,8 @@
           "fs": 9
         }
       ],
-      "venue": "Suwon",
-      "park_factor": 0.991
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     },
     {
       "name": "Park Hae-min",
@@ -6482,9 +6329,9 @@
             3,
             2
           ],
-          "projection": 1.83,
-          "edge": -0.17,
-          "rating": 45.7,
+          "projection": 2.07,
+          "edge": 0.07,
+          "rating": 51.8,
           "recommendation": "PUSH"
         }
       ],
@@ -6689,8 +6536,8 @@
         }
       ],
       "games": [],
-      "venue": "Suwon",
-      "park_factor": 0.991
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     },
     {
       "name": "Lee Do-yun",
@@ -6749,8 +6596,8 @@
         }
       ],
       "games": [],
-      "venue": "Daejeon",
-      "park_factor": 0.887
+      "venue": "Seoul-Jamsil",
+      "park_factor": 0.964
     },
     {
       "name": "Park Jae-hyun",
@@ -6779,8 +6626,8 @@
         }
       ],
       "games": [],
-      "venue": "Suwon",
-      "park_factor": 0.991
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     },
     {
       "name": "Lee Jeong-hun",
@@ -6869,8 +6716,8 @@
         }
       ],
       "games": [],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "Cheon Jae-hwan",
@@ -6899,8 +6746,8 @@
         }
       ],
       "games": [],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
     },
     {
       "name": "Cho Hyeong-woo",
@@ -6929,8 +6776,8 @@
         }
       ],
       "games": [],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Suwon",
+      "park_factor": 0.991
     },
     {
       "name": "An Joong-yeol",
@@ -6959,8 +6806,8 @@
         }
       ],
       "games": [],
-      "venue": "Changwon",
-      "park_factor": 1.224
+      "venue": "Busan-Sajik",
+      "park_factor": 1.116
     },
     {
       "name": "Song Chan-eui",
@@ -7049,8 +6896,8 @@
         }
       ],
       "games": [],
-      "venue": "Seoul-Jamsil",
-      "park_factor": 0.964
+      "venue": "Daejeon",
+      "park_factor": 0.887
     }
   ]
 }
