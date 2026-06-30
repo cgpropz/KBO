@@ -656,6 +656,9 @@ def build_team_sp_whip(profiles):
         for team, data in team_data.items()
         if data['ip'] > 0
     }
+
+
+def main():
     logs = load_pitcher_logs()
     league_batting = load_league_batting()
     park_factors = load_park_factors()

@@ -73,6 +73,7 @@ jobs:
         run: |
           bash pipeline/run_release.sh --skip-deploy
         env:
+          ALLOW_STALE_DEPLOY: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 

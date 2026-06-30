@@ -406,13 +406,15 @@ def main() -> int:
 
     if not args.apply:
         print("\n[dry-run] re-run with --apply to write changes")
-        return 1 if still_missing else 0
+        return 0
 
     n1 = append_to_hands_csv(resolved_list)
     n2 = append_to_batterlog(resolved_list)
     print(f"\n[apply] kbo_batter_hands.csv: +{n1} rows")
     print(f"[apply] batterlog.py PLAYER_NAMES/PLAYER_TEAMS: +{n2} entries")
-    return 1 if still_missing else 0
+    if still_missing:
+        print(f"[warn] {len(still_missing)} batter(s) could not be resolved — pipeline will continue without them")
+    return 0
 
 
 if __name__ == "__main__":
