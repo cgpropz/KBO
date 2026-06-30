@@ -746,12 +746,20 @@ def resolve_batter_name(name):
     if norm in _norm_to_actual:
         return _norm_to_actual[norm]
     if norm in _hand_norm_to_name:
-        return _hand_norm_to_name[norm]
+        candidate = _hand_norm_to_name[norm]
+        if candidate in _batter_names:
+            return candidate
     parts = name_parts(name)
     if parts in _parts_to_actual:
         return _parts_to_actual[parts]
     if parts in _hand_parts_to_name:
-        return _hand_parts_to_name[parts]
+        candidate = _hand_parts_to_name[parts]
+        if candidate in _batter_names:
+            return candidate
+    # Check explicit PP→KBO name map (handles first-name variants like Matt→Matthew)
+    mapped = pp_batter_name_map_norm.get(norm)
+    if mapped and mapped in _batter_names:
+        return mapped
     return name
 
 

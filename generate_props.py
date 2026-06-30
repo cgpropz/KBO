@@ -13,6 +13,7 @@ PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
 PP_NAME_ALIASES = {
     "hyeok park chan": "Park Chan-hyeok",
+    "matt davidson": "Matthew Davidson",
 }
 
 TEAM_ALIASES = {

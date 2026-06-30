@@ -43,6 +43,9 @@ BATTER_PCODES = {
     "69636": "Oh Sun-woo",
     "53554": "Kim Min-suk", "55252": "Park Jun-soon", "79109": "Oh Ji-hwan",
     "68525": "Han Dong-hui", "69992": "Choi Jeong-won",
+    "53036": "Ryu Hyun-in", "56613": "Aderlin Rodriguez", "55636": "Park Jae-hyun",
+    "56305": "Keston Hiura", "64346": "Lim Byeong-wuk", "78168": "Seo Geon-chang",
+    "54812": "Jeong Jun-jae",
     # Additional batters from current rosters
     "50500": "Hwang Seong-bin", "79608": "An Chi-Hong", "55208": "Jake Cave",
     "52025": "Henry Ramos", "52366": "Yasiel Puig", "54529": "Victor Reyes",

@@ -93,6 +93,11 @@ STEPS = [
         "skip_flag": "--skip-logs",
     },
     {
+        "name": "Resolve Missing Batter pcodes",
+        "cmd": [PYTHON, os.path.join(BASE, "find_missing_batter_pcodes.py"), "--apply"],
+        "skip_flag": "--skip-pcodes",
+    },
+    {
         "name": "Combine Batter Logs (2025 + 2026)",
         "cmd": [PYTHON, os.path.join(BASE, "combine_batter_logs.py")],
         "skip_flag": "--skip-logs",

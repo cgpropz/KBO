@@ -638,11 +638,29 @@ def _parts_match(name_a, name_b):
     return _name_parts(name_a or "") == _name_parts(name_b or "")
 
 
-def main():
+def build_team_sp_whip(profiles):
+    """Compute per-team average SP WHIP from individual pitcher profiles.
+    Used as a soft fallback when a new starter has no individual log history.
+    """
+    from collections import defaultdict
+    team_data = defaultdict(lambda: {'hbb': 0.0, 'ip': 0.0})
+    for _, profile in profiles.items():
+        team = profile.get('team')
+        total_ip = profile.get('total_ip') or 0
+        whip = profile.get('whip') or 0
+        if team and total_ip > 0:
+            team_data[team]['hbb'] += whip * total_ip
+            team_data[team]['ip'] += total_ip
+    return {
+        team: round(data['hbb'] / data['ip'], 2)
+        for team, data in team_data.items()
+        if data['ip'] > 0
+    }
     logs = load_pitcher_logs()
     league_batting = load_league_batting()
     park_factors = load_park_factors()
     pitcher_profiles = build_pitcher_profiles(logs)
+    team_sp_whip = build_team_sp_whip(pitcher_profiles)
     team_pitching = build_team_pitching(logs)
     k_data, b_data = load_projections()
 
@@ -771,10 +789,20 @@ def main():
             away_profile = pitcher_profiles.get(away_pitcher["name"])
             if not away_profile:
                 away_profile = _fuzzy_profile(away_pitcher["name"], pitcher_profiles)
+            if not away_profile:
+                # New starter with no individual logs — soft fallback to team SP WHIP
+                fallback_whip = team_sp_whip.get(away)
+                if fallback_whip:
+                    away_profile = {"whip": fallback_whip}
         if home_pitcher:
             home_profile = pitcher_profiles.get(home_pitcher["name"])
             if not home_profile:
                 home_profile = _fuzzy_profile(home_pitcher["name"], pitcher_profiles)
+            if not home_profile:
+                # New starter with no individual logs — soft fallback to team SP WHIP
+                fallback_whip = team_sp_whip.get(home)
+                if fallback_whip:
+                    home_profile = {"whip": fallback_whip}
 
         # Collect all props for this game
         game_props = []
