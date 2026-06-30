@@ -94,6 +94,18 @@ echo "Python: $PYTHON"
 echo "Allow stale deploy: $ALLOW_STALE_DEPLOY"
 echo "=================================================="
 
+# Step 0: Auto-discover PCodes for any PP slate batters missing from batterlog.py.
+# Runs before the full data refresh so newly-found players are scraped in the
+# same pipeline run.  Non-fatal — failures are logged but never block the deploy.
+echo ""
+echo "[0/4] Discover missing batter PCodes"
+echo "--------------------------------------------------"
+DISCOVER_RC=0
+"$PYTHON" "$BASE/pipeline/discover_missing_pcodes.py" || DISCOVER_RC=$?
+if [[ "$DISCOVER_RC" -ne 0 ]]; then
+  echo "⚠ discover_missing_pcodes.py exited $DISCOVER_RC — continuing anyway"
+fi
+
 if [[ "$SKIP_ODDS" -eq 0 ]]; then
   log_step 1 "Refresh odds snapshots"
   ODDS_RC=0
