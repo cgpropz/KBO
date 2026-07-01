@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-01T18:09:53.956185+00:00",
-  "total_props": 17,
+  "generated_at": "2026-07-01T18:11:01.225119+00:00",
+  "total_props": 23,
   "cards": [
     {
       "name": "Wang Yan-cheng",
@@ -218,11 +218,11 @@
           "outs": 19
         }
       ],
-      "projection_so": 13.21,
-      "so_per_ip": null,
+      "projection_so": 4.42,
+      "so_per_ip": 0.845,
       "ip_per_g": 4.849,
-      "proj_rating": 45.5,
-      "proj_rec": "PUSH",
+      "proj_rating": 63.1,
+      "proj_rec": "OVER",
       "venue": "Daejeon",
       "park_factor": 0.887
     },
@@ -445,8 +445,8 @@
       "projection_so": 19.93,
       "so_per_ip": null,
       "ip_per_g": 6.119,
-      "proj_rating": 68.7,
-      "proj_rec": "OVER",
+      "proj_rating": null,
+      "proj_rec": "NO LINE",
       "venue": "Gwangju",
       "park_factor": 0.985
     },
@@ -481,7 +481,7 @@
             4,
             6
           ],
-          "recommendation": "PUSH"
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -666,11 +666,11 @@
           "outs": 1
         }
       ],
-      "projection_so": 13.09,
-      "so_per_ip": null,
+      "projection_so": 5.35,
+      "so_per_ip": 0.968,
       "ip_per_g": 4.915,
-      "proj_rating": 42.2,
-      "proj_rec": "UNDER",
+      "proj_rating": 59.5,
+      "proj_rec": "OVER",
       "venue": "Daejeon",
       "park_factor": 0.887
     },
@@ -684,7 +684,7 @@
           "stat": "Pitcher Strikeouts",
           "line": 3.0,
           "odds_type": "standard",
-          "avg": 3.65,
+          "avg": 2.95,
           "over": 19,
           "under": 7,
           "push": 11,
@@ -705,7 +705,7 @@
             5,
             4
           ],
-          "recommendation": null
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -890,6 +890,11 @@
           "outs": 15
         }
       ],
+      "projection_so": 21.19,
+      "so_per_ip": null,
+      "ip_per_g": 6.187,
+      "proj_rating": null,
+      "proj_rec": "NO LINE",
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
     },
@@ -924,7 +929,7 @@
             1,
             6
           ],
-          "recommendation": "UNDER"
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -1109,11 +1114,11 @@
           "outs": 0
         }
       ],
-      "projection_so": 16.44,
-      "so_per_ip": null,
+      "projection_so": 3.06,
+      "so_per_ip": 0.694,
       "ip_per_g": 4.962,
-      "proj_rating": 44.4,
-      "proj_rec": "UNDER",
+      "proj_rating": 43.7,
+      "proj_rec": "PUSH",
       "venue": "Seoul-Gocheok",
       "park_factor": 0.904
     },
@@ -1336,8 +1341,8 @@
       "projection_so": 16.8,
       "so_per_ip": null,
       "ip_per_g": 5.542,
-      "proj_rating": 48.0,
-      "proj_rec": "PUSH",
+      "proj_rating": null,
+      "proj_rec": "NO LINE",
       "venue": "Seoul-Jamsil",
       "park_factor": 0.906
     },
@@ -1372,7 +1377,7 @@
             7,
             4
           ],
-          "recommendation": "UNDER"
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -1557,10 +1562,10 @@
           "outs": 12
         }
       ],
-      "projection_so": 18.0,
-      "so_per_ip": null,
+      "projection_so": 4.6,
+      "so_per_ip": 0.819,
       "ip_per_g": 5.821,
-      "proj_rating": 51.4,
+      "proj_rating": 46.0,
       "proj_rec": "PUSH",
       "venue": "Seoul-Jamsil",
       "park_factor": 0.906
@@ -1784,8 +1789,8 @@
       "projection_so": 14.15,
       "so_per_ip": null,
       "ip_per_g": 4.836,
-      "proj_rating": 52.4,
-      "proj_rec": "PUSH",
+      "proj_rating": null,
+      "proj_rec": "NO LINE",
       "venue": "Gwangju",
       "park_factor": 0.985
     },
@@ -1809,15 +1814,15 @@
           "hit_rate_l10": 0,
           "hit_rate_l20": 0,
           "recent_values": [],
-          "recommendation": "UNDER"
+          "recommendation": "OVER"
         }
       ],
       "games": [],
-      "projection_so": 13.66,
-      "so_per_ip": null,
+      "projection_so": 3.91,
+      "so_per_ip": 0.878,
       "ip_per_g": 4.582,
-      "proj_rating": 44.1,
-      "proj_rec": "UNDER",
+      "proj_rating": 78.1,
+      "proj_rec": "OVER",
       "venue": "Changwon",
       "park_factor": 1.224
     },
@@ -2044,10 +2049,10 @@
             5,
             0
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 1.1,
+          "edge": 0.6,
+          "rating": 109.6,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2236,10 +2241,10 @@
             1,
             4
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 1.24,
+          "edge": 0.74,
+          "rating": 124.1,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2428,10 +2433,10 @@
             0,
             3
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 0.75,
+          "edge": 0.25,
+          "rating": 75.2,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -2620,10 +2625,10 @@
             0,
             0
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 0.83,
+          "edge": 0.33,
+          "rating": 82.7,
+          "recommendation": "OVER"
         }
       ],
       "games": [
@@ -2812,10 +2817,10 @@
             0,
             1
           ],
-          "projection": null,
-          "edge": null,
-          "rating": null,
-          "recommendation": null
+          "projection": 0.2,
+          "edge": -0.3,
+          "rating": 20.3,
+          "recommendation": "PUSH"
         }
       ],
       "games": [
@@ -3004,6 +3009,156 @@
       "park_factor": 1.224
     },
     {
+      "name": "Kim Whee-Jip",
+      "team": "NC",
+      "opponent": "Samsung",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Changwon",
+      "park_factor": 1.224
+    },
+    {
+      "name": "Cho Hyeong-woo",
+      "team": "SSG",
+      "opponent": "Kia",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Gwangju",
+      "park_factor": 0.985
+    },
+    {
+      "name": "Kim Seong-uk",
+      "team": "SSG",
+      "opponent": "Kia",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Gwangju",
+      "park_factor": 0.985
+    },
+    {
+      "name": "Kim Kyu-sung",
+      "team": "Kia",
+      "opponent": "SSG",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Gwangju",
+      "park_factor": 0.985
+    },
+    {
+      "name": "Han Seung-taek",
+      "team": "KT",
+      "opponent": "Hanwha",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Daejeon",
+      "park_factor": 0.887
+    },
+    {
       "name": "Sim Woo-jun",
       "team": "Hanwha",
       "opponent": "KT",
@@ -3032,6 +3187,36 @@
       "games": [],
       "venue": "Daejeon",
       "park_factor": 0.887
+    },
+    {
+      "name": "Yeo Dong-uk",
+      "team": "Kiwoom",
+      "opponent": "LG",
+      "type": "batter",
+      "props": [
+        {
+          "stat": "Total Bases",
+          "line": 0.5,
+          "odds_type": "standard",
+          "avg": 0,
+          "over": 0,
+          "under": 0,
+          "push": 0,
+          "total_games": 0,
+          "hit_rate_all": 0,
+          "hit_rate_l5": 0,
+          "hit_rate_l10": 0,
+          "hit_rate_l20": 0,
+          "recent_values": [],
+          "projection": 0.5,
+          "edge": 0.0,
+          "rating": 50.0,
+          "recommendation": "PUSH"
+        }
+      ],
+      "games": [],
+      "venue": "Seoul-Gocheok",
+      "park_factor": 0.904
     }
   ]
 }
