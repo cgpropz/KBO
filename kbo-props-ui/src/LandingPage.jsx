@@ -623,8 +623,15 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
   const oppLogo = TEAM_LOGOS[pick.opponent];
   const [photoFailed, setPhotoFailed] = useState(false);
   const showPhoto = photoUrl && !photoFailed;
+
+  const isOver = pick.recommendation === 'OVER';
+  const isUnder = pick.recommendation === 'UNDER';
+  const dirClass = isOver ? 'dir-over' : isUnder ? 'dir-under' : 'dir-push';
+  const dirArrow = isOver ? '▲' : isUnder ? '▼' : '＝';
+  const projGap = pick.projection - pick.line;
+
   return (
-    <div className={`lp-pick-card ${cardClass}`} onClick={onClick}>
+    <div className={`lp-pick-card ${cardClass} ${dirClass}`} onClick={onClick}>
       <div className="lp-pick-type">
         {typeLabel}
         {(pick.odds_type === 'demon' || pick.odds_type === 'goblin') && (
@@ -676,13 +683,26 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
             </span>
           </div>
         </div>
+        <div className={`lp-pick-call ${dirClass}`}>
+          <span className="lp-pick-call-arrow">{dirArrow}</span>
+          <span className="lp-pick-call-text">{pick.recommendation}</span>
+        </div>
       </div>
 
-      <div className="lp-pick-nums">
-        <div className="lp-pick-line">
-          <span className="lp-pp-icon">P</span> {pick.line.toFixed(1)}
+      {/* Line vs Projection — the core over/under signal */}
+      <div className={`lp-pick-compare ${dirClass}`}>
+        <div className="lp-compare-cell">
+          <span className="lp-compare-label"><span className="lp-pp-icon">P</span> Line</span>
+          <span className="lp-compare-num">{pick.line.toFixed(1)}</span>
         </div>
-        <div className="lp-pick-proj">Proj: {pick.projection.toFixed(1)}</div>
+        <div className={`lp-compare-arrow ${dirClass}`} aria-hidden="true">
+          <span className="lp-compare-arrow-icon">{dirArrow}</span>
+          <span className="lp-compare-gap">{formatSigned(projGap, 1)}</span>
+        </div>
+        <div className="lp-compare-cell lp-compare-proj">
+          <span className="lp-compare-label">Projection</span>
+          <span className={`lp-compare-num ${dirClass}`}>{pick.projection.toFixed(1)}</span>
+        </div>
       </div>
 
       <div className="lp-pick-metrics">
@@ -712,7 +732,7 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
         <ValuePickMiniChart gameLog={gameLog} line={pick.line} />
       )}
 
-      <div className={`lp-pick-badge ${pick.recommendation === 'OVER' ? 'badge-over' : pick.recommendation === 'UNDER' ? 'badge-under' : 'badge-push'}`}>
+      <div className={`lp-pick-badge ${isOver ? 'badge-over' : isUnder ? 'badge-under' : 'badge-push'}`}>
         {pick.recommendation} · Raw Edge {formatSigned(pick.edge)}
       </div>
     </div>

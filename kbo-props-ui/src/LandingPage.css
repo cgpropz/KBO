@@ -275,6 +275,16 @@
 .lp-pick-hrr::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
 .lp-pick-tb::before { background: linear-gradient(90deg, #059669, #34d399); }
 
+/* Directional glow so OVER / UNDER is scannable at a glance */
+.lp-pick-card.dir-over:hover {
+  border-color: rgba(34, 197, 94, 0.55);
+  box-shadow: 0 12px 32px rgba(34, 197, 94, 0.18);
+}
+.lp-pick-card.dir-under:hover {
+  border-color: rgba(239, 68, 68, 0.55);
+  box-shadow: 0 12px 32px rgba(239, 68, 68, 0.18);
+}
+
 .lp-pick-type {
   font-size: 0.6rem;
   font-weight: 800;
@@ -347,6 +357,7 @@
 }
 .lp-pick-identity-text {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -422,6 +433,106 @@
   font-size: 0.85rem;
   color: #a6b1c2;
 }
+
+/* ── Directional call chip on identity row ── */
+.lp-pick-call {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: 10px;
+  min-width: 60px;
+  font-weight: 900;
+  border: 1px solid transparent;
+}
+.lp-pick-call-arrow {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.lp-pick-call-text {
+  font-size: 0.72rem;
+  letter-spacing: 0.6px;
+}
+.lp-pick-call.dir-over {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+.lp-pick-call.dir-under {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+.lp-pick-call.dir-push {
+  background: rgba(234, 179, 8, 0.14);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #facc15;
+}
+
+/* ── Line vs Projection comparison (core over/under signal) ── */
+.lp-pick-compare {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  padding: 0.55rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.lp-compare-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.2rem;
+}
+.lp-compare-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #8c98ad;
+  display: inline-flex;
+  align-items: center;
+}
+.lp-compare-num {
+  font-size: 1.45rem;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #e8ecf7;
+  line-height: 1;
+}
+.lp-compare-num.dir-over { color: #4ade80; }
+.lp-compare-num.dir-under { color: #f87171; }
+.lp-compare-num.dir-push { color: #facc15; }
+.lp-compare-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 46px;
+  border-radius: 8px;
+  padding: 0.1rem 0.25rem;
+}
+.lp-compare-arrow-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.lp-compare-gap {
+  font-size: 0.66rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.lp-compare-arrow.dir-over { color: #4ade80; background: rgba(34, 197, 94, 0.1); }
+.lp-compare-arrow.dir-under { color: #f87171; background: rgba(239, 68, 68, 0.1); }
+.lp-compare-arrow.dir-push { color: #facc15; background: rgba(234, 179, 8, 0.1); }
 
 .lp-pick-metrics {
   display: grid;
