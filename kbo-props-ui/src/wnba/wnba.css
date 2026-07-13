@@ -1,0 +1,695 @@
+/*
+ * WNBA styles ported from the standalone WNBA app (frontend/src/index.css).
+ * Scoped under `.wnba-root` so global resets do not affect the KBO views.
+ * Tailwind directives were intentionally dropped — the components use these
+ * hand-written classes, not Tailwind utilities.
+ */
+
+.wnba-root {
+  --orange: #FF6900;
+  --orange-dim: rgba(255, 105, 0, 0.12);
+  --orange-glow: rgba(255, 105, 0, 0.25);
+  --bg: #080808;
+  --card: #111111;
+  --card-hover: #191919;
+  --border: #222222;
+  --border-light: #2d2d2d;
+  --text: #e5e5e5;
+  --text-muted: #6b7280;
+  --text-dim: #4b5563;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --purple: #a855f7;
+  --font: 'Sora', 'Manrope', 'Avenir Next', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  width: 100%;
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 90% at 10% -10%, rgba(126, 252, 106, 0.06) 0%, rgba(126, 252, 106, 0) 52%),
+    radial-gradient(80% 70% at 100% 0%, rgba(56, 189, 248, 0.06) 0%, rgba(56, 189, 248, 0) 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.wnba-root, .wnba-root *, .wnba-root *::before, .wnba-root *::after { box-sizing: border-box; }
+
+/* ---- Card ---- */
+.wnba-root .card {
+  background: linear-gradient(180deg, rgba(17, 17, 17, 0.96), rgba(13, 13, 13, 0.96));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: border-color 0.22s, background 0.22s, box-shadow 0.22s, transform 0.22s;
+}
+.wnba-root .card:hover {
+  border-color: var(--border-light);
+  background: linear-gradient(180deg, rgba(23, 23, 23, 0.96), rgba(18, 18, 18, 0.96));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Buttons ---- */
+.wnba-root .btn-orange {
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.1s;
+  letter-spacing: 0.2px;
+}
+.wnba-root .btn-orange:hover { opacity: 0.88; transform: translateY(-1px); }
+.wnba-root .btn-orange:active { transform: translateY(0); }
+
+.wnba-root .btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.wnba-root .btn-ghost:hover {
+  border-color: var(--border-light);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.wnba-root .btn-ghost.active { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+
+/* ---- Badges ---- */
+.wnba-root .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.wnba-root .badge-guard { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.wnba-root .badge-forward { background: rgba(34,197,94,0.15); color: #4ade80; }
+.wnba-root .badge-center { background: rgba(168,85,247,0.15); color: #c084fc; }
+.wnba-root .badge-na { background: rgba(107,114,128,0.15); color: #9ca3af; }
+
+/* ---- Typography ---- */
+.wnba-root .stat-value { font-size: 22px; font-weight: 700; color: white; line-height: 1.2; }
+.wnba-root .stat-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+.wnba-root .gradient-text {
+  background: linear-gradient(135deg, #FF6900 0%, #FF9500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Table ---- */
+.wnba-root .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.wnba-root .data-table th {
+  background: #111;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.wnba-root .data-table th:hover { color: var(--orange); }
+.wnba-root .data-table th.sorted { color: var(--orange); }
+.wnba-root .data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+.wnba-root .data-table tr:last-child td { border-bottom: none; }
+.wnba-root .data-table tbody tr { transition: background 0.12s; }
+.wnba-root .data-table tbody tr:hover td { background: var(--card-hover); }
+
+/* ---- Inputs ---- */
+.wnba-root .search-input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.18s;
+  width: 100%;
+}
+.wnba-root .search-input::placeholder { color: var(--text-dim); }
+.wnba-root .search-input:focus { border-color: var(--orange); }
+
+/* ---- Charts ---- */
+.wnba-root .recharts-cartesian-axis-tick-value { fill: #6b7280; font-size: 11px; }
+.wnba-root .recharts-tooltip-wrapper { outline: none; }
+
+/* ---- Animations ---- */
+@keyframes wnbaFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.wnba-root .fade-in { animation: wnbaFadeIn 0.3s ease forwards; }
+
+@keyframes wnbaPulseOrange { 0%, 100% { box-shadow: 0 0 0 0 var(--orange-glow); } 50% { box-shadow: 0 0 0 8px transparent; } }
+.wnba-root .pulse-dot { animation: wnbaPulseOrange 2s infinite; }
+
+/* ---- PrizePicks Edge Board ---- */
+.wnba-root .edge-board-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+.wnba-root .edge-board-bg {
+  position: absolute;
+  inset: -24px -16px auto -16px;
+  height: 220px;
+  background:
+    radial-gradient(120% 110% at 10% 0%, rgba(126, 252, 106, 0.12) 0%, rgba(126, 252, 106, 0) 56%),
+    radial-gradient(90% 120% at 90% 0%, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 62%),
+    linear-gradient(180deg, rgba(8, 14, 20, 0.95), rgba(8, 8, 8, 0));
+  border-radius: 22px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.wnba-root .edge-title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #e6f3ce;
+  text-shadow: 0 0 24px rgba(126, 252, 106, 0.24);
+}
+
+.wnba-root .edge-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: rgba(9, 13, 16, 0.88);
+  border: 1px solid #173130;
+  box-shadow: inset 0 0 0 1px rgba(126, 252, 106, 0.08), 0 0 24px rgba(126, 252, 106, 0.06);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.wnba-root .edge-search,
+.wnba-root .edge-select {
+  background: #0b1218;
+  border: 1px solid #1f3f3d;
+  color: #def8df;
+  border-radius: 9px;
+}
+
+.wnba-root .edge-select {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  min-height: 36px;
+}
+
+.wnba-root .edge-select:focus,
+.wnba-root .edge-search:focus {
+  outline: none;
+  border-color: #7efc6a;
+  box-shadow: 0 0 0 3px rgba(126, 252, 106, 0.16);
+}
+
+.wnba-root .edge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.wnba-root .edge-card {
+  background: linear-gradient(180deg, rgba(8, 14, 16, 0.98), rgba(10, 12, 18, 0.98));
+  border: 1px solid #173130;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: inset 0 0 0 1px rgba(126, 252, 106, 0.08), 0 0 18px rgba(87, 224, 106, 0.08);
+  transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.wnba-root .edge-card:hover {
+  transform: translateY(-2px);
+  border-color: #2f8f5f;
+  box-shadow: inset 0 0 0 1px rgba(126, 252, 106, 0.15), 0 0 24px rgba(126, 252, 106, 0.16);
+}
+
+.wnba-root .edge-chip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.wnba-root .edge-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #7efc6a;
+  color: #05230f;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 9px;
+  letter-spacing: 0.35px;
+  box-shadow: 0 0 12px rgba(126, 252, 106, 0.38);
+}
+
+.wnba-root .edge-player {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 78px;
+  margin-bottom: 8px;
+}
+
+.wnba-root .edge-headshot {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+}
+
+.wnba-root .edge-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f3f9ef;
+  line-height: 1;
+}
+
+.wnba-root .edge-tags {
+  margin-top: 6px;
+  display: flex;
+  gap: 5px;
+}
+
+.wnba-root .edge-team-tag,
+.wnba-root .edge-vs-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.wnba-root .edge-team-tag {
+  color: #f8f4ff;
+  background: #5b21b6;
+}
+
+.wnba-root .edge-vs-tag {
+  color: #ffe6e9;
+  background: #be123c;
+}
+
+.wnba-root .edge-prop-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2f8f5f;
+  color: #d8ffe1;
+  background: rgba(16, 32, 29, 0.8);
+  border-radius: 9px;
+  padding: 5px 8px;
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.wnba-root .edge-hit-chart-wrap {
+  background: linear-gradient(180deg, rgba(7, 19, 23, 0.95), rgba(10, 14, 19, 0.92));
+  border: 1px solid #173130;
+  border-radius: 10px;
+  padding: 8px 8px 4px;
+  margin-bottom: 8px;
+}
+
+.wnba-root .edge-hit-chart-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.wnba-root .edge-hit-chart-kicker {
+  margin: 0 0 2px;
+  color: #7dd3fc;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wnba-root .edge-hit-chart-rate {
+  margin: 0;
+  color: #ecfdf5;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.wnba-root .edge-hit-chart-rate span {
+  color: #7efc6a;
+}
+
+.wnba-root .edge-hit-chart-subtext {
+  margin: 2px 0 0;
+  color: #67827c;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.wnba-root .edge-hit-chart-empty {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(7, 19, 23, 0.95), rgba(10, 14, 19, 0.92));
+  border: 1px solid #173130;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  color: #67827c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wnba-root .edge-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.wnba-root .edge-stats-row > div {
+  background: #0e1623;
+  border: 1px solid #1e2e43;
+  border-radius: 8px;
+  text-align: center;
+  padding: 5px 4px 6px;
+}
+
+.wnba-root .edge-stat-label {
+  margin: 0 0 2px;
+  font-size: 10px;
+  color: #6ee7b7;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+
+.wnba-root .edge-stat-value {
+  margin: 0;
+  font-size: 13px;
+  color: #dbeafe;
+  font-weight: 800;
+}
+
+.wnba-root .edge-score {
+  color: #5cff8d;
+  text-shadow: 0 0 12px rgba(92, 255, 141, 0.28);
+}
+
+@media (max-width: 720px) {
+  .wnba-root .edge-title {
+    font-size: 27px;
+  }
+
+  .wnba-root .edge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* WNBA in-app top nav */
+.wnba-root .wnba-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8, 8, 8, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.wnba-root .wnba-nav-logo {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--orange);
+  letter-spacing: 0.5px;
+}
+.wnba-root .wnba-nav-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wnba-root .wnba-content {
+  padding: 22px 20px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Edge cards / dashboard board (ported from WNBA index.css) ────────────── */
+.wnba-root .edge-search,
+.wnba-root .edge-select {
+  background: #0b1218;
+  border: 1px solid #1f3f3d;
+  color: #def8df;
+  border-radius: 9px;
+}
+.wnba-root .edge-select {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  min-height: 36px;
+}
+.wnba-root .edge-select:focus,
+.wnba-root .edge-search:focus {
+  outline: none;
+  border-color: #7efc6a;
+  box-shadow: 0 0 0 3px rgba(126, 252, 106, 0.16);
+}
+.wnba-root .edge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.wnba-root .edge-card {
+  background: linear-gradient(180deg, rgba(8, 14, 16, 0.98), rgba(10, 12, 18, 0.98));
+  border: 1px solid #173130;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: inset 0 0 0 1px rgba(126, 252, 106, 0.08), 0 0 18px rgba(87, 224, 106, 0.08);
+  transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.wnba-root .edge-card:hover {
+  transform: translateY(-2px);
+  border-color: #2f8f5f;
+  box-shadow: inset 0 0 0 1px rgba(126, 252, 106, 0.15), 0 0 24px rgba(126, 252, 106, 0.16);
+}
+.wnba-root .edge-chip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.wnba-root .edge-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #7efc6a;
+  color: #05230f;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 9px;
+  letter-spacing: 0.35px;
+  box-shadow: 0 0 12px rgba(126, 252, 106, 0.38);
+}
+.wnba-root .edge-player {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 78px;
+  margin-bottom: 8px;
+}
+.wnba-root .edge-headshot {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+}
+.wnba-root .edge-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f3f9ef;
+  line-height: 1;
+}
+.wnba-root .edge-tags {
+  margin-top: 6px;
+  display: flex;
+  gap: 5px;
+}
+.wnba-root .edge-team-tag,
+.wnba-root .edge-vs-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+.wnba-root .edge-team-tag {
+  color: #f8f4ff;
+  background: #5b21b6;
+}
+.wnba-root .edge-vs-tag {
+  color: #ffe6e9;
+  background: #be123c;
+}
+.wnba-root .edge-prop-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2f8f5f;
+  color: #d8ffe1;
+  background: rgba(16, 32, 29, 0.8);
+  border-radius: 9px;
+  padding: 5px 8px;
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.wnba-root .edge-hit-chart-wrap {
+  background: linear-gradient(180deg, rgba(7, 19, 23, 0.95), rgba(10, 14, 19, 0.92));
+  border: 1px solid #173130;
+  border-radius: 10px;
+  padding: 8px 8px 4px;
+  margin-bottom: 8px;
+}
+.wnba-root .edge-hit-chart-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.wnba-root .edge-hit-chart-kicker {
+  margin: 0 0 2px;
+  color: #7dd3fc;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.wnba-root .edge-hit-chart-rate {
+  margin: 0;
+  color: #ecfdf5;
+  font-size: 15px;
+  font-weight: 900;
+}
+.wnba-root .edge-hit-chart-rate span {
+  color: #7efc6a;
+}
+.wnba-root .edge-hit-chart-subtext {
+  margin: 2px 0 0;
+  color: #67827c;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: right;
+}
+.wnba-root .edge-hit-chart-empty {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(7, 19, 23, 0.95), rgba(10, 14, 19, 0.92));
+  border: 1px solid #173130;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  color: #67827c;
+  font-size: 11px;
+  font-weight: 700;
+}
+.wnba-root .edge-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.wnba-root .edge-stats-row > div {
+  background: #0e1623;
+  border: 1px solid #1e2e43;
+  border-radius: 8px;
+  text-align: center;
+  padding: 5px 4px 6px;
+}
+.wnba-root .edge-stat-label {
+  margin: 0 0 2px;
+  font-size: 10px;
+  color: #6ee7b7;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+.wnba-root .edge-stat-value {
+  margin: 0;
+  font-size: 13px;
+  color: #dbeafe;
+  font-weight: 800;
+}
+.wnba-root .edge-score {
+  color: #5cff8d;
+  text-shadow: 0 0 12px rgba(92, 255, 141, 0.28);
+}
+@media (max-width: 720px) {
+  .wnba-root .edge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* keyframes used by ported loaders */
+@keyframes wnbaFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wnbaPulseOrange {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
+}

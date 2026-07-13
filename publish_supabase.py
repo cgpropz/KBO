@@ -37,12 +37,35 @@ TABLES = {
     "matchup_data.json": "matchup_data",
     "prop_results.json": "prop_results",
     "pitcher_logs.json": "pitcher_logs",
+    "wnba/projections_standard.json": "wnba_projections_standard",
+    "wnba/projections_demon.json": "wnba_projections_demon",
+    "wnba/projections_goblin.json": "wnba_projections_goblin",
+    "wnba/players.json": "wnba_players",
+    "wnba/teams.json": "wnba_teams",
+    "wnba/lineups.json": "wnba_lineups",
+    "wnba/edge.json": "wnba_edge",
+    "wnba/dvp_guard.json": "wnba_dvp_guard",
+    "wnba/dvp_forward.json": "wnba_dvp_forward",
+    "wnba/dvp_center.json": "wnba_dvp_center",
 }
 
 
 def main():
     if not SERVICE_ROLE_KEY:
         print("✗ SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_SERVICE_ROLE_KEY is not set")
+        sys.exit(1)
+
+    # Optional filter: when PUBLISH_ONLY_PREFIX is set, only publish snapshot
+    # files whose path starts with it (e.g. "wnba/"). This lets a sport-specific
+    # workflow republish just its own tables without touching the others.
+    only_prefix = os.environ.get("PUBLISH_ONLY_PREFIX", "").strip()
+    tables = {
+        filename: table
+        for filename, table in TABLES.items()
+        if not only_prefix or filename.startswith(only_prefix)
+    }
+    if only_prefix and not tables:
+        print(f"✗ No snapshots match PUBLISH_ONLY_PREFIX={only_prefix!r}")
         sys.exit(1)
 
     headers = {
@@ -57,7 +80,7 @@ def main():
 
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
 
-    for filename, table in TABLES.items():
+    for filename, table in tables.items():
         file_path = os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):

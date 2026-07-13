@@ -1,0 +1,158 @@
+name: Refresh WNBA Data
+
+# Boots the bundled WNBA Express backend (self-contained under wnba/), exports
+# fresh projection/lineup/edge/dvp snapshots, publishes them to Supabase (the
+# authoritative source the frontend reads), and commits the static JSON
+# fallbacks. Supabase is updated directly, so no Vercel redeploy is required for
+# production to pick up the new WNBA data.
+#
+# NOTE: This does NOT run the SeleniumBase PrizePicks scraper (too flaky for CI).
+# The backend serves the committed downloaded_files/prizepicks_*.json snapshots
+# and falls back gracefully when a line type has no snapshot.
+
+on:
+  schedule:
+    # Evening ET refreshes ahead of / around WNBA tip-offs (GitHub cron = UTC).
+    - cron: "0 21 * * *" # 5:00 PM ET
+    - cron: "0 23 * * *" # 7:00 PM ET
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: wnba-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  refresh-wnba:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install WNBA backend dependencies
+        working-directory: wnba/backend
+        run: npm ci || npm install
+
+      - name: Boot WNBA backend
+        working-directory: wnba/backend
+        run: |
+          PORT=5050 node index.js > "$RUNNER_TEMP/wnba-backend.log" 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+
+      - name: Wait for backend to be ready
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:5050/api/teams; then
+              echo "Backend is ready (attempt ${attempt})"
+              exit 0
+            fi
+            echo "Waiting for backend... (${attempt}/30)"
+            sleep 2
+          done
+          echo "Backend did not become ready in time. Log:"
+          cat "$RUNNER_TEMP/wnba-backend.log" || true
+          exit 1
+
+      - name: Export WNBA snapshots
+        run: node wnba/export_snapshots.mjs
+        env:
+          BACKEND_URL: http://localhost:5050
+
+      - name: Stop WNBA backend
+        if: always()
+        run: |
+          if [ -n "${BACKEND_PID:-}" ]; then
+            kill "$BACKEND_PID" 2>/dev/null || true
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Publish WNBA snapshots to Supabase
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "wnba/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Commit WNBA snapshot updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add kbo-props-ui/public/data/wnba
+
+          if git diff --cached --quiet; then
+            echo "No WNBA data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: auto-refresh WNBA data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # Attempt 1: direct push
+          if git push origin HEAD:main; then
+            echo "Push succeeded on first attempt"
+            exit 0
+          fi
+
+          echo "Push rejected; fetching latest and rebasing..."
+          if git pull --rebase origin main; then
+            git push origin HEAD:main \
+              && echo "Push succeeded after clean rebase" \
+              || git push --force-with-lease origin HEAD:main \
+              && echo "Push succeeded with --force-with-lease" \
+              || echo "All push attempts failed — snapshots still published to Supabase"
+          else
+            # Conflicts here would only be within wnba/ data; take our fresh version.
+            CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+            if [ -n "$CONFLICTS" ]; then
+              echo "Conflicted files: $CONFLICTS"
+              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+            fi
+            GIT_EDITOR=true git rebase --continue \
+              && git push origin HEAD:main \
+              && echo "Push succeeded after conflict auto-resolution" \
+              || {
+                git rebase --abort >/dev/null 2>&1 || true
+                echo "Push failed after conflict resolution — snapshots still published to Supabase"
+              }
+          fi
+
+      - name: Notify on failure (open/update issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TITLE="🚨 WNBA data refresh FAILED"
+          BODY="Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          Branch: $GITHUB_REF_NAME
+          Commit: $GITHUB_SHA"
+          EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY" --label "ci-failure" 2>/dev/null \
+              || gh issue create --title "$TITLE" --body "$BODY"
+          fi

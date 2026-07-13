@@ -12,15 +12,28 @@ import LandingPage from './LandingPage'
 import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
 import Paywall from './Paywall'
+import WnbaApp from './wnba/WnbaApp'
+import SportSwitcher from './SportSwitcher'
 import './App.css'
 
 /* Views that require a paid subscription */
 const PAID_VIEWS = new Set(['projections', 'batters', 'props', 'optimizer', 'matchups']);
 
+const SPORT_STORAGE_KEY = 'cg_sport';
+
 function App() {
   const { user, loading } = useAuth();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('home');
+  const [sport, setSportState] = useState(() => {
+    if (typeof localStorage === 'undefined') return 'kbo';
+    return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
+  });
+
+  const setSport = (next) => {
+    setSportState(next);
+    try { localStorage.setItem(SPORT_STORAGE_KEY, next); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     setTimeout(() => setShowUI(true), 100);
@@ -48,8 +61,19 @@ function App() {
     return <AuthPage />;
   }
 
+  /* WNBA section — separate sport shell behind the same auth */
+  if (sport === 'wnba') {
+    return (
+      <WnbaApp
+        sport={sport}
+        setSport={setSport}
+        onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
+      />
+    );
+  }
+
   if (view === 'home') {
-    return <LandingPage onNavigate={setView} />;
+    return <LandingPage onNavigate={setView} sport={sport} setSport={setSport} />;
   }
 
   const content = (() => {
@@ -71,7 +95,7 @@ function App() {
 
   return (
     <div>
-      <Nav view={view} setView={setView} />
+      <Nav view={view} setView={setView} sport={sport} setSport={setSport} />
       {needsPaywall
         ? <Paywall onNavigate={setView}>{content}</Paywall>
         : content}
@@ -80,7 +104,7 @@ function App() {
 }
 
 /* ── Nav bar (extracted for readability) ── */
-function Nav({ view, setView }) {
+function Nav({ view, setView, sport, setSport }) {
   const { signOut, user, tier } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -109,6 +133,7 @@ function Nav({ view, setView }) {
     <>
       <nav className="app-nav">
         <button className="nav-logo" onClick={() => handleNav('home')}>KBO</button>
+        <SportSwitcher sport={sport} setSport={setSport} />
         <div className="nav-divider" />
         <div className="nav-links-desktop">
           {navItems.map(item => (

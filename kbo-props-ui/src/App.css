@@ -146,3 +146,29 @@
   .nav-mobile-menu { display: flex; }
   .app-nav { padding: 0 1rem; }
 }
+
+/* ── Sport switcher (KBO ⚾ / WNBA 🏀) ── */
+.sport-switcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.sport-switcher button {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.sport-switcher button.active {
+  background: #fff;
+  color: #0b0b0b;
+}

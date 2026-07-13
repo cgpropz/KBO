@@ -3,6 +3,7 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import './LandingPage.css';
 import { fetchDataSnapshot } from './dataUrl';
+import SportSwitcher from './SportSwitcher';
 
 const TEAMS = {
   Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
@@ -156,7 +157,7 @@ function selectBestValuePick(picks, filterFn = () => true) {
   return candidates[0] || null;
 }
 
-function LandingPage({ onNavigate }) {
+function LandingPage({ onNavigate, sport, setSport }) {
   const [kData, setKData] = useState(null);
   const [batterData, setBatterData] = useState(null);
   const [rankings, setRankings] = useState(null);
@@ -363,6 +364,11 @@ function LandingPage({ onNavigate }) {
 
   return (
     <div className={`lp ${animate ? 'lp-visible' : ''}`}>
+      {setSport ? (
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50 }}>
+          <SportSwitcher sport={sport} setSport={setSport} />
+        </div>
+      ) : null}
       {/* Hero */}
       <section className="lp-hero">
         <div className="lp-hero-bg" />
