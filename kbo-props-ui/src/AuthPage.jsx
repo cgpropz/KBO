@@ -54,7 +54,7 @@ export default function AuthPage() {
         <div className="auth-logo">
           <span className="auth-logo-k">cgpropz</span>
         </div>
-        <p className="auth-tagline">AI-powered props for ⚾ KBO baseball & 🏀 WNBA basketball</p>
+        <p className="auth-tagline">Hand-crafted props for ⚾ KBO baseball & 🏀 WNBA basketball</p>
 
         <div className="auth-tabs">
           <button

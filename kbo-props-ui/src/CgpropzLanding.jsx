@@ -18,8 +18,8 @@ const SPORTS = [
     name: 'KBO',
     full: 'Korea Baseball',
     tagline: 'Strikeout & batter projections, prop cards, slip builder, and matchup breakdowns.',
-    accent: '#00a8e8',
-    glow: 'rgba(0, 168, 232, 0.35)',
+    accent: '#22c55e',
+    glow: 'rgba(34, 197, 94, 0.35)',
     features: ['Pitcher K projections', 'Batter props & hit rates', 'Slip builder + tracker'],
   },
   {
@@ -28,8 +28,8 @@ const SPORTS = [
     name: 'WNBA',
     full: 'Women\'s Basketball',
     tagline: 'PrizePicks edge board, player projections, defense vs position, and daily lineups.',
-    accent: '#ff6900',
-    glow: 'rgba(255, 105, 0, 0.35)',
+    accent: '#4ade80',
+    glow: 'rgba(74, 222, 128, 0.35)',
     features: ['PrizePicks edge board', 'Points / reb / ast projections', 'DvP & daily lineups'],
   },
 ];
@@ -61,7 +61,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
       <main className="cg-main">
         <section className="cg-hero">
           <div className="cg-hero-badge">
-            {isPaid ? '✓ ALL ACCESS ACTIVE' : 'AI-POWERED SPORTS PROPS'}
+            {isPaid ? '✓ ALL ACCESS ACTIVE' : 'HAND-CRAFTED PROPS'}
           </div>
           <h1 className="cg-hero-title">
             One edge. <span className="cg-hero-grad">Every sport.</span>
