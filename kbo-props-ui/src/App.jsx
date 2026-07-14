@@ -9,6 +9,7 @@ import PropTracker from './PropTracker'
 import SlipOptimizer from './SlipOptimizer'
 import MatchupDeepDive from './MatchupDeepDive'
 import LandingPage from './LandingPage'
+import CgpropzLanding from './CgpropzLanding'
 import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
 import Paywall from './Paywall'
@@ -24,7 +25,7 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 function App() {
   const { user, loading } = useAuth();
   const [showUI, setShowUI] = useState(false);
-  const [view, setView] = useState('home');
+  const [view, setView] = useState('hub');
   const [sport, setSportState] = useState(() => {
     if (typeof localStorage === 'undefined') return 'kbo';
     return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
@@ -46,12 +47,12 @@ function App() {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        background: 'linear-gradient(135deg, #003d7a, #00a8e8)',
+        background: 'linear-gradient(135deg, #003d7a, #ff6900)',
         color: 'white',
         fontSize: '24px',
         fontFamily: 'Arial, sans-serif'
       }}>
-        ⚾ Loading KBO Player Props...
+        Loading cgpropz…
       </div>
     );
   }
@@ -59,6 +60,16 @@ function App() {
   /* Not logged in → show login/signup */
   if (!user) {
     return <AuthPage />;
+  }
+
+  /* cgpropz hub — sport-agnostic front door (sits above both sports) */
+  if (view === 'hub') {
+    return (
+      <CgpropzLanding
+        onEnterSport={(s) => { setSport(s); setView('home'); }}
+        onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
+      />
+    );
   }
 
   /* WNBA section — separate sport shell behind the same auth */
@@ -132,7 +143,7 @@ function Nav({ view, setView, sport, setSport }) {
   return (
     <>
       <nav className="app-nav">
-        <button className="nav-logo" onClick={() => handleNav('home')}>KBO</button>
+        <button className="nav-logo" onClick={() => handleNav('hub')} title="cgpropz home">cgpropz</button>
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="nav-divider" />
         <div className="nav-links-desktop">

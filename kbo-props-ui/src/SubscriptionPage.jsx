@@ -16,6 +16,13 @@ import './SubscriptionPage.css';
 const STRIPE_LINKS = {
   monthly: 'https://buy.stripe.com/28EfZj9Wf3E26f84qY5Ne05',
   season:  'https://buy.stripe.com/eVqcN75FZdeC6f8cXu5Ne02',
+  // ── Future per-sport products ────────────────────────────────────
+  // These are placeholders for standalone single-sport plans. They stay
+  // disabled until (1) the Stripe products exist and (2) the tier/webhook
+  // logic tracks per-sport access. Today every paid tier = full All Access
+  // (both KBO + WNBA), so the plans above already unlock everything.
+  // kboMonthly:  '',
+  // wnbaMonthly: '',
 };
 
 const TIERS = [
@@ -25,18 +32,18 @@ const TIERS = [
     price: '$0',
     period: '',
     badge: null,
-    description: 'Get started with basic KBO projections',
+    description: 'Preview both sports before you commit',
     features: [
-      'Today\'s game schedule',
-      'Top 3 projections',
-      'Basic batter stats',
+      'Today\'s KBO & WNBA schedules',
+      'Top 3 KBO projections',
+      'WNBA dashboard & team pages',
       'Landing page overview',
     ],
     limited: [
-      'Full projections list',
-      'Player prop cards',
-      'Slip builder',
-      'Matchup deep dive',
+      'Full KBO + WNBA projections',
+      'Player prop cards & PrizePicks edge',
+      'Slip builder & optimizer',
+      'Matchups, lineups & tracker',
     ],
     cta: 'Current Plan',
     ctaStyle: 'free',
@@ -44,19 +51,19 @@ const TIERS = [
   },
   {
     id: 'monthly',
-    name: 'Monthly',
+    name: 'All Access Monthly',
     price: '$19.99',
     period: '/ month',
     badge: 'MOST POPULAR',
-    description: 'Full access — everything unlocked',
+    description: 'Everything unlocked — KBO + WNBA',
     features: [
-      'All K projections',
-      'All batter projections',
-      'Player prop cards + hit rates',
-      'Pitcher rankings & tiers',
-      'Matchup deep dive',
-      'Slip builder & optimizer',
-      'Prop tracker + bet grading',
+      '⚾ All KBO pitcher & batter projections',
+      '⚾ Player prop cards + hit rates',
+      '⚾ Pitcher rankings & matchup deep dive',
+      '🏀 WNBA PrizePicks edge board',
+      '🏀 Points / reb / ast projections',
+      '🏀 Defense vs position & daily lineups',
+      'Slip builder, optimizer & prop tracker',
       'Full game log history',
     ],
     limited: [],
@@ -66,14 +73,14 @@ const TIERS = [
   },
   {
     id: 'season',
-    name: 'Yearly',
+    name: 'All Access Yearly',
     price: '$49.99',
     period: '/ year',
     badge: 'BEST DEAL',
-    description: 'Lock in all features for the entire 2026 season',
+    description: 'Lock in KBO + WNBA for the full year',
     features: [
       'Everything in Monthly',
-      'Full 2026 season access',
+      'Both sports, all season long',
       'Early access to new features',
       'Priority data updates',
       'Season-long prop history',
@@ -166,11 +173,17 @@ function SubscriptionPage() {
       <div className="sub-header">
         <div className="sub-badge">SUBSCRIPTION PLANS</div>
         <h1 className="sub-title">
-          Unlock <span className="sub-highlight">Full Access</span>
+          Unlock <span className="sub-highlight">All Access</span>
         </h1>
         <p className="sub-subtitle">
-          AI-powered KBO projections, hit rates, and prop analysis — pick the plan that fits your game.
+          One subscription unlocks every ⚾ KBO and 🏀 WNBA tool — projections, hit rates,
+          prop cards, and edge boards. Pick the plan that fits your game.
         </p>
+      </div>
+
+      <div className="sub-combine-banner">
+        <span className="sub-combine-icon">⚾🏀</span>
+        <span>One login, one subscription — <strong>both sports included</strong> in every paid plan.</span>
       </div>
 
       {noLinksConfigured && (
@@ -245,7 +258,7 @@ function SubscriptionPage() {
             <span className="sub-setup-icon">✅</span>
             <div>
               <strong style={{ color: '#4ade80' }}>You have {tier} access!</strong>
-              <p style={{ color: '#a1a1aa' }}>All features are unlocked. Enjoy full KBO projections and tools.</p>
+              <p style={{ color: '#a1a1aa' }}>All features are unlocked across ⚾ KBO and 🏀 WNBA. Enjoy the full toolkit.</p>
             </div>
           </div>
 
@@ -304,19 +317,19 @@ function SubscriptionPage() {
         <div className="sub-faq-grid">
           <FaqItem
             q="What's included in the free tier?"
-            a="You get access to the landing page, today's game schedule, and a preview of the top 3 strikeout projections. Upgrade to unlock full projections, player prop cards, and advanced tools."
+            a="You get the landing page, today's KBO & WNBA schedules, a preview of the top 3 KBO projections, and the WNBA dashboard and team pages. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for both sports."
+          />
+          <FaqItem
+            q="Does one subscription cover both sports?"
+            a="Yes. Every paid plan is All Access — it unlocks all KBO and WNBA tools under a single login. There's no need to buy each sport separately."
           />
           <FaqItem
             q="Can I cancel anytime?"
             a="Yes. Monthly subscriptions can be cancelled at any time. Your access continues until the end of your current billing period."
           />
           <FaqItem
-            q="What is the Full Season plan?"
-            a="A one-time payment that gives you complete access to every feature for the entire 2026 KBO season. No recurring charges — the best deal for committed bettors."
-          />
-          <FaqItem
             q="How often is the data updated?"
-            a="Projections, prop cards, and rankings are refreshed multiple times daily — at 12 PM, 2 PM, 5 PM, and 6:30 PM EST — so you always have the latest data before games start."
+            a="KBO projections and props refresh multiple times daily before games. WNBA projections, edge, and lineups refresh on their own schedule ahead of tip-off, so you always have the latest numbers."
           />
         </div>
       </div>

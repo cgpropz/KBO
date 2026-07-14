@@ -59,7 +59,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
   return (
     <div className="wnba-root">
       <nav className="wnba-nav">
-        <span className="wnba-nav-logo">WNBA</span>
+        <button className="wnba-nav-logo" onClick={() => onNavigateKbo('hub')} title="cgpropz home">cgpropz</button>
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="wnba-nav-links">
           {NAV_ITEMS.map(item => (

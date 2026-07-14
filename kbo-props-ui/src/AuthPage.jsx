@@ -52,11 +52,9 @@ export default function AuthPage() {
       <div className="auth-bg" />
       <div className="auth-card">
         <div className="auth-logo">
-          <span className="auth-logo-k">KBO</span>
-          <span className="auth-logo-divider" />
-          <span className="auth-logo-sub">PROPS</span>
+          <span className="auth-logo-k">cgpropz</span>
         </div>
-        <p className="auth-tagline">AI-powered projections for Korean baseball</p>
+        <p className="auth-tagline">AI-powered props for ⚾ KBO baseball & 🏀 WNBA basketball</p>
 
         <div className="auth-tabs">
           <button
