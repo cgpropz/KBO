@@ -6,9 +6,10 @@ name: Refresh WNBA Data
 # fallbacks. Supabase is updated directly, so no Vercel redeploy is required for
 # production to pick up the new WNBA data.
 #
-# NOTE: This does NOT run the SeleniumBase PrizePicks scraper (too flaky for CI).
-# The backend serves the committed downloaded_files/prizepicks_*.json snapshots
-# and falls back gracefully when a line type has no snapshot.
+# NOTE: PrizePicks lines are fetched fresh each run via the PrizePicks partner
+# API (wnba/wnba-pp-odds.py, requests-only — no SeleniumBase). The backend
+# spawns it on demand during the export and falls back gracefully when a line
+# type has no props for the current slate.
 
 on:
   schedule:
@@ -44,6 +45,15 @@ jobs:
         working-directory: wnba/backend
         run: npm ci || npm install
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install requests pandas
+
       - name: Boot WNBA backend
         working-directory: wnba/backend
         run: |
@@ -51,6 +61,7 @@ jobs:
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          PYTHON_BIN: python3
 
       - name: Wait for backend to be ready
         run: |
@@ -77,15 +88,6 @@ jobs:
           if [ -n "${BACKEND_PID:-}" ]; then
             kill "$BACKEND_PID" 2>/dev/null || true
           fi
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install Python dependencies
-        run: pip install requests
 
       - name: Publish WNBA snapshots to Supabase
         run: python publish_supabase.py
