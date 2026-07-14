@@ -364,6 +364,13 @@ function LandingPage({ onNavigate, sport, setSport }) {
 
   return (
     <div className={`lp ${animate ? 'lp-visible' : ''}`}>
+      <button
+        className="lp-hub-link"
+        onClick={() => onNavigate('hub')}
+        title="Back to cgpropz home"
+      >
+        ← cgpropz
+      </button>
       {setSport ? (
         <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50 }}>
           <SportSwitcher sport={sport} setSport={setSport} />
