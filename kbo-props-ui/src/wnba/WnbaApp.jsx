@@ -75,7 +75,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
       </nav>
       <div className="wnba-content">
         {needsPaywall
-          ? <Paywall onNavigate={onNavigateKbo}>{content}</Paywall>
+          ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
           : content}
       </div>
     </div>

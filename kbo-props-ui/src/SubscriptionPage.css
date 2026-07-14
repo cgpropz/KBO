@@ -135,18 +135,18 @@
 }
 
 .sub-card-selected {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
 }
 
 .sub-card-featured {
-  border-color: #7c3aed;
-  background: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, #12121a 40%);
+  border-color: #22c55e;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, #12121a 40%);
 }
 
 .sub-card-featured:hover {
-  border-color: #a78bfa;
-  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.2);
+  border-color: #4ade80;
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.22);
 }
 
 .sub-card-badge {
@@ -154,8 +154,8 @@
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #7c3aed, #a78bfa);
-  color: white;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #04140a;
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -309,6 +309,36 @@
 
 .sub-cta-season:hover:not(:disabled) {
   box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.sub-cta-combined {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #04140a;
+}
+
+.sub-cta-combined:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+  transform: translateY(-1px);
+}
+
+.sub-cta-kbo {
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  color: white;
+}
+
+.sub-cta-kbo:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.32);
+  transform: translateY(-1px);
+}
+
+.sub-cta-wnba {
+  background: linear-gradient(135deg, #047857, #34d399);
+  color: #04140a;
+}
+
+.sub-cta-wnba:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(52, 211, 153, 0.32);
   transform: translateY(-1px);
 }
 

@@ -108,7 +108,7 @@ function App() {
     <div>
       <Nav view={view} setView={setView} sport={sport} setSport={setSport} />
       {needsPaywall
-        ? <Paywall onNavigate={setView}>{content}</Paywall>
+        ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall>
         : content}
     </div>
   );

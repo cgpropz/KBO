@@ -1,4 +1,5 @@
 import { useAuth } from './AuthContext';
+import { sportAccess } from './entitlements';
 import './CgpropzLanding.css';
 
 /*
@@ -36,7 +37,9 @@ const SPORTS = [
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
-  const isPaid = tier && tier !== 'free';
+  const access = sportAccess(tier, user?.email);
+  const isPaid = access.kbo || access.wnba;
+  const isAllAccess = access.kbo && access.wnba;
 
   return (
     <div className="cg-landing">
@@ -61,7 +64,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
       <main className="cg-main">
         <section className="cg-hero">
           <div className="cg-hero-badge">
-            {isPaid ? '✓ ALL ACCESS ACTIVE' : 'HAND-CRAFTED PROPS'}
+            {isAllAccess ? '✓ ALL ACCESS ACTIVE' : isPaid ? '✓ MEMBER ACCESS ACTIVE' : 'HAND-CRAFTED PROPS'}
           </div>
           <h1 className="cg-hero-title">
             One edge. <span className="cg-hero-grad">Every sport.</span>

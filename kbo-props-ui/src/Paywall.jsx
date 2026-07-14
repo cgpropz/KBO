@@ -1,15 +1,15 @@
 import { useAuth } from './AuthContext';
+import { sportAccess } from './entitlements';
 import './Paywall.css';
 
-const OWNER_EMAILS = ['cgpropz@gmail.com', 'vicelocksx@gmail.com', 'brittaneycollard@yahoo.com'];
-
-export default function Paywall({ children, onNavigate }) {
+export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
   const { tier, user } = useAuth();
-  const userEmail = (user?.email || '').toLowerCase();
-  const isOwner = Boolean(user) && OWNER_EMAILS.includes(userEmail);
-  const isPaid = isOwner || tier === 'owner' || tier === 'pro' || tier === 'monthly' || tier === 'weekly' || tier === 'season';
+  const access = sportAccess(tier, user?.email);
+  const isPaid = sport === 'wnba' ? access.wnba : access.kbo;
 
   if (isPaid) return children;
+
+  const sportLabel = sport === 'wnba' ? 'WNBA' : 'KBO';
 
   return (
     <div className="pw-wrap">
@@ -17,9 +17,10 @@ export default function Paywall({ children, onNavigate }) {
       <div className="pw-overlay">
         <div className="pw-card">
           <div className="pw-icon">🔒</div>
-          <h2 className="pw-title">Pro Feature</h2>
+          <h2 className="pw-title">{sportLabel} Pro Feature</h2>
           <p className="pw-desc">
-            Upgrade to unlock full projections, player prop cards, slip builder, and all advanced tools.
+            Unlock full {sportLabel} projections, player prop cards, and every advanced tool.
+            Grab the {sportLabel} plan, or get All Access for both sports.
           </p>
           <button className="pw-cta" onClick={() => onNavigate('pricing')}>
             View Plans

@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { tierForPrice, mergeTier, computeStripeTier } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -14,15 +15,7 @@ const supabase = createClient(
 );
 
 // Infer tier from a Stripe price ID or unit amount (in cents)
-function inferTier(priceId, unitAmount) {
-  const SEASON_PRICE = cleanEnv(process.env.STRIPE_SEASON_PRICE_ID);
-  const MONTHLY_PRICE = cleanEnv(process.env.STRIPE_MONTHLY_PRICE_ID);
-  if (SEASON_PRICE && priceId === SEASON_PRICE) return 'season';
-  if (MONTHLY_PRICE && priceId === MONTHLY_PRICE) return 'monthly';
-  // Fallback: infer from amount ($40+ = season/yearly, otherwise monthly)
-  if (unitAmount >= 4000) return 'season';
-  return 'monthly';
-}
+// (tier inference now lives in ./_stripeTier.js via tierForPrice)
 
 async function findUserByEmail(email) {
   const target = (email || '').trim().toLowerCase();
@@ -48,16 +41,24 @@ async function findUserByEmail(email) {
   return null;
 }
 
-// Upsert user_profiles by Supabase user ID
-async function setTierById(userId, tier) {
+// Grant a tier to a user, merging with their current tier so grandfathered
+// all-access subscribers are never downgraded and single-sport plans union.
+async function setTierById(userId, incoming) {
+  const { data: rows } = await supabase
+    .from('user_profiles')
+    .select('tier')
+    .eq('id', userId)
+    .limit(1);
+  const current = rows?.[0]?.tier || 'free';
+  const tier = mergeTier(current, incoming);
   const { error } = await supabase
     .from('user_profiles')
     .upsert({ id: userId, tier }, { onConflict: 'id' });
   if (error) console.error(`[webhook] upsert by ID failed for ${userId}:`, error);
-  else console.log(`[webhook] set ${userId} → tier=${tier}`);
+  else console.log(`[webhook] ${userId}: ${current} + ${incoming} → ${tier}`);
 }
 
-// Look up Supabase user by email, then upsert their tier
+// Look up Supabase user by email, then grant (merge) their tier.
 async function setTierByEmail(email, tier) {
   const user = await findUserByEmail(email);
   if (!user) {
@@ -67,18 +68,20 @@ async function setTierByEmail(email, tier) {
   await setTierById(user.id, tier);
 }
 
-// Remove or downgrade tier when subscription is cancelled
+// Recompute a user's tier authoritatively from their live Stripe state when a
+// subscription is cancelled/expires, so remaining plans + lifetime are honoured.
 async function clearTierByCustomer(customerId) {
   const customer = await stripe.customers.retrieve(customerId);
   const email = customer.email;
   if (!email) return;
   const user = await findUserByEmail(email);
   if (!user) return;
+  const tier = await computeStripeTier(stripe, email);
   const { error } = await supabase
     .from('user_profiles')
-    .upsert({ id: user.id, tier: 'free' }, { onConflict: 'id' });
-  if (error) console.error(`[webhook] clear tier failed for ${email}:`, error);
-  else console.log(`[webhook] cleared tier for ${email} (subscription cancelled)`);
+    .upsert({ id: user.id, tier }, { onConflict: 'id' });
+  if (error) console.error(`[webhook] recompute failed for ${email}:`, error);
+  else console.log(`[webhook] recomputed ${email} → ${tier} (subscription change)`);
 }
 
 // Read the raw body from the request stream (Vercel serverless doesn't
@@ -123,9 +126,28 @@ export default async function handler(req, res) {
   if (event.type === 'checkout.session.completed') {
     const userId = obj.client_reference_id;
     const email  = obj.customer_details?.email || obj.customer_email;
-    const priceId = obj.line_items?.data?.[0]?.price?.id;
-    const amount  = obj.amount_total;
-    const tier    = inferTier(priceId, amount);
+
+    // checkout.session.completed does NOT include line_items by default, so
+    // resolve the real price from the subscription (or fetch line items for
+    // one-time purchases) before mapping to a sport-specific tier.
+    let priceId = obj.line_items?.data?.[0]?.price?.id;
+    if (!priceId && obj.subscription) {
+      try {
+        const sub = await stripe.subscriptions.retrieve(obj.subscription);
+        priceId = sub.items?.data?.[0]?.price?.id;
+      } catch (err) {
+        console.error('[webhook] could not retrieve subscription for price:', err.message);
+      }
+    }
+    if (!priceId) {
+      try {
+        const li = await stripe.checkout.sessions.listLineItems(obj.id, { limit: 1 });
+        priceId = li.data?.[0]?.price?.id;
+      } catch (err) {
+        console.error('[webhook] could not list checkout line items:', err.message);
+      }
+    }
+    const tier = tierForPrice(priceId);
 
     if (userId) {
       await setTierById(userId, tier);
@@ -141,8 +163,7 @@ export default async function handler(req, res) {
   // was missed or user subscribed via a direct Stripe link without being logged in).
   else if (event.type === 'customer.subscription.created') {
     const priceId = obj.items?.data?.[0]?.price?.id;
-    const amount  = obj.items?.data?.[0]?.price?.unit_amount;
-    const tier    = inferTier(priceId, amount);
+    const tier    = tierForPrice(priceId);
     const customer = await stripe.customers.retrieve(obj.customer);
     if (customer.email) await setTierByEmail(customer.email, tier);
   }
@@ -154,8 +175,7 @@ export default async function handler(req, res) {
     if (obj.billing_reason === 'subscription_create' || obj.billing_reason === 'subscription_cycle') {
       const line  = obj.lines?.data?.[0];
       const priceId = line?.price?.id;
-      const amount  = line?.price?.unit_amount;
-      const tier    = inferTier(priceId, amount);
+      const tier    = tierForPrice(priceId);
       const customer = await stripe.customers.retrieve(obj.customer);
       if (customer.email) await setTierByEmail(customer.email, tier);
     }

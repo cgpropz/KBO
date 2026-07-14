@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { computeStripeTier } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -11,15 +12,6 @@ const supabase = createClient(
   cleanEnv(process.env.VITE_SUPABASE_URL),
   cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
 );
-
-function inferTier(priceId, unitAmount) {
-  const SEASON_PRICE = cleanEnv(process.env.STRIPE_SEASON_PRICE_ID);
-  const MONTHLY_PRICE = cleanEnv(process.env.STRIPE_MONTHLY_PRICE_ID);
-  if (SEASON_PRICE && priceId === SEASON_PRICE) return 'season';
-  if (MONTHLY_PRICE && priceId === MONTHLY_PRICE) return 'monthly';
-  if (unitAmount >= 4000) return 'season';
-  return 'monthly';
-}
 
 /**
  * POST /api/sync-subscription
@@ -56,31 +48,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ tier: currentTier, synced: false });
   }
 
-  // Look up active Stripe subscription by the user's email.
-  // Accept both `active` and `trialing` so 3-day free trial users get instant access.
-  let tier = null;
+  // Look up the user's live Stripe entitlement across all active/trialing
+  // subscriptions + any one-time lifetime purchase, mapped to a per-sport tier.
+  let tier = 'free';
   try {
-    const customers = await stripe.customers.list({ email: user.email, limit: 10 });
-    outer: for (const customer of customers.data) {
-      // status:'all' lets us filter in code for active OR trialing in one call
-      const subs = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: 'all',
-        limit: 10,
-      });
-      for (const sub of subs.data) {
-        if (sub.status !== 'active' && sub.status !== 'trialing') continue;
-        const price = sub.items.data[0]?.price;
-        tier = inferTier(price?.id, price?.unit_amount);
-        break outer;
-      }
-    }
+    tier = await computeStripeTier(stripe, user.email);
   } catch (err) {
     console.error('[sync-subscription] Stripe lookup failed:', err.message);
     return res.status(500).json({ error: 'Stripe lookup failed' });
   }
 
-  if (!tier) {
+  if (!tier || tier === 'free') {
     return res.status(200).json({ tier: 'free', synced: false });
   }
 

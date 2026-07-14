@@ -5,24 +5,19 @@ import './SubscriptionPage.css';
 
 /*
  * ─── STRIPE PAYMENT LINKS ──────────────────────────────────────────
- * Replace these with your actual Stripe Payment Links.
- * Create them at https://dashboard.stripe.com/payment-links
- *
- * 1. Create products in Stripe: Weekly, Monthly, Full Season
- * 2. Generate a Payment Link for each
- * 3. Paste the URLs below
+ * Live Payment Links (from the Stripe dashboard). Each maps to a tier in
+ * api/_stripeTier.js so access is granted per sport:
+ *   combined → both sports · kbo → KBO only · wnba → WNBA only
  * ────────────────────────────────────────────────────────────────────
  */
 const STRIPE_LINKS = {
-  monthly: 'https://buy.stripe.com/28EfZj9Wf3E26f84qY5Ne05',
-  season:  'https://buy.stripe.com/eVqcN75FZdeC6f8cXu5Ne02',
-  // ── Future per-sport products ────────────────────────────────────
-  // These are placeholders for standalone single-sport plans. They stay
-  // disabled until (1) the Stripe products exist and (2) the tier/webhook
-  // logic tracks per-sport access. Today every paid tier = full All Access
-  // (both KBO + WNBA), so the plans above already unlock everything.
-  // kboMonthly:  '',
-  // wnbaMonthly: '',
+  combined:    'https://buy.stripe.com/6oU5kFfgzdeCfPIcXu5Ne09', // KBO + WNBA   $29.99 / mo
+  kboMonthly:  'https://buy.stripe.com/28EfZj9Wf3E26f84qY5Ne05', // KBO Monthly  $19.99 / mo
+  kboSeason:   'https://buy.stripe.com/eVqcN75FZdeC6f8cXu5Ne02', // KBO Season   $49.99 / yr
+  kboWeekly:   'https://buy.stripe.com/00wcN7gkD7Ui8ng6z65Ne08', // KBO Weekly   $9.99  / wk
+  kboLifetime: 'https://buy.stripe.com/dRmeVfd8r3E2avo4qY5Ne03', // KBO Lifetime $99.99 once
+  wnbaMonthly: 'https://buy.stripe.com/dRm4gBc4n2zY0UO6z65Ne07', // WNBA Monthly $19.99 / mo
+  wnbaWeekly:  'https://buy.stripe.com/fZudRb2tN7UibzsbTq5Ne06', // WNBA Weekly  $9.99  / wk
 };
 
 const TIERS = [
@@ -50,49 +45,148 @@ const TIERS = [
     link: null,
   },
   {
-    id: 'monthly',
-    name: 'All Access Monthly',
-    price: '$19.99',
+    id: 'combined',
+    name: '⚾🏀 All Access',
+    price: '$29.99',
     period: '/ month',
-    badge: 'MOST POPULAR',
+    badge: 'BEST VALUE',
     description: 'Everything unlocked — KBO + WNBA',
     features: [
       '⚾ All KBO pitcher & batter projections',
-      '⚾ Player prop cards + hit rates',
-      '⚾ Pitcher rankings & matchup deep dive',
+      '⚾ Prop cards, rankings & matchup deep dive',
       '🏀 WNBA PrizePicks edge board',
       '🏀 Points / reb / ast projections',
       '🏀 Defense vs position & daily lineups',
       'Slip builder, optimizer & prop tracker',
-      'Full game log history',
+      'Full game log history for both sports',
+      'Save $10/mo vs. buying each sport',
     ],
     limited: [],
-    cta: 'Subscribe Monthly',
-    ctaStyle: 'monthly',
-    link: STRIPE_LINKS.monthly,
+    cta: 'Get All Access',
+    ctaStyle: 'combined',
+    link: STRIPE_LINKS.combined,
   },
   {
-    id: 'season',
-    name: 'All Access Yearly',
+    id: 'kboMonthly',
+    name: '⚾ KBO Monthly',
+    price: '$19.99',
+    period: '/ month',
+    badge: null,
+    description: 'Full KBO toolkit',
+    features: [
+      'All KBO pitcher & batter projections',
+      'Player prop cards + hit rates',
+      'Pitcher rankings & matchup deep dive',
+      'Slip builder, optimizer & tracker',
+      'Full KBO game log history',
+    ],
+    limited: ['WNBA projections & edge board'],
+    cta: 'Subscribe to KBO',
+    ctaStyle: 'kbo',
+    link: STRIPE_LINKS.kboMonthly,
+  },
+  {
+    id: 'wnbaMonthly',
+    name: '🏀 WNBA Monthly',
+    price: '$19.99',
+    period: '/ month',
+    badge: null,
+    description: 'Full WNBA toolkit',
+    features: [
+      'WNBA PrizePicks edge board',
+      'Points / reb / ast projections',
+      'Defense vs position matchups',
+      'Daily lineups & starters',
+      'Full WNBA prop history',
+    ],
+    limited: ['KBO projections & prop cards'],
+    cta: 'Subscribe to WNBA',
+    ctaStyle: 'wnba',
+    link: STRIPE_LINKS.wnbaMonthly,
+  },
+  {
+    id: 'kboSeason',
+    name: '⚾ KBO Full Season',
     price: '$49.99',
     period: '/ year',
-    badge: 'BEST DEAL',
-    description: 'Lock in KBO + WNBA for the full year',
+    badge: 'SAVE 79%',
+    description: 'Lock in KBO for the whole year',
     features: [
-      'Everything in Monthly',
-      'Both sports, all season long',
-      'Early access to new features',
-      'Priority data updates',
+      'Everything in KBO Monthly',
+      'All season long — no monthly charges',
       'Season-long prop history',
-      'No recurring charges',
+      'Priority data updates',
     ],
     limited: [],
-    cta: 'Get Yearly',
-
+    cta: 'Get KBO Season',
     ctaStyle: 'season',
-    link: STRIPE_LINKS.season,
+    link: STRIPE_LINKS.kboSeason,
+  },
+  {
+    id: 'kboWeekly',
+    name: '⚾ KBO Weekly',
+    price: '$9.99',
+    period: '/ week',
+    badge: null,
+    description: 'Try KBO week to week',
+    features: [
+      'Full KBO projections & prop cards',
+      'Pitcher rankings & matchups',
+      'Slip builder, optimizer & tracker',
+      'Cancel anytime',
+    ],
+    limited: ['WNBA projections & edge board'],
+    cta: 'Start KBO Weekly',
+    ctaStyle: 'kbo',
+    link: STRIPE_LINKS.kboWeekly,
+  },
+  {
+    id: 'wnbaWeekly',
+    name: '🏀 WNBA Weekly',
+    price: '$9.99',
+    period: '/ week',
+    badge: null,
+    description: 'Try WNBA week to week',
+    features: [
+      'WNBA PrizePicks edge board',
+      'Points / reb / ast projections',
+      'Defense vs position & lineups',
+      'Cancel anytime',
+    ],
+    limited: ['KBO projections & prop cards'],
+    cta: 'Start WNBA Weekly',
+    ctaStyle: 'wnba',
+    link: STRIPE_LINKS.wnbaWeekly,
+  },
+  {
+    id: 'kboLifetime',
+    name: '⚾ KBO Lifetime',
+    price: '$99.99',
+    period: 'once',
+    badge: 'ONE-TIME',
+    description: 'Pay once, keep KBO forever',
+    features: [
+      'Everything in KBO Season',
+      'Lifetime access — no renewals ever',
+      'All future KBO features included',
+    ],
+    limited: ['WNBA projections & edge board'],
+    cta: 'Buy KBO Lifetime',
+    ctaStyle: 'season',
+    link: STRIPE_LINKS.kboLifetime,
   },
 ];
+
+// Human-readable label for the user's current tier (used in the active banner).
+const TIER_LABELS = {
+  combined: 'All Access', all: 'All Access', monthly: 'All Access', season: 'All Access',
+  weekly: 'All Access', pro: 'All Access', owner: 'All Access',
+  kbo: 'KBO', wnba: 'WNBA',
+};
+
+// Tiers that represent an active, cancellable subscription (excludes one-time
+// lifetime and free). Grandfathered all-access tiers remain cancellable.
+const CANCELLABLE_TIERS = new Set(['combined', 'kbo', 'wnba', 'monthly', 'season', 'weekly', 'pro', 'all']);
 
 function SubscriptionPage() {
   const [selectedTier, setSelectedTier] = useState(null);
@@ -166,7 +260,7 @@ function SubscriptionPage() {
     }
   };
 
-  const noLinksConfigured = !STRIPE_LINKS.monthly && !STRIPE_LINKS.season;
+  const noLinksConfigured = !STRIPE_LINKS.combined;
 
   return (
     <div className="sub-page">
@@ -176,14 +270,14 @@ function SubscriptionPage() {
           Unlock <span className="sub-highlight">All Access</span>
         </h1>
         <p className="sub-subtitle">
-          One subscription unlocks every ⚾ KBO and 🏀 WNBA tool — projections, hit rates,
-          prop cards, and edge boards. Pick the plan that fits your game.
+          Go all-in with ⚾ KBO and 🏀 WNBA, or pick a single sport. Every plan unlocks
+          full projections, hit rates, prop cards, and edge boards for what you choose.
         </p>
       </div>
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀</span>
-        <span>One login, one subscription — <strong>both sports included</strong> in every paid plan.</span>
+        <span>Want both sports? <strong>All Access is $29.99/mo</strong> — $10 less than buying KBO and WNBA separately.</span>
       </div>
 
       {noLinksConfigured && (
@@ -200,7 +294,7 @@ function SubscriptionPage() {
         {TIERS.map((tier) => (
           <div
             key={tier.id}
-            className={`sub-card ${tier.id === 'monthly' ? 'sub-card-featured' : ''} ${selectedTier === tier.id ? 'sub-card-selected' : ''}`}
+            className={`sub-card ${tier.id === 'combined' ? 'sub-card-featured' : ''} ${selectedTier === tier.id ? 'sub-card-selected' : ''}`}
             onClick={() => setSelectedTier(tier.id)}
           >
             {tier.badge && <div className="sub-card-badge">{tier.badge}</div>}
@@ -257,8 +351,12 @@ function SubscriptionPage() {
           <div className="sub-setup-notice" style={{ borderColor: '#22c55e40', background: '#22c55e10' }}>
             <span className="sub-setup-icon">✅</span>
             <div>
-              <strong style={{ color: '#4ade80' }}>You have {tier} access!</strong>
-              <p style={{ color: '#a1a1aa' }}>All features are unlocked across ⚾ KBO and 🏀 WNBA. Enjoy the full toolkit.</p>
+              <strong style={{ color: '#4ade80' }}>You have {TIER_LABELS[tier] || tier} access!</strong>
+              <p style={{ color: '#a1a1aa' }}>{
+                (TIER_LABELS[tier] === 'All Access')
+                  ? 'All features are unlocked across ⚾ KBO and 🏀 WNBA. Enjoy the full toolkit.'
+                  : `Your ${TIER_LABELS[tier] || tier} tools are fully unlocked. Add All Access anytime to include the other sport.`
+              }</p>
             </div>
           </div>
 
@@ -275,7 +373,7 @@ function SubscriptionPage() {
             </div>
           )}
 
-          {tier === 'monthly' && !cancelResult?.ok && (
+          {CANCELLABLE_TIERS.has(tier) && !cancelResult?.ok && (
             <div style={{ marginTop: '1rem', textAlign: 'center' }}>
               {!showCancelConfirm ? (
                 <button
@@ -321,7 +419,7 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="Does one subscription cover both sports?"
-            a="Yes. Every paid plan is All Access — it unlocks all KBO and WNBA tools under a single login. There's no need to buy each sport separately."
+            a="The All Access plan ($29.99/mo) unlocks every KBO and WNBA tool under one login. Single-sport plans (KBO or WNBA) unlock just that sport — you can upgrade to All Access anytime to add the other."
           />
           <FaqItem
             q="Can I cancel anytime?"
