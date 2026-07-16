@@ -487,6 +487,21 @@ function normalizeRow(row, src) {
   };
 }
 
+// ── Canonicalise a game date (ISO or M/D/YYYY) to YYYY-MM-DD ──────────────────
+// The two gamelog CSVs store dates in different formats (the stats-API gamelog
+// uses "2026-07-15T00:00:00", the scraped boxscores use "07/15/2026"). Reducing
+// both to a canonical calendar date lets the same game from either source dedupe
+// against each other and sort correctly.
+function canonicalGameDate(value) {
+  const raw = String(value || '').trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const us = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (us) return `${us[3]}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}`;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString().slice(0, 10);
+}
+
 // ── Merge + dedupe both gamelog CSVs, sorted newest-first ────────────────────
 async function getAllGamelogs() {
   const [gl, bs] = await Promise.all([
@@ -501,13 +516,15 @@ async function getAllGamelogs() {
 
   const seen = new Set();
   const deduped = rows.filter(r => {
-    const key = `${r.player.toLowerCase()}|${r.date}`;
+    // Gamelog rows are listed first, so the authoritative stats-API row wins
+    // when the same game also exists (in a different date format) in boxscores.
+    const key = `${r.player.toLowerCase()}|${canonicalGameDate(r.date)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 
-  deduped.sort((a, b) => new Date(b.date) - new Date(a.date));
+  deduped.sort((a, b) => canonicalGameDate(b.date).localeCompare(canonicalGameDate(a.date)));
   return deduped;
 }
 
