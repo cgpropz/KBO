@@ -1,0 +1,118 @@
+name: Refresh WNBA PrizePicks Lines (30 min)
+
+# Lightweight intraday refresh of ONLY the WNBA PrizePicks prop lines.
+#
+# This job boots the bundled WNBA backend, forces a fresh PrizePicks partner-API
+# scrape, re-exports ONLY the projection snapshots (projections_{standard,demon,
+# goblin}.json — these carry the live prop lines + hit rates), and publishes
+# ONLY those three tables to Supabase (the authoritative source the frontend
+# reads).
+#
+# It deliberately does NOT:
+#   • regenerate gamelogs / boxscores (read live from the committed CSVs, so the
+#     projection values stay identical between runs — only the lines move),
+#   • re-export or publish players / teams / lineups / edge / dvp snapshots,
+#   • commit anything to the repo.
+#
+# Net effect: the website prop lines refresh every 30 minutes while every other
+# piece of WNBA data stays exactly as the last full refresh (or a manual update)
+# left it. If a scrape returns no lines (off-hours / no slate), the publish step
+# is skipped so existing good lines are never overwritten with blanks.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # every 30 minutes (UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-props-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-wnba-props:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install WNBA backend dependencies
+        working-directory: wnba/backend
+        run: npm ci || npm install
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install requests pandas
+
+      - name: Force fresh PrizePicks scrape (drop any cached snapshot)
+        run: rm -f wnba/downloaded_files/prizepicks_*.json
+
+      - name: Boot WNBA backend
+        working-directory: wnba/backend
+        run: |
+          PORT=5050 node index.js > "$RUNNER_TEMP/wnba-backend.log" 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          PYTHON_BIN: python3
+
+      - name: Wait for backend to be ready
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:5050/api/teams; then
+              echo "Backend is ready (attempt ${attempt})"
+              exit 0
+            fi
+            echo "Waiting for backend... (${attempt}/30)"
+            sleep 2
+          done
+          echo "Backend did not become ready in time. Log:"
+          cat "$RUNNER_TEMP/wnba-backend.log" || true
+          exit 1
+
+      - name: Export WNBA projection (prop-line) snapshots only
+        run: node wnba/export_snapshots.mjs
+        env:
+          BACKEND_URL: http://localhost:5050
+          EXPORT_ONLY: projections
+
+      - name: Stop WNBA backend
+        if: always()
+        run: |
+          if [ -n "${BACKEND_PID:-}" ]; then
+            kill "$BACKEND_PID" 2>/dev/null || true
+          fi
+
+      - name: Verify fresh PrizePicks lines were fetched
+        id: check_lines
+        run: |
+          COUNT=$(node -e "const d=require('./kbo-props-ui/public/data/wnba/projections_standard.json'); let n=0; for (const r of d) { n += (r.ppAllProps?.length || 0); } console.log(n);")
+          echo "PrizePicks prop line count: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "has_lines=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_lines=false" >> "$GITHUB_OUTPUT"
+            echo "No PrizePicks lines available this run — skipping publish so existing lines are preserved."
+          fi
+
+      - name: Publish WNBA prop lines to Supabase
+        if: steps.check_lines.outputs.has_lines == 'true'
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "wnba/projections"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -24,6 +24,12 @@ const OUT_DIR = resolve(__dirname, '..', 'kbo-props-ui', 'public', 'data', 'wnba
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5050'
 const LINE_TYPES = ['standard', 'demon', 'goblin']
 
+// EXPORT_ONLY=projections limits the export to just the prop-line projection
+// snapshots (used by the every-30-minute PrizePicks line refresh). All other
+// snapshots (players/teams/lineups/edge/dvp) are left untouched so their data
+// stays exactly as the last full refresh produced it.
+const EXPORT_ONLY = (process.env.EXPORT_ONLY || '').trim().toLowerCase()
+
 // Single-blob datasets: each maps an output filename to a backend endpoint path.
 const BLOB_SNAPSHOTS = [
   { file: 'players.json', path: '/api/players' },
@@ -60,6 +66,7 @@ async function main() {
   }
 
   for (const { file, path } of BLOB_SNAPSHOTS) {
+    if (EXPORT_ONLY === 'projections') break
     try {
       const data = await fetchJson(`${BACKEND_URL}${path}`)
       await writeFile(resolve(OUT_DIR, file), JSON.stringify(data), 'utf-8')
