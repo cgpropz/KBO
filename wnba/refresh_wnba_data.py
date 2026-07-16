@@ -114,6 +114,15 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_SEASONS,
         help="Seasons to fetch (default: 2025 2026).",
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "Exit non-zero if the stats API is unreachable. Off by default so a CI "
+            "run keeps the last committed gamelog CSV and the rest of the WNBA "
+            "pipeline (projections + PrizePicks lines) still runs."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -121,11 +130,21 @@ def main() -> int:
     args = parse_args()
     print(f"Refreshing WNBA gamelogs for seasons: {args.seasons}")
 
-    gamelogs = refresh_gamelogs(args.seasons)
+    try:
+        gamelogs = refresh_gamelogs(args.seasons)
+    except Exception as exc:  # noqa: BLE001 - network block / API outage
+        print(f"\n⚠ Gamelog refresh failed: {exc}")
+        if args.strict:
+            return 1
+        print(
+            "  Keeping the existing committed WNBA_Gamelog_Data.csv so the rest of "
+            "the pipeline (projections + PrizePicks lines) still runs."
+        )
+        return 0
 
     if gamelogs.empty:
-        print("✗ Refusing to overwrite gamelog CSV with an empty dataset.")
-        return 1
+        print("✗ Stats API returned no rows; keeping the existing gamelog CSV.")
+        return 1 if args.strict else 0
 
     newest = None
     if "GAME_DATE" in gamelogs.columns and not gamelogs.empty:

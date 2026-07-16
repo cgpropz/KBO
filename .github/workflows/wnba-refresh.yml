@@ -55,6 +55,7 @@ jobs:
         run: pip install requests pandas
 
       - name: Refresh WNBA gamelogs (stats API, requests-only)
+        continue-on-error: true
         run: python wnba/refresh_wnba_data.py
 
       - name: Boot WNBA backend
