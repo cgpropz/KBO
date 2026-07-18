@@ -13,11 +13,14 @@ on:
       - ".github/workflows/**"
       - "refresh_data.py"
       - "refresh_odds.py"
+      - "publish_supabase.py"
       - "generate_*.py"
       - "build_opponent_stats.py"
       - "_build_player_photos.py"
       - "Batters-Data/batterlog.py"
       - "Batters-Data/kbo_batter_hands.csv"
+      - "wnba/**"
+      - "kbo-props-ui/public/data/wnba/**"
       - "kbo-props-ui/src/**"
       - "kbo-props-ui/public/index.html"
       - "kbo-props-ui/package*.json"
@@ -180,7 +183,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4 5 6; do
             echo "Production verify attempt ${attempt}/6"
-            if python pipeline/verify_production_data.py --base-url https://mykboprops.com --strict; then
+            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict; then
               exit 0
             fi
             if [ "$attempt" -lt 6 ]; then

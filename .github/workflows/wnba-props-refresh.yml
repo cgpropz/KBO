@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: wnba-props-refresh
@@ -116,3 +116,25 @@ jobs:
           PUBLISH_ONLY_PREFIX: "wnba/projections"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Commit refreshed WNBA projection snapshots
+        if: steps.check_lines.outputs.has_lines == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            kbo-props-ui/public/data/wnba/projections_standard.json \
+            kbo-props-ui/public/data/wnba/projections_demon.json \
+            kbo-props-ui/public/data/wnba/projections_goblin.json
+          if git diff --cached --quiet; then
+            echo "No WNBA projection snapshot changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: refresh WNBA prop snapshots $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if git push origin HEAD:main; then
+            echo "Pushed WNBA projection snapshots"
+          else
+            echo "Push rejected; retrying with rebase..."
+            git pull --rebase origin main && git push origin HEAD:main \
+              || echo "Push failed after retry; Supabase publish still updated"
+          fi
