@@ -504,20 +504,20 @@ function canonicalGameDate(value) {
 
 // ── Merge + dedupe both gamelog CSVs, sorted newest-first ────────────────────
 async function getAllGamelogs() {
-  const [gl, bs] = await Promise.all([
-    readCsv(path.join(ROOT, 'WNBA_Gamelog_Data.csv')),
+  const [bs, gl] = await Promise.all([
     readCsv(path.join(ROOT, 'wnba_boxscores_2025_2026.csv')),
+    readCsv(path.join(ROOT, 'WNBA_Gamelog_Data.csv')),
   ]);
 
   const rows = [
-    ...gl.map(r => normalizeRow(r, 'gamelog')),
     ...bs.map(r => normalizeRow(r, 'boxscore')),
+    ...gl.map(r => normalizeRow(r, 'gamelog')),
   ].filter(r => r.player && r.date);
 
   const seen = new Set();
   const deduped = rows.filter(r => {
-    // Gamelog rows are listed first, so the authoritative stats-API row wins
-    // when the same game also exists (in a different date format) in boxscores.
+    // The WNBA API boxscore data is listed first and wins when a legacy
+    // gamelog row represents the same player game in a different date format.
     const key = `${r.player.toLowerCase()}|${canonicalGameDate(r.date)}`;
     if (seen.has(key)) return false;
     seen.add(key);
