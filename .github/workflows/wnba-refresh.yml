@@ -16,6 +16,8 @@ on:
     # Evening ET refreshes ahead of / around WNBA tip-offs (GitHub cron = UTC).
     - cron: "0 21 * * *" # 5:00 PM ET
     - cron: "0 23 * * *" # 7:00 PM ET
+    # Post-game refresh so finalized box scores reach every WNBA page overnight.
+    - cron: "0 4 * * *" # 12:00 AM EDT
   workflow_dispatch:
 
 permissions:
