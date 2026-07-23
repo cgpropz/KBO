@@ -15,7 +15,7 @@
  * Python generator so CI (GitHub Actions) can produce these snapshots without a
  * running Node server.
  */
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -55,6 +55,24 @@ function propCount(projections) {
   )
 }
 
+async function retainPreviousPropLines(file, projections) {
+  try {
+    const previous = JSON.parse(await readFile(file, 'utf-8'))
+    const previousByName = new Map(previous.map(player => [player.name, player]))
+    return projections.map(player => {
+      const prior = previousByName.get(player.name)
+      if (!prior) return player
+      return {
+        ...player,
+        ppAllProps: prior.ppAllProps || [],
+        ppLines: prior.ppLines || {},
+      }
+    })
+  } catch {
+    return projections
+  }
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const failures = []
@@ -65,11 +83,13 @@ async function main() {
       const data = await fetchJson(url)
       if (!Array.isArray(data)) throw new Error('response is not an array')
       const count = propCount(data)
+      const file = resolve(OUT_DIR, `projections_${lineType}.json`)
       if (count === 0) {
-        console.warn(`  ! projections_${lineType}.json: no props returned; preserving the existing snapshot`)
+        const merged = await retainPreviousPropLines(file, data)
+        await writeFile(file, JSON.stringify(merged), 'utf-8')
+        console.warn(`  ! projections_${lineType}.json: no props returned; retained existing lines while refreshing gamelogs`)
         continue
       }
-      const file = resolve(OUT_DIR, `projections_${lineType}.json`)
       await writeFile(file, JSON.stringify(data), 'utf-8')
       console.log(`  \u2713 projections_${lineType}.json (${data.length} rows, ${count} props)`)
     } catch (err) {
