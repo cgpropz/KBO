@@ -47,6 +47,14 @@ async function fetchJson(url) {
   return res.json()
 }
 
+function propCount(projections) {
+  if (!Array.isArray(projections)) return 0
+  return projections.reduce(
+    (total, player) => total + (Array.isArray(player.ppAllProps) ? player.ppAllProps.length : 0),
+    0,
+  )
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const failures = []
@@ -56,9 +64,14 @@ async function main() {
     try {
       const data = await fetchJson(url)
       if (!Array.isArray(data)) throw new Error('response is not an array')
+      const count = propCount(data)
+      if (count === 0) {
+        console.warn(`  ! projections_${lineType}.json: no props returned; preserving the existing snapshot`)
+        continue
+      }
       const file = resolve(OUT_DIR, `projections_${lineType}.json`)
       await writeFile(file, JSON.stringify(data), 'utf-8')
-      console.log(`  \u2713 projections_${lineType}.json (${data.length} rows)`)
+      console.log(`  \u2713 projections_${lineType}.json (${data.length} rows, ${count} props)`)
     } catch (err) {
       console.error(`  \u2717 ${lineType}: ${err.message}`)
       failures.push(lineType)
@@ -69,6 +82,10 @@ async function main() {
     if (EXPORT_ONLY === 'projections') break
     try {
       const data = await fetchJson(`${BACKEND_URL}${path}`)
+      if (file === 'edge.json' && (!Array.isArray(data) || data.length === 0)) {
+        console.warn('  ! edge.json: no props returned; preserving the existing snapshot')
+        continue
+      }
       await writeFile(resolve(OUT_DIR, file), JSON.stringify(data), 'utf-8')
       const size = Array.isArray(data) ? `${data.length} rows` : `${Object.keys(data).length} keys`
       console.log(`  \u2713 ${file} (${size})`)
