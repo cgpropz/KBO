@@ -12,7 +12,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_U
 
 
 def _clean_secret(value):
-    return str(value or "").strip().strip('"').strip("'").replace("\\n", "\n")
+    return str(value or "").replace("\\n", "").strip().strip('"').strip("'")
 
 
 def _get_service_role_key():
