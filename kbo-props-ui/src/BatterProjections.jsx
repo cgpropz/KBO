@@ -171,6 +171,20 @@ function BatterProjections() {
 
       const awayPitcher = m?.away_pitcher || {};
       const homePitcher = m?.home_pitcher || {};
+      const homeProfile = homePitcher?.profile || null;
+      const awayProfile = awayPitcher?.profile || null;
+      const homeWhipFallback = !!(
+        homeProfile
+        && typeof homeProfile === 'object'
+        && Object.keys(homeProfile).length === 1
+        && Number.isFinite(Number(homeProfile?.whip))
+      );
+      const awayWhipFallback = !!(
+        awayProfile
+        && typeof awayProfile === 'object'
+        && Object.keys(awayProfile).length === 1
+        && Number.isFinite(Number(awayProfile?.whip))
+      );
 
       map[away] = {
         opponent: home,
@@ -179,6 +193,7 @@ function BatterProjections() {
         opp_pitcher_whip: Number.isFinite(Number(homePitcher?.profile?.whip))
           ? Number(homePitcher.profile.whip)
           : null,
+        opp_pitcher_whip_is_fallback: homeWhipFallback,
       };
 
       map[home] = {
@@ -188,6 +203,7 @@ function BatterProjections() {
         opp_pitcher_whip: Number.isFinite(Number(awayPitcher?.profile?.whip))
           ? Number(awayPitcher.profile.whip)
           : null,
+        opp_pitcher_whip_is_fallback: awayWhipFallback,
       };
     }
     return map;
@@ -394,9 +410,25 @@ function BatterProjections() {
     const opp = canonicalTeam(liveCtx?.opponent || p.opponent || '');
     const home = canonicalTeam(liveCtx?.home_team || p.home_team || team);
     const oppPitcher = String(liveCtx?.opp_pitcher || p.opp_pitcher || '').trim();
-    const oppPitcherWhip = liveCtx?.opp_pitcher_whip != null
-      ? liveCtx.opp_pitcher_whip
-      : p.opp_pitcher_whip;
+    const snapOppPitcher = String(p.opp_pitcher || '').trim();
+    const liveOppPitcher = String(liveCtx?.opp_pitcher || '').trim();
+    const sameOppPitcher = !!(snapOppPitcher && liveOppPitcher && normalizeName(snapOppPitcher) === normalizeName(liveOppPitcher));
+    const snapWhip = Number.isFinite(Number(p.opp_pitcher_whip)) ? Number(p.opp_pitcher_whip) : null;
+    const liveWhip = Number.isFinite(Number(liveCtx?.opp_pitcher_whip)) ? Number(liveCtx.opp_pitcher_whip) : null;
+    const liveWhipIsFallback = !!liveCtx?.opp_pitcher_whip_is_fallback;
+
+    // Prefer per-pitcher WHIP from batter projections. Only use live WHIP when it
+    // appears to be a real pitcher profile (not team fallback) and context matches.
+    let oppPitcherWhip = snapWhip;
+    if (liveWhip != null && !liveWhipIsFallback) {
+      if (sameOppPitcher || snapWhip == null) {
+        oppPitcherWhip = liveWhip;
+      }
+    }
+
+    if (snapWhip != null && liveWhipIsFallback && sameOppPitcher) {
+      oppPitcherWhip = snapWhip;
+    }
     if (!ppStats.length) {
       return {
         ...p,
