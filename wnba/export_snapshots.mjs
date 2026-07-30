@@ -55,6 +55,13 @@ function propCount(projections) {
   )
 }
 
+function missingRecentGamelogs(projections) {
+  return projections
+    .filter(player => Array.isArray(player.ppAllProps) && player.ppAllProps.length > 0)
+    .filter(player => !Array.isArray(player.recentGames) || player.recentGames.length === 0)
+    .map(player => player.name)
+}
+
 async function retainPreviousPropLines(file, projections) {
   try {
     const previous = JSON.parse(await readFile(file, 'utf-8'))
@@ -82,6 +89,10 @@ async function main() {
     try {
       const data = await fetchJson(url)
       if (!Array.isArray(data)) throw new Error('response is not an array')
+      const missingGamelogs = missingRecentGamelogs(data)
+      if (missingGamelogs.length) {
+        throw new Error(`active props missing recent gamelogs: ${missingGamelogs.join(', ')}`)
+      }
       const count = propCount(data)
       const file = resolve(OUT_DIR, `projections_${lineType}.json`)
       if (count === 0) {

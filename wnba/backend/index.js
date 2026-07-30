@@ -690,7 +690,7 @@ app.get('/api/projections/v2', async (req, res) => {
     const lineType = normalizeOddsType(req.query.lineType);
     const ppLinesPromise = fetchPrizePicks(lineType);
     const ppStandardPromise = lineType === 'standard' ? ppLinesPromise : fetchPrizePicks('standard');
-    const [bio, all, gDvp, fDvp, cDvp, ppLines, ppStandardLines, spreads] = await Promise.all([
+    const [bio, all, gDvp, fDvp, cDvp, ppLines, ppStandardLines] = await Promise.all([
       readCsv(path.join(ROOT, 'wnba_bio_2025.csv')),
       getAllGamelogs(),
       buildDvpMap('Guard'),
@@ -698,8 +698,8 @@ app.get('/api/projections/v2', async (req, res) => {
       buildDvpMap('Center'),
       ppLinesPromise,
       ppStandardPromise,
-      fetchSpreads(),
     ]);
+    const spreads = await fetchSpreads(propSlateDates(ppStandardLines));
 
     const dvpMaps = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
     const STATS = BASE_PROJECTION_STATS;
@@ -896,8 +896,8 @@ app.get('/api/projections/v2', async (req, res) => {
 });
 
 // ── Odds API – WNBA spreads ─────────────────────────────────────────────────
-const ODDS_API_KEY = 'b3573496127b5228b9c5f4d34cb06e2a';
-const oddsCache = { spreads: null, ts: 0 };
+const ODDS_API_KEY = process.env.ODDS_API_KEY || 'b3573496127b5228b9c5f4d34cb06e2a';
+const oddsCache = { spreads: null, slateKey: '', ts: 0 };
 
 const WNBA_TEAM_NAME_MAP = {
   'Atlanta Dream': 'ATL', 'Chicago Sky': 'CHI', 'Connecticut Sun': 'CON',
@@ -917,30 +917,76 @@ function httpsGet(url) {
   });
 }
 
-async function fetchSpreads() {
+function espnDate(dateValue) {
+  const match = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}${match[2]}${match[3]}` : null;
+}
+
+function propSlateDates(lines) {
+  const dates = new Set();
+  for (const player of Object.values(lines || {})) {
+    for (const prop of player.__allProps || []) {
+      const date = espnDate(prop.gameDate);
+      if (date) dates.add(date);
+    }
+  }
+  return [...dates].sort();
+}
+
+function applyEspnSpread(spreadMap, competition) {
+  const details = competition?.odds?.[0]?.details || '';
+  const match = details.match(/^(.+?)\s+([+-]\d+(?:\.\d+)?)$/);
+  if (!match) return;
+  const favorite = normalizeTeamAbbr(match[1]);
+  const favoriteSpread = Number(match[2]);
+  if (!favorite || !Number.isFinite(favoriteSpread)) return;
+  spreadMap[favorite] = favoriteSpread;
+  for (const competitor of competition.competitors || []) {
+    const team = normalizeTeamAbbr(competitor.team?.displayName);
+    if (team && team !== favorite) spreadMap[team] = -favoriteSpread;
+  }
+}
+
+async function fetchEspnSpreads(slateDates) {
+  const spreadMap = {};
+  for (const date of slateDates) {
+    try {
+      const games = await httpsGet(`https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=${date}`);
+      for (const event of games.events || []) applyEspnSpread(spreadMap, event.competitions?.[0]);
+    } catch (err) {
+      console.error('ESPN spreads failed:', err.message);
+    }
+  }
+  return spreadMap;
+}
+
+async function fetchSpreads(slateDates = []) {
   const now = Date.now();
-  if (oddsCache.spreads && now - oddsCache.ts < 10 * 60 * 1000) return oddsCache.spreads;
+  const dates = slateDates.length ? slateDates : [espnDate(new Date().toISOString())];
+  const slateKey = dates.join(',');
+  if (oddsCache.spreads && oddsCache.slateKey === slateKey && now - oddsCache.ts < 10 * 60 * 1000) return oddsCache.spreads;
+
+  const spreadMap = {};
   try {
     const url = `https://api.the-odds-api.com/v4/sports/basketball_wnba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads&oddsFormat=american`;
     const games = await httpsGet(url);
-    const spreadMap = {};
     for (const game of (Array.isArray(games) ? games : [])) {
       const bookmaker = game.bookmakers?.[0];
-      if (!bookmaker) continue;
-      const market = bookmaker.markets?.find(m => m.key === 'spreads');
-      if (!market) continue;
-      for (const outcome of (market.outcomes || [])) {
+      const market = bookmaker?.markets?.find(item => item.key === 'spreads');
+      for (const outcome of market?.outcomes || []) {
         const abbr = WNBA_TEAM_NAME_MAP[outcome.name] || normalizeTeamAbbr(outcome.name);
         if (abbr) spreadMap[abbr] = outcome.point;
       }
     }
-    oddsCache.spreads = spreadMap;
-    oddsCache.ts = now;
-    return spreadMap;
   } catch (err) {
     console.error('Odds API spreads failed:', err.message);
-    return oddsCache.spreads || {};
   }
+
+  Object.assign(spreadMap, await fetchEspnSpreads(dates));
+  oddsCache.spreads = spreadMap;
+  oddsCache.slateKey = slateKey;
+  oddsCache.ts = now;
+  return spreadMap;
 }
 
 // ── Hit-rate helpers ─────────────────────────────────────────────────────────
@@ -966,15 +1012,15 @@ function seasonAvg(games, statKey) {
 // GET /api/edge — all active PP lines flattened, with hit rates + ratings
 app.get('/api/edge', async (req, res) => {
   try {
-    const [bio, all, gDvp, fDvp, cDvp, ppStandard, spreads] = await Promise.all([
+    const [bio, all, gDvp, fDvp, cDvp, ppStandard] = await Promise.all([
       readCsv(path.join(ROOT, 'wnba_bio_2025.csv')),
       getAllGamelogs(),
       buildDvpMap('Guard'),
       buildDvpMap('Forward'),
       buildDvpMap('Center'),
       fetchPrizePicks('standard'),
-      fetchSpreads(),
     ]);
+    const spreads = await fetchSpreads(propSlateDates(ppStandard));
 
     const dvpMaps  = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
     const bioByName = {};
