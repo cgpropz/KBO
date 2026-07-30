@@ -42,6 +42,7 @@ const HITRATE_MAX = 75;
 const WHIP_TOUGH = 1.1;
 const WHIP_NEUTRAL = 1.3;
 const WHIP_EASY = 1.45;
+const WHIP_SOURCE_DRIFT_MAX = 0.08;
 
 const SCALE_RED = { r: 239, g: 68, b: 68 };
 const SCALE_NEUTRAL = { r: 203, g: 213, b: 225 };
@@ -421,7 +422,9 @@ function BatterProjections() {
     // appears to be a real pitcher profile (not team fallback) and context matches.
     let oppPitcherWhip = snapWhip;
     if (liveWhip != null && !liveWhipIsFallback) {
-      if (sameOppPitcher || snapWhip == null) {
+      if (snapWhip == null) {
+        oppPitcherWhip = liveWhip;
+      } else if (sameOppPitcher && Math.abs(liveWhip - snapWhip) <= WHIP_SOURCE_DRIFT_MAX) {
         oppPitcherWhip = liveWhip;
       }
     }

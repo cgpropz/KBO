@@ -443,9 +443,24 @@ def valid_pitch_row(g):
     return True
 
 
+def _as_int(value):
+    try:
+        return int(float(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def load_pitcher_logs():
-    path = os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")
-    with open(path) as f:
+    # Canonical source: same combined pitching CSV consumed by
+    # generate_batter_projections.py to keep WHIP/ERA consistent across pages.
+    csv_path = os.path.join(BASE, "Pitchers-Data", "KBO_daily_pitching_stats_combined.csv")
+    if os.path.exists(csv_path):
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+
+    # Fallback kept for robustness in local/dev environments.
+    json_path = os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")
+    with open(json_path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -522,8 +537,32 @@ def load_projections():
     return k_data, b_data
 
 
-def build_pitcher_profiles(logs):
-    """Build per-pitcher season stats and last 3 starts from game logs."""
+def _log_season(log):
+    """Best-effort season resolver for a pitcher log row."""
+    raw = log.get("Season")
+    if raw not in (None, ""):
+        try:
+            return int(raw)
+        except Exception:
+            pass
+
+    # Fallback to date year when Season is absent.
+    text = str(log.get("Date", "")).strip()
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt).year
+        except Exception:
+            continue
+    return None
+
+
+def build_pitcher_profiles(logs, active_season=None):
+    """Build per-pitcher season stats and last starts from game logs."""
+    if active_season is None:
+        seasons = [_log_season(l) for l in logs if valid_pitch_row(l)]
+        seasons = [s for s in seasons if isinstance(s, int)]
+        active_season = max(seasons) if seasons else None
+
     pitcher_games = defaultdict(list)
     for log in logs:
         if valid_pitch_row(log):
@@ -531,7 +570,11 @@ def build_pitcher_profiles(logs):
 
     profiles = {}
     for name, games in pitcher_games.items():
-        sp_games = [g for g in games if g["Role"] == "SP"]
+        sp_games = [g for g in games if str(g.get("Role", "")).strip().upper() == "SP"]
+        if active_season is not None:
+            season_sp_games = [g for g in sp_games if _log_season(g) == active_season]
+            if season_sp_games:
+                sp_games = season_sp_games
         if not sp_games:
             continue
         team_raw = sp_games[-1]["Tm"]
@@ -539,11 +582,11 @@ def build_pitcher_profiles(logs):
 
         total_outs = sum(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) for g in sp_games)
         total_ip = outs_to_ip(total_outs)
-        total_er = sum(g["ER"] for g in sp_games)
-        total_so = sum(g["SO"] for g in sp_games)
-        total_bb = sum(g["BB"] for g in sp_games)
-        total_ha = sum(g["HA"] for g in sp_games)
-        total_hr = sum(g["HR"] for g in sp_games)
+        total_er = sum(_as_int(g.get("ER")) for g in sp_games)
+        total_so = sum(_as_int(g.get("SO")) for g in sp_games)
+        total_bb = sum(_as_int(g.get("BB")) for g in sp_games)
+        total_ha = sum(_as_int(g.get("HA")) for g in sp_games)
+        total_hr = sum(_as_int(g.get("HR")) for g in sp_games)
         n = len(sp_games)
 
         era = round((total_er / total_ip * 9), 2) if total_ip > 0 else 0
@@ -565,11 +608,11 @@ def build_pitcher_profiles(logs):
                 "date": g["Date"],
                 "opp": opp_team,
                 "ip": g["IP"],
-                "er": g["ER"],
-                "so": g["SO"],
-                "ha": g["HA"],
-                "bb": g["BB"],
-                "era": round((g["ER"] / outs_to_ip(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0)) * 9), 2)
+                "er": _as_int(g.get("ER")),
+                "so": _as_int(g.get("SO")),
+                "ha": _as_int(g.get("HA")),
+                "bb": _as_int(g.get("BB")),
+                "era": round((_as_int(g.get("ER")) / outs_to_ip(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0)) * 9), 2)
                 if int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) > 0 else 0,
             })
 
@@ -598,11 +641,11 @@ def build_team_pitching(logs):
         t = TEAM_SHORT.get(log["Tm"], log["Tm"])
         outs = int(log.get("PitOuts", ip_to_outs(log.get("IP", 0))) or 0)
         team_stats[t]["ip"] += outs_to_ip(outs)
-        team_stats[t]["er"] += log["ER"]
-        team_stats[t]["so"] += log["SO"]
-        team_stats[t]["ha"] += log["HA"]
-        team_stats[t]["bb"] += log["BB"]
-        team_stats[t]["hr"] += log["HR"]
+        team_stats[t]["er"] += _as_int(log.get("ER"))
+        team_stats[t]["so"] += _as_int(log.get("SO"))
+        team_stats[t]["ha"] += _as_int(log.get("HA"))
+        team_stats[t]["bb"] += _as_int(log.get("BB"))
+        team_stats[t]["hr"] += _as_int(log.get("HR"))
         team_stats[t]["games"].add(log["Date"])
 
     result = {}
@@ -625,13 +668,34 @@ def _name_parts(name):
     return frozenset(name.lower().replace("-", " ").split())
 
 
-def _fuzzy_profile(query_name, profiles):
-    """Find a pitcher profile by matching name parts regardless of order/hyphens."""
+def _fuzzy_profile(query_name, profiles, team_hint=None):
+    """Find a pitcher profile by matching name parts regardless of order/hyphens.
+
+    If multiple profiles share the same parts signature (e.g. "Hyeon-jong Yang"
+    vs "Yang Hyeon-jong"), prefer the team-matching and larger-sample starter.
+    """
     q = _name_parts(query_name)
+    candidates = []
     for pname, profile in profiles.items():
         if _name_parts(pname) == q:
-            return profile
-    return None
+            candidates.append(profile)
+
+    if not candidates:
+        return None
+
+    if team_hint:
+        team_matches = [c for c in candidates if c.get("team") == team_hint]
+        if team_matches:
+            candidates = team_matches
+
+    candidates.sort(
+        key=lambda c: (
+            int(c.get("starts") or 0),
+            float(c.get("total_ip") or 0.0),
+        ),
+        reverse=True,
+    )
+    return candidates[0]
 
 
 def _parts_match(name_a, name_b):
@@ -791,7 +855,7 @@ def main():
         if away_pitcher:
             away_profile = pitcher_profiles.get(away_pitcher["name"])
             if not away_profile:
-                away_profile = _fuzzy_profile(away_pitcher["name"], pitcher_profiles)
+                away_profile = _fuzzy_profile(away_pitcher["name"], pitcher_profiles, team_hint=away)
             if not away_profile:
                 # New starter with no individual logs — soft fallback to team SP WHIP
                 fallback_whip = team_sp_whip.get(away)
@@ -800,7 +864,7 @@ def main():
         if home_pitcher:
             home_profile = pitcher_profiles.get(home_pitcher["name"])
             if not home_profile:
-                home_profile = _fuzzy_profile(home_pitcher["name"], pitcher_profiles)
+                home_profile = _fuzzy_profile(home_pitcher["name"], pitcher_profiles, team_hint=home)
             if not home_profile:
                 # New starter with no individual logs — soft fallback to team SP WHIP
                 fallback_whip = team_sp_whip.get(home)

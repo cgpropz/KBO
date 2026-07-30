@@ -641,10 +641,15 @@ def build_pitcher_whip_index(rows):
 
     out = {}
     team_out = {}
+    def prefer_starter_rows(games):
+        starter_games = [g for g in games if str(g.get("Role", "")).strip().upper() == "SP"]
+        return starter_games if starter_games else games
+
     for nm, games in by_name.items():
         # Prefer current season samples, fallback to all-time if needed.
         season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
         use_games = season_games if season_games else games
+        use_games = prefer_starter_rows(use_games)
         whip = aggregate_whip(use_games)
         if whip is not None:
             out[nm] = whip
@@ -652,6 +657,7 @@ def build_pitcher_whip_index(rows):
     for team, games in by_team.items():
         season_games = [g for g in games if str(g.get("Season", "")) == "2026"]
         use_games = season_games if season_games else games
+        use_games = prefer_starter_rows(use_games)
         whip = aggregate_whip(use_games)
         if whip is not None:
             team_out[team] = whip

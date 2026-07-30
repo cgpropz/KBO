@@ -213,6 +213,74 @@ def main() -> int:
                 f"(rendered as '—' in UI): {preview}"
             )
 
+        # Cross-source WHIP drift guard: when matchup_data and batter_projections
+        # both claim a WHIP for the same named starter, flag large differences.
+        # Ignore fallback-only matchup profiles ({"whip": ...}) because those are
+        # team-level substitutes for new starters with no individual history.
+        matchup_starters = {}
+
+        def norm_name(value):
+            return " ".join(str(value or "").lower().replace("-", " ").split())
+
+        for matchup in matchup_data.get("matchups", []) if isinstance(matchup_data, dict) else []:
+            if not isinstance(matchup, dict):
+                continue
+            for key in ("away_pitcher", "home_pitcher"):
+                block = matchup.get(key) or {}
+                if not isinstance(block, dict):
+                    continue
+                nm = str(block.get("name") or "").strip()
+                profile = block.get("profile") or {}
+                if not nm or not isinstance(profile, dict):
+                    continue
+                whip = profile.get("whip")
+                try:
+                    whip = float(whip)
+                except (TypeError, ValueError):
+                    continue
+                is_fallback = set(profile.keys()) == {"whip"}
+                matchup_starters[norm_name(nm)] = {
+                    "name": nm,
+                    "whip": whip,
+                    "is_fallback": is_fallback,
+                }
+
+        DRIFT_MAX = 0.08
+        whip_drift = []
+        seen = set()
+        for p in projs:
+            if not isinstance(p, dict):
+                continue
+            nm = str(p.get("opp_pitcher") or "").strip()
+            if not nm:
+                continue
+            try:
+                bp_whip = float(p.get("opp_pitcher_whip"))
+            except (TypeError, ValueError):
+                continue
+            key = norm_name(nm)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+
+            m = matchup_starters.get(key)
+            if not m or m.get("is_fallback"):
+                continue
+
+            mp_whip = m.get("whip")
+            delta = abs(bp_whip - mp_whip)
+            if delta > DRIFT_MAX:
+                whip_drift.append((nm, bp_whip, mp_whip, round(delta, 3)))
+
+        if whip_drift:
+            preview = [
+                f"{nm}: batter={b:.2f}, matchup={m:.2f}, Δ={d:.2f}"
+                for nm, b, m, d in whip_drift[:6]
+            ]
+            warnings.append(
+                f"batter/matchup WHIP drift detected for {len(whip_drift)} starters (> {DRIFT_MAX:.2f}): {preview}"
+            )
+
     if not props.get("generated_at"):
         warnings.append("prizepicks_props.json missing generated_at")
 
