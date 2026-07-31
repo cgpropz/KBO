@@ -17,6 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -70,7 +71,11 @@ def event_to_rows(event: dict, season: int) -> list[dict]:
         for entry in teams
     }
     summary = fetch_json(SUMMARY_URL, {"event": event["id"]})
-    game_date = datetime.fromisoformat(event["date"].replace("Z", "+00:00")).strftime("%m/%d/%Y")
+    game_date = (
+        datetime.fromisoformat(event["date"].replace("Z", "+00:00"))
+        .astimezone(ZoneInfo("America/New_York"))
+        .strftime("%m/%d/%Y")
+    )
     rows = []
 
     for team_boxscore in summary.get("boxscore", {}).get("players", []):
@@ -85,7 +90,8 @@ def event_to_rows(event: dict, season: int) -> list[dict]:
         for group in team_boxscore.get("statistics", []):
             names = group.get("names", [])
             for athlete_entry in group.get("athletes", []):
-                if athlete_entry.get("didNotPlay") or not athlete_entry.get("active", True):
+                # ESPN marks some finished-game participants inactive despite a complete stat line.
+                if athlete_entry.get("didNotPlay"):
                     continue
                 values = dict(zip(names, athlete_entry.get("stats", [])))
                 if not values.get("MIN"):
