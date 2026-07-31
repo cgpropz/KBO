@@ -2,6 +2,7 @@
 """Publish snapshot data to Supabase via REST API."""
 import json
 import os
+import subprocess
 import sys
 
 import requests
@@ -50,6 +51,16 @@ TABLES = {
 }
 
 
+def verify_wnba_gamelogs(only_prefix):
+    if not only_prefix.startswith("wnba/"):
+        return
+    verifier = os.path.join(BASE, "wnba", "verify_snapshot_gamelogs.py")
+    result = subprocess.run([sys.executable, verifier], check=False)
+    if result.returncode:
+        print("✗ WNBA gamelog freshness verification failed; refusing to publish snapshots")
+        sys.exit(result.returncode)
+
+
 def main():
     if not SERVICE_ROLE_KEY:
         print("✗ SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_SERVICE_ROLE_KEY is not set")
@@ -67,6 +78,7 @@ def main():
     if only_prefix and not tables:
         print(f"✗ No snapshots match PUBLISH_ONLY_PREFIX={only_prefix!r}")
         sys.exit(1)
+    verify_wnba_gamelogs(only_prefix)
 
     headers = {
         "apikey": SERVICE_ROLE_KEY,

@@ -90,6 +90,9 @@ jobs:
           BACKEND_URL: http://localhost:5050
           EXPORT_ONLY: projections
 
+      - name: Verify exported prop gamelogs are current
+        run: python wnba/verify_snapshot_gamelogs.py
+
       - name: Stop WNBA backend
         if: always()
         run: |
