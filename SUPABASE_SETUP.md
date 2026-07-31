@@ -188,7 +188,7 @@ curl -X GET "https://ocaqjkfdjqxszevtllew.supabase.co/rest/v1/prizepicks_props?i
 - [ ] Vercel redeployed after env var changes
 - [ ] `python refresh_data.py` run successfully locally with `SUPABASE_SERVICE_ROLE_KEY` set
 - [ ] Supabase tables populated with data (check Table Editor)
-- [ ] Console errors gone from mykboprops.com
+- [ ] Console errors gone from cgpropz.com
 - [ ] Landing page shows "Live data updated X minutes ago" (freshness badge)
 - [ ] Props cards display data (not 0 values)
 
@@ -250,7 +250,7 @@ After SQL schema and env vars are set:
    - Find the latest deployment
    - Click **...** → **Redeploy**
 3. Wait for build to complete
-4. Visit mykboprops.com and verify data loads
+4. Visit cgpropz.com and verify data loads
 
 ---
 
@@ -277,5 +277,5 @@ After SQL schema and env vars are set:
    export SUPABASE_SERVICE_ROLE_KEY="sbpvt_..."
    python refresh_data.py
    ```
-5. **Check mykboprops.com** → Console should have no errors, landing page should show data
+5. **Check cgpropz.com** → Console should have no errors, landing page should show data
 6. **Set up CI/CD** → GitHub Actions workflows for automatic refreshes

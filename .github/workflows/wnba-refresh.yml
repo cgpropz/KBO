@@ -95,7 +95,6 @@ jobs:
 
       - name: Verify WNBA DvP and official prop positions
         run: python wnba/verify_wnba_dvp.py
-
       - name: Stop WNBA backend
         if: always()
         run: |

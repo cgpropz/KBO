@@ -9,6 +9,7 @@ export const OWNER_EMAILS = [
   'cgpropz@gmail.com',
   'vicelocksx@gmail.com',
   'brittaneycollard@yahoo.com',
+  'gbaby_95@yahoo.com',
 ];
 
 // Tiers that unlock both sports (grandfathered all-access + the combined plan).

@@ -4,7 +4,7 @@ set -euo pipefail
 # Lightweight odds-only release pipeline.
 # Refreshes PrizePicks lines and pushes a fresh production build to Vercel.
 # Designed to run every 10–15 minutes throughout the day so live odds on
-# https://mykboprops.com stay current between full pipeline runs.
+# https://cgpropz.com stay current between full pipeline runs.
 #
 # Steps:
 #   1) refresh_odds.py        (fetches PrizePicks API, updates prizepicks_props.json lines/odds_type)
