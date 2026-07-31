@@ -57,8 +57,7 @@ jobs:
         run: pip install requests pandas
 
       - name: Refresh WNBA gamelogs (WNBA game API)
-        continue-on-error: true
-        run: python wnba/refresh_wnba_data.py
+        run: python wnba/refresh_wnba_data.py --strict
 
       - name: Boot WNBA backend
         working-directory: wnba/backend
@@ -87,6 +86,9 @@ jobs:
         run: node wnba/export_snapshots.mjs
         env:
           BACKEND_URL: http://localhost:5050
+
+      - name: Verify exported prop gamelogs are current
+        run: python wnba/verify_snapshot_gamelogs.py
 
       - name: Stop WNBA backend
         if: always()
