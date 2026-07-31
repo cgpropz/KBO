@@ -18,30 +18,6 @@ const FILE_TO_TABLE = {
   'wnba/dvp_center.json': 'wnba_dvp_center',
 }
 
-const STALE_SNAPSHOT_MINUTES = 90
-
-function parseTimestampMs(value) {
-  if (!value) return NaN
-  let v = String(value)
-  if (/^\d{4}-\d{2}-\d{2}T[\d:.]+$/.test(v)) {
-    v += 'Z'
-  }
-  const ms = new Date(v).getTime()
-  return Number.isFinite(ms) ? ms : NaN
-}
-
-function snapshotFreshnessMs(snapshot) {
-  if (!snapshot) return NaN
-  const payloadData = snapshot?.data
-  if (!payloadData || typeof payloadData !== 'object') return parseTimestampMs(snapshot.updatedAt)
-  return (
-    parseTimestampMs(payloadData.generated_at) ||
-    parseTimestampMs(payloadData.updated_at) ||
-    parseTimestampMs(payloadData.last_updated) ||
-    parseTimestampMs(snapshot.updatedAt)
-  )
-}
-
 function staticUrl(path) {
   return `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`
 }
@@ -79,23 +55,7 @@ export async function fetchWnbaSnapshot(path) {
     console.warn(`[wnba] ${path} static fallback failed:`, err.message)
   }
 
-  if (!supabasePayload && staticPayload) return staticPayload
-  if (!staticPayload) return supabasePayload
-
-  const supabaseFreshnessMs = snapshotFreshnessMs(supabasePayload)
-  const staticFreshnessMs = snapshotFreshnessMs(staticPayload)
-  if (Number.isFinite(staticFreshnessMs) && (!Number.isFinite(supabaseFreshnessMs) || staticFreshnessMs > supabaseFreshnessMs)) {
-    return staticPayload
-  }
-
-  const supabaseAgeMinutes = Number.isFinite(supabaseFreshnessMs)
-    ? (Date.now() - supabaseFreshnessMs) / 60000
-    : NaN
-  if (Number.isFinite(supabaseAgeMinutes) && supabaseAgeMinutes > STALE_SNAPSHOT_MINUTES) {
-    return staticPayload
-  }
-
-  return supabasePayload
+  return supabasePayload || staticPayload
 }
 
 export async function fetchWnbaData(path) {
