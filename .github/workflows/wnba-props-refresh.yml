@@ -28,7 +28,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: wnba-props-refresh
+  # Share the full-refresh lock so a props job never publishes projections built
+  # from an older checkout after a gamelog refresh has completed.
+  group: wnba-refresh-pipeline
   cancel-in-progress: false
 
 jobs:
