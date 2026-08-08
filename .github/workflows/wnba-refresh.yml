@@ -59,6 +59,9 @@ jobs:
       - name: Refresh WNBA gamelogs (WNBA game API)
         run: python wnba/refresh_wnba_data.py --strict
 
+      - name: Generate current WNBA DvP tables
+        run: python wnba/generate_wnba_dvp.py
+
       - name: Boot WNBA backend
         working-directory: wnba/backend
         run: |
@@ -89,6 +92,9 @@ jobs:
 
       - name: Verify exported prop gamelogs are current
         run: python wnba/verify_snapshot_gamelogs.py
+
+      - name: Verify WNBA DvP and official prop positions
+        run: python wnba/verify_wnba_dvp.py
 
       - name: Stop WNBA backend
         if: always()

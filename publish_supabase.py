@@ -59,6 +59,11 @@ def verify_wnba_gamelogs(only_prefix):
     if result.returncode:
         print("✗ WNBA gamelog freshness verification failed; refusing to publish snapshots")
         sys.exit(result.returncode)
+    dvp_verifier = os.path.join(BASE, "wnba", "verify_wnba_dvp.py")
+    result = subprocess.run([sys.executable, dvp_verifier], check=False)
+    if result.returncode:
+        print("✗ WNBA DvP verification failed; refusing to publish snapshots")
+        sys.exit(result.returncode)
 
 
 def main():
