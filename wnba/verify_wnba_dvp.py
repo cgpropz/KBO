@@ -59,6 +59,12 @@ def main() -> int:
                 failures.append(f"{filename}: {name} snapshot position does not match official position")
             elif player.get("dvpOpponent") and not player.get("dvpFactors"):
                 failures.append(f"{filename}: {name} has no stat-specific DvP factors")
+            elif any(
+                not isinstance(prop.get("effectiveDvpFactor"), (int, float))
+                or prop["effectiveDvpFactor"] <= 0
+                for prop in player.get("ppAllProps", [])
+            ):
+                failures.append(f"{filename}: {name} has a prop without an effective DvP factor")
             else:
                 verified_players += 1
 

@@ -69,9 +69,19 @@ async function retainPreviousPropLines(file, projections) {
     return projections.map(player => {
       const prior = previousByName.get(player.name)
       if (!prior) return player
+      const ppAllProps = (prior.ppAllProps || []).map(prop => {
+        const projection = player.propProjectionByStat?.[prop.stat] ?? prop.projection ?? null
+        const line = prop.line ?? null
+        return {
+          ...prop,
+          projection,
+          rating: projection != null && line > 0 ? Number(((projection / line) * 50).toFixed(1)) : null,
+          effectiveDvpFactor: player.dvpFactorByProp?.[prop.stat] ?? prop.effectiveDvpFactor ?? 1,
+        }
+      })
       return {
         ...player,
-        ppAllProps: prior.ppAllProps || [],
+        ppAllProps,
         ppLines: prior.ppLines || {},
       }
     })

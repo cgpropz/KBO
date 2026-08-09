@@ -217,6 +217,13 @@ function projectionByStatLabel(label, bundle) {
   }
 }
 
+function effectiveDvpFactor(label, adjustedBundle, neutralBundle) {
+  const adjusted = projectionByStatLabel(label, adjustedBundle);
+  const neutral = projectionByStatLabel(label, neutralBundle);
+  if (!Number.isFinite(adjusted) || !Number.isFinite(neutral) || neutral <= 0) return 1;
+  return parseFloat((adjusted / neutral).toFixed(3));
+}
+
 function seasonAvgForLabel(games, label) {
   if (!games.length) return null;
   const values = games.map(g => statValueByLabel(g, label)).filter(v => v != null);
@@ -760,6 +767,13 @@ app.get('/api/projections/v2', async (req, res) => {
       const dvpFactor = dvpFactors.pts ?? 1;
 
       const bundle = buildProjectionBundle(games, avgMins, dvpFactors);
+      const neutralBundle = buildProjectionBundle(games, avgMins);
+      const propProjectionByStat = Object.fromEntries(
+        Object.keys(PP_STAT_MAP).map(label => [label, projectionByStatLabel(label, bundle)])
+      );
+      const dvpFactorByProp = Object.fromEntries(
+        Object.keys(PP_STAT_MAP).map(label => [label, effectiveDvpFactor(label, bundle, neutralBundle)])
+      );
       const rateForLabel = label => {
         const line = standardLineForStat(label);
         const proj = projectionByStatLabel(label, bundle);
@@ -778,6 +792,8 @@ app.get('/api/projections/v2', async (req, res) => {
         spread: spreads[team] ?? null,
         dvpFactor: parseFloat(dvpFactor.toFixed(3)),
         dvpFactors: Object.fromEntries(Object.entries(dvpFactors).map(([stat, factor]) => [stat, parseFloat(factor.toFixed(3))])),
+        propProjectionByStat,
+        dvpFactorByProp,
         projPts:   bundle.base.pts,
         projReb:   bundle.base.reb,
         projAst:   bundle.base.ast,
@@ -882,6 +898,7 @@ app.get('/api/projections/v2', async (req, res) => {
           standardLine: standardLineForStat(prop.stat),
             projection,
             rating,
+            effectiveDvpFactor: effectiveDvpFactor(prop.stat, bundle, neutralBundle),
           };
         }),
         ppRating: {
@@ -1068,6 +1085,7 @@ app.get('/api/edge', async (req, res) => {
         const dvpOpponent = normalizeTeamAbbr(opponent);
         const dvpFactors  = dvpOpponent ? (dvpMaps[position]?.[dvpOpponent] ?? {}) : {};
         const bundle = buildProjectionBundle(games, avgMins, dvpFactors);
+        const neutralBundle = buildProjectionBundle(games, avgMins);
         const proj   = projectionByStatLabel(statLabel, bundle);
         if (proj == null) continue;
         const rating = line > 0 ? parseFloat(((proj / line) * 50).toFixed(1)) : null;
@@ -1086,6 +1104,7 @@ app.get('/api/edge', async (req, res) => {
           l15:  hitRateForLabel(games, statLabel, line, 15),
           full: hitRateForLabel(games, statLabel, line, null),
           projection: proj,
+          effectiveDvpFactor: effectiveDvpFactor(statLabel, bundle, neutralBundle),
           rating,
           value: rating == null ? null : rating > 50 ? 'OVER' : rating < 50 ? 'UNDER' : 'EVEN',
         });

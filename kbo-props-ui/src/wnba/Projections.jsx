@@ -197,6 +197,7 @@ export default function Projections({ onSelectPlayer }) {
           gameDate: prop.gameDate ?? null,
           projection,
           score,
+          dvpFactor: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           spread: player.spread ?? null,
           recentGames: player.recentGames || [],
         })
@@ -312,7 +313,7 @@ export default function Projections({ onSelectPlayer }) {
           ))}
 
           {!loading && cards.map(card => {
-            const { player, line, standardLine, projection, stat, score, spread, opponent, versus, recentGames } = card
+            const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames } = card
             const matchupTag = opponent ? `vs ${opponent}` : (versus || 'vs —')
             return (
               <article
@@ -369,7 +370,7 @@ export default function Projections({ onSelectPlayer }) {
                   </div>
                   <div>
                     <p className="edge-stat-label">{String(player.position || 'DVP').charAt(0).toUpperCase()} DVP</p>
-                    <p className="edge-stat-value">{fmtDvpFactor(player.dvpFactor)}</p>
+                    <p className="edge-stat-value">{fmtDvpFactor(dvpFactor)}</p>
                   </div>
                 </div>
 
