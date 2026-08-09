@@ -12,6 +12,13 @@ const MINUTE_TABS = [
   { label: '30+ Min', min: 30 },
   { label: '35+ Min', min: 35 },
 ]
+const HIT_RATE_SORTS = [
+  { value: 'score', label: 'Sort: Best Score' },
+  { value: 'L5', label: 'Sort: L5 Hit Rate' },
+  { value: 'L10', label: 'Sort: L10 Hit Rate' },
+  { value: 'L15', label: 'Sort: L15 Hit Rate' },
+  { value: 'FULL', label: 'Sort: Full Hit Rate' },
+]
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 
 const PROP_PROJECTION = {
@@ -32,6 +39,49 @@ const PROP_PROJECTION = {
   'Pts+Rebs+Asts': p => (p.projPts ?? 0) + (p.projReb ?? 0) + (p.projAst ?? 0),
   'Double-Double': p => p.projDoubleDouble,
   'Triple-Double': p => p.projTripleDouble,
+}
+
+const PROP_GAME_VALUE = {
+  Points: game => game.pts ?? 0,
+  Rebounds: game => game.reb ?? 0,
+  Assists: game => game.ast ?? 0,
+  'FG Made': game => game.fgm ?? 0,
+  'FG Attempted': game => game.fga ?? 0,
+  'Two Pointers Made': game => game.fg2m ?? Math.max((game.fgm ?? 0) - (game.fg3m ?? 0), 0),
+  'Two Pointers Attempted': game => game.fg2a ?? Math.max((game.fga ?? 0) - (game.fg3a ?? 0), 0),
+  '3-PT Made': game => game.fg3m ?? 0,
+  '3-PT Attempted': game => game.fg3a ?? 0,
+  'Free Throws Made': game => game.ftm ?? 0,
+  'Free Throws Attempted': game => game.fta ?? 0,
+  Steals: game => game.stl ?? 0,
+  Blocks: game => game.blk ?? 0,
+  'Blocked Shots': game => game.blk ?? 0,
+  'Blks+Stls': game => (game.blk ?? 0) + (game.stl ?? 0),
+  Turnovers: game => game.tov ?? 0,
+  'Offensive Rebounds': game => game.oreb ?? 0,
+  'Defensive Rebounds': game => game.dreb ?? 0,
+  'Fantasy Score': game => game.fantasy ?? 0,
+  'Reb+Asts': game => (game.reb ?? 0) + (game.ast ?? 0),
+  'Rebs+Asts': game => (game.reb ?? 0) + (game.ast ?? 0),
+  'Pts+Rebs': game => (game.pts ?? 0) + (game.reb ?? 0),
+  'Pts+Asts': game => (game.pts ?? 0) + (game.ast ?? 0),
+  'Pts+Rebs+Asts': game => (game.pts ?? 0) + (game.reb ?? 0) + (game.ast ?? 0),
+  'Double-Double': game => [game.pts, game.reb, game.ast, game.stl, game.blk].filter(value => (value ?? 0) >= 10).length >= 2 ? 1 : 0,
+  'Triple-Double': game => [game.pts, game.reb, game.ast, game.stl, game.blk].filter(value => (value ?? 0) >= 10).length >= 3 ? 1 : 0,
+}
+
+function hitRateForWindow(games, stat, line, windowSize) {
+  const numericLine = Number(line)
+  const getValue = PROP_GAME_VALUE[stat]
+  if (!getValue || !Number.isFinite(numericLine)) return null
+
+  const eligibleGames = games
+    .slice(0, windowSize ?? games.length)
+    .map(game => getValue(game))
+    .filter(value => value != null)
+
+  if (!eligibleGames.length) return null
+  return Math.round((eligibleGames.filter(value => value > numericLine).length / eligibleGames.length) * 100)
 }
 
 function fmtScore(value) {
@@ -70,6 +120,7 @@ export default function Projections({ onSelectPlayer }) {
   const [posFilter, setPosFilter] = useState('All')
   const [matchupFilter, setMatchupFilter] = useState('All')
   const [minMinutes, setMinMinutes] = useState(30)
+  const [hitRateSort, setHitRateSort] = useState('score')
 
   useEffect(() => {
     let cancelled = false
@@ -186,6 +237,7 @@ export default function Projections({ onSelectPlayer }) {
         const score = projection != null && Number.isFinite(line) && line > 0
           ? (projection / line) * 50
           : null
+        const hitRateLine = prop.standardLine ?? line
         rows.push({
           key: `${player.name}-${prop.stat}`,
           player,
@@ -197,6 +249,12 @@ export default function Projections({ onSelectPlayer }) {
           gameDate: prop.gameDate ?? null,
           projection,
           score,
+          hitRates: {
+            L5: hitRateForWindow(player.recentGames || [], prop.stat, hitRateLine, 5),
+            L10: hitRateForWindow(player.recentGames || [], prop.stat, hitRateLine, 10),
+            L15: hitRateForWindow(player.recentGames || [], prop.stat, hitRateLine, 15),
+            FULL: hitRateForWindow(player.recentGames || [], prop.stat, hitRateLine, null),
+          },
           dvpFactor: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           spread: player.spread ?? null,
           recentGames: player.recentGames || [],
@@ -205,13 +263,17 @@ export default function Projections({ onSelectPlayer }) {
     })
 
     rows.sort((a, b) => {
+      if (hitRateSort !== 'score') {
+        const hitRateDifference = (b.hitRates[hitRateSort] ?? -1) - (a.hitRates[hitRateSort] ?? -1)
+        if (hitRateDifference !== 0) return hitRateDifference
+      }
       const as = a.score ?? -Infinity
       const bs = b.score ?? -Infinity
       return bs - as
     })
 
     return rows
-  }, [filtered, propType])
+  }, [filtered, propType, hitRateSort])
 
   return (
     <div className="fade-in edge-board-wrap">
@@ -243,6 +305,10 @@ export default function Projections({ onSelectPlayer }) {
           {propTypes.map(prop => (
             <option key={prop} value={prop}>{prop === 'All' ? 'Best Score' : prop}</option>
           ))}
+        </select>
+
+        <select className="edge-select" value={hitRateSort} onChange={e => setHitRateSort(e.target.value)}>
+          {HIT_RATE_SORTS.map(sort => <option key={sort.value} value={sort.value}>{sort.label}</option>)}
         </select>
 
         <select className="edge-select" value={posFilter} onChange={e => setPosFilter(e.target.value)}>

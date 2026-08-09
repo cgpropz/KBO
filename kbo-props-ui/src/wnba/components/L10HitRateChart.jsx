@@ -1,5 +1,6 @@
 import Highcharts from 'highcharts'
 import HighchartsReactModule from 'highcharts-react-official'
+import { useState } from 'react'
 import { formatDate } from '../utils/formatters'
 
 const HighchartsReact = HighchartsReactModule.default || HighchartsReactModule
@@ -16,13 +17,21 @@ const PROP_GAME_VALUE = {
   '3-PT Attempted': game => game.fg3a ?? 0,
   'Free Throws Made': game => game.ftm ?? 0,
   'Free Throws Attempted': game => game.fta ?? 0,
+  Steals: game => game.stl ?? 0,
+  Blocks: game => game.blk ?? 0,
   'Blocked Shots': game => game.blk ?? 0,
   'Blks+Stls': game => (game.blk ?? 0) + (game.stl ?? 0),
+  Turnovers: game => game.tov ?? 0,
+  'Offensive Rebounds': game => game.oreb ?? 0,
+  'Defensive Rebounds': game => game.dreb ?? 0,
+  'Fantasy Score': game => game.fantasy ?? 0,
   'Reb+Asts': game => (game.reb ?? 0) + (game.ast ?? 0),
   'Rebs+Asts': game => (game.reb ?? 0) + (game.ast ?? 0),
   'Pts+Rebs': game => (game.pts ?? 0) + (game.reb ?? 0),
   'Pts+Asts': game => (game.pts ?? 0) + (game.ast ?? 0),
   'Pts+Rebs+Asts': game => (game.pts ?? 0) + (game.reb ?? 0) + (game.ast ?? 0),
+  'Double-Double': game => [game.pts, game.reb, game.ast, game.stl, game.blk].filter(value => (value ?? 0) >= 10).length >= 2 ? 1 : 0,
+  'Triple-Double': game => [game.pts, game.reb, game.ast, game.stl, game.blk].filter(value => (value ?? 0) >= 10).length >= 3 ? 1 : 0,
 }
 
 function getGameValue(game, stat) {
@@ -38,9 +47,20 @@ function formatShortGameDate(dateStr) {
 }
 
 export default function L10HitRateChart({ games = [], stat, line }) {
+  const [selectedWindow, setSelectedWindow] = useState('L10')
   const numericLine = Number(line)
-  const chartGames = [...games]
-    .slice(0, 10)
+  const eligibleGames = games
+    .map(game => ({ game, value: getGameValue(game, stat) }))
+    .filter(({ value }) => value != null)
+  const hitRateWindows = [
+    { label: 'L5', count: 5 },
+    { label: 'L10', count: 10 },
+    { label: 'L15', count: 15 },
+    { label: 'FULL', count: null },
+  ]
+  const activeWindow = hitRateWindows.find(window => window.label === selectedWindow) || hitRateWindows[1]
+  const chartGames = games
+    .slice(0, activeWindow.count ?? games.length)
     .reverse()
     .map(game => {
       const value = getGameValue(game, stat)
@@ -72,6 +92,14 @@ export default function L10HitRateChart({ games = [], stat, line }) {
 
   const hitCount = chartGames.reduce((sum, point) => sum + (point.hit ? 1 : 0), 0)
   const hitRate = Math.round((hitCount / chartGames.length) * 100)
+  const xAxisLabelStep = Math.ceil(chartGames.length / 10)
+  const hitRateSummaries = hitRateWindows.map(({ label, count }) => {
+    const windowGames = count == null ? eligibleGames : eligibleGames.slice(0, count)
+    const hits = windowGames.filter(({ value }) => value > numericLine).length
+    const rate = windowGames.length ? Math.round((hits / windowGames.length) * 100) : null
+
+    return { label, hits, total: windowGames.length, rate }
+  })
 
   const options = {
     chart: {
@@ -94,6 +122,7 @@ export default function L10HitRateChart({ games = [], stat, line }) {
       labels: {
         autoRotation: false,
         rotation: -45,
+        step: xAxisLabelStep,
         staggerLines: 1,
         reserveSpace: true,
         align: 'right',
@@ -171,10 +200,28 @@ export default function L10HitRateChart({ games = [], stat, line }) {
     <div className="edge-hit-chart-wrap">
       <div className="edge-hit-chart-header">
         <div>
-          <p className="edge-hit-chart-kicker">L10 Hit Rate</p>
+          <p className="edge-hit-chart-kicker">{activeWindow.label} Hit Rate</p>
           <p className="edge-hit-chart-rate">{hitCount}/{chartGames.length} <span>{hitRate}%</span></p>
         </div>
         <p className="edge-hit-chart-subtext">Vs standard PP line</p>
+      </div>
+      <div className="edge-hit-rate-grid" aria-label="Hit rate by game window">
+        {hitRateSummaries.map(({ label, hits, total, rate }) => (
+          <button
+            aria-pressed={label === activeWindow.label}
+            className={`edge-hit-rate-window${label === activeWindow.label ? ' is-active' : ''}`}
+            key={label}
+            onClick={(event) => {
+              event.stopPropagation()
+              setSelectedWindow(label)
+            }}
+            type="button"
+          >
+            <span className="edge-hit-rate-label">{label}</span>
+            <span className="edge-hit-rate-value">{rate == null ? '—' : `${rate}%`}</span>
+            <span className="edge-hit-rate-count">{total ? `${hits}/${total}` : 'No games'}</span>
+          </button>
+        ))}
       </div>
       <HighchartsReact highcharts={Highcharts} options={options} />
     </div>

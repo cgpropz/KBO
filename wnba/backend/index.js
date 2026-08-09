@@ -813,7 +813,7 @@ app.get('/api/projections/v2', async (req, res) => {
         l3ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L3.toFixed(4)])),
         l7ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L7.toFixed(4)])),
         l15ppm: Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L15.toFixed(4)])),
-        recentGames: last10.map(game => ({
+        recentGames: games.map(game => ({
           date: game.date,
           matchup: game.matchup,
           pts: game.pts,
