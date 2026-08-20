@@ -42,6 +42,54 @@ const ppInFlight = new Map();
 const PYTHON_BIN = process.env.PYTHON_BIN || path.join(ROOT, 'venv', 'bin', 'python');
 const PP_SCRIPT = path.join(ROOT, 'wnba-pp-odds.py');
 const PP_SNAPSHOT_DIR = path.join(ROOT, 'downloaded_files');
+const SHARP_ODDS_PATH = path.join(ROOT, 'wnba_pp_line_matched_odds.json');
+const sharpOddsCache = { map: new Map(), ts: 0 };
+
+function normalizeTextKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeNameKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function normalizeLineKey(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(2) : '';
+}
+
+function buildSharpKey(player, statLabel, line) {
+  return `${normalizeNameKey(player)}|${normalizeTextKey(statLabel)}|${normalizeLineKey(line)}`;
+}
+
+function loadSharpOddsMap() {
+  const now = Date.now();
+  if (sharpOddsCache.map.size && now - sharpOddsCache.ts < 60 * 1000) {
+    return sharpOddsCache.map;
+  }
+
+  const map = new Map();
+  try {
+    const payload = JSON.parse(fs.readFileSync(SHARP_ODDS_PATH, 'utf8'));
+    const records = Array.isArray(payload?.records) ? payload.records : [];
+    const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    records.forEach(record => {
+      const isCurrentExactSharp = record?.game_date === todayET
+        && record?.matched_outcomes_count > 0
+        && Number(record?.sharp_line_delta) === 0
+        && record?.sharp?.available
+        && record?.sharp?.source === 'sharp_books';
+      if (!isCurrentExactSharp) return;
+      map.set(buildSharpKey(record.player, record.stat_label, record.pp_line), record);
+    });
+  } catch {
+    // Sharp odds are optional; retain an empty map for missing or invalid artifacts.
+  }
+
+  sharpOddsCache.map = map;
+  sharpOddsCache.ts = now;
+  return map;
+}
 
 function ppSnapshotPath(oddsType) {
   return path.join(PP_SNAPSHOT_DIR, `prizepicks_${normalizeOddsType(oddsType)}.json`);
@@ -707,6 +755,7 @@ app.get('/api/dvp/:position', async (req, res) => {
 // GET /api/projections/v2 — weighted formula projections
 app.get('/api/projections/v2', async (req, res) => {
   try {
+    const sharpOddsMap = loadSharpOddsMap();
     const lineType = normalizeOddsType(req.query.lineType);
     const ppLinesPromise = fetchPrizePicks(lineType);
     const ppStandardPromise = lineType === 'standard' ? ppLinesPromise : fetchPrizePicks('standard');
@@ -752,12 +801,18 @@ app.get('/api/projections/v2', async (req, res) => {
           projPts: 0, projReb: 0, projAst: 0, projFg3m: 0,
           l3ppm: {}, l7ppm: {}, l15ppm: {},
           recentGames: [],
-          ppAllProps: playerProps.map(prop => ({
-            ...prop,
-            standardLine: standardLineForStat(prop.stat),
-            projection: null,
-            rating: null,
-          })),
+          ppAllProps: playerProps.map(prop => {
+            const sharpRow = sharpOddsMap.get(buildSharpKey(name, prop?.stat, prop?.line));
+            return {
+              ...prop,
+              standardLine: standardLineForStat(prop.stat),
+              projection: null,
+              rating: null,
+              sharpScore: sharpRow?.sharp_score ?? null,
+              sharpOdds: sharpRow?.sharp_odds ?? null,
+              sharpSide: sharpRow?.sharp_side ?? null,
+            };
+          }),
         };
       }
 
@@ -893,12 +948,16 @@ app.get('/api/projections/v2', async (req, res) => {
           const rating = (line != null && line > 0 && projection != null)
             ? parseFloat(((projection / line) * 50).toFixed(1))
             : null;
+          const sharpRow = sharpOddsMap.get(buildSharpKey(name, prop.stat, line));
           return {
           ...prop,
           standardLine: standardLineForStat(prop.stat),
             projection,
             rating,
             effectiveDvpFactor: effectiveDvpFactor(prop.stat, bundle, neutralBundle),
+            sharpScore: sharpRow?.sharp_score ?? null,
+            sharpOdds: sharpRow?.sharp_odds ?? null,
+            sharpSide: sharpRow?.sharp_side ?? null,
           };
         }),
         ppRating: {

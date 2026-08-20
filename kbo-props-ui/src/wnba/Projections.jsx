@@ -18,6 +18,7 @@ const HIT_RATE_SORTS = [
   { value: 'L10', label: 'Sort: L10 Hit Rate' },
   { value: 'L15', label: 'Sort: L15 Hit Rate' },
   { value: 'FULL', label: 'Sort: Full Hit Rate' },
+  { value: 'sharpOdds', label: 'Sort: Sharp Odds (- to +)' },
 ]
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 
@@ -107,6 +108,12 @@ function fmtSpread(spread) {
 function fmtDvpFactor(value) {
   if (value == null || Number.isNaN(value)) return '1.00x'
   return `${value.toFixed(2)}x`
+}
+
+function fmtAmericanOdds(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—'
+  const numeric = Number(value)
+  return numeric > 0 ? `+${numeric}` : `${numeric}`
 }
 
 export default function Projections({ onSelectPlayer }) {
@@ -257,13 +264,22 @@ export default function Projections({ onSelectPlayer }) {
           },
           dvpFactor: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           spread: player.spread ?? null,
+          sharpOdds: prop.sharpOdds ?? null,
+          sharpSide: prop.sharpSide ?? null,
           recentGames: player.recentGames || [],
         })
       })
     })
 
     rows.sort((a, b) => {
-      if (hitRateSort !== 'score') {
+      if (hitRateSort === 'sharpOdds') {
+        const aOdds = Number(a.sharpOdds)
+        const bOdds = Number(b.sharpOdds)
+        const aHasOdds = Number.isFinite(aOdds)
+        const bHasOdds = Number.isFinite(bOdds)
+        if (aHasOdds && bHasOdds && aOdds !== bOdds) return aOdds - bOdds
+        if (aHasOdds !== bHasOdds) return aHasOdds ? -1 : 1
+      } else if (hitRateSort !== 'score') {
         const hitRateDifference = (b.hitRates[hitRateSort] ?? -1) - (a.hitRates[hitRateSort] ?? -1)
         if (hitRateDifference !== 0) return hitRateDifference
       }
@@ -379,7 +395,7 @@ export default function Projections({ onSelectPlayer }) {
           ))}
 
           {!loading && cards.map(card => {
-            const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames } = card
+            const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames, sharpOdds, sharpSide } = card
             const matchupTag = opponent ? `vs ${opponent}` : (versus || 'vs —')
             return (
               <article
@@ -437,6 +453,10 @@ export default function Projections({ onSelectPlayer }) {
                   <div>
                     <p className="edge-stat-label">{String(player.position || 'DVP').charAt(0).toUpperCase()} DVP</p>
                     <p className="edge-stat-value">{fmtDvpFactor(dvpFactor)}</p>
+                  </div>
+                  <div>
+                    <p className="edge-stat-label">Sharp</p>
+                    <p className={`edge-stat-value edge-score${sharpSide ? ` is-${sharpSide}` : ''}`}>{fmtAmericanOdds(sharpOdds)}</p>
                   </div>
                 </div>
 
