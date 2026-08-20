@@ -42,7 +42,9 @@ async function fetchStatic(path) {
 
 function hasSharpOdds(snapshot) {
   return Array.isArray(snapshot?.data) && snapshot.data.some(player => (
-    player?.ppAllProps?.some(prop => Number.isFinite(Number(prop?.sharpOdds)))
+    player?.ppAllProps?.some(prop => (
+      prop?.sharpOdds != null && Number.isFinite(Number(prop.sharpOdds))
+    ))
   ))
 }
 
