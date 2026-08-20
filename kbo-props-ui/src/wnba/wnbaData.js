@@ -40,6 +40,12 @@ async function fetchStatic(path) {
   return { data: await res.json(), updatedAt: res.headers.get('last-modified') || null, source: 'static' }
 }
 
+function hasSharpOdds(snapshot) {
+  return Array.isArray(snapshot?.data) && snapshot.data.some(player => (
+    player?.ppAllProps?.some(prop => Number.isFinite(Number(prop?.sharpOdds)))
+  ))
+}
+
 export async function fetchWnbaSnapshot(path) {
   let supabasePayload = null
   let staticPayload = null
@@ -53,6 +59,10 @@ export async function fetchWnbaSnapshot(path) {
     staticPayload = await fetchStatic(path)
   } catch (err) {
     console.warn(`[wnba] ${path} static fallback failed:`, err.message)
+  }
+
+  if (hasSharpOdds(staticPayload) && !hasSharpOdds(supabasePayload)) {
+    return staticPayload
   }
 
   return supabasePayload || staticPayload
