@@ -63,17 +63,12 @@ jobs:
       - name: Force fresh PrizePicks scrape (drop any cached snapshot)
         run: rm -f wnba/downloaded_files/prizepicks_*.json
 
-      - name: Refresh exact-line sharp odds
+      - name: Refresh Unabated sharp odds
         working-directory: wnba
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           PYTHONUNBUFFERED: '1'
-        run: |
-          if [ -z "$ODDS_API_KEY" ]; then
-            echo 'ODDS_API_KEY secret is not configured' >&2
-            exit 1
-          fi
-          python sports_odds_data.py --refresh-pp
+        continue-on-error: true
+        run: python unabated_props_data.py
 
       - name: Boot WNBA backend
         working-directory: wnba/backend
@@ -81,7 +76,6 @@ jobs:
           PORT=5050 node index.js > "$RUNNER_TEMP/wnba-backend.log" 2>&1 &
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           PYTHON_BIN: python3
 
       - name: Wait for backend to be ready
