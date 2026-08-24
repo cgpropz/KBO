@@ -80,6 +80,7 @@ function BatterProjections() {
   const [propFilter, setPropFilter] = useState('all');
   const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
   const [hitRateFilter, setHitRateFilter] = useState('all');
+  const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [playerSearch, setPlayerSearch] = useState('');
 
   const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[BatterProjections]', ...args); };
@@ -539,9 +540,15 @@ function BatterProjections() {
       const query = playerSearch.trim().toLowerCase();
       if (!String(p.name || '').toLowerCase().includes(query)) return false;
     }
+    if (hitRateMinimum === 'off') return true;
+
+    const minimumRate = Number(hitRateMinimum);
+    if (hitRateFilter === 'all') {
+      return [p.hit_rate_l5, p.hit_rate_l10, p.hit_rate_full]
+        .some((rate) => Number.isFinite(Number(rate)) && Number(rate) >= minimumRate);
+    }
     const selectedRate = getRateByFilter(p);
-    if (selectedRate == null) return true;
-    return selectedRate >= 50;
+    return Number.isFinite(Number(selectedRate)) && Number(selectedRate) >= minimumRate;
   });
 
   const projections = [...filtered].sort((a, b) => {
@@ -551,6 +558,22 @@ function BatterProjections() {
     if (typeof aVal === 'string') return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
   });
+
+  const activeFilterCount = [
+    propFilter !== 'all',
+    oddsTypeFilter !== 'all',
+    hitRateFilter !== 'all',
+    hitRateMinimum !== 'off',
+    playerSearch.trim() !== '',
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setPropFilter('all');
+    setOddsTypeFilter('all');
+    setHitRateFilter('all');
+    setHitRateMinimum('off');
+    setPlayerSearch('');
+  };
 
   const getValClass = (rec) => {
     if (rec === 'OVER') return 'val-over';
@@ -663,66 +686,112 @@ function BatterProjections() {
   return (
     <div className="bp-container">
       <header className="bp-header">
-        <h1 className="bp-title">🇰🇷 ⚾️ KBO Batter Projections ⚾️ 🇰🇷</h1>
-        {lastUpdated ? <p className="bp-subtitle">Updated {new Date(lastUpdated).toLocaleString()}</p> : null}
-        <div className="bp-filter-bar">
-          {['all', 'Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score'].map(f => (
-            <button
-              key={f}
-              className={`bp-filter-btn ${propFilter === f ? 'active' : ''}`}
-              onClick={() => setPropFilter(f)}
-            >
-              {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : f === 'Total Bases' ? 'Total Bases' : 'Fantasy Score'}
-            </button>
-          ))}
-
-          {[
-            { key: 'all', label: 'Any Line' },
-            { key: 'standard', label: 'Standard' },
-            { key: 'goblin', label: '🟢 Goblin' },
-            { key: 'demon', label: '🔴 Demon' },
-            { key: 'promo', label: 'Promos' },
-          ].map(({ key, label }) => (
-            <button
-              key={`ot-${key}`}
-              className={`bp-filter-btn bp-filter-btn-ot ${oddsTypeFilter === key ? 'active' : ''}`}
-              onClick={() => setOddsTypeFilter(key)}
-              title={
-                key === 'goblin' ? 'Easier line / lower payout'
-                : key === 'demon' ? 'Harder line / higher payout'
-                : key === 'promo' ? 'Goblin or Demon'
-                : key === 'standard' ? 'Standard PrizePicks line'
-                : 'Show all line types'
-              }
-            >
-              {label}
-            </button>
-          ))}
-
-          <select
-            className="bp-hitrate-select"
-            value={hitRateFilter}
-            onChange={(e) => setHitRateFilter(e.target.value)}
-            title="Filter by hit-rate window"
-          >
-            <option value="all">Hit Rate: All</option>
-            <option value="l5">Hit Rate: L5 ≥ 50%</option>
-            <option value="l10">Hit Rate: L10 ≥ 50%</option>
-            <option value="full">Hit Rate: FULL ≥ 50%</option>
-          </select>
-
-          <input
-            className="bp-player-search"
-            type="text"
-            value={playerSearch}
-            onChange={(e) => setPlayerSearch(e.target.value)}
-            placeholder="Search player..."
-            aria-label="Search player"
-          />
+        <div className="bp-header-inner">
+          <div className="bp-title-block">
+            <p className="bp-eyebrow">KBO PrizePicks</p>
+            <h1 className="bp-title">Batter Projections</h1>
+            <p className="bp-description">Compare live lines with matchup-aware projections and recent performance.</p>
+          </div>
+          <div className="bp-update-status">
+            <span className="bp-live-dot" aria-hidden="true" />
+            <span>{lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleString()}` : 'Live board'}</span>
+          </div>
+        </div>
+        <div className="bp-filter-shell">
+          <div className="bp-filter-groups">
+            <div className="bp-filter-group" aria-label="Prop type">
+              <span className="bp-filter-label">Market</span>
+              <div className="bp-filter-options">
+                {['all', 'Hits+Runs+RBIs', 'Total Bases', 'Fantasy Score'].map(f => (
+                  <button
+                    key={f}
+                    className={`bp-filter-btn ${propFilter === f ? 'active' : ''}`}
+                    onClick={() => setPropFilter(f)}
+                  >
+                    {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : f === 'Total Bases' ? 'Total Bases' : 'Fantasy'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="bp-filter-group" aria-label="Line type">
+              <span className="bp-filter-label">Line type</span>
+              <div className="bp-filter-options">
+                {[
+                  { key: 'all', label: 'Any' },
+                  { key: 'standard', label: 'Standard' },
+                  { key: 'goblin', label: 'Goblin' },
+                  { key: 'demon', label: 'Demon' },
+                  { key: 'promo', label: 'Promos' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={`ot-${key}`}
+                    className={`bp-filter-btn bp-filter-btn-ot ${oddsTypeFilter === key ? 'active' : ''}`}
+                    onClick={() => setOddsTypeFilter(key)}
+                    title={
+                      key === 'goblin' ? 'Easier line / lower payout'
+                      : key === 'demon' ? 'Harder line / higher payout'
+                      : key === 'promo' ? 'Goblin or Demon'
+                      : key === 'standard' ? 'Standard PrizePicks line'
+                      : 'Show all line types'
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="bp-filter-tools">
+            <div className="bp-rate-filter">
+              <span className="bp-filter-label">Hit rate</span>
+              <div className="bp-rate-selects">
+                <select
+                  className="bp-hitrate-select"
+                  value={hitRateFilter}
+                  onChange={(e) => setHitRateFilter(e.target.value)}
+                  title="Choose a hit-rate window"
+                  aria-label="Hit-rate window"
+                >
+                  <option value="all">Any window</option>
+                  <option value="l5">L5</option>
+                  <option value="l10">L10</option>
+                  <option value="full">Full season</option>
+                </select>
+                <select
+                  className="bp-hitrate-select"
+                  value={hitRateMinimum}
+                  onChange={(e) => setHitRateMinimum(e.target.value)}
+                  title="Minimum hit rate"
+                  aria-label="Minimum hit rate"
+                >
+                  <option value="off">Any rate</option>
+                  <option value="50">50% or higher</option>
+                  <option value="60">60% or higher</option>
+                  <option value="70">70% or higher</option>
+                </select>
+              </div>
+            </div>
+            <div className="bp-search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input
+                className="bp-player-search"
+                type="search"
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
+                placeholder="Search player"
+                aria-label="Search player"
+              />
+            </div>
+            {activeFilterCount > 0 && <button className="bp-clear-filters" onClick={clearFilters}>Clear filters</button>}
+          </div>
         </div>
       </header>
 
       <main className="bp-main">
+        <div className="bp-table-toolbar">
+          <div><strong>{projections.length}</strong> projections <span>Sort any column to rank the board</span></div>
+          {activeFilterCount > 0 && <span className="bp-active-filters">{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>}
+        </div>
         <div className="bp-table-wrap">
           <table className="bp-table">
             <thead>
@@ -769,7 +838,10 @@ function BatterProjections() {
                       ) : (
                         <div className="bp-player-fallback">{playerInitials(p.name)}</div>
                       )}
-                      <span>{p.name}</span>
+                      <span className="bp-player-identity">
+                        <span>{p.name}</span>
+                        <span className="bp-mobile-matchup">{p.team} vs {p.opponent}</span>
+                      </span>
                     </div>
                   </td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>

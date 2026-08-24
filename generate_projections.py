@@ -949,6 +949,16 @@ def main():
             # player_names.csv starters (for batter opp_pitcher lookups) + pp_starter_rows
             starters = list(starters) + extra_starters
 
+        # Trust PrizePicks' confirmed starter name over our own probable-starter
+        # guess when they disagree for the same matchup — PP is typically updated
+        # closer to game time with the actual confirmed starter, while our own
+        # scrape (player_names.csv / GameCenter probable starters) can be stale.
+        for s in starters:
+            pp_row = pp_starter_rows.get((s.get("team"), s.get("opponent")))
+            if pp_row and pp_row.get("name"):
+                if normalize_name(s.get("name", "")).lower() != normalize_name(pp_row["name"]).lower():
+                    s["name"] = pp_row["name"]
+
     games_by_name, norm_map, parts_map = load_pitcher_games()
 
     update_persistent_pitcher_maps(

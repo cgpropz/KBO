@@ -642,6 +642,25 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
   const dirClass = isOver ? 'dir-over' : isUnder ? 'dir-under' : 'dir-push';
   const dirArrow = isOver ? '▲' : isUnder ? '▼' : '＝';
   const projGap = pick.projection - pick.line;
+  const formatHitRate = (rate) => {
+    const value = Number(rate);
+    return Number.isFinite(value) ? `${value.toFixed(0)}%` : '—';
+  };
+  const getHitRateStyle = (rate) => {
+    const value = Number(rate);
+    if (!Number.isFinite(value)) return undefined;
+
+    const clamped = Math.max(40, Math.min(70, value));
+    const from = clamped <= 50 ? [239, 68, 68] : [203, 213, 225];
+    const to = clamped <= 50 ? [203, 213, 225] : [34, 197, 94];
+    const progress = clamped <= 50 ? (clamped - 40) / 10 : (clamped - 50) / 20;
+    const rgb = from.map((channel, index) => Math.round(channel + (to[index] - channel) * progress));
+
+    return {
+      color: `rgb(${rgb.join(', ')})`,
+      backgroundColor: `rgba(${rgb.join(', ')}, 0.12)`,
+    };
+  };
 
   return (
     <div className={`lp-pick-card ${cardClass} ${dirClass}`} onClick={onClick}>
@@ -745,8 +764,19 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
         <ValuePickMiniChart gameLog={gameLog} line={pick.line} />
       )}
 
-      <div className={`lp-pick-badge ${isOver ? 'badge-over' : isUnder ? 'badge-under' : 'badge-push'}`}>
-        {pick.recommendation} · Raw Edge {formatSigned(pick.edge)}
+      <div className="lp-pick-hit-rates" aria-label="Hit rates">
+        <div>
+          <span>L5</span>
+          <strong style={getHitRateStyle(pick.hit_rate_l5)}>{formatHitRate(pick.hit_rate_l5)}</strong>
+        </div>
+        <div>
+          <span>L10</span>
+          <strong style={getHitRateStyle(pick.hit_rate_l10)}>{formatHitRate(pick.hit_rate_l10)}</strong>
+        </div>
+        <div>
+          <span>Full</span>
+          <strong style={getHitRateStyle(pick.hit_rate_full)}>{formatHitRate(pick.hit_rate_full)}</strong>
+        </div>
       </div>
     </div>
   );

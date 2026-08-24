@@ -417,6 +417,15 @@ def main():
             today_pitchers.add(alias_norm)
             today_pitchers.add(canon_norm)
 
+    # Trust PrizePicks itself: any pitcher-stat prop currently on the board is by
+    # definition today's confirmed starter, even if our own probable-starter
+    # scrape (player_names.csv) guessed a different name for that matchup.
+    for o in odds:
+        if o.get("Stat") in ("Pitcher Strikeouts", "Pitching Outs", "Hits Allowed", "Pitcher Hits Allowed"):
+            nm = normalize((o.get("Name") or "").strip())
+            if nm:
+                today_pitchers.add(nm)
+
     # Load park factors from batter projections
     park_factors = {}
     b_path = os.path.join(PUBLIC_DATA, "batter_projections.json")

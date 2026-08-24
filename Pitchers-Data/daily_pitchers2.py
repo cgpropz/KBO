@@ -195,8 +195,8 @@ def main():
         away_name = name_cache.get(g["away_pcode"], g["away_kor"])
         home_name = name_cache.get(g["home_pcode"], g["home_kor"])
         print(f"  {g['away_team']} vs {g['home_team']}: {away_name} vs {home_name}")
-        rows.append({"Player": away_name, "Team": g["away_team"]})
-        rows.append({"Player": home_name, "Team": g["home_team"]})
+        rows.append({"Player": away_name, "Team": g["away_team"], "Pcode": g["away_pcode"]})
+        rows.append({"Player": home_name, "Team": g["home_team"], "Pcode": g["home_pcode"]})
 
     df = pd.DataFrame(rows)
     df.to_csv(args.output, index=False)

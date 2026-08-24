@@ -74,6 +74,8 @@ function StrikeoutProjections({ onNavigate }) {
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
   const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
+  const [hitRateFilter, setHitRateFilter] = useState('all');
+  const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
   const [parlayPicks, setParlayPicks] = useState([]); // array of {name, team, opponent, prop, line, projection, edge, side}
@@ -420,7 +422,15 @@ function StrikeoutProjections({ onNavigate }) {
       if (oddsTypeFilter === 'promo' && ot !== 'goblin' && ot !== 'demon') return false;
       if (oddsTypeFilter !== 'promo' && ot !== oddsTypeFilter) return false;
     }
-    return true;
+    if (hitRateMinimum === 'off') return true;
+
+    const minimumRate = Number(hitRateMinimum);
+    if (hitRateFilter === 'all') {
+      return [p.hit_rate_l5, p.hit_rate_full]
+        .some((rate) => Number.isFinite(Number(rate)) && Number(rate) >= minimumRate);
+    }
+    const selectedRate = hitRateFilter === 'l5' ? p.hit_rate_l5 : p.hit_rate_full;
+    return Number.isFinite(Number(selectedRate)) && Number(selectedRate) >= minimumRate;
   });
 
   // Always sort by highest rating by default
@@ -492,6 +502,20 @@ function StrikeoutProjections({ onNavigate }) {
     return 'val-push';
   };
 
+  const activeFilterCount = [
+    selectedProp !== 'all',
+    oddsTypeFilter !== 'all',
+    hitRateFilter !== 'all',
+    hitRateMinimum !== 'off',
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setSelectedProp('all');
+    setOddsTypeFilter('all');
+    setHitRateFilter('all');
+    setHitRateMinimum('off');
+  };
+
   // Color scaling for opponent K% (strikeout rate)
   // Low K% (like 21.5%) = Red (hard - fewer strikeouts)
   // Mid K% (like 24%) = Neutral gray
@@ -545,46 +569,73 @@ function StrikeoutProjections({ onNavigate }) {
   return (
     <div className="so-container so-k-page">
       <header className="so-header">
-        <h1 className="so-title">🇰🇷 ⚾ KBO Pitchers ⚾ 🇰🇷</h1>
-        <div className="so-filter-bar">
-          {propOptions.map((option) => (
-            <button
-              key={option.key}
-              className={`so-filter-btn ${selectedProp === option.key ? 'active' : ''}`}
-              onClick={() => setSelectedProp(option.key)}
-            >
-              {option.label}
-            </button>
-          ))}
-          <span className="so-filter-divider" aria-hidden="true" />
-          {[
-            { key: 'all', label: 'Any Line' },
-            { key: 'standard', label: 'Standard' },
-            { key: 'goblin', label: '\uD83D\uDFE2 Goblin' },
-            { key: 'demon', label: '\uD83D\uDD34 Demon' },
-            { key: 'promo', label: 'Promos' },
-          ].map(({ key, label }) => (
-            <button
-              key={`ot-${key}`}
-              className={`so-filter-btn ${oddsTypeFilter === key ? 'active' : ''}`}
-              onClick={() => setOddsTypeFilter(key)}
-              title={
-                key === 'goblin' ? 'Easier line / lower payout'
-                : key === 'demon' ? 'Harder line / higher payout'
-                : key === 'promo' ? 'Goblin or Demon'
-                : key === 'standard' ? 'Standard PrizePicks line'
-                : 'Show all line types'
-              }
-            >
-              {label}
-            </button>
-          ))}
+        <div className="so-header-inner">
+          <div>
+            <p className="so-eyebrow">KBO PrizePicks</p>
+            <h1 className="so-title">Pitcher Projections</h1>
+            <p className="so-description">Compare live lines with opponent context and recent pitcher performance.</p>
+          </div>
+          <div className="so-live-status"><span aria-hidden="true" />Live pitcher board</div>
+        </div>
+        <div className="so-filter-shell">
+          <div className="so-filter-groups">
+            <div className="so-filter-group">
+              <span className="so-filter-label">Market</span>
+              <div className="so-filter-options">
+                {propOptions.map((option) => (
+                  <button key={option.key} className={`so-filter-btn ${selectedProp === option.key ? 'active' : ''}`} onClick={() => setSelectedProp(option.key)}>{option.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="so-filter-group">
+              <span className="so-filter-label">Line type</span>
+              <div className="so-filter-options">
+                {[
+                  { key: 'all', label: 'Any' },
+                  { key: 'standard', label: 'Standard' },
+                  { key: 'goblin', label: 'Goblin' },
+                  { key: 'demon', label: 'Demon' },
+                  { key: 'promo', label: 'Promos' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={`ot-${key}`}
+                    className={`so-filter-btn ${oddsTypeFilter === key ? 'active' : ''}`}
+                    onClick={() => setOddsTypeFilter(key)}
+                    title={key === 'goblin' ? 'Easier line / lower payout' : key === 'demon' ? 'Harder line / higher payout' : key === 'promo' ? 'Goblin or Demon' : key === 'standard' ? 'Standard PrizePicks line' : 'Show all line types'}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="so-filter-tools">
+            <div className="so-rate-filter">
+              <span className="so-filter-label">Hit rate</span>
+              <div className="so-rate-selects">
+                <select className="so-hitrate-select" value={hitRateFilter} onChange={(e) => setHitRateFilter(e.target.value)} aria-label="Hit-rate window">
+                  <option value="all">Any window</option>
+                  <option value="l5">L5</option>
+                  <option value="full">Full season</option>
+                </select>
+                <select className="so-hitrate-select" value={hitRateMinimum} onChange={(e) => setHitRateMinimum(e.target.value)} aria-label="Minimum hit rate">
+                  <option value="off">Any rate</option>
+                  <option value="50">50% or higher</option>
+                  <option value="60">60% or higher</option>
+                  <option value="70">70% or higher</option>
+                </select>
+              </div>
+            </div>
+            {activeFilterCount > 0 && <button className="so-clear-filters" onClick={clearFilters}>Clear filters</button>}
+          </div>
         </div>
       </header>
 
       <main className="so-main">
 
         {/* Projection table */}
+        <div className="so-table-toolbar">
+          <div><strong>{projections.length}</strong> projections <span>Click a row for matchup detail</span></div>
+          {activeFilterCount > 0 && <span className="so-active-filters">{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>}
+        </div>
         <div className="so-scroll-hint">Swipe left/right to view full pitcher table</div>
         <div className="so-table-wrap">
           <table className="so-table">
@@ -644,7 +695,10 @@ function StrikeoutProjections({ onNavigate }) {
                       ) : (
                         <div className="so-player-fallback">{playerInitials(p.name)}</div>
                       )}
-                      <span>{p.name}</span>
+                      <span className="so-player-identity">
+                        <span>{p.name}</span>
+                        <span className="so-mobile-matchup">{p.team} vs {p.opponent}</span>
+                      </span>
                       <span className="expand-arrow">{isExpanded ? '▾' : '▸'}</span>
                     </div>
                   </td>
