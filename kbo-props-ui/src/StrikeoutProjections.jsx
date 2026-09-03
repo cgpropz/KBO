@@ -487,7 +487,7 @@ function StrikeoutProjections({ onNavigate }) {
       ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
       : selectedProp === 'all'
         ? 'Filter by prop type to view the active pitcher model formula'
-        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by WHIP and form';
+        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by recent strikeout form';
 
   const deriveValue = (proj, line) => {
     if (proj == null || line == null) return 'PUSH';
