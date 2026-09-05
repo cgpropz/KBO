@@ -224,8 +224,10 @@ def update_persistent_pitcher_maps(pp_maps, starters, games_by_name):
         if not target and starter_pcode and starter_pcode in hand_by_pcode:
             target = hand_by_pcode[starter_pcode][0]
 
-        # Keep existing manual override if it still points to a known pitcher.
-        if prev_target and prev_target != pp_name and prev_target in hand_players:
+        # Retain a persisted alias only when current sources cannot resolve the
+        # PrizePicks name. A direct log/hand match is authoritative and avoids
+        # carrying a prior starter's identity into a new slate.
+        if not target and prev_target and prev_target != pp_name and prev_target in hand_players:
             target = prev_target
 
         if not target:
