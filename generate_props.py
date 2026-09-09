@@ -182,6 +182,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
         card["so_per_ip"] = proj.get("so_per_ip")
         card["ip_per_g"] = proj.get("ip_per_g")
         card["proj_rating"] = proj.get("rating")
+        card["cg_projection"] = proj.get("cg_projection")
         card["proj_rec"] = proj.get("recommendation")
 
     # Build a dict of prop-type-specific projections from k_proj_all
@@ -248,6 +249,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
             "hit_rate_l20": round(hr20, 1),
             "recent_values": values[:10],
             "recommendation": stat_proj.get("recommendation"),
+            "cg_projection": stat_proj.get("cg_projection"),
         })
 
     return card
@@ -320,8 +322,18 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         hr10 = (sum(1 for v in l10 if v > line) / len(l10) * 100) if l10 else 0
         hr20 = (sum(1 for v in l20 if v > line) / len(l20) * 100) if l20 else 0
 
-        # Get projection
+        # Get projection, allowing internal log names and PrizePicks names to differ.
         proj = b_proj.get((name, stat), {})
+        if not proj:
+            normalized_name = normalize(name)
+            proj = next(
+                (
+                    candidate
+                    for (projection_name, projection_stat), candidate in b_proj.items()
+                    if projection_stat == stat and normalize(projection_name) == normalized_name
+                ),
+                {},
+            )
 
         card["props"].append({
             "stat": stat,
@@ -341,6 +353,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
             "edge": proj.get("edge"),
             "rating": proj.get("rating"),
             "recommendation": proj.get("recommendation"),
+            "cg_projection": proj.get("cg_projection"),
         })
 
     return card

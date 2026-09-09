@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
+import { getCgProjectionColor } from './cgProjectionColor';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -653,6 +654,7 @@ function StrikeoutProjections({ onNavigate }) {
                 <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 Hit% {sortIcon('hit_rate_l5')}</th>
                 <th onClick={() => handleSort('hit_rate_full')} className="col-num">Full Hit% {sortIcon('hit_rate_full')}</th>
                 <th onClick={() => handleSort('rating')} className="col-num">Rating {sortIcon('rating')}</th>
+                <th onClick={() => handleSort('cg_projection')} className="col-num">CG Projection {sortIcon('cg_projection')}</th>
                 <th onClick={() => handleSort('edge')} className="col-num">Variance {sortIcon('edge')}</th>
                 <th onClick={() => handleSort('recommendation')} className="col-center">VALUE {sortIcon('recommendation')}</th>
               </tr>
@@ -721,6 +723,9 @@ function StrikeoutProjections({ onNavigate }) {
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
+                  </td>
+                  <td className={`col-num mono ${p.cg_projection == null ? 'cell-na' : ''}`} style={{ color: getCgProjectionColor(p.cg_projection), fontWeight: 800 }}>
+                    {p.cg_projection != null ? p.cg_projection : '—'}
                   </td>
                   <td className={`col-num mono ${p.edge != null ? (p.edge > 0 ? 'var-pos' : p.edge < -0.5 ? 'var-neg' : '') : 'cell-na'}`}>
                     {p.edge != null ? p.edge.toFixed(1) : '#N/A'}

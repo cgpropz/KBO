@@ -20,6 +20,7 @@ Outputs:
 """
 import csv
 import json
+from utils.cg_projection import calculate_cg_projection
 import os
 import unicodedata
 from datetime import datetime, timezone
@@ -1000,6 +1001,15 @@ def resolve_team(pp_team_raw):
     return text
 
 
+# PrizePicks is closer to game time than the cached probable-starter file. Use
+# its team/opponent pair for projection context whenever the two sources drift.
+for pp_entry in [*pp_hrr.values(), *pp_tb.values(), *pp_fs.values()]:
+    pp_team = resolve_team(pp_entry.get("team"))
+    pp_opp = resolve_team(pp_entry.get("versus"))
+    if pp_team and pp_opp:
+        team_opponent[pp_team] = pp_opp
+
+
 def build_hrr_projections():
     """Build H+R+RBI projections."""
     print("\n── H+R+RBI Projections ──")
@@ -1151,6 +1161,7 @@ def build_hrr_projections():
             "odds_type": pp_val.get("odds_type", "standard"),
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
+            "cg_projection": calculate_cg_projection(proj, line, edge, rec, hit_rates.get("hit_rate_l5"), hit_rates.get("hit_rate_full"), bs["games"]),
             "avg_per_g": round(base, 2), "opp_factor": round(opp_factor, 3),
             "park_factor": round(pf, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),
@@ -1283,6 +1294,7 @@ def build_tb_projections():
             "odds_type": pp_val.get("odds_type", "standard"),
             "projection": round(proj, 2), "edge": round(edge, 2),
             "rating": rating, "recommendation": rec,
+            "cg_projection": calculate_cg_projection(proj, line, edge, rec, hit_rates.get("hit_rate_l5"), hit_rates.get("hit_rate_full"), bs["games"]),
             "avg_per_g": round(base, 2), "ba": round(bs["ba"], 3), "slg": round(bs["slg"], 3),
             "ops": batter_ops_2026.get(resolved, round(bs["ops"], 3)),
             "opp_factor": round(opp_factor, 3), "park_factor": round(pf, 3),
@@ -1538,6 +1550,7 @@ def build_fantasy_projections():
             "odds_type": pp_val.get("odds_type", "standard"),
             "projection": round(proj, 2), "edge": round(edge, 2) if edge is not None else None,
             "rating": rating, "recommendation": rec,
+            "cg_projection": calculate_cg_projection(proj, line, edge, rec, hit_rates.get("hit_rate_l5"), hit_rates.get("hit_rate_full"), bs["games"]),
             "avg_per_g": round(base_fantasy, 2),
             "opp_factor": round(opp_factor, 3), "park_factor": round((pf_r + pf_hr) / 2.0, 3),
             "venue": park_factors.get(home, {}).get("venue", ""),

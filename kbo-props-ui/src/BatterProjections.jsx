@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
+import { getCgProjectionColor } from './cgProjectionColor';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -816,6 +817,7 @@ function BatterProjections() {
                 <th onClick={() => handleSort('hit_rate_l10')} className="col-num">L10 {sortIcon('hit_rate_l10')}</th>
                 <th onClick={() => handleSort('hit_rate_full')} className="col-num">FULL {sortIcon('hit_rate_full')}</th>
                 <th onClick={() => handleSort('rating')} className="col-num">Rating {sortIcon('rating')}</th>
+                <th onClick={() => handleSort('cg_projection')} className="col-num">CG Projection {sortIcon('cg_projection')}</th>
                 <th onClick={() => handleSort('edge')} className="col-num">Variance {sortIcon('edge')}</th>
                 <th onClick={() => handleSort('recommendation')} className="col-center">VALUE {sortIcon('recommendation')}</th>
               </tr>
@@ -909,6 +911,9 @@ function BatterProjections() {
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
+                  </td>
+                  <td className={`col-num mono ${p.cg_projection == null ? 'cell-na' : ''}`} style={{ color: getCgProjectionColor(p.cg_projection), fontWeight: 800 }}>
+                    {p.cg_projection != null ? p.cg_projection : '—'}
                   </td>
                   <td className={`col-num mono ${p.edge != null ? (p.edge > 0 ? 'var-pos' : p.edge < -0.3 ? 'var-neg' : '') : 'cell-na'}`}>
                     {p.edge != null ? p.edge.toFixed(2) : '—'}

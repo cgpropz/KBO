@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import './LandingPage.css';
+import { getCgProjectionColor } from './cgProjectionColor';
 import { fetchDataSnapshot } from './dataUrl';
 import SportSwitcher from './SportSwitcher';
 
@@ -129,7 +130,10 @@ function enrichPick(pick) {
 
   const rating = toNum(pick.rating, 50);
   const gamesUsed = Math.max(0, toNum(pick.games_used, 0));
-  const confidence = Math.max(0, Math.min(100, Math.abs(rating - 50) * 2));
+  const persistedCg = toNum(pick.cg_projection);
+  const confidence = persistedCg == null
+    ? Math.max(0, Math.min(100, Math.abs(rating - 50) * 2))
+    : Math.max(1, Math.min(100, persistedCg));
   const valuePct = line > 0 ? (directionalValue / line) * 100 : 0;
   const stability = Math.min(gamesUsed / 20, 1);
   const valueScore = directionalValue * (1 + confidence / 140 + stability / 8);
@@ -292,7 +296,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
     const liveLine =
       lineMap.get(`pitcher@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@${norm}`)
       ?? lineMap.get(`pitcher@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@sig:${sig}`);
-    if (!Number.isFinite(liveLine)) return p;
+    if (!Number.isFinite(liveLine)) return null;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
     const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
@@ -305,7 +309,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
       recommendation: pitcherRec,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
     };
-  });
+  }).filter(Boolean);
 
   const batterProjections = (batterData?.projections || []).map((p) => {
     const statMap = {
@@ -319,7 +323,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
     const liveLine =
       lineMap.get(`batter@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@${norm}`)
       ?? lineMap.get(`batter@@${stat}@@${p.team || ''}@@${p.opponent || ''}@@sig:${sig}`);
-    if (!Number.isFinite(liveLine)) return p;
+    if (!Number.isFinite(liveLine)) return null;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
     const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
@@ -332,7 +336,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
       recommendation: batterRec,
       rating: Number.isFinite(projection) && liveLine ? Number(((projection / liveLine) * 50).toFixed(1)) : null,
     };
-  });
+  }).filter(Boolean);
   const topPitchers = (rankings || []).slice(0, 5);
   const todaysGames = [];
   const seenGamePairs = new Set();
@@ -747,8 +751,10 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
           <span className="lp-pick-metric-value">{formatSigned(pick.valuePct, 1)}%</span>
         </div>
         <div className="lp-pick-metric">
-          <span className="lp-pick-metric-label">CONF</span>
-          <span className="lp-pick-metric-value">{pick.confidence.toFixed(0)}%</span>
+          <span className="lp-pick-metric-label">CG PROJECTION / BY CG</span>
+          <span className="lp-pick-metric-value" style={{ color: getCgProjectionColor(pick.confidence) }}>
+            {pick.confidence.toFixed(0)}%
+          </span>
         </div>
         <div className="lp-pick-metric">
           <span className="lp-pick-metric-label">GAMES</span>
