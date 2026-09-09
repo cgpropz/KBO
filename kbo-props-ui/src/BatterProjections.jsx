@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
+import RecentGameLogChart from './RecentGameLogChart';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -83,6 +84,7 @@ function BatterProjections() {
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [playerSearch, setPlayerSearch] = useState('');
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
 
   const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[BatterProjections]', ...args); };
 
@@ -824,7 +826,8 @@ function BatterProjections() {
             </thead>
             <tbody>
               {projections.map((p, i) => (
-                <tr key={i} className="bp-row">
+                <React.Fragment key={`${p.name}-${p.prop}-${i}`}>
+                <tr className={`bp-row ${expandedPlayer === `${p.name}@@${p.prop}` ? 'bp-row-expanded' : ''}`}>
                   <td className="col-player">
                     <div className="bp-player-cell">
                       {photoLookup[normalizeName(p.name)] ? (
@@ -840,10 +843,16 @@ function BatterProjections() {
                       ) : (
                         <div className="bp-player-fallback">{playerInitials(p.name)}</div>
                       )}
-                      <span className="bp-player-identity">
+                      <button
+                        type="button"
+                        className="bp-player-identity bp-player-trigger"
+                        onClick={() => setExpandedPlayer((current) => current === `${p.name}@@${p.prop}` ? null : `${p.name}@@${p.prop}`)}
+                        aria-expanded={expandedPlayer === `${p.name}@@${p.prop}`}
+                        title="Show last 10 game log"
+                      >
                         <span>{p.name}</span>
                         <span className="bp-mobile-matchup">{p.team} vs {p.opponent}</span>
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
@@ -923,6 +932,20 @@ function BatterProjections() {
                     {oddsTypeBadge(p.odds_type)}
                   </td>
                 </tr>
+                {expandedPlayer === `${p.name}@@${p.prop}` && (
+                  <tr className="bp-log-row">
+                    <td colSpan="24">
+                      <RecentGameLogChart
+                        name={p.name}
+                        prop={p.prop}
+                        line={p.line}
+                        hitRate={p.hit_rate_l10}
+                        entries={p.recent_game_log || []}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

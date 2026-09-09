@@ -831,6 +831,9 @@
 .so-player-avatar { border-color: #3c576b; background: #0e1a23; }
 .so-player-fallback { background: #263947; }
 .so-player-identity { display: inline-flex; flex-direction: column; gap: 0.08rem; }
+.so-player-trigger { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; text-align: left; }
+.so-player-trigger:hover span:first-child, .so-player-trigger:focus-visible span:first-child { color: #8be9b4; text-decoration: underline; text-underline-offset: 3px; }
+.so-log-row td { padding: 0.7rem 1rem 0.9rem; background: #0a151f; border-bottom: 1px solid #2c4353; }
 .so-mobile-matchup { display: none; }
 .pp-icon,
 .pp-icon-sm { background: #7357de; }

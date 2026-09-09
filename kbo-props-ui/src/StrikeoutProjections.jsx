@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
+import RecentGameLogChart from './RecentGameLogChart';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -81,6 +82,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [sortDir, setSortDir] = useState('desc');
   const [parlayPicks, setParlayPicks] = useState([]); // array of {name, team, opponent, prop, line, projection, edge, side}
   const [expandedRow, setExpandedRow] = useState(null); // index of expanded row or null
+  const [expandedLogRow, setExpandedLogRow] = useState(null);
 
   const normalizeName = (value) => String(value || '')
     .normalize('NFD')
@@ -669,9 +671,16 @@ function StrikeoutProjections({ onNavigate }) {
             <tbody>
               {projections.map((p, i) => {
                 const isExpanded = expandedRow === i;
+                const isLogExpanded = expandedLogRow === i;
                 const detail = isExpanded ? getMatchupDetail(p) : null;
                 const profile = detail?.pitcher?.profile || {};
                 const recent = profile.recent || [];
+                const recentLog = (p.recent_values || []).map((value, index) => ({
+                  value,
+                  date: recent[index]?.date || '',
+                  opponent: recent[index]?.opp || '',
+                  hit: p.line != null ? Number(value) > Number(p.line) : null,
+                }));
                 const weather = detail?.matchup?.weather;
                 const park = detail?.matchup?.park_factor;
                 const oppBat = detail?.oppBatting;
@@ -704,10 +713,16 @@ function StrikeoutProjections({ onNavigate }) {
                       ) : (
                         <div className="so-player-fallback">{playerInitials(p.name)}</div>
                       )}
-                      <span className="so-player-identity">
+                      <button
+                        type="button"
+                        className="so-player-identity so-player-trigger"
+                        onClick={(e) => { e.stopPropagation(); setExpandedLogRow(isLogExpanded ? null : i); }}
+                        aria-expanded={isLogExpanded}
+                        title="Show last 10 game log"
+                      >
                         <span>{p.name}</span>
                         <span className="so-mobile-matchup">{p.team} vs {p.opponent}</span>
-                      </span>
+                      </button>
                       <span className="expand-arrow">{isExpanded ? '▾' : '▸'}</span>
                     </div>
                   </td>
@@ -895,6 +910,19 @@ function StrikeoutProjections({ onNavigate }) {
                           <p className="so-detail-empty">No matchup data available for this pitcher today.</p>
                         )}
                       </div>
+                    </td>
+                  </tr>
+                )}
+                {isLogExpanded && (
+                  <tr className="so-log-row">
+                    <td colSpan="14">
+                      <RecentGameLogChart
+                        name={p.name}
+                        prop={p.prop}
+                        line={p.line}
+                        hitRate={p.hit_rate_l10}
+                        entries={recentLog}
+                      />
                     </td>
                   </tr>
                 )}

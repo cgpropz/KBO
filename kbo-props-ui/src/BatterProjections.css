@@ -142,6 +142,10 @@
 .team-text { font-size: clamp(0.68rem, 0.68vw, 0.84rem); font-weight: 800; }
 .bp-player-cell { display: inline-flex; align-items: center; gap: 0.45rem; }
 .bp-player-identity { display: inline-flex; flex-direction: column; gap: 0.08rem; }
+.bp-player-trigger { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; text-align: left; }
+.bp-player-trigger:hover span:first-child, .bp-player-trigger:focus-visible span:first-child { color: #8be9b4; text-decoration: underline; text-underline-offset: 3px; }
+.bp-row-expanded td { background: #142531 !important; }
+.bp-log-row td { padding: 0.7rem 1rem 0.9rem; background: #0a151f; border-bottom: 1px solid #2c4353; }
 .bp-mobile-matchup { display: none; }
 .bp-player-avatar, .bp-player-fallback { width: 25px; height: 25px; border-radius: 50%; flex-shrink: 0; }
 .bp-player-avatar { border: 1px solid #3c576b; background: #0e1a23; object-fit: cover; }

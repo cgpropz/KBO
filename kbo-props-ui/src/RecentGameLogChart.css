@@ -1,0 +1,61 @@
+.rgl-chart {
+  padding: 0.85rem 1rem 0.95rem;
+  border: 1px solid #2c4353;
+  border-radius: 8px;
+  background: #0a151f;
+}
+
+.rgl-chart-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.7rem;
+}
+
+.rgl-chart-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.rgl-kicker {
+  color: #8ca7b9;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rgl-chart-header strong { color: #f4fbff; font-size: 0.98rem; }
+.rgl-subtitle { color: #8ca7b9; font-size: 0.75rem; }
+.rgl-summary { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+.rgl-summary strong { color: #44d483; font-size: 1.05rem; }
+.rgl-summary span { color: #8ca7b9; font-size: 0.7rem; }
+
+.rgl-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.35rem, 1.2vw, 0.75rem);
+  height: 128px;
+  padding: 0.35rem 0.2rem 1.45rem;
+  border-bottom: 1px solid #29404e;
+  background: repeating-linear-gradient(to top, transparent 0, transparent 31px, rgba(120, 160, 180, 0.12) 32px);
+}
+
+.rgl-bar-item { position: relative; z-index: 1; display: flex; flex: 1; height: 100%; min-width: 1.2rem; flex-direction: column; justify-content: flex-end; align-items: center; gap: 0.18rem; }
+.rgl-value { color: #d8e8ef; font-size: 0.72rem; font-weight: 800; }
+.rgl-bar { width: min(2.1rem, 100%); min-height: 7px; border-radius: 4px 4px 0 0; transition: height 180ms ease; }
+.rgl-hit { background: #20c878; }
+.rgl-miss { background: #ed5c68; }
+.rgl-date { position: absolute; bottom: -1.2rem; color: #718b9b; font-size: 0.62rem; white-space: nowrap; }
+.rgl-line { position: absolute; z-index: 2; left: 0; right: 0; border-top: 2px dashed #f2c94c; pointer-events: none; }
+.rgl-line span { position: absolute; right: 0; top: -1rem; padding-left: 0.25rem; color: #f2c94c; background: #0a151f; font-size: 0.62rem; }
+.rgl-empty { padding: 1.3rem 0; color: #8ca7b9; font-size: 0.8rem; text-align: center; }
+
+@media (max-width: 640px) {
+  .rgl-chart { padding: 0.75rem; }
+  .rgl-bars { gap: 0.2rem; }
+  .rgl-date { font-size: 0.55rem; }
+}

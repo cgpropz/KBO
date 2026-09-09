@@ -522,6 +522,19 @@ def calc_hit_rates(values, line):
     }
 
 
+def build_recent_game_log(games, values, line):
+    """Return newest-first game values with the row's over/under result."""
+    return [
+        {
+            "date": g.get("DATE") or g.get("date") or "",
+            "opponent": g.get("Opp") or g.get("OPP") or g.get("opponent") or "",
+            "value": value,
+            "hit": value > line if line is not None else None,
+        }
+        for g, value in list(zip(games, values))[:10]
+    ]
+
+
 def _safe_avg(value):
     if value is None:
         return None
@@ -1037,6 +1050,7 @@ def build_hrr_projections():
             for g in recent_games
         ]
         hit_rates = calc_hit_rates(hrr_values, line)
+        recent_game_log = build_recent_game_log(recent_games, hrr_values, line)
 
         # ── PA-decomposition base (recency-weighted L3/L6/season) ──
         # Projected PA: 0.50·L3 + 0.30·L6 + 0.20·season
@@ -1115,6 +1129,7 @@ def build_hrr_projections():
                 "vs_rhp_ab": split_row.get("vs_rhp_ab"),
                 "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
                 **hit_rates,
+                "recent_game_log": recent_game_log,
             })
             continue
 
@@ -1184,6 +1199,7 @@ def build_hrr_projections():
             "split_factor": round(split_factor, 3),
             "pitcher_factor": round(pitcher_factor, 3),
             **hit_rates,
+            "recent_game_log": recent_game_log,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): projPA={proj_pa or 0:.2f} base={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
@@ -1217,6 +1233,7 @@ def build_tb_projections():
         recent_games = batter_games.get(resolved, [])
         tb_values = [int(g.get("TB", 0)) for g in recent_games]
         hit_rates = calc_hit_rates(tb_values, line)
+        recent_game_log = build_recent_game_log(recent_games, tb_values, line)
 
         if not bs:
             print(f"  WARNING: No data for {pp_name} — using neutral fallback")
@@ -1244,6 +1261,7 @@ def build_tb_projections():
                 "vs_rhp_ab": split_row.get("vs_rhp_ab"),
                 "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
                 **hit_rates,
+                "recent_game_log": recent_game_log,
             })
             continue
 
@@ -1311,6 +1329,7 @@ def build_tb_projections():
             "vs_rhp_ab": split_row.get("vs_rhp_ab"),
             "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
             **hit_rates,
+            "recent_game_log": recent_game_log,
         })
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
@@ -1422,6 +1441,7 @@ def build_fantasy_projections():
             }
         else:
             hit_rates = calc_hit_rates(fantasy_values, line)
+        recent_game_log = build_recent_game_log(recent_games, fantasy_values, line)
 
         if not bs:
             print(f"  WARNING: No data for {pp_name} — using neutral fallback")
@@ -1449,6 +1469,7 @@ def build_fantasy_projections():
                 "vs_rhp_ab": split_row.get("vs_rhp_ab"),
                 "vs_opp_hand_avg": split_avgs["vs_opp_hand_avg"],
                 **hit_rates,
+                "recent_game_log": recent_game_log,
             })
             continue
 
@@ -1579,6 +1600,7 @@ def build_fantasy_projections():
             "split_factor": round(split_factor, 3),
             "pitcher_factor": round(pitcher_factor, 3),
             **hit_rates,
+            "recent_game_log": recent_game_log,
         })
         edge_txt = f"{edge:+.2f}" if edge is not None else "N/A"
         line_txt = f"{line}" if line is not None else "None"
