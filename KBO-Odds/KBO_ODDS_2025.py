@@ -1,4 +1,6 @@
 import os
+import json
+import sys
 import time
 import requests
 import pandas as pd
@@ -84,16 +86,32 @@ def _load_cached():
 def save_to_json(df):
     if df.empty:
         print("No new data to save — keeping existing files")
-        return
+        return False
     base = os.path.dirname(os.path.abspath(__file__))
     out_json = os.path.join(base, 'KBO_odds_2025.json')
     out_csv = os.path.join(base, 'KBO_odds_2025.csv')
+
+    pitcher_stats = {'Pitcher Strikeouts', 'Hits Allowed', 'Pitching Outs'}
+    has_pitcher_markets = bool(set(df['Stat'].dropna()) & pitcher_stats)
+    if not has_pitcher_markets and os.path.exists(out_json):
+        try:
+            with open(out_json, encoding='utf-8') as f:
+                cached = pd.DataFrame(json.load(f))
+            cached_has_pitcher_markets = bool(set(cached.get('Stat', [])) & pitcher_stats)
+        except (OSError, ValueError, TypeError):
+            cached_has_pitcher_markets = False
+        if cached_has_pitcher_markets:
+            print("✗ Refusing to overwrite cached pitcher markets with a batter-only response")
+            return False
+
     df.to_json(out_json, orient='records', indent=2)
     df.to_csv(out_csv, index=False)
     print(f"Data saved to KBO_odds_2025.json + .csv ({len(df)} lines) ✅")
+    return True
 
 
 if __name__ == "__main__":
     df = dfs_scraper()
-    save_to_json(df)
+    if not save_to_json(df):
+        sys.exit(1)
     print("Google Sheets sync disabled")

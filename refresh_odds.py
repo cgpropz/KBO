@@ -47,7 +47,15 @@ def fetch_odds():
     
     print("✓ PrizePicks odds fetched")
 
-    # Intraday job should stay lightweight: only update lines + odds_type.
+    print("\n▶  Regenerating pitcher projections...")
+    pitcher_cmd = [PYTHON, os.path.join(BASE, "generate_projections.py")]
+    pitcher_result = subprocess.run(pitcher_cmd, cwd=BASE)
+    if pitcher_result.returncode != 0:
+        print("✗ Failed to regenerate pitcher projections")
+        return False
+    print("✓ strikeout_projections.json updated")
+
+    # Keep normalized props aligned with the refreshed pitcher and batter lines.
     print("\n▶  Updating lines (lines-only mode)...")
     props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py"), "--lines-only"]
     props_result = subprocess.run(props_cmd, cwd=BASE)
