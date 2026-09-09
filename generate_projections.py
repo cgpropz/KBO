@@ -861,6 +861,25 @@ def main():
 
     team_batting_ctx, league_avg_so_per_g, league_avg_h_per_ip = load_team_batting_context()
 
+    if not pp_matchups:
+        out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "strikeout_projections.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "market_status": "no_current_pitcher_markets",
+                    "projections": [],
+                    "league_avg_so_per_g": round(league_avg_so_per_g, 3),
+                    "league_avg_h_per_ip": round(league_avg_h_per_ip, 3),
+                    "team_so_per_g": {k: round(v["so_per_g"], 3) for k, v in team_batting_ctx.items()},
+                    "team_h_per_ip": {k: round(v["h_per_ip"], 3) for k, v in team_batting_ctx.items()},
+                },
+                f,
+                indent=2,
+            )
+        print(f"Wrote 0 projections to {out_path} (no current pitcher markets)")
+        return
+
     # Prefer the pre-generated starters file (written by daily_pitchers2.py in the pipeline).
     # Only fall back to a live scrape if the file is missing or stale (>18h).
     starters = []
@@ -979,8 +998,15 @@ def main():
     league_hits_per_ip = (total_ha / total_ip) if total_ip > 0 else 1.0
     league_ipg = (sum(g["ip"] for g in all_games) / len(all_games)) if all_games else 5.2
 
-    # Keep K projections strictly on today's starter slate to avoid stale/extra rows.
-    all_pitchers = list(starters)
+    # Never publish cached starters as current props when PrizePicks has no
+    # pitcher markets. An empty, explicit snapshot is safer than stale rows.
+    if not pp_matchups:
+        print("⚠ No current pitcher markets found; publishing an empty pitcher slate.")
+        all_pitchers = []
+        market_status = "no_current_pitcher_markets"
+    else:
+        all_pitchers = list(starters)
+        market_status = "active"
 
     projections = []
     for p in all_pitchers:
@@ -1183,6 +1209,7 @@ def main():
         json.dump(
             {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
+                "market_status": market_status,
                 "projections": projections,
                 "league_avg_so_per_g": round(league_avg_so_per_g, 3),
                 "league_avg_h_per_ip": round(league_avg_h_per_ip, 3),

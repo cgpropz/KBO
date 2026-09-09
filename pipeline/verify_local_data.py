@@ -158,8 +158,11 @@ def main() -> int:
         matchup_opponents_by_team.setdefault(home, set()).add(away)
 
     projections = strikeout_data.get("projections", []) if isinstance(strikeout_data, dict) else []
-    if not isinstance(projections, list) or not projections:
+    market_status = strikeout_data.get("market_status") if isinstance(strikeout_data, dict) else None
+    if not isinstance(projections, list) or (not projections and market_status != "no_current_pitcher_markets"):
         failures.append("strikeout_projections.json missing non-empty projections list")
+    elif not projections and market_status == "no_current_pitcher_markets":
+        warnings.append("strikeout_projections.json has no current pitcher markets")
     else:
         bad_pairs = []
         missing_opp_stats = []
