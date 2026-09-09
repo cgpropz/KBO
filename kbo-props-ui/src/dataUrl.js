@@ -12,6 +12,8 @@ const FILE_TO_TABLE = {
 
 const PROTECTED_FILES = new Set(Object.keys(FILE_TO_TABLE));
 const DEV_STATIC_FIRST_FILES = new Set([
+  'strikeout_projections.json',
+  'batter_projections.json',
   'prizepicks_props.json',
   'prop_results.json',
   'pitcher_logs.json',
