@@ -490,6 +490,8 @@ function StrikeoutProjections({ onNavigate }) {
         ? 'Filter by prop type to view the active pitcher model formula'
         : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by recent strikeout form';
 
+  const hasCurrentPitcherMarkets = data.market_status !== 'no_current_pitcher_markets';
+
   const deriveValue = (proj, line) => {
     if (proj == null || line == null) return 'PUSH';
     if (proj > line) return 'OVER';
@@ -637,6 +639,11 @@ function StrikeoutProjections({ onNavigate }) {
           <div><strong>{projections.length}</strong> projections <span>Click a row for matchup detail</span></div>
           {activeFilterCount > 0 && <span className="so-active-filters">{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>}
         </div>
+        {!hasCurrentPitcherMarkets && (
+          <div className="so-market-notice" role="status">
+            Pitcher model projections are current, but PrizePicks has not posted live pitcher lines yet. Betting fields will populate automatically when markets open.
+          </div>
+        )}
         <div className="so-scroll-hint">Swipe left/right to view full pitcher table</div>
         <div className="so-table-wrap">
           <table className="so-table">
