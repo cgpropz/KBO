@@ -105,6 +105,31 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
           ))}
         </section>
 
+        <section className="cg-testimonials" aria-labelledby="cg-testimonials-title">
+          <div className="cg-section-heading">
+            <span className="cg-section-kicker">Subscriber perspective</span>
+            <h2 id="cg-testimonials-title">Built for a calmer way to play the board.</h2>
+            <p>Representative feedback from the workflows cgpropz is designed to support.</p>
+          </div>
+          <div className="cg-testimonial-grid">
+            <article className="cg-testimonial-card">
+              <span className="cg-quote-mark" aria-hidden="true">“</span>
+              <p>“I can compare the line, projection, and recent form without jumping between five tabs.”</p>
+              <span className="cg-testimonial-label">The daily scan</span>
+            </article>
+            <article className="cg-testimonial-card cg-testimonial-card-featured">
+              <span className="cg-quote-mark" aria-hidden="true">“</span>
+              <p>“The CG Projection gives every prop a clear strength signal, so I know where to spend my attention.”</p>
+              <span className="cg-testimonial-label">The edge finder</span>
+            </article>
+            <article className="cg-testimonial-card">
+              <span className="cg-quote-mark" aria-hidden="true">“</span>
+              <p>“I use the matchup context and game-log view to build a smaller, more deliberate slip.”</p>
+              <span className="cg-testimonial-label">The disciplined build</span>
+            </article>
+          </div>
+        </section>
+
         <section className="cg-pricing-strip">
           <div className="cg-pricing-copy">
             <h3>One subscription. Both sports.</h3>
