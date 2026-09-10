@@ -47,20 +47,21 @@ PLAYER_NAMES = {
     # New 2026 PP slate players
     "60084": "Yun Jun-ho", "61561": "Han Seung-taek", "63408": "Moon Jeong-bin",
     "63695": "Kim Whee-Jip", "63961": "Kim Do-hwan", "64159": "Kim Ho-ryung",
-    "64203": "Son Seoung-Bin", "72069": "Sim Woo-jun",
+    "64203": "Son Seoung-Bin", "56626": "Harold Castro",
+    "64006": "Sim Woo-jun", "68362": "Choo Jae-hyun", "56950": "Blaine Crim",
     "50638": "Ryu Seung-min",
 }
 
 PLAYER_TEAMS = {code: team for team, codes in {
     "Samsung": ["62404", "74540", "50458", "52430", "62234", "52415", "54400", "75125","67449", "63961"],
     "Doosan": ["55208", "52025", "79240", "54295", "79231", "63123", "78224", "76232", "64153", "51203", "53554", "55252", "56251", "60084", "50638"],
-    "Hanwha": ["55734", "79608", "50707", "79192", "66715", "66704", "69737", "54730", "55703", "56754", "53764", "72069"],
-    "Kia": ["55645", "72443", "66606", "52605", "78603", "63260", "62947", "64646", "52630", "69636", "56632", "56613", "55636", "50657", "64159"],
+    "Hanwha": ["55734", "79608", "50707", "79192", "66715", "66704", "69737", "54730", "55703", "56754", "53764", "64006"],
+    "Kia": ["55645", "72443", "66606", "52605", "78603", "63260", "62947", "64646", "52630", "69636", "56632", "56613", "55636", "50657", "64159", "56626"],
     "Kiwoom": ["65357", "50167", "52366", "54444", "67304", "53327", "78135", "55392", "64340", "52348", "76267", "56305", "64346", "78168"],
     "KT": ["50054", "78548", "68050", "64004", "67025", "79402","52001", "53036", "56034", "61561"],
     "LG": ["53123", "66108", "76290", "69102", "68119", "79365", "62415", "65207", "79109", "63408"],
     "Lotte": ["50500", "78513", "60523", "61102", "51551", "50150", "54529", "52591", "69517", "62931", "68525", "64203"],
-    "NC": ["51907", "63963", "54944", "62907", "79215", "77532", "69992", "63695"],
+    "NC": ["51907", "63963", "54944", "62907", "79215", "77532", "69992", "63695", "68362", "56950"],
     "SSG": ["75847", "50854", "53827", "69813", "62895", "62864", "54805", "67893", "51868", "54812"]
 }.items() for code in codes}
 
@@ -427,8 +428,8 @@ async def scrape_multiple_players(player_codes, season, output_path=None, checkp
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scrape KBO hitter daily logs")
-    parser.add_argument("--season", type=int, default=datetime.now().year - 1,
-                        help="Season year to scrape (default: previous year)")
+    parser.add_argument("--season", type=int, default=datetime.now().year,
+                        help="Season year to scrape (default: current year)")
     parser.add_argument("--max-players", type=int, default=None,
                         help="Limit number of players for quick test runs")
     return parser.parse_args()
