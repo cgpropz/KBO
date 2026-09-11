@@ -67,7 +67,7 @@ function playerInitials(name) {
 
 const SHOWCASE_SHOTS = [
   {
-    image: '/showcase/power-play-slip.svg',
+    image: '/tutorial-screenshots/tracker.png',
     eyebrow: 'Winning Receipts',
     title: 'Show new users what a settled slip looks like',
     quote: 'The win screen gives people immediate context on how the picks translate into real payout screens and final results.',
@@ -75,7 +75,7 @@ const SHOWCASE_SHOTS = [
     cta: 'Open Prop Tracker',
   },
   {
-    image: '/showcase/batter-prop-card.svg',
+    image: '/tutorial-screenshots/props.png',
     eyebrow: 'Card Breakdown',
     title: 'Let them preview the exact prop card experience',
     quote: 'Projection, score, edge, hit rates, and recent bars all sit in one view so the sell is visual before it is verbal.',
@@ -83,7 +83,7 @@ const SHOWCASE_SHOTS = [
     cta: 'Open Player Props',
   },
   {
-    image: '/showcase/hit-rate-table.svg',
+    image: '/tutorial-screenshots/batters.png',
     eyebrow: 'Scan Fast',
     title: 'Surface the sortable model board up front',
     quote: 'A clean heat-mapped table makes it obvious that users can sort by hit rate, rating, and value in seconds.',
@@ -91,7 +91,7 @@ const SHOWCASE_SHOTS = [
     cta: 'Open Batter Props',
   },
   {
-    image: '/showcase/pitcher-board.svg',
+    image: '/tutorial-screenshots/pitchers.png',
     eyebrow: 'Pitcher Model',
     title: 'Preview the strikeout board before signup',
     quote: 'The pitcher screen immediately communicates that this is a model-driven board, not a thin picks page.',
