@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import './CgpropzLanding.css';
@@ -37,9 +38,23 @@ const SPORTS = [
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
+  const [subscriberCount, setSubscriberCount] = useState(null);
   const access = sportAccess(tier, user?.email);
   const isPaid = access.kbo || access.wnba;
   const isAllAccess = access.kbo && access.wnba;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/subscriber-count')
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!cancelled && Number.isFinite(data?.count)) setSubscriberCount(data.count);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="cg-landing">
@@ -79,6 +94,12 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
               <button className="cg-cta-ghost" onClick={() => onNavigate('pricing')}>View plans</button>
             )}
           </div>
+          {subscriberCount !== null && (
+            <p className="cg-subscriber-count">
+              <span className="cg-subscriber-dot" aria-hidden="true" />
+              Trusted by <strong>{subscriberCount.toLocaleString()}</strong> subscribers
+            </p>
+          )}
         </section>
 
         <section className="cg-sports">
