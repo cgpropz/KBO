@@ -324,7 +324,23 @@
 .cg-footer-note { color: #52525b; }
 
 @media (max-width: 640px) {
+  .cg-header { padding: 14px 16px; }
+  .cg-wordmark { font-size: 22px; }
+  .cg-header-actions { gap: 4px; }
+  .cg-link-btn { padding: 9px 11px; font-size: 12px; }
+  .cg-signout { padding: 9px 4px; font-size: 12px; }
+  .cg-main { padding: 30px 16px 36px; }
+  .cg-hero-title { font-size: clamp(34px, 11vw, 48px); letter-spacing: -1px; }
+  .cg-hero-sub { font-size: 15px; line-height: 1.5; }
+  .cg-hero-cta { gap: 10px; }
+  .cg-cta-primary, .cg-cta-ghost { min-height: 46px; padding-inline: 22px; }
   .cg-sports { grid-template-columns: 1fr; }
+  .cg-sport-card { padding: 22px 20px; border-radius: 16px; }
+  .cg-sport-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .cg-sport-name { font-size: 24px; }
   .cg-testimonial-grid { grid-template-columns: 1fr; }
   .cg-testimonial-card { min-height: 150px; }
+  .cg-pricing-strip { align-items: stretch; padding: 20px; border-radius: 16px; }
+  .cg-pricing-strip .cg-cta-primary { width: 100%; }
+  .cg-footer { align-items: flex-start; flex-direction: column; padding: 18px 16px; }
 }

@@ -1,4 +1,7 @@
 /* App-level overrides — kept minimal since pages own their own styles */
+*, *::before, *::after { box-sizing: border-box; }
+
+button, input, select, textarea { font: inherit; }
 
 /* ── Nav bar ── */
 .app-nav {
@@ -144,7 +147,23 @@
   .nav-signout { display: none; }
   .nav-hamburger { display: block; }
   .nav-mobile-menu { display: flex; }
-  .app-nav { padding: 0 1rem; }
+  .app-nav { min-width: 0; padding: 0 0.75rem; }
+  .nav-logo { flex-shrink: 0; padding-inline: 0.5rem; margin-right: 0.15rem; }
+  .sport-switcher { margin-inline: 0.15rem; flex-shrink: 1; }
+  .sport-switcher button { padding-inline: 0.55rem; white-space: nowrap; }
+  .nav-hamburger {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .sport-switcher button { font-size: 12px; padding-inline: 0.45rem; }
+  .nav-logo { font-size: 1rem; }
 }
 
 /* ── Sport switcher (KBO ⚾ / WNBA 🏀) ── */

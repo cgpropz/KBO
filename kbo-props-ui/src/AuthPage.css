@@ -237,8 +237,10 @@
 
 /* Mobile */
 @media (max-width: 480px) {
+  .auth-page { align-items: flex-start; padding: 1rem; overflow-y: auto; }
   .auth-card {
-    padding: 2rem 1.5rem 1.5rem;
+    margin: auto 0;
+    padding: 1.75rem 1.25rem 1.25rem;
   }
   .auth-logo-k,
   .auth-logo-sub {
