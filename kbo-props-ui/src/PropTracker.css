@@ -152,7 +152,31 @@
   color: #c9d1d9;
 }
 .gt-section-rate { font-size: 0.85rem; color: #8b949e; }
-.gt-section-detail { font-size: 0.78rem; color: #6e7681; margin-left: 0.3rem; }
+.gt-section-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem 0.5rem 0.9rem;
+  border: 1px solid #23863666;
+  border-radius: 7px;
+  background: linear-gradient(110deg, #23863618, #161b22 72%);
+  box-shadow: inset 3px 0 #3fb950;
+}
+.gt-section-rate-label {
+  color: #8b949e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.gt-section-rate-value {
+  color: #56d364;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 900;
+}
+.gt-section-detail { font-size: 0.72rem; color: #8b949e; }
 
 /* Table */
 .gt-table-wrap {

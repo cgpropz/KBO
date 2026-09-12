@@ -241,10 +241,11 @@ function PropTracker() {
         <div className="gt-section">
           <div className="gt-section-header">
             <span className="gt-section-count">{gradedCount} Graded Props</span>
-            <span className="gt-section-rate">
-              Hit Rate: <strong className="gt-green">{summary.overall}%</strong>
-              <span className="gt-section-detail"> ({summary.hits} HIT / {summary.misses} MISS)</span>
-            </span>
+            <div className="gt-section-rate" aria-label={`Overall hit rate ${summary.overall}%`}>
+              <span className="gt-section-rate-label">Overall Hit Rate</span>
+              <strong className="gt-section-rate-value">{summary.overall}%</strong>
+              <span className="gt-section-detail">{summary.hits} HIT / {summary.misses} MISS</span>
+            </div>
           </div>
           <div className="gt-table-wrap">
             <table className="gt-table">
