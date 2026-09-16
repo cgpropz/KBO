@@ -2,8 +2,8 @@ name: Intraday Odds Refresh
 
 on:
   schedule:
-    # Keep PrizePicks/props snapshots fresh throughout the day.
-    - cron: "*/10 * * * *"
+    # Recalculate line-sensitive prop projections every 30 minutes.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
           # prior snapshot — but that means stats stop refreshing entirely.
           playwright install chromium --with-deps
 
-      - name: Refresh odds + publish Supabase snapshot
+      - name: Refresh odds-derived projection snapshots
         run: |
           for attempt in 1 2 3; do
             echo "Refresh attempt ${attempt}/3"
@@ -67,11 +67,14 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Commit refreshed odds snapshot
+      - name: Commit refreshed odds-derived snapshots
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add kbo-props-ui/public/data/prizepicks_props.json KBO-Odds/ 2>/dev/null || true
+          git add KBO-Odds/ \
+            kbo-props-ui/public/data/strikeout_projections.json \
+            kbo-props-ui/public/data/batter_projections.json \
+            kbo-props-ui/public/data/prizepicks_props.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No odds changes to commit"
           else
@@ -93,49 +96,17 @@ jobs:
       - name: Build and deploy odds-only update to Vercel
         run: |
           npm i -g vercel@latest
-          # Pull latest committed data so the build always includes fresh projections
-          # from the most recent full-refresh run (batter/pitcher projections, etc.).
-          # --ff-only first (fast, no rebase needed if remote is strictly ahead);
-          # fall back to --rebase if we have local commits ahead of remote.
-          # Never let a pull failure block the deploy — worst case we deploy with
-          # the last committed projections which are at most a few hours old.
-          git pull --ff-only origin main 2>/dev/null \
-            || git pull --rebase origin main 2>/dev/null \
-            || echo "git pull skipped (no-op or minor conflict) — continuing with current checkout"
-          # Lightweight: build with fresh prizepicks_props.json + ship to prod.
-          # Skip-odds avoids re-fetching (we already did it above) and
-          # skip-full-refresh avoids the 30+ min stat scrape pipeline.
-          bash pipeline/run_release.sh --skip-odds --skip-full-refresh
+          # Do not invoke run_release.sh here: its quick mode refreshes starters,
+          # rankings, photos, matchup/weather, and other unrelated site data.
+          cd kbo-props-ui
+          npm ci
+          npm run build
+          vercel --prod --token "$VERCEL_TOKEN" --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         timeout-minutes: 10
-
-      - name: Commit regenerated data snapshots
-        run: |
-          # Persist all freshly-generated data files so the next run (full or intraday)
-          # starts from the latest slate — not a previous day's cached state.
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add kbo-props-ui/public/data/ Pitchers-Data/player_names.csv \
-                  Pitchers-Data/player_names_meta.json 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "No generated data changes to commit"
-          else
-            git commit -m "chore: refresh generated snapshots $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            if git push origin HEAD:main; then
-              echo "Push succeeded"
-            else
-              echo "Push rejected; attempting rebase+push retry"
-              if git pull --rebase origin main && git push origin HEAD:main; then
-                echo "Retry push succeeded"
-              else
-                git rebase --abort >/dev/null 2>&1 || true
-                echo "Retry push failed — data deployed but not committed (non-fatal)"
-              fi
-            fi
-          fi
 
       # Email-on-failure: create/update a GitHub issue when this scheduled
       # job fails. GitHub's default notification settings will email the repo

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Lightweight PrizePicks odds refresh only.
-Run every ~10 minutes via cron or GitHub Actions.
-Fetches latest PrizePicks odds and publishes to Supabase.
+Run every 30 minutes via GitHub Actions.
+Fetches latest PrizePicks odds, recalculates line-sensitive projections, and
+publishes only the affected snapshots to Supabase.
 
 Usage:
   python refresh_odds.py          # fetch and publish
@@ -33,8 +34,8 @@ def ensure_project_python():
 
 def fetch_odds():
     """
-    Fetch latest PrizePicks odds using KBO_ODDS_2025.py, then regenerate props.
-    Generates: KBO-Odds/KBO_odds_2025.csv + prizepicks_props.json
+    Fetch latest PrizePicks odds and regenerate line-sensitive snapshots.
+    Generates: KBO-Odds/KBO_odds_2025.csv, pitcher/batter projections, and props.
     """
     print("\n▶  Fetching PrizePicks odds...")
     print("=" * 50)
@@ -55,14 +56,23 @@ def fetch_odds():
         return False
     print("✓ strikeout_projections.json updated")
 
-    # Keep normalized props aligned with the refreshed pitcher and batter lines.
-    print("\n▶  Updating lines (lines-only mode)...")
-    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py"), "--lines-only"]
+    print("\n▶  Regenerating batter projections...")
+    batter_cmd = [PYTHON, os.path.join(BASE, "generate_batter_projections.py")]
+    batter_result = subprocess.run(batter_cmd, cwd=BASE)
+    if batter_result.returncode != 0:
+        print("✗ Failed to regenerate batter projections")
+        return False
+    print("✓ batter_projections.json updated")
+
+    # Rebuild only the derived prop-card snapshot so hit rates, recommendations,
+    # and CG scores use the newly fetched line while source logs remain untouched.
+    print("\n▶  Recalculating line-sensitive prop data...")
+    props_cmd = [PYTHON, os.path.join(BASE, "generate_props.py")]
     props_result = subprocess.run(props_cmd, cwd=BASE)
     if props_result.returncode != 0:
-        print("✗ Failed to update lines — keeping previous file")
-    else:
-        print("✓ prizepicks_props.json lines updated")
+        print("✗ Failed to rebuild line-sensitive prop data")
+        return False
+    print("✓ prizepicks_props.json projections and lines updated")
 
     return True
 
@@ -94,7 +104,7 @@ def _publish_snapshot(client, filename, table, dry_run=False):
 
 def publish_to_supabase(skip=False, dry_run=False):
     """
-    Publish prizepicks_props.json snapshot to Supabase.
+    Publish odds-derived projection snapshots to Supabase.
     Uses SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars.
     """
     if skip:
@@ -125,6 +135,8 @@ def publish_to_supabase(skip=False, dry_run=False):
     try:
         client = create_client(supabase_url, service_role_key)
         targets = [
+            ("strikeout_projections.json", "strikeout_projections"),
+            ("batter_projections.json", "batter_projections"),
             ("prizepicks_props.json", "prizepicks_props"),
         ]
 
