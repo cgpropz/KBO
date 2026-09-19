@@ -1,0 +1,39 @@
+name: Refresh NFL PrizePicks Board
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  refresh-nfl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install pandas requests
+
+      - name: Build current NFL PrizePicks projections
+        run: python nfl/build_projection_data.py
+
+      - name: Publish protected NFL snapshot
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nfl/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

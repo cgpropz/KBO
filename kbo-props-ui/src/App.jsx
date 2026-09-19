@@ -14,6 +14,7 @@ import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
 import Paywall from './Paywall'
 import WnbaApp from './wnba/WnbaApp'
+import NflApp from './nfl/NflApp'
 import SportSwitcher from './SportSwitcher'
 import './App.css'
 
@@ -79,6 +80,17 @@ function App() {
         sport={sport}
         setSport={setSport}
         onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
+      />
+    );
+  }
+
+  if (sport === 'nfl') {
+    return (
+      <NflApp
+        sport={sport}
+        setSport={setSport}
+        onNavigateHome={() => setView('hub')}
+        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
     );
   }

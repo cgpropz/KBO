@@ -5,11 +5,11 @@ import './CgpropzLanding.css';
 
 /*
  * cgpropz — unified brand hub / front door.
- * Sits above both sports (⚾ KBO and 🏀 WNBA). Users land here after login,
+ * Sits above all sports. Users land here after login,
  * pick a sport to enter, or jump to the unified pricing page.
  *
  * Props:
- *   onEnterSport(sport)  → 'kbo' | 'wnba'
+ *   onEnterSport(sport)  → 'kbo' | 'wnba' | 'nfl'
  *   onNavigate(view)     → e.g. 'pricing'
  */
 
@@ -34,14 +34,24 @@ const SPORTS = [
     glow: 'rgba(74, 222, 128, 0.35)',
     features: ['PrizePicks edge board', 'Points / reb / ast projections', 'DvP & daily lineups'],
   },
+  {
+    id: 'nfl',
+    emoji: '🏈',
+    name: 'NFL',
+    full: 'Pro Football',
+    tagline: 'PrizePicks prop edges built from weighted recent form and live lines.',
+    accent: '#7fff68',
+    glow: 'rgba(127, 255, 104, 0.35)',
+    features: ['Top 3 daily props', 'Full PrizePicks edge board', '2025 + 2026 game logs'],
+  },
 ];
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
   const [subscriberCount, setSubscriberCount] = useState(null);
   const access = sportAccess(tier, user?.email);
-  const isPaid = access.kbo || access.wnba;
-  const isAllAccess = access.kbo && access.wnba;
+  const isPaid = access.kbo || access.wnba || access.nfl;
+  const isAllAccess = access.kbo && access.wnba && access.nfl;
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +96,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
           </h1>
           <p className="cg-hero-sub">
             Data-driven projections, hit rates, and prop analysis across KBO baseball and
-            WNBA basketball — all under one login, one subscription.
+            WNBA basketball, and NFL football — all under one login, one subscription.
           </p>
           <div className="cg-hero-cta">
             <button className="cg-cta-primary" onClick={() => onEnterSport('kbo')}>Enter the app</button>
@@ -153,8 +163,8 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
 
         <section className="cg-pricing-strip">
           <div className="cg-pricing-copy">
-            <h3>One subscription. Both sports.</h3>
-            <p>All Access unlocks every KBO and WNBA tool — projections, prop cards, edge boards, and more.</p>
+            <h3>One subscription. Every sport.</h3>
+            <p>All Access unlocks KBO, WNBA, and NFL projections, prop cards, and edge boards.</p>
           </div>
           <button className="cg-cta-primary" onClick={() => onNavigate('pricing')}>
             {isPaid ? 'Manage subscription' : 'See pricing'}

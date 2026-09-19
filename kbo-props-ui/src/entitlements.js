@@ -21,14 +21,14 @@ export function isOwnerEmail(email) {
   return OWNER_EMAILS.includes((email || '').toLowerCase());
 }
 
-// Returns { kbo: boolean, wnba: boolean } for a given tier + email.
+// Returns per-sport access for a given tier + email. NFL is an All Access / Pro feature.
 export function sportAccess(tier, email) {
-  if (isOwnerEmail(email)) return { kbo: true, wnba: true };
-  if (ALL_ACCESS_TIERS.has(tier)) return { kbo: true, wnba: true };
-  return { kbo: tier === 'kbo', wnba: tier === 'wnba' };
+  if (isOwnerEmail(email)) return { kbo: true, wnba: true, nfl: true };
+  if (ALL_ACCESS_TIERS.has(tier)) return { kbo: true, wnba: true, nfl: true };
+  return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false };
 }
 
 export function hasAnyPaidAccess(tier, email) {
   const a = sportAccess(tier, email);
-  return a.kbo || a.wnba;
+  return a.kbo || a.wnba || a.nfl;
 }

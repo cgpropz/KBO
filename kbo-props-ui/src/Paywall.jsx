@@ -5,11 +5,12 @@ import './Paywall.css';
 export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
   const { tier, user } = useAuth();
   const access = sportAccess(tier, user?.email);
-  const isPaid = sport === 'wnba' ? access.wnba : access.kbo;
+  const isPaid = sport === 'wnba' ? access.wnba : sport === 'nfl' ? access.nfl : access.kbo;
 
   if (isPaid) return children;
 
-  const sportLabel = sport === 'wnba' ? 'WNBA' : 'KBO';
+  const sportLabel = sport === 'wnba' ? 'WNBA' : sport === 'nfl' ? 'NFL' : 'KBO';
+  const planLabel = sport === 'nfl' ? 'All Access plan' : `${sportLabel} plan`;
 
   return (
     <div className="pw-wrap">
@@ -20,7 +21,7 @@ export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
           <h2 className="pw-title">{sportLabel} Pro Feature</h2>
           <p className="pw-desc">
             Unlock full {sportLabel} projections, player prop cards, and every advanced tool.
-            Grab the {sportLabel} plan, or get All Access for both sports.
+            Grab the {planLabel} to access this board.
           </p>
           <button className="pw-cta" onClick={() => onNavigate('pricing')}>
             View Plans

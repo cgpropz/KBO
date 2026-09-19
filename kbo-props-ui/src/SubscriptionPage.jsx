@@ -7,7 +7,7 @@ import './SubscriptionPage.css';
  * ─── STRIPE PAYMENT LINKS ──────────────────────────────────────────
  * Live Payment Links (from the Stripe dashboard). Each maps to a tier in
  * api/_stripeTier.js so access is granted per sport:
- *   combined → both sports · kbo → KBO only · wnba → WNBA only
+ *   combined → all sports · kbo → KBO only · wnba → WNBA only
  * ────────────────────────────────────────────────────────────────────
  */
 const STRIPE_LINKS = {
@@ -27,7 +27,7 @@ const TIERS = [
     price: '$0',
     period: '',
     badge: null,
-    description: 'Preview both sports before you commit',
+    description: 'Preview CGPropz before you commit',
     features: [
       'Today\'s KBO & WNBA schedules',
       'Top 3 KBO projections',
@@ -35,7 +35,7 @@ const TIERS = [
       'Landing page overview',
     ],
     limited: [
-      'Full KBO + WNBA projections',
+      'Full KBO, WNBA + NFL projections',
       'Player prop cards & PrizePicks edge',
       'Slip builder & optimizer',
       'Matchups, lineups & tracker',
@@ -46,17 +46,18 @@ const TIERS = [
   },
   {
     id: 'combined',
-    name: '⚾🏀 All Access',
+    name: '⚾🏀🏈 All Access',
     price: '$29.99',
     period: '/ month',
     badge: 'BEST VALUE',
-    description: 'Everything unlocked — KBO + WNBA',
+    description: 'Everything unlocked — KBO + WNBA + NFL',
     features: [
       '⚾ All KBO pitcher & batter projections',
       '⚾ Prop cards, rankings & matchup deep dive',
       '🏀 WNBA PrizePicks edge board',
       '🏀 Points / reb / ast projections',
       '🏀 Defense vs position & daily lineups',
+      '🏈 NFL PrizePicks dashboard & full edge board',
       'Slip builder, optimizer & prop tracker',
       'Full game log history for both sports',
       'Save $10/mo vs. buying each sport',
@@ -270,14 +271,14 @@ function SubscriptionPage() {
           Unlock <span className="sub-highlight">All Access</span>
         </h1>
         <p className="sub-subtitle">
-          Go all-in with ⚾ KBO and 🏀 WNBA, or pick a single sport. Every plan unlocks
+          Go all-in with ⚾ KBO, 🏀 WNBA, and 🏈 NFL, or pick a single sport. Every plan unlocks
           full projections, hit rates, prop cards, and edge boards for what you choose.
         </p>
       </div>
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀</span>
-        <span>Want both sports? <strong>All Access is $29.99/mo</strong> — $10 less than buying KBO and WNBA separately.</span>
+        <span>Want every sport? <strong>All Access is $29.99/mo</strong> — KBO, WNBA, and NFL in one plan.</span>
       </div>
 
       {noLinksConfigured && (

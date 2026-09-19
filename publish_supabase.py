@@ -48,6 +48,7 @@ TABLES = {
     "wnba/dvp_guard.json": "wnba_dvp_guard",
     "wnba/dvp_forward.json": "wnba_dvp_forward",
     "wnba/dvp_center.json": "wnba_dvp_center",
+    "nfl/projections.json": "nfl_projections",
 }
 
 
@@ -98,7 +99,7 @@ def main():
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
 
     for filename, table in tables.items():
-        file_path = os.path.join(DATA_DIR, filename)
+        file_path = os.path.join(BASE, filename) if filename.startswith("nfl/") else os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):
             msg = f"{filename} not found"
