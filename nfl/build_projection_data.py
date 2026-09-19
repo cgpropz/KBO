@@ -21,6 +21,10 @@ def name_key(name):
     return re.sub(r'[^a-z0-9]', '', str(name).lower())
 
 
+def text_or_empty(value):
+    return '' if pd.isna(value) else str(value)
+
+
 def stat_values(frame, stat):
     columns = {
         'Pass Yards': 'passing_yards',
@@ -111,13 +115,14 @@ def make_record(row, history, directory):
     else:
         projection = row.line
     player = directory.get(key, {})
-    position = player.get('position') or ('QB' if row.prop.startswith('Pass') else 'RB' if 'Rush' in row.prop else 'WR')
+    default_position = 'QB' if row.prop.startswith('Pass') else 'RB' if 'Rush' in row.prop else 'WR'
+    position = text_or_empty(player.get('position')) or default_position
     return {
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
-        'player': row.player, 'position': position, 'team': row.team, 'opponent': row.opponent,
+        'player': text_or_empty(row.player), 'position': position, 'team': text_or_empty(row.team), 'opponent': text_or_empty(row.opponent),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
-        'imageUrl': player.get('headshot') or '', 'recent': [round(value, 1) for value in recent],
+        'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'hitRate': round(sum(value >= row.line for value in recent) / len(recent) * 100) if recent else 0,
         'gamesPlayed': len(recent),
     }
@@ -130,7 +135,7 @@ def main():
     records = [make_record(row, history, directory) for row in slate.itertuples(index=False)]
     if not records:
         raise RuntimeError('Refusing to publish an empty NFL PrizePicks slate.')
-    OUTPUT_PATH.write_text(json.dumps(records, indent=2) + '\n')
+    OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')
     print(f'Wrote {len(records)} NFL projections to {OUTPUT_PATH}.')
 
 
