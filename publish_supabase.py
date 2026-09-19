@@ -49,6 +49,7 @@ TABLES = {
     "wnba/dvp_forward.json": "wnba_dvp_forward",
     "wnba/dvp_center.json": "wnba_dvp_center",
     "nfl/projections.json": "nfl_projections",
+    "nfl/lineups.json": "nfl_lineups",
 }
 
 

@@ -28,7 +28,7 @@ jobs:
       - name: Install snapshot dependencies
         run: pip install pandas requests
 
-      - name: Build current NFL PrizePicks projections
+      - name: Build current NFL projections and starting lineups
         run: python nfl/build_projection_data.py
 
       - name: Publish protected NFL snapshot

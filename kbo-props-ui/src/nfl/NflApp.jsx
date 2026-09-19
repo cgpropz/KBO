@@ -2,19 +2,23 @@ import { useState } from 'react'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
 import NflDashboard from './NflDashboard'
+import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
 import './nfl.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projections', label: 'PrizePicks Board' },
+  { id: 'lineups', label: 'Starting Lineups' },
 ]
 
 export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const [view, setView] = useState('dashboard')
   const content = view === 'projections'
     ? <NflProjections />
-    : <NflDashboard onOpenBoard={() => setView('projections')} />
+    : view === 'lineups'
+      ? <NflLineups />
+      : <NflDashboard onOpenBoard={() => setView('projections')} />
 
   return (
     <div className="nfl-root">
