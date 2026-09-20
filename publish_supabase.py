@@ -125,6 +125,9 @@ def main():
                 print(f"  ✓ {table:30} updated")
             else:
                 body = response.text.strip().replace("\n", " ")
+                if table == "nfl_lineups" and response.status_code == 404 and "PGRST205" in body:
+                    print("  ! nfl_lineups is not migrated yet; skipping lineup snapshot")
+                    continue
                 msg = f"{table} HTTP {response.status_code}: {body[:200]}"
                 print(f"  ✗ {msg}")
                 failures.append(msg)
