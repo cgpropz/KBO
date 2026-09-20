@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { fetchWnbaData } from './wnbaData'
-import { fmt1, dvpLabel } from './utils/formatters'
+import { fmt1, fmtDvpRank, dvpLabel } from './utils/formatters'
 
 const TEAM_FULL = {
   LVA: 'Las Vegas Aces', MIN: 'Minnesota Lynx', IND: 'Indiana Fever',
@@ -40,7 +40,7 @@ function DVPRow({ rank, team, oppPts, dvpFactor, leagueAvg }) {
         color: dvp.color, fontWeight: 700, fontSize: 11,
         background: dvp.color + '18', padding: '2px 8px', borderRadius: 20,
         minWidth: 64, textAlign: 'center',
-      }}>{dvp.label} {dvpFactor.toFixed(2)}x</span>
+      }}>{dvp.label} {fmtDvpRank(dvpFactor)}</span>
     </div>
   )
 }

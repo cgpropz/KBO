@@ -619,6 +619,9 @@ function clampDvpFactor(factor) {
   return Math.min(DVP_FACTOR_MAX, Math.max(DVP_FACTOR_MIN, factor));
 }
 
+// Shown in the UI instead of the internal multiplier — 1 = toughest matchup, N = easiest.
+const DVP_RANK_NEUTRAL = 7;
+
 async function buildDvpMap(position) {
   const rows = await readCsv(DVP_FILES[position] || '');
   const averages = Object.fromEntries(Object.entries(DVP_COLUMNS_BY_STAT).map(([stat, column]) => {
@@ -634,7 +637,41 @@ async function buildDvpMap(position) {
       return [stat, clampDvpFactor(raw)];
     }));
   });
-  return { map, averages, rows };
+
+  // Rank teams 1 (toughest) to N (easiest) per stat column, based on raw opponent output.
+  const rankMap = {};
+  const numTeams = rows.length;
+  Object.entries(DVP_COLUMNS_BY_STAT).forEach(([stat, column]) => {
+    const sorted = [...rows].sort((a, b) => parseFloat(b[column] || 0) - parseFloat(a[column] || 0));
+    sorted.forEach((r, index) => {
+      const team = normalizeTeamAbbr(r.TEAM || r.Team);
+      if (!team) return;
+      if (!rankMap[team]) rankMap[team] = {};
+      rankMap[team][stat] = numTeams - index;
+    });
+  });
+
+  return { map, rankMap, averages, rows };
+}
+
+// Combo props blend more than one base stat column; average their ranks for display.
+const DVP_COMBO_STAT_PARTS = {
+  ptsAst: ['pts', 'ast'], ptsReb: ['pts', 'reb'], ptsRebAst: ['pts', 'reb', 'ast'],
+  rebAst: ['reb', 'ast'], blkStl: ['blk', 'stl'],
+};
+
+function dvpStatsForLabel(label) {
+  const key = PP_STAT_MAP[label];
+  if (!key || key === 'fantasy' || key === 'doubleDouble' || key === 'tripleDouble') return null;
+  return DVP_COMBO_STAT_PARTS[key] || [key];
+}
+
+function effectiveDvpRank(label, opponentRankMap) {
+  const stats = dvpStatsForLabel(label);
+  if (!stats || !opponentRankMap) return null;
+  const ranks = stats.map(stat => opponentRankMap[stat]).filter(Number.isFinite);
+  if (!ranks.length) return null;
+  return Math.round(ranks.reduce((sum, r) => sum + r, 0) / ranks.length);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -733,7 +770,7 @@ app.get('/api/dvp/:position', async (req, res) => {
     if (!DVP_FILES[pos]) {
       return res.status(400).json({ error: 'Invalid position. Use guard, forward, or center.' });
     }
-    const { map, averages, rows } = await buildDvpMap(pos);
+    const { map, rankMap, averages, rows } = await buildDvpMap(pos);
     const teams = rows.map(r => {
       const team = normalizeTeamAbbr(r.TEAM || r.Team);
       return {
@@ -743,8 +780,10 @@ app.get('/api/dvp/:position', async (req, res) => {
         oppPts:    parseFloat(r['OPP PTS'] || 0),
         oppReb:    parseFloat(r['OPP REB'] || 0),
         oppAst:    parseFloat(r['OPP AST'] || 0),
-        dvpFactor: parseFloat((map[team]?.pts ?? 1).toFixed(4)),
+        rank:      rankMap[team]?.pts ?? 0,
+        dvpFactor: rankMap[team]?.pts ?? DVP_RANK_NEUTRAL,
         dvpFactors: Object.fromEntries(Object.entries(map[team] || {}).map(([stat, factor]) => [stat, parseFloat(factor.toFixed(4))])),
+        dvpRanks: rankMap[team] || {},
       };
     }).sort((a, b) => b.dvpFactor - a.dvpFactor);
 
@@ -771,6 +810,7 @@ app.get('/api/projections/v2', async (req, res) => {
     const spreads = await fetchSpreads(propSlateDates(ppStandardLines));
 
     const dvpMaps = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
+    const dvpRankMaps = { Guard: gDvp.rankMap, Forward: fDvp.rankMap, Center: cDvp.rankMap };
     const STATS = BASE_PROJECTION_STATS;
 
     const projections = bio.map(p => {
@@ -797,7 +837,7 @@ app.get('/api/projections/v2', async (req, res) => {
           position,  image: playerImages[name] || null,
           dvpOpponent,
           spread: spreads[team] ?? null,
-          gp: 0, avgMins: 0, dvpFactor: 1,
+          gp: 0, avgMins: 0, dvpFactor: DVP_RANK_NEUTRAL,
           projPts: 0, projReb: 0, projAst: 0, projFg3m: 0,
           l3ppm: {}, l7ppm: {}, l15ppm: {},
           recentGames: [],
@@ -819,15 +859,15 @@ app.get('/api/projections/v2', async (req, res) => {
       const last10    = games.slice(0, 10);
       const avgMins   = last10.reduce((s, g) => s + g.min, 0) / last10.length;
       const dvpFactors = dvpOpponent ? (dvpMaps[position]?.[dvpOpponent] ?? {}) : {};
-      const dvpFactor = dvpFactors.pts ?? 1;
+      const opponentRankMap = dvpOpponent ? (dvpRankMaps[position]?.[dvpOpponent] ?? {}) : {};
+      const dvpRank = opponentRankMap.pts ?? DVP_RANK_NEUTRAL;
 
       const bundle = buildProjectionBundle(games, avgMins, dvpFactors);
-      const neutralBundle = buildProjectionBundle(games, avgMins);
       const propProjectionByStat = Object.fromEntries(
         Object.keys(PP_STAT_MAP).map(label => [label, projectionByStatLabel(label, bundle)])
       );
       const dvpFactorByProp = Object.fromEntries(
-        Object.keys(PP_STAT_MAP).map(label => [label, effectiveDvpFactor(label, bundle, neutralBundle)])
+        Object.keys(PP_STAT_MAP).map(label => [label, effectiveDvpRank(label, opponentRankMap) ?? DVP_RANK_NEUTRAL])
       );
       const rateForLabel = label => {
         const line = standardLineForStat(label);
@@ -845,7 +885,7 @@ app.get('/api/projections/v2', async (req, res) => {
         avgMins:   parseFloat(avgMins.toFixed(1)),
         dvpOpponent,
         spread: spreads[team] ?? null,
-        dvpFactor: parseFloat(dvpFactor.toFixed(3)),
+        dvpFactor: dvpRank,
         dvpFactors: Object.fromEntries(Object.entries(dvpFactors).map(([stat, factor]) => [stat, parseFloat(factor.toFixed(3))])),
         propProjectionByStat,
         dvpFactorByProp,
@@ -954,7 +994,7 @@ app.get('/api/projections/v2', async (req, res) => {
           standardLine: standardLineForStat(prop.stat),
             projection,
             rating,
-            effectiveDvpFactor: effectiveDvpFactor(prop.stat, bundle, neutralBundle),
+            effectiveDvpFactor: effectiveDvpRank(prop.stat, opponentRankMap) ?? DVP_RANK_NEUTRAL,
             sharpScore: sharpRow?.sharp_score ?? null,
             sharpOdds: sharpRow?.sharp_odds ?? null,
             sharpSide: sharpRow?.sharp_side ?? null,
@@ -1114,6 +1154,7 @@ app.get('/api/edge', async (req, res) => {
     const spreads = await fetchSpreads(propSlateDates(ppStandard));
 
     const dvpMaps  = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
+    const dvpRankMaps = { Guard: gDvp.rankMap, Forward: fDvp.rankMap, Center: cDvp.rankMap };
     const bioByName = {};
     bio.forEach(p => { bioByName[(p.Player || '').trim().toLowerCase()] = p; });
 
@@ -1143,8 +1184,8 @@ app.get('/api/edge', async (req, res) => {
         // projection (weighted PPM × mins × DVP)
         const dvpOpponent = normalizeTeamAbbr(opponent);
         const dvpFactors  = dvpOpponent ? (dvpMaps[position]?.[dvpOpponent] ?? {}) : {};
+        const opponentRankMap = dvpOpponent ? (dvpRankMaps[position]?.[dvpOpponent] ?? {}) : {};
         const bundle = buildProjectionBundle(games, avgMins, dvpFactors);
-        const neutralBundle = buildProjectionBundle(games, avgMins);
         const proj   = projectionByStatLabel(statLabel, bundle);
         if (proj == null) continue;
         const rating = line > 0 ? parseFloat(((proj / line) * 50).toFixed(1)) : null;
@@ -1163,7 +1204,7 @@ app.get('/api/edge', async (req, res) => {
           l15:  hitRateForLabel(games, statLabel, line, 15),
           full: hitRateForLabel(games, statLabel, line, null),
           projection: proj,
-          effectiveDvpFactor: effectiveDvpFactor(statLabel, bundle, neutralBundle),
+          effectiveDvpFactor: effectiveDvpRank(statLabel, opponentRankMap) ?? DVP_RANK_NEUTRAL,
           rating,
           value: rating == null ? null : rating > 50 ? 'OVER' : rating < 50 ? 'UNDER' : 'EVEN',
         });

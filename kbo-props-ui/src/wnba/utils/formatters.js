@@ -29,10 +29,19 @@ export function posColor(pos) {
   return '#9ca3af'
 }
 
-export function dvpLabel(factor) {
-  if (factor >= 1.05) return { label: 'Easy', color: '#22c55e' }
-  if (factor >= 0.95) return { label: 'Avg', color: '#f59e0b' }
-  return { label: 'Hard', color: '#ef4444' }
+export function fmtDvpRank(value) {
+  const rank = Number(value)
+  return Number.isFinite(rank) ? String(Math.round(rank)) : '—'
+}
+
+export function dvpLabel(rankValue) {
+  const rank = Math.min(15, Math.max(1, Number(rankValue) || 1))
+  const from = rank <= 7 ? [239, 68, 68] : [250, 204, 21]
+  const to = rank <= 7 ? [250, 204, 21] : [34, 197, 94]
+  const progress = rank <= 7 ? (rank - 1) / 6 : (rank - 7) / 8
+  const color = `rgb(${Math.round(from[0] + (to[0] - from[0]) * progress)}, ${Math.round(from[1] + (to[1] - from[1]) * progress)}, ${Math.round(from[2] + (to[2] - from[2]) * progress)})`
+  const label = rank < 7 ? 'Tough' : rank > 7 ? 'Easy' : 'Neutral'
+  return { label, color }
 }
 
 export function formatDate(dateStr) {

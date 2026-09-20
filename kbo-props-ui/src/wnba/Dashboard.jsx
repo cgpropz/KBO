@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { fetchWnbaData } from './wnbaData'
+import { fmtDvpRank } from './utils/formatters'
 import L10HitRateChart from './components/L10HitRateChart'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
@@ -62,11 +63,6 @@ function spreadColor(spread) {
 function fmtSpread(spread) {
   if (spread == null || Number.isNaN(spread)) return 'Spread —'
   return `Spread ${spread > 0 ? '+' : ''}${spread.toFixed(1)}`
-}
-
-function fmtDvpFactor(value) {
-  if (value == null || Number.isNaN(value)) return '1.00x'
-  return `${value.toFixed(2)}x`
 }
 
 function hitColor(pct) {
@@ -464,7 +460,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
                 </div>
                 <div>
                   <p className="edge-stat-label">{String(player.position || 'DVP').charAt(0).toUpperCase()} DVP</p>
-                  <p className="edge-stat-value">{fmtDvpFactor(dvpFactor)}</p>
+                  <p className="edge-stat-value">{fmtDvpRank(dvpFactor)}</p>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { fmt1, posBadgeClass, dvpLabel, teamColor, ratingLabel } from '../utils/formatters'
+import { fmt1, fmtDvpRank, posBadgeClass, dvpLabel, teamColor, ratingLabel } from '../utils/formatters'
 
 const COLS = [
   { key: 'rank', label: '#', sortKey: null, width: 36 },
@@ -201,7 +201,7 @@ export default function ProjectionTable({ data = [], loading = false, selectedPr
                     borderRadius: 20,
                     fontSize: 11,
                     fontWeight: 700,
-                  }}>{dvp.label} ({(p.dvpFactor ?? 1).toFixed(2)}x)</span>
+                  }}>{dvp.label} ({fmtDvpRank(p.dvpFactor)})</span>
                 </td>
 
                 <td style={{ borderLeft: '2px solid #22c55e22' }}>

@@ -76,7 +76,7 @@ async function retainPreviousPropLines(file, projections) {
           ...prop,
           projection,
           rating: projection != null && line > 0 ? Number(((projection / line) * 50).toFixed(1)) : null,
-          effectiveDvpFactor: player.dvpFactorByProp?.[prop.stat] ?? prop.effectiveDvpFactor ?? 1,
+          effectiveDvpFactor: player.dvpFactorByProp?.[prop.stat] ?? prop.effectiveDvpFactor ?? 7,
         }
       })
       return {
