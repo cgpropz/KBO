@@ -64,7 +64,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   return (
     <section className="nfl-player-page">
-      <button className="nfl-player-back" onClick={onBack}>&larr; Back to Edge Board</button>
+      <button className="nfl-player-back" onClick={onBack}>&larr; Back</button>
       <div className="nfl-player-header">
         <div className="nfl-player-avatar">
           {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={currentRow.imageUrl} alt={player} loading="lazy" /> : initials(player)}

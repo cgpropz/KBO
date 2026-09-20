@@ -4,31 +4,37 @@ import SportSwitcher from '../SportSwitcher'
 import NflDashboard from './NflDashboard'
 import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
+import NflPropLines from './NflPropLines'
 import NflPlayerPage from './NflPlayerPage'
 import './nfl.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projections', label: 'PrizePicks Board' },
+  { id: 'lines', label: 'Prop Lines' },
   { id: 'lineups', label: 'Starting Lineups' },
 ]
 
 export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const [view, setView] = useState('dashboard')
+  const [previousView, setPreviousView] = useState('dashboard')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   const openPlayer = (player, prop) => {
+    setPreviousView(view)
     setSelectedPlayer({ player, prop })
     setView('player')
   }
 
   const content = view === 'player' && selectedPlayer
-    ? <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView('projections')} />
+    ? <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />
     : view === 'projections'
       ? <NflProjections onSelectPlayer={openPlayer} />
-      : view === 'lineups'
-        ? <NflLineups />
-        : <NflDashboard onOpenBoard={() => setView('projections')} onSelectPlayer={openPlayer} />
+      : view === 'lines'
+        ? <NflPropLines onSelectPlayer={openPlayer} />
+        : view === 'lineups'
+          ? <NflLineups />
+          : <NflDashboard onOpenBoard={() => setView('projections')} onSelectPlayer={openPlayer} />
 
   return (
     <div className="nfl-root">
