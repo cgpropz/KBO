@@ -4,6 +4,12 @@ import { teamLogoUrl } from './nflTeams'
 
 const PROP_TABS = ['All Props', 'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Rush Yards', 'Rush Attempts', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Pass+Rush Yds', 'Rush+Rec Yds']
 const SEASON_LABEL = String(new Date().getFullYear())
+const SORT_OPTIONS = ['Hit Rate', 'Edge Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
+const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
+const GAMES_OPTIONS = [0, 3, 5, 8, 10]
+const POSITIONS = ['All', 'QB', 'RB', 'WR', 'TE']
+const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
+const DEFAULT_FILTERS = { side: 'All', sortBy: 'Hit Rate', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
@@ -52,6 +58,16 @@ function TeamLogo({ team, className }) {
   return url ? <img className={className} src={url} alt={team} loading="lazy" /> : null
 }
 
+function FilterIcon() {
+  return (
+    <svg className="nfl-filters-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="4" y1="7" x2="20" y2="7" /><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none" />
+      <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
+      <line x1="4" y1="17" x2="20" y2="17" /><circle cx="11" cy="17" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 function MiniChart({ recent, line }) {
   const maxValue = Math.max(line, ...recent, 1)
   return (
@@ -91,10 +107,111 @@ function PropRow({ item, onSelectPlayer }) {
   )
 }
 
+function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
+  const expanded = expandedRow === id
+  return (
+    <div className="nfl-filter-row">
+      <button type="button" className="nfl-filter-row-head" onClick={() => onToggle(id)}>
+        <span>{label}</span>
+        <span className="nfl-filter-row-value">{value}</span>
+        <i className={`nfl-filter-chevron${expanded ? ' open' : ''}`} />
+      </button>
+      {expanded && <div className="nfl-filter-row-body">{children}</div>}
+    </div>
+  )
+}
+
+function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, propTab, setPropTab, lineBounds, resultCount }) {
+  const [expandedRow, setExpandedRow] = useState(null)
+  const toggleRow = (id) => setExpandedRow((current) => (current === id ? null : id))
+
+  if (!open) return null
+  return (
+    <div className="nfl-filters-overlay" onClick={onClose}>
+      <div className="nfl-filters-panel" onClick={(event) => event.stopPropagation()}>
+        <div className="nfl-filters-head">
+          <h2>Filters</h2>
+          <button className="nfl-filters-close" onClick={onClose}>Close <span>&times;</span></button>
+        </div>
+        <div className="nfl-filters-side">
+          {['All', 'Overs', 'Unders'].map((option) => (
+            <button key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
+          ))}
+        </div>
+
+        <FilterRow id="sort" label="Sort By" value={filters.sortBy} expandedRow={expandedRow} onToggle={toggleRow}>
+          <select value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
+            {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </FilterRow>
+
+        <FilterRow id="hitrate" label="Hit Rates" value={`L10 > ${filters.minHitRate}%`} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="nfl-filter-chip-row">
+            {HIT_RATE_OPTIONS.map((option) => (
+              <button key={option} className={filters.minHitRate === option ? 'active' : ''} onClick={() => updateFilter('minHitRate', option)}>{option === 0 ? 'All' : `>${option}%`}</button>
+            ))}
+          </div>
+        </FilterRow>
+
+        <FilterRow id="prop" label="Prop Type" value={propTab} expandedRow={expandedRow} onToggle={toggleRow}>
+          <select value={propTab} onChange={(event) => setPropTab(event.target.value)}>
+            {PROP_TABS.map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </FilterRow>
+
+        <FilterRow id="games" label="Games" value={filters.minGames === 0 ? 'All' : `${filters.minGames}+`} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="nfl-filter-chip-row">
+            {GAMES_OPTIONS.map((option) => (
+              <button key={option} className={filters.minGames === option ? 'active' : ''} onClick={() => updateFilter('minGames', option)}>{option === 0 ? 'All' : `${option}+`}</button>
+            ))}
+          </div>
+        </FilterRow>
+
+        <FilterRow id="position" label="Positions" value={filters.position} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="nfl-filter-chip-row">
+            {POSITIONS.map((option) => (
+              <button key={option} className={filters.position === option ? 'active' : ''} onClick={() => updateFilter('position', option)}>{option}</button>
+            ))}
+          </div>
+        </FilterRow>
+
+        <FilterRow id="edge" label="Edge" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="nfl-filter-range-row">
+            <input type="number" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
+            <span>to</span>
+            <input type="number" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
+          </div>
+        </FilterRow>
+
+        <FilterRow id="lines" label="Lines" value={filters.lineMin || filters.lineMax ? `${filters.lineMin || lineBounds.min} to ${filters.lineMax || lineBounds.max}` : `${lineBounds.min} to ${lineBounds.max}`} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="nfl-filter-range-row">
+            <input type="number" placeholder={String(lineBounds.min)} value={filters.lineMin} onChange={(event) => updateFilter('lineMin', event.target.value)} />
+            <span>to</span>
+            <input type="number" placeholder={String(lineBounds.max)} value={filters.lineMax} onChange={(event) => updateFilter('lineMax', event.target.value)} />
+          </div>
+        </FilterRow>
+
+        <FilterRow id="grade" label="Matchup Grade" value={filters.grade} expandedRow={expandedRow} onToggle={toggleRow}>
+          <select value={filters.grade} onChange={(event) => updateFilter('grade', event.target.value)}>
+            {GRADE_OPTIONS.map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </FilterRow>
+
+        <div className="nfl-filters-footer">
+          <button className="nfl-filters-reset" onClick={resetFilters}>Reset</button>
+          <button className="nfl-filters-apply" onClick={onClose}>Show {resultCount} lines</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function NflPropLines({ onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
   useEffect(() => {
     let active = true
@@ -102,10 +219,44 @@ export default function NflPropLines({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
-  const rows = useMemo(() => projections
-    .map((item) => ({ ...item, score: item.line ? (item.projection / item.line) * 50 : 0 }))
-    .filter((item) => propTab === 'All Props' || item.prop === propTab)
-    .sort((a, b) => b.hitRate - a.hitRate), [projections, propTab])
+  const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
+  const resetFilters = () => setFilters(DEFAULT_FILTERS)
+
+  const lineBounds = useMemo(() => {
+    const lines = projections.map((item) => item.line).filter((value) => typeof value === 'number')
+    if (!lines.length) return { min: 0, max: 0 }
+    return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
+  }, [projections])
+
+  const rows = useMemo(() => {
+    const withScore = projections.map((item) => ({ ...item, score: item.line ? (item.projection / item.line) * 50 : 0, isOver: item.projection >= item.line }))
+    const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
+    const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
+    const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)
+    const lineMax = filters.lineMax === '' ? Infinity : Number(filters.lineMax)
+
+    const filtered = withScore
+      .filter((item) => propTab === 'All Props' || item.prop === propTab)
+      .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.isOver : !item.isOver))
+      .filter((item) => item.hitRate >= filters.minHitRate)
+      .filter((item) => item.gamesPlayed >= filters.minGames)
+      .filter((item) => filters.position === 'All' || item.position === filters.position)
+      .filter((item) => item.score >= edgeMin && item.score <= edgeMax)
+      .filter((item) => item.line >= lineMin && item.line <= lineMax)
+      .filter((item) => {
+        if (filters.grade === 'All Grades') return true
+        const grade = dvpGrade(item.dvpRank)
+        return grade && grade[0] === filters.grade
+      })
+
+    return filtered.sort((a, b) => {
+      if (filters.sortBy === 'Edge Score') return b.score - a.score
+      if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
+      if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
+      if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
+      return b.hitRate - a.hitRate
+    })
+  }, [projections, propTab, filters])
 
   return (
     <section className="nfl-lines-page">
@@ -114,7 +265,13 @@ export default function NflPropLines({ onSelectPlayer }) {
           <button key={tab} className={tab === propTab ? 'active' : ''} onClick={() => setPropTab(tab)}>{tab}</button>
         ))}
       </div>
-      <div className="nfl-board-header"><div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1></div><span>{rows.length} lines · sorted by L10 hit rate</span></div>
+      <div className="nfl-board-header">
+        <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1></div>
+        <div className="nfl-lines-header-actions">
+          <span>{rows.length} lines · sorted by {filters.sortBy}</span>
+          <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
+        </div>
+      </div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !rows.length && <div className="nfl-notice">Loading NFL prop lines.</div>}
       {!!rows.length && (
@@ -131,6 +288,17 @@ export default function NflPropLines({ onSelectPlayer }) {
           </table>
         </div>
       )}
+      <FiltersPanel
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        updateFilter={updateFilter}
+        resetFilters={resetFilters}
+        propTab={propTab}
+        setPropTab={setPropTab}
+        lineBounds={lineBounds}
+        resultCount={rows.length}
+      />
     </section>
   )
 }
