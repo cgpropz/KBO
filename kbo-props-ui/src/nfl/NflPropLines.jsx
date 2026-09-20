@@ -53,6 +53,24 @@ function gradeClass(grade) {
   return `grade-${grade[0].toLowerCase()}`
 }
 
+const DVP_RED = [255, 123, 121]
+const DVP_NEUTRAL = [120, 145, 138]
+const DVP_GREEN = [127, 255, 104]
+
+function mixColor(a, b, t) {
+  return a.map((channel, index) => Math.round(channel + (b[index] - channel) * t))
+}
+
+// 1 = toughest matchup (red) -> 15 = neutral -> 32 = easiest matchup (green)
+function dvpColor(rank) {
+  if (!rank) return null
+  const value = Math.max(1, Math.min(32, rank))
+  const [r, g, b] = value <= 15
+    ? mixColor(DVP_RED, DVP_NEUTRAL, (value - 1) / 14)
+    : mixColor(DVP_NEUTRAL, DVP_GREEN, (value - 15) / 17)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
   return url ? <img className={className} src={url} alt={team} loading="lazy" /> : null
@@ -98,7 +116,7 @@ function PropRow({ item, onSelectPlayer }) {
       <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
       <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
       <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
-      <td>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
+      <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
       <td className="nfl-lines-matchup">
         <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
         <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
