@@ -3,15 +3,10 @@
 import datetime
 import json
 import re
-from io import StringIO
 from pathlib import Path
 
 import pandas as pd
 import requests
-from seleniumbase import Driver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 
 ROOT = Path(__file__).resolve().parent
@@ -24,14 +19,15 @@ GAMES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/schedul
 PLAYERS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/players/players.csv'
 DEPTH_URL = 'https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_{season}.csv'
 INJURIES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv'
+SNAP_COUNTS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_{season}.csv'
 PRIZEPICKS_URL = 'https://partner-api.prizepicks.com/projections?per_page=1000'
-LINEUPS_SNAPS_URL = 'https://www.lineups.com/nfl/snap-counts/'
 
 STARTER_SLOTS = [('QB', 1), ('RB', 1), ('WR', 3), ('TE', 1), ('PK', 1)]
 
 
 def name_key(name):
-    return re.sub(r'[^a-z0-9]', '', str(name).lower())
+    stripped = re.sub(r'\s+(jr|sr|ii|iii|iv|v)\.?$', '', str(name).lower().strip())
+    return re.sub(r'[^a-z0-9]', '', stripped)
 
 
 def text_or_empty(value):
@@ -57,39 +53,13 @@ def stat_values(frame, stat):
 
 
 def load_snap_counts():
-    """Read current team snap shares from Lineups' browser-rendered table."""
-    driver = Driver(uc=True, headless=True)
-    try:
-        driver.set_window_size(1440, 1200)
-        driver.get(LINEUPS_SNAPS_URL)
-        wait = WebDriverWait(driver, 30)
-        table = wait.until(EC.presence_of_element_located((By.TAG_NAME, 'table')))
-        wait.until(lambda browser: browser.execute_script("return Boolean(document.querySelector('nav[aria-label=\"Table pages\"] [aria-current=\"page\"]'))"))
-        frames = []
-        while True:
-            frames.extend(pd.read_html(StringIO(table.get_attribute('outerHTML'))))
-            first_player = table.find_element(By.CSS_SELECTOR, 'tbody tr').text
-            advanced = driver.execute_script("""
-                const pager = document.querySelector('nav[aria-label="Table pages"]');
-                const current = Number(pager?.querySelector('[aria-current="page"]')?.textContent);
-                const next = [...(pager?.querySelectorAll('button') || [])].find(button => button.textContent.trim() === String(current + 1));
-                if (!next) return false;
-                next.click();
-                return true;
-            """)
-            if not advanced:
-                break
-            wait.until(lambda browser: table.find_element(By.CSS_SELECTOR, 'tbody tr').text != first_player)
-    finally:
-        driver.quit()
-
-    snap_frames = [table for table in frames if 'TM SNAP%' in table.columns]
-    if not snap_frames:
-        raise RuntimeError('Lineups snap-count columns were not found.')
-    frame = pd.concat(snap_frames, ignore_index=True)
-    frame['name_key'] = frame['NAMES'].astype(str).str.replace(r'(QB|RB|WR|TE)$', '', regex=True).map(name_key)
-    frame['snapCount'] = pd.to_numeric(frame['TM SNAP%'].astype(str).str.replace('%', '', regex=False), errors='coerce')
-    return frame.dropna(subset=['snapCount']).drop_duplicates('name_key', keep='last').set_index('name_key')['snapCount'].to_dict()
+    """Read each player's current-season offensive snap share from nflverse."""
+    frame = pd.read_csv(SNAP_COUNTS_URL.format(season=CURRENT_SEASON), low_memory=False)
+    frame = frame[frame['game_type'].isin(['REG', 'POST'])]
+    frame['name_key'] = frame['player'].map(name_key)
+    frame['offense_pct'] = pd.to_numeric(frame['offense_pct'], errors='coerce')
+    average_pct = frame.dropna(subset=['offense_pct']).groupby('name_key')['offense_pct'].mean()
+    return (average_pct * 100).round(1).to_dict()
 
 
 def load_dvp_ratings(history):
