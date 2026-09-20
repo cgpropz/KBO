@@ -40,9 +40,10 @@ def stat_values(frame, stat):
         'Pass Attempts': 'attempts',
         'Pass Completions': 'completions',
         'Rush Yards': 'rushing_yards',
-        'Rush Attempts': 'rushing_attempts',
+        'Rush Attempts': 'carries',
         'Receiving Yards': 'receiving_yards',
         'Receptions': 'receptions',
+        'Rec Targets': 'targets',
     }
     if stat == 'Pass+Rush Yds':
         return frame['passing_yards'].fillna(0) + frame['rushing_yards'].fillna(0)
@@ -128,7 +129,7 @@ def load_slate():
         for item in payload.get('included', [])
         if item.get('attributes', {}).get('name')
     }
-    supported = {'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions'}
+    supported = {'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets'}
     records = []
     for item in payload.get('data', []):
         attrs = item.get('attributes', {})
