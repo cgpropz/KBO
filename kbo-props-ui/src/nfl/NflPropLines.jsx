@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections } from './nflData'
 import { teamLogoUrl } from './nflTeams'
+import { useAuth } from '../AuthContext'
+import { sportAccess } from '../entitlements'
+
+const FREE_ROW_LIMIT = 3
 
 const PROP_TABS = ['All Props', 'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Rush Yards', 'Rush Attempts', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Pass+Rush Yds', 'Rush+Rec Yds']
 const SEASON_LABEL = String(new Date().getFullYear())
@@ -97,17 +101,17 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.projection >= item.line
   const grade = dvpGrade(item.dvpRank)
 
   return (
-    <tr className="nfl-lines-row">
+    <tr className={`nfl-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
       <td className="nfl-lines-player">
         <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
         <div className="nfl-lines-info">
-          <button className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</button>
+          <button className="nfl-player-link" onClick={() => !locked && onSelectPlayer(item.player, item.prop)}>{item.player}</button>
           <span className="nfl-lines-tag">{item.team}, {item.position}</span>
           <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
         </div>
@@ -224,12 +228,19 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
   )
 }
 
-export default function NflPropLines({ onSelectPlayer }) {
+export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
+
+  const { tier, user } = useAuth()
+  const isPaid = sportAccess(tier, user?.email).nfl
+
+  const tableWrapRef = useRef(null)
+  const lastFreeRowRef = useRef(null)
+  const [lockTop, setLockTop] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -276,6 +287,22 @@ export default function NflPropLines({ onSelectPlayer }) {
     })
   }, [projections, propTab, filters])
 
+  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+
+  useEffect(() => {
+    if (!hasLockedRows) return
+    const measure = () => {
+      if (tableWrapRef.current && lastFreeRowRef.current) {
+        const wrapTop = tableWrapRef.current.getBoundingClientRect().top
+        const rowBottom = lastFreeRowRef.current.getBoundingClientRect().bottom
+        setLockTop(rowBottom - wrapTop)
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [hasLockedRows, rows])
+
   return (
     <section className="nfl-lines-page">
       <div className="nfl-lines-tabs">
@@ -293,7 +320,7 @@ export default function NflPropLines({ onSelectPlayer }) {
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !rows.length && <div className="nfl-notice">Loading NFL prop lines.</div>}
       {!!rows.length && (
-        <div className="nfl-lines-table-wrap">
+        <div className="nfl-lines-table-wrap" ref={tableWrapRef}>
           <table className="nfl-lines-table">
             <thead>
               <tr>
@@ -301,9 +328,27 @@ export default function NflPropLines({ onSelectPlayer }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((item) => <PropRow key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}
+              {rows.map((item, index) => (
+                <PropRow
+                  key={item.id}
+                  item={item}
+                  onSelectPlayer={onSelectPlayer}
+                  locked={!isPaid && index >= FREE_ROW_LIMIT}
+                  rowRef={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}
+                />
+              ))}
             </tbody>
           </table>
+          {hasLockedRows && lockTop != null && (
+            <div className="nfl-lines-lock-overlay" style={{ top: lockTop }}>
+              <div className="nfl-lines-lock-card">
+                <div className="nfl-lines-lock-icon">🔒</div>
+                <h3>Unlock the Full Board</h3>
+                <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+                <button onClick={onNavigatePricing}>View Plans</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <FiltersPanel

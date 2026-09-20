@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
-import NflDashboard from './NflDashboard'
 import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
 import NflPropLines from './NflPropLines'
@@ -11,7 +10,6 @@ import './nfl.css'
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projections', label: 'PrizePicks Board' },
-  { id: 'lines', label: 'Prop Lines' },
   { id: 'lineups', label: 'Starting Lineups' },
 ]
 
@@ -30,11 +28,12 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
     ? <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />
     : view === 'projections'
       ? <NflProjections onSelectPlayer={openPlayer} />
-      : view === 'lines'
-        ? <NflPropLines onSelectPlayer={openPlayer} />
-        : view === 'lineups'
-          ? <NflLineups />
-          : <NflDashboard onOpenBoard={() => setView('projections')} onSelectPlayer={openPlayer} />
+      : view === 'lineups'
+        ? <NflLineups />
+        : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
+
+  // The dashboard gates itself (top 3 free, rest blurred by membership), so it skips the full-page paywall.
+  const isDashboard = view === 'dashboard'
 
   return (
     <div className="nfl-root">
@@ -51,7 +50,7 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NFL PRO</button>
       </nav>
       <main className="nfl-content">
-        <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>
+        {isDashboard ? content : <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>}
       </main>
     </div>
   )
