@@ -153,13 +153,14 @@ def make_record(row, history, directory, dvp_ratings, snap_counts):
     key = name_key(row.player)
     player_history = history[history['name_key'] == key].sort_values('date')
     series = stat_values(player_history, row.prop)
-    values, dates = [], []
+    values, dates, opponents = [], [], []
     if series is not None:
         numeric = pd.to_numeric(series, errors='coerce')
         valid = numeric.notna()
         values = numeric[valid].tolist()
         dates = player_history.loc[valid, 'date'].dt.strftime('%-m/%-d').tolist()
-    recent, recent_dates = values[-10:], dates[-10:]
+        opponents = player_history.loc[valid, 'opponent_team'].fillna('').tolist()
+    recent, recent_dates, recent_opponents = values[-10:], dates[-10:], opponents[-10:]
     if len(recent) >= 3:
         last_three = sum(recent[-3:]) / 3
         last_nine = sum(recent[-9:]) / min(9, len(recent))
@@ -177,7 +178,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts):
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
-        'gameDates': recent_dates, 'hitRate': round(sum(value >= row.line for value in recent) / len(recent) * 100) if recent else 0,
+        'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'hitRate': round(sum(value >= row.line for value in recent) / len(recent) * 100) if recent else 0,
         'gamesPlayed': len(recent), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
         'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
     }
