@@ -8,7 +8,7 @@ const FREE_ROW_LIMIT = 3
 
 const PROP_TABS = ['All Props', 'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Rush Yards', 'Rush Attempts', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Pass+Rush Yds', 'Rush+Rec Yds']
 const SEASON_LABEL = String(new Date().getFullYear())
-const SORT_OPTIONS = ['Hit Rate', 'Edge Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
+const SORT_OPTIONS = ['Hit Rate', 'CG Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
 const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
 const GAMES_OPTIONS = [0, 3, 5, 8, 10]
 const POSITIONS = ['All', 'QB', 'RB', 'WR', 'TE']
@@ -197,7 +197,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
           </div>
         </FilterRow>
 
-        <FilterRow id="edge" label="Edge" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
+        <FilterRow id="edge" label="CG Score" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
           <div className="nfl-filter-range-row">
             <input type="number" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
             <span>to</span>
@@ -279,7 +279,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       })
 
     return filtered.sort((a, b) => {
-      if (filters.sortBy === 'Edge Score') return b.score - a.score
+      if (filters.sortBy === 'CG Score') return b.score - a.score
       if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
       if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
@@ -324,7 +324,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <table className="nfl-lines-table">
             <thead>
               <tr>
-                <th>Lines</th><th>L10 Chart</th><th>Edge</th><th>{SEASON_LABEL}</th><th>H2H</th><th>DVP</th><th>Matchup</th>
+                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON_LABEL}</th><th>H2H</th><th>DVP</th><th>Matchup</th>
               </tr>
             </thead>
             <tbody>
