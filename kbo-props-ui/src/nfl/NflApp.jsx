@@ -4,6 +4,7 @@ import SportSwitcher from '../SportSwitcher'
 import NflDashboard from './NflDashboard'
 import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
+import NflPlayerPage from './NflPlayerPage'
 import './nfl.css'
 
 const NAV_ITEMS = [
@@ -14,11 +15,20 @@ const NAV_ITEMS = [
 
 export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const [view, setView] = useState('dashboard')
-  const content = view === 'projections'
-    ? <NflProjections />
-    : view === 'lineups'
-      ? <NflLineups />
-      : <NflDashboard onOpenBoard={() => setView('projections')} />
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
+
+  const openPlayer = (player, prop) => {
+    setSelectedPlayer({ player, prop })
+    setView('player')
+  }
+
+  const content = view === 'player' && selectedPlayer
+    ? <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView('projections')} />
+    : view === 'projections'
+      ? <NflProjections onSelectPlayer={openPlayer} />
+      : view === 'lineups'
+        ? <NflLineups />
+        : <NflDashboard onOpenBoard={() => setView('projections')} onSelectPlayer={openPlayer} />
 
   return (
     <div className="nfl-root">

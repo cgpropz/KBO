@@ -5,7 +5,7 @@ function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
 }
 
-export default function NflDashboard({ onOpenBoard }) {
+export default function NflDashboard({ onOpenBoard, onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState('')
@@ -43,7 +43,7 @@ export default function NflDashboard({ onOpenBoard }) {
             <div className="nfl-rank">0{index + 1}</div>
             <div className="nfl-player">
               <div className="nfl-avatar">{item.imageUrl && <img src={item.imageUrl} alt="" />}</div>
-              <div><h2>{item.player}</h2><span>{item.position} · {item.team} vs {item.opponent}</span></div>
+              <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><span>{item.position} · {item.team} vs {item.opponent}</span></div>
             </div>
             <p className="nfl-prop">{item.prop}</p>
             <div className="nfl-metrics"><span>LINE <b>{formatValue(item.line)}</b></span><span>MODEL <b>{formatValue(item.projection)}</b></span><span>EDGE <b>{item.score.toFixed(1)}</b></span></div>

@@ -27,7 +27,7 @@ function snapColor(pct) {
   return `rgb(${r}, ${g}, ${b})`
 }
 
-function ProjectionCard({ item }) {
+function ProjectionCard({ item, onSelectPlayer }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const gameDates = Array.isArray(item.gameDates) ? item.gameDates : []
   const maxValue = Math.max(item.line, ...recent, 1)
@@ -38,7 +38,7 @@ function ProjectionCard({ item }) {
       <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
-        <div><h2>{item.player}</h2><p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p></div>
+        <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p></div>
       </div>
       <div className="nfl-card-prop">{item.prop}</div>
       <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
@@ -56,7 +56,7 @@ function ProjectionCard({ item }) {
   )
 }
 
-export default function NflProjections() {
+export default function NflProjections({ onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [query, setQuery] = useState('')
   const [position, setPosition] = useState('ALL')
@@ -95,7 +95,7 @@ export default function NflProjections() {
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !rows.length && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
-      <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} />)}</div>
+      <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>
     </section>
   )
 }
