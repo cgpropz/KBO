@@ -11,6 +11,22 @@ function initials(name) {
   return name.split(' ').map((part) => part[0]).join('').slice(0, 2)
 }
 
+const SNAP_RED = [255, 123, 121]
+const SNAP_NEUTRAL = [120, 145, 138]
+const SNAP_GREEN = [127, 255, 104]
+
+function mixColor(a, b, t) {
+  return a.map((channel, index) => Math.round(channel + (b[index] - channel) * t))
+}
+
+function snapColor(pct) {
+  const value = Math.max(0, Math.min(100, pct))
+  const [r, g, b] = value <= 50
+    ? mixColor(SNAP_RED, SNAP_NEUTRAL, Math.max(0, Math.min(1, (value - 30) / 20)))
+    : mixColor(SNAP_NEUTRAL, SNAP_GREEN, Math.max(0, Math.min(1, (value - 50) / 20)))
+  return `rgb(${r}, ${g}, ${b})`
+}
+
 function ProjectionCard({ item }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const gameDates = Array.isArray(item.gameDates) ? item.gameDates : []
@@ -19,7 +35,7 @@ function ProjectionCard({ item }) {
 
   return (
     <article className="nfl-edge-card">
-      <div className="nfl-card-topline"><span className="nfl-snap-badge">{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
+      <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
         <div><h2>{item.player}</h2><p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p></div>
