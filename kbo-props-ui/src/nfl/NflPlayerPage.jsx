@@ -67,8 +67,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       <button className="nfl-player-back" onClick={onBack}>&larr; Back to Edge Board</button>
       <div className="nfl-player-header">
         <div className="nfl-player-avatar">
-          {currentRow.imageUrl ? <img src={currentRow.imageUrl} alt={player} loading="lazy" /> : initials(player)}
-          <TeamLogo team={currentRow.team} className="nfl-player-avatar-badge" />
+          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={currentRow.imageUrl} alt={player} loading="lazy" /> : initials(player)}
         </div>
         <div className="nfl-player-title"><h1>{player}<span>{currentRow.position}</span></h1><p>{currentRow.team} vs {currentRow.opponent}</p></div>
         <div className="nfl-player-prop-pill">
