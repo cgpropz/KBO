@@ -3,10 +3,15 @@
 import datetime
 import json
 import re
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
 import requests
+from seleniumbase import Driver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 ROOT = Path(__file__).resolve().parent
@@ -20,6 +25,7 @@ PLAYERS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/playe
 DEPTH_URL = 'https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_{season}.csv'
 INJURIES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv'
 PRIZEPICKS_URL = 'https://partner-api.prizepicks.com/projections?per_page=1000'
+LINEUPS_SNAPS_URL = 'https://www.lineups.com/nfl/snap-counts/'
 
 STARTER_SLOTS = [('QB', 1), ('RB', 1), ('WR', 3), ('TE', 1), ('PK', 1)]
 
@@ -50,14 +56,40 @@ def stat_values(frame, stat):
     return frame[column] if column and column in frame else None
 
 
-def snap_rate(frame):
-    for column in ('offense_pct', 'offensive_snap_pct', 'offense_snaps_pct'):
-        if column in frame:
-            rate = pd.to_numeric(frame[column], errors='coerce').dropna()
-            if not rate.empty:
-                value = float(rate.tail(5).mean())
-                return value * 100 if value <= 1 else value
-    return 0.0
+def load_snap_counts():
+    """Read current team snap shares from Lineups' browser-rendered table."""
+    driver = Driver(uc=True, headless=True)
+    try:
+        driver.set_window_size(1440, 1200)
+        driver.get(LINEUPS_SNAPS_URL)
+        wait = WebDriverWait(driver, 30)
+        table = wait.until(EC.presence_of_element_located((By.TAG_NAME, 'table')))
+        wait.until(lambda browser: browser.execute_script("return Boolean(document.querySelector('nav[aria-label=\"Table pages\"] [aria-current=\"page\"]'))"))
+        frames = []
+        while True:
+            frames.extend(pd.read_html(StringIO(table.get_attribute('outerHTML'))))
+            first_player = table.find_element(By.CSS_SELECTOR, 'tbody tr').text
+            advanced = driver.execute_script("""
+                const pager = document.querySelector('nav[aria-label="Table pages"]');
+                const current = Number(pager?.querySelector('[aria-current="page"]')?.textContent);
+                const next = [...(pager?.querySelectorAll('button') || [])].find(button => button.textContent.trim() === String(current + 1));
+                if (!next) return false;
+                next.click();
+                return true;
+            """)
+            if not advanced:
+                break
+            wait.until(lambda browser: table.find_element(By.CSS_SELECTOR, 'tbody tr').text != first_player)
+    finally:
+        driver.quit()
+
+    snap_frames = [table for table in frames if 'TM SNAP%' in table.columns]
+    if not snap_frames:
+        raise RuntimeError('Lineups snap-count columns were not found.')
+    frame = pd.concat(snap_frames, ignore_index=True)
+    frame['name_key'] = frame['NAMES'].astype(str).str.replace(r'(QB|RB|WR|TE)$', '', regex=True).map(name_key)
+    frame['snapCount'] = pd.to_numeric(frame['TM SNAP%'].astype(str).str.replace('%', '', regex=False), errors='coerce')
+    return frame.dropna(subset=['snapCount']).drop_duplicates('name_key', keep='last').set_index('name_key')['snapCount'].to_dict()
 
 
 def load_dvp_ratings(history):
@@ -146,7 +178,7 @@ def load_slate():
     return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
 
 
-def make_record(row, history, directory, dvp_ratings):
+def make_record(row, history, directory, dvp_ratings, snap_counts):
     key = name_key(row.player)
     player_history = history[history['name_key'] == key].sort_values('date')
     series = stat_values(player_history, row.prop)
@@ -175,7 +207,7 @@ def make_record(row, history, directory, dvp_ratings):
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'hitRate': round(sum(value >= row.line for value in recent) / len(recent) * 100) if recent else 0,
-        'gamesPlayed': len(recent), 'snapCount': round(snap_rate(player_history), 1),
+        'gamesPlayed': len(recent), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
         'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
     }
 
@@ -249,7 +281,8 @@ def main():
     slate = load_slate()
     directory = load_player_directory()
     dvp_ratings = load_dvp_ratings(history)
-    records = [make_record(row, history, directory, dvp_ratings) for row in slate.itertuples(index=False)]
+    snap_counts = load_snap_counts()
+    records = [make_record(row, history, directory, dvp_ratings, snap_counts) for row in slate.itertuples(index=False)]
     if not records:
         raise RuntimeError('Refusing to publish an empty NFL PrizePicks slate.')
     OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')

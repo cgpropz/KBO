@@ -19,7 +19,7 @@ function ProjectionCard({ item }) {
 
   return (
     <article className="nfl-edge-card">
-      <div className="nfl-card-topline"><span>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : `${item.gamesPlayed} GAMES`}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
+      <div className="nfl-card-topline"><span className="nfl-snap-badge">{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
         <div><h2>{item.player}</h2><p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p></div>
