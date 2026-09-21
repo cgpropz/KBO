@@ -100,15 +100,13 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   const currentRow = useMemo(() => playerRows.find((item) => item.prop === selectedProp) || playerRows[0], [playerRows, selectedProp])
 
-  // Re-seed the chart filter defaults (current matchup rank, average snap %, average usage) whenever the player/prop changes.
+  // Chart filters default to "All" (unfiltered) whenever the player/prop changes, so the chart never starts empty.
   const [seededRowId, setSeededRowId] = useState(null)
   if (currentRow && currentRow.id !== seededRowId) {
     setSeededRowId(currentRow.id)
-    setDvpThreshold(currentRow.dvpRank ?? null)
-    const snaps = (currentRow.recentSnapPercents || []).filter((value) => value != null)
-    setSnapThreshold(snaps.length ? Math.round(average(snaps) * 10) / 10 : null)
-    const usage = (currentRow.recentUsage || []).filter((value) => value != null)
-    setUsageThreshold(usage.length ? Math.round(average(usage) * 10) / 10 : null)
+    setDvpThreshold(null)
+    setSnapThreshold(null)
+    setUsageThreshold(null)
     setOpenFilter(null)
   }
 
@@ -122,6 +120,11 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
   const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
   const usageLabel = currentRow.usageLabel || 'Usage'
+  const validSnaps = recentSnapPercents.filter((value) => value != null)
+  const validUsage = recentUsage.filter((value) => value != null)
+  const defaultDvpThreshold = currentRow.dvpRank ?? 32
+  const defaultSnapThreshold = validSnaps.length ? Math.round(average(validSnaps) * 10) / 10 : 0
+  const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
   const isOver = currentRow.projection >= currentRow.line
   const hits = Math.round((currentRow.hitRate / 100) * currentRow.gamesPlayed)
   const modelDelta = currentRow.projection - currentRow.line
@@ -209,8 +212,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           open={openFilter === 'dvp'}
           onToggle={() => toggleFilter('dvp')}
         >
-          <input type="range" min={1} max={32} step={1} value={dvpThreshold ?? 32} onChange={(event) => setDvpThreshold(Number(event.target.value))} />
-          <small>Show games vs. defenses ranked {dvpThreshold ?? 32} or tougher</small>
+          <input type="range" min={1} max={32} step={1} value={dvpThreshold ?? defaultDvpThreshold} onChange={(event) => setDvpThreshold(Number(event.target.value))} />
+          <small>Show games vs. defenses ranked {dvpThreshold ?? defaultDvpThreshold} or tougher</small>
         </ChartFilterChip>
         <ChartFilterChip
           label="Snap %"
@@ -218,8 +221,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           open={openFilter === 'snap'}
           onToggle={() => toggleFilter('snap')}
         >
-          <input type="range" min={0} max={100} step={0.5} value={snapThreshold ?? 0} onChange={(event) => setSnapThreshold(Number(event.target.value))} />
-          <small>Show games with snap share &ge; {snapThreshold ?? 0}%</small>
+          <input type="range" min={0} max={100} step={0.5} value={snapThreshold ?? defaultSnapThreshold} onChange={(event) => setSnapThreshold(Number(event.target.value))} />
+          <small>Show games with snap share &ge; {snapThreshold ?? defaultSnapThreshold}%</small>
         </ChartFilterChip>
         <ChartFilterChip
           label={usageLabel}
@@ -227,8 +230,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           open={openFilter === 'usage'}
           onToggle={() => toggleFilter('usage')}
         >
-          <input type="range" min={0} max={Math.max(1, Math.ceil(Math.max(...recentUsage, 1)))} step={0.5} value={usageThreshold ?? 0} onChange={(event) => setUsageThreshold(Number(event.target.value))} />
-          <small>Show games with {usageLabel.toLowerCase()} &ge; {usageThreshold ?? 0}</small>
+          <input type="range" min={0} max={Math.max(1, Math.ceil(Math.max(...recentUsage, 1)))} step={0.5} value={usageThreshold ?? defaultUsageThreshold} onChange={(event) => setUsageThreshold(Number(event.target.value))} />
+          <small>Show games with {usageLabel.toLowerCase()} &ge; {usageThreshold ?? defaultUsageThreshold}</small>
         </ChartFilterChip>
         <button className="nfl-chart-filter-more" title="More filters coming soon" disabled>More</button>
       </div>
