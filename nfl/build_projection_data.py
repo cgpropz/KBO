@@ -54,13 +54,19 @@ def stat_values(frame, stat):
 
 
 def load_snap_counts():
-    """Read each player's current-season offensive snap share from nflverse."""
+    """Read each player's offensive snap share from nflverse: a season average plus a per-game lookup."""
     frame = pd.read_csv(SNAP_COUNTS_URL.format(season=CURRENT_SEASON), low_memory=False)
     frame = frame[frame['game_type'].isin(['REG', 'POST'])]
     frame['name_key'] = frame['player'].map(name_key)
     frame['offense_pct'] = pd.to_numeric(frame['offense_pct'], errors='coerce')
-    average_pct = frame.dropna(subset=['offense_pct']).groupby('name_key')['offense_pct'].mean()
-    return (average_pct * 100).round(1).to_dict()
+    valid = frame.dropna(subset=['offense_pct'])
+    average_pct = valid.groupby('name_key')['offense_pct'].mean()
+    season_average = (average_pct * 100).round(1).to_dict()
+    per_game = {
+        (row.name_key, CURRENT_SEASON, int(row.week)): round(float(row.offense_pct) * 100, 1)
+        for row in valid.itertuples(index=False)
+    }
+    return season_average, per_game
 
 
 def load_dvp_ratings(history):
@@ -149,28 +155,48 @@ def load_slate():
     return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
 
 
-def make_record(row, history, directory, dvp_ratings, snap_counts):
+def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     key = name_key(row.player)
     player_history = history[history['name_key'] == key].sort_values('date')
     series = stat_values(player_history, row.prop)
-    values, dates, opponents = [], [], []
+    values, dates, opponents, weeks, seasons = [], [], [], [], []
     season_hit_rate, season_games = None, 0
+    prior_season_hit_rate, prior_season_games = None, 0
     h2h_hit_rate, h2h_games = None, 0
+    hit_rate_l5, games_l5 = None, 0
+    hit_rate_l20, games_l20 = None, 0
+    hit_rate_l30, games_l30 = None, 0
     if series is not None:
         numeric = pd.to_numeric(series, errors='coerce')
         valid = numeric.notna()
         values = numeric[valid].tolist()
         dates = player_history.loc[valid, 'date'].dt.strftime('%-m/%-d').tolist()
         opponents = player_history.loc[valid, 'opponent_team'].fillna('').tolist()
+        weeks = player_history.loc[valid, 'week'].tolist()
+        seasons = player_history.loc[valid, 'season'].tolist()
         season_mask = valid & (player_history['season'] == CURRENT_SEASON)
         season_games = int(season_mask.sum())
         if season_games:
             season_hit_rate = round(float((numeric[season_mask] >= row.line).mean()) * 100)
+        prior_mask = valid & (player_history['season'] == CURRENT_SEASON - 1)
+        prior_season_games = int(prior_mask.sum())
+        if prior_season_games:
+            prior_season_hit_rate = round(float((numeric[prior_mask] >= row.line).mean()) * 100)
         opponent_mask = valid & (player_history['opponent_team'] == row.opponent)
         h2h_games = int(opponent_mask.sum())
         if h2h_games:
             h2h_hit_rate = round(float((numeric[opponent_mask] >= row.line).mean()) * 100)
+        games_l5 = min(5, len(values))
+        if games_l5:
+            hit_rate_l5 = round(sum(value >= row.line for value in values[-5:]) / games_l5 * 100)
+        games_l20 = min(20, len(values))
+        if games_l20:
+            hit_rate_l20 = round(sum(value >= row.line for value in values[-20:]) / games_l20 * 100)
+        games_l30 = min(30, len(values))
+        if games_l30:
+            hit_rate_l30 = round(sum(value >= row.line for value in values[-30:]) / games_l30 * 100)
     recent, recent_dates, recent_opponents = values[-10:], dates[-10:], opponents[-10:]
+    recent_weeks, recent_seasons = weeks[-10:], seasons[-10:]
     if len(recent) >= 3:
         last_three = sum(recent[-3:]) / 3
         last_nine = sum(recent[-9:]) / min(9, len(recent))
@@ -182,6 +208,18 @@ def make_record(row, history, directory, dvp_ratings, snap_counts):
     default_position = 'QB' if row.prop.startswith('Pass') else 'RB' if 'Rush' in row.prop else 'WR'
     position = text_or_empty(player.get('position')) or default_position
     dvp_rank, dvp_ratio = dvp_for(position, row.prop, row.opponent, dvp_ratings)
+
+    # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
+    recent_dvp_ranks = [dvp_for(position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
+    recent_snap_pcts = [snap_games.get((key, season_value, int(week_value))) for season_value, week_value in zip(recent_seasons, recent_weeks)]
+    usage_stat = 'Pass Attempts' if position == 'QB' else 'Rush Attempts' if position == 'RB' else 'Rec Targets'
+    usage_label = {'Pass Attempts': 'Pass Att', 'Rush Attempts': 'Rush Att', 'Rec Targets': 'Targets'}[usage_stat]
+    usage_series = stat_values(player_history, usage_stat)
+    recent_usage = []
+    if usage_series is not None and series is not None:
+        usage_numeric = pd.to_numeric(usage_series, errors='coerce').fillna(0)
+        recent_usage = [round(float(v), 1) for v in usage_numeric[valid].tolist()[-10:]]
+
     return {
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
         'player': text_or_empty(row.player), 'position': position, 'team': text_or_empty(row.team), 'opponent': text_or_empty(row.opponent),
@@ -192,7 +230,13 @@ def make_record(row, history, directory, dvp_ratings, snap_counts):
         'gamesPlayed': len(recent), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
         'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
         'seasonHitRate': season_hit_rate, 'seasonGames': season_games,
+        'priorSeasonHitRate': prior_season_hit_rate, 'priorSeasonGames': prior_season_games, 'priorSeasonLabel': CURRENT_SEASON - 1,
         'h2hHitRate': h2h_hit_rate, 'h2hGames': h2h_games,
+        'hitRateL5': hit_rate_l5, 'gamesL5': games_l5,
+        'hitRateL20': hit_rate_l20, 'gamesL20': games_l20,
+        'hitRateL30': hit_rate_l30, 'gamesL30': games_l30,
+        'recentDvpRanks': recent_dvp_ranks, 'recentSnapPercents': recent_snap_pcts,
+        'recentUsage': recent_usage, 'usageLabel': usage_label,
     }
 
 
@@ -265,8 +309,8 @@ def main():
     slate = load_slate()
     directory = load_player_directory()
     dvp_ratings = load_dvp_ratings(history)
-    snap_counts = load_snap_counts()
-    records = [make_record(row, history, directory, dvp_ratings, snap_counts) for row in slate.itertuples(index=False)]
+    snap_counts, snap_games = load_snap_counts()
+    records = [make_record(row, history, directory, dvp_ratings, snap_counts, snap_games) for row in slate.itertuples(index=False)]
     if not records:
         raise RuntimeError('Refusing to publish an empty NFL PrizePicks slate.')
     OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')
