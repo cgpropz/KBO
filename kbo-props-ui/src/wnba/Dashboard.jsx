@@ -44,12 +44,12 @@ const GAME_STAT_VALUE = {
 
 const SEASON_LABEL = String(new Date().getFullYear())
 const PROP_TABS = ['All Props', 'Points', 'Rebounds', 'Assists', '3-PT Made', 'Steals', 'Blocks', 'Turnovers', 'Fantasy Score', 'Pts+Rebs+Asts']
-const SORT_OPTIONS = ['Hit Rate', 'CG Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
+const SORT_OPTIONS = ['L10 Hit Rate', 'CG Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
 const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
 const GAMES_OPTIONS = [0, 3, 5, 8, 10]
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
-const DEFAULT_FILTERS = { side: 'All', sortBy: 'Hit Rate', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
+const DEFAULT_FILTERS = { side: 'All', sortBy: 'L10 Hit Rate', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
@@ -429,7 +429,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
         const recent = getter
           ? recentGames.slice(0, 10).map(g => getter(g)).filter(v => v != null).reverse()
           : []
-        const hitObj = computeRatePct(recentGames, prop.stat, line)
+        const l10Obj = computeRatePct(recentGames.slice(0, 10), prop.stat, line)
+        const seasonObj = computeRatePct(recentGames, prop.stat, line)
         const h2hObj = computeH2H(recentGames, prop.stat, line, prop.opponent ?? null)
 
         rows.push({
@@ -445,14 +446,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
           score: (projection / line) * 50,
           isOver: projection >= line,
           recent,
-          hitRate: hitObj ? Math.round(hitObj.pct) : 0,
-          gamesPlayed: hitObj ? hitObj.total : 0,
-          seasonHitRate: hitObj ? Math.round(hitObj.pct) : null,
+          hitRate: l10Obj ? Math.round(l10Obj.pct) : 0,
+          gamesPlayed: l10Obj ? l10Obj.total : 0,
+          seasonHitRate: seasonObj ? Math.round(seasonObj.pct) : null,
           h2hHitRate: h2hObj ? Math.round(h2hObj.pct) : null,
           dvpRank: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           // Preserved for the insight panels below.
           _player: player,
-          _hit: hitObj,
+          _hit: l10Obj,
           _edgePct: ((projection - rawLine) / rawLine) * 100,
         })
       })
