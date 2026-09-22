@@ -761,3 +761,124 @@
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.85; }
 }
+
+/*
+ * Prop Lines board theme — ported 1:1 from the cgpropz NFL board
+ * (src/nfl/nfl.css) so the WNBA board matches its format/colors.
+ * Scoped under .wnba-propboard so the rest of the WNBA section keeps its own theme.
+ */
+.wnba-propboard {
+  --pb-bg: #06100f;
+  --pb-panel: #081513;
+  --pb-panel-2: #0a1615;
+  --pb-panel-3: #0a1716;
+  --pb-input: #0b1c19;
+  --pb-border: #1a3c36;
+  --pb-border-soft: #15302b;
+  --pb-border-softer: #142a25;
+  --pb-text: #e8f4e6;
+  --pb-text-dim: #b7cac3;
+  --pb-text-muted: #78918a;
+  --pb-lime: #7fff68;
+  --pb-teal: #54e0bf;
+  --pb-red: #ff7b79;
+  --pb-amber: #f6c35f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  color: var(--pb-text);
+  background: var(--pb-bg);
+  border: 1px solid var(--pb-border);
+  border-radius: 14px;
+  padding: 26px;
+  margin-bottom: 24px;
+}
+.wnba-propboard * { box-sizing: border-box; }
+
+.wnba-lines-page { min-width: 0; }
+.wnba-lines-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--pb-border); }
+.wnba-lines-tabs button { border: 1px solid var(--pb-border); padding: 8px 13px; border-radius: 999px; color: var(--pb-text-muted); background: var(--pb-panel-2); font: 800 11px inherit; letter-spacing: .02em; cursor: pointer; }
+.wnba-lines-tabs button:hover { color: var(--pb-text); border-color: #2a5148; }
+.wnba-lines-tabs button.active { color: var(--pb-bg); background: var(--pb-lime); border-color: var(--pb-lime); }
+
+.wnba-lines-page .over { color: var(--pb-lime); }
+.wnba-lines-page .under { color: var(--pb-red); }
+
+.wnba-board-header { display: flex; align-items: end; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px; }
+.wnba-board-header p { margin: 0 0 6px; color: var(--pb-teal); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.wnba-board-header h1 { margin: 0; font-size: clamp(30px, 4.4vw, 46px); line-height: .95; text-transform: uppercase; }
+.wnba-lines-header-actions { display: flex; align-items: center; gap: 14px; }
+.wnba-lines-header-actions > span { color: var(--pb-lime); font-size: 12px; white-space: nowrap; }
+
+.wnba-notice { padding: 16px; border: 1px solid var(--pb-border); border-radius: 6px; color: var(--pb-text-muted); background: var(--pb-panel-3); }
+
+.wnba-lines-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--pb-border); border-radius: 8px; background: var(--pb-panel); }
+.wnba-lines-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+.wnba-lines-table th, .wnba-lines-table td { padding: 12px 14px; border-bottom: 1px solid var(--pb-border-soft); text-align: left; white-space: nowrap; }
+.wnba-lines-table th { color: var(--pb-teal); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.wnba-lines-table td { color: var(--pb-text-dim); font-size: 13px; }
+.wnba-lines-row:hover { background: #0c1c19; }
+
+.wnba-lines-player { display: flex; align-items: center; gap: 10px; white-space: normal; }
+.wnba-lines-avatar { display: grid; flex: 0 0 auto; place-items: center; width: 40px; height: 40px; overflow: hidden; border-radius: 50%; background: #143029; font: 800 12px inherit; }
+.wnba-lines-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.wnba-lines-info { min-width: 0; }
+.wnba-lines-info .wnba-player-link { display: block; border: 0; padding: 0; color: var(--pb-text); background: transparent; font: 800 13px inherit; text-align: left; cursor: pointer; }
+.wnba-lines-info .wnba-player-link:hover { color: var(--pb-lime); text-decoration: underline; }
+.wnba-lines-tag { color: var(--pb-text-muted); font-size: 10px; text-transform: uppercase; }
+.wnba-lines-line { margin-top: 3px; font-size: 11px; }
+.wnba-lines-line b { margin-right: 3px; }
+
+.wnba-lines-chart { display: flex; align-items: flex-end; gap: 2px; width: 110px; height: 34px; }
+.wnba-lines-chart span { flex: 1 1 0; min-width: 2px; border-radius: 1px 1px 0 0; }
+.wnba-lines-chart span.hit { background: var(--pb-lime); }
+.wnba-lines-chart span.miss { background: var(--pb-red); }
+
+.wnba-lines-matchup { display: flex; align-items: center; gap: 7px; }
+.wnba-lines-matchup-logo { width: 22px; height: 22px; object-fit: contain; }
+
+.wnba-grade { padding: 2px 7px; border-radius: 4px; font: 800 11px inherit; }
+.grade-a { color: #06100f; background: var(--pb-lime); }
+.grade-b { color: #06100f; background: var(--pb-teal); }
+.grade-c { color: #14110a; background: var(--pb-amber); }
+.grade-d { color: #fff; background: #e8813f; }
+.grade-f { color: #fff; background: var(--pb-red); }
+.grade-na { color: var(--pb-text-muted); background: transparent; }
+
+.wnba-filters-btn { display: flex; align-items: center; gap: 7px; border: 1px solid var(--pb-border); padding: 9px 14px; border-radius: 999px; color: var(--pb-text); background: var(--pb-panel-2); font: 800 11px inherit; letter-spacing: .02em; cursor: pointer; }
+.wnba-filters-btn:hover, .wnba-filters-btn.active { border-color: var(--pb-lime); color: var(--pb-lime); }
+.wnba-filters-icon { flex: 0 0 auto; }
+
+.wnba-filters-overlay { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: flex-end; background: rgba(4, 10, 9, .6); }
+.wnba-filters-panel { display: flex; flex-direction: column; width: 420px; max-width: 92vw; height: 100%; padding: 26px; overflow-y: auto; border-left: 1px solid var(--pb-border); background: var(--pb-panel); font-family: inherit; color: var(--pb-text); }
+.wnba-filters-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.wnba-filters-head h2 { margin: 0; font-size: 26px; }
+.wnba-filters-close { display: flex; align-items: center; gap: 6px; border: 1px solid var(--pb-border); padding: 8px 12px; border-radius: 999px; color: var(--pb-text); background: transparent; font: 800 11px inherit; cursor: pointer; }
+.wnba-filters-close span { font-size: 14px; }
+
+.wnba-filters-side { display: flex; gap: 4px; margin-bottom: 18px; padding: 4px; border-radius: 999px; background: var(--pb-panel-2); }
+.wnba-filters-side button { flex: 1 1 0; border: 0; padding: 10px 0; border-radius: 999px; color: var(--pb-text-muted); background: transparent; font: 800 12px inherit; cursor: pointer; }
+.wnba-filters-side button.active { color: #06100f; background: var(--pb-lime); }
+
+.wnba-filter-row { border-bottom: 1px solid var(--pb-border-softer); }
+.wnba-filter-row-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 16px 2px; border: 0; background: transparent; color: var(--pb-text); font: 800 13px inherit; cursor: pointer; }
+.wnba-filter-row-head span:first-child { flex: 1 1 auto; text-align: left; }
+.wnba-filter-row-value { padding: 3px 9px; border-radius: 999px; color: var(--pb-text-dim); background: #0f231f; font-size: 11px; }
+.wnba-filter-chevron { width: 7px; height: 7px; border-right: 2px solid var(--pb-text-muted); border-bottom: 2px solid var(--pb-text-muted); transform: rotate(-45deg); transition: transform .12s; }
+.wnba-filter-chevron.open { transform: rotate(45deg); }
+.wnba-filter-row-body { padding: 0 2px 16px; }
+.wnba-filter-row-body select { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid #23443d; border-radius: 5px; color: var(--pb-text); background: var(--pb-input); font: 12px inherit; }
+.wnba-filter-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.wnba-filter-chip-row button { border: 1px solid var(--pb-border); padding: 7px 12px; border-radius: 999px; color: var(--pb-text-muted); background: var(--pb-panel-2); font: 800 11px inherit; cursor: pointer; }
+.wnba-filter-chip-row button.active { color: #06100f; background: var(--pb-lime); border-color: var(--pb-lime); }
+.wnba-filter-range-row { display: flex; align-items: center; gap: 8px; }
+.wnba-filter-range-row input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid #23443d; border-radius: 5px; color: var(--pb-text); background: var(--pb-input); font: 12px inherit; }
+.wnba-filter-range-row span { color: var(--pb-text-muted); font-size: 10px; }
+
+.wnba-filters-footer { display: flex; gap: 10px; margin-top: auto; padding-top: 18px; }
+.wnba-filters-reset { border: 1px solid var(--pb-border); padding: 12px 16px; border-radius: 6px; color: var(--pb-text); background: transparent; font: 800 12px inherit; cursor: pointer; }
+.wnba-filters-apply { flex: 1 1 auto; border: 0; padding: 12px 16px; border-radius: 6px; color: #06100f; background: var(--pb-lime); font: 800 12px inherit; cursor: pointer; }
+
+@media (max-width: 900px) { .wnba-lines-chart { width: 80px; } }
+@media (max-width: 640px) {
+  .wnba-board-header { flex-wrap: wrap; gap: 10px; }
+  .wnba-lines-header-actions { width: 100%; justify-content: space-between; }
+}
