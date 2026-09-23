@@ -38,8 +38,7 @@ const TIERS = [
     description: 'Preview CGPropz before you commit',
     features: [
       'Today\'s KBO & WNBA schedules',
-      'Top 3 KBO projections',
-      'WNBA dashboard & team pages',
+      'Top 3 projections — KBO, WNBA & NFL',
       'Landing page overview',
     ],
     limited: [
@@ -331,7 +330,7 @@ function SubscriptionPage() {
         <div className="sub-faq-grid">
           <FaqItem
             q="What's included in the free tier?"
-            a="You get the landing page, today's KBO & WNBA schedules, a preview of the top 3 KBO projections, and the WNBA dashboard and team pages. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for both sports."
+            a="You get the landing page, today's KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA & NFL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport."
           />
           <FaqItem
             q="Does one subscription cover both sports?"

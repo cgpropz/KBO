@@ -823,6 +823,14 @@
 .wnba-lines-info { min-width: 0; }
 .wnba-lines-info .wnba-player-link { display: block; border: 0; padding: 0; color: var(--pb-text); background: transparent; font: 800 13px inherit; text-align: left; cursor: pointer; }
 .wnba-lines-info .wnba-player-link:hover { color: var(--pb-lime); text-decoration: underline; }
+
+.wnba-lines-row.locked td { filter: blur(6px); user-select: none; pointer-events: none; }
+.wnba-lines-lock-overlay { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 26px; background: linear-gradient(180deg, rgba(8,21,19,0) 0%, rgba(8,21,19,.85) 22%, rgba(8,21,19,.98) 50%); }
+.wnba-lines-lock-card { pointer-events: auto; max-width: 300px; padding: 22px 26px; border: 1px solid var(--pb-border); border-radius: 10px; background: #0a1716; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.wnba-lines-lock-icon { margin-bottom: 8px; font-size: 26px; }
+.wnba-lines-lock-card h3 { margin: 0 0 6px; color: var(--pb-text); font-size: 16px; }
+.wnba-lines-lock-card p { margin: 0 0 16px; color: var(--pb-text-muted); font-size: 12px; line-height: 1.5; }
+.wnba-lines-lock-card button { border: 0; padding: 10px 20px; border-radius: 6px; color: #06100f; background: var(--pb-lime); font-weight: 800; cursor: pointer; }
 .wnba-lines-tag { color: var(--pb-text-muted); font-size: 10px; text-transform: uppercase; }
 .wnba-lines-line { margin-top: 3px; font-size: 11px; }
 .wnba-lines-line b { margin-right: 3px; }

@@ -24,8 +24,10 @@ const NAV_ITEMS = [
 ]
 if (import.meta.env.DEV) NAV_ITEMS.push({ id: 'tutorial', label: 'Tutorial' })
 
-/* Views that require a paid subscription (mirrors the pre-redesign App.jsx gate) */
-const PAID_VIEWS = new Set(['board', 'projections', 'batters', 'optimizer', 'matchups'])
+/* Views that require a paid subscription (mirrors the pre-redesign App.jsx gate).
+   'board' is excluded: it self-gates with a top-3-free / rest-locked preview,
+   matching the WNBA and NFL dashboards. */
+const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
 export default function KboApp({ sport, setSport, onNavigateHome, initialView }) {
   const { signOut, user, tier } = useAuth()
@@ -42,7 +44,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
       case 'matchups':    return <MatchupDeepDive />
       case 'pricing':     return <SubscriptionPage />
       case 'tutorial':    return <TutorialPage onNavigate={setView} />
-      default:            return <KboPropBoard />
+      default:            return <KboPropBoard onNavigatePricing={() => setView('pricing')} />
     }
   })()
 

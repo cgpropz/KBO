@@ -46,7 +46,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
   const content = (() => {
     switch (view) {
       case 'projections': return <Projections onSelectPlayer={handleSelectPlayer} />
-      case 'dashboard':   return <Dashboard onSelectPlayer={handleSelectPlayer} onNavigate={setView} />
+      case 'dashboard':   return <Dashboard onSelectPlayer={handleSelectPlayer} onNavigate={setView} onNavigatePricing={() => onNavigateKbo('pricing')} />
       case 'players':     return <PlayerMap onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
       case 'teams':       return <Teams onSelectTeam={handleSelectTeam} />
       case 'lineups':     return <Lineups />

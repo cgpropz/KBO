@@ -1,6 +1,12 @@
 -- NFL PrizePicks snapshot. Run once in the Supabase SQL editor.
--- The row is written by GitHub Actions with the service-role key and is readable
--- only by All Access / legacy Pro subscribers (or owner accounts).
+-- The row is written by GitHub Actions with the service-role key. Read access is
+-- public (anon key), mirroring the KBO/WNBA blob tables -- gating (top-3 free
+-- preview vs. full board) happens client-side in NflPropLines.jsx / Paywall.jsx,
+-- not at the database layer. This matches the established architecture and fixes
+-- the free-tier "NFL dashboard doesn't load" bug: the old policy restricted
+-- SELECT to authenticated paid users only, so free (and anonymous) sessions got
+-- zero rows and the client's `.single()` query threw before any UI gating could
+-- run.
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -38,33 +44,13 @@ alter table public.nfl_projections enable row level security;
 alter table public.nfl_lineups enable row level security;
 
 drop policy if exists nfl_projections_read_pro on public.nfl_projections;
-create policy nfl_projections_read_pro
-on public.nfl_projections
-for select to authenticated
-using (
-  lower(coalesce(auth.jwt() ->> 'email', '')) in (
-    'cgpropz@gmail.com', 'vicelocksx@gmail.com', 'brittaneycollard@yahoo.com', 'gbaby_95@yahoo.com'
-  )
-  or exists (
-    select 1
-    from public.user_profiles profile
-    where profile.id = auth.uid()
-      and profile.tier in ('owner', 'pro', 'monthly', 'weekly', 'season', 'all', 'combined')
-  )
-);
+drop policy if exists nfl_projections_read_all on public.nfl_projections;
+create policy nfl_projections_read_all
+on public.nfl_projections for select
+using (true);
 
 drop policy if exists nfl_lineups_read_pro on public.nfl_lineups;
-create policy nfl_lineups_read_pro
-on public.nfl_lineups
-for select to authenticated
-using (
-  lower(coalesce(auth.jwt() ->> 'email', '')) in (
-    'cgpropz@gmail.com', 'vicelocksx@gmail.com', 'brittaneycollard@yahoo.com', 'gbaby_95@yahoo.com'
-  )
-  or exists (
-    select 1
-    from public.user_profiles profile
-    where profile.id = auth.uid()
-      and profile.tier in ('owner', 'pro', 'monthly', 'weekly', 'season', 'all', 'combined')
-  )
-);
+drop policy if exists nfl_lineups_read_all on public.nfl_lineups;
+create policy nfl_lineups_read_all
+on public.nfl_lineups for select
+using (true);

@@ -1,7 +1,10 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData } from './wnbaData'
+import { useAuth } from '../AuthContext'
+import { sportAccess } from '../entitlements'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
+const FREE_ROW_LIMIT = 3
 
 const PROP_PROJECTION = {
   Points: p => p.projPts,
@@ -180,13 +183,13 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.isOver
   const grade = dvpGrade(item.dvpRank)
 
   return (
-    <tr className="wnba-lines-row">
+    <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
       <td className="wnba-lines-player">
         <div className="wnba-lines-avatar">
           {item.imageUrl
@@ -194,7 +197,7 @@ function PropRow({ item, onSelectPlayer }) {
             : initials(item.player)}
         </div>
         <div className="wnba-lines-info">
-          <button className="wnba-player-link" onClick={() => onSelectPlayer?.(item.player)}>{item.player}</button>
+          <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
           <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
           <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
         </div>
@@ -374,7 +377,7 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
   )
 }
 
-export default function Dashboard({ onSelectPlayer, onNavigate }) {
+export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricing }) {
   const [projections, setProjections] = useState(null)
   const [players, setPlayers] = useState(null)
   const [projLoading, setProjLoading] = useState(true)
@@ -382,6 +385,13 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
+
+  const { tier, user } = useAuth()
+  const isPaid = sportAccess(tier, user?.email).wnba
+
+  const tableWrapRef = useRef(null)
+  const lastFreeRowRef = useRef(null)
+  const [lockTop, setLockTop] = useState(null)
 
   const updateFilter = (key, value) => setFilters(current => ({ ...current, [key]: value }))
   const resetFilters = () => setFilters(DEFAULT_FILTERS)
@@ -547,6 +557,22 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
   const goPlayer = name => onSelectPlayer?.(name)
   const goProjections = () => onNavigate?.('projections')
 
+  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+
+  useEffect(() => {
+    if (!hasLockedRows) return
+    const measure = () => {
+      if (tableWrapRef.current && lastFreeRowRef.current) {
+        const wrapTop = tableWrapRef.current.getBoundingClientRect().top
+        const rowBottom = lastFreeRowRef.current.getBoundingClientRect().bottom
+        setLockTop(rowBottom - wrapTop)
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [hasLockedRows, rows])
+
   return (
     <div className="fade-in">
       <div className="wnba-propboard">
@@ -567,7 +593,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
           {projLoading && <div className="wnba-notice">Loading WNBA prop lines…</div>}
           {!projLoading && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
-            <div className="wnba-lines-table-wrap">
+            <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
               <table className="wnba-lines-table">
                 <thead>
                   <tr>
@@ -575,9 +601,27 @@ export default function Dashboard({ onSelectPlayer, onNavigate }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(item => <PropRow key={item.id} item={item} onSelectPlayer={goPlayer} />)}
+                  {rows.map((item, index) => (
+                    <PropRow
+                      key={item.id}
+                      item={item}
+                      onSelectPlayer={goPlayer}
+                      locked={!isPaid && index >= FREE_ROW_LIMIT}
+                      rowRef={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}
+                    />
+                  ))}
                 </tbody>
               </table>
+              {hasLockedRows && lockTop != null && (
+                <div className="wnba-lines-lock-overlay" style={{ top: lockTop }}>
+                  <div className="wnba-lines-lock-card">
+                    <div className="wnba-lines-lock-icon">🔒</div>
+                    <h3>Unlock the Full Board</h3>
+                    <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+                    <button onClick={() => onNavigatePricing?.()}>View Plans</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

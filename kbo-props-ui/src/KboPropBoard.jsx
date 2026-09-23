@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
+import { useAuth } from './AuthContext'
+import { sportAccess } from './entitlements'
 import './KboPropBoard.css'
+
+const FREE_ROW_LIMIT = 3
 
 const DEFAULT_FILTERS = {
   direction: 'All',
@@ -96,13 +100,20 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
-export default function KboPropBoard() {
+export default function KboPropBoard({ onNavigatePricing }) {
   const [snapshot, setSnapshot] = useState(null)
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const { tier, user } = useAuth()
+  const isPaid = sportAccess(tier, user?.email).kbo
+
+  const tableWrapRef = useRef(null)
+  const lastFreeRowRef = useRef(null)
+  const [lockTop, setLockTop] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -144,6 +155,22 @@ export default function KboPropBoard() {
     })
   }, [allRows, filters, propTab])
 
+  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+
+  useEffect(() => {
+    if (!hasLockedRows) return
+    const measure = () => {
+      if (tableWrapRef.current && lastFreeRowRef.current) {
+        const wrapTop = tableWrapRef.current.getBoundingClientRect().top
+        const rowBottom = lastFreeRowRef.current.getBoundingClientRect().bottom
+        setLockTop(rowBottom - wrapTop)
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [hasLockedRows, rows])
+
   return (
     <main className="kbo-lines-page">
       <nav className="kbo-prop-tabs" aria-label="KBO prop types">
@@ -155,12 +182,24 @@ export default function KboPropBoard() {
       </section>
       {error && <p className="kbo-notice">{error}</p>}
       {!error && !snapshot && <p className="kbo-notice">Loading KBO prop lines...</p>}
-      {!!rows.length && <div className="kbo-lines-table-wrap"><table className="kbo-lines-table"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>L5</th><th>L10</th><th>Full</th><th>Matchup</th></tr></thead><tbody>
+      {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>L5</th><th>L10</th><th>Full</th><th>Matchup</th></tr></thead><tbody>
         {rows.map(({ card, prop, score, direction }, index) => {
           const photo = photoLookup[String(card.name || '').toLowerCase()]
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}><td className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
+          const locked = !isPaid && index >= FREE_ROW_LIMIT
+          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}><td className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
         })}
-      </tbody></table></div>}
+      </tbody></table>
+        {hasLockedRows && lockTop != null && (
+          <div className="kbo-lines-lock-overlay" style={{ top: lockTop }}>
+            <div className="kbo-lines-lock-card">
+              <div className="kbo-lines-lock-icon">🔒</div>
+              <h3>Unlock the Full Board</h3>
+              <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+              <button onClick={() => onNavigatePricing?.()}>View Plans</button>
+            </div>
+          </div>
+        )}
+      </div>}
       {!error && snapshot && !rows.length && <p className="kbo-notice">No KBO prop lines match these filters.</p>}
       <Filters open={filtersOpen} close={() => setFiltersOpen(false)} filters={filters} setFilters={setFilters} propTabs={propTabs} propTab={propTab} setPropTab={setPropTab} count={rows.length} />
     </main>
