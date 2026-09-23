@@ -507,6 +507,9 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   }, [allRows, propTab, filters])
 
   // ── Bonus insight panels (kept from the previous board) ──────────────────
+  // Free tier matches Prop Lines: top FREE_ROW_LIMIT; paid keeps full insight lists.
+  const insightLimit = isPaid ? 5 : FREE_ROW_LIMIT
+
   const dedupePlayers = (list, limit) => {
     const seen = new Set()
     const out = []
@@ -523,15 +526,15 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     const filtered = allRows
       .filter(r => r._hit && r._hit.total >= 5)
       .sort((a, b) => (b._hit.pct - a._hit.pct) || (b.score - a.score))
-    return dedupePlayers(filtered, 5)
-  }, [allRows])
+    return dedupePlayers(filtered, insightLimit)
+  }, [allRows, insightLimit])
 
   const bestValue = useMemo(() => {
     const filtered = allRows
       .filter(r => r.isOver)
       .sort((a, b) => b._edgePct - a._edgePct)
-    return dedupePlayers(filtered, 5)
-  }, [allRows])
+    return dedupePlayers(filtered, insightLimit)
+  }, [allRows, insightLimit])
 
   const slate = useMemo(() => {
     const seen = new Map()
@@ -651,33 +654,51 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         <InsightPanel title="Hottest Streaks" kicker="L10 hit rate" accent="#22c55e">
           {projLoading
-            ? Array(5).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
+            ? Array(insightLimit).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
             : hotStreaks.length
-              ? hotStreaks.map((r, i) => (
-                  <MiniRow
-                    key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
-                    primary={`${r._hit.pct.toFixed(0)}%`} primaryColor={hitColor(r._hit.pct)}
-                    sub={`${r._hit.hits}/${r._hit.total} · line ${r.line}`}
-                    onClick={() => goPlayer(r.player)}
-                    last={i === hotStreaks.length - 1}
-                  />
-                ))
+              ? <>
+                  {hotStreaks.map((r, i) => (
+                    <MiniRow
+                      key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
+                      primary={`${r._hit.pct.toFixed(0)}%`} primaryColor={hitColor(r._hit.pct)}
+                      sub={`${r._hit.hits}/${r._hit.total} · line ${r.line}`}
+                      onClick={() => goPlayer(r.player)}
+                      last={i === hotStreaks.length - 1 && (isPaid || hotStreaks.length < FREE_ROW_LIMIT)}
+                    />
+                  ))}
+                  {!isPaid && hotStreaks.length >= FREE_ROW_LIMIT && (
+                    <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
+                      Free members see the top {FREE_ROW_LIMIT}.{' '}
+                      <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
+                      {' '}for the full list.
+                    </p>
+                  )}
+                </>
               : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>Not enough game history yet.</p>}
         </InsightPanel>
 
         <InsightPanel title="Best Value Edges" kicker="proj vs line" accent="#FF6900">
           {projLoading
-            ? Array(5).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
+            ? Array(insightLimit).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
             : bestValue.length
-              ? bestValue.map((r, i) => (
-                  <MiniRow
-                    key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
-                    primary={`+${r._edgePct.toFixed(0)}%`} primaryColor="#FF6900"
-                    sub={`proj ${r.projection.toFixed(1)} · line ${r.line}`}
-                    onClick={() => goPlayer(r.player)}
-                    last={i === bestValue.length - 1}
-                  />
-                ))
+              ? <>
+                  {bestValue.map((r, i) => (
+                    <MiniRow
+                      key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
+                      primary={`+${r._edgePct.toFixed(0)}%`} primaryColor="#FF6900"
+                      sub={`proj ${r.projection.toFixed(1)} · line ${r.line}`}
+                      onClick={() => goPlayer(r.player)}
+                      last={i === bestValue.length - 1 && (isPaid || bestValue.length < FREE_ROW_LIMIT)}
+                    />
+                  ))}
+                  {!isPaid && bestValue.length >= FREE_ROW_LIMIT && (
+                    <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
+                      Free members see the top {FREE_ROW_LIMIT}.{' '}
+                      <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
+                      {' '}for the full list.
+                    </p>
+                  )}
+                </>
               : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>No value edges available.</p>}
         </InsightPanel>
 
