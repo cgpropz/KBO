@@ -29,7 +29,7 @@ function ComingSoon({ label }) {
 }
 
 export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
-  const [view, setView] = useState('projections')
+  const [view, setView] = useState('dashboard')
   const [teamFilter, setTeamFilter] = useState('All')
 
   // Player detail is not ported yet; route player clicks to the Player Map.
