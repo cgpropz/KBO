@@ -261,7 +261,7 @@ function SubscriptionPage() {
     }
   };
 
-  const noLinksConfigured = !STRIPE_LINKS.combined;
+  const noLinksConfigured = !STRIPE_LINKS.monthly;
 
   return (
     <div className="sub-page">
@@ -271,14 +271,14 @@ function SubscriptionPage() {
           Unlock <span className="sub-highlight">All Access</span>
         </h1>
         <p className="sub-subtitle">
-          Go all-in with ⚾ KBO, 🏀 WNBA, and 🏈 NFL, or pick a single sport. Every plan unlocks
-          full projections, hit rates, prop cards, and edge boards for what you choose.
+          Every plan is All-Access — ⚾ KBO, 🏀 WNBA, and 🏈 NFL, full projections, hit rates,
+          prop cards, and edge boards included. Just pick the billing cadence that fits you.
         </p>
       </div>
 
       <div className="sub-combine-banner">
-        <span className="sub-combine-icon">⚾🏀</span>
-        <span>Want every sport? <strong>All Access is $29.99/mo</strong> — KBO, WNBA, and NFL in one plan.</span>
+        <span className="sub-combine-icon">⚾🏀🏈</span>
+        <span>Every plan unlocks <strong>all three sports</strong> — choose weekly, monthly, or lifetime billing.</span>
       </div>
 
       {noLinksConfigured && (
@@ -420,11 +420,11 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="Does one subscription cover both sports?"
-            a="The All Access plan ($29.99/mo) unlocks every KBO and WNBA tool under one login. Single-sport plans (KBO or WNBA) unlock just that sport — you can upgrade to All Access anytime to add the other."
+            a="Yes — every plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. There are no more single-sport plans."
           />
           <FaqItem
             q="Can I cancel anytime?"
-            a="Yes. Monthly subscriptions can be cancelled at any time. Your access continues until the end of your current billing period."
+            a="Yes. Weekly and Monthly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel."
           />
           <FaqItem
             q="How often is the data updated?"

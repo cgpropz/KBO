@@ -2,18 +2,20 @@
 // NOT a route: the leading underscore keeps Vercel from exposing this as an API
 // endpoint. Imported by api/stripe-webhook.js and api/sync-subscription.js.
 //
-// Each Stripe price maps to a tier. New per-sport plans use 'kbo' | 'wnba' |
-// 'combined'. The two legacy prices (KBO Monthly / KBO Full Season) map to
-// 'kbo' for NEW buyers, but grandfathered all-access subscribers are protected
-// by mergeTier(), which never downgrades an existing all-access tier.
+// Plans are now sold by billing cadence (Weekly / Monthly / Lifetime), not by
+// sport — every current price grants 'combined' (all-access: KBO+WNBA+NFL).
+// The old single-sport prices ('kbo' / 'wnba') are kept here only so legacy
+// subscribers' renewals still resolve correctly; mergeTier() never downgrades
+// an existing all-access tier, and mergeTier() unions two single-sport tiers
+// into 'combined' if a legacy subscriber ever adds the other sport.
 
 export const TIER_BY_PRICE = {
-  'price_1TtFFePwL0k9PEMvPJUUwuTr': 'combined', // KBO + WNBA        $29.99 / mo
-  'price_1TtFErPwL0k9PEMvIrEJajK1': 'kbo',       // KBO Weekly        $9.99  / wk
-  'price_1TtFEPPwL0k9PEMvc8kcK6Ut': 'wnba',      // WNBA Monthly      $19.99 / mo
-  'price_1TtFDNPwL0k9PEMvEzCTHBbL': 'wnba',      // WNBA Weekly       $9.99  / wk
+  'price_1TtFFePwL0k9PEMvPJUUwuTr': 'combined', // Monthly All-Access $29.99 / mo
+  'price_1TtFErPwL0k9PEMvIrEJajK1': 'combined', // Weekly All-Access  $9.99  / wk (was KBO Weekly)
+  'price_1TtFEPPwL0k9PEMvc8kcK6Ut': 'wnba',      // WNBA Monthly      $19.99 / mo (legacy)
+  'price_1TtFDNPwL0k9PEMvEzCTHBbL': 'wnba',      // WNBA Weekly       $9.99  / wk (legacy)
   'price_1THCokPwL0k9PEMvcWwT7F2c': 'kbo',       // KBO Monthly       $19.99 / mo (legacy)
-  'price_1THZjaPwL0k9PEMvARtuGG1F': 'kbo',       // KBO Lifetime      $99.99 once
+  'price_1THZjaPwL0k9PEMvARtuGG1F': 'combined', // Lifetime All-Access $99.99 once (was KBO Lifetime)
   'price_1THCpZPwL0k9PEMvPlLqiIDu': 'kbo',       // KBO Full Season   $49.99 / yr (legacy)
 };
 
@@ -75,13 +77,15 @@ export async function computeStripeTier(stripe, email) {
       else sports.add(t);
     }
 
-    // One-time KBO Lifetime purchase (no subscription) — detect via a paid,
-    // non-refunded charge matching the lifetime amount.
+    // One-time Lifetime All-Access purchase (no subscription) — detect via a
+    // paid, non-refunded charge matching the lifetime amount. Grants both
+    // sports since Lifetime is now an all-access plan.
     try {
       const charges = await stripe.charges.list({ customer: c.id, limit: 50 });
       for (const ch of charges.data) {
         if (ch.paid && !ch.refunded && ch.amount === LIFETIME_AMOUNT) {
           sports.add('kbo');
+          sports.add('wnba');
           hasAny = true;
         }
       }

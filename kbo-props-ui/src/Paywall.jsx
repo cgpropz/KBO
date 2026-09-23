@@ -10,7 +10,6 @@ export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
   if (isPaid) return children;
 
   const sportLabel = sport === 'wnba' ? 'WNBA' : sport === 'nfl' ? 'NFL' : 'KBO';
-  const planLabel = sport === 'nfl' ? 'All Access plan' : `${sportLabel} plan`;
 
   return (
     <div className="pw-wrap">
@@ -21,7 +20,7 @@ export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
           <h2 className="pw-title">{sportLabel} Pro Feature</h2>
           <p className="pw-desc">
             Unlock full {sportLabel} projections, player prop cards, and every advanced tool.
-            Grab the {planLabel} to access this board.
+            Grab any All-Access plan (Weekly, Monthly, or Lifetime) to access this board.
           </p>
           <button className="pw-cta" onClick={() => onNavigate('pricing')}>
             View Plans
