@@ -5,20 +5,28 @@ import './SubscriptionPage.css';
 
 /*
  * ─── STRIPE PAYMENT LINKS ──────────────────────────────────────────
- * Live Payment Links (from the Stripe dashboard). Each maps to a tier in
- * api/_stripeTier.js so access is granted per sport:
- *   combined → all sports · kbo → KBO only · wnba → WNBA only
+ * Live Payment Links (from the Stripe dashboard). Plans are grouped by
+ * billing cadence, not by sport — every plan below unlocks KBO + WNBA + NFL.
+ * Reuses the existing per-sport Stripe prices (see api/_stripeTier.js for
+ * the price → tier mapping that now grants full access for each one).
  * ────────────────────────────────────────────────────────────────────
  */
 const STRIPE_LINKS = {
-  combined:    'https://buy.stripe.com/6oU5kFfgzdeCfPIcXu5Ne09', // KBO + WNBA   $29.99 / mo
-  kboMonthly:  'https://buy.stripe.com/28EfZj9Wf3E26f84qY5Ne05', // KBO Monthly  $19.99 / mo
-  kboSeason:   'https://buy.stripe.com/eVqcN75FZdeC6f8cXu5Ne02', // KBO Season   $49.99 / yr
-  kboWeekly:   'https://buy.stripe.com/00wcN7gkD7Ui8ng6z65Ne08', // KBO Weekly   $9.99  / wk
-  kboLifetime: 'https://buy.stripe.com/dRmeVfd8r3E2avo4qY5Ne03', // KBO Lifetime $99.99 once
-  wnbaMonthly: 'https://buy.stripe.com/dRm4gBc4n2zY0UO6z65Ne07', // WNBA Monthly $19.99 / mo
-  wnbaWeekly:  'https://buy.stripe.com/fZudRb2tN7UibzsbTq5Ne06', // WNBA Weekly  $9.99  / wk
+  weekly:   'https://buy.stripe.com/00wcN7gkD7Ui8ng6z65Ne08', // Weekly All-Access   $9.99  / wk
+  monthly:  'https://buy.stripe.com/6oU5kFfgzdeCfPIcXu5Ne09', // Monthly All-Access  $29.99 / mo
+  lifetime: 'https://buy.stripe.com/dRmeVfd8r3E2avo4qY5Ne03', // Lifetime All-Access $99.99 once
 };
+
+// Every paid tier unlocks the same full toolkit — tiers differ only by
+// billing cadence/price, not by feature.
+const ALL_ACCESS_FEATURES = [
+  '⚾🏀🏈 Full KBO, WNBA & NFL projections',
+  'PrizePicks edge board for every sport',
+  'Player prop cards & hit rates',
+  'Slip builder, optimizer & prop tracker',
+  'Defense vs position & daily lineups',
+  'Full game log history',
+];
 
 const TIERS = [
   {
@@ -45,136 +53,43 @@ const TIERS = [
     link: null,
   },
   {
+    id: 'weekly',
+    name: 'Weekly All-Access',
+    price: '$9.99',
+    period: '/ week',
+    badge: null,
+    description: 'Try everything, week to week',
+    features: ALL_ACCESS_FEATURES,
+    limited: [],
+    cta: 'Start Weekly',
+    ctaStyle: 'weekly',
+    link: STRIPE_LINKS.weekly,
+  },
+  {
     id: 'combined',
-    name: '⚾🏀🏈 All Access',
+    name: 'Monthly All-Access',
     price: '$29.99',
     period: '/ month',
     badge: 'BEST VALUE',
-    description: 'Everything unlocked — KBO + WNBA + NFL',
-    features: [
-      '⚾ All KBO pitcher & batter projections',
-      '⚾ Prop cards, rankings & matchup deep dive',
-      '🏀 WNBA PrizePicks edge board',
-      '🏀 Points / reb / ast projections',
-      '🏀 Defense vs position & daily lineups',
-      '🏈 NFL PrizePicks dashboard & full edge board',
-      'Slip builder, optimizer & prop tracker',
-      'Full game log history for both sports',
-      'Save $10/mo vs. buying each sport',
-    ],
+    description: 'Everything unlocked, billed monthly',
+    features: [...ALL_ACCESS_FEATURES, 'Save vs. paying weekly'],
     limited: [],
-    cta: 'Get All Access',
+    cta: 'Get Monthly Access',
     ctaStyle: 'combined',
-    link: STRIPE_LINKS.combined,
+    link: STRIPE_LINKS.monthly,
   },
   {
-    id: 'kboMonthly',
-    name: '⚾ KBO Monthly',
-    price: '$19.99',
-    period: '/ month',
-    badge: null,
-    description: 'Full KBO toolkit',
-    features: [
-      'All KBO pitcher & batter projections',
-      'Player prop cards + hit rates',
-      'Pitcher rankings & matchup deep dive',
-      'Slip builder, optimizer & tracker',
-      'Full KBO game log history',
-    ],
-    limited: ['WNBA projections & edge board'],
-    cta: 'Subscribe to KBO',
-    ctaStyle: 'kbo',
-    link: STRIPE_LINKS.kboMonthly,
-  },
-  {
-    id: 'wnbaMonthly',
-    name: '🏀 WNBA Monthly',
-    price: '$19.99',
-    period: '/ month',
-    badge: null,
-    description: 'Full WNBA toolkit',
-    features: [
-      'WNBA PrizePicks edge board',
-      'Points / reb / ast projections',
-      'Defense vs position matchups',
-      'Daily lineups & starters',
-      'Full WNBA prop history',
-    ],
-    limited: ['KBO projections & prop cards'],
-    cta: 'Subscribe to WNBA',
-    ctaStyle: 'wnba',
-    link: STRIPE_LINKS.wnbaMonthly,
-  },
-  {
-    id: 'kboSeason',
-    name: '⚾ KBO Full Season',
-    price: '$49.99',
-    period: '/ year',
-    badge: 'SAVE 79%',
-    description: 'Lock in KBO for the whole year',
-    features: [
-      'Everything in KBO Monthly',
-      'All season long — no monthly charges',
-      'Season-long prop history',
-      'Priority data updates',
-    ],
-    limited: [],
-    cta: 'Get KBO Season',
-    ctaStyle: 'season',
-    link: STRIPE_LINKS.kboSeason,
-  },
-  {
-    id: 'kboWeekly',
-    name: '⚾ KBO Weekly',
-    price: '$9.99',
-    period: '/ week',
-    badge: null,
-    description: 'Try KBO week to week',
-    features: [
-      'Full KBO projections & prop cards',
-      'Pitcher rankings & matchups',
-      'Slip builder, optimizer & tracker',
-      'Cancel anytime',
-    ],
-    limited: ['WNBA projections & edge board'],
-    cta: 'Start KBO Weekly',
-    ctaStyle: 'kbo',
-    link: STRIPE_LINKS.kboWeekly,
-  },
-  {
-    id: 'wnbaWeekly',
-    name: '🏀 WNBA Weekly',
-    price: '$9.99',
-    period: '/ week',
-    badge: null,
-    description: 'Try WNBA week to week',
-    features: [
-      'WNBA PrizePicks edge board',
-      'Points / reb / ast projections',
-      'Defense vs position & lineups',
-      'Cancel anytime',
-    ],
-    limited: ['KBO projections & prop cards'],
-    cta: 'Start WNBA Weekly',
-    ctaStyle: 'wnba',
-    link: STRIPE_LINKS.wnbaWeekly,
-  },
-  {
-    id: 'kboLifetime',
-    name: '⚾ KBO Lifetime',
+    id: 'lifetime',
+    name: 'Lifetime All-Access',
     price: '$99.99',
     period: 'once',
     badge: 'ONE-TIME',
-    description: 'Pay once, keep KBO forever',
-    features: [
-      'Everything in KBO Season',
-      'Lifetime access — no renewals ever',
-      'All future KBO features included',
-    ],
-    limited: ['WNBA projections & edge board'],
-    cta: 'Buy KBO Lifetime',
+    description: 'Pay once, keep everything forever',
+    features: [...ALL_ACCESS_FEATURES, 'Lifetime access — no renewals ever', 'All future features included'],
+    limited: [],
+    cta: 'Buy Lifetime Access',
     ctaStyle: 'season',
-    link: STRIPE_LINKS.kboLifetime,
+    link: STRIPE_LINKS.lifetime,
   },
 ];
 
