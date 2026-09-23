@@ -9,10 +9,14 @@ name: Refresh WNBA PrizePicks Lines (30 min)
 # reads).
 #
 # It deliberately does NOT:
-#   • regenerate gamelogs / boxscores (read live from the committed CSVs, so the
-#     projection values stay identical between runs — only the lines move),
+#   • regenerate gamelogs / boxscores (read live from the committed CSVs),
 #   • re-export or publish players / teams / lineups / edge / dvp snapshots,
 #   • commit anything to the repo.
+#
+# It DOES rebuild the local DvP CSV tables from the committed boxscores before
+# export verification so SOURCE_THROUGH stays aligned with the latest games.
+# Projection baselines can nudge when those tables catch up after a full refresh
+# that previously omitted committing them; prop lines remain the primary delta.
 #
 # Net effect: the website prop lines refresh every 30 minutes while every other
 # piece of WNBA data stays exactly as the last full refresh (or a manual update)
@@ -59,6 +63,12 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install requests pandas
+
+      # Rebuild DvP CSVs from the committed boxscores so SOURCE_THROUGH stays
+      # aligned even if a prior full refresh omitted committing the tables.
+      # Must run before the backend boots so exported projections use fresh DvP.
+      - name: Generate current WNBA DvP tables
+        run: python wnba/generate_wnba_dvp.py
 
       - name: Force fresh PrizePicks scrape (drop any cached snapshot)
         run: rm -f wnba/downloaded_files/prizepicks_*.json
