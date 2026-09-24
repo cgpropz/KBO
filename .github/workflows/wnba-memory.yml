@@ -44,4 +44,5 @@ jobs:
           fi
 
       - name: Publish memory/
-        run: bash pipeline/memory/commit_memory.sh "chore: wnba memory grade"
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: wnba memory grade"

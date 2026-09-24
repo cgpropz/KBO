@@ -181,7 +181,8 @@ jobs:
       - name: Publish memory/ updates
         if: success()
         continue-on-error: true
-        run: bash pipeline/memory/commit_memory.sh "chore: wnba memory update"
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: wnba memory update"
 
       - name: Notify on failure (open/update issue)
         if: failure()
