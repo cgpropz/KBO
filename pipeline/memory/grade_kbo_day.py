@@ -25,6 +25,7 @@ from pipeline.memory.common import (
     parse_date,
     utc_now_iso,
     write_meta,
+    write_partial_progress,
     write_recap,
     yesterday_kst,
 )
@@ -189,12 +190,11 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
     if missing and not (allow_partial_write and n_graded):
         status = "partial" if n_graded else "waiting"
         if not dry_run:
-            write_meta(
+            write_partial_progress(
                 "kbo",
                 d,
-                status=status,
+                graded,
                 props_total=total,
-                props_graded=n_graded,
                 missing=missing,
             )
         return {
@@ -210,12 +210,11 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
         # Partial allowed — still don't write recap.json per product rule
         status = "partial"
         if not dry_run:
-            write_meta(
+            write_partial_progress(
                 "kbo",
                 d,
-                status=status,
+                graded,
                 props_total=total,
-                props_graded=n_graded,
                 missing=missing,
             )
         return {

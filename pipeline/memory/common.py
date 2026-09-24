@@ -158,6 +158,182 @@ def model_result(outcome: str, recommendation: str | None) -> str:
     return MODEL_NA
 
 
+
+SUMMARY_PROP_KEYS = ("player", "team", "stat", "odds_type", "line", "actual", "side", "model_result")
+
+
+def summary_prop_entry(prop: dict) -> dict:
+    """Slim prop row for summary.json hit/miss lists."""
+    side = prop.get("side") or prop.get("recommendation") or prop.get("pick")
+    entry = {
+        "player": prop.get("player") or prop.get("name") or "",
+        "stat": prop.get("stat") or prop.get("prop") or "",
+        "odds_type": prop.get("odds_type") or "standard",
+        "line": prop.get("line"),
+        "actual": prop.get("actual"),
+        "side": side,
+        "model_result": prop.get("model_result"),
+    }
+    team = prop.get("team")
+    if team not in (None, ""):
+        entry["team"] = team
+    return entry
+
+
+def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
+    """
+    Aggregate HIT/MISS/PUSH/DNP counts and hit rate from graded props.
+
+    Hit rate denominator is hits + misses only (PUSH / DNP / N/A excluded).
+    """
+    hits = 0
+    misses = 0
+    pushes = 0
+    dnps = 0
+    props_hit: list[dict] = []
+    props_miss: list[dict] = []
+
+    for prop in props or []:
+        mr = str(prop.get("model_result") or "").strip().upper()
+        result = str(prop.get("result") or "").strip().upper()
+        if mr == MODEL_HIT:
+            hits += 1
+            props_hit.append(summary_prop_entry(prop))
+        elif mr == MODEL_MISS:
+            misses += 1
+            props_miss.append(summary_prop_entry(prop))
+        elif mr == MODEL_PUSH or result == RESULT_PUSH:
+            pushes += 1
+        elif mr in (MODEL_NA, "") and result == RESULT_DNP:
+            dnps += 1
+        elif result == RESULT_DNP:
+            dnps += 1
+        elif mr == MODEL_NA:
+            # Graded without a usable recommendation — exclude from hit rate
+            pass
+        else:
+            # Unknown model_result: do not inflate hit rate
+            pass
+
+    denom = hits + misses
+    hit_rate = round(hits / denom, 6) if denom else None
+    hit_rate_pct = round(hits / denom * 100, 1) if denom else None
+    return {
+        "hits": hits,
+        "misses": misses,
+        "pushes": pushes,
+        "dnps": dnps,
+        "hit_rate": hit_rate,
+        "hit_rate_pct": hit_rate_pct,
+        "props_hit": props_hit,
+        "props_miss": props_miss,
+    }
+
+
+def hit_rate_meta_extra(stats: dict) -> dict:
+    """Fields to merge into meta.json when a summary is available."""
+    return {
+        "hits": stats.get("hits", 0),
+        "misses": stats.get("misses", 0),
+        "pushes": stats.get("pushes", 0),
+        "dnps": stats.get("dnps", 0),
+        "hit_rate": stats.get("hit_rate"),
+        "hit_rate_pct": stats.get("hit_rate_pct"),
+    }
+
+
+def build_day_summary(
+    sport: str,
+    d: date,
+    props: list[dict],
+    *,
+    status: str,
+    props_total: int | None = None,
+) -> dict:
+    """Build the in-memory summary.json payload (does not write)."""
+    sport = sport.lower()
+    if sport not in SPORTS:
+        raise ValueError(f"Unknown sport: {sport}")
+    if status not in ("complete", "partial"):
+        raise ValueError(f"summary status must be complete|partial, got {status!r}")
+
+    graded = list(props or [])
+    stats = compute_hit_rate_stats(graded)
+    total = props_total if props_total is not None else len(graded)
+    return {
+        "sport": sport,
+        "slate_date": format_mmddyyyy(d),
+        "slate_date_iso": format_iso(d),
+        "timezone_basis": TIMEZONE_BASIS[sport],
+        "status": status,
+        "props_total": total,
+        "props_graded": len(graded),
+        "hits": stats["hits"],
+        "misses": stats["misses"],
+        "pushes": stats["pushes"],
+        "dnps": stats["dnps"],
+        "hit_rate": stats["hit_rate"],
+        "hit_rate_pct": stats["hit_rate_pct"],
+        "props_hit": stats["props_hit"],
+        "props_miss": stats["props_miss"],
+        "updated_at": utc_now_iso(),
+    }
+
+
+def write_day_summary(
+    sport: str,
+    d: date,
+    props: list[dict],
+    *,
+    status: str,
+    props_total: int | None = None,
+) -> tuple[Path, dict]:
+    """
+    Write memory/<sport>/mm/dd/yyyy/summary.json from graded props.
+
+    Call on complete (via write_recap) and on partial when any props graded.
+    Returns (path, summary_dict).
+    """
+    summary = build_day_summary(
+        sport, d, props, status=status, props_total=props_total
+    )
+    path = ensure_memory_dir(sport, d) / "summary.json"
+    save_json(path, summary)
+    return path, summary
+
+
+def write_partial_progress(
+    sport: str,
+    d: date,
+    graded: list[dict],
+    *,
+    props_total: int,
+    missing: list[Any] | None = None,
+) -> Path:
+    """
+    Persist meta for waiting|partial days; write summary.json when any props graded.
+
+    Does not write recap.json (complete-only).
+    """
+    n_graded = len(graded or [])
+    status = "partial" if n_graded else "waiting"
+    extra = None
+    if n_graded:
+        _, summary = write_day_summary(
+            sport, d, graded, status="partial", props_total=props_total
+        )
+        extra = hit_rate_meta_extra(summary)
+    return write_meta(
+        sport,
+        d,
+        status=status,
+        props_total=props_total,
+        props_graded=n_graded,
+        missing=missing or [],
+        extra=extra,
+    )
+
+
 def write_meta(
     sport: str,
     d: date,
@@ -235,6 +411,9 @@ def write_recap(sport: str, d: date, props: list[dict], *, missing: list[Any] | 
     }
     path = day_dir / "recap.json"
     save_json(path, payload)
+    _, summary = write_day_summary(
+        sport, d, props, status="complete", props_total=len(props)
+    )
     write_meta(
         sport,
         d,
@@ -242,6 +421,7 @@ def write_recap(sport: str, d: date, props: list[dict], *, missing: list[Any] | 
         props_total=len(props),
         props_graded=len(props),
         missing=missing or [],
+        extra=hit_rate_meta_extra(summary),
     )
     return path
 
