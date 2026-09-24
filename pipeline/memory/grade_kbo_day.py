@@ -6,7 +6,7 @@ import argparse
 import csv
 import json
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -46,6 +46,69 @@ STAT_KEY = {
     "Fantasy Score": "fs",
     "Hitter Fantasy Score": "fs",
 }
+
+
+# PrizePicks hitter fantasy score weights. Mirrors the formula already used to
+# build the site's Fantasy Score projections/cards so grading matches the board:
+#   generate_batter_projections.py::build_fantasy_projections (score_weights)
+#   generate_props.py::build_batter_card
+#   kbo-props-ui/src/BatterProjections.jsx (FS formula footnote)
+# NOTE: the site uses SB=2 (PrizePicks' published MLB table lists SB=5); keep
+# these in sync with the projection code rather than changing grading alone.
+HITTER_FANTASY_WEIGHTS = {
+    "single": 3,
+    "double": 5,
+    "triple": 8,
+    "hr": 10,
+    "r": 2,
+    "rbi": 2,
+    "bb": 2,
+    "hbp": 2,
+    "sb": 2,
+}
+
+
+def _int_field(row: dict, *names: str) -> int:
+    """First non-empty integer-ish value among column aliases (missing → 0)."""
+    for name in names:
+        raw = row.get(name)
+        if raw in (None, ""):
+            continue
+        try:
+            return int(float(raw))
+        except (TypeError, ValueError):
+            continue
+    return 0
+
+
+def hitter_fantasy_components(row: dict) -> dict[str, int]:
+    """Extract fantasy components from a KBO_daily_batting_stats_combined.csv row.
+
+    Singles are derived as H - 2B - 3B - HR (floored at 0), matching the
+    projection code. Missing component columns count as 0, as in the
+    projection code (``int(g.get(col, 0) or 0)``).
+    """
+    h = _int_field(row, "H")
+    doubles = _int_field(row, "2B")
+    triples = _int_field(row, "3B")
+    hr = _int_field(row, "HR")
+    return {
+        "single": max(0, h - doubles - triples - hr),
+        "double": doubles,
+        "triple": triples,
+        "hr": hr,
+        "r": _int_field(row, "R"),
+        "rbi": _int_field(row, "RBI"),
+        "bb": _int_field(row, "Walks", "BB"),
+        "hbp": _int_field(row, "HBP"),
+        "sb": _int_field(row, "SB"),
+    }
+
+
+def hitter_fantasy_score(row: dict) -> float:
+    """PrizePicks-style hitter fantasy score computed from box-score components."""
+    comps = hitter_fantasy_components(row)
+    return float(sum(comps[k] * w for k, w in HITTER_FANTASY_WEIGHTS.items()))
 
 
 def build_actuals() -> dict[tuple[str, str], dict]:
@@ -104,6 +167,9 @@ def build_actuals() -> dict[tuple[str, str], dict]:
                         entry["fs"] = float(fs)
                     except ValueError:
                         pass
+                if "fs" not in entry:
+                    # Logs carry components only — derive Hitter Fantasy Score.
+                    entry["fs"] = hitter_fantasy_score(row)
                 lookup[(format_iso(d), normalize_name(row.get("Name", "")))] = entry
 
     return lookup
@@ -113,14 +179,15 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
     day_dir = memory_dir("kbo", d)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
-        write_meta(
-            "kbo",
-            d,
-            status="waiting",
-            props_total=0,
-            props_graded=0,
-            missing=["no slate.json — freeze the board first"],
-        )
+        if not dry_run:
+            write_meta(
+                "kbo",
+                d,
+                status="waiting",
+                props_total=0,
+                props_graded=0,
+                missing=["no slate.json — freeze the board first"],
+            )
         return {"status": "waiting", "reason": "no slate", "slate_date": format_mmddyyyy(d)}
 
     actuals = build_actuals()
@@ -246,14 +313,51 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
     }
 
 
+DEFAULT_CATCH_UP_DAYS = 3
+
+
+def catch_up_dates(d: date, days: int) -> list[date]:
+    """Earlier KST slate dates (d-1 … d-days) that have a slate but are not graded complete.
+
+    Mirrors grade_wnba_day.catch_up_dates: scheduled runs can be dropped and
+    grading rules can improve (e.g. a newly supported stat), so a day that
+    missed its single "yesterday" window would otherwise stay partial forever.
+    """
+    out: list[date] = []
+    for offset in range(1, max(0, days) + 1):
+        prior = d - timedelta(days=offset)
+        day_dir = memory_dir("kbo", prior)
+        if not (day_dir / "slate.json").exists():
+            continue
+        meta = load_json(day_dir / "meta.json", default={}) or {}
+        if meta.get("status") == "complete" and (day_dir / "recap.json").exists():
+            continue
+        out.append(prior)
+    return sorted(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Grade KBO memory slate for a KST date")
     parser.add_argument("--date", help="KST slate date mm/dd/YYYY or YYYY-MM-DD (default: yesterday KST)")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--catch-up-days",
+        type=int,
+        default=None,
+        help=(
+            "Also grade up to N earlier KST dates whose slate is not yet complete "
+            f"(default: {DEFAULT_CATCH_UP_DAYS} for scheduled runs without --date, 0 with --date)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     d = parse_cli_date(args.date, yesterday_kst())
-    result = grade_day(d, dry_run=args.dry_run)
+    catch_up = args.catch_up_days
+    if catch_up is None:
+        catch_up = 0 if args.date else DEFAULT_CATCH_UP_DAYS
+    results = [grade_day(prior, dry_run=args.dry_run) for prior in catch_up_dates(d, catch_up)]
+    results.append(grade_day(d, dry_run=args.dry_run))
+    result = results if len(results) > 1 else results[0]
     print(json.dumps(result, indent=2))
     # Non-zero only on hard failure; waiting/partial are normal
     return 0
