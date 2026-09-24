@@ -18,12 +18,32 @@ from pipeline.memory.common import (
     format_mmddyyyy,
     kst_game_date_from_meta,
     load_json,
+    memory_dir,
     parse_cli_date,
     parse_date,
     today_et,
     today_kst,
-    write_slate,
 )
+from pipeline.memory.common import write_slate as _write_slate_unlocked
+
+
+def slate_is_locked(sport: str, d: date) -> bool:
+    """True once a day has been graded complete (recap.json + meta complete).
+
+    Locked slates are immutable: re-freezing after grading would let
+    post-game projections/recommendations overwrite the pregame picks the
+    recap was graded against.
+    """
+    day_dir = memory_dir(sport, d)
+    meta = load_json(day_dir / "meta.json", default={}) or {}
+    return meta.get("status") == "complete" and (day_dir / "recap.json").exists()
+
+
+def write_slate(sport: str, d: date, props: list[dict], *, source: str | None = None) -> Path:
+    """common.write_slate, except graded (locked) days are never touched."""
+    if slate_is_locked(sport, d):
+        return memory_dir(sport, d) / "slate.json"
+    return _write_slate_unlocked(sport, d, props, source=source)
 
 
 def freeze_kbo(slate_date: date | None = None, dry_run: bool = False) -> dict:
@@ -74,7 +94,22 @@ def freeze_kbo(slate_date: date | None = None, dry_run: bool = False) -> dict:
     }
 
 
-def freeze_wnba(slate_date: date | None = None, dry_run: bool = False) -> dict:
+def freeze_wnba(
+    slate_date: date | None = None,
+    dry_run: bool = False,
+    *,
+    today: date | None = None,
+) -> dict:
+    """Freeze WNBA boards into memory keyed by each prop's ET gameDate.
+
+    Past gameDates (before today ET) are skipped unless explicitly forced via
+    ``slate_date``: the live boards keep yesterday's props around with
+    projections/ratings recomputed from boxscores that already include those
+    games, so merging them would overwrite pregame picks with post-game ones
+    (look-ahead leakage into the graded hit rate).
+    """
+    today = today or today_et()
+    skipped_past: dict[date, int] = defaultdict(int)
     boards = {
         "standard": PUBLIC_DATA / "wnba" / "projections_standard.json",
         "demon": PUBLIC_DATA / "wnba" / "projections_demon.json",
@@ -89,6 +124,9 @@ def freeze_wnba(slate_date: date | None = None, dry_run: bool = False) -> dict:
                 if not gamedate:
                     continue
                 if slate_date and gamedate != slate_date:
+                    continue
+                if not slate_date and gamedate < today:
+                    skipped_past[gamedate] += 1
                     continue
                 by_date[gamedate].append(
                     {
@@ -108,8 +146,12 @@ def freeze_wnba(slate_date: date | None = None, dry_run: bool = False) -> dict:
                     }
                 )
 
+    skipped = {format_mmddyyyy(d): n for d, n in sorted(skipped_past.items())}
     if not by_date:
-        return {"sport": "wnba", "dates": 0, "props": 0, "note": "no ppAllProps with gameDate"}
+        out = {"sport": "wnba", "dates": 0, "props": 0, "note": "no ppAllProps with gameDate"}
+        if skipped:
+            out["skipped_past_dates"] = skipped
+        return out
 
     summaries = []
     for d, props in sorted(by_date.items()):
@@ -123,7 +165,10 @@ def freeze_wnba(slate_date: date | None = None, dry_run: bool = False) -> dict:
             source="kbo-props-ui/public/data/wnba/projections_*.json",
         )
         summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)})
-    return {"sport": "wnba", "dates": len(summaries), "results": summaries}
+    out = {"sport": "wnba", "dates": len(summaries), "results": summaries}
+    if skipped:
+        out["skipped_past_dates"] = skipped
+    return out
 
 
 def _nfl_team_gameday(lineups: list) -> dict[str, date]:

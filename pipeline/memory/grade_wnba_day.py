@@ -239,15 +239,52 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     }
 
 
+DEFAULT_CATCH_UP_DAYS = 3
+
+
+def catch_up_dates(d: date, days: int) -> list[date]:
+    """Earlier gameDates (d-1 … d-days) that have a slate but are not graded complete.
+
+    Scheduled runs are routinely delayed or dropped by GitHub, and boxscores
+    can land a day late; without catch-up a day that missed its single
+    "yesterday" window stays `waiting` forever.
+    """
+    out: list[date] = []
+    for offset in range(1, max(0, days) + 1):
+        prior = d - timedelta(days=offset)
+        day_dir = memory_dir("wnba", prior)
+        if not (day_dir / "slate.json").exists():
+            continue
+        meta = load_json(day_dir / "meta.json", default={}) or {}
+        if meta.get("status") == "complete" and (day_dir / "recap.json").exists():
+            continue
+        out.append(prior)
+    return sorted(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Grade WNBA memory slate for an ET gameDate")
     parser.add_argument("--date", help="Game date mm/dd/YYYY or YYYY-MM-DD (default: yesterday ET)")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--catch-up-days",
+        type=int,
+        default=None,
+        help=(
+            "Also grade up to N earlier gameDates whose slate is not yet complete "
+            f"(default: {DEFAULT_CATCH_UP_DAYS} for scheduled runs without --date, 0 with --date)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     default = today_et() - timedelta(days=1)
     d = parse_cli_date(args.date, default)
-    print(json.dumps(grade_day(d, dry_run=args.dry_run), indent=2))
+    catch_up = args.catch_up_days
+    if catch_up is None:
+        catch_up = 0 if args.date else DEFAULT_CATCH_UP_DAYS
+    results = [grade_day(prior, dry_run=args.dry_run) for prior in catch_up_dates(d, catch_up)]
+    results.append(grade_day(d, dry_run=args.dry_run))
+    print(json.dumps(results if len(results) > 1 else results[0], indent=2))
     return 0
 
 
