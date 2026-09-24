@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { supabase } from './supabaseClient';
 import './AuthPage.css';
 
-export default function AuthPage() {
-  const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'reset'
+export default function AuthPage({ initialMode = 'login', onBack } = {}) {
+  const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -51,10 +51,10 @@ export default function AuthPage() {
     <div className="auth-page">
       <div className="auth-bg" />
       <div className="auth-card">
-        <div className="auth-logo">
+        <button type="button" className="auth-logo" onClick={onBack} disabled={!onBack}>
           <span className="auth-logo-k">cgpropz</span>
-        </div>
-        <p className="auth-tagline">Hand-crafted props for ⚾ KBO baseball & 🏀 WNBA basketball</p>
+        </button>
+        <p className="auth-tagline">Hand-crafted props for ⚾ KBO, 🏀 WNBA & 🏈 NFL</p>
 
         <div className="auth-tabs">
           <button
@@ -131,6 +131,12 @@ export default function AuthPage() {
           <div className="auth-feature"><span className="auth-feature-icon">⚡</span> Free: Today's top picks &amp; schedule</div>
           <div className="auth-feature"><span className="auth-feature-icon">🔓</span> Pro: Full projections, slip builder &amp; more</div>
         </div>
+
+        {onBack && (
+          <button type="button" className="auth-link auth-back" onClick={onBack}>
+            ← Back to home
+          </button>
+        )}
       </div>
     </div>
   );

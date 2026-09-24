@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import AuthPage from './AuthPage'
+import PublicLanding from './PublicLanding'
 import KboApp from './KboApp'
 import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
@@ -13,6 +14,9 @@ function App() {
   const { user, loading } = useAuth();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('hub');
+  // Pre-login flow: marketing page first, then the login/signup form.
+  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'auth'
+  const [authMode, setAuthMode] = useState('login');
   const [sport, setSportState] = useState(() => {
     if (typeof localStorage === 'undefined') return 'kbo';
     return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
@@ -44,9 +48,17 @@ function App() {
     );
   }
 
-  /* Not logged in → show login/signup */
+  /* Not logged in → marketing page first, then login/signup */
   if (!user) {
-    return <AuthPage />;
+    if (publicView === 'landing') {
+      return (
+        <PublicLanding
+          onGetStarted={() => { setAuthMode('signup'); setPublicView('auth'); }}
+          onLogin={() => { setAuthMode('login'); setPublicView('auth'); }}
+        />
+      );
+    }
+    return <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />;
   }
 
   /* cgpropz hub — sport-agnostic front door (sits above both sports) */
