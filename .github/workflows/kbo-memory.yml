@@ -1,0 +1,45 @@
+name: KBO Props Memory Grade
+
+# Grades yesterday's KST slate after the 12pm ET full-refresh window has had
+# time to scrape game logs. Writes memory/kbo/mm/dd/yyyy/recap.json only when
+# the finals gate passes; otherwise updates meta.json (waiting|partial).
+
+on:
+  schedule:
+    - cron: "0 17 * * *" # 1:00 PM ET — after 12pm full refresh
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional KST slate date (mm/dd/YYYY or YYYY-MM-DD)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kbo-memory
+  cancel-in-progress: false
+
+jobs:
+  grade-kbo-memory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Grade KBO memory day
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python pipeline/memory/grade_kbo_day.py --date "${{ github.event.inputs.date }}"
+          else
+            python pipeline/memory/grade_kbo_day.py
+          fi
+
+      - name: Publish memory/
+        run: bash pipeline/memory/commit_memory.sh "chore: kbo memory grade"

@@ -230,6 +230,10 @@ fi
 echo "Generating graded props history..."
 "$PYTHON" "$BASE/generate_graded_history.py" || echo "Warning: graded history generation failed (non-fatal)"
 
+# Freeze today's KBO slate into memory/ (non-fatal; CI also freezes on live refresh).
+echo "Freezing KBO props slate into memory/..."
+"$PYTHON" "$BASE/pipeline/memory/freeze_slate.py" --sport kbo || echo "Warning: memory slate freeze failed (non-fatal)"
+
 # --- Grade saved subscriber slips against actual results ---
 if [[ "$SUPABASE_READY" -eq 1 ]]; then
   echo "Grading saved subscriber slips..."
