@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Commit and publish memory/ tree changes only.
+# Commit and publish memory/ tree changes only
+# (slate.json, recap.json, summary.json, meta.json, …).
 set -euo pipefail
 MSG="${1:-chore: memory update}"
 git config user.name "github-actions[bot]"

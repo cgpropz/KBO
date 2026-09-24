@@ -26,6 +26,7 @@ from pipeline.memory.common import (
     today_et,
     utc_now_iso,
     write_meta,
+    write_partial_progress,
     write_recap,
 )
 
@@ -202,12 +203,11 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     if missing:
         status = "partial" if n_graded else "waiting"
         if not dry_run:
-            write_meta(
+            write_partial_progress(
                 "wnba",
                 d,
-                status=status,
+                graded,
                 props_total=total,
-                props_graded=n_graded,
                 missing=missing,
             )
         return {
