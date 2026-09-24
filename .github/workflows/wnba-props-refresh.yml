@@ -162,3 +162,14 @@ jobs:
             git pull --rebase origin main && git push origin HEAD:main \
               || echo "Push failed after retry; Supabase publish still updated"
           fi
+
+      - name: Freeze WNBA slate into memory/
+        if: success() && steps.check_lines.outputs.has_lines == 'true'
+        continue-on-error: true
+        run: python pipeline/memory/freeze_slate.py --sport wnba
+
+      - name: Publish memory/ slate freeze
+        if: success() && steps.check_lines.outputs.has_lines == 'true'
+        continue-on-error: true
+        run: bash pipeline/memory/commit_memory.sh "chore: wnba memory slate freeze"
+

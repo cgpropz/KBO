@@ -19,15 +19,15 @@ on:
       - "_build_player_photos.py"
       - "Batters-Data/batterlog.py"
       - "Batters-Data/kbo_batter_hands.csv"
-      - "wnba/**"
-      - "kbo-props-ui/public/data/wnba/**"
       - "kbo-props-ui/src/**"
       - "kbo-props-ui/public/index.html"
       - "kbo-props-ui/package*.json"
       - "kbo-props-ui/vite.config.*"
   schedule:
-    # Full refresh + deploy spread across the afternoon (US Eastern).
-    # GitHub schedule uses UTC.
+    # Full refresh + deploy. GitHub schedule uses UTC.
+    # Morning ET run catches overnight KBO finals (KST evening games).
+    - cron: "0 12 * * *" # 8:00 AM ET — post-game actuals
+    # Afternoon ET cluster for pre-slate / US-day updates.
     - cron: "0 16 * * *" # 12:00 PM ET
     - cron: "0 18 * * *" # 2:00 PM ET
     - cron: "0 19 * * *" # 3:00 PM ET
@@ -161,6 +161,22 @@ jobs:
               fi
             fi
           fi
+
+
+      - name: Freeze KBO slate into memory/
+        if: success()
+        continue-on-error: true
+        run: python pipeline/memory/freeze_slate.py --sport kbo
+
+      - name: Grade KBO memory for yesterday (KST) if complete
+        if: success()
+        continue-on-error: true
+        run: python pipeline/memory/grade_kbo_day.py
+
+      - name: Publish memory/ changes
+        if: success()
+        continue-on-error: true
+        run: bash pipeline/memory/commit_memory.sh "chore: kbo memory update"
 
       - name: Deploy to Vercel
         run: |
