@@ -1,12 +1,12 @@
 name: KBO Props Memory Grade
 
-# Grades yesterday's KST slate after the morning full-refresh window has had
+# Grades yesterday's KST slate after the 12pm ET full-refresh window has had
 # time to scrape game logs. Writes memory/kbo/mm/dd/yyyy/recap.json only when
 # the finals gate passes; otherwise updates meta.json (waiting|partial).
 
 on:
   schedule:
-    - cron: "0 13 * * *" # 9:00 AM ET — after 8am full refresh
+    - cron: "0 17 * * *" # 1:00 PM ET — after 12pm full refresh
   workflow_dispatch:
     inputs:
       date:

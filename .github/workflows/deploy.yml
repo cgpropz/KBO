@@ -25,10 +25,10 @@ on:
       - "kbo-props-ui/vite.config.*"
   schedule:
     # Full refresh + deploy. GitHub schedule uses UTC.
-    # Morning ET run catches overnight KBO finals (KST evening games).
-    - cron: "0 12 * * *" # 8:00 AM ET — post-game actuals
-    # Afternoon ET cluster for pre-slate / US-day updates.
-    - cron: "0 16 * * *" # 12:00 PM ET
+    # 12:00 PM ET is the post-game actuals window (gives overnight KST
+    # finals time to land in logs before we grade memory).
+    - cron: "0 16 * * *" # 12:00 PM ET — post-game actuals
+    # Later ET cluster for pre-slate / US-day updates.
     - cron: "0 18 * * *" # 2:00 PM ET
     - cron: "0 19 * * *" # 3:00 PM ET
     - cron: "0 20 * * *" # 4:00 PM ET
