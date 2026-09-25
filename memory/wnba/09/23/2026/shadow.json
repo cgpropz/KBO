@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "sport": "wnba",
+  "slate_date": "09/23/2026",
+  "slate_date_iso": "2026-09-23",
+  "generated_at": "2026-09-25T10:32:29+00:00",
+  "mode": "shadow (offline; never shown on the site)",
+  "slate_sha256": "dc3eb9bcad8cfd58",
+  "slate_frozen_at": "2026-09-24T04:28:11.662584+00:00",
+  "params": {
+    "sha256": "1ca37bc5a9730530",
+    "files": 22,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "d88a6b4df51e"
+  },
+  "rules": {
+    "shadow_projection": "Phase 2 final fit (knobs + linear calibration) for stats with recommendation=candidate; otherwise the current projection is carried (carried_current=true)",
+    "shadow_side": "candidate stats: sign(shadow_projection - line); carried stats: current pick",
+    "p_over": "Phase 2 logistic on (fit_projection - line, line); standard lines only",
+    "top_bucket": "top 20% of the day's standard lines by |projection - line| / stat walk-forward MAE, separately for current and shadow",
+    "leakage": "inputs pinned per prop at its pregame ref (source_commit, or last commit before a provably pregame legacy freeze); game logs filtered to dates before the game date"
+  },
+  "status": "excluded",
+  "reason": "Slate was frozen at 2026-09-24T04:28:11Z (00:28 ET 09/24), after the 09/23 games had finished, by the initial memory-archive commit 3e8da751e (before the past-date guard existed). Projections/recommendations may include post-game information.",
+  "counts": {
+    "props": 0
+  },
+  "props": []
+}
