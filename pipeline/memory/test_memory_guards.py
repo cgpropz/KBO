@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -16,6 +16,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pipeline.memory import common, freeze_slate, grade_kbo_day, grade_wnba_day
 
 COMMIT_MEMORY = Path(__file__).resolve().parent / "commit_memory.sh"
+
+
+def _pregame(d: date) -> datetime:
+    """09:00 ET (13:00 UTC) on d: before the WNBA noon-ET fallback tip-off."""
+    return datetime(d.year, d.month, d.day, 13, 0, tzinfo=timezone.utc)
 
 
 def _board_row(name: str, team: str, props: list[dict]) -> dict:
@@ -61,7 +66,7 @@ class FreezeWnbaPastDateTests(_TmpMemoryCase):
         today = date(2026, 9, 24)
         # Pregame freeze of 09/23 (made on 09/23)
         self.write_board([_board_row("Allisha Gray", "ATL", [_prop("3-PT Attempted", 4.5, "2026-09-23", 4.49, "UNDER")])])
-        freeze_slate.freeze_wnba(today=date(2026, 9, 23))
+        freeze_slate.freeze_wnba(today=date(2026, 9, 23), now=_pregame(date(2026, 9, 23)))
         slate_path = common.memory_dir("wnba", date(2026, 9, 23)) / "slate.json"
         before = json.loads(slate_path.read_text())
 
@@ -72,7 +77,7 @@ class FreezeWnbaPastDateTests(_TmpMemoryCase):
                 _prop("Points", 15.5, "2026-09-24", 16.0, "OVER"),
             ])
         ])
-        out = freeze_slate.freeze_wnba(today=today)
+        out = freeze_slate.freeze_wnba(today=today, now=_pregame(today))
 
         after = json.loads(slate_path.read_text())
         self.assertEqual(before["props"], after["props"])
@@ -83,16 +88,24 @@ class FreezeWnbaPastDateTests(_TmpMemoryCase):
 
     def test_explicit_date_still_allows_manual_backfill(self):
         self.write_board([_board_row("A", "ATL", [_prop("Points", 10.5, "2026-09-23", 11, "OVER")])])
-        out = freeze_slate.freeze_wnba(date(2026, 9, 23), today=date(2026, 9, 25))
+        # A past date is post-game by definition: the cutoff blocks it...
+        out = freeze_slate.freeze_wnba(date(2026, 9, 23), today=date(2026, 9, 25), now=_pregame(date(2026, 9, 25)))
+        self.assertEqual(out["dates"], 0)
+        self.assertEqual(out.get("skipped_started"), {"09/23/2026": 1})
+        # ...unless the operator explicitly opts in, which marks every row.
+        out = freeze_slate.freeze_wnba(
+            date(2026, 9, 23), today=date(2026, 9, 25), now=_pregame(date(2026, 9, 25)), ignore_cutoff=True
+        )
         self.assertEqual(out["dates"], 1)
-        self.assertTrue((common.memory_dir("wnba", date(2026, 9, 23)) / "slate.json").exists())
+        slate_path = common.memory_dir("wnba", date(2026, 9, 23)) / "slate.json"
+        self.assertTrue(json.loads(slate_path.read_text())["props"][0]["cutoff_ignored"])
 
     def test_same_day_updates_still_merge(self):
         d = date(2026, 9, 24)
         self.write_board([_board_row("A", "ATL", [_prop("Points", 10.5, "2026-09-24", 11, "OVER")])])
-        freeze_slate.freeze_wnba(today=d)
+        freeze_slate.freeze_wnba(today=d, now=_pregame(d))
         self.write_board([_board_row("A", "ATL", [_prop("Points", 11.5, "2026-09-24", 11, "UNDER")])])
-        freeze_slate.freeze_wnba(today=d)
+        freeze_slate.freeze_wnba(today=d, now=_pregame(d))
         slate = json.loads((common.memory_dir("wnba", d) / "slate.json").read_text())
         self.assertEqual(slate["props"][0]["line"], 11.5)
 
