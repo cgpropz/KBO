@@ -1,0 +1,31 @@
+{
+  "sport": "wnba",
+  "stat": "Blocked Shots",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "keep_current",
+  "adopt_in_shadow": false,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2026-07-16", "to": "2026-08-28", "periods": 31, "rows": 62},
+  "formula": {"is_current": true, "knobs": {"window_weights": "live", "windows": "live", "minutes_window": 10, "dvp": "on"}, "candidates_searched": 135},
+  "linear_calibration": null,
+  "p_over": null,
+  "walk_forward": {
+    "n": 0,
+    "periods": null,
+    "mae_current": null,
+    "mae_tuned": null,
+    "delta_mae": null,
+    "delta_ci95": null,
+    "rel_change_pct": null,
+    "fold_deltas": null,
+    "fold_delta_sd": null,
+    "hit_current": null,
+    "hit_tuned": null,
+    "hit_delta_ci95": null,
+    "hit_n": null
+  },
+  "folds": [],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}
