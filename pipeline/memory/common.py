@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -114,8 +116,27 @@ def prop_key(prop: dict) -> tuple[str, str, str]:
     return player, stat, odds_type
 
 
+# Slate prop schema. v2 adds a real stat projection for every prop (the KBO
+# pitcher rows used to store the 1-100 cg_projection score in `projection`),
+# plus edge / factor / timing / provenance fields. See memory/README.md.
+SLATE_PROP_SCHEMA = 2
+
+# Fields that must keep the value from the FIRST pregame freeze of a prop.
+FIRST_WRITE_WINS = ("first_frozen_at",)
+
+# When a schema-2 row replaces a legacy (schema < 2) row, these fields are
+# taken verbatim from the new row, even when None. Otherwise a legacy KBO
+# pitcher `projection` (really the cg score) would survive the merge whenever
+# the new freeze could not find a stat projection (None values never overwrite).
+SCHEMA2_REPLACE_FIELDS = ("projection", "edge")
+
+
 def merge_slate_props(existing: list[dict], incoming: list[dict]) -> list[dict]:
-    """Merge by player+stat+odds_type; newer incoming fields win."""
+    """Merge by player+stat+odds_type; newer incoming fields win.
+
+    Exceptions: ``first_frozen_at`` keeps its first value, and a schema-2 row
+    replacing a legacy row overwrites ``projection``/``edge`` even with None.
+    """
     by_key: dict[tuple[str, str, str], dict] = {}
     for prop in existing or []:
         by_key[prop_key(prop)] = dict(prop)
@@ -123,8 +144,17 @@ def merge_slate_props(existing: list[dict], incoming: list[dict]) -> list[dict]:
         key = prop_key(prop)
         if not key[0] or not key[1]:
             continue
-        merged = dict(by_key.get(key) or {})
+        previous = by_key.get(key) or {}
+        merged = dict(previous)
+        if int(prop.get("projection_schema") or 0) >= SLATE_PROP_SCHEMA and int(
+            previous.get("projection_schema") or 0
+        ) < SLATE_PROP_SCHEMA:
+            for field in SCHEMA2_REPLACE_FIELDS:
+                merged[field] = prop.get(field)
         merged.update({k: v for k, v in prop.items() if v is not None})
+        for field in FIRST_WRITE_WINS:
+            if previous.get(field) is not None:
+                merged[field] = previous[field]
         by_key[key] = merged
     return sorted(by_key.values(), key=lambda p: (normalize_name(p.get("player", "")), str(p.get("stat", "")), str(p.get("odds_type", ""))))
 
@@ -242,6 +272,39 @@ def hit_rate_meta_extra(stats: dict) -> dict:
     }
 
 
+def evaluation_exclusions_path() -> Path:
+    """memory/evaluation_exclusions.json: hand-maintained, never written by bots."""
+    return MEMORY_ROOT / "evaluation_exclusions.json"
+
+
+def evaluation_status(sport: str, d: date) -> dict | None:
+    """Return the exclusion record for a sport/day, or None when eligible.
+
+    Excluded days are still frozen/graded/summarized as usual (graded results
+    are never rewritten); the flag only tells evaluation consumers (ML
+    training, hit-rate rollups, backtests) to leave the day out.
+    """
+    data = load_json(evaluation_exclusions_path(), default={}) or {}
+    iso = format_iso(d)
+    for entry in data.get("exclusions") or []:
+        if str(entry.get("sport") or "").lower() != sport.lower():
+            continue
+        if parse_date(entry.get("slate_date")) != d:
+            continue
+        return {
+            "excluded": True,
+            "scope": entry.get("scope") or "day",
+            "reason": entry.get("reason") or "",
+            "flagged_at": entry.get("flagged_at"),
+            "slate_date_iso": iso,
+        }
+    return None
+
+
+def is_excluded_from_evaluation(sport: str, d: date) -> bool:
+    return evaluation_status(sport, d) is not None
+
+
 def build_day_summary(
     sport: str,
     d: date,
@@ -297,6 +360,9 @@ def write_day_summary(
     summary = build_day_summary(
         sport, d, props, status=status, props_total=props_total
     )
+    evaluation = evaluation_status(sport, d)
+    if evaluation:
+        summary["evaluation"] = evaluation
     path = ensure_memory_dir(sport, d) / "summary.json"
     save_json(path, summary)
     return path, summary
@@ -364,8 +430,28 @@ def write_meta(
     }
     if extra:
         payload.update(extra)
+    evaluation = evaluation_status(sport, d)
+    if evaluation:
+        payload["evaluation"] = evaluation
     save_json(path, payload)
     return path
+
+
+def source_commit() -> str | None:
+    """Commit the freeze ran on (GITHUB_SHA in Actions, else local HEAD)."""
+    sha = (os.environ.get("GITHUB_SHA") or "").strip()
+    if not sha:
+        try:
+            sha = subprocess.run(
+                ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            ).stdout.strip()
+        except Exception:
+            sha = ""
+    return sha[:12] or None
 
 
 def write_slate(sport: str, d: date, props: list[dict], *, source: str | None = None) -> Path:
@@ -378,8 +464,10 @@ def write_slate(sport: str, d: date, props: list[dict], *, source: str | None = 
         "slate_date": format_mmddyyyy(d),
         "slate_date_iso": format_iso(d),
         "timezone_basis": TIMEZONE_BASIS[sport],
+        "schema_version": SLATE_PROP_SCHEMA,
         "frozen_at": utc_now_iso(),
         "source": source or existing.get("source"),
+        "source_commit": source_commit() or existing.get("source_commit"),
         "props": merged,
     }
     save_json(slate_path, payload)
