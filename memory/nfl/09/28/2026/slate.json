@@ -4,10 +4,63 @@
   "slate_date_iso": "2026-09-28",
   "timezone_basis": "ET-gameday",
   "schema_version": 2,
-  "frozen_at": "2026-09-25T19:26:08.253373+00:00",
+  "frozen_at": "2026-09-25T22:39:53.600897+00:00",
   "source": "nfl/projections.json",
-  "source_commit": "e8cb78951167",
+  "source_commit": "5f0f668a6cdb",
   "props": [
+    {
+      "projection": 162.5,
+      "edge": 0.0,
+      "player": "Case Keenum",
+      "team": "CHI",
+      "opponent": "PHI",
+      "position": "QB",
+      "stat": "Pass Yards",
+      "line": 162.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": true,
+      "game_date_iso": "2026-09-28",
+      "season_average": 162.5,
+      "games_played": 0,
+      "snap_count": 0.0,
+      "dvp_rank": 13,
+      "dvp_ratio": 0.85,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-09-25T22:39:53+00:00",
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
+    },
+    {
+      "projection": 19.7,
+      "edge": 10.2,
+      "player": "Cole Kmet",
+      "team": "CHI",
+      "opponent": "PHI",
+      "position": "TE",
+      "stat": "Receiving Yards",
+      "line": 9.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 50,
+      "game_date_iso": "2026-09-28",
+      "season_average": 21.2,
+      "games_played": 10,
+      "snap_count": 63.0,
+      "dvp_rank": 2,
+      "dvp_ratio": 0.39,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-09-25T22:39:53+00:00",
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
+    },
     {
       "projection": 6.0,
       "edge": 1.5,
@@ -32,8 +85,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Colston Loveland",
@@ -59,8 +112,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Colston Loveland",
@@ -86,8 +139,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "D'Andre Swift",
@@ -95,13 +148,13 @@
       "opponent": "PHI",
       "position": "RB",
       "stat": "Receiving Yards",
-      "line": 13.5,
+      "line": 10.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection": 20.1,
       "rating": 50,
       "game_date_iso": "2026-09-28",
-      "edge": 6.6,
+      "edge": 9.6,
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "season_average": 20.2,
@@ -113,8 +166,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "D'Andre Swift",
@@ -122,13 +175,13 @@
       "opponent": "PHI",
       "position": "RB",
       "stat": "Rush Attempts",
-      "line": 15.5,
+      "line": 14.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection": 14.3,
       "rating": 100,
       "game_date_iso": "2026-09-28",
-      "edge": -1.2,
+      "edge": -0.2,
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "season_average": 14.3,
@@ -140,18 +193,18 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 69.9,
-      "edge": 1.4,
+      "edge": 8.4,
       "player": "D'Andre Swift",
       "team": "CHI",
       "opponent": "PHI",
       "position": "RB",
       "stat": "Rush Yards",
-      "line": 68.5,
+      "line": 61.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -167,8 +220,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T15:25:47+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "DeVonta Smith",
@@ -194,8 +247,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "DeVonta Smith",
@@ -221,8 +274,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "DeVonta Smith",
@@ -248,8 +301,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Dontayvion Wicks",
@@ -275,8 +328,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Dontayvion Wicks",
@@ -302,8 +355,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Dontayvion Wicks",
@@ -329,8 +382,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -356,8 +409,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -383,8 +436,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -410,8 +463,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -437,8 +490,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -464,8 +517,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Jalen Hurts",
@@ -491,8 +544,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Johnny Mundt",
@@ -518,8 +571,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Johnny Mundt",
@@ -545,8 +598,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 4.5,
@@ -572,8 +625,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Kalif Raymond",
@@ -599,8 +652,35 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
+    },
+    {
+      "projection": 14.1,
+      "edge": 7.6,
+      "player": "Kyle Monangai",
+      "team": "CHI",
+      "opponent": "PHI",
+      "position": "RB",
+      "stat": "Receiving Yards",
+      "line": 6.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 100,
+      "game_date_iso": "2026-09-28",
+      "season_average": 10.5,
+      "games_played": 10,
+      "snap_count": 38.5,
+      "dvp_rank": 2,
+      "dvp_ratio": 0.38,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-09-25T22:39:53+00:00",
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 10.0,
@@ -635,13 +715,13 @@
       "opponent": "PHI",
       "position": "RB",
       "stat": "Rush Yards",
-      "line": 41.5,
+      "line": 39.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection": 54.7,
       "rating": 100,
       "game_date_iso": "2026-09-28",
-      "edge": 13.2,
+      "edge": 15.2,
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "season_average": 48.9,
@@ -653,8 +733,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 5.6,
@@ -680,8 +760,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Luther Burden III",
@@ -689,13 +769,13 @@
       "opponent": "PHI",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 32.5,
+      "line": 31.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection": 50.6,
-      "rating": 50,
+      "rating": 100,
       "game_date_iso": "2026-09-28",
-      "edge": 18.1,
+      "edge": 19.1,
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "season_average": 43.9,
@@ -707,8 +787,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Luther Burden III",
@@ -747,8 +827,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Makai Lemon",
@@ -756,10 +836,10 @@
       "opponent": "CHI",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 29.5,
+      "line": 28.5,
       "odds_type": "standard",
       "recommendation": "OVER",
-      "projection": 29.5,
+      "projection": 28.5,
       "rating": 0,
       "game_date_iso": "2026-09-28",
       "edge": 0.0,
@@ -774,8 +854,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Makai Lemon",
@@ -801,8 +881,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 5.3,
@@ -828,8 +908,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Rome Odunze",
@@ -855,8 +935,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Rome Odunze",
@@ -909,8 +989,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Saquon Barkley",
@@ -936,8 +1016,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Saquon Barkley",
@@ -963,8 +1043,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Saquon Barkley",
@@ -972,13 +1052,13 @@
       "opponent": "CHI",
       "position": "RB",
       "stat": "Rush Yards",
-      "line": 72.5,
+      "line": 71.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection": 62.6,
       "rating": 50,
       "game_date_iso": "2026-09-28",
-      "edge": -9.9,
+      "edge": -8.9,
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "season_average": 68.4,
@@ -990,8 +1070,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "player": "Saquon Barkley",
@@ -1017,8 +1097,35 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T05:13:02+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
+    },
+    {
+      "projection": 6.6,
+      "edge": 3.1,
+      "player": "Will Shipley",
+      "team": "PHI",
+      "opponent": "CHI",
+      "position": "RB",
+      "stat": "Receiving Yards",
+      "line": 3.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 100,
+      "game_date_iso": "2026-09-28",
+      "season_average": 4.3,
+      "games_played": 10,
+      "snap_count": 34.5,
+      "dvp_rank": 30,
+      "dvp_ratio": 1.59,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-09-25T22:39:53+00:00",
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     },
     {
       "projection": 45.8,
@@ -1043,8 +1150,8 @@
       "start_time_utc": "2026-09-29T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-09-25T19:26:08+00:00",
-      "last_pregame_frozen_at": "2026-09-25T19:26:08+00:00",
-      "source_commit": "e8cb78951167"
+      "last_pregame_frozen_at": "2026-09-25T22:39:53+00:00",
+      "source_commit": "5f0f668a6cdb"
     }
   ]
 }
