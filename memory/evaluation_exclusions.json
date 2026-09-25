@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "description": "Memory days (or sport/day scopes) that must be left out of accuracy evaluation, ML training and hit-rate rollups. Hand-maintained; bots never write this file. Graded results (recap/summary) are NOT rewritten; meta.json and summary.json surface the flag as `evaluation` the next time they are written.",
+  "exclusions": [
+    {
+      "sport": "wnba",
+      "slate_date": "2026-09-23",
+      "scope": "day",
+      "reason": "Slate was frozen at 2026-09-24T04:28:11Z (00:28 ET 09/24), after the 09/23 games had finished, by the initial memory-archive commit 3e8da751e (before the past-date guard existed). Projections/recommendations may include post-game information.",
+      "flagged_at": "2026-09-25"
+    }
+  ]
+}
