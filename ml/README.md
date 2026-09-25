@@ -1,4 +1,4 @@
-# ml/: offline datasets, formula replay and baselines (Phase 1)
+# ml/: offline datasets, formula replay and baselines (Phase 1), tuning (Phase 2), shadow mode (Phase 3)
 
 Everything here runs **offline**. The live pipeline, the Vercel site and the
 scheduled workflows never import anything from `ml/`, and no live projection
@@ -230,5 +230,159 @@ UTC, or by hand.
 NFL P(over) is deferred until `memory/nfl/.../history.jsonl` has several graded
 weeks of lines.
 
-**Next (Phase 3):** score open slates in shadow with the `candidate` params, and
-compare against the live projection on identical graded props.
+**Phase 3 (below):** open slates are scored in shadow with the `candidate`
+params and compared with the live projection on the same graded props.
+
+## Phase 3: shadow mode (offline)
+
+Shadow mode never changes what the site shows. Nothing in `pipeline/`, the UI
+or the refresh workflows reads these files. The only files it writes are
+`memory/**/shadow*.json`.
+
+```bash
+python3 -m ml.shadow.score --sport kbo|wnba|nfl|all [--date YYYY-MM-DD]   # -> shadow.json
+python3 -m ml.shadow.grade --sport kbo|wnba|nfl|all [--date YYYY-MM-DD]   # -> shadow_summary.json + scoreboard
+python3 ml/tests/test_ml_phase3.py
+```
+
+### What gets scored
+
+Every prop in `memory/<sport>/<mm>/<dd>/<yyyy>/slate.json` is scored: the same
+player, stat, odds type and line.
+- **Candidate stats** (`recommendation: "candidate"` in `ml/params`):
+  `shadow_projection` is the Phase 2 final fit (`formula.knobs`, then
+  `linear_calibration`), and `shadow_side` is the sign of
+  `shadow_projection - line`.
+- **Other stats:** the current projection and the current pick are carried.
+  These rows have `carried_current: true` and a `flag`, so they grade the
+  same in both columns.
+- **Candidates whose inputs are missing** (for example no prior games, or an
+  NFL line fallback) are also carried. Their flag is
+  `candidate_inputs_unavailable:<why>`.
+- **`p_over`:** the Phase 2 logistic P(over), wherever a calibrator exists.
+  - It is computed on the fit projection it was trained on, and for standard
+    lines only.
+  - It is informational: only WNBA Free Throws Made has
+    `p_over_recommendation: "candidate"`.
+
+**Leakage guard.** Each prop's inputs (game logs, opponent tables, DvP) are
+read at a pinned pregame git ref:
+- Schema-2 rows use the row's `source_commit`, and only if
+  `last_pregame_frozen_at < start_time_utc`.
+- Legacy rows use the last commit before the slate's `frozen_at`, and only if
+  that freeze is before the earliest possible start of the day
+  (`pipeline/memory/cutoff.py`): KBO 14:00/18:30 KST, WNBA 12:00 PM ET, NFL
+  09:30 AM ET.
+- Game logs are also filtered to dates before the game date.
+- Rows with `cutoff_ignored` and excluded days are never scored.
+
+Because inputs are pinned, re-scoring later gives identical numbers. The test
+suite checks this, and checks that live knobs at the pinned KBO ref reproduce
+the published 09/25 projections.
+
+NFL Receiving Yards uses nflverse weekly stats with gamedays before the slate
+date. The other NFL candidates only need `a + b * current projection`.
+
+### When it runs
+
+`.github/workflows/ml-shadow.yml`. Times are UTC; ET = UTC-4 until DST ends.
+
+| cron (UTC) | ET | sports | why |
+|---|---|---|---|
+| `41 5 * * *` | 1:41 AM | KBO score, WNBA score+grade | weekend KBO slates lock 05:00 UTC; wnba-memory runs 1 AM ET |
+| `47 9 * * *` | 5:47 AM | KBO score | weekday KBO slates lock 09:30 UTC |
+| `41 17 * * *` | 1:41 PM | KBO score+grade | kbo-memory runs 1 PM ET; lands before the 2:12 PM digest |
+| `47 23 * * *` | 7:47 PM | WNBA + NFL score | pregame boards |
+| `41 14 * * 2,3` | 10:41 AM Tue/Wed | NFL score+grade | nfl-memory runs 10 AM ET Tue/Wed |
+
+How a run behaves:
+- Every run scores and then grades its sports.
+- Files are rewritten only when their content changes (timestamps are
+  ignored), so a no-op run makes no commit.
+- A day is re-scored when its slate changes. An open day is also re-scored
+  when the params change. A graded day keeps its `shadow.json`.
+- Publishing goes through `ml/shadow/publish_shadow.sh`. This is the same
+  clean-worktree, 3-attempt push as `pipeline/memory/commit_memory.sh`, but it
+  refuses any path other than `memory/**/shadow*.json`.
+- Concurrency group: `ml-shadow`.
+- Deploys are unaffected: `memory/**` is not in `deploy.yml`'s push paths,
+  `ml-*.yml` is excluded there, and `GITHUB_TOKEN` pushes never trigger
+  workflows.
+
+If a memory grade runs late, the shadow grade for that day happens on the next
+run of that sport.
+
+### Files and fields (for the 2:12 PM ET daily digest)
+
+**Per-day scores:** `memory/<sport>/<mm>/<dd>/<yyyy>/shadow.json`
+- Top level:
+  - `status`: `scored`, `not_scored` (nothing provably pregame) or `excluded`.
+  - `counts.{props, scored, shadow_candidate, carried_current, with_p_over}`
+  - `params.{sha256, git_commit, git_tree, data_ref, generated_at}`: the params
+    version.
+  - `input_refs`, `slate_sha256`, `not_scored_reasons`.
+- `props[]`:
+  - `player, stat, odds_type, line`
+  - `current_projection, current_side`
+  - `shadow_projection, shadow_side, shadow_source` (`candidate` or `current`),
+    `carried_current, flag`
+  - `p_over, p_over_note`
+  - `top_current, top_shadow`
+  - `input_ref, pin`
+
+**Per-day grades:** `memory/<sport>/<mm>/<dd>/<yyyy>/shadow_summary.json`
+- Written only for complete, non-excluded days, from the same `recap.json`
+  actuals.
+- The same block shape appears under `overall`, `candidate_rows_only` and
+  `per_stat.<stat>`:
+  - `current.{hits, misses, pushes, dnps, hit_rate, hit_rate_pct}`: the site's
+    picks (recap `model_result`). They equal `summary.json` for the same day.
+  - `shadow.{hits, misses, pushes, dnps, no_pick, hit_rate, hit_rate_pct}`
+  - `hit_rate_delta_pct_points`: shadow minus current, in points.
+  - `paired.{n, current_hits, shadow_hits, current_hit_rate_pct, shadow_hit_rate_pct}`:
+    only rows where both made a pick.
+  - `mae.{n, current, shadow, delta}` (paired rows) and `mae_shadow_all`.
+  - `top_bucket.current` / `top_bucket.shadow`: the same fields as `current`.
+    The bucket is the top 20% of the day's standard lines by
+    |projection - line| / stat MAE, chosen pregame.
+  - `current_edge`: a projection-sign benchmark.
+- `props[]` lists each graded prop with `actual`, `result`, `current_result`
+  and `shadow_result`.
+
+**Running totals:** `memory/<sport>/shadow_scoreboard.json`
+- Totals since `shadow_start`: `graded_days`, `last_graded`, `periods`
+  (days, or NFL weeks).
+- `thresholds` / `progress`, for example `{"periods": "1/30", "props": "34/1000"}`.
+  The D3 thresholds are KBO 30 days and 1,000 props, WNBA 20 days and 1,500,
+  NFL 6 weeks and 1,500. Props are counted on candidate rows.
+- `status`, which is one of:
+  - `collecting`: below the thresholds.
+  - `beating`: shadow hit rate is higher and its MAE is not worse.
+  - `losing`: shadow hit rate is lower and its MAE is not better.
+  - `meets-thresholds`: the thresholds are met but the result is mixed.
+- The block shapes above repeat under `overall`, `candidate_rows_only` and
+  `per_stat` (each stat also has its own `periods` and `status`).
+
+A digest line can be built from:
+- `scoreboard.overall.current.hit_rate_pct` vs `scoreboard.overall.shadow.hit_rate_pct`
+- the latest day's `shadow_summary.overall.{current,shadow}.{hits,misses,hit_rate_pct}`
+- `scoreboard.status` and `scoreboard.progress`
+
+### Backfill
+
+The only days that can be scored leak-free are:
+- KBO 09/24: a legacy freeze at 14:57 KST, before the 18:30 KST first pitch.
+- KBO 09/25: schema 2.
+- NFL 09/27 and 09/28: legacy freeze at 8:22 PM ET 09/24.
+
+These are skipped and marked `not_scored`, so shadow starts with their next
+slates:
+- WNBA 09/24: frozen 9:02 PM ET, after tip-off.
+- NFL 09/24: frozen 8:22 PM ET, after the 8:15 PM ET TNF kickoff.
+
+WNBA 09/23 is excluded (`memory/evaluation_exclusions.json`). Only KBO 09/24
+had actuals when this was added.
+
+These files are not committed by the PR. The first run of `ml-shadow.yml` after
+merge writes them; you can also start it by hand with `workflow_dispatch`,
+sport `all`. The numbers are the same as a local run, because inputs are pinned.
