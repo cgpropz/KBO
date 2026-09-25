@@ -1,0 +1,37 @@
+{
+  "sport": "nfl",
+  "stat": "Rush Yards",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "candidate",
+  "adopt_in_shadow": true,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2024-04", "to": "2026-02", "periods": 43, "rows": 1773},
+  "formula": {"is_current": true, "knobs": {"weights": "live", "windows": "live", "recent_cap": 10}, "candidates_searched": 36},
+  "linear_calibration": {"a": 5.858, "b": 0.7909},
+  "p_over": null,
+  "walk_forward": {
+    "n": 1483,
+    "periods": 37,
+    "mae_current": 25.7317,
+    "mae_tuned": 24.9146,
+    "delta_mae": -0.8171,
+    "delta_ci95": [-1.1514, -0.4852],
+    "rel_change_pct": -3.18,
+    "fold_deltas": [-0.5905, -1.2342, -0.5576, -0.7043, -1.3618],
+    "fold_delta_sd": 0.3794,
+    "hit_current": null,
+    "hit_tuned": null,
+    "hit_delta_ci95": null,
+    "hit_n": null
+  },
+  "folds": [
+    ["2024-10", "2024-17", 377, 25.9512, 25.3607, true, true],
+    ["2024-18", "2025-03", 237, 25.3318, 24.0976, true, true],
+    ["2025-04", "2025-10", 320, 26.7806, 26.223, true, true],
+    ["2025-11", "2025-17", 349, 24.5188, 23.8145, true, true],
+    ["2025-18", "2026-02", 200, 26.2298, 24.868, true, true]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}
