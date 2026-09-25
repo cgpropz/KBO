@@ -1,0 +1,34 @@
+{
+  "sport": "wnba",
+  "stat": "Turnovers",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "keep_current",
+  "adopt_in_shadow": false,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2026-07-15", "to": "2026-08-28", "periods": 34, "rows": 148},
+  "formula": {"is_current": true, "knobs": {"window_weights": "live", "windows": "live", "minutes_window": 10, "dvp": "on"}, "candidates_searched": 135},
+  "linear_calibration": null,
+  "p_over": null,
+  "walk_forward": {
+    "n": 65,
+    "periods": 16,
+    "mae_current": 1.2851,
+    "mae_tuned": 1.2851,
+    "delta_mae": 0.0,
+    "delta_ci95": [0.0, 0.0],
+    "rel_change_pct": 0.0,
+    "fold_deltas": [0.0, 0.0],
+    "fold_delta_sd": 0.0,
+    "hit_current": 0.4375,
+    "hit_tuned": 0.4375,
+    "hit_delta_ci95": [0.0, 0.0],
+    "hit_n": 64
+  },
+  "folds": [
+    ["2026-08-10", "2026-08-18", 40, 1.385, 1.385, true, false],
+    ["2026-08-19", "2026-08-28", 25, 1.1252, 1.1252, true, false]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}
