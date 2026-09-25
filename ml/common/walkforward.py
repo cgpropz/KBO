@@ -34,7 +34,7 @@ GUARDS = {
 }
 
 
-# ── folds ───────────────────────────────────────────────────────────────────────────
+# -- folds --
 
 
 def make_folds(periods, warmup: int, n_folds: int) -> list[list]:
@@ -53,7 +53,7 @@ def make_folds(periods, warmup: int, n_folds: int) -> list[list]:
     return folds
 
 
-# ── basic stats ─────────────────────────────────────────────────────────────────────────
+# -- basic stats --
 
 
 def mae(pred, actual, idx=None) -> float | None:
@@ -136,7 +136,7 @@ def paired_rate_diff_ci(periods, hits_base, hits_new, reps, seed):
     return block_bootstrap(blocks, fn, reps, seed)
 
 
-# ── linear calibration: LAD (IRLS), shrunk toward identity ─────────────────
+# -- linear calibration: LAD (IRLS), shrunk toward identity --
 
 
 def fit_lad_calibration(pred: list[float], actual: list[float], ridge: float = 0.05, iters: int = 40,
@@ -183,7 +183,7 @@ def apply_cal(pred: list[float], cal) -> list[float]:
     return [a + b * p for p in pred]
 
 
-# ── candidate selection ───────────────────────────────────────────────────────────────────
+# -- candidate selection --
 
 
 @dataclass
@@ -287,7 +287,7 @@ def summarize_oof(problem: Problem, wf: dict, guards: dict = GUARDS) -> dict:
     }
 
 
-# ── probability of over: L2 logistic regression (Newton) ───────────────────
+# -- probability of over: L2 logistic regression (Newton) --
 
 
 def _sigmoid(z: float) -> float:
