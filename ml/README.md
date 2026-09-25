@@ -128,3 +128,107 @@ python3 ml/tests/test_ml_phase1.py -v
 
 The KBO reproduction test is skipped when the audit ref is not in local history
 (for example, a shallow clone).
+
+## Phase 2: light tuner, calibration and P(over) (offline)
+
+Phase 2 is still **Python stdlib only** and **offline**. Its files are marked
+`mode: "offline"`, and nothing reads them live.
+
+```bash
+python3 -m ml.kbo.build_dataset  --out ml/out     # the Phase 1 datasets (HEAD or a pinned --ref)
+python3 -m ml.wnba.build_dataset --out ml/out
+python3 -m ml.train --out ml/out                  # ~20 s -> ml/params/<sport>/<stat>.json, ml/reports/phase2_<date>.md
+python3 ml/tests/test_ml_phase2.py
+```
+
+`ml.train` accepts `--params-dir` / `--report-dir`; the weekly workflow writes
+under `ml/out/` instead of the committed folders. NFL downloads the nflverse
+CSVs (2024 to 2026) once into `ml/data/nfl/`. Delete that folder to pick up new
+weeks.
+
+### What it does, per sport and stat
+
+1. **Knob search.** Every combination of the existing formula knobs is
+   computed point in time for every row (`ml/<sport>/tune.py`). Candidate 0 is
+   always the current live formula, and a test checks it matches the Phase 1
+   replay.
+   - **KBO pitchers (270 candidates):**
+     - `dedupe` (`live` = today's double count; `fixed`)
+     - `form` (`live` 0.90-1.10 clamp; `narrow` 0.95-1.05; `off`)
+     - `shrink_games` (6 live; 3; 10)
+     - `weights`: recent/season/all blend. `live` .5/.3/.2, `balanced` .3/.3/.4,
+       `season_heavy` .2/.2/.6, `recent_heavy` .7/.2/.1, `long_run` .1/.2/.7
+     - `opp_mult` on the opponent sensitivity (1 live; 0 off; 1.5)
+   - **KBO Hits+Runs+RBIs (216 candidates):**
+     - `pa_weights` and `rate_weights` (L3/L6/season)
+     - `opp`: `published` is the live input, the opponent's own batting;
+       `corrected` is the opponent pitching staff's HRR allowed per game,
+       rebuilt from batting logs before the date; `off`
+     - `park`, `split` and `pitcher` multipliers on/off
+   - **KBO Total Bases / Fantasy Score:** not replayed, so only the
+     calibration is tuned on the published projection.
+   - **WNBA (135 candidates):**
+     - `window_weights` on the per-minute rates
+     - `windows`: `live` 3/7/15, `longer` 5/10/20, `longest` 7/15/30
+     - `minutes_window` (10 live; 5; 15)
+     - `dvp` (`on`; `off`; `half` = factor^0.5)
+   - **NFL (36 candidates, MAE only):**
+     - `weights`
+     - `windows`
+     - `recent_cap`: 10 is live, the "L15 is really L10" slice; 15 and 20
+2. **Linear calibration** `projection_final = a + b * projection`. It is fit
+   by least absolute deviation with a ridge pull toward a=0, b=1, and the slope
+   is kept within [0.5, 1.5]. A slope near 0 would replace the projection with a
+   constant, which can lower MAE on noisy stats but throws the projection away.
+3. **P(over) calibrator.** Logistic regression on
+   `edge = projection - line` and `line`, per stat, on standard lines with
+   pushes dropped.
+   - The line is used only here, never in the projection (D1).
+   - The baseline is a constant: the training over-rate.
+   - Top-confidence buckets use |p - 0.5| cut-offs taken from the training
+     predictions.
+
+### Walk-forward and guards
+
+- **Expanding window.** Each test fold uses knobs, calibration and P(over)
+  fit on earlier dates only.
+  - KBO and WNBA: 21-day warm-up, then 6 folds for KBO and 3 for WNBA.
+  - NFL: 6-week warm-up, then 5 folds by season-week.
+- **Keeping the current formula.** In each fold the current formula is kept
+  unless a candidate cuts training MAE by at least 1% with at least 150
+  training rows. The calibration must also clear 1%.
+- **What counts as a candidate.** A stat is a `candidate`
+  (`adopt_in_shadow: true`) only if the pooled walk-forward MAE change has a
+  95% day-block (NFL: week-block) bootstrap CI entirely below zero. Otherwise
+  its recommendation is `keep_current`.
+- **Fixed variants.** The report also scores pre-registered variants with no
+  tuning, on the same test rows: double count fixed, form off, corrected
+  opponent factor, DvP off, and the L15 fix.
+
+### Params file
+
+`ml/params/<sport>/<stat>.json` holds:
+- `recommendation` and `adopt_in_shadow`
+- the chosen `formula.knobs` (knob names as listed above)
+- `linear_calibration` (`a`, `b`)
+- `p_over`: logit = `intercept + coef.edge*edge + coef.line*line`
+- `training_window`
+- the `walk_forward` metrics against the current formula
+- `folds` rows: `[test_from, test_to, n_test, mae_current, mae_tuned,
+  kept_current_formula, calibrated]`
+
+The full tables are in `ml/reports/phase2_<date>.md`.
+
+### Weekly workflow and next step
+
+The weekly workflow `.github/workflows/ml-train.yml` runs Mondays at 10:23
+UTC, or by hand.
+- It is read-only: it rebuilds everything and uploads the params and report
+  as an artifact kept for 90 days.
+- It commits nothing. Refreshing the committed params is a human PR.
+
+NFL P(over) is deferred until `memory/nfl/.../history.jsonl` has several graded
+weeks of lines.
+
+**Next (Phase 3):** score open slates in shadow with the `candidate` params, and
+compare against the live projection on identical graded props.
