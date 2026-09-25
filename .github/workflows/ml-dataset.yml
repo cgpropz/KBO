@@ -1,0 +1,53 @@
+# Manual-only (workflow_dispatch) Phase 1 dataset build. Read-only: it commits
+# nothing and uploads ml/out/ as an artifact. Not scheduled (that is Phase 2).
+name: ML dataset build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to rebuild datasets at (HEAD or a commit sha)"
+        required: false
+        default: "HEAD"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ml-dataset
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Unit tests
+        run: python3 ml/tests/test_ml_phase1.py -v
+
+      - name: Build datasets, replay and baseline
+        env:
+          ML_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          python3 -m ml.kbo.build_dataset  --ref "$ML_REF" --out ml/out
+          python3 -m ml.wnba.build_dataset --ref "$ML_REF" --out ml/out
+          python3 -m ml.kbo.replay         --ref "$ML_REF" --out ml/out
+          python3 -m ml.wnba.replay        --ref "$ML_REF" --out ml/out
+          python3 -m ml.nfl.replay         --out ml/out
+          python3 -m ml.evaluate_baseline  --out ml/out >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ml-datasets-${{ github.run_id }}
+          path: ml/out/
+          retention-days: 30
