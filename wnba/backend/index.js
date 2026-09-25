@@ -1027,7 +1027,13 @@ app.get('/api/projections/v2', async (req, res) => {
 });
 
 // ── Odds API – WNBA spreads ─────────────────────────────────────────────────
-const ODDS_API_KEY = process.env.ODDS_API_KEY || 'b3573496127b5228b9c5f4d34cb06e2a';
+// The key is read ONLY from the environment (GitHub Actions secret
+// `ODDS_API_KEY`; `THE_ODDS_API_KEY` is accepted as an alias to match
+// generate_matchups.py). Never hard-code a key here: this repo is public.
+// When no key is configured the Odds API call is skipped and spreads come from
+// ESPN alone (spread is display-only; projections do not use it).
+const ODDS_API_KEY = String(process.env.ODDS_API_KEY || process.env.THE_ODDS_API_KEY || '').trim();
+let oddsApiKeyWarned = false;
 const oddsCache = { spreads: null, slateKey: '', ts: 0 };
 
 const WNBA_TEAM_NAME_MAP = {
@@ -1098,19 +1104,27 @@ async function fetchSpreads(slateDates = []) {
   if (oddsCache.spreads && oddsCache.slateKey === slateKey && now - oddsCache.ts < 10 * 60 * 1000) return oddsCache.spreads;
 
   const spreadMap = {};
-  try {
-    const url = `https://api.the-odds-api.com/v4/sports/basketball_wnba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads&oddsFormat=american`;
-    const games = await httpsGet(url);
-    for (const game of (Array.isArray(games) ? games : [])) {
-      const bookmaker = game.bookmakers?.[0];
-      const market = bookmaker?.markets?.find(item => item.key === 'spreads');
-      for (const outcome of market?.outcomes || []) {
-        const abbr = WNBA_TEAM_NAME_MAP[outcome.name] || normalizeTeamAbbr(outcome.name);
-        if (abbr) spreadMap[abbr] = outcome.point;
-      }
+  if (!ODDS_API_KEY) {
+    if (!oddsApiKeyWarned) {
+      console.warn('ODDS_API_KEY not set; skipping The Odds API and using ESPN spreads only.');
+      oddsApiKeyWarned = true;
     }
-  } catch (err) {
-    console.error('Odds API spreads failed:', err.message);
+  } else {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/basketball_wnba/odds/?apiKey=${encodeURIComponent(ODDS_API_KEY)}&regions=us&markets=spreads&oddsFormat=american`;
+      const games = await httpsGet(url);
+      for (const game of (Array.isArray(games) ? games : [])) {
+        const bookmaker = game.bookmakers?.[0];
+        const market = bookmaker?.markets?.find(item => item.key === 'spreads');
+        for (const outcome of market?.outcomes || []) {
+          const abbr = WNBA_TEAM_NAME_MAP[outcome.name] || normalizeTeamAbbr(outcome.name);
+          if (abbr) spreadMap[abbr] = outcome.point;
+        }
+      }
+    } catch (err) {
+      // Never log the URL: it contains the key.
+      console.error('Odds API spreads failed:', err.message);
+    }
   }
 
   Object.assign(spreadMap, await fetchEspnSpreads(dates));
