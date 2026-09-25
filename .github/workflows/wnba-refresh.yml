@@ -76,6 +76,9 @@ jobs:
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
         env:
           PYTHON_BIN: python3
+          # Optional. Empty when the secret is not configured; the backend then
+          # skips The Odds API and uses ESPN spreads (display-only field).
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
       - name: Wait for backend to be ready
         run: |
