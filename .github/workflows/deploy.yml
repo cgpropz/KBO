@@ -23,6 +23,13 @@ on:
       - "kbo-props-ui/public/index.html"
       - "kbo-props-ui/package*.json"
       - "kbo-props-ui/vite.config.*"
+      # Offline ML work (D6): ml/** and the ml-*.yml workflows never touch the
+      # live site, so they must not kick off a full redeploy. Negations must
+      # stay LAST: GitHub evaluates path filters in order and the last match
+      # wins. A push that also touches a live path above still deploys.
+      - "!ml/**"
+      - "!.github/workflows/ml-*.yml"
+      - "!.github/workflows/ml-*.yaml"
   schedule:
     # Full refresh + deploy. GitHub schedule uses UTC.
     # 12:00 PM ET is the post-game actuals window (gives overnight KST
