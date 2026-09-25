@@ -1,0 +1,111 @@
+# ML Phase 3 shadow mode (offline). Scores each frozen memory slate with the
+# Phase 2 candidate params (ml/params) and grades it against the same actuals as
+# recap.json. It publishes ONLY memory/**/shadow*.json via
+# ml/shadow/publish_shadow.sh (clean worktree of origin/main, 3 push attempts).
+#
+# It never touches live projections, the UI, pipeline/ or the refresh workflows.
+# Deploys are not affected: memory/** is not in deploy.yml's push paths,
+# ml-*.yml is excluded there (D6), and pushes made with GITHUB_TOKEN never
+# trigger other workflows.
+#
+# Schedule (UTC; ET = UTC-4 in EDT, UTC-5 after DST ends). All off :00/:30.
+# Every run scores AND grades its sports; both are no-ops (no commit) when
+# nothing changed, so at most one small commit per run.
+#   41 5  daily    KBO score (weekend slates lock at 14:00 KST = 05:00 UTC)
+#                  + WNBA grade (wnba-memory runs 05:00 UTC = 1 AM ET)
+#   47 9  daily    KBO score (weekday slates lock at 18:30 KST = 09:30 UTC)
+#   41 17 daily    KBO grade (kbo-memory runs 17:00 UTC = 1 PM ET); lands
+#                  before the 2:12 PM ET digest
+#   47 23 daily    WNBA + NFL score (pregame boards; ~7:47 PM ET)
+#   41 14 Tue/Wed  NFL grade (nfl-memory runs 14:00 UTC Tue/Wed = 10 AM ET)
+# Scores are leak-free whenever they run: inputs are pinned per prop to the
+# pregame git ref the slate was frozen from (see ml/shadow/common.py).
+name: ML shadow (offline, Phase 3)
+
+on:
+  schedule:
+    - cron: "41 5 * * *"
+    - cron: "47 9 * * *"
+    - cron: "41 17 * * *"
+    - cron: "47 23 * * *"
+    - cron: "41 14 * * 2,3"
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: "kbo, wnba, nfl or all"
+        required: false
+        default: "all"
+      date:
+        description: "Optional slate date (YYYY-MM-DD); default = every memory day"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ml-shadow
+  cancel-in-progress: false
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache past nflverse seasons
+        uses: actions/cache@v4
+        with:
+          path: ml/data/nfl
+          key: nflverse-2024-2025-v1
+
+      - name: Pick sports for this run
+        id: pick
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_SPORT: ${{ github.event.inputs.sport }}
+        run: |
+          case "$SCHEDULE" in
+            "41 5 * * *")    sports="kbo wnba" ;;
+            "47 9 * * *")    sports="kbo" ;;
+            "41 17 * * *")   sports="kbo" ;;
+            "47 23 * * *")   sports="wnba nfl" ;;
+            "41 14 * * 2,3") sports="nfl" ;;
+            *)
+              case "${INPUT_SPORT:-all}" in
+                kbo|wnba|nfl) sports="$INPUT_SPORT" ;;
+                *) sports="kbo wnba nfl" ;;
+              esac ;;
+          esac
+          echo "sports=$sports" >> "$GITHUB_OUTPUT"
+          echo "Sports this run: $sports"
+
+      - name: Unit tests (shadow)
+        run: python3 ml/tests/test_ml_phase3.py
+
+      - name: Score and grade
+        env:
+          SPORTS: ${{ steps.pick.outputs.sports }}
+          ONLY_DATE: ${{ github.event.inputs.date }}
+        run: |
+          set -uo pipefail
+          date_arg=()
+          if [ -n "${ONLY_DATE:-}" ]; then date_arg=(--date "$ONLY_DATE"); fi
+          for s in $SPORTS; do
+            extra=()
+            if [ "$s" = "nfl" ]; then extra=(--refresh-nflverse); fi
+            python3 -m ml.shadow.score --sport "$s" "${date_arg[@]}" "${extra[@]}" || true
+            python3 -m ml.shadow.grade --sport "$s" "${date_arg[@]}" || true
+          done
+          git status --short -- memory/ | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish memory/**/shadow*.json only
+        run: |
+          bash ml/shadow/publish_shadow.sh "chore: ml shadow update"
