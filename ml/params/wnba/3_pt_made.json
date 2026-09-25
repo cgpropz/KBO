@@ -1,0 +1,35 @@
+{
+  "sport": "wnba",
+  "stat": "3-PT Made",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "keep_current",
+  "adopt_in_shadow": false,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2026-07-14", "to": "2026-09-23", "periods": 47, "rows": 156},
+  "formula": {"is_current": false, "knobs": {"window_weights": "long_heavy", "windows": "longest", "minutes_window": 5, "dvp": "half"}, "candidates_searched": 135},
+  "linear_calibration": null,
+  "p_over": {"intercept": -0.14504, "coef": {"edge": 0.12175, "line": 0.12546}, "n_train": 156},
+  "walk_forward": {
+    "n": 89,
+    "periods": 27,
+    "mae_current": 1.2178,
+    "mae_tuned": 1.2178,
+    "delta_mae": 0.0,
+    "delta_ci95": [0.0, 0.0],
+    "rel_change_pct": 0.0,
+    "fold_deltas": [0.0, 0.0, 0.0],
+    "fold_delta_sd": 0.0,
+    "hit_current": 0.5,
+    "hit_tuned": 0.5,
+    "hit_delta_ci95": [0.0, 0.0],
+    "hit_n": 88
+  },
+  "folds": [
+    ["2026-08-10", "2026-08-18", 29, 1.2972, 1.2972, true, false],
+    ["2026-08-19", "2026-08-28", 28, 1.3539, 1.3539, true, false],
+    ["2026-08-29", "2026-09-23", 32, 1.0266, 1.0266, true, false]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}

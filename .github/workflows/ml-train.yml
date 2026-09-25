@@ -1,0 +1,58 @@
+# Weekly offline ML tuning (Phase 2). Read-only: it rebuilds the datasets from
+# git history, runs the walk-forward tuner and uploads params + report as an
+# Actions artifact. It commits nothing and never touches the live site, the
+# refresh workflows or any live code. Deploy ignores ml-*.yml (D6).
+name: ML train (weekly, offline)
+
+on:
+  schedule:
+    # Mondays 10:23 UTC (6:23 AM ET). Off the :00/:30 marks; timing-insensitive.
+    - cron: "23 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ml-train
+  cancel-in-progress: true
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Unit tests
+        run: |
+          python3 ml/tests/test_ml_phase1.py
+          python3 ml/tests/test_ml_phase2.py
+
+      - name: Rebuild datasets from git history
+        run: |
+          set -euo pipefail
+          python3 -m ml.kbo.build_dataset  --out ml/out
+          python3 -m ml.wnba.build_dataset --out ml/out
+
+      - name: Walk-forward tuning and calibration
+        run: |
+          set -euo pipefail
+          python3 -m ml.train --out ml/out --params-dir ml/out/params --report-dir ml/out/reports
+          cat ml/out/reports/phase2_*.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ml-train-${{ github.run_id }}
+          path: |
+            ml/out/params/
+            ml/out/reports/
+            ml/out/*_dataset_stats.json
+          retention-days: 90

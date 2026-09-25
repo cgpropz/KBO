@@ -1,0 +1,37 @@
+{
+  "sport": "nfl",
+  "stat": "Pass Completions",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "keep_current",
+  "adopt_in_shadow": false,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2024-04", "to": "2026-02", "periods": 43, "rows": 1083},
+  "formula": {"is_current": true, "knobs": {"weights": "live", "windows": "live", "recent_cap": 10}, "candidates_searched": 36},
+  "linear_calibration": {"a": 8.7755, "b": 0.5611},
+  "p_over": null,
+  "walk_forward": {
+    "n": 921,
+    "periods": 37,
+    "mae_current": 5.3946,
+    "mae_tuned": 5.349,
+    "delta_mae": -0.0456,
+    "delta_ci95": [-0.1664, 0.0765],
+    "rel_change_pct": -0.85,
+    "fold_deltas": [0.075, -0.2071, -0.136, -0.0218, 0.0343],
+    "fold_delta_sd": 0.1179,
+    "hit_current": null,
+    "hit_tuned": null,
+    "hit_delta_ci95": null,
+    "hit_n": null
+  },
+  "folds": [
+    ["2024-10", "2024-17", 228, 4.9045, 4.9795, true, true],
+    ["2024-18", "2025-03", 148, 5.654, 5.4469, true, true],
+    ["2025-04", "2025-10", 205, 5.4406, 5.3046, true, true],
+    ["2025-11", "2025-17", 218, 5.8623, 5.8405, true, true],
+    ["2025-18", "2026-02", 122, 5.083, 5.1173, true, true]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}

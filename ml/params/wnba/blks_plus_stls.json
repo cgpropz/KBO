@@ -1,0 +1,33 @@
+{
+  "sport": "wnba",
+  "stat": "Blks+Stls",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "keep_current",
+  "adopt_in_shadow": false,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2026-07-15", "to": "2026-09-19", "periods": 33, "rows": 130},
+  "formula": {"is_current": true, "knobs": {"window_weights": "live", "windows": "live", "minutes_window": 10, "dvp": "on"}, "candidates_searched": 135},
+  "linear_calibration": null,
+  "p_over": null,
+  "walk_forward": {
+    "n": 36,
+    "periods": 8,
+    "mae_current": 1.5161,
+    "mae_tuned": 1.5161,
+    "delta_mae": 0.0,
+    "delta_ci95": [0.0, 0.0],
+    "rel_change_pct": 0.0,
+    "fold_deltas": [0.0],
+    "fold_delta_sd": null,
+    "hit_current": 0.5556,
+    "hit_tuned": 0.5556,
+    "hit_delta_ci95": [0.0, 0.0],
+    "hit_n": 36
+  },
+  "folds": [
+    ["2026-08-10", "2026-08-18", 36, 1.5161, 1.5161, true, false]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}

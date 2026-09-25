@@ -1,0 +1,37 @@
+{
+  "sport": "nfl",
+  "stat": "Receptions",
+  "mode": "offline",
+  "schema": 1,
+  "recommendation": "candidate",
+  "adopt_in_shadow": true,
+  "p_over_recommendation": "no_model",
+  "training_window": {"from": "2024-04", "to": "2026-02", "periods": 43, "rows": 4801},
+  "formula": {"is_current": true, "knobs": {"weights": "live", "windows": "live", "recent_cap": 10}, "candidates_searched": 36},
+  "linear_calibration": {"a": 0.3103, "b": 0.8215},
+  "p_over": null,
+  "walk_forward": {
+    "n": 4079,
+    "periods": 37,
+    "mae_current": 1.681,
+    "mae_tuned": 1.6366,
+    "delta_mae": -0.0444,
+    "delta_ci95": [-0.0569, -0.031],
+    "rel_change_pct": -2.64,
+    "fold_deltas": [-0.0145, -0.0713, -0.0513, -0.0546, -0.0411],
+    "fold_delta_sd": 0.021,
+    "hit_current": null,
+    "hit_tuned": null,
+    "hit_delta_ci95": null,
+    "hit_n": null
+  },
+  "folds": [
+    ["2024-10", "2024-17", 1049, 1.702, 1.6875, false, true],
+    ["2024-18", "2025-03", 643, 1.7599, 1.6886, true, true],
+    ["2025-04", "2025-10", 893, 1.6537, 1.6024, false, true],
+    ["2025-11", "2025-17", 966, 1.6446, 1.59, false, true],
+    ["2025-18", "2026-02", 528, 1.6561, 1.615, false, true]
+  ],
+  "data_ref": "c73f7210bc196962b48d905a236c0dcb1e979fae",
+  "generated_at": "2026-09-25T01:21:19+00:00"
+}
