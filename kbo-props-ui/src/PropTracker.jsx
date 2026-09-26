@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { fetchDataSnapshot } from './dataUrl';
 import './PropTracker.css';
 
 const TEAMS = {
@@ -18,6 +19,7 @@ const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('
 function PropTracker() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingLocked, setPendingLocked] = useState(0);
   const [tab, setTab] = useState('graded');
   const [playerSearch, setPlayerSearch] = useState('');
   const [statFilter, setStatFilter] = useState('All');
@@ -33,9 +35,10 @@ function PropTracker() {
 
   useEffect(() => {
     debugLog('Fetching graded props history...');
-    fetch('/data/graded_props_history.json')
-      .then(r => r.json())
-      .then(d => {
+    fetchDataSnapshot('graded_props_history.json')
+      .then(snap => {
+        const d = snap.data;
+        setPendingLocked(snap.preview ? snap.lockedCount : 0);
         debugLog('Data loaded:', { pending: d?.pending?.length || 0, graded: d?.graded?.length || 0, generatedAt: d?.generated_at });
         setData(d); setLoading(false);
       })
@@ -149,7 +152,7 @@ function PropTracker() {
   if (loading) return <div className="gt-container"><div className="gt-loading">Loading tracker data...</div></div>;
   if (!data) return <div className="gt-container"><div className="gt-loading">No grading data available.</div></div>;
 
-  const pendingCount = data.pending?.length || 0;
+  const pendingCount = (data.pending?.length || 0) + pendingLocked;
   const gradedCount = filteredGraded.length;
 
   return (
@@ -231,6 +234,13 @@ function PropTracker() {
                     <td className="gt-venue">{p.venue}</td>
                   </tr>
                 ))}
+                {pendingLocked > 0 && (
+                  <tr className="gt-row gt-locked-row">
+                    <td colSpan="10" className="gt-empty">
+                      🔒 {pendingLocked} more pending {pendingLocked === 1 ? 'prop is' : 'props are'} locked. Upgrade to see today&apos;s full card.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

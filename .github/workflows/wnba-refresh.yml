@@ -94,6 +94,12 @@ jobs:
           cat "$RUNNER_TEMP/wnba-backend.log" || true
           exit 1
 
+      - name: Restore last published WNBA snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py --prefix wnba/
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Export WNBA snapshots
         run: node wnba/export_snapshots.mjs
         env:
@@ -123,8 +129,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # kbo-props-ui/public/data/wnba/* is paid data: published to Supabase
+          # above and served via /api/data only. It is git-ignored; never add it.
           git add \
-            kbo-props-ui/public/data/wnba \
             wnba/wnba_boxscores_2025_2026.csv \
             wnba/mappings/player_positions.json \
             wnba/wnbaGUARDdvp.csv \

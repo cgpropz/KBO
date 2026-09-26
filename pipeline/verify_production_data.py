@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Verify key production data endpoints after deploy.
 
+Paid snapshots are served only by the server-gated /api/data endpoint. This
+script checks them anonymously (so it sees the free preview, which keeps the
+original payload shape and timestamps) and also asserts that the old static
+/data/<paid>.json URLs no longer serve JSON (regression guard for the leak).
+
 Supports Vercel protection bypass when configured:
   - env VERCEL_PROTECTION_BYPASS
   - or --bypass-secret
@@ -23,13 +28,26 @@ DEFAULT_BASE_URL = os.environ.get(
 ).strip()
 
 ENDPOINTS = {
+	# Public, non-paid static file.
 	"team_opponent_stats": "/data/team_opponent_stats_2026.json",
-	"pitcher_rankings": "/data/pitcher_rankings.json",
-	"strikeout_projections": "/data/strikeout_projections.json",
-	"batter_projections": "/data/batter_projections.json",
-	"matchup_data": "/data/matchup_data.json",
-	"prizepicks_props": "/data/prizepicks_props.json",
+	# Paid datasets: server-gated API (anonymous request -> free preview).
+	"pitcher_rankings": "/api/data?ds=pitcher_rankings",
+	"strikeout_projections": "/api/data?ds=strikeout_projections",
+	"batter_projections": "/api/data?ds=batter_projections",
+	"matchup_data": "/api/data?ds=matchup_data",
+	"prizepicks_props": "/api/data?ds=prizepicks_props",
 }
+
+# Static URLs that used to leak paid data. They must not return JSON anymore.
+MUST_NOT_BE_PUBLIC = [
+	"/data/prizepicks_props.json",
+	"/data/strikeout_projections.json",
+	"/data/batter_projections.json",
+	"/data/matchup_data.json",
+	"/data/graded_props_history.json",
+	"/data/prop_results.json",
+	"/data/wnba/projections_standard.json",
+]
 
 CORE_CORRELATED = [
 	"strikeout_projections",
@@ -47,6 +65,7 @@ class FetchResult:
 	body: str
 	json_data: Any
 	error: str | None = None
+	api_updated_at: str | None = None
 
 
 def build_headers(bypass_secret: str | None) -> Dict[str, str]:
@@ -103,6 +122,33 @@ def fetch_json(url: str, headers: Dict[str, str], timeout: int = 20) -> FetchRes
 		body=text,
 		json_data=data,
 	)
+
+
+def unwrap_api_payload(result: FetchResult) -> FetchResult:
+	"""/api/data wraps snapshots as {data, updatedAt, preview, lockedCount}."""
+	body = result.json_data
+	if result.ok and isinstance(body, dict) and "data" in body and "preview" in body:
+		data = body.get("data")
+		if isinstance(data, dict) and not infer_payload_timestamp(data) and body.get("updatedAt"):
+			data = {**data, "updated_at": body.get("updatedAt")}
+		result.json_data = data
+		result.api_updated_at = body.get("updatedAt")
+	return result
+
+
+def check_not_public(url: str, headers: Dict[str, str]) -> str | None:
+	"""Return an error message if a paid static URL still serves JSON."""
+	try:
+		resp = requests.get(url, headers=headers, timeout=20)
+	except Exception:
+		return None  # network errors are reported by the main endpoint checks
+	if resp.status_code != 200:
+		return None
+	try:
+		resp.json()
+	except Exception:
+		return None  # e.g. SPA HTML fallback, not data
+	return f"paid snapshot is still publicly served as JSON: {url}"
 
 
 def parse_iso_ts(value: Any) -> datetime | None:
@@ -257,7 +303,7 @@ def main() -> int:
 
 	for label, path in ENDPOINTS.items():
 		url = f"{base_url}{path}"
-		result = fetch_json(url, headers)
+		result = unwrap_api_payload(fetch_json(url, headers))
 		results[label] = result
 
 		blocked = result.status == 401 and "text/html" in result.content_type
@@ -272,8 +318,15 @@ def main() -> int:
 			continue
 
 		ts = infer_payload_timestamp(result.json_data)
+		if ts is None:
+			ts = parse_iso_ts(getattr(result, "api_updated_at", None))
 		if ts is not None:
 			timestamps[label] = ts
+
+	for path in MUST_NOT_BE_PUBLIC:
+		leak = check_not_public(f"{base_url}{path}", headers)
+		if leak:
+			failures.append(leak)
 
 	# Helpful guidance for Vercel protection/SSO failures.
 	if protection_blocked:

@@ -1,0 +1,31 @@
+# Files excluded from `vercel` CLI uploads (the CLI does not read .gitignore).
+#
+# Paid snapshot data is served only by the server-gated /api/data endpoint and
+# must never be uploaded as a static asset. Keep in sync with paidDataFiles.js
+# and the repo-root .gitignore.
+
+public/data/prizepicks_props.json
+public/data/strikeout_projections.json
+public/data/batter_projections*.json
+public/data/matchup_data.json
+public/data/pitcher_logs.json
+public/data/prop_results.json
+public/data/pitcher_rankings*.json
+public/data/graded_props_history.json
+public/data/wnba/
+public/data/nfl/
+
+dist/data/prizepicks_props.json
+dist/data/strikeout_projections.json
+dist/data/batter_projections*.json
+dist/data/matchup_data.json
+dist/data/pitcher_logs.json
+dist/data/prop_results.json
+dist/data/pitcher_rankings*.json
+dist/data/graded_props_history.json
+dist/data/wnba/
+dist/data/nfl/
+
+# Local secrets / env files (Vercel uses dashboard env vars)
+.env
+.env.*

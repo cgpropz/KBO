@@ -1,73 +1,27 @@
-import { supabase } from '../supabaseClient'
+import { fetchApiDataset } from '../apiData'
 
 /*
- * WNBA snapshot loader. Mirrors the KBO `dataUrl.js` pattern: each dataset is a
- * single jsonb blob (row id=1) in a Supabase table, with a static snapshot in
- * `public/data/wnba/*.json` as a fallback for local dev / cold Supabase.
+ * WNBA snapshot loader. Every dataset is served by the server-gated
+ * /api/data endpoint (full data for paid tiers, a preview for free users).
+ * The local public/data/wnba/*.json files are only used as a dev fallback
+ * and are no longer committed or deployed.
  */
-const FILE_TO_TABLE = {
+const FILE_TO_DATASET = {
   'wnba/projections_standard.json': 'wnba_projections_standard',
   'wnba/projections_demon.json': 'wnba_projections_demon',
   'wnba/projections_goblin.json': 'wnba_projections_goblin',
   'wnba/players.json': 'wnba_players',
-  'wnba/teams.json': 'wnba_teams',
   'wnba/lineups.json': 'wnba_lineups',
-  'wnba/edge.json': 'wnba_edge',
   'wnba/dvp_guard.json': 'wnba_dvp_guard',
   'wnba/dvp_forward.json': 'wnba_dvp_forward',
   'wnba/dvp_center.json': 'wnba_dvp_center',
 }
 
-function staticUrl(path) {
-  return `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`
-}
-
-async function fetchFromSupabase(path) {
-  const table = FILE_TO_TABLE[path]
-  if (!table || !supabase) return null
-  const { data: rows, error } = await supabase
-    .from(table)
-    .select('data, updated_at')
-    .eq('id', 1)
-    .limit(1)
-  if (error || !Array.isArray(rows) || rows.length === 0) return null
-  return { data: rows[0].data, updatedAt: rows[0].updated_at || null, source: 'supabase' }
-}
-
-async function fetchStatic(path) {
-  const res = await fetch(staticUrl(path), { cache: 'no-store' })
-  if (!res.ok) throw new Error(`Failed to load ${path}`)
-  return { data: await res.json(), updatedAt: res.headers.get('last-modified') || null, source: 'static' }
-}
-
-function hasSharpOdds(snapshot) {
-  return Array.isArray(snapshot?.data) && snapshot.data.some(player => (
-    player?.ppAllProps?.some(prop => (
-      prop?.sharpOdds != null && Number.isFinite(Number(prop.sharpOdds))
-    ))
-  ))
-}
-
+// Returns { data, updatedAt, source, preview, lockedCount }.
 export async function fetchWnbaSnapshot(path) {
-  let supabasePayload = null
-  let staticPayload = null
-  try {
-    supabasePayload = await fetchFromSupabase(path)
-  } catch (err) {
-    console.warn(`[wnba] ${path} supabase fetch failed:`, err.message)
-  }
-
-  try {
-    staticPayload = await fetchStatic(path)
-  } catch (err) {
-    console.warn(`[wnba] ${path} static fallback failed:`, err.message)
-  }
-
-  if (hasSharpOdds(staticPayload) && !hasSharpOdds(supabasePayload)) {
-    return staticPayload
-  }
-
-  return supabasePayload || staticPayload
+  const ds = FILE_TO_DATASET[path]
+  if (!ds) throw new Error(`Unknown WNBA data file: ${path}`)
+  return fetchApiDataset(ds, { devStaticPath: path })
 }
 
 export async function fetchWnbaData(path) {

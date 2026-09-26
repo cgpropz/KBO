@@ -5,7 +5,7 @@
 insert into public.user_profiles (id, tier)
 select au.id, 'combined'
 from auth.users au
-where au.email = 'gbaby_95@yahoo.com'
+where lower(au.email) = lower('REPLACE_WITH_ACCOUNT_EMAIL')  -- never commit real addresses (public repo)
 on conflict (id) do update
 set tier = 'combined';
 

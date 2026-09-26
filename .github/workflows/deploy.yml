@@ -5,8 +5,9 @@ on:
     branches:
       - main
     paths:
-      # Data file changes (kbo-props-ui/public/data/**) and memory/**
-      # archive commits are intentionally excluded here. Odds/data and
+      # Data file changes (paid kbo-props-ui/public/data/** snapshots are no
+      # longer committed at all) and memory/** archive commits are
+      # intentionally excluded here. Odds/data and
       # memory commits must NOT re-trigger a full 14-minute deploy.
       # Only code/config/pipeline changes should kick off a full redeploy.
       - "pipeline/**"
@@ -23,6 +24,10 @@ on:
       - "kbo-props-ui/public/index.html"
       - "kbo-props-ui/package*.json"
       - "kbo-props-ui/vite.config.*"
+      - "kbo-props-ui/api/**"
+      - "kbo-props-ui/vercel.json"
+      - "kbo-props-ui/.vercelignore"
+      - "kbo-props-ui/paidDataFiles.js"
       # Offline ML work (D6): ml/** and the ml-*.yml workflows never touch the
       # live site, so they must not kick off a full redeploy. Negations must
       # stay LAST: GitHub evaluates path filters in order and the last match
@@ -78,6 +83,12 @@ jobs:
       - name: Write credentials.json
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         continue-on-error: true
+
+      - name: Restore last published snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Run full data refresh (stats, logs, projections, player props)
         run: |

@@ -195,10 +195,10 @@ PYEOF
   # Keep matchup markets/weather fresh for quick-release runs.
   "$PYTHON" "$BASE/generate_matchups.py" || { echo "⚠ generate_matchups.py failed in quick mode"; QUICK_RC=1; }
 
-  # Step F: Push fresh snapshots to Supabase so DB and static stay in sync.
+  # Step F: Push fresh snapshots to Supabase (the site reads them via /api/data).
   if [[ "$SUPABASE_READY" -eq 1 ]]; then
     echo "Pushing fresh snapshots to Supabase..."
-    "$PYTHON" "$BASE/publish_supabase.py" || echo "⚠ publish_supabase.py failed (non-fatal; static files still deploy)"
+    "$PYTHON" "$BASE/publish_supabase.py" || echo "⚠ publish_supabase.py failed (non-fatal; site keeps serving the previous Supabase snapshot)"
   fi
 
   if [[ "$QUICK_RC" -ne 0 ]]; then
@@ -229,6 +229,11 @@ fi
 # --- Generate graded prop history for tracker ---
 echo "Generating graded props history..."
 "$PYTHON" "$BASE/generate_graded_history.py" || echo "Warning: graded history generation failed (non-fatal)"
+# The tracker reads graded history through /api/data (it is no longer a static
+# file), so publish it to Supabase right after it is generated.
+if [[ "$SUPABASE_READY" -eq 1 ]]; then
+  PUBLISH_ONLY_PREFIX="graded_props_history" "$PYTHON" "$BASE/publish_supabase.py" || echo "Warning: graded history publish failed (non-fatal)"
+fi
 
 # Freeze today's KBO slate into memory/ (non-fatal; CI also freezes on live refresh).
 echo "Freezing KBO props slate into memory/..."

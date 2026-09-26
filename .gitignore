@@ -47,3 +47,25 @@ nfl/projections.json
 nfl/lineups.json
 
 # Props memory archive is committed under memory/ (do not ignore).
+
+# Paid snapshot data. These files are pipeline working state only: they are
+# published to Supabase and served to the site exclusively through the
+# server-gated /api/data endpoint. Never commit or deploy them as static files.
+# (Keep in sync with kbo-props-ui/paidDataFiles.js and kbo-props-ui/.vercelignore.)
+kbo-props-ui/public/data/prizepicks_props.json
+kbo-props-ui/public/data/strikeout_projections.json
+kbo-props-ui/public/data/batter_projections*.json
+kbo-props-ui/public/data/matchup_data.json
+kbo-props-ui/public/data/pitcher_logs.json
+kbo-props-ui/public/data/prop_results.json
+kbo-props-ui/public/data/pitcher_rankings*.json
+kbo-props-ui/public/data/graded_props_history.json
+kbo-props-ui/public/data/wnba/
+kbo-props-ui/public/data/nfl/
+
+# Vercel CLI local build output (.vercel/output contains build-time copies of
+# source and data). Only the project link file stays tracked so CI deploys keep
+# targeting the existing Vercel project.
+kbo-props-ui/.vercel/*
+!kbo-props-ui/.vercel/project.json
+.vercel/

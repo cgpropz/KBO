@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '.vercel']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -24,6 +24,13 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+  {
+    // Vercel serverless functions and build config run on Node, not the browser.
+    files: ['api/**/*.js', 'vite.config.js', 'paidDataFiles.js'],
+    languageOptions: {
+      globals: { ...globals.node },
     },
   },
 ])

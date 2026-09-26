@@ -1,33 +1,25 @@
-import { supabase } from '../supabaseClient'
+import { fetchApiDataset } from '../apiData'
 
+/*
+ * NFL loaders. Data comes from the server-gated /api/data endpoint: paid tiers
+ * get every row, free users get the top rows plus a locked-row count.
+ */
 export async function fetchNflProjections() {
-  if (!supabase) throw new Error('NFL data is unavailable until Supabase is configured.')
-
-  const { data, error } = await supabase
-    .from('nfl_projections')
-    .select('data, updated_at')
-    .eq('id', 1)
-    .single()
-
-  if (error) throw new Error(error.message)
+  const snapshot = await fetchApiDataset('nfl_projections')
   return {
-    projections: Array.isArray(data?.data) ? data.data : [],
-    updatedAt: data?.updated_at || null,
+    projections: Array.isArray(snapshot.data) ? snapshot.data : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
   }
 }
 
 export async function fetchNflLineups() {
-  if (!supabase) throw new Error('NFL data is unavailable until Supabase is configured.')
-
-  const { data, error } = await supabase
-    .from('nfl_lineups')
-    .select('data, updated_at')
-    .eq('id', 1)
-    .single()
-
-  if (error) throw new Error(error.message)
+  const snapshot = await fetchApiDataset('nfl_lineups')
   return {
-    matchups: Array.isArray(data?.data) ? data.data : [],
-    updatedAt: data?.updated_at || null,
+    matchups: Array.isArray(snapshot.data) ? snapshot.data : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
   }
 }

@@ -107,9 +107,12 @@ export default function KboPropBoard({ onNavigatePricing }) {
   const [propTab, setPropTab] = useState('All Props')
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [lockedCount, setLockedCount] = useState(0)
 
-  const { tier, user } = useAuth()
-  const isPaid = sportAccess(tier, user?.email).kbo
+  const { tier } = useAuth()
+  // The server decides what is sent (full board vs. top-3 preview); lockedCount
+  // is how many rows it withheld. The client tier only drives UI chrome.
+  const isPaid = sportAccess(tier).kbo && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -125,6 +128,7 @@ export default function KboPropBoard({ onNavigatePricing }) {
         ])
         if (!active) return
         setSnapshot(props.data)
+        setLockedCount(props.preview ? props.lockedCount : 0)
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
@@ -155,7 +159,9 @@ export default function KboPropBoard({ onNavigatePricing }) {
     })
   }, [allRows, filters, propTab])
 
-  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
+  const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
   useEffect(() => {
     if (!hasLockedRows) return
@@ -178,7 +184,7 @@ export default function KboPropBoard({ onNavigatePricing }) {
       </nav>
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1></div>
-        <div className="kbo-header-actions"><span>{rows.length} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
+        <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
       </section>
       {error && <p className="kbo-notice">{error}</p>}
       {!error && !snapshot && <p className="kbo-notice">Loading KBO prop lines...</p>}
@@ -186,15 +192,16 @@ export default function KboPropBoard({ onNavigatePricing }) {
         {rows.map(({ card, prop, score, direction }, index) => {
           const photo = photoLookup[String(card.name || '').toLowerCase()]
           const locked = !isPaid && index >= FREE_ROW_LIMIT
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}><td className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
+          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
         })}
+        {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={7}><span className="kbo-placeholder-bar" /></td></tr>)}
       </tbody></table>
         {hasLockedRows && lockTop != null && (
           <div className="kbo-lines-lock-overlay" style={{ top: lockTop }}>
             <div className="kbo-lines-lock-card">
               <div className="kbo-lines-lock-icon">🔒</div>
               <h3>Unlock the Full Board</h3>
-              <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+              <p>Free members see the top {FREE_ROW_LIMIT} lines.{lockedCount > 0 ? ` ${lockedCount} more are locked.` : ''} Upgrade to see every prop line.</p>
               <button onClick={() => onNavigatePricing?.()}>View Plans</button>
             </div>
           </div>

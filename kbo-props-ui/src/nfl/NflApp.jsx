@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
 import NflLineups from './NflLineups'
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 ]
 
 export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
+  const { tier } = useAuth()
   const [view, setView] = useState('dashboard')
   const [previousView, setPreviousView] = useState('dashboard')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -49,7 +51,7 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
         </div>
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NFL PRO</button>
       </nav>
-      <main className="nfl-content">
+      <main className="nfl-content" key={tier || 'free'}>
         {isDashboard ? content : <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>}
       </main>
     </div>

@@ -235,8 +235,11 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
-  const { tier, user } = useAuth()
-  const isPaid = sportAccess(tier, user?.email).nfl
+  const [lockedCount, setLockedCount] = useState(0)
+
+  const { tier } = useAuth()
+  // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
+  const isPaid = sportAccess(tier).nfl && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -244,7 +247,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next }) => active && setProjections(next)).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setLockedCount(preview ? locked : 0) }).catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
@@ -287,7 +290,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     })
   }, [projections, propTab, filters])
 
-  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
+  const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
   useEffect(() => {
     if (!hasLockedRows) return
@@ -313,7 +318,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       <div className="nfl-board-header">
         <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1></div>
         <div className="nfl-lines-header-actions">
-          <span>{rows.length} lines · sorted by {filters.sortBy}</span>
+          <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
@@ -334,8 +339,13 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
                   item={item}
                   onSelectPlayer={onSelectPlayer}
                   locked={!isPaid && index >= FREE_ROW_LIMIT}
-                  rowRef={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}
+                  rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                 />
+              ))}
+              {Array.from({ length: placeholderCount }, (_, index) => (
+                <tr key={`locked-${index}`} className="nfl-lines-row locked nfl-placeholder-row" aria-hidden="true">
+                  <td colSpan={7}><span className="nfl-placeholder-bar" /></td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -344,7 +354,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
               <div className="nfl-lines-lock-card">
                 <div className="nfl-lines-lock-icon">🔒</div>
                 <h3>Unlock the Full Board</h3>
-                <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+                <p>Free members see the top {FREE_ROW_LIMIT} lines.{lockedCount > 0 ? ` ${lockedCount} more are locked.` : ''} Upgrade to see every prop line.</p>
                 <button onClick={onNavigatePricing}>View Plans</button>
               </div>
             </div>

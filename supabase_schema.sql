@@ -1,3 +1,9 @@
+-- ⚠ SECURITY NOTE (Phase 1 server-side paywall): the `*_read_all ... using (true)`
+-- policies in this file made paid snapshot tables readable by anyone with the
+-- public anon key. The site now reads these tables only through /api/data
+-- (service role). If you ever re-run this file, run
+-- sql/security/02_lock_down_rls.sql afterwards to remove public read access.
+
 -- Supabase schema for latest snapshot payloads consumed by kbo-props-ui.
 -- Run this in Supabase SQL Editor.
 

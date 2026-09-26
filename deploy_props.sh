@@ -1,25 +1,11 @@
 #!/bin/bash
-# Usage: ./deploy_props.sh
-# This script copies the latest prizepicks_props.json to your repo, commits, and pushes to trigger a redeploy.
-
+# DEPRECATED: prizepicks_props.json is paid data and is no longer committed to
+# git or deployed as a static file (it is git-ignored). The board is published
+# to Supabase by the pipeline (refresh_odds.py / publish_supabase.py) and served
+# to the site through the server-gated /api/data endpoint.
+#
+# To push a fresh board manually, publish it to Supabase instead:
+#   python publish_supabase.py
 set -e
-
-# Path to your local data file
-DATA_FILE="kbo-props-ui/public/data/prizepicks_props.json"
-
-# Check if the file exists
-if [ ! -f "$DATA_FILE" ]; then
-  echo "Error: $DATA_FILE does not exist."
-  exit 1
-fi
-
-echo "Adding $DATA_FILE to git..."
-git add "$DATA_FILE"
-
-echo "Committing changes..."
-git commit -m "Update prizepicks_props.json with latest props"
-
-echo "Pushing to remote..."
-git push
-
-echo "Done! Triggered redeploy. Check your site and /data/prizepicks_props.json after deploy."
+echo "deploy_props.sh is deprecated: run 'python publish_supabase.py' to publish the board to Supabase." >&2
+exit 1

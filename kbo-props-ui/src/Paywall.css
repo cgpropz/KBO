@@ -76,3 +76,18 @@
   .pw-desc { font-size: 0.82rem; }
   .pw-cta { padding: 0.65rem 1.5rem; font-size: 0.9rem; }
 }
+
+/* Static teaser image shown behind the lock card (no live data). */
+.pw-teaser {
+  min-height: 60vh;
+  overflow: hidden;
+}
+
+.pw-teaser img {
+  display: block;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  object-fit: cover;
+  object-position: top;
+}
