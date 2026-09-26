@@ -25,7 +25,10 @@ function value(value, digits = 1) {
 }
 
 function directionFor(prop) {
-  const projection = Number(prop.cg_projection ?? prop.avg ?? prop.projection)
+  // Direction must compare the actual projected stat value against the line (same
+  // as BatterProjections/StrikeoutProjections' edge = projection - line), never the
+  // CG Score/rating, which is a 0-100 scale and not comparable to the raw line.
+  const projection = Number(prop.projection ?? prop.avg)
   const line = Number(prop.line)
   if (!Number.isFinite(projection) || !Number.isFinite(line)) return 'neutral'
   return projection >= line ? 'over' : 'under'
