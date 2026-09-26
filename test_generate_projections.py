@@ -42,5 +42,49 @@ class PersistentPitcherMapTests(unittest.TestCase):
         self.assertEqual(result, "Choi Min Jun")
 
 
+class NoMarketStarterFallbackTests(unittest.TestCase):
+    def test_same_games_prefer_matchup_snapshot_starters(self):
+        starters = [
+            {"name": "Local Away", "team": "Hanwha", "opponent": "NC", "pcode": None},
+            {"name": "Local Home", "team": "NC", "opponent": "Hanwha", "pcode": None},
+        ]
+        matchup_starters = [
+            {"name": "Snapshot Away", "team": "Hanwha", "opponent": "NC", "pcode": None},
+            {"name": "Snapshot Home", "team": "NC", "opponent": "Hanwha", "pcode": None},
+        ]
+
+        result = projections.select_no_market_starters(starters, matchup_starters)
+
+        self.assertEqual(result, matchup_starters)
+
+    def test_different_games_keep_current_starters(self):
+        starters = [
+            {"name": "Current Away", "team": "Hanwha", "opponent": "Lotte", "pcode": None},
+            {"name": "Current Home", "team": "Lotte", "opponent": "Hanwha", "pcode": None},
+            {"name": "Current Away 2", "team": "NC", "opponent": "Kiwoom", "pcode": None},
+            {"name": "Current Home 2", "team": "Kiwoom", "opponent": "NC", "pcode": None},
+        ]
+        matchup_starters = [
+            {"name": "Stale Away", "team": "Hanwha", "opponent": "NC", "pcode": None},
+            {"name": "Stale Home", "team": "NC", "opponent": "Hanwha", "pcode": None},
+            {"name": "Stale Away 2", "team": "Lotte", "opponent": "Kiwoom", "pcode": None},
+            {"name": "Stale Home 2", "team": "Kiwoom", "opponent": "Lotte", "pcode": None},
+        ]
+
+        result = projections.select_no_market_starters(starters, matchup_starters)
+
+        self.assertEqual(result, starters)
+
+    def test_empty_current_starters_use_matchup_snapshot(self):
+        matchup_starters = [
+            {"name": "Snapshot Away", "team": "Hanwha", "opponent": "NC", "pcode": None},
+            {"name": "Snapshot Home", "team": "NC", "opponent": "Hanwha", "pcode": None},
+        ]
+
+        result = projections.select_no_market_starters([], matchup_starters)
+
+        self.assertEqual(result, matchup_starters)
+
+
 if __name__ == "__main__":
     unittest.main()
