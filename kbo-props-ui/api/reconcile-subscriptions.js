@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
@@ -22,16 +23,23 @@ function bestTier(a, b) {
   return (rank[b] || 0) > (rank[a] || 0) ? b : a;
 }
 
+// Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}` when the CRON_SECRET
+// env var is set on the project (https://vercel.com/docs/cron-jobs/manage-cron-jobs).
+// That is the only accepted credential: the old `x-vercel-cron` header check is
+// gone because any client can send that header, and query-string tokens leak
+// into logs. With no CRON_SECRET configured, every request is rejected.
 function isAuthorizedRequest(req) {
-  const cronHeader = req.headers['x-vercel-cron'];
-  if (cronHeader) return true;
+  const cronSecret = cleanEnv(process.env.CRON_SECRET);
+  if (!cronSecret) return false;
+  const header = req.headers.authorization || '';
+  return safeEqual(header, `Bearer ${cronSecret}`);
+}
 
-  const configured = process.env.SUBS_RECONCILE_SECRET;
-  if (!configured) return false;
-
-  const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  const queryToken = (req.query?.token || '').toString().trim();
-  return auth === configured || queryToken === configured;
+function safeEqual(a, b) {
+  const left = Buffer.from(String(a));
+  const right = Buffer.from(String(b));
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
 }
 
 async function findUserByEmail(email) {
@@ -137,24 +145,17 @@ export default async function handler(req, res) {
       patched: 0,
       missingAccount: 0,
       errors: 0,
-      missingEmails: [],
-      patchedEmails: [],
     };
 
     for (const [email, tier] of activeByEmail.entries()) {
       const r = await setTierByEmail(email, tier);
       if (r.status === 'already_paid') results.alreadyPaid += 1;
-      if (r.status === 'patched') {
-        results.patched += 1;
-        results.patchedEmails.push(email);
-      }
-      if (r.status === 'missing_account') {
-        results.missingAccount += 1;
-        results.missingEmails.push(email);
-      }
+      if (r.status === 'patched') results.patched += 1;
+      if (r.status === 'missing_account') results.missingAccount += 1;
       if (r.status === 'error') results.errors += 1;
     }
 
+    // Counts only: customer emails are never returned or logged in the summary.
     console.log('[reconcile] summary', results);
     return res.status(200).json({ ok: true, ...results });
   } catch (err) {

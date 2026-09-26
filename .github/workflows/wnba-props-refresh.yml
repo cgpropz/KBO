@@ -105,6 +105,12 @@ jobs:
           cat "$RUNNER_TEMP/wnba-backend.log" || true
           exit 1
 
+      - name: Restore last published WNBA snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py --prefix wnba/
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Export WNBA projection (prop-line) snapshots only
         run: node wnba/export_snapshots.mjs
         env:
@@ -144,27 +150,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Commit refreshed WNBA projection snapshots
-        if: steps.check_lines.outputs.has_lines == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add \
-            kbo-props-ui/public/data/wnba/projections_standard.json \
-            kbo-props-ui/public/data/wnba/projections_demon.json \
-            kbo-props-ui/public/data/wnba/projections_goblin.json
-          if git diff --cached --quiet; then
-            echo "No WNBA projection snapshot changes to commit"
-            exit 0
-          fi
-          git commit -m "chore: refresh WNBA prop snapshots $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if git push origin HEAD:main; then
-            echo "Pushed WNBA projection snapshots"
-          else
-            echo "Push rejected; retrying with rebase..."
-            git pull --rebase origin main && git push origin HEAD:main \
-              || echo "Push failed after retry; Supabase publish still updated"
-          fi
+      # The former "Commit refreshed WNBA projection snapshots" step pushed the
+      # paid prop-line boards to the public repo. They now live only in Supabase
+      # (published above) and are served through /api/data.
 
       - name: Freeze WNBA slate into memory/
         if: success() && steps.check_lines.outputs.has_lines == 'true'

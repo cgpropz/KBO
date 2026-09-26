@@ -1,3 +1,9 @@
+-- ⚠ SECURITY NOTE (Phase 1 server-side paywall): the `*_read_all ... using (true)`
+-- policies in this file made paid snapshot tables readable by anyone with the
+-- public anon key. The site now reads these tables only through /api/data
+-- (service role). If you ever re-run this file, run
+-- sql/security/02_lock_down_rls.sql afterwards to remove public read access.
+
 -- NFL PrizePicks snapshot. Run once in the Supabase SQL editor.
 -- The row is written by GitHub Actions with the service-role key. Read access is
 -- public (anon key), mirroring the KBO/WNBA blob tables -- gating (top-3 free

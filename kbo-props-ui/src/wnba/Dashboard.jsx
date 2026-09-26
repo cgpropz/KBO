@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { fetchWnbaData } from './wnbaData'
+import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
 
@@ -386,8 +386,11 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
-  const { tier, user } = useAuth()
-  const isPaid = sportAccess(tier, user?.email).wnba
+  const [lockedCount, setLockedCount] = useState(0)
+
+  const { tier } = useAuth()
+  // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
+  const isPaid = sportAccess(tier).wnba && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -402,11 +405,12 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       setProjLoading(true)
       try {
         const [pr, pl] = await Promise.all([
-          fetchWnbaData('wnba/projections_standard.json'),
+          fetchWnbaSnapshot('wnba/projections_standard.json'),
           fetchWnbaData('wnba/players.json'),
         ])
         if (cancelled) return
-        setProjections(Array.isArray(pr) ? pr : [])
+        setLockedCount(pr?.preview ? pr.lockedCount : 0)
+        setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
       } catch {
         if (!cancelled) { setProjections([]); setPlayers([]) }
@@ -560,7 +564,9 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const goPlayer = name => onSelectPlayer?.(name)
   const goProjections = () => onNavigate?.('projections')
 
-  const hasLockedRows = !isPaid && rows.length > FREE_ROW_LIMIT
+  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
+  const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
   useEffect(() => {
     if (!hasLockedRows) return
@@ -588,7 +594,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           <div className="wnba-board-header">
             <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1></div>
             <div className="wnba-lines-header-actions">
-              <span>{rows.length} lines · sorted by {filters.sortBy}</span>
+              <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
@@ -610,8 +616,13 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                       item={item}
                       onSelectPlayer={goPlayer}
                       locked={!isPaid && index >= FREE_ROW_LIMIT}
-                      rowRef={index === FREE_ROW_LIMIT - 1 ? lastFreeRowRef : undefined}
+                      rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                     />
+                  ))}
+                  {Array.from({ length: placeholderCount }, (_, index) => (
+                    <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
+                      <td colSpan={7}><span className="wnba-placeholder-bar" /></td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -620,7 +631,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                   <div className="wnba-lines-lock-card">
                     <div className="wnba-lines-lock-icon">🔒</div>
                     <h3>Unlock the Full Board</h3>
-                    <p>Free members see the top {FREE_ROW_LIMIT} lines. Upgrade to see every prop line.</p>
+                    <p>Free members see the top {FREE_ROW_LIMIT} lines.{lockedCount > 0 ? ` ${lockedCount} more are locked.` : ''} Upgrade to see every prop line.</p>
                     <button onClick={() => onNavigatePricing?.()}>View Plans</button>
                   </div>
                 </div>

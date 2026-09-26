@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../AuthContext'
 import './wnba.css'
 import Projections from './Projections'
 import Dashboard from './Dashboard'
@@ -29,6 +30,7 @@ function ComingSoon({ label }) {
 }
 
 export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
+  const { tier } = useAuth()
   const [view, setView] = useState('dashboard')
   const [teamFilter, setTeamFilter] = useState('All')
 
@@ -73,7 +75,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
           ))}
         </div>
       </nav>
-      <div className="wnba-content">
+      <div className="wnba-content" key={tier || 'free'}>
         {needsPaywall
           ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
           : content}

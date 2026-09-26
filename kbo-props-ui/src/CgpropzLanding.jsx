@@ -17,7 +17,7 @@ import './CgpropzLanding.css';
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
   const [subscriberCount, setSubscriberCount] = useState(null);
-  const access = sportAccess(tier, user?.email);
+  const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
 

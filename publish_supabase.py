@@ -30,6 +30,11 @@ def _get_service_role_key():
 SERVICE_ROLE_KEY = _get_service_role_key()
 DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 
+# Tables that may not exist yet in every environment (created by a later
+# migration). A missing table is reported and skipped instead of failing the
+# whole publish.
+OPTIONAL_TABLES = {"nfl_lineups", "graded_props_history"}
+
 TABLES = {
     "strikeout_projections.json": "strikeout_projections",
     "batter_projections.json": "batter_projections",
@@ -38,6 +43,7 @@ TABLES = {
     "matchup_data.json": "matchup_data",
     "prop_results.json": "prop_results",
     "pitcher_logs.json": "pitcher_logs",
+    "graded_props_history.json": "graded_props_history",
     "wnba/projections_standard.json": "wnba_projections_standard",
     "wnba/projections_demon.json": "wnba_projections_demon",
     "wnba/projections_goblin.json": "wnba_projections_goblin",
@@ -103,6 +109,9 @@ def main():
         file_path = os.path.join(BASE, filename) if filename.startswith("nfl/") else os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):
+            if table in OPTIONAL_TABLES:
+                print(f"  ! {filename} not found; skipping optional snapshot")
+                continue
             msg = f"{filename} not found"
             print(f"  ✗ {msg}")
             failures.append(msg)
@@ -125,8 +134,8 @@ def main():
                 print(f"  ✓ {table:30} updated")
             else:
                 body = response.text.strip().replace("\n", " ")
-                if table == "nfl_lineups" and response.status_code == 404 and "PGRST205" in body:
-                    print("  ! nfl_lineups is not migrated yet; skipping lineup snapshot")
+                if table in OPTIONAL_TABLES and response.status_code == 404 and "PGRST205" in body:
+                    print(f"  ! {table} is not migrated yet; skipping snapshot")
                     continue
                 msg = f"{table} HTTP {response.status_code}: {body[:200]}"
                 print(f"  ✗ {msg}")
