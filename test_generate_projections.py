@@ -85,6 +85,16 @@ class NoMarketStarterFallbackTests(unittest.TestCase):
 
         self.assertEqual(result, matchup_starters)
 
+    def test_empty_matchup_snapshot_keeps_current_starters(self):
+        starters = [
+            {"name": "Current Away", "team": "Hanwha", "opponent": "NC", "pcode": None},
+            {"name": "Current Home", "team": "NC", "opponent": "Hanwha", "pcode": None},
+        ]
+
+        result = projections.select_no_market_starters(starters, [])
+
+        self.assertEqual(result, starters)
+
 
 if __name__ == "__main__":
     unittest.main()
