@@ -116,6 +116,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const recent = Array.isArray(currentRow.recent) ? currentRow.recent : []
   const gameDates = Array.isArray(currentRow.gameDates) ? currentRow.gameDates : []
   const gameOpponents = Array.isArray(currentRow.gameOpponents) ? currentRow.gameOpponents : []
+  const gameSeasons = Array.isArray(currentRow.gameSeasons) ? currentRow.gameSeasons : []
   const recentDvpRanks = Array.isArray(currentRow.recentDvpRanks) ? currentRow.recentDvpRanks : []
   const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
   const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
@@ -128,9 +129,10 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const isOver = currentRow.projection >= currentRow.line
   const hits = Math.round((currentRow.hitRate / 100) * currentRow.gamesPlayed)
   const modelDelta = currentRow.projection - currentRow.line
+  const currentSeason = currentRow.priorSeasonLabel != null ? currentRow.priorSeasonLabel + 1 : new Date().getFullYear()
 
   const rangeOptions = [
-    { id: 'season', label: String(new Date().getFullYear()), hitRate: currentRow.seasonHitRate, games: currentRow.seasonGames },
+    { id: 'season', label: String(currentSeason), hitRate: currentRow.seasonHitRate, games: currentRow.seasonGames },
     { id: 'priorSeason', label: currentRow.priorSeasonLabel ? String(currentRow.priorSeasonLabel) : '—', hitRate: currentRow.priorSeasonHitRate, games: currentRow.priorSeasonGames },
     { id: 'h2h', label: 'H2H', hitRate: currentRow.h2hHitRate, games: currentRow.h2hGames },
     { id: 'l5', label: 'L5', hitRate: currentRow.hitRateL5, games: currentRow.gamesL5 },
@@ -139,16 +141,25 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     { id: 'l30', label: 'L30', hitRate: currentRow.hitRateL30, games: currentRow.gamesL30 },
   ]
 
-  // Only L5/L10 actually change the chart window since we only ship each player's last 10 games; wider ranges just report their official hit rate above.
-  const windowSize = selectedRange === 'l5' ? Math.min(5, recent.length) : recent.length
-  const windowStart = recent.length - windowSize
-  const chartIndices = []
-  for (let index = windowStart; index < recent.length; index++) {
+  // Base indices for the selected range: season/prior season/H2H filter by game metadata, L5-L30 slice the trailing window.
+  let baseIndices
+  if (selectedRange === 'season') {
+    baseIndices = gameSeasons.map((season, index) => (season === currentSeason ? index : -1)).filter((index) => index !== -1)
+  } else if (selectedRange === 'priorSeason') {
+    baseIndices = gameSeasons.map((season, index) => (season === currentSeason - 1 ? index : -1)).filter((index) => index !== -1)
+  } else if (selectedRange === 'h2h') {
+    baseIndices = gameOpponents.map((opponent, index) => (opponent === currentRow.opponent ? index : -1)).filter((index) => index !== -1)
+  } else {
+    const count = selectedRange === 'l5' ? 5 : selectedRange === 'l20' ? 20 : selectedRange === 'l30' ? 30 : 10
+    const size = Math.min(count, recent.length)
+    baseIndices = Array.from({ length: size }, (_, i) => recent.length - size + i)
+  }
+  const chartIndices = baseIndices.filter((index) => {
     const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
     const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
     const passesUsage = usageThreshold == null || (recentUsage[index] != null && recentUsage[index] >= usageThreshold)
-    if (passesDvp && passesSnap && passesUsage) chartIndices.push(index)
-  }
+    return passesDvp && passesSnap && passesUsage
+  })
   const chartValues = chartIndices.map((index) => recent[index])
   const chartDates = chartIndices.map((index) => gameDates[index])
   const chartOpponents = chartIndices.map((index) => gameOpponents[index])

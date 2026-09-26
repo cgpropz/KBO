@@ -160,9 +160,6 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     player_history = history[history['name_key'] == key].sort_values('date')
     series = stat_values(player_history, row.prop)
     values, dates, opponents, weeks, seasons = [], [], [], [], []
-    season_hit_rate, season_games = None, 0
-    prior_season_hit_rate, prior_season_games = None, 0
-    h2h_hit_rate, h2h_games = None, 0
     hit_rate_l5, games_l5 = None, 0
     hit_rate_l20, games_l20 = None, 0
     hit_rate_l30, games_l30 = None, 0
@@ -174,18 +171,6 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         opponents = player_history.loc[valid, 'opponent_team'].fillna('').tolist()
         weeks = player_history.loc[valid, 'week'].tolist()
         seasons = player_history.loc[valid, 'season'].tolist()
-        season_mask = valid & (player_history['season'] == CURRENT_SEASON)
-        season_games = int(season_mask.sum())
-        if season_games:
-            season_hit_rate = round(float((numeric[season_mask] >= row.line).mean()) * 100)
-        prior_mask = valid & (player_history['season'] == CURRENT_SEASON - 1)
-        prior_season_games = int(prior_mask.sum())
-        if prior_season_games:
-            prior_season_hit_rate = round(float((numeric[prior_mask] >= row.line).mean()) * 100)
-        opponent_mask = valid & (player_history['opponent_team'] == row.opponent)
-        h2h_games = int(opponent_mask.sum())
-        if h2h_games:
-            h2h_hit_rate = round(float((numeric[opponent_mask] >= row.line).mean()) * 100)
         games_l5 = min(5, len(values))
         if games_l5:
             hit_rate_l5 = round(sum(value >= row.line for value in values[-5:]) / games_l5 * 100)
@@ -195,12 +180,23 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         games_l30 = min(30, len(values))
         if games_l30:
             hit_rate_l30 = round(sum(value >= row.line for value in values[-30:]) / games_l30 * 100)
-    recent, recent_dates, recent_opponents = values[-10:], dates[-10:], opponents[-10:]
-    recent_weeks, recent_seasons = weeks[-10:], seasons[-10:]
-    if len(recent) >= 3:
-        last_three = sum(recent[-3:]) / 3
-        last_nine = sum(recent[-9:]) / min(9, len(recent))
-        last_fifteen = sum(recent[-15:]) / min(15, len(recent))
+    recent, recent_dates, recent_opponents = values[-30:], dates[-30:], opponents[-30:]
+    recent_weeks, recent_seasons = weeks[-30:], seasons[-30:]
+    last10 = values[-10:]
+
+    # Season/prior season/H2H hit rates are computed from the same shipped 30-game window as the
+    # chart, so the range strip pills always match what the chart can actually show.
+    season_games = sum(1 for s in recent_seasons if s == CURRENT_SEASON)
+    season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON) / season_games * 100) if season_games else None
+    prior_season_games = sum(1 for s in recent_seasons if s == CURRENT_SEASON - 1)
+    prior_season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON - 1) / prior_season_games * 100) if prior_season_games else None
+    h2h_games = sum(1 for o in recent_opponents if o == row.opponent)
+    h2h_hit_rate = round(sum(v >= row.line for v, o in zip(recent, recent_opponents) if o == row.opponent) / h2h_games * 100) if h2h_games else None
+
+    if len(values) >= 3:
+        last_three = sum(values[-3:]) / 3
+        last_nine = sum(values[-9:]) / min(9, len(values))
+        last_fifteen = sum(values[-15:]) / min(15, len(values))
         projection = last_three * .50 + last_nine * .25 + last_fifteen * .25
     else:
         projection = row.line
@@ -220,7 +216,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     if usage_series is not None and series is not None:
         usage_numeric = pd.to_numeric(usage_series, errors='coerce').fillna(0)
         usage_values = usage_numeric[valid].tolist()
-        recent_usage = [round(float(v), 1) for v in usage_values[-10:]]
+        recent_usage = [round(float(v), 1) for v in usage_values[-30:]]
         if usage_stat == 'Rec Targets' and usage_values:
             targets_per_game = round(sum(usage_values) / len(usage_values), 1)
 
@@ -230,8 +226,9 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
-        'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'hitRate': round(sum(value >= row.line for value in recent) / len(recent) * 100) if recent else 0,
-        'gamesPlayed': len(recent), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
+        'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,
+        'hitRate': round(sum(value >= row.line for value in last10) / len(last10) * 100) if last10 else 0,
+        'gamesPlayed': len(last10), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
         'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
         'seasonHitRate': season_hit_rate, 'seasonGames': season_games,
         'priorSeasonHitRate': prior_season_hit_rate, 'priorSeasonGames': prior_season_games, 'priorSeasonLabel': CURRENT_SEASON - 1,
