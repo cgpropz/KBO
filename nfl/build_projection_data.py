@@ -216,9 +216,13 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     usage_label = {'Pass Attempts': 'Pass Att', 'Rush Attempts': 'Rush Att', 'Rec Targets': 'Targets'}[usage_stat]
     usage_series = stat_values(player_history, usage_stat)
     recent_usage = []
+    targets_per_game = None
     if usage_series is not None and series is not None:
         usage_numeric = pd.to_numeric(usage_series, errors='coerce').fillna(0)
-        recent_usage = [round(float(v), 1) for v in usage_numeric[valid].tolist()[-10:]]
+        usage_values = usage_numeric[valid].tolist()
+        recent_usage = [round(float(v), 1) for v in usage_values[-10:]]
+        if usage_stat == 'Rec Targets' and usage_values:
+            targets_per_game = round(sum(usage_values) / len(usage_values), 1)
 
     return {
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
@@ -236,7 +240,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         'hitRateL20': hit_rate_l20, 'gamesL20': games_l20,
         'hitRateL30': hit_rate_l30, 'gamesL30': games_l30,
         'recentDvpRanks': recent_dvp_ranks, 'recentSnapPercents': recent_snap_pcts,
-        'recentUsage': recent_usage, 'usageLabel': usage_label,
+        'recentUsage': recent_usage, 'usageLabel': usage_label, 'targetsPerGame': targets_per_game,
     }
 
 

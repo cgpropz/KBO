@@ -186,6 +186,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div><small>SEASON AVG</small><strong>{formatValue(currentRow.seasonAverage)}</strong></div>
         <div><small>DVP RANK</small><strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'}>{currentRow.dvpRank}<i> /32</i></strong></div>
         <div><small>SNAPS</small><strong>{currentRow.snapCount > 0 ? `${currentRow.snapCount}%` : 'N/A'}</strong></div>
+        {(currentRow.position === 'WR' || currentRow.position === 'TE') && currentRow.targetsPerGame != null && (
+          <div><small>TARGETS/GM</small><strong>{formatValue(currentRow.targetsPerGame)}</strong></div>
+        )}
       </div>
 
       <div className="nfl-player-range-strip">
