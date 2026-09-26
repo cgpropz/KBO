@@ -5,7 +5,7 @@ import { fetchApiDataset } from '../apiData'
  * get every row, free users get the top rows plus a locked-row count.
  */
 export async function fetchNflProjections() {
-  const snapshot = await fetchApiDataset('nfl_projections')
+  const snapshot = await fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json' })
   return {
     projections: Array.isArray(snapshot.data) ? snapshot.data : [],
     updatedAt: snapshot.updatedAt,
@@ -15,7 +15,7 @@ export async function fetchNflProjections() {
 }
 
 export async function fetchNflLineups() {
-  const snapshot = await fetchApiDataset('nfl_lineups')
+  const snapshot = await fetchApiDataset('nfl_lineups', { devStaticPath: 'nfl/lineups.json' })
   return {
     matchups: Array.isArray(snapshot.data) ? snapshot.data : [],
     updatedAt: snapshot.updatedAt,
