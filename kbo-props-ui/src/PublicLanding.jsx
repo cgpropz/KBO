@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SPORTS } from './sportsMeta';
 import { TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
+import Testimonials from './Testimonials';
 import './PublicLanding.css';
 
 /*
@@ -37,12 +38,6 @@ const TOOLS = [
     image: '/landing-screenshots/wnba-edge-board.png',
     alt: 'WNBA PrizePicks edge board with L10 hit-rate charts',
   },
-];
-
-const TESTIMONIALS = [
-  { quote: 'I can compare the line, projection, and recent form without jumping between five tabs.', label: 'The daily scan' },
-  { quote: 'The CG Projection gives every prop a clear strength signal, so I know where to spend my attention.', label: 'The edge finder', featured: true },
-  { quote: 'I use the matchup context and game-log view to build a smaller, more deliberate slip.', label: 'The disciplined build' },
 ];
 
 const FAQS = [
@@ -198,22 +193,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
           </div>
         </section>
 
-        <section className="pl-testimonials">
-          <div className="pl-section-heading">
-            <span className="pl-section-kicker">Subscriber perspective</span>
-            <h2>Built for a calmer way to play the board.</h2>
-            <p>Representative feedback from the workflows cgpropz is designed to support.</p>
-          </div>
-          <div className="pl-testimonial-grid">
-            {TESTIMONIALS.map((t) => (
-              <article className={`pl-testimonial-card ${t.featured ? 'pl-testimonial-card-featured' : ''}`} key={t.label}>
-                <span className="pl-quote-mark" aria-hidden="true">&ldquo;</span>
-                <p>&ldquo;{t.quote}&rdquo;</p>
-                <span className="pl-testimonial-label">{t.label}</span>
-              </article>
-            ))}
-          </div>
-        </section>
+        <Testimonials />
 
         <section className="pl-faq" id="faq">
           <div className="pl-section-heading">

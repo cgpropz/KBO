@@ -1,0 +1,134 @@
+/* Shared subscriber-testimonials section + submission form, used by both
+   PublicLanding and CgpropzLanding. */
+.testi-section {
+  margin: clamp(36px, 6vw, 72px) 0;
+}
+.testi-heading {
+  max-width: 620px;
+  margin-bottom: 22px;
+}
+.testi-kicker {
+  color: #4ade80;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.testi-heading h2 {
+  margin: 8px 0 8px;
+  color: #fff;
+  font-size: clamp(24px, 3.4vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.6px;
+}
+.testi-heading p {
+  margin: 0;
+  color: #8f939b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.testi-card {
+  min-height: 190px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.testi-card-featured {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: linear-gradient(145deg, rgba(34, 197, 94, 0.14), rgba(255, 255, 255, 0.035));
+}
+.testi-quote-mark { color: #4ade80; font-size: 38px; font-weight: 900; line-height: 0.7; }
+.testi-card p { margin: 16px 0 20px; color: #e4e4e7; font-size: 15px; line-height: 1.55; }
+.testi-label {
+  color: #8f939b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Submission prompt / form (post-login only) */
+.testi-prompt {
+  margin-top: 16px;
+  color: #a1a1aa;
+  font-size: 13px;
+}
+.testi-prompt-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.testi-form {
+  margin-top: 16px;
+  max-width: 480px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+.testi-form-row { margin-bottom: 12px; }
+.testi-form-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 700;
+}
+.testi-form-row input,
+.testi-form-row textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0b0b0d;
+  color: #f4f4f5;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.testi-form-row input:focus,
+.testi-form-row textarea:focus {
+  outline: none;
+  border-color: rgba(74, 222, 128, 0.5);
+}
+.testi-form-error { color: #f87171; font-size: 13px; margin: 0 0 10px; }
+.testi-form-actions { display: flex; gap: 10px; align-items: center; }
+.testi-form-submit {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.testi-form-submit:disabled { opacity: 0.6; cursor: default; }
+.testi-form-cancel {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.testi-form-note { margin: 10px 0 0; color: #6b7280; font-size: 11px; }
+
+@media (max-width: 640px) {
+  .testi-grid { grid-template-columns: 1fr; }
+  .testi-card { min-height: 150px; }
+}

@@ -381,37 +381,6 @@
 .pl-pricing-cta { width: 100%; margin-bottom: 14px; }
 .pl-pricing-alt { margin: 0; color: #8f939b; font-size: 12px; }
 
-/* Testimonials */
-.pl-testimonials { margin-bottom: clamp(48px, 8vw, 96px); }
-.pl-testimonial-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.pl-testimonial-card {
-  min-height: 190px;
-  padding: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.035);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.pl-testimonial-card-featured {
-  border-color: rgba(74, 222, 128, 0.4);
-  background: linear-gradient(145deg, rgba(34, 197, 94, 0.14), rgba(255, 255, 255, 0.035));
-}
-.pl-quote-mark { color: #4ade80; font-size: 38px; font-weight: 900; line-height: 0.7; }
-.pl-testimonial-card p { margin: 16px 0 20px; color: #e4e4e7; font-size: 15px; line-height: 1.55; }
-.pl-testimonial-label {
-  color: #8f939b;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
 /* FAQ */
 .pl-faq { margin-bottom: clamp(48px, 8vw, 96px); }
 .pl-faq-grid {
@@ -484,7 +453,6 @@
   .pl-tool-row.reverse .pl-tool-copy { order: 2; }
   .pl-tool-copy p { max-width: none; }
   .pl-sports-grid { grid-template-columns: 1fr; }
-  .pl-testimonial-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .pl-header { padding: 14px 16px; }
