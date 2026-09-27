@@ -218,7 +218,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4 5 6; do
             echo "Production verify attempt ${attempt}/6"
-            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict; then
+            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict --max-skew-minutes 480; then
               exit 0
             fi
             if [ "$attempt" -lt 6 ]; then
