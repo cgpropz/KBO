@@ -6,6 +6,7 @@ import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
 import NflPropLines from './NflPropLines'
 import NflPlayerPage from './NflPlayerPage'
+import NflPlayerSearch from './NflPlayerSearch'
 import './nfl.css'
 
 const NAV_ITEMS = [
@@ -49,6 +50,7 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
             </button>
           ))}
         </div>
+        <NflPlayerSearch onSelect={openPlayer} />
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NFL PRO</button>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>

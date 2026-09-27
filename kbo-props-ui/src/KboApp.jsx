@@ -12,6 +12,7 @@ import MatchupDeepDive from './MatchupDeepDive'
 import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
 import KboPlayerPage from './KboPlayerPage'
+import PlayerSearch from './PlayerSearch'
 import './KboPropBoard.css'
 
 const NAV_ITEMS = [
@@ -72,6 +73,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
             </button>
           ))}
         </div>
+        <PlayerSearch onSelect={openPlayer} />
         <button className="kbo-app-pro-badge" onClick={() => setView('pricing')}>{isPaid ? 'MANAGE' : 'UPGRADE'}</button>
         <button className="kbo-app-signout" onClick={signOut} title={user?.email}>Sign Out</button>
       </nav>

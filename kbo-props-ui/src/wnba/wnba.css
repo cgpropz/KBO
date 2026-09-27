@@ -540,6 +540,55 @@
   gap: 6px;
   flex-wrap: wrap;
 }
+.wnba-root .wnba-player-search {
+  position: relative;
+  width: 200px;
+  margin-left: auto;
+}
+.wnba-root .wnba-player-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.wnba-root .wnba-player-search input {
+  padding-left: 32px;
+}
+.wnba-root .wnba-player-search-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .4);
+}
+.wnba-root .wnba-player-search-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  background: transparent;
+  font: 13px var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+.wnba-root .wnba-player-search-menu button:last-child { border-bottom: 0; }
+.wnba-root .wnba-player-search-menu button:hover { background: var(--card-hover); color: var(--orange); }
+.wnba-root .wnba-player-search-empty {
+  display: block;
+  padding: 10px 12px;
+  color: var(--text-dim);
+  font: 13px var(--font);
+}
 .wnba-root .wnba-content {
   padding: 22px 20px 60px;
   max-width: 1400px;

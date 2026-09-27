@@ -7,6 +7,7 @@ import PlayerMap from './PlayerMap'
 import Teams from './Teams'
 import Lineups from './Lineups'
 import WnbaPlayerPage from './WnbaPlayerPage'
+import WnbaPlayerSearch from './WnbaPlayerSearch'
 import SportSwitcher from '../SportSwitcher'
 import Paywall from '../Paywall'
 
@@ -80,6 +81,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
             </button>
           ))}
         </div>
+        <WnbaPlayerSearch onSelect={handleSelectPlayer} />
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
         {needsPaywall
