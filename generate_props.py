@@ -140,6 +140,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
         games.append({
             "date": g.get("Date", ""),
             "opp": g.get("Opp", ""),
+            "season": g.get("Season", ""),
             "ip": g.get("IP", 0),
             "so": g.get("SO", 0),
             "er": g.get("ER", 0),
@@ -156,7 +157,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
         "opponent": canonical_team(props[0]["vs"]),
         "type": "pitcher",
         "props": [],
-        "games": games[:15],  # last 15 games
+        "games": games[:200],  # full multi-season history for the player detail page
     }
 
     # Look up projection using multiple name variants
@@ -275,7 +276,11 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         games.append({
             "date": g.get("date", ""),
             "opp": g.get("opponent", ""),
+            "season": g.get("season", ""),
             "h": h,
+            "ab": g.get("ab", 0) or 0,
+            "hr": hr,
+            "bb": bb,
             "r": r,
             "rbi": rbi,
             "hrr": g.get("hrr", 0),
@@ -289,7 +294,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         "opponent": canonical_team(props[0]["vs"]),
         "type": "batter",
         "props": [],
-        "games": games[:15],
+        "games": games[:200],  # full multi-season history for the player detail page
     }
 
     for p in props:

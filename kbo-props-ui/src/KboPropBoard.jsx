@@ -103,7 +103,7 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
-export default function KboPropBoard({ onNavigatePricing }) {
+export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [snapshot, setSnapshot] = useState(null)
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
@@ -195,7 +195,7 @@ export default function KboPropBoard({ onNavigatePricing }) {
         {rows.map(({ card, prop, score, direction }, index) => {
           const photo = photoLookup[String(card.name || '').toLowerCase()]
           const locked = !isPaid && index >= FREE_ROW_LIMIT
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
+          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td className="kbo-player-cell" onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
         })}
         {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={7}><span className="kbo-placeholder-bar" /></td></tr>)}
       </tbody></table>

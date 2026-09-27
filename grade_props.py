@@ -90,6 +90,10 @@ def main():
                 "h": int(row["H"]) if row.get("H") else 0,
                 "r": int(row["R"]) if row.get("R") else 0,
                 "rbi": int(row["RBI"]) if row.get("RBI") else 0,
+                "ab": int(row["AB"]) if row.get("AB") else 0,
+                "hr": int(row["HR"]) if row.get("HR") else 0,
+                "bb": int(row["Walks"]) if row.get("Walks") else 0,
+                "season": row.get("Season", ""),
             })
             batter_count += 1
 

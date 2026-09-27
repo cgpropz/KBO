@@ -11,6 +11,7 @@ import SlipOptimizer from './SlipOptimizer'
 import MatchupDeepDive from './MatchupDeepDive'
 import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
+import KboPlayerPage from './KboPlayerPage'
 import './KboPropBoard.css'
 
 const NAV_ITEMS = [
@@ -32,7 +33,15 @@ const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 export default function KboApp({ sport, setSport, onNavigateHome, initialView }) {
   const { signOut, user, tier } = useAuth()
   const [view, setView] = useState(NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board')
+  const [previousView, setPreviousView] = useState('board')
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
   const isPaid = tier && tier !== 'free'
+
+  const openPlayer = (name) => {
+    setPreviousView(view)
+    setSelectedPlayer(name)
+    setView('player')
+  }
 
   const content = (() => {
     switch (view) {
@@ -44,7 +53,8 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
       case 'matchups':    return <MatchupDeepDive />
       case 'pricing':     return <SubscriptionPage />
       case 'tutorial':    return <TutorialPage onNavigate={setView} />
-      default:            return <KboPropBoard onNavigatePricing={() => setView('pricing')} />
+      case 'player':      return <KboPlayerPage playerName={selectedPlayer} onBack={() => setView(previousView)} />
+      default:            return <KboPropBoard onNavigatePricing={() => setView('pricing')} onSelectPlayer={openPlayer} />
     }
   })()
 
