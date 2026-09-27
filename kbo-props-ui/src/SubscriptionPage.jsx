@@ -131,6 +131,8 @@ function SubscriptionPage() {
     if (tier && tier !== 'free' && awaitingPayment) {
       clearInterval(pollRef.current);
       setAwaitingPayment(false);
+      // X (Twitter) conversion tracking event
+      window.twq && window.twq('event', 'tw-pul9k-pul9m', {});
     }
   }, [tier, awaitingPayment]);
 

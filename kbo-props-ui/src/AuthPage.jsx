@@ -42,6 +42,8 @@ export default function AuthPage({ initialMode = 'login', onBack } = {}) {
       } else {
         setMessage('Check your email to confirm your account, then log in.');
         setMode('login');
+        // X (Twitter) lead generation conversion tracking event
+        window.twq && window.twq('event', 'tw-pul9k-pul9n', {});
       }
     }
     setLoading(false);

@@ -6,6 +6,7 @@ import Dashboard from './Dashboard'
 import PlayerMap from './PlayerMap'
 import Teams from './Teams'
 import Lineups from './Lineups'
+import WnbaPlayerPage from './WnbaPlayerPage'
 import SportSwitcher from '../SportSwitcher'
 import Paywall from '../Paywall'
 
@@ -33,11 +34,14 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
   const { tier } = useAuth()
   const [view, setView] = useState('dashboard')
   const [teamFilter, setTeamFilter] = useState('All')
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [returnView, setReturnView] = useState('players')
 
-  // Player detail is not ported yet; route player clicks to the Player Map.
   const handleSelectPlayer = name => {
-    if (name) setTeamFilter('All')
-    setView('players')
+    if (!name) return
+    setReturnView(view)
+    setSelectedPlayer(name)
+    setView('playerDetail')
   }
 
   const handleSelectTeam = team => {
@@ -52,11 +56,13 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
       case 'players':     return <PlayerMap onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
       case 'teams':       return <Teams onSelectTeam={handleSelectTeam} />
       case 'lineups':     return <Lineups />
+      case 'playerDetail': return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
       default:            return <ComingSoon label="WNBA" />
     }
   })()
 
   const needsPaywall = WNBA_PAID_VIEWS.has(view)
+
 
   return (
     <div className="wnba-root">

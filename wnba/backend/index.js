@@ -131,6 +131,16 @@ function parseOpponentFromVersus(versusText) {
   return match ? match[1] : null;
 }
 
+// Gamelog "matchup" strings are always "OWN_TEAM vs. OPP" or "OWN_TEAM @ OPP";
+// the opponent is whatever team name/abbr trails the separator.
+function parseOpponentFromMatchup(matchup) {
+  const cleaned = String(matchup || '').replace(/\./g, '').trim();
+  if (!cleaned) return null;
+  const tokens = cleaned.split(/\s+/).filter(Boolean);
+  const last = tokens[tokens.length - 1];
+  return last ? normalizeTeamAbbr(last) : null;
+}
+
 const EXCLUDED_PP_PROPS = new Set(['Points - 1st 3 Minutes']);
 const BASE_PROJECTION_STATS = [
   'pts', 'reb', 'ast',
@@ -594,6 +604,36 @@ function ppmWindow(games, stat, n) {
   return totalMin > 0 ? totalStat / totalMin : 0;
 }
 
+// ── Team-game box score totals (for per-game usage rate) ─────────────────────
+// Sums FGA/FTA/TOV/MIN across every player on a team for a single game, keyed
+// by "TEAM|YYYY-MM-DD". `rows` is the full merged gamelog set (all players).
+function buildTeamGameTotals(rows) {
+  const totals = new Map();
+  for (const row of rows) {
+    const team = normalizeTeamAbbr(row.team);
+    if (!team) continue;
+    const key = `${team}|${canonicalGameDate(row.date)}`;
+    const entry = totals.get(key) || { fga: 0, fta: 0, tov: 0, min: 0 };
+    entry.fga += row.fga || 0;
+    entry.fta += row.fta || 0;
+    entry.tov += row.tov || 0;
+    entry.min += row.min || 0;
+    totals.set(key, entry);
+  }
+  return totals;
+}
+
+// Standard NBA/WNBA usage-rate formula: share of team possessions a player used
+// while on the floor for that game.
+function usageRate(game, teamTotals) {
+  if (!teamTotals || !game.min) return null;
+  const teamPossessions = teamTotals.fga + 0.44 * teamTotals.fta + teamTotals.tov;
+  const denom = game.min * teamPossessions;
+  if (!denom) return null;
+  const playerPossessions = (game.fga + 0.44 * game.fta + game.tov) * (teamTotals.min / 5);
+  return parseFloat(((playerPossessions / denom) * 100).toFixed(1));
+}
+
 // ── Build DVP lookup for a position ──────────────────────────────────────────
 const DVP_FILES = {
   Guard:   path.join(ROOT, 'wnbaGUARDdvp.csv'),
@@ -808,6 +848,7 @@ app.get('/api/projections/v2', async (req, res) => {
       ppStandardPromise,
     ]);
     const spreads = await fetchSpreads(propSlateDates(ppStandardLines));
+    const teamGameTotals = buildTeamGameTotals(all);
 
     const dvpMaps = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
     const dvpRankMaps = { Guard: gDvp.rankMap, Forward: fDvp.rankMap, Center: cDvp.rankMap };
@@ -908,28 +949,34 @@ app.get('/api/projections/v2', async (req, res) => {
         l3ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L3.toFixed(4)])),
         l7ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L7.toFixed(4)])),
         l15ppm: Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L15.toFixed(4)])),
-        recentGames: games.map(game => ({
-          date: game.date,
-          matchup: game.matchup,
-          pts: game.pts,
-          reb: game.reb,
-          ast: game.ast,
-          fgm: game.fgm,
-          fga: game.fga,
-          fg2m: game.fg2m,
-          fg2a: game.fg2a,
-          fg3m: game.fg3m,
-          fg3a: game.fg3a,
-          ftm: game.ftm,
-          fta: game.fta,
-          stl: game.stl,
-          blk: game.blk,
-          blkStl: (game.blk ?? 0) + (game.stl ?? 0),
-          tov: game.tov,
-          oreb: game.oreb,
-          dreb: game.dreb,
-          fantasy: game.fantasy,
-        })),
+        recentGames: games.map(game => {
+          const teamTotals = teamGameTotals.get(`${normalizeTeamAbbr(game.team)}|${canonicalGameDate(game.date)}`);
+          return {
+            date: game.date,
+            matchup: game.matchup,
+            opponent: parseOpponentFromMatchup(game.matchup),
+            min: game.min,
+            usagePct: usageRate(game, teamTotals),
+            pts: game.pts,
+            reb: game.reb,
+            ast: game.ast,
+            fgm: game.fgm,
+            fga: game.fga,
+            fg2m: game.fg2m,
+            fg2a: game.fg2a,
+            fg3m: game.fg3m,
+            fg3a: game.fg3a,
+            ftm: game.ftm,
+            fta: game.fta,
+            stl: game.stl,
+            blk: game.blk,
+            blkStl: (game.blk ?? 0) + (game.stl ?? 0),
+            tov: game.tov,
+            oreb: game.oreb,
+            dreb: game.dreb,
+            fantasy: game.fantasy,
+          };
+        }),
         ppLines: {
           pts:  ppPlayer.pts  ?? null,
           reb:  ppPlayer.reb  ?? null,
