@@ -417,6 +417,13 @@ class TestWorkflowAndIsolation(unittest.TestCase):
         self.assertFalse(any(e.startswith("memory") for e in entries))
         self.assertEqual(entries[-3:], ["!ml/**", "!.github/workflows/ml-*.yml", "!.github/workflows/ml-*.yaml"])
 
+    def test_deploy_production_verify_skew_tolerance(self):
+        text = (REPO / ".github/workflows/deploy.yml").read_text()
+        self.assertIn(
+            "python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict --max-skew-minutes 480",
+            text,
+        )
+
     def test_live_code_never_imports_shadow(self):
         for base in ("pipeline", "kbo-props-ui/src", "wnba", "nfl"):
             root = REPO / base
