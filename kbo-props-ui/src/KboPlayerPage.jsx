@@ -7,6 +7,14 @@ const TEAM_COLORS = {
   Samsung: '#60a5fa', SSG: '#ff5555',
 }
 
+// Logos live under kbo-props-ui/public/team-logos/ (shared with LandingPage/MatchupDeepDive).
+const TEAM_LOGOS = {
+  Doosan: '/team-logos/doosan.svg', Hanwha: '/team-logos/hanwha.svg', Kia: '/team-logos/kia.png',
+  Kiwoom: '/team-logos/kiwoom.png', KT: '/team-logos/kt.svg', LG: '/team-logos/lg.svg',
+  Lotte: '/team-logos/lotte.svg', NC: '/team-logos/nc.svg', Samsung: '/team-logos/samsung.svg',
+  SSG: '/team-logos/ssg.png',
+}
+
 // Per-game value getters, keyed by the PrizePicks stat labels used on the KBO board.
 // Batter and pitcher stat labels never overlap, so one flat map covers both.
 const PROP_GAME_VALUE = {
@@ -51,11 +59,10 @@ function formatAvg(value) {
   return value.toFixed(3).replace(/^0\./, '.')
 }
 
-// Pitcher dates ship as MM/DD/YYYY; batter dates ship as YYYY-MM-DD.
+// Pitcher dates ship as MM/DD/YYYY; batter dates ship as YYYY-MM-DD. Always render M/D.
 function fmtDate(dateStr) {
   const text = String(dateStr || '')
-  const parts = text.includes('-') ? text.split('-').slice(1).reverse() : text.split('/')
-  const [m, d] = parts
+  const [m, d] = text.includes('-') ? text.split('-').slice(1) : text.split('/')
   return m && d ? `${Number(m)}/${Number(d)}` : text
 }
 
@@ -195,10 +202,17 @@ export default function KboPlayerPage({ playerName, onBack }) {
       <section className="kbo-player-page">
         <button className="kbo-player-back" onClick={onBack}>&larr; Back</button>
         <div className="kbo-player-header">
-          <div className="kbo-player-avatar">{initials(player.name)}</div>
+          <div className="kbo-player-avatar">
+            {initials(player.name)}
+            {TEAM_LOGOS[player.team] && <img className="kbo-player-avatar-badge" src={TEAM_LOGOS[player.team]} alt={player.team} />}
+          </div>
           <div className="kbo-player-title">
             <h1>{player.name}<span>{isPitcher ? 'P' : 'B'}</span></h1>
-            <p>{player.team} vs {opponentToday || '—'}</p>
+            <p>
+              {player.team} vs {' '}
+              {TEAM_LOGOS[opponentToday] && <img className="kbo-player-opp-logo" src={TEAM_LOGOS[opponentToday]} alt={opponentToday} />}
+              {opponentToday || '—'}
+            </p>
           </div>
           <div className="kbo-player-prop-pill">
             <span>{formatValue(line)} {currentProp.stat}</span>
@@ -285,6 +299,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
         <div className="kbo-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
+              {TEAM_LOGOS[g.opp] && <img className="kbo-player-date-logo" src={TEAM_LOGOS[g.opp]} alt={g.opp} />}
               <b className="kbo-player-date-team" style={{ color: TEAM_COLORS[g.opp] || '#78918a' }}>{g.opp || '—'}</b>
               {fmtDate(g.date)}
             </span>
