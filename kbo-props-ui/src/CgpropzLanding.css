@@ -149,23 +149,6 @@
   transition: border-color 0.18s;
 }
 .cg-cta-ghost:hover { border-color: rgba(255, 255, 255, 0.45); }
-.cg-subscriber-count {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  margin: 18px 0 0;
-  color: #8f939b;
-  font-size: 13px;
-}
-.cg-subscriber-count strong { color: #e4e4e7; font-weight: 800; }
-.cg-subscriber-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.1);
-}
 
 /* Sport cards */
 .cg-sports {
@@ -308,6 +291,7 @@
 }
 .cg-pricing-copy h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; color: #fff; }
 .cg-pricing-copy p { margin: 0; color: #a1a1aa; font-size: 14px; max-width: 520px; }
+.cg-pricing-note { margin-top: 6px; color: #6b7280; font-size: 12px; }
 
 /* Footer */
 .cg-footer {

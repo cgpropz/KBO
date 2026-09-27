@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { SPORTS } from './sportsMeta';
+import TrustStrip from './TrustStrip';
 import './CgpropzLanding.css';
 
 /*
@@ -16,23 +16,9 @@ import './CgpropzLanding.css';
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
-  const [subscriberCount, setSubscriberCount] = useState(null);
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch('/api/subscriber-count')
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => {
-        if (!cancelled && Number.isFinite(data?.count)) setSubscriberCount(data.count);
-      })
-      .catch(() => {});
-
-    return () => { cancelled = true; };
-  }, []);
 
   return (
     <div className="cg-landing">
@@ -72,12 +58,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
               <button className="cg-cta-ghost" onClick={() => onNavigate('pricing')}>View plans</button>
             )}
           </div>
-          {subscriberCount !== null && (
-            <p className="cg-subscriber-count">
-              <span className="cg-subscriber-dot" aria-hidden="true" />
-              Trusted by <strong>{subscriberCount.toLocaleString()}</strong> subscribers
-            </p>
-          )}
+          <TrustStrip align="center" />
         </section>
 
         <section className="cg-sports">
@@ -133,6 +114,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
           <div className="cg-pricing-copy">
             <h3>One subscription. Every sport.</h3>
             <p>All Access unlocks KBO, WNBA, and NFL projections, prop cards, and edge boards.</p>
+            <p className="cg-pricing-note">No credit card required to explore the free board first.</p>
           </div>
           <button className="cg-cta-primary" onClick={() => onNavigate('pricing')}>
             {isPaid ? 'Manage subscription' : 'See pricing'}

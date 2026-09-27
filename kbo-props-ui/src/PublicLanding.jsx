@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { SPORTS } from './sportsMeta';
+import { TIERS } from './pricingTiers';
+import TrustStrip from './TrustStrip';
 import './PublicLanding.css';
 
 /*
@@ -10,28 +12,30 @@ import './PublicLanding.css';
  *   onLogin()      → reveal AuthPage in 'login' mode
  */
 
-const FEATURES = [
-  { icon: '📊', title: 'Model Projections', text: 'Data-driven projections built from recent form, matchups, and historical trends.' },
-  { icon: '🎯', title: 'Prop Analysis & Hit Rates', text: 'See L10 hit rates and game logs behind every prop before you build a slip.' },
-  { icon: '🛡️', title: 'Matchup Insights', text: 'Defense vs. position breakdowns to spot the softest matchups on the board.' },
-  { icon: '🔑', title: 'One Login, Every Sport', text: 'KBO, WNBA, and NFL projections and edge boards under a single subscription.' },
-];
-
-const SHOWCASE = [
+const TOOLS = [
   {
-    sport: 'WNBA',
-    image: '/landing-screenshots/wnba-edge-board.png',
-    caption: 'PrizePicks edge board with L10 hit-rate charts for every player prop.',
-  },
-  {
-    sport: 'NFL',
-    image: '/landing-screenshots/nfl-player-detail.png',
-    caption: 'Player detail pages with hit rate and recent-form breakdowns.',
-  },
-  {
-    sport: 'KBO',
+    id: 'projections',
+    kicker: 'PROJECTIONS',
+    title: 'Model projections for every board.',
+    text: 'Data-driven projections built from recent form, matchups, and historical trends — refreshed automatically across KBO, WNBA, and NFL.',
     image: '/landing-screenshots/kbo-projections.png',
-    caption: 'Batter projection tables with matchup and hit-rate context.',
+    alt: 'KBO batter projection table with matchup and hit-rate context',
+  },
+  {
+    id: 'hitrates',
+    kicker: 'HIT RATES & PROP CARDS',
+    title: 'See how often it actually cashed.',
+    text: 'Every player page pairs the line and projection with L10 hit rates and a full game log, so you know the history before you build a slip.',
+    image: '/landing-screenshots/nfl-player-detail.png',
+    alt: 'NFL player detail page with hit rate and recent-form breakdown',
+  },
+  {
+    id: 'edge',
+    kicker: 'MATCHUP EDGE',
+    title: 'Spot the softest matchup on the board.',
+    text: 'Defense vs. position breakdowns and a PrizePicks edge board surface the mismatches — all under one login, one subscription.',
+    image: '/landing-screenshots/wnba-edge-board.png',
+    alt: 'WNBA PrizePicks edge board with L10 hit-rate charts',
   },
 ];
 
@@ -61,6 +65,10 @@ const FAQS = [
 ];
 
 export default function PublicLanding({ onGetStarted, onLogin }) {
+  const [planId, setPlanId] = useState('combined');
+  const paidTiers = TIERS.filter((t) => t.id !== 'free');
+  const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
+
   return (
     <div className="pl-landing">
       <div className="pl-bg" />
@@ -99,6 +107,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
               <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
               <a className="pl-cta-ghost" href="#pricing">View Plans</a>
             </div>
+            <TrustStrip />
           </div>
           <div className="pl-hero-visual">
             <div className="pl-hero-visual-bg" />
@@ -111,20 +120,23 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
           </div>
         </section>
 
-        <section className="pl-features" id="features">
+        <section className="pl-tools" id="features">
           <div className="pl-section-heading">
-            <span className="pl-section-kicker">What you get</span>
+            <span className="pl-section-kicker">The tools</span>
             <h2>Everything you need in one place.</h2>
           </div>
-          <div className="pl-feature-grid">
-            {FEATURES.map((f) => (
-              <div className="pl-feature-card" key={f.title}>
-                <div className="pl-feature-icon">{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
+          {TOOLS.map((tool, i) => (
+            <div className={`pl-tool-row${i % 2 ? ' reverse' : ''}`} key={tool.id}>
+              <div className="pl-tool-visual">
+                <img src={tool.image} alt={tool.alt} loading="lazy" />
               </div>
-            ))}
-          </div>
+              <div className="pl-tool-copy">
+                <span className="pl-tool-kicker">{tool.kicker}</span>
+                <h3>{tool.title}</h3>
+                <p>{tool.text}</p>
+              </div>
+            </div>
+          ))}
         </section>
 
         <section className="pl-sports" id="sports">
@@ -156,39 +168,33 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
           </div>
         </section>
 
-        <section className="pl-showcase">
+        <section className="pl-pricing" id="pricing">
           <div className="pl-section-heading">
-            <span className="pl-section-kicker">See it in action</span>
-            <h2>The platform, at a glance.</h2>
+            <span className="pl-section-kicker">Pricing</span>
+            <h2>Upgrade when it pays for itself.</h2>
           </div>
-          <div className="pl-showcase-grid">
-            {SHOWCASE.map((item) => (
-              <figure className="pl-showcase-card" key={item.sport}>
-                <img src={item.image} alt={`${item.sport} screenshot`} />
-                <figcaption>
-                  <span className="pl-showcase-sport">{item.sport}</span>
-                  <p>{item.caption}</p>
-                </figcaption>
-              </figure>
+          <div className="pl-pricing-toggle" role="tablist" aria-label="Billing plan">
+            {paidTiers.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={activeTier.id === t.id}
+                className={`pl-pricing-tab${activeTier.id === t.id ? ' active' : ''}`}
+                onClick={() => setPlanId(t.id)}
+              >
+                {t.name.replace(' All-Access', '')}
+              </button>
             ))}
           </div>
-        </section>
-
-        <section className="pl-pricing" id="pricing">
           <div className="pl-pricing-card">
-            <span className="pl-pricing-badge">MOST POPULAR</span>
-            <h3>Monthly All-Access</h3>
-            <div className="pl-pricing-price">$29.99<span>/ month</span></div>
+            {activeTier.badge && <span className="pl-pricing-badge">{activeTier.badge}</span>}
+            <h3>{activeTier.name}</h3>
+            <div className="pl-pricing-price">{activeTier.price}<span>{activeTier.period}</span></div>
             <ul className="pl-pricing-features">
-              <li>⚾🏀🏈 Full KBO, WNBA & NFL projections</li>
-              <li>PrizePicks edge board for every sport</li>
-              <li>Player prop cards & hit rates</li>
-              <li>Slip builder, optimizer & prop tracker</li>
-              <li>Defense vs position & daily lineups</li>
-              <li>Full game log history</li>
+              {activeTier.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
             <button className="pl-cta-primary pl-pricing-cta" onClick={onGetStarted}>Get Started</button>
-            <p className="pl-pricing-alt">Also available: Weekly $9.99/wk or Lifetime $99.99 one-time.</p>
+            <p className="pl-pricing-alt">{activeTier.description}</p>
           </div>
         </section>
 
@@ -196,6 +202,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
           <div className="pl-section-heading">
             <span className="pl-section-kicker">Subscriber perspective</span>
             <h2>Built for a calmer way to play the board.</h2>
+            <p>Representative feedback from the workflows cgpropz is designed to support.</p>
           </div>
           <div className="pl-testimonial-grid">
             {TESTIMONIALS.map((t) => (
@@ -222,7 +229,9 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
 
         <section className="pl-final-cta">
           <h2>Ready to find your edge?</h2>
+          <p className="pl-final-cta-sub">No credit card required for the free tier — upgrade anytime for full access.</p>
           <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
+          <TrustStrip align="center" />
         </section>
       </main>
 
