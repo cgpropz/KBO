@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-09-29",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-09-28T01:19:17.415110+00:00",
+  "frozen_at": "2026-09-28T01:31:27.319722+00:00",
   "source": "kbo-props-ui/public/data/wnba/projections_*.json",
-  "source_commit": "a66cd1d51aa4",
+  "source_commit": "048a9721039a",
   "props": [
     {
       "projection": 0.55,
@@ -30,8 +30,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 0.55,
+      "edge": 0.05,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 55,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 1,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3,
@@ -55,8 +80,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3,
+      "edge": 1.5,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 100,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 23.37,
@@ -81,8 +131,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 23.37,
+      "edge": 1.87,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Points",
+      "line": 21.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 54.3,
+      "standard_line": 28,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 23.37,
@@ -107,8 +183,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.37,
@@ -133,8 +209,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.37,
+      "edge": 1.87,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Pts+Asts",
+      "line": 24.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 53.8,
+      "standard_line": 31,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.37,
@@ -159,8 +261,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 31.18,
@@ -185,8 +287,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 31.18,
+      "edge": 1.68,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Pts+Rebs",
+      "line": 29.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 52.8,
+      "standard_line": 38,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 31.18,
@@ -211,8 +339,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.18,
@@ -237,8 +365,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 34.18,
+      "edge": -0.32,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "line": 34.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 49.5,
+      "standard_line": 41.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.18,
@@ -263,8 +417,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.81,
@@ -288,8 +442,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 7.81,
+      "edge": 0.31,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Rebounds",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 52.1,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.81,
@@ -313,8 +492,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.81,
+      "edge": 1.31,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "IND",
+      "stat": "Rebs+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 56.9,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 31.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 0.62,
@@ -338,8 +542,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 0.62,
+      "edge": 0.12,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3,
@@ -363,8 +592,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3,
+      "edge": 0.5,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "Assists",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 60,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.19,
@@ -389,8 +643,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 13.19,
+      "edge": 3.69,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 69.4,
+      "standard_line": 15,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.19,
@@ -415,8 +695,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.19,
@@ -441,8 +721,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 19.13,
@@ -467,8 +747,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.13,
@@ -493,8 +773,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 22.13,
+      "edge": -2.37,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "line": 24.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 45.2,
+      "standard_line": 27.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.13,
@@ -519,8 +825,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.94,
@@ -545,8 +851,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 5.94,
+      "edge": -0.56,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "Rebounds",
+      "line": 6.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 45.7,
+      "standard_line": 8.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.94,
@@ -571,8 +903,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.94,
@@ -596,8 +928,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.94,
+      "edge": -1.56,
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "position": "Center",
+      "opponent": "LVA",
+      "stat": "Rebs+Asts",
+      "line": 10.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 42.6,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 26.7,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 0.55,
@@ -621,8 +978,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 0.55,
+      "edge": 0.05,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 55,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.41,
@@ -647,8 +1029,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.41,
+      "edge": 0.91,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Assists",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 68.2,
+      "standard_line": 3.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.41,
@@ -673,8 +1081,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.01,
@@ -699,8 +1107,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 22.01,
+      "edge": 4.51,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 17.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62.9,
+      "standard_line": 23.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.01,
@@ -725,8 +1159,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 25.42,
@@ -751,8 +1185,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 25.42,
+      "edge": 5.92,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Asts",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 65.2,
+      "standard_line": 27,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 25.42,
@@ -777,8 +1237,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.95,
@@ -803,8 +1263,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 30.95,
+      "edge": 1.45,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs",
+      "line": 29.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 52.5,
+      "standard_line": 33,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.95,
@@ -829,8 +1315,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.36,
@@ -855,8 +1341,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 34.36,
+      "edge": 4.86,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "line": 29.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 58.2,
+      "standard_line": 37,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.36,
@@ -881,8 +1393,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.94,
@@ -907,8 +1419,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.94,
+      "edge": 2.44,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Rebounds",
+      "line": 6.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 68.8,
+      "standard_line": 9.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.94,
@@ -933,8 +1471,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.35,
@@ -959,8 +1497,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.35,
+      "edge": 0.85,
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Rebs+Asts",
+      "line": 11.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 53.7,
+      "standard_line": 13.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 32.1,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.35,
@@ -985,8 +1549,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.82,
@@ -1010,8 +1574,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.82,
+      "edge": 1.32,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 94,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.1,
@@ -1035,8 +1624,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 7.1,
+      "edge": 0.6,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Assists",
+      "line": 6.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 54.6,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.74,
@@ -1061,8 +1675,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 22.74,
+      "edge": 6.24,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 16.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 68.9,
+      "standard_line": 22.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.74,
@@ -1087,8 +1727,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 29.84,
@@ -1113,8 +1753,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 29.84,
+      "edge": 5.34,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Pts+Asts",
+      "line": 24.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 60.9,
+      "standard_line": 32,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 29.84,
@@ -1139,8 +1805,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 27.36,
@@ -1165,8 +1831,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.46,
@@ -1191,8 +1857,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 34.46,
+      "edge": 4.96,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "line": 29.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 58.4,
+      "standard_line": 36.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 34.46,
@@ -1217,8 +1909,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.62,
@@ -1242,8 +1934,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.62,
+      "edge": 2.12,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 92.4,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 11.72,
@@ -1268,8 +1985,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 11.72,
+      "edge": -0.78,
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Rebs+Asts",
+      "line": 12.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 46.9,
+      "standard_line": 13.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 32.9,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 11.72,
@@ -1294,8 +2037,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.09,
@@ -1319,8 +2062,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.09,
+      "edge": 0.59,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 109,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 1,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.07,
@@ -1345,8 +2113,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 5.07,
+      "edge": 0.57,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Assists",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 56.3,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.07,
@@ -1371,8 +2165,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.3,
@@ -1397,8 +2191,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.3,
+      "edge": 4.8,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Points",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 82,
+      "standard_line": 12.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.3,
@@ -1423,8 +2243,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 17.37,
@@ -1448,8 +2268,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.56,
@@ -1474,8 +2294,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 15.56,
+      "edge": 1.06,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Pts+Rebs",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 53.7,
+      "standard_line": 15.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.56,
@@ -1500,8 +2346,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 20.63,
@@ -1526,8 +2372,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 20.63,
+      "edge": 0.13,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "line": 20.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 50.3,
+      "standard_line": 22.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 20.63,
@@ -1552,8 +2424,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.26,
@@ -1577,8 +2449,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.26,
+      "edge": 1.76,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Rebounds",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 108.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.33,
@@ -1602,8 +2499,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.33,
+      "edge": -0.17,
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Rebs+Asts",
+      "line": 8.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 49,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 30.6,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 0.99,
@@ -1627,8 +2549,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 0.99,
+      "edge": 0.49,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 99,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 6.32,
@@ -1652,8 +2599,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 6.32,
+      "edge": 3.82,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Assists",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 126.4,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.34,
@@ -1677,8 +2649,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.34,
+      "edge": 2.84,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Points",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 68.9,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.66,
@@ -1703,8 +2700,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 16.66,
+      "edge": 2.16,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 57.4,
+      "standard_line": 16,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.66,
@@ -1729,8 +2752,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 14.03,
@@ -1755,8 +2778,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 14.03,
+      "edge": -0.47,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 48.4,
+      "standard_line": 16,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 14.03,
@@ -1781,8 +2830,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 20.35,
@@ -1807,8 +2856,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 20.35,
+      "edge": 5.85,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 70.2,
+      "standard_line": 20.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 20.35,
@@ -1833,8 +2908,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.69,
@@ -1858,8 +2933,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.69,
+      "edge": 1.19,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 73.8,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.01,
@@ -1883,8 +2983,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.01,
+      "edge": 2.51,
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebs+Asts",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 66.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 27.1,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.87,
@@ -1908,8 +3033,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.87,
+      "edge": 0.37,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62.3,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 1,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.34,
@@ -1934,8 +3084,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.34,
+      "edge": 3.84,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Assists",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 92.7,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.34,
@@ -1960,8 +3136,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 17.67,
@@ -1986,8 +3162,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 17.67,
+      "edge": 3.17,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Points",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 60.9,
+      "standard_line": 21,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 17.67,
@@ -2012,8 +3214,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.01,
@@ -2038,8 +3240,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.01,
+      "edge": 6.51,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Pts+Asts",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 66.7,
+      "standard_line": 27.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.01,
@@ -2064,8 +3292,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.05,
@@ -2090,8 +3318,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 22.05,
+      "edge": 2.55,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Pts+Rebs",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 56.5,
+      "standard_line": 25.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.05,
@@ -2116,8 +3370,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.39,
@@ -2142,8 +3396,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 30.39,
+      "edge": 5.89,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "line": 24.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62,
+      "standard_line": 32,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.39,
@@ -2168,8 +3448,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.38,
@@ -2193,8 +3473,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.38,
+      "edge": 1.88,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 87.6,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.72,
@@ -2218,8 +3523,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.72,
+      "edge": 5.22,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Rebs+Asts",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 84.8,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 31.9,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.06,
@@ -2244,8 +3574,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.06,
+      "edge": 1.56,
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 206,
+      "standard_line": 1.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 1,
+      "avg_mins": 22.3,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.06,
@@ -2270,8 +3626,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.6,
@@ -2296,8 +3652,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.6,
+      "edge": 6.1,
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "IND",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 117.8,
+      "standard_line": 8.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 22.3,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.6,
@@ -2322,8 +3704,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.38,
@@ -2347,8 +3729,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.78,
@@ -2373,8 +3755,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.78,
@@ -2399,8 +3781,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.73,
@@ -2424,8 +3806,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.73,
+      "edge": 0.23,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 57.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.68,
@@ -2450,8 +3857,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.68,
+      "edge": 0.18,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 56,
+      "standard_line": 2.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.68,
@@ -2476,8 +3909,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.4,
@@ -2502,8 +3935,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 13.4,
+      "edge": 4.9,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 8.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 78.8,
+      "standard_line": 13,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.4,
@@ -2528,8 +3987,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.08,
@@ -2554,8 +4013,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 15.08,
+      "edge": 0.58,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Pts+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 52,
+      "standard_line": 16,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.08,
@@ -2580,8 +4065,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 24.01,
@@ -2606,8 +4091,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 24.01,
+      "edge": 4.51,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 61.6,
+      "standard_line": 23,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 24.01,
@@ -2632,8 +4143,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 25.69,
@@ -2658,8 +4169,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 25.69,
+      "edge": 6.19,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 65.9,
+      "standard_line": 25.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 25.69,
@@ -2684,8 +4221,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.61,
@@ -2710,8 +4247,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.61,
+      "edge": 4.11,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Rebounds",
+      "line": 6.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 81.6,
+      "standard_line": 9.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 13,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.61,
@@ -2736,8 +4299,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.29,
@@ -2762,8 +4325,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.29,
+      "edge": 2.79,
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "position": "Center",
+      "opponent": "MIN",
+      "stat": "Rebs+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 64.7,
+      "standard_line": 12,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 25.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.29,
@@ -2788,8 +4377,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.4,
@@ -2813,8 +4402,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.4,
+      "edge": 1.9,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 113.3,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.42,
@@ -2838,8 +4452,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.42,
+      "edge": 1.92,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 114,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.3,
@@ -2864,8 +4503,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 16.3,
+      "edge": 4.8,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Points",
+      "line": 11.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 70.9,
+      "standard_line": 16.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.3,
@@ -2890,8 +4555,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 19.72,
@@ -2916,8 +4581,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 19.72,
+      "edge": 5.22,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 68,
+      "standard_line": 19.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 19.72,
@@ -2942,8 +4633,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 18.55,
@@ -2968,8 +4659,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 18.55,
+      "edge": 4.05,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 64,
+      "standard_line": 19.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 18.55,
@@ -2994,8 +4711,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.97,
@@ -3020,8 +4737,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 21.97,
+      "edge": 7.47,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 75.8,
+      "standard_line": 22,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.97,
@@ -3046,8 +4789,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.25,
@@ -3071,8 +4814,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.25,
+      "edge": 0.75,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebounds",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 75,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.67,
@@ -3096,8 +4864,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 5.67,
+      "edge": 1.17,
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebs+Asts",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 63,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 30.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.1,
@@ -3121,8 +4914,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.1,
+      "edge": 0.6,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "3-PT Made",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.53,
@@ -3146,8 +4964,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.53,
+      "edge": 1.03,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 84.3,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.22,
@@ -3172,8 +5015,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 22.22,
+      "edge": 3.72,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 18.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 60.1,
+      "standard_line": 25,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 22.22,
@@ -3198,8 +5067,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 24.75,
@@ -3224,8 +5093,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 24.01,
@@ -3250,8 +5119,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 24.01,
+      "edge": 4.51,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Pts+Rebs",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 61.6,
+      "standard_line": 27,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 24.01,
@@ -3276,8 +5171,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.54,
@@ -3302,8 +5197,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.54,
+      "edge": -1.96,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "line": 28.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 46.6,
+      "standard_line": 30,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.54,
@@ -3328,8 +5249,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.79,
@@ -3353,8 +5274,59 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.79,
+      "edge": 0.29,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Rebounds",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 59.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.32,
+      "edge": -0.18,
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Rebs+Asts",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 48,
+      "standard_line": 5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 31.1,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.32,
@@ -3379,8 +5351,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.17,
@@ -3405,8 +5377,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.17,
+      "edge": 0.67,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 117,
+      "standard_line": 1.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.17,
@@ -3431,8 +5429,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.65,
@@ -3456,8 +5454,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.65,
+      "edge": 1.15,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 88.3,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.99,
@@ -3482,8 +5505,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.99,
+      "edge": 0.49,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 55.4,
+      "standard_line": 8.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.99,
@@ -3508,8 +5557,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.64,
@@ -3534,8 +5583,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 7.64,
+      "edge": -1.86,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 40.2,
+      "standard_line": 11,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.64,
@@ -3560,8 +5635,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.37,
@@ -3586,8 +5661,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.37,
+      "edge": -1.13,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 44.1,
+      "standard_line": 12,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.37,
@@ -3612,8 +5713,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 11.02,
@@ -3638,8 +5739,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 11.02,
+      "edge": 1.52,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 58,
+      "standard_line": 14.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 11.02,
@@ -3664,8 +5791,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.38,
@@ -3690,8 +5817,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.38,
+      "edge": 1.88,
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "position": "Forward",
+      "opponent": "MIN",
+      "stat": "Rebounds",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 112.7,
+      "standard_line": 3.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 3,
+      "avg_mins": 29.5,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.38,
@@ -3716,8 +5869,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 6.03,
@@ -3742,8 +5895,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.2,
@@ -3768,8 +5921,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.2,
@@ -3794,8 +5947,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 6.7,
@@ -3820,8 +5973,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.5,
@@ -3845,8 +5998,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.5,
+      "edge": 0.0,
+      "player": "Lexie Hull",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 50,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 16.4,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 9.21,
@@ -3871,8 +6049,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 9.21,
+      "edge": 4.71,
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "position": "Forward",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 102.3,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 24.6,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 9.21,
@@ -3897,8 +6101,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.16,
@@ -3922,8 +6126,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 6.95,
@@ -3948,8 +6152,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 6.95,
+      "edge": 2.45,
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "position": "Forward",
+      "opponent": "LVA",
+      "stat": "Rebounds",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 77.2,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 13,
+      "avg_mins": 24.6,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 6.95,
@@ -3974,8 +6204,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.55,
@@ -3999,8 +6229,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.55,
+      "edge": 1.05,
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 155,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 12,
+      "avg_mins": 16.2,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.36,
@@ -4025,8 +6280,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.36,
+      "edge": 0.86,
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 3.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 62.3,
+      "standard_line": 4.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 16.2,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.36,
@@ -4051,8 +6332,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.59,
@@ -4076,8 +6357,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.59,
+      "edge": 2.09,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 119.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 17.8,
@@ -4102,8 +6408,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 17.8,
+      "edge": 11.3,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Points",
+      "line": 6.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 136.9,
+      "standard_line": 11,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 17.8,
@@ -4128,8 +6460,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.39,
@@ -4154,8 +6486,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 21.39,
+      "edge": 11.89,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Pts+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 112.6,
+      "standard_line": 13.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.39,
@@ -4180,8 +6538,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.77,
@@ -4206,8 +6564,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.77,
+      "edge": 12.27,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 92.3,
+      "standard_line": 17.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.77,
@@ -4232,8 +6616,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.36,
@@ -4258,8 +6642,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 30.36,
+      "edge": 11.86,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "line": 18.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 82.1,
+      "standard_line": 20.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 30.36,
@@ -4284,8 +6694,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.97,
@@ -4310,8 +6720,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.97,
+      "edge": 4.47,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Rebounds",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 99.7,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 2,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.97,
@@ -4336,8 +6772,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.56,
@@ -4361,8 +6797,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.56,
+      "edge": 5.06,
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "position": "Forward",
+      "opponent": "NYL",
+      "stat": "Rebs+Asts",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 83.7,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 26.5,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.3,
@@ -4386,8 +6847,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.3,
+      "edge": 0.8,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 130,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.94,
@@ -4411,8 +6897,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.94,
+      "edge": 0.44,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Assists",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 54.9,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.37,
@@ -4437,8 +6948,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 21.37,
+      "edge": 8.87,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Points",
+      "line": 12.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 85.5,
+      "standard_line": 18,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 21.37,
@@ -4463,8 +7000,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.31,
@@ -4489,8 +7026,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.31,
+      "edge": 6.81,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Asts",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 67.5,
+      "standard_line": 25,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.31,
@@ -4515,8 +7078,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.48,
@@ -4541,8 +7104,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 26.48,
+      "edge": 6.98,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 67.9,
+      "standard_line": 23,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 26.48,
@@ -4567,8 +7156,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 31.42,
@@ -4593,8 +7182,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 31.42,
+      "edge": 6.92,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "line": 24.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 64.1,
+      "standard_line": 30,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 31.42,
@@ -4619,8 +7234,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 5.11,
@@ -4644,8 +7259,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 5.11,
+      "edge": 1.61,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebounds",
+      "line": 3.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 73,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.05,
@@ -4669,8 +7309,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.05,
+      "edge": 0.55,
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "position": "Guard",
+      "opponent": "NYL",
+      "stat": "Rebs+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 52.9,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 31.9,
+      "dvp_opponent": "NYL",
+      "spread": -2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 0.64,
@@ -4695,8 +7360,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 0.64,
@@ -4721,8 +7386,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 3.04,
@@ -4746,8 +7411,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 3.04,
+      "edge": 0.54,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Assists",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 60.8,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.97,
@@ -4772,8 +7462,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.97,
+      "edge": 4.47,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 99.7,
+      "standard_line": 8,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.97,
@@ -4798,8 +7514,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.01,
@@ -4824,8 +7540,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 12.01,
+      "edge": 2.51,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Asts",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 63.2,
+      "standard_line": 11.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 12.01,
@@ -4850,8 +7592,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.39,
@@ -4876,8 +7618,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 13.39,
+      "edge": 3.89,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs",
+      "line": 9.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 70.5,
+      "standard_line": 11.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.39,
@@ -4902,8 +7670,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.43,
@@ -4928,8 +7696,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 16.43,
+      "edge": 3.93,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "line": 12.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 65.7,
+      "standard_line": 15,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 16.43,
@@ -4954,8 +7748,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.42,
@@ -4980,8 +7774,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.42,
+      "edge": 2.92,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Rebounds",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 147.3,
+      "standard_line": 3.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.42,
@@ -5006,8 +7826,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.46,
@@ -5031,8 +7851,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 7.46,
+      "edge": 2.96,
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Rebs+Asts",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 82.9,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 22.9,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.65,
@@ -5056,8 +7901,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.65,
+      "edge": 0.15,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 55,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 12,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.84,
@@ -5081,8 +7951,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.84,
+      "edge": 1.34,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Assists",
+      "line": 3.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 69.1,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 10,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.7,
@@ -5107,8 +8002,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.7,
+      "edge": 0.2,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Points",
+      "line": 10.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 51,
+      "standard_line": 15.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 4,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 10.7,
@@ -5133,8 +8054,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.54,
@@ -5159,8 +8080,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 15.54,
+      "edge": 1.04,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Asts",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 53.6,
+      "standard_line": 21,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 15.54,
@@ -5185,8 +8132,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.58,
@@ -5211,8 +8158,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 13.58,
+      "edge": -0.92,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs",
+      "line": 14.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 46.8,
+      "standard_line": 19.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 5,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 13.58,
@@ -5237,8 +8210,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 18.42,
@@ -5263,8 +8236,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 18.42,
+      "edge": -1.08,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "line": 19.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 47.2,
+      "standard_line": 25.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 18.42,
@@ -5289,8 +8288,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.88,
@@ -5314,8 +8313,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.88,
+      "edge": 0.38,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 57.6,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 6,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 7.72,
@@ -5339,8 +8363,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 7.72,
+      "edge": 0.22,
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "MIN",
+      "stat": "Rebs+Asts",
+      "line": 7.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 51.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 8,
+      "avg_mins": 28.3,
+      "dvp_opponent": "MIN",
+      "spread": 2.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.1,
@@ -5364,8 +8413,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 1.1,
+      "edge": 0.6,
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "3-PT Made",
+      "line": 0.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 110,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 9,
+      "avg_mins": 20,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.46,
@@ -5390,8 +8464,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 4.46,
+      "edge": -0.04,
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 49.6,
+      "standard_line": 6.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 20,
+      "dvp_opponent": "LVA",
+      "spread": -1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 4.46,
@@ -5416,8 +8516,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 1.83,
@@ -5441,8 +8541,8 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.25,
@@ -5467,8 +8567,34 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 8.25,
+      "edge": 3.75,
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "position": "Forward",
+      "opponent": "IND",
+      "stat": "Points",
+      "line": 4.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 91.7,
+      "standard_line": 5.5,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 15,
+      "avg_mins": 19.2,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 8.25,
@@ -5493,8 +8619,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 10.95,
+      "edge": 2.45,
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "position": "Forward",
+      "opponent": "IND",
+      "stat": "Pts+Rebs",
+      "line": 8.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 64.4,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 11,
+      "avg_mins": 19.2,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     },
     {
       "projection": 2.7,
@@ -5518,8 +8669,33 @@
       "start_time_utc": "2026-09-29T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-09-28T01:19:17+00:00",
-      "last_pregame_frozen_at": "2026-09-28T01:19:17+00:00",
-      "source_commit": "a66cd1d51aa4"
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
+    },
+    {
+      "projection": 2.7,
+      "edge": 0.2,
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "position": "Forward",
+      "opponent": "IND",
+      "stat": "Rebounds",
+      "line": 2.5,
+      "odds_type": "goblin",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 54,
+      "game_date_iso": "2026-09-29",
+      "effective_dvp_factor": 7,
+      "avg_mins": 19.2,
+      "dvp_opponent": "IND",
+      "spread": 1.5,
+      "projection_schema": 2,
+      "start_time_utc": "2026-09-29T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-09-28T01:31:26+00:00",
+      "last_pregame_frozen_at": "2026-09-28T01:31:26+00:00",
+      "source_commit": "048a9721039a"
     }
   ]
 }
