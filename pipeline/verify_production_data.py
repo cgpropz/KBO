@@ -15,11 +15,17 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 import requests
+
+_PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
+if _PIPELINE_DIR not in sys.path:
+	sys.path.insert(0, _PIPELINE_DIR)
+from snapshot_consistency import age_timestamp, skew_anchor  # noqa: E402
 
 
 DEFAULT_BASE_URL = os.environ.get(
@@ -279,7 +285,7 @@ def main() -> int:
 		"--max-skew-minutes",
 		type=float,
 		default=180.0,
-		help="Warn/fail if core files differ by more than this timestamp skew",
+		help="Warn/fail if core files differ by more than this timestamp skew. Do not raise this to hide a split publish.",
 	)
 	args = parser.parse_args()
 
@@ -300,6 +306,7 @@ def main() -> int:
 	protection_blocked = False
 	results: Dict[str, FetchResult] = {}
 	timestamps: Dict[str, datetime] = {}
+	skew_timestamps: Dict[str, datetime] = {}
 
 	for label, path in ENDPOINTS.items():
 		url = f"{base_url}{path}"
@@ -317,11 +324,17 @@ def main() -> int:
 				failures.append(f"{label} fetch failed: {result.error} ({url})")
 			continue
 
-		ts = infer_payload_timestamp(result.json_data)
+		# Age stays on generated_at so a cohort stamp cannot hide a stale build.
+		# Skew uses published_at when this file was part of a full cohort, and
+		# falls back to generated_at otherwise. The 180 minute limit is unchanged.
+		ts = age_timestamp(result.json_data, result.api_updated_at)
 		if ts is None:
-			ts = parse_iso_ts(getattr(result, "api_updated_at", None))
+			ts = infer_payload_timestamp(result.json_data)
 		if ts is not None:
 			timestamps[label] = ts
+		skew_ts = skew_anchor(result.json_data, result.api_updated_at)
+		if skew_ts is not None:
+			skew_timestamps[label] = skew_ts
 
 	for path in MUST_NOT_BE_PUBLIC:
 		leak = check_not_public(f"{base_url}{path}", headers)
@@ -387,7 +400,7 @@ def main() -> int:
 	else:
 		warnings.append("no snapshot timestamps found in payloads (generated_at/updated_at/last_updated)")
 
-	core_ts = {name: timestamps[name] for name in CORE_CORRELATED if name in timestamps}
+	core_ts = {name: skew_timestamps[name] for name in CORE_CORRELATED if name in skew_timestamps}
 	if len(core_ts) >= 2:
 		min_ts = min(core_ts.values())
 		max_ts = max(core_ts.values())
@@ -416,10 +429,17 @@ def main() -> int:
 		for msg in warnings:
 			print(f"- {msg}")
 
-	if timestamps:
+	if timestamps or skew_timestamps:
 		print("\nSnapshot timestamps (UTC):")
-		for label in sorted(timestamps):
-			print(f"- {label}: {timestamps[label].isoformat()}")
+		for label in sorted(set(timestamps) | set(skew_timestamps)):
+			age = timestamps.get(label)
+			skew = skew_timestamps.get(label)
+			age_text = age.isoformat() if age else "missing"
+			if skew is not None and age is not None and abs((skew - age).total_seconds()) > 1:
+				print(f"- {label}: {skew.isoformat()} (generated {age_text}; skew uses publish cohort)")
+			else:
+				shown = skew or age
+				print(f"- {label}: {shown.isoformat() if shown else 'missing'}")
 
 	if failures:
 		return 1

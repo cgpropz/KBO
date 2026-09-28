@@ -9,6 +9,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+from snapshot_consistency import strikeout_pair_mismatches
+
 
 BASE = Path(__file__).resolve().parents[1]
 PUBLIC = BASE / "kbo-props-ui" / "public" / "data"
@@ -143,20 +145,6 @@ def main() -> int:
         if missing_ctx:
             failures.append(f"pitcher rankings missing opponent context for {len(missing_ctx)} rows")
 
-    matchup_pairs = set()
-    matchup_opponents_by_team = {}
-    for matchup in matchup_data.get("matchups", []) if isinstance(matchup_data, dict) else []:
-        if not isinstance(matchup, dict):
-            continue
-        away = canonical_team(matchup.get("away"))
-        home = canonical_team(matchup.get("home"))
-        if not away or not home:
-            continue
-        matchup_pairs.add((away, home))
-        matchup_pairs.add((home, away))
-        matchup_opponents_by_team.setdefault(away, set()).add(home)
-        matchup_opponents_by_team.setdefault(home, set()).add(away)
-
     projections = strikeout_data.get("projections", []) if isinstance(strikeout_data, dict) else []
     market_status = strikeout_data.get("market_status") if isinstance(strikeout_data, dict) else None
     if not isinstance(projections, list) or (not projections and market_status != "no_current_pitcher_markets"):
@@ -164,22 +152,14 @@ def main() -> int:
     elif not projections and market_status == "no_current_pitcher_markets":
         warnings.append("strikeout_projections.json has no current pitcher markets")
     else:
-        bad_pairs = []
+        bad_pairs = strikeout_pair_mismatches(strikeout_data, matchup_data)
         missing_opp_stats = []
         for row in projections:
             if not isinstance(row, dict):
                 continue
-            team = canonical_team(row.get("team"))
             opponent = canonical_team(row.get("opponent"))
-            if not team or not opponent:
-                bad_pairs.append(f"{row.get('name', '<unknown>')} ({team or '?'} vs {opponent or '?'})")
-                continue
-            if matchup_pairs and (team, opponent) not in matchup_pairs:
-                allowed = sorted(matchup_opponents_by_team.get(team, set()))
-                bad_pairs.append(
-                    f"{row.get('name', '<unknown>')} ({team} vs {opponent}; expected one of {allowed or ['<none>']})"
-                )
-            if isinstance(team_stats, dict) and opponent not in team_stats:
+            team = canonical_team(row.get("team"))
+            if isinstance(team_stats, dict) and opponent and opponent not in team_stats:
                 missing_opp_stats.append(f"{row.get('name', '<unknown>')} ({team} vs {opponent})")
 
         if bad_pairs:

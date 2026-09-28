@@ -31,7 +31,7 @@ import time
 import shutil
 import json
 import csv
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import contextmanager
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +40,18 @@ PYTHON = PROJECT_PYTHON if os.path.exists(PROJECT_PYTHON) else sys.executable
 PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 LOCK_DIR = os.path.join(BASE, ".locks")
 PIPELINE_LOCK = os.path.join(LOCK_DIR, "refresh_pipeline.lock")
+PIPELINE_DIR = os.path.join(BASE, "pipeline")
+if PIPELINE_DIR not in sys.path:
+    sys.path.insert(0, PIPELINE_DIR)
+
+from snapshot_consistency import (  # noqa: E402
+    COHORT_FILENAMES,
+    ODDS_FETCH_STEP,
+    generated_timestamp,
+    publish_gate_errors,
+    strikeout_pair_mismatches,
+    with_published_at,
+)
 
 
 def ensure_project_python():
@@ -203,7 +215,11 @@ def pipeline_lock(lock_path, stale_seconds=3 * 60 * 60):
 
 def push_snapshots_to_supabase(skip_flags):
     """
-    Publish all data snapshots (except prizepicks_props) to Supabase.
+    Publish every data snapshot in one cohort.
+
+    Called only after the publish gate has accepted the set. A cohort stamp
+    is written first so the strict skew check sees one publish, not the
+    individual generation clocks.
     """
     if "--skip-supabase" in skip_flags:
         print("⏭  Skipping Supabase publish (--skip-supabase)")
@@ -229,7 +245,9 @@ def push_snapshots_to_supabase(skip_flags):
 
     errors = []
     client = create_client(supabase_url, service_role_key)
-    print("\n📡 Publishing snapshots to Supabase...")
+    published_at = datetime.now(timezone.utc).isoformat()
+    print(f"\n📡 Publishing snapshots to Supabase (cohort {published_at})...")
+    _stamp_publish_cohort(published_at)
 
     for filename, table in DATA_SNAPSHOTS:
         file_path = os.path.join(PUBLIC_DATA, filename)
@@ -251,6 +269,69 @@ def push_snapshots_to_supabase(skip_flags):
             errors.append(msg)
 
     return errors
+
+
+def _read_json(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _stamp_publish_cohort(published_at):
+    """Write one published_at onto every dict snapshot in this publish."""
+    for filename in COHORT_FILENAMES:
+        path = os.path.join(PUBLIC_DATA, filename)
+        payload = _read_json(path)
+        stamped = with_published_at(payload, published_at)
+        if stamped is payload or not isinstance(stamped, dict):
+            continue
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(stamped, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        print(f"  • stamped {filename}")
+
+
+def last_good_odds_available():
+    payload = _read_json(os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.json"))
+    if isinstance(payload, list):
+        return len(payload) > 0
+    if isinstance(payload, dict):
+        return len(payload) > 0
+    return False
+
+
+def collect_generated_times():
+    """Generation clocks for the core files, before any cohort stamp."""
+    files = {
+        "strikeout_projections": "strikeout_projections.json",
+        "batter_projections": "batter_projections.json",
+        "matchup_data": "matchup_data.json",
+    }
+    times = {}
+    payloads = {}
+    for label, filename in files.items():
+        payload = _read_json(os.path.join(PUBLIC_DATA, filename))
+        payloads[label] = payload
+        times[label] = generated_timestamp(payload)
+    rankings_meta = _read_json(os.path.join(PUBLIC_DATA, "pitcher_rankings_meta.json"))
+    times["pitcher_rankings"] = generated_timestamp(rankings_meta)
+    return times, payloads
+
+
+def evaluate_publish_gate(failed):
+    times, payloads = collect_generated_times()
+    mismatches = strikeout_pair_mismatches(
+        payloads.get("strikeout_projections"),
+        payloads.get("matchup_data"),
+    )
+    return publish_gate_errors(
+        failed=list(failed),
+        has_last_good_lines=last_good_odds_available(),
+        generated_times=times,
+        pair_mismatches=mismatches,
+    )
 
 
 def parse_any_date(value):
@@ -384,9 +465,18 @@ def main():
         failed.extend(summarize_gamelogs())
         failed.extend(validate_ui_snapshots())
 
-        if failed:
-            print("\n⚠ Skipping Supabase publish because one or more pipeline steps failed")
+        gate_errors = evaluate_publish_gate(failed)
+        if gate_errors:
+            print("\n⚠ Skipping Supabase publish so the live site keeps the last good snapshot set")
+            for msg in gate_errors:
+                print(f"   - {msg}")
+            failed.extend(gate_errors)
         else:
+            if ODDS_FETCH_STEP in failed:
+                print(
+                    "\n⚠ PrizePicks odds fetch failed; publishing the full snapshot set "
+                    "on the last good lines"
+                )
             failed.extend(push_snapshots_to_supabase(skip_flags))
 
         print("\n" + "=" * 50)
