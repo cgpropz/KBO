@@ -3,7 +3,7 @@
   "slate_date": "09/27/2026",
   "slate_date_iso": "2026-09-27",
   "timezone_basis": "KST",
-  "graded_at": "2026-09-27T23:14:04.731723+00:00",
+  "graded_at": "2026-09-28T19:07:12.772299+00:00",
   "props": [
     {
       "projection": 1.55,
@@ -49,7 +49,7 @@
       "actual": 3,
       "result": "OVER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731357+00:00"
+      "graded_at": "2026-09-28T19:07:12.771910+00:00"
     },
     {
       "projection": 5.17,
@@ -87,9 +87,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731380+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.771929+00:00"
     },
     {
       "projection": 4.66,
@@ -129,9 +130,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731387+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.771936+00:00"
     },
     {
       "projection": 16.5,
@@ -170,9 +172,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731391+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.771940+00:00"
     },
     {
       "projection": 2.12,
@@ -214,9 +217,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731396+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.771944+00:00"
     },
     {
       "projection": 2.28,
@@ -258,9 +262,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731400+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.771947+00:00"
     },
     {
       "projection": 9.72,
@@ -303,9 +308,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731404+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.771951+00:00"
     },
     {
       "projection": 2.81,
@@ -342,10 +348,10 @@
       "first_frozen_at": "2026-09-26T18:41:46+00:00",
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
-      "actual": null,
-      "result": "DNP",
-      "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731409+00:00"
+      "actual": 3,
+      "result": "UNDER",
+      "model_result": "HIT",
+      "graded_at": "2026-09-28T19:07:12.771962+00:00"
     },
     {
       "projection": 3.74,
@@ -384,10 +390,10 @@
       "first_frozen_at": "2026-09-27T01:06:44+00:00",
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
-      "actual": null,
-      "result": "DNP",
+      "actual": 4,
+      "result": "UNDER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731413+00:00"
+      "graded_at": "2026-09-28T19:07:12.771970+00:00"
     },
     {
       "projection": 3.74,
@@ -427,10 +433,10 @@
       "first_frozen_at": "2026-09-26T18:41:46+00:00",
       "last_pregame_frozen_at": "2026-09-26T23:42:20+00:00",
       "source_commit": "b44528bc4c1f",
-      "actual": null,
-      "result": "DNP",
-      "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731417+00:00"
+      "actual": 4,
+      "result": "UNDER",
+      "model_result": "HIT",
+      "graded_at": "2026-09-28T19:07:12.771977+00:00"
     },
     {
       "projection": 12.97,
@@ -468,10 +474,10 @@
       "first_frozen_at": "2026-09-26T18:41:46+00:00",
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
-      "actual": null,
-      "result": "DNP",
+      "actual": 18,
+      "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731422+00:00"
+      "graded_at": "2026-09-28T19:07:12.771983+00:00"
     },
     {
       "projection": 1.64,
@@ -517,7 +523,7 @@
       "actual": 4,
       "result": "OVER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731426+00:00"
+      "graded_at": "2026-09-28T19:07:12.771990+00:00"
     },
     {
       "projection": 4.26,
@@ -555,9 +561,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731430+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.771994+00:00"
     },
     {
       "projection": 5.54,
@@ -598,9 +605,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731434+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.771997+00:00"
     },
     {
       "projection": 16.27,
@@ -640,9 +648,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731438+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772000+00:00"
     },
     {
       "projection": 2.0,
@@ -683,7 +692,7 @@
       "actual": null,
       "result": "DNP",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731442+00:00"
+      "graded_at": "2026-09-28T19:07:12.772008+00:00"
     },
     {
       "projection": 6.0,
@@ -722,9 +731,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731446+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772011+00:00"
     },
     {
       "projection": 4.54,
@@ -764,7 +774,7 @@
       "actual": 6,
       "result": "OVER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731449+00:00"
+      "graded_at": "2026-09-28T19:07:12.772018+00:00"
     },
     {
       "projection": 4.0,
@@ -807,7 +817,7 @@
       "actual": 1,
       "result": "UNDER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731453+00:00"
+      "graded_at": "2026-09-28T19:07:12.772024+00:00"
     },
     {
       "projection": 11.91,
@@ -849,7 +859,7 @@
       "actual": 6,
       "result": "UNDER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731457+00:00"
+      "graded_at": "2026-09-28T19:07:12.772030+00:00"
     },
     {
       "projection": 2.64,
@@ -895,7 +905,7 @@
       "actual": 8,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731460+00:00"
+      "graded_at": "2026-09-28T19:07:12.772036+00:00"
     },
     {
       "projection": 8.99,
@@ -941,7 +951,7 @@
       "actual": 21.0,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731464+00:00"
+      "graded_at": "2026-09-28T19:07:12.772042+00:00"
     },
     {
       "projection": 2.7,
@@ -986,7 +996,7 @@
       "actual": 1,
       "result": "UNDER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731467+00:00"
+      "graded_at": "2026-09-28T19:07:12.772048+00:00"
     },
     {
       "projection": 5.76,
@@ -1025,7 +1035,7 @@
       "actual": 10,
       "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731472+00:00"
+      "graded_at": "2026-09-28T19:07:12.772054+00:00"
     },
     {
       "projection": 4.2,
@@ -1067,7 +1077,7 @@
       "actual": 5,
       "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731475+00:00"
+      "graded_at": "2026-09-28T19:07:12.772060+00:00"
     },
     {
       "projection": 17.38,
@@ -1109,7 +1119,7 @@
       "actual": 18,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731478+00:00"
+      "graded_at": "2026-09-28T19:07:12.772065+00:00"
     },
     {
       "projection": 3.6,
@@ -1155,7 +1165,7 @@
       "actual": 2,
       "result": "PUSH",
       "model_result": "PUSH",
-      "graded_at": "2026-09-27T23:14:04.731481+00:00"
+      "graded_at": "2026-09-28T19:07:12.772071+00:00"
     },
     {
       "projection": 2.68,
@@ -1199,9 +1209,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731485+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772074+00:00"
     },
     {
       "projection": 7.97,
@@ -1245,9 +1256,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731488+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772077+00:00"
     },
     {
       "projection": 3.85,
@@ -1286,9 +1298,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731492+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772080+00:00"
     },
     {
       "projection": 4.02,
@@ -1334,7 +1347,7 @@
       "actual": 0,
       "result": "UNDER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731495+00:00"
+      "graded_at": "2026-09-28T19:07:12.772086+00:00"
     },
     {
       "projection": 7.3,
@@ -1372,9 +1385,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731499+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772089+00:00"
     },
     {
       "projection": 3.64,
@@ -1414,9 +1428,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731502+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772092+00:00"
     },
     {
       "projection": 19.96,
@@ -1456,9 +1471,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731506+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772095+00:00"
     },
     {
       "projection": 5.32,
@@ -1495,9 +1511,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731509+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772098+00:00"
     },
     {
       "projection": 5.63,
@@ -1538,9 +1555,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731512+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772101+00:00"
     },
     {
       "projection": 17.08,
@@ -1579,9 +1597,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731516+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772104+00:00"
     },
     {
       "projection": 1.45,
@@ -1626,7 +1645,7 @@
       "actual": 0,
       "result": "UNDER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731519+00:00"
+      "graded_at": "2026-09-28T19:07:12.772110+00:00"
     },
     {
       "projection": 2.57,
@@ -1672,7 +1691,7 @@
       "actual": 5,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731522+00:00"
+      "graded_at": "2026-09-28T19:07:12.772116+00:00"
     },
     {
       "projection": 3.43,
@@ -1717,7 +1736,7 @@
       "actual": 4,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731525+00:00"
+      "graded_at": "2026-09-28T19:07:12.772123+00:00"
     },
     {
       "projection": 1.61,
@@ -1760,9 +1779,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731528+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772126+00:00"
     },
     {
       "projection": 2.29,
@@ -1808,7 +1828,7 @@
       "actual": 1,
       "result": "UNDER",
       "model_result": "MISS",
-      "graded_at": "2026-09-27T23:14:04.731532+00:00"
+      "graded_at": "2026-09-28T19:07:12.772132+00:00"
     },
     {
       "projection": 4.76,
@@ -1846,9 +1866,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731536+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772135+00:00"
     },
     {
       "projection": 5.86,
@@ -1888,9 +1909,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731539+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772138+00:00"
     },
     {
       "projection": 21.21,
@@ -1930,9 +1952,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731542+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772142+00:00"
     },
     {
       "projection": 3.79,
@@ -1976,7 +1999,7 @@
       "actual": null,
       "result": "DNP",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731546+00:00"
+      "graded_at": "2026-09-28T19:07:12.772148+00:00"
     },
     {
       "projection": 15.2,
@@ -2020,7 +2043,7 @@
       "actual": null,
       "result": "DNP",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731550+00:00"
+      "graded_at": "2026-09-28T19:07:12.772155+00:00"
     },
     {
       "projection": 5.98,
@@ -2059,7 +2082,7 @@
       "actual": 7,
       "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731553+00:00"
+      "graded_at": "2026-09-28T19:07:12.772161+00:00"
     },
     {
       "projection": 4.4,
@@ -2101,7 +2124,7 @@
       "actual": 8,
       "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731556+00:00"
+      "graded_at": "2026-09-28T19:07:12.772166+00:00"
     },
     {
       "projection": 16.53,
@@ -2142,7 +2165,7 @@
       "actual": 18,
       "result": "OVER",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731559+00:00"
+      "graded_at": "2026-09-28T19:07:12.772172+00:00"
     },
     {
       "projection": 4.08,
@@ -2188,7 +2211,7 @@
       "actual": 2,
       "result": "PUSH",
       "model_result": "PUSH",
-      "graded_at": "2026-09-27T23:14:04.731563+00:00"
+      "graded_at": "2026-09-28T19:07:12.772177+00:00"
     },
     {
       "projection": 2.51,
@@ -2232,9 +2255,10 @@
       "source_commit": "a08868b79ce3",
       "cg_projection": 81,
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731566+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772181+00:00"
     },
     {
       "projection": 2.81,
@@ -2274,9 +2298,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731570+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772184+00:00"
     },
     {
       "projection": 2.16,
@@ -2319,9 +2344,10 @@
       "last_pregame_frozen_at": "2026-09-27T02:06:44+00:00",
       "source_commit": "a08868b79ce3",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731574+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772187+00:00"
     },
     {
       "projection": 2.81,
@@ -2367,7 +2393,7 @@
       "actual": 5,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731577+00:00"
+      "graded_at": "2026-09-28T19:07:12.772196+00:00"
     },
     {
       "projection": 2.88,
@@ -2413,7 +2439,7 @@
       "actual": 4,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731580+00:00"
+      "graded_at": "2026-09-28T19:07:12.772202+00:00"
     },
     {
       "projection": 10.36,
@@ -2459,7 +2485,7 @@
       "actual": 10.0,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731583+00:00"
+      "graded_at": "2026-09-28T19:07:12.772207+00:00"
     },
     {
       "projection": 1.58,
@@ -2502,9 +2528,10 @@
       "last_pregame_frozen_at": "2026-09-26T11:09:49+00:00",
       "source_commit": "3e6c77fbf49b",
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731586+00:00"
+      "void_reason": "not_on_slate",
+      "graded_at": "2026-09-28T19:07:12.772211+00:00"
     },
     {
       "projection": 1.66,
@@ -2547,9 +2574,10 @@
       "source_commit": "a08868b79ce3",
       "cg_projection": 85,
       "actual": null,
-      "result": "DNP",
+      "result": "VOID",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731590+00:00"
+      "void_reason": "postponed",
+      "graded_at": "2026-09-28T19:07:12.772213+00:00"
     },
     {
       "projection": 4.98,
@@ -2595,7 +2623,7 @@
       "actual": 3,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731593+00:00"
+      "graded_at": "2026-09-28T19:07:12.772219+00:00"
     },
     {
       "projection": 14.54,
@@ -2641,7 +2669,7 @@
       "actual": 10.0,
       "result": "OVER",
       "model_result": "HIT",
-      "graded_at": "2026-09-27T23:14:04.731595+00:00"
+      "graded_at": "2026-09-28T19:07:12.772225+00:00"
     },
     {
       "projection": 1.47,
@@ -2686,7 +2714,7 @@
       "actual": null,
       "result": "DNP",
       "model_result": "N/A",
-      "graded_at": "2026-09-27T23:14:04.731599+00:00"
+      "graded_at": "2026-09-28T19:07:12.772231+00:00"
     },
     {
       "projection": 1.6,
@@ -2732,7 +2760,7 @@
       "actual": 2,
       "result": "PUSH",
       "model_result": "PUSH",
-      "graded_at": "2026-09-27T23:14:04.731602+00:00"
+      "graded_at": "2026-09-28T19:07:12.772238+00:00"
     }
   ]
 }

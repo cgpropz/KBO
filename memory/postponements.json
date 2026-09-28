@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "description": "Games postponed or cancelled before they were played. Memory grading marks props on these matchups VOID (counted as graded, excluded from W-L and hit rate). Hand-maintained. A KBO starter scrape that records game_sc 4 for the same date is also treated as postponed.",
+  "postponements": [
+    {
+      "sport": "kbo",
+      "date": "2026-09-25",
+      "teams": ["Doosan", "Lotte"],
+      "reason": "rainout"
+    },
+    {
+      "sport": "kbo",
+      "date": "2026-09-25",
+      "teams": ["Samsung", "SSG"],
+      "reason": "rainout"
+    },
+    {
+      "sport": "kbo",
+      "date": "2026-09-27",
+      "teams": ["LG", "Kia"],
+      "reason": "rainout"
+    }
+  ]
+}
