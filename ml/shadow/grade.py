@@ -37,6 +37,8 @@ def key(row: dict) -> tuple:
 
 
 def outcome(side: str | None, result: str) -> str:
+    if result == "VOID":
+        return "VOID"
     if result == "DNP":
         return "DNP"
     if result == "PUSH":
@@ -51,6 +53,8 @@ def outcome(side: str | None, result: str) -> str:
 def current_outcome(recap_row: dict) -> str:
     mr = str(recap_row.get("model_result") or "").upper()
     res = str(recap_row.get("result") or "").upper()
+    if res == "VOID":
+        return "VOID"
     if res == "DNP":
         return "DNP"
     if mr in ("HIT", "MISS", "PUSH"):
@@ -61,11 +65,11 @@ def current_outcome(recap_row: dict) -> str:
 
 
 def new_block() -> dict:
-    return {"hits": 0, "misses": 0, "pushes": 0, "dnps": 0, "no_pick": 0}
+    return {"hits": 0, "misses": 0, "pushes": 0, "dnps": 0, "voids": 0, "no_pick": 0}
 
 
 def add(block: dict, oc: str) -> None:
-    k = {"HIT": "hits", "MISS": "misses", "PUSH": "pushes", "DNP": "dnps", "NO_PICK": "no_pick"}.get(oc)
+    k = {"HIT": "hits", "MISS": "misses", "PUSH": "pushes", "DNP": "dnps", "VOID": "voids", "NO_PICK": "no_pick"}.get(oc)
     if k:
         block[k] += 1
 
@@ -81,7 +85,7 @@ class Agg:
     """Side-by-side accumulator for one scope (overall / stat / candidate-only)."""
 
     def __init__(self):
-        self.graded = 0  # props with a decided or push result (DNP excluded)
+        self.graded = 0  # decided or push results (DNP and VOID excluded)
         self.current, self.shadow, self.current_edge = new_block(), new_block(), new_block()
         self.top_current, self.top_shadow = new_block(), new_block()
         self.abs_cur = self.abs_sh = 0.0
@@ -165,7 +169,7 @@ def grade_rows(shadow: dict, recap: dict) -> list[dict]:
         res = str(r.get("result") or "").upper()
         actual = to_float(r.get("actual"))
         line = to_float(s.get("line"))
-        has_actual = actual is not None and res != "DNP"
+        has_actual = actual is not None and res not in ("DNP", "VOID")
         cur, sh = s.get("current_projection"), s.get("shadow_projection")
         cur_edge_side = None if cur is None or line is None or cur == line else ("OVER" if cur > line else "UNDER")
         out.append({
@@ -221,7 +225,7 @@ def grade_day(sport: str, d, ddir: Path, excluded: dict) -> tuple[dict | None, s
             "current": "recap.json model_result (the site's pick), same as summary.json",
             "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
             "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
-            "hit_rate": "hits / (hits + misses); pushes, DNPs and no-pick rows excluded",
+            "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
             "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
             "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
             "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",

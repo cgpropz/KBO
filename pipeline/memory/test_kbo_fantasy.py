@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from pipeline.memory import common
 from pipeline.memory import grade_kbo_day as g
 
 CSV_HEADER = [
@@ -101,7 +102,7 @@ class BuildActualsFantasyTests(unittest.TestCase):
     def test_fs_derived_when_column_absent(self):
         self._write([_row(Name="Víctor Reyes", H=2, R=1, RBI=1)])
         actuals = g.build_actuals()
-        entry = actuals[("2026-09-24", "victor reyes")]
+        entry = actuals[("2026-09-24", common.name_match_key("Víctor Reyes"))]
         self.assertEqual(entry["fs"], 10.0)
         # grading path looks up via STAT_KEY
         self.assertEqual(entry[g.STAT_KEY["Hitter Fantasy Score"]], 10.0)
@@ -110,13 +111,13 @@ class BuildActualsFantasyTests(unittest.TestCase):
     def test_explicit_fs_column_wins(self):
         header = CSV_HEADER + ["FS"]
         self._write([dict(_row(H=2, R=1, RBI=1), FS="12.5")], header=header)
-        entry = g.build_actuals()[("2026-09-24", "test player")]
+        entry = g.build_actuals()[("2026-09-24", common.name_match_key("Test Player"))]
         self.assertEqual(entry["fs"], 12.5)
 
     def test_blank_fs_column_falls_back_to_formula(self):
         header = CSV_HEADER + ["FS"]
         self._write([dict(_row(H=1), FS="")], header=header)
-        entry = g.build_actuals()[("2026-09-24", "test player")]
+        entry = g.build_actuals()[("2026-09-24", common.name_match_key("Test Player"))]
         self.assertEqual(entry["fs"], 3.0)
 
 

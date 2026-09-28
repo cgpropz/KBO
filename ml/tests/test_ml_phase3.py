@@ -241,6 +241,26 @@ class TestGrader(unittest.TestCase):
         self.assertAlmostEqual(s["mae"]["current"], (1 + 2 + 0.5 + 1) / 4)
         self.assertEqual((s["top_bucket"]["current"]["hits"], s["top_bucket"]["shadow"]["misses"]), (1, 1))
 
+    def test_void_is_out_of_hit_rate_and_counted(self):
+        recap = {"props": [
+            recap_row("A", "HRR", "OVER", "HIT", 3),
+            recap_row("B", "HRR", "VOID", "N/A", None),
+        ]}
+        shadow = {"props": [shadow_row("A", "HRR", "OVER", 2.0), shadow_row("B", "HRR", "UNDER", 1.0)]}
+        rows = G.grade_rows(shadow, recap)
+        self.assertEqual([r["shadow_result"] for r in rows], ["HIT", "VOID"])
+        s = G.summarize_rows(rows)["overall"]
+        self.assertEqual(s["current"]["voids"], 1)
+        self.assertEqual(s["shadow"]["voids"], 1)
+        self.assertEqual((s["current"]["hits"], s["current"]["misses"]), (1, 0))
+        self.assertEqual(s["current"]["hit_rate"], 1.0)
+        self.assertEqual(s["graded_props"], 1)  # VOID is graded for the day, not a decided bet
+        sys.path.insert(0, str(REPO))
+        from pipeline.memory.common import compute_hit_rate_stats
+        ref = compute_hit_rate_stats(recap["props"])
+        self.assertEqual(ref["voids"], 1)
+        self.assertEqual(ref["hit_rate"], s["current"]["hit_rate"])
+
     def test_current_matches_summary_counting(self):
         sys.path.insert(0, str(REPO))
         from pipeline.memory.common import compute_hit_rate_stats

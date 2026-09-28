@@ -97,6 +97,8 @@ def get_upcoming_games(page, timeout_ms):
             "date": game_date,
             "stadium": stadium,
             "time": game_time,
+            # game_sc=3 finished, game_sc=4 postponed/cancelled (not clickable).
+            "game_sc": li.get("game_sc") or "",
         })
 
     return games
@@ -211,6 +213,16 @@ def main():
         "game_date": games[0].get("date", ""),
         "num_games": len(games),
         "num_starters": len(rows),
+        # Read by the memory freeze/grader only. Absent on older scrapes, which
+        # then do not filter cards by matchup.
+        "games": [
+            {
+                "away": g.get("away_team") or "",
+                "home": g.get("home_team") or "",
+                "game_sc": g.get("game_sc") or "",
+            }
+            for g in games
+        ],
     }
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)

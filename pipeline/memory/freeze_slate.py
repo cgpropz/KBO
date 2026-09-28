@@ -27,11 +27,14 @@ from pipeline.memory.common import (
     format_mmddyyyy,
     kst_game_date_from_meta,
     load_json,
+    matchup_pair,
     memory_dir,
     normalize_name,
     parse_cli_date,
     parse_date,
     prop_key,
+    save_json,
+    scheduled_matchups,
     source_commit,
     today_et,
     today_kst,
@@ -183,15 +186,25 @@ def build_kbo_props(
     batter_index = batter_index or {}
     generated = projections_generated_at or {}
     start, start_source = cutoff.kbo_first_pitch(slate_date)
-    stats = {"skipped_started": 0, "skipped_game_log_present": 0, "missing_projection": 0}
+    stats = {
+        "skipped_started": 0,
+        "skipped_game_log_present": 0,
+        "skipped_not_on_slate": 0,
+        "missing_projection": 0,
+    }
     if not ignore_cutoff and cutoff.has_started(start, now):
         stats["skipped_started"] = sum(len(c.get("props") or []) for c in data.get("cards") or [])
         return [], stats
 
+    # None means the starter scrape did not record this date's games: do not filter.
+    matchups = scheduled_matchups("kbo", slate_date)
     out: list[dict] = []
     for card in data.get("cards") or []:
         role = card.get("type")
         card_props = card.get("props") or []
+        if matchups is not None and matchup_pair(card.get("team"), card.get("opponent")) not in matchups:
+            stats["skipped_not_on_slate"] += len(card_props)
+            continue
         game_dates = [g.get("date") for g in card.get("games") or []]
         if not ignore_cutoff and cutoff.played_on(game_dates, slate_date, parse_date):
             stats["skipped_game_log_present"] += len(card_props)
@@ -406,6 +419,10 @@ def freeze_wnba(
 # ── NFL ─────────────────────────────────────────────────────────────────────
 
 
+# nflverse schedule abbreviations differ from a few board abbreviations.
+NFL_TEAM_ALIASES = {"JAC": "JAX"}
+
+
 def _nfl_team_schedule(lineups: list) -> dict[str, tuple[date, str | None]]:
     mapping: dict[str, tuple[date, str | None]] = {}
     for matchup in lineups or []:
@@ -416,6 +433,9 @@ def _nfl_team_schedule(lineups: list) -> dict[str, tuple[date, str | None]]:
             team = matchup.get(team_key)
             if team:
                 mapping[str(team).upper()] = (gameday, matchup.get("gametime"))
+    for alias, canonical in NFL_TEAM_ALIASES.items():
+        if canonical in mapping and alias not in mapping:
+            mapping[alias] = mapping[canonical]
     return mapping
 
 
@@ -581,6 +601,184 @@ def freeze_nfl(
     if skipped_started:
         out["skipped_started"] = {format_mmddyyyy(d): n for d, n in sorted(skipped_started.items())}
     return out
+
+
+def _parse_utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _nfl_prop_frozen_at(prop: dict, slate: dict) -> str | None:
+    return prop.get("first_frozen_at") or slate.get("frozen_at")
+
+
+def consolidate_aliased_nfl_props(*, alias: str = "JAC") -> dict:
+    """Move pre-kickoff props whose team uses ``alias`` onto the real gameday.
+
+    nflverse calls Jacksonville JAX. Props tagged JAC used to miss the schedule
+    and land on phantom days at the 9:30 AM fallback. This keeps the earliest
+    first_frozen_at and drops a day that contains only those props.
+    """
+    from pipeline.memory.common import MEMORY_ROOT
+
+    alias = alias.upper()
+    canonical = NFL_TEAM_ALIASES.get(alias, alias)
+    lineups = load_json(REPO_ROOT / "nfl" / "lineups.json", default=[]) or []
+    schedule = _nfl_team_schedule(lineups)
+    dest_date, dest_time = schedule.get(alias) or schedule.get(canonical) or (None, None)
+
+    days: list[tuple[date, Path, dict]] = []
+    nfl_root = MEMORY_ROOT / "nfl"
+    if nfl_root.exists():
+        for slate_path in nfl_root.glob("*/*/*/slate.json"):
+            slate = load_json(slate_path, default={}) or {}
+            parsed = parse_date(slate.get("slate_date_iso") or slate.get("slate_date"))
+            if parsed:
+                days.append((parsed, slate_path.parent, slate))
+
+    if dest_date is None:
+        for parsed, _path, slate in days:
+            for prop in slate.get("props") or []:
+                team = str(prop.get("team") or "").upper()
+                opp = str(prop.get("opponent") or "").upper()
+                if prop.get("start_time_source") != "nflverse_schedule":
+                    continue
+                if {team, opp} & {alias, canonical} and "NE" in {team, opp}:
+                    dest_date = parsed
+                    dest_time = None
+                    kickoff = _parse_utc(prop.get("start_time_utc"))
+                    break
+            if dest_date:
+                break
+        else:
+            kickoff = None
+    else:
+        kickoff, _source = cutoff.nfl_kickoff(dest_date, dest_time)
+
+    if dest_date is None or kickoff is None:
+        return {"moved": 0, "reason": "no destination gameday"}
+
+    def is_alias_prop(prop: dict) -> bool:
+        return str(prop.get("team") or "").upper() == alias
+
+    # Earliest pre-kickoff freeze per prop, and the latest such snapshot's fields.
+    earliest: dict[tuple, str] = {}
+    latest: dict[tuple, tuple[datetime, dict]] = {}
+    for parsed, _path, slate in days:
+        for prop in slate.get("props") or []:
+            if not is_alias_prop(prop):
+                continue
+            frozen_at = _nfl_prop_frozen_at(prop, slate)
+            frozen = _parse_utc(frozen_at)
+            if frozen is None or frozen >= kickoff:
+                continue
+            key = prop_key(prop)
+            prev = earliest.get(key)
+            if prev is None or (frozen_at and frozen_at < prev):
+                earliest[key] = frozen_at
+            prev_latest = latest.get(key)
+            if prev_latest is None or frozen >= prev_latest[0]:
+                latest[key] = (frozen, prop)
+
+    dest_dir = memory_dir("nfl", dest_date)
+    dest_slate_path = dest_dir / "slate.json"
+    dest_slate = load_json(dest_slate_path, default={}) or {}
+    dest_props = list(dest_slate.get("props") or [])
+    index = {prop_key(p): p for p in dest_props}
+    kickoff_iso = cutoff.to_utc_iso(kickoff)
+    updated = 0
+    for key, (_when, source_prop) in latest.items():
+        row = index.get(key)
+        if row is None:
+            row = dict(source_prop)
+            dest_props.append(row)
+            index[key] = row
+        row["game_date_iso"] = format_iso(dest_date)
+        row["start_time_utc"] = kickoff_iso
+        row["start_time_source"] = cutoff.SOURCE_NFL_SCHEDULE
+        if earliest.get(key):
+            row["first_frozen_at"] = earliest[key]
+        updated += 1
+
+    if updated and dest_props:
+        dest_slate = dict(dest_slate)
+        dest_slate.setdefault("sport", "nfl")
+        dest_slate.setdefault("slate_date", format_mmddyyyy(dest_date))
+        dest_slate.setdefault("slate_date_iso", format_iso(dest_date))
+        dest_slate["props"] = dest_props
+        save_json(dest_slate_path, dest_slate)
+        meta_path = dest_dir / "meta.json"
+        meta = load_json(meta_path, default={}) or {}
+        if meta:
+            meta["props_total"] = len(dest_props)
+            save_json(meta_path, meta)
+
+    moved_keys = set(latest)
+    removed_days = []
+    for parsed, path, slate in days:
+        if parsed == dest_date:
+            continue
+        original = list(slate.get("props") or [])
+        kept = [p for p in original if prop_key(p) not in moved_keys]
+        if len(kept) == len(original):
+            continue
+        hist_src = path / "history.jsonl"
+        hist_dst = dest_dir / "history.jsonl"
+        if hist_src.exists():
+            moved_lines = []
+            for line in hist_src.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                if str(rec.get("team") or "").upper() == alias:
+                    moved_lines.append(line)
+            if moved_lines:
+                with hist_dst.open("a", encoding="utf-8") as handle:
+                    for line in moved_lines:
+                        handle.write(line + "\n")
+        if kept:
+            slate = dict(slate)
+            slate["props"] = kept
+            save_json(path / "slate.json", slate)
+            meta = load_json(path / "meta.json", default={}) or {}
+            if meta:
+                meta["props_total"] = len(kept)
+                save_json(path / "meta.json", meta)
+            if hist_src.exists():
+                remain = []
+                for line in hist_src.read_text(encoding="utf-8").splitlines():
+                    if not line.strip():
+                        remain.append(line)
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except ValueError:
+                        remain.append(line)
+                        continue
+                    if str(rec.get("team") or "").upper() != alias:
+                        remain.append(line)
+                hist_src.write_text("\n".join(remain) + ("\n" if remain else ""), encoding="utf-8")
+        else:
+            import shutil
+
+            shutil.rmtree(path)
+            removed_days.append(format_mmddyyyy(parsed))
+
+    return {
+        "alias": alias,
+        "canonical": canonical,
+        "destination": format_mmddyyyy(dest_date),
+        "kickoff_utc": kickoff_iso,
+        "props_updated": updated,
+        "removed_days": removed_days,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:

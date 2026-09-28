@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from pipeline.memory import cutoff
 from pipeline.memory.common import (
     REPO_ROOT,
     RESULT_DNP,
@@ -29,6 +30,11 @@ from pipeline.memory.common import (
     write_partial_progress,
     write_recap,
 )
+
+# Regular-season file feeds live projection averages. Playoff box scores live
+# in a separate file read only here (and therefore only by recap-based grading).
+BOX_SCORE_CSV = REPO_ROOT / "wnba" / "wnba_boxscores_2025_2026.csv"
+POSTSEASON_BOX_SCORE_CSV = REPO_ROOT / "wnba" / "wnba_boxscores_postseason.csv"
 
 
 def _num(value) -> float:
@@ -49,12 +55,32 @@ def calc_fantasy(stats: dict) -> float:
     )
 
 
+def boxscore_paths() -> list[Path]:
+    """Regular-season log plus the grading-only postseason file, if present."""
+    root = REPO_ROOT / "wnba"
+    paths = [root / BOX_SCORE_CSV.name]
+    post = root / POSTSEASON_BOX_SCORE_CSV.name
+    if post.exists():
+        paths.append(post)
+    return paths
+
+
 def load_boxscores() -> dict[tuple[str, str], dict]:
-    """(iso_date, normalized_player) -> stats dict."""
-    path = REPO_ROOT / "wnba" / "wnba_boxscores_2025_2026.csv"
+    """(iso_date, normalized_player) -> stats dict.
+
+    Team abbreviations are normalized with the same aliases as tip-off lookup
+    (NY->NYL, WSH->WAS, LV->LVA, GS->GSV) so a playoff box score marks the
+    slate team as having played.
+    """
     lookup: dict[tuple[str, str], dict] = {}
-    if not path.exists():
-        return lookup
+    for path in boxscore_paths():
+        if not path.exists():
+            continue
+        _load_boxscore_file(path, lookup)
+    return lookup
+
+
+def _load_boxscore_file(path: Path, lookup: dict[tuple[str, str], dict]) -> None:
     with path.open(encoding="utf-8-sig", newline="") as handle:
         for row in csv.DictReader(handle):
             d = parse_date(row.get("Game Date"))
@@ -83,7 +109,7 @@ def load_boxscores() -> dict[tuple[str, str], dict]:
                 "ftm": _num(row.get("FTM")),
                 "fta": _num(row.get("FTA")),
                 "min": row.get("MIN"),
-                "team": row.get("Team"),
+                "team": cutoff.wnba_team(row.get("Team")),
                 "matchup": row.get("Match Up"),
                 "present": True,
             }
@@ -97,7 +123,6 @@ def load_boxscores() -> dict[tuple[str, str], dict]:
             stats["doubleDouble"] = 1 if sum(1 for c in cats if c >= 10) >= 2 else 0
             stats["tripleDouble"] = 1 if sum(1 for c in cats if c >= 10) >= 3 else 0
             lookup[(format_iso(d), normalize_name(name))] = stats
-    return lookup
 
 
 STAT_VALUE = {
@@ -152,7 +177,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     missing = []
 
     teams_done = {
-        normalize_name(v.get("team", ""))
+        cutoff.wnba_team(v.get("team", ""))
         for (day, _), v in box.items()
         if day == iso and v.get("team")
     }
@@ -163,7 +188,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         line = prop.get("line")
         stats = box.get((iso, normalize_name(player)))
         if not stats:
-            team_key = normalize_name(prop.get("team") or "")
+            team_key = cutoff.wnba_team(prop.get("team") or "")
             if team_key and team_key in teams_done:
                 graded.append(
                     {
