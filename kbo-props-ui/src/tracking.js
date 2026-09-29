@@ -12,6 +12,8 @@
  *   api/stripe-webhook.js.
  */
 
+import { STRIPE_LINKS } from './pricingTiers.js';
+
 export const X_PURCHASE_EVENT = 'tw-pul9k-pul9m';
 
 const ATTRIBUTION_KEY = 'cg_attribution';
@@ -69,13 +71,22 @@ export function utmParams() {
  * - logged out: no identifiers; the webhook / sync-subscription match the
  *   payment by the checkout email once the buyer signs up with it.
  * Stored UTM codes are appended in both cases.
+ * Weekly All-Access also prefills promo XWEEK (first-week ad offer).
  */
 export function buildCheckoutUrl(link, user) {
   const url = new URL(link);
   if (user?.id) url.searchParams.set('client_reference_id', user.id);
   if (user?.email) url.searchParams.set('prefilled_email', user.email);
+  // XWEEK is the first-week ad offer ($4.99 for new customers). Prefill it only
+  // on the Weekly All-Access payment link; monthly and lifetime stay full price.
+  if (isWeeklyPaymentLink(url)) url.searchParams.set('prefilled_promo_code', 'XWEEK');
   for (const [key, value] of Object.entries(utmParams())) url.searchParams.set(key, value);
   return url.toString();
+}
+
+function isWeeklyPaymentLink(url) {
+  const weekly = new URL(STRIPE_LINKS.weekly);
+  return url.origin === weekly.origin && url.pathname === weekly.pathname;
 }
 
 export function purchaseAlreadyTracked(sessionId) {
