@@ -3,7 +3,10 @@ name: Intraday Odds Refresh
 on:
   schedule:
     # Recalculate line-sensitive prop projections every 30 minutes.
-    - cron: "*/30 * * * *"
+    # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
+    # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
+    # job actually ran only every ~3-6 h). Same 30-minute cadence.
+    - cron: "7,37 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -126,19 +129,4 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          TITLE="🚨 Intraday odds refresh FAILED"
-          BODY="Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-          Branch: $GITHUB_REF_NAME
-          Commit: $GITHUB_SHA"
-          # Try to find an existing open issue with this title; comment on it
-          # so we don't spam new issues every 10 min during an outage.
-          EXISTING=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number' || echo "")
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body "$BODY"
-          else
-            gh issue create --title "$TITLE" --body "$BODY" --label "ci-failure" 2>/dev/null \
-              || gh issue create --title "$TITLE" --body "$BODY"
-          fi
+        run: bash .github/scripts/notify-failure.sh "🚨 Intraday odds refresh FAILED"

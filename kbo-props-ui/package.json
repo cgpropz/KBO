@@ -11,7 +11,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:api": "node --test tests/"
+    "test:api": "node --test \"tests/**/*.test.mjs\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",

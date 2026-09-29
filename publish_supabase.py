@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import requests
 
@@ -34,6 +35,55 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 # migration). A missing table is reported and skipped instead of failing the
 # whole publish.
 OPTIONAL_TABLES = {"nfl_lineups", "graded_props_history"}
+
+# Transient Supabase/PostgREST failures that are safe to retry. Every publish
+# is an idempotent upsert of the single `id = 1` row, so re-sending the same
+# payload cannot duplicate or corrupt data. Observed in CI on 2026-09-28:
+# HTTP 500 {"code":"57014","message":"canceling statement due to statement
+# timeout"} on one wnba_projections_* table while the other two succeeded.
+RETRYABLE_STATUS = {500, 502, 503, 504, 520, 522, 524}
+PUBLISH_ATTEMPTS = int(os.environ.get("SUPABASE_PUBLISH_ATTEMPTS", "3") or 3)
+PUBLISH_BACKOFF_SECONDS = float(os.environ.get("SUPABASE_PUBLISH_BACKOFF", "5") or 5)
+
+
+def _is_retryable(response):
+    if response.status_code in RETRYABLE_STATUS:
+        return True
+    # PostgREST can surface a statement timeout with a non-5xx status.
+    return '"57014"' in (response.text or "")
+
+
+def post_with_retry(session, url, *, attempts=None, backoff=None, sleep=time.sleep, **kwargs):
+    """POST, retrying transient 5xx / statement-timeout / network errors.
+
+    Returns the last response. Re-raises the last network exception if every
+    attempt failed without a response. Non-transient responses (2xx, 4xx) are
+    returned immediately.
+    """
+    attempts = max(1, int(attempts or PUBLISH_ATTEMPTS))
+    backoff = PUBLISH_BACKOFF_SECONDS if backoff is None else float(backoff)
+    last_exc = None
+    response = None
+    for attempt in range(1, attempts + 1):
+        try:
+            response = session.post(url, **kwargs)
+            last_exc = None
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            last_exc = exc
+            response = None
+        if response is not None and not _is_retryable(response):
+            return response
+        if attempt < attempts:
+            reason = (
+                f"HTTP {response.status_code}" if response is not None else type(last_exc).__name__
+            )
+            delay = backoff * attempt
+            print(f"    … transient {reason}; retrying in {delay:.0f}s (attempt {attempt + 1}/{attempts})")
+            sleep(delay)
+    if response is None and last_exc is not None:
+        raise last_exc
+    return response
+
 
 TABLES = {
     "strikeout_projections.json": "strikeout_projections",
@@ -97,7 +147,9 @@ def main():
         "apikey": SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SERVICE_ROLE_KEY}",
         "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates,return=representation",
+        # return=minimal: we only check the status code, so do not ask
+        # PostgREST to echo the (up to ~1 MB) jsonb row back on every upsert.
+        "Prefer": "resolution=merge-duplicates,return=minimal",
     }
 
     failures = []
@@ -122,7 +174,8 @@ def main():
                 data = json.load(file_handle)
 
             payload = {"id": 1, "data": data}
-            response = session.post(
+            response = post_with_retry(
+                session,
                 f"{SUPABASE_URL}/rest/v1/{table}",
                 params={"on_conflict": "id"},
                 json=payload,
@@ -130,7 +183,7 @@ def main():
                 timeout=120,
             )
 
-            if response.status_code in (200, 201):
+            if response.status_code in (200, 201, 204):
                 print(f"  ✓ {table:30} updated")
             else:
                 body = response.text.strip().replace("\n", " ")
