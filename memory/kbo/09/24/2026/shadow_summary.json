@@ -4,7 +4,7 @@
   "slate_date": "09/24/2026",
   "slate_date_iso": "2026-09-24",
   "period": "2026-09-24",
-  "graded_at": "2026-09-25T10:32:29+00:00",
+  "graded_at": "2026-09-29T11:33:32+00:00",
   "status": "graded",
   "evaluation": {
     "excluded": false
@@ -30,7 +30,7 @@
     "current": "recap.json model_result (the site's pick), same as summary.json",
     "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
     "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
-    "hit_rate": "hits / (hits + misses); pushes, DNPs and no-pick rows excluded",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
     "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
     "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
     "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
@@ -43,6 +43,7 @@
       "misses": 13,
       "pushes": 1,
       "dnps": 8,
+      "voids": 0,
       "no_pick": 5,
       "hit_rate": 0.535714,
       "hit_rate_pct": 53.6
@@ -52,6 +53,7 @@
       "misses": 13,
       "pushes": 1,
       "dnps": 8,
+      "voids": 0,
       "no_pick": 0,
       "hit_rate": 0.606061,
       "hit_rate_pct": 60.6
@@ -69,6 +71,7 @@
       "misses": 10,
       "pushes": 1,
       "dnps": 8,
+      "voids": 0,
       "no_pick": 9,
       "hit_rate": 0.583333,
       "hit_rate_pct": 58.3
@@ -92,6 +95,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 1,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 1.0,
         "hit_rate_pct": 100.0
@@ -101,6 +105,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.8,
         "hit_rate_pct": 80.0
@@ -114,6 +119,7 @@
       "misses": 13,
       "pushes": 1,
       "dnps": 7,
+      "voids": 0,
       "no_pick": 5,
       "hit_rate": 0.535714,
       "hit_rate_pct": 53.6
@@ -123,6 +129,7 @@
       "misses": 13,
       "pushes": 1,
       "dnps": 7,
+      "voids": 0,
       "no_pick": 0,
       "hit_rate": 0.606061,
       "hit_rate_pct": 60.6
@@ -140,6 +147,7 @@
       "misses": 10,
       "pushes": 1,
       "dnps": 7,
+      "voids": 0,
       "no_pick": 9,
       "hit_rate": 0.583333,
       "hit_rate_pct": 58.3
@@ -163,6 +171,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 1,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 1.0,
         "hit_rate_pct": 100.0
@@ -172,6 +181,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.8,
         "hit_rate_pct": 80.0
@@ -186,6 +196,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 2,
         "hit_rate": 0.0,
         "hit_rate_pct": 0.0
@@ -195,6 +206,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 1.0,
         "hit_rate_pct": 100.0
@@ -212,6 +224,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 3,
         "hit_rate": null,
         "hit_rate_pct": null
@@ -235,6 +248,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
@@ -244,6 +258,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 1,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
@@ -257,6 +272,7 @@
         "misses": 8,
         "pushes": 1,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 2,
         "hit_rate": 0.555556,
         "hit_rate_pct": 55.6
@@ -266,6 +282,7 @@
         "misses": 10,
         "pushes": 1,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.5,
         "hit_rate_pct": 50.0
@@ -283,6 +300,7 @@
         "misses": 8,
         "pushes": 1,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.6,
         "hit_rate_pct": 60.0
@@ -306,6 +324,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 1,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": 1.0,
           "hit_rate_pct": 100.0
@@ -315,6 +334,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 1,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": 1.0,
           "hit_rate_pct": 100.0
@@ -328,6 +348,7 @@
         "misses": 2,
         "pushes": 0,
         "dnps": 0,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.5,
         "hit_rate_pct": 50.0
@@ -337,6 +358,7 @@
         "misses": 2,
         "pushes": 0,
         "dnps": 0,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.5,
         "hit_rate_pct": 50.0
@@ -354,6 +376,7 @@
         "misses": 2,
         "pushes": 0,
         "dnps": 0,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.5,
         "hit_rate_pct": 50.0
@@ -377,6 +400,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": 1.0,
           "hit_rate_pct": 100.0
@@ -386,6 +410,7 @@
           "misses": 1,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": 0.666667,
           "hit_rate_pct": 66.7
@@ -399,6 +424,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.666667,
         "hit_rate_pct": 66.7
@@ -408,6 +434,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 0.666667,
         "hit_rate_pct": 66.7
@@ -425,6 +452,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 3,
         "hit_rate": null,
         "hit_rate_pct": null
@@ -448,6 +476,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
@@ -457,6 +486,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": 1.0,
           "hit_rate_pct": 100.0
@@ -470,6 +500,7 @@
         "misses": 1,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 1,
         "hit_rate": 0.5,
         "hit_rate_pct": 50.0
@@ -479,6 +510,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 0,
         "hit_rate": 1.0,
         "hit_rate_pct": 100.0
@@ -496,6 +528,7 @@
         "misses": 0,
         "pushes": 0,
         "dnps": 2,
+        "voids": 0,
         "no_pick": 3,
         "hit_rate": null,
         "hit_rate_pct": null
@@ -519,6 +552,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
@@ -528,6 +562,7 @@
           "misses": 0,
           "pushes": 0,
           "dnps": 0,
+          "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
