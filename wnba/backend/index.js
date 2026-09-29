@@ -922,7 +922,7 @@ app.get('/api/projections/v2', async (req, res) => {
           gp: 0, avgMins: 0, dvpFactor: DVP_RANK_NEUTRAL,
           projPts: 0, projReb: 0, projAst: 0, projFg3m: 0,
           l3ppm: {}, l7ppm: {}, l15ppm: {},
-          recentGames: logGames.map(toRecentGame),
+          recentGames: logGames.slice(0, 40).map(toRecentGame),
           ppAllProps: playerProps.map(prop => {
             const sharpRow = sharpOddsMap.get(buildSharpKey(name, prop?.stat, prop?.line));
             return {
@@ -990,7 +990,7 @@ app.get('/api/projections/v2', async (req, res) => {
         l3ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L3.toFixed(4)])),
         l7ppm:  Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L7.toFixed(4)])),
         l15ppm: Object.fromEntries(STATS.map(stat => [stat, +bundle.ppmData[stat].L15.toFixed(4)])),
-        recentGames: logGames.map(toRecentGame),
+        recentGames: logGames.slice(0, 40).map(toRecentGame),
         ppLines: {
           pts:  ppPlayer.pts  ?? null,
           reb:  ppPlayer.reb  ?? null,

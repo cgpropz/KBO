@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
 import { DATASETS, FREE_ROW_LIMIT } from '../api/_dataAccess.js'
 
 const NOW = '2026-09-25T12:00:00Z'
@@ -201,5 +201,40 @@ test('every whitelisted dataset produces a response for free and paid', async ()
     assert.equal(free.statusCode, 200, ds)
     assert.equal(paid.statusCode, 200, ds)
     assert.equal(paid.body.preview, false, ds)
+  }
+})
+
+test('slow snapshot read returns 503 upstream_timeout instead of hanging', async () => {
+  const prev = { ...timeouts }
+  _setTimeouts({ snapshotReadMs: 40, tierLookupMs: 40 })
+  try {
+    const client = mockClient()
+    const originalFrom = client.from.bind(client)
+    client.from = (table) => {
+      const chain = originalFrom(table)
+      if (table === 'user_profiles') return chain
+      return {
+        select() { return this },
+        eq() { return this },
+        abortSignal() { return this },
+        maybeSingle() {
+          return new Promise(() => { /* never resolves — simulates Supabase hang */ })
+        },
+      }
+    }
+    const res = mockRes()
+    const started = Date.now()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'wnba_projections_standard' }, headers: {} },
+      res,
+      client,
+    )
+    const elapsed = Date.now() - started
+    assert.equal(res.statusCode, 503)
+    assert.equal(res.body.code, 'upstream_timeout')
+    assert.match(res.body.message || '', /timed out/i)
+    assert.ok(elapsed < 1500, `timed out too slowly: ${elapsed}ms`)
+  } finally {
+    _setTimeouts(prev)
   }
 })
