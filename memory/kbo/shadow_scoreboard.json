@@ -1,16 +1,17 @@
 {
   "schema": 1,
   "sport": "kbo",
-  "updated_at": "2026-09-28T19:07:34+00:00",
+  "updated_at": "2026-09-29T21:32:00+00:00",
   "shadow_start": "2026-09-24",
-  "last_graded": "2026-09-27",
+  "last_graded": "2026-09-29",
   "graded_days": [
     "2026-09-24",
     "2026-09-25",
     "2026-09-26",
-    "2026-09-27"
+    "2026-09-27",
+    "2026-09-29"
   ],
-  "periods": 4,
+  "periods": 5,
   "period_unit": "days",
   "thresholds": {
     "min_periods": 30,
@@ -19,8 +20,8 @@
     "props_counted": "graded props on candidate-sourced rows (candidate_rows_only.graded_props)"
   },
   "progress": {
-    "periods": "4/30",
-    "props": "89/1000"
+    "periods": "5/30",
+    "props": "129/1000"
   },
   "status": "collecting",
   "status_rules": {
@@ -30,210 +31,210 @@
     "meets-thresholds": "thresholds met but mixed/tied result"
   },
   "overall": {
-    "graded_props": 102,
+    "graded_props": 154,
     "current": {
-      "hits": 35,
-      "misses": 30,
-      "pushes": 7,
-      "dnps": 25,
+      "hits": 55,
+      "misses": 46,
+      "pushes": 8,
+      "dnps": 46,
       "voids": 52,
-      "no_pick": 30,
-      "hit_rate": 0.538462,
-      "hit_rate_pct": 53.8
+      "no_pick": 45,
+      "hit_rate": 0.544554,
+      "hit_rate_pct": 54.5
     },
     "shadow": {
-      "hits": 51,
-      "misses": 37,
-      "pushes": 7,
-      "dnps": 25,
+      "hits": 75,
+      "misses": 58,
+      "pushes": 8,
+      "dnps": 46,
       "voids": 52,
-      "no_pick": 7,
-      "hit_rate": 0.579545,
-      "hit_rate_pct": 58.0
+      "no_pick": 13,
+      "hit_rate": 0.56391,
+      "hit_rate_pct": 56.4
     },
-    "hit_rate_delta_pct_points": 4.1,
+    "hit_rate_delta_pct_points": 1.9,
     "paired": {
-      "n": 65,
-      "current_hits": 35,
-      "shadow_hits": 37,
-      "current_hit_rate_pct": 53.8,
-      "shadow_hit_rate_pct": 56.9
+      "n": 101,
+      "current_hits": 55,
+      "shadow_hits": 57,
+      "current_hit_rate_pct": 54.5,
+      "shadow_hit_rate_pct": 56.4
     },
     "current_edge": {
-      "hits": 47,
-      "misses": 39,
-      "pushes": 7,
-      "dnps": 25,
+      "hits": 72,
+      "misses": 64,
+      "pushes": 8,
+      "dnps": 46,
       "voids": 52,
-      "no_pick": 9,
-      "hit_rate": 0.546512,
-      "hit_rate_pct": 54.7
+      "no_pick": 10,
+      "hit_rate": 0.529412,
+      "hit_rate_pct": 52.9
     },
     "mae": {
-      "n": 93,
-      "current": 2.3181,
-      "shadow": 2.072,
-      "delta": -0.2461,
-      "sum_abs_current": 215.58,
-      "sum_abs_shadow": 192.696
+      "n": 145,
+      "current": 2.4748,
+      "shadow": 2.2054,
+      "delta": -0.2693,
+      "sum_abs_current": 358.84,
+      "sum_abs_shadow": 319.785
     },
     "mae_shadow_all": {
-      "n": 102,
-      "shadow": 2.0756,
-      "sum_abs": 211.71
+      "n": 154,
+      "shadow": 2.2,
+      "sum_abs": 338.799
     },
     "top_bucket": {
       "current": {
-        "hits": 9,
-        "misses": 4,
+        "hits": 11,
+        "misses": 8,
         "pushes": 3,
-        "dnps": 2,
+        "dnps": 3,
         "voids": 3,
         "no_pick": 0,
-        "hit_rate": 0.692308,
-        "hit_rate_pct": 69.2
+        "hit_rate": 0.578947,
+        "hit_rate_pct": 57.9
       },
       "shadow": {
-        "hits": 12,
-        "misses": 5,
+        "hits": 16,
+        "misses": 8,
         "pushes": 0,
-        "dnps": 5,
+        "dnps": 7,
         "voids": 7,
-        "no_pick": 0,
-        "hit_rate": 0.705882,
-        "hit_rate_pct": 70.6
-      }
-    }
-  },
-  "candidate_rows_only": {
-    "graded_props": 89,
-    "current": {
-      "hits": 31,
-      "misses": 28,
-      "pushes": 7,
-      "dnps": 20,
-      "voids": 48,
-      "no_pick": 23,
-      "hit_rate": 0.525424,
-      "hit_rate_pct": 52.5
-    },
-    "shadow": {
-      "hits": 47,
-      "misses": 35,
-      "pushes": 7,
-      "dnps": 20,
-      "voids": 48,
-      "no_pick": 0,
-      "hit_rate": 0.573171,
-      "hit_rate_pct": 57.3
-    },
-    "hit_rate_delta_pct_points": 4.8,
-    "paired": {
-      "n": 59,
-      "current_hits": 31,
-      "shadow_hits": 33,
-      "current_hit_rate_pct": 52.5,
-      "shadow_hit_rate_pct": 55.9
-    },
-    "current_edge": {
-      "hits": 41,
-      "misses": 32,
-      "pushes": 7,
-      "dnps": 20,
-      "voids": 48,
-      "no_pick": 9,
-      "hit_rate": 0.561644,
-      "hit_rate_pct": 56.2
-    },
-    "mae": {
-      "n": 80,
-      "current": 2.3465,
-      "shadow": 2.0604,
-      "delta": -0.2861,
-      "sum_abs_current": 187.72,
-      "sum_abs_shadow": 164.836
-    },
-    "mae_shadow_all": {
-      "n": 89,
-      "shadow": 2.0657,
-      "sum_abs": 183.85
-    },
-    "top_bucket": {
-      "current": {
-        "hits": 7,
-        "misses": 4,
-        "pushes": 3,
-        "dnps": 2,
-        "voids": 3,
-        "no_pick": 0,
-        "hit_rate": 0.636364,
-        "hit_rate_pct": 63.6
-      },
-      "shadow": {
-        "hits": 8,
-        "misses": 4,
-        "pushes": 0,
-        "dnps": 5,
-        "voids": 4,
         "no_pick": 0,
         "hit_rate": 0.666667,
         "hit_rate_pct": 66.7
       }
     }
   },
-  "per_stat": {
-    "Hits Allowed": {
-      "graded_props": 11,
+  "candidate_rows_only": {
+    "graded_props": 129,
+    "current": {
+      "hits": 49,
+      "misses": 40,
+      "pushes": 8,
+      "dnps": 22,
+      "voids": 48,
+      "no_pick": 32,
+      "hit_rate": 0.550562,
+      "hit_rate_pct": 55.1
+    },
+    "shadow": {
+      "hits": 69,
+      "misses": 52,
+      "pushes": 8,
+      "dnps": 22,
+      "voids": 48,
+      "no_pick": 0,
+      "hit_rate": 0.570248,
+      "hit_rate_pct": 57.0
+    },
+    "hit_rate_delta_pct_points": 2.0,
+    "paired": {
+      "n": 89,
+      "current_hits": 49,
+      "shadow_hits": 51,
+      "current_hit_rate_pct": 55.1,
+      "shadow_hit_rate_pct": 57.3
+    },
+    "current_edge": {
+      "hits": 63,
+      "misses": 48,
+      "pushes": 8,
+      "dnps": 22,
+      "voids": 48,
+      "no_pick": 10,
+      "hit_rate": 0.567568,
+      "hit_rate_pct": 56.8
+    },
+    "mae": {
+      "n": 120,
+      "current": 2.4753,
+      "shadow": 2.1499,
+      "delta": -0.3255,
+      "sum_abs_current": 297.04,
+      "sum_abs_shadow": 257.985
+    },
+    "mae_shadow_all": {
+      "n": 129,
+      "shadow": 2.1473,
+      "sum_abs": 276.999
+    },
+    "top_bucket": {
       "current": {
-        "hits": 1,
+        "hits": 9,
+        "misses": 8,
+        "pushes": 3,
+        "dnps": 2,
+        "voids": 3,
+        "no_pick": 0,
+        "hit_rate": 0.529412,
+        "hit_rate_pct": 52.9
+      },
+      "shadow": {
+        "hits": 11,
         "misses": 5,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 6,
+        "voids": 4,
+        "no_pick": 0,
+        "hit_rate": 0.6875,
+        "hit_rate_pct": 68.8
+      }
+    }
+  },
+  "per_stat": {
+    "Hits Allowed": {
+      "graded_props": 16,
+      "current": {
+        "hits": 1,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 9,
         "voids": 8,
-        "no_pick": 5,
-        "hit_rate": 0.166667,
-        "hit_rate_pct": 16.7
+        "no_pick": 8,
+        "hit_rate": 0.125,
+        "hit_rate_pct": 12.5
       },
       "shadow": {
         "hits": 5,
-        "misses": 4,
+        "misses": 6,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 9,
         "voids": 8,
-        "no_pick": 2,
-        "hit_rate": 0.555556,
-        "hit_rate_pct": 55.6
+        "no_pick": 5,
+        "hit_rate": 0.454545,
+        "hit_rate_pct": 45.5
       },
-      "hit_rate_delta_pct_points": 38.9,
+      "hit_rate_delta_pct_points": 33.0,
       "paired": {
-        "n": 6,
+        "n": 8,
         "current_hits": 1,
         "shadow_hits": 3,
-        "current_hit_rate_pct": 16.7,
-        "shadow_hit_rate_pct": 50.0
+        "current_hit_rate_pct": 12.5,
+        "shadow_hit_rate_pct": 37.5
       },
       "current_edge": {
         "hits": 3,
-        "misses": 5,
+        "misses": 10,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 9,
         "voids": 8,
         "no_pick": 3,
-        "hit_rate": 0.375,
-        "hit_rate_pct": 37.5
+        "hit_rate": 0.230769,
+        "hit_rate_pct": 23.1
       },
       "mae": {
-        "n": 8,
-        "current": 1.9763,
-        "shadow": 1.5851,
-        "delta": -0.3911,
-        "sum_abs_current": 15.81,
-        "sum_abs_shadow": 12.681
+        "n": 13,
+        "current": 2.3123,
+        "shadow": 2.0716,
+        "delta": -0.2407,
+        "sum_abs_current": 30.06,
+        "sum_abs_shadow": 26.931
       },
       "mae_shadow_all": {
-        "n": 11,
-        "shadow": 1.8552,
-        "sum_abs": 20.407
+        "n": 16,
+        "shadow": 2.1661,
+        "sum_abs": 34.657
       },
       "top_bucket": {
         "current": {
@@ -248,81 +249,81 @@
         },
         "shadow": {
           "hits": 1,
-          "misses": 1,
+          "misses": 2,
           "pushes": 0,
           "dnps": 1,
           "voids": 1,
           "no_pick": 0,
-          "hit_rate": 0.5,
-          "hit_rate_pct": 50.0
+          "hit_rate": 0.333333,
+          "hit_rate_pct": 33.3
         }
       },
-      "periods": 4,
+      "periods": 5,
       "status": "collecting"
     },
     "Hits+Runs+RBIs": {
-      "graded_props": 55,
+      "graded_props": 89,
       "current": {
-        "hits": 20,
-        "misses": 16,
-        "pushes": 7,
-        "dnps": 9,
+        "hits": 34,
+        "misses": 26,
+        "pushes": 8,
+        "dnps": 12,
         "voids": 20,
-        "no_pick": 12,
+        "no_pick": 21,
+        "hit_rate": 0.566667,
+        "hit_rate_pct": 56.7
+      },
+      "shadow": {
+        "hits": 45,
+        "misses": 36,
+        "pushes": 8,
+        "dnps": 12,
+        "voids": 20,
+        "no_pick": 0,
         "hit_rate": 0.555556,
         "hit_rate_pct": 55.6
       },
-      "shadow": {
-        "hits": 27,
-        "misses": 21,
-        "pushes": 7,
-        "dnps": 9,
-        "voids": 20,
-        "no_pick": 0,
-        "hit_rate": 0.5625,
-        "hit_rate_pct": 56.2
-      },
-      "hit_rate_delta_pct_points": 0.7,
+      "hit_rate_delta_pct_points": -1.1,
       "paired": {
-        "n": 36,
-        "current_hits": 20,
-        "shadow_hits": 19,
-        "current_hit_rate_pct": 55.6,
-        "shadow_hit_rate_pct": 52.8
+        "n": 60,
+        "current_hits": 34,
+        "shadow_hits": 33,
+        "current_hit_rate_pct": 56.7,
+        "shadow_hit_rate_pct": 55.0
       },
       "current_edge": {
-        "hits": 29,
-        "misses": 19,
-        "pushes": 7,
-        "dnps": 9,
+        "hits": 47,
+        "misses": 33,
+        "pushes": 8,
+        "dnps": 12,
         "voids": 20,
-        "no_pick": 0,
-        "hit_rate": 0.604167,
-        "hit_rate_pct": 60.4
+        "no_pick": 1,
+        "hit_rate": 0.5875,
+        "hit_rate_pct": 58.8
       },
       "mae": {
-        "n": 55,
-        "current": 1.7035,
-        "shadow": 1.5525,
-        "delta": -0.1509,
-        "sum_abs_current": 93.69,
-        "sum_abs_shadow": 85.39
+        "n": 89,
+        "current": 1.8379,
+        "shadow": 1.6806,
+        "delta": -0.1573,
+        "sum_abs_current": 163.57,
+        "sum_abs_shadow": 149.572
       },
       "mae_shadow_all": {
-        "n": 55,
-        "shadow": 1.5525,
-        "sum_abs": 85.39
+        "n": 89,
+        "shadow": 1.6806,
+        "sum_abs": 149.572
       },
       "top_bucket": {
         "current": {
-          "hits": 5,
-          "misses": 2,
+          "hits": 6,
+          "misses": 5,
           "pushes": 3,
           "dnps": 1,
           "voids": 1,
           "no_pick": 0,
-          "hit_rate": 0.714286,
-          "hit_rate_pct": 71.4
+          "hit_rate": 0.545455,
+          "hit_rate_pct": 54.5
         },
         "shadow": {
           "hits": 3,
@@ -335,163 +336,163 @@
           "hit_rate_pct": 75.0
         }
       },
-      "periods": 4,
+      "periods": 5,
       "status": "collecting"
     },
     "Hitter Fantasy Score": {
-      "graded_props": 11,
+      "graded_props": 17,
       "current": {
-        "hits": 6,
-        "misses": 5,
+        "hits": 10,
+        "misses": 7,
         "pushes": 0,
-        "dnps": 3,
+        "dnps": 4,
         "voids": 8,
         "no_pick": 0,
-        "hit_rate": 0.545455,
-        "hit_rate_pct": 54.5
+        "hit_rate": 0.588235,
+        "hit_rate_pct": 58.8
       },
       "shadow": {
-        "hits": 6,
-        "misses": 5,
+        "hits": 10,
+        "misses": 7,
         "pushes": 0,
-        "dnps": 3,
+        "dnps": 4,
         "voids": 8,
         "no_pick": 0,
-        "hit_rate": 0.545455,
-        "hit_rate_pct": 54.5
+        "hit_rate": 0.588235,
+        "hit_rate_pct": 58.8
       },
       "hit_rate_delta_pct_points": 0.0,
       "paired": {
-        "n": 11,
-        "current_hits": 6,
-        "shadow_hits": 6,
-        "current_hit_rate_pct": 54.5,
-        "shadow_hit_rate_pct": 54.5
+        "n": 17,
+        "current_hits": 10,
+        "shadow_hits": 10,
+        "current_hit_rate_pct": 58.8,
+        "shadow_hit_rate_pct": 58.8
       },
       "current_edge": {
-        "hits": 6,
-        "misses": 5,
+        "hits": 10,
+        "misses": 7,
         "pushes": 0,
-        "dnps": 3,
+        "dnps": 4,
         "voids": 8,
         "no_pick": 0,
-        "hit_rate": 0.545455,
-        "hit_rate_pct": 54.5
+        "hit_rate": 0.588235,
+        "hit_rate_pct": 58.8
       },
       "mae": {
-        "n": 11,
-        "current": 6.2855,
-        "shadow": 5.4614,
-        "delta": -0.8241,
-        "sum_abs_current": 69.14,
-        "sum_abs_shadow": 60.075
+        "n": 17,
+        "current": 6.3871,
+        "shadow": 5.2378,
+        "delta": -1.1493,
+        "sum_abs_current": 108.58,
+        "sum_abs_shadow": 89.042
       },
       "mae_shadow_all": {
-        "n": 11,
-        "shadow": 5.4614,
-        "sum_abs": 60.075
+        "n": 17,
+        "shadow": 5.2378,
+        "sum_abs": 89.042
       },
       "top_bucket": {
         "current": {
-          "hits": 2,
-          "misses": 1,
+          "hits": 3,
+          "misses": 2,
           "pushes": 0,
           "dnps": 0,
           "voids": 1,
           "no_pick": 0,
-          "hit_rate": 0.666667,
-          "hit_rate_pct": 66.7
+          "hit_rate": 0.6,
+          "hit_rate_pct": 60.0
         },
         "shadow": {
-          "hits": 3,
-          "misses": 3,
+          "hits": 6,
+          "misses": 4,
           "pushes": 0,
-          "dnps": 1,
+          "dnps": 2,
           "voids": 3,
           "no_pick": 0,
-          "hit_rate": 0.5,
-          "hit_rate_pct": 50.0
+          "hit_rate": 0.6,
+          "hit_rate_pct": 60.0
         }
       },
-      "periods": 3,
+      "periods": 4,
       "status": "collecting"
     },
     "Pitcher Strikeouts": {
-      "graded_props": 14,
+      "graded_props": 21,
       "current": {
-        "hits": 5,
-        "misses": 2,
+        "hits": 7,
+        "misses": 4,
         "pushes": 0,
-        "dnps": 5,
+        "dnps": 12,
         "voids": 9,
-        "no_pick": 7,
-        "hit_rate": 0.714286,
-        "hit_rate_pct": 71.4
+        "no_pick": 10,
+        "hit_rate": 0.636364,
+        "hit_rate_pct": 63.6
       },
       "shadow": {
-        "hits": 5,
-        "misses": 6,
+        "hits": 7,
+        "misses": 8,
         "pushes": 0,
-        "dnps": 5,
+        "dnps": 12,
         "voids": 9,
-        "no_pick": 3,
-        "hit_rate": 0.454545,
-        "hit_rate_pct": 45.5
+        "no_pick": 6,
+        "hit_rate": 0.466667,
+        "hit_rate_pct": 46.7
       },
-      "hit_rate_delta_pct_points": -26.0,
+      "hit_rate_delta_pct_points": -17.0,
       "paired": {
-        "n": 7,
-        "current_hits": 5,
-        "shadow_hits": 4,
-        "current_hit_rate_pct": 71.4,
-        "shadow_hit_rate_pct": 57.1
+        "n": 11,
+        "current_hits": 7,
+        "shadow_hits": 6,
+        "current_hit_rate_pct": 63.6,
+        "shadow_hit_rate_pct": 54.5
       },
       "current_edge": {
-        "hits": 6,
-        "misses": 5,
+        "hits": 9,
+        "misses": 9,
         "pushes": 0,
-        "dnps": 5,
+        "dnps": 12,
         "voids": 9,
         "no_pick": 3,
-        "hit_rate": 0.545455,
-        "hit_rate_pct": 54.5
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
       },
       "mae": {
-        "n": 11,
-        "current": 1.4064,
-        "shadow": 1.5505,
-        "delta": 0.1442,
-        "sum_abs_current": 15.47,
-        "sum_abs_shadow": 17.056
+        "n": 18,
+        "current": 1.9533,
+        "shadow": 2.0414,
+        "delta": 0.0881,
+        "sum_abs_current": 35.16,
+        "sum_abs_shadow": 36.746
       },
       "mae_shadow_all": {
-        "n": 14,
-        "shadow": 1.4989,
-        "sum_abs": 20.985
+        "n": 21,
+        "shadow": 1.9369,
+        "sum_abs": 40.675
       },
       "top_bucket": {
         "current": {
           "hits": 0,
           "misses": 0,
           "pushes": 0,
-          "dnps": 0,
+          "dnps": 1,
           "voids": 0,
           "no_pick": 0,
           "hit_rate": null,
           "hit_rate_pct": null
         },
         "shadow": {
-          "hits": 2,
-          "misses": 0,
+          "hits": 3,
+          "misses": 1,
           "pushes": 0,
-          "dnps": 1,
+          "dnps": 2,
           "voids": 1,
           "no_pick": 0,
-          "hit_rate": 1.0,
-          "hit_rate_pct": 100.0
+          "hit_rate": 0.75,
+          "hit_rate_pct": 75.0
         }
       },
-      "periods": 4,
+      "periods": 5,
       "status": "collecting"
     },
     "Pitching Outs": {
@@ -500,7 +501,7 @@
         "hits": 3,
         "misses": 2,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 9,
         "voids": 7,
         "no_pick": 6,
         "hit_rate": 0.6,
@@ -510,7 +511,7 @@
         "hits": 8,
         "misses": 1,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 9,
         "voids": 7,
         "no_pick": 2,
         "hit_rate": 0.888889,
@@ -528,7 +529,7 @@
         "hits": 3,
         "misses": 5,
         "pushes": 0,
-        "dnps": 4,
+        "dnps": 9,
         "voids": 7,
         "no_pick": 3,
         "hit_rate": 0.375,
