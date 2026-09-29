@@ -295,7 +295,11 @@ class WnbaPostseasonTests(_MemoryCase):
         self.assertEqual(summary["dnps"], 1)
         live = (REPO / "wnba" / "backend" / "index.js").read_text()
         self.assertIn("wnba_boxscores_2025_2026.csv", live)
-        self.assertNotIn("wnba_boxscores_postseason", live)
+        # Playoff rows reach the displayed game log only; projection math keeps
+        # filtering them out so live projections and ML replay parity hold.
+        self.assertIn("wnba_boxscores_postseason.csv", live)
+        self.assertIn("postseason: true", live)
+        self.assertIn("logsWithPostseason.filter(g => !g.postseason)", live)
         self.assertTrue(str((REPO / "wnba" / "generate_wnba_dvp.py")).endswith("generate_wnba_dvp.py"))
         dvp = (REPO / "wnba" / "generate_wnba_dvp.py").read_text()
         self.assertIn("wnba_boxscores_2025_2026.csv", dvp)

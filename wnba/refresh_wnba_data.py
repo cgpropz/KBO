@@ -26,8 +26,9 @@ import requests
 
 ROOT = Path(__file__).resolve().parent
 BOX_SCORE_CSV = ROOT / "wnba_boxscores_2025_2026.csv"
-# Playoff box scores. Read only by the memory grader. Never merged into
-# BOX_SCORE_CSV, which feeds live projection averages.
+# Playoff box scores. Kept out of BOX_SCORE_CSV so projection averages (and
+# DvP) stay regular-season only. Read by the memory/shadow graders and merged
+# (tagged postseason) into the published player game logs by wnba/backend.
 POSTSEASON_BOX_SCORE_CSV = ROOT / "wnba_boxscores_postseason.csv"
 POSITIONS_JSON = ROOT / "mappings" / "player_positions.json"
 SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
@@ -183,7 +184,7 @@ def fetch_player_gamelogs(
 
 
 def fetch_postseason_gamelogs(seasons: list[int], official_teams: set[str]) -> pd.DataFrame:
-    """Completed postseason box scores. Not written into the regular-season CSV."""
+    """Every completed postseason box score for ``seasons``. Not written into the regular-season CSV."""
     frames = []
     for season in seasons:
         scoreboard = fetch_espn("scoreboard", {"limit": 1000, "dates": season})
@@ -291,6 +292,9 @@ def main() -> int:
         gamelogs, positions = refresh_gamelogs(args.seasons)
     except Exception as exc:  # noqa: BLE001 - network block / API outage
         print(f"\n⚠ Gamelog refresh failed: {exc}")
+        # Playoff box scores come from a separate fetch; refresh them anyway so
+        # game logs still pick up new playoff games when the regular pull fails.
+        _write_postseason_boxscores(args.seasons)
         if args.strict:
             return 1
         print(
@@ -301,6 +305,7 @@ def main() -> int:
 
     if gamelogs.empty:
         print("✗ Stats API returned no rows; keeping the existing gamelog CSV.")
+        _write_postseason_boxscores(args.seasons)
         return 1 if args.strict else 0
 
     newest = str(gamelogs.iloc[0]["Game Date"])
