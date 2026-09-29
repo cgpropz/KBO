@@ -13,6 +13,10 @@ import { supabase } from './supabaseClient';
  * public/data/*.json files. That fallback is compiled out of production builds.
  */
 
+// Client-side ceiling so boards surface the #32 load-error UI instead of
+// hanging forever when /api/data (or upstream Supabase) stalls.
+export const FETCH_TIMEOUT_MS = 12_000;
+
 async function accessToken() {
   if (!supabase) return null;
   try {
@@ -35,16 +39,33 @@ async function fetchDevStatic(staticPath) {
   };
 }
 
+function isTimeoutError(err) {
+  return err?.name === 'TimeoutError' || err?.name === 'AbortError';
+}
+
+async function readErrorDetail(res) {
+  try {
+    const body = await res.json();
+    return body?.message || body?.error || String(res.status);
+  } catch {
+    return String(res.status);
+  }
+}
+
 export async function fetchApiDataset(ds, { devStaticPath } = {}) {
   try {
     const token = await accessToken();
     const res = await fetch(`/api/data?ds=${encodeURIComponent(ds)}`, {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     const type = res.headers.get('content-type') || '';
     if (!res.ok || !type.includes('application/json')) {
-      throw new Error(`Failed to load ${ds} (${res.status})`);
+      const detail = type.includes('application/json')
+        ? await readErrorDetail(res)
+        : String(res.status);
+      throw new Error(`Failed to load ${ds} (${detail})`);
     }
     const body = await res.json();
     return {
@@ -58,6 +79,9 @@ export async function fetchApiDataset(ds, { devStaticPath } = {}) {
     if (import.meta.env.DEV && devStaticPath) {
       console.warn(`[data] ${ds} API unavailable in dev, using local static file`, err.message);
       return fetchDevStatic(devStaticPath);
+    }
+    if (isTimeoutError(err)) {
+      throw new Error(`Timed out loading ${ds}. The data service may be slow — please refresh.`);
     }
     throw err;
   }
