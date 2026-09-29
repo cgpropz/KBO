@@ -192,7 +192,11 @@ jobs:
           # Vercel's own builder runs without our system env vars and the deployed
           # JS may be missing Supabase config (root cause of GH-Actions deploys
           # silently shipping a broken bundle).
-          bash pipeline/run_release.sh --skip-odds --skip-full-refresh
+          # Do NOT regenerate data here. This step has the anon key for the
+          # frontend bundle and does not have SUPABASE_SERVICE_ROLE_KEY. A quick
+          # regen used to rewrite snapshots and publish nothing, which left the
+          # live cohort split. The refresh step above already published.
+          bash pipeline/run_release.sh --skip-odds --skip-full-refresh --skip-snapshot-regen
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

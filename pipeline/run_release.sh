@@ -14,6 +14,7 @@ set -euo pipefail
 #   bash pipeline/run_release.sh --skip-deploy
 #   bash pipeline/run_release.sh --skip-odds
 #   bash pipeline/run_release.sh --skip-full-refresh
+#   bash pipeline/run_release.sh --skip-full-refresh --skip-snapshot-regen
 #   bash pipeline/run_release.sh --skip-build
 #
 # Optional passthrough for refresh_data.py:
@@ -38,6 +39,7 @@ SKIP_ODDS=0
 SKIP_FULL=0
 SKIP_BUILD=0
 SKIP_DEPLOY=0
+SKIP_SNAPSHOT_REGEN=0
 REFRESH_DATA_ARGS=""
 ALLOW_STALE_DEPLOY="${ALLOW_STALE_DEPLOY:-0}"
 VERCEL_HAS_TOKEN=0
@@ -58,6 +60,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-full-refresh)
       SKIP_FULL=1
+      shift
+      ;;
+    --skip-snapshot-regen)
+      SKIP_SNAPSHOT_REGEN=1
       shift
       ;;
     --skip-build)
@@ -152,6 +158,14 @@ if [[ "$SKIP_FULL" -eq 0 ]]; then
   fi
 else
   log_step 2 "Run full data refresh (skipped)"
+  if [[ "$SKIP_SNAPSHOT_REGEN" -eq 1 ]]; then
+    # The Vercel deploy step does not have the service-role key, and it must
+    # not rewrite snapshots it cannot publish. Doing so previously rebuilt
+    # projections with new timestamps and left Supabase on the previous set.
+    echo "Skipping snapshot regeneration."
+    echo "This step builds and deploys the frontend only. Data was published by the refresh step."
+    QUICK_RC=0
+  else
   echo "Regenerating core UI snapshots from current local data"
   # Keep primary pages current in quick-release mode too (without full scrape).
   QUICK_RC=0
@@ -195,10 +209,15 @@ PYEOF
   # Keep matchup markets/weather fresh for quick-release runs.
   "$PYTHON" "$BASE/generate_matchups.py" || { echo "⚠ generate_matchups.py failed in quick mode"; QUICK_RC=1; }
 
-  # Step F: Push fresh snapshots to Supabase (the site reads them via /api/data).
-  if [[ "$SUPABASE_READY" -eq 1 ]]; then
+  # Step F: Push fresh snapshots only when every quick-mode step succeeded.
+  # A partial regen must not replace the live cohort.
+  if [[ "$QUICK_RC" -eq 0 && "$SUPABASE_READY" -eq 1 ]]; then
     echo "Pushing fresh snapshots to Supabase..."
     "$PYTHON" "$BASE/publish_supabase.py" || echo "⚠ publish_supabase.py failed (non-fatal; site keeps serving the previous Supabase snapshot)"
+  elif [[ "$SUPABASE_READY" -eq 0 ]]; then
+    echo "Supabase env vars missing; quick mode will not publish regenerated snapshots"
+  else
+    echo "Skipping Supabase publish because quick-mode regeneration was incomplete"
   fi
 
   if [[ "$QUICK_RC" -ne 0 ]]; then
@@ -210,6 +229,7 @@ PYEOF
       exit 1
     fi
   fi
+  fi # end quick-mode regeneration
 fi
 
 # --- PREDEPLOY DATA VERIFICATION ---

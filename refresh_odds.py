@@ -3,7 +3,8 @@
 Lightweight PrizePicks odds refresh only.
 Run every 30 minutes via GitHub Actions.
 Fetches latest PrizePicks odds, recalculates line-sensitive projections, and
-publishes only the affected snapshots to Supabase.
+republishes those files together with matchup data and pitcher rankings so
+the live cohort keeps one published_at.
 
 Usage:
   python refresh_odds.py          # fetch and publish
@@ -16,7 +17,7 @@ import os
 import json
 import time
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PROJECT_PYTHON = os.path.join(BASE, "venv", "bin", "python")
@@ -24,6 +25,15 @@ PYTHON = PROJECT_PYTHON if os.path.exists(PROJECT_PYTHON) else sys.executable
 PUBLIC_DATA = os.path.join(BASE, "kbo-props-ui", "public", "data")
 LOCK_DIR = os.path.join(BASE, ".locks")
 PIPELINE_LOCK = os.path.join(LOCK_DIR, "refresh_pipeline.lock")
+PIPELINE_DIR = os.path.join(BASE, "pipeline")
+if PIPELINE_DIR not in sys.path:
+    sys.path.insert(0, PIPELINE_DIR)
+
+from snapshot_consistency import (  # noqa: E402
+    COHORT_FILENAMES,
+    intraday_publish_block_reason,
+    with_published_at,
+)
 
 
 def ensure_project_python():
@@ -43,7 +53,7 @@ def fetch_odds():
     result = subprocess.run(cmd, cwd=BASE)
     
     if result.returncode != 0:
-        print("✗ Failed to fetch odds")
+        print("✗ Failed to fetch odds (see the HTTP status and response snippet above)")
         return False
     
     print("✓ PrizePicks odds fetched")
@@ -102,14 +112,50 @@ def _publish_snapshot(client, filename, table, dry_run=False):
         return False
 
 
+def _load_public_json(filename):
+    path = os.path.join(PUBLIC_DATA, filename)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _stamp_cohort(published_at):
+    for filename in COHORT_FILENAMES:
+        path = os.path.join(PUBLIC_DATA, filename)
+        payload = _load_public_json(filename)
+        stamped = with_published_at(payload, published_at)
+        if not isinstance(stamped, dict):
+            continue
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(stamped, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+
+
 def publish_to_supabase(skip=False, dry_run=False):
     """
-    Publish odds-derived projection snapshots to Supabase.
-    Uses SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars.
+    Publish one consistent snapshot cohort to Supabase.
+
+    Line refreshes rebuild strikeout projections, batter projections, and
+    props. Matchup data and pitcher rankings are not rebuilt here (that would
+    re-scrape the slate every 30 minutes). They are republished in the same
+    cohort, with one published_at, only when the rebuilt projections still
+    match the matchup slate. Otherwise nothing is published and the live site
+    keeps the last good set.
     """
     if skip:
         print("⏭  Skipping Supabase publish (--skip-supabase)")
         return True
+
+    strikeout = _load_public_json("strikeout_projections.json")
+    batter = _load_public_json("batter_projections.json")
+    matchup = _load_public_json("matchup_data.json")
+    reason = intraday_publish_block_reason(strikeout=strikeout, batter=batter, matchup=matchup)
+    if reason:
+        print(f"⚠ {reason}")
+        print("   Leaving the last good published set in place.")
+        return False
     
     supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
     service_role_key = (
@@ -133,13 +179,22 @@ def publish_to_supabase(skip=False, dry_run=False):
         return False
     
     try:
+        published_at = datetime.now(timezone.utc).isoformat()
+        if not dry_run:
+            _stamp_cohort(published_at)
         client = create_client(supabase_url, service_role_key)
+        # Rankings and matchup go first. If a later line-file upload fails,
+        # the slate files have moved together and the line files stay on the
+        # previous cohort, so the skew check still fails closed.
         targets = [
+            ("pitcher_rankings.json", "pitcher_rankings"),
+            ("matchup_data.json", "matchup_data"),
             ("strikeout_projections.json", "strikeout_projections"),
             ("batter_projections.json", "batter_projections"),
             ("prizepicks_props.json", "prizepicks_props"),
         ]
 
+        print(f"📡 Publishing odds cohort {published_at} ({len(targets)} snapshots)")
         ok = True
         for filename, table in targets:
             ok = _publish_snapshot(client, filename, table, dry_run=dry_run) and ok

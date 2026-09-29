@@ -57,8 +57,11 @@ jobs:
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
-              echo "Refresh failed, retrying in 20s..."
-              sleep 20
+              # Outer backoff in addition to the fetcher's own retry. The
+              # fetcher logs the HTTP status and a short response snippet.
+              delay=$((attempt * 15))
+              echo "Refresh failed, retrying in ${delay}s..."
+              sleep "$delay"
             fi
           done
           echo "Refresh failed after 3 attempts"
