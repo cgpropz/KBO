@@ -373,8 +373,8 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             {filteredGames.map((g, index) => {
               const hit = line != null && g.value != null && g.value > line
               return (
-                <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`}>
-                  <div className={`wnba-player-bar ${hit ? 'hit' : 'miss'}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
+                <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`} title={g.postseason ? `Playoffs · ${fmtDate(g.date)}` : undefined}>
+                  <div className={`wnba-player-bar ${hit ? 'hit' : 'miss'}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
             })}
@@ -386,6 +386,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             <span key={`date-${g.date}-${index}`}>
               <b className="wnba-player-date-team" style={{ color: teamColorLookup[g.opponent] || '#78918a' }}>{g.opponent || '—'}</b>
               {fmtDate(g.date)}
+              {g.postseason && <em className="wnba-player-date-po" title="Playoff game">PO</em>}
             </span>
           ))}
         </div>

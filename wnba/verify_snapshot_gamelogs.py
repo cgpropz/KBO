@@ -15,6 +15,9 @@ SNAPSHOT_DIR = ROOT.parent / "kbo-props-ui" / "public" / "data" / "wnba"
 SOURCES = (
     (ROOT / "wnba_boxscores_2025_2026.csv", "Player", "Game Date"),
     (ROOT / "WNBA_Gamelog_Data.csv", "PLAYER_NAME", "GAME_DATE"),
+    # Playoff box scores are part of the published game log (recentGames), so a
+    # snapshot must show a player's latest playoff game too. Optional file.
+    (ROOT / "wnba_boxscores_postseason.csv", "Player", "Game Date"),
 )
 SNAPSHOTS = (
     "projections_standard.json",
@@ -37,6 +40,8 @@ def parse_date(value: object) -> datetime | None:
 def latest_games() -> dict[str, datetime]:
     latest: dict[str, datetime] = {}
     for source, name_field, date_field in SOURCES:
+        if not source.exists():
+            continue
         with source.open(newline="", encoding="utf-8-sig") as file_handle:
             for row in csv.DictReader(file_handle):
                 name = (row.get(name_field) or "").strip()
