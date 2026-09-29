@@ -841,6 +841,44 @@ def shrink_pitcher_stats(stats, league_soip, league_ipg, league_hits_per_ip):
     return stats
 
 
+def load_matchup_starters(matchup_path):
+    matchup_starters = []
+    with open(matchup_path, encoding="utf-8") as f:
+        matchup_payload = json.load(f)
+    for matchup in matchup_payload.get("matchups", []):
+        away = canonical_team(matchup.get("away"))
+        home = canonical_team(matchup.get("home"))
+        for pitcher, team, opponent in (
+            (matchup.get("away_pitcher"), away, home),
+            (matchup.get("home_pitcher"), home, away),
+        ):
+            name = (pitcher or {}).get("profile", {}).get("name") or (pitcher or {}).get("name")
+            if name and team and opponent:
+                matchup_starters.append({"name": name, "team": team, "opponent": opponent, "pcode": None})
+    return matchup_starters
+
+
+def starter_games(starters):
+    games = set()
+    for starter in starters or []:
+        team = canonical_team((starter or {}).get("team"))
+        opponent = canonical_team((starter or {}).get("opponent"))
+        if team and opponent:
+            games.add(tuple(sorted((team, opponent))))
+    return games
+
+
+def select_no_market_starters(starters, matchup_starters):
+    if not matchup_starters:
+        return starters
+    if not starters:
+        return matchup_starters
+    if starter_games(starters) != starter_games(matchup_starters):
+        print("⚠ Ignoring stale matchup starters because their game slate differs from player_names.csv")
+        return starters
+    return matchup_starters
+
+
 def main():
     pp_strikeouts = load_pp_lines("Pitcher Strikeouts")
     pp_hits_allowed = load_pp_lines("Hits Allowed")
@@ -912,24 +950,12 @@ def main():
         # The matchup snapshot is the authoritative current slate when PP has
         # not published pitcher markets yet. Keep model rows, but no live lines.
         matchup_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "matchup_data.json")
-        matchup_starters = []
         try:
-            with open(matchup_path, encoding="utf-8") as f:
-                matchup_payload = json.load(f)
-            for matchup in matchup_payload.get("matchups", []):
-                away = canonical_team(matchup.get("away"))
-                home = canonical_team(matchup.get("home"))
-                for pitcher, team, opponent in (
-                    (matchup.get("away_pitcher"), away, home),
-                    (matchup.get("home_pitcher"), home, away),
-                ):
-                    name = (pitcher or {}).get("profile", {}).get("name") or (pitcher or {}).get("name")
-                    if name and team and opponent:
-                        matchup_starters.append({"name": name, "team": team, "opponent": opponent, "pcode": None})
+            matchup_starters = load_matchup_starters(matchup_path)
         except (OSError, TypeError, ValueError) as exc:
             print(f"⚠ Could not read current matchup starters: {exc}")
-        if matchup_starters:
-            starters = matchup_starters
+        else:
+            starters = select_no_market_starters(starters, matchup_starters)
 
     starters_for_map = list(starters)
     # Always include local starter file aliases so batter-side opponent lookups stay in sync.
