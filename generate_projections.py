@@ -358,6 +358,59 @@ def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
+GAME_LIST_ATTEMPTS = 3
+GAME_LIST_BACKOFF_SECONDS = 5
+
+
+def fetch_kbo_game_list_json(url, payload, timeout, attempts=GAME_LIST_ATTEMPTS,
+                             backoff=GAME_LIST_BACKOFF_SECONDS, post=None, sleep=None):
+    """POST to the KBO GetKboGameList endpoint and return the decoded JSON.
+
+    The endpoint intermittently answers 200 with an empty/HTML body (seen in
+    the Intraday Odds Refresh run on 2026-09-28 15:44 ET, which raised
+    JSONDecodeError three times in a row). Retry non-JSON bodies, network
+    errors and non-200 responses with a short backoff.
+
+    Behaviour once retries are exhausted is unchanged from before:
+      * non-200 status          -> returns None (caller treats as no games)
+      * 200 with a non-JSON body -> raises (so the run fails and the last
+        published snapshot is preserved instead of publishing an empty slate)
+    """
+    import time
+
+    post = post or requests.post
+    sleep = sleep or time.sleep
+    headers = {"User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest"}
+    last_error = None
+    last_status = None
+    for attempt in range(1, max(1, attempts) + 1):
+        try:
+            resp = post(url, data=payload, timeout=timeout, headers=headers)
+            last_status = resp.status_code
+            if resp.status_code == 200:
+                try:
+                    return resp.json()
+                except ValueError as exc:
+                    snippet = (getattr(resp, "text", "") or "")[:120].replace("\n", " ")
+                    last_error = ValueError(
+                        f"KBO game list returned non-JSON body (HTTP 200, {len(getattr(resp, 'text', '') or '')} bytes): {snippet!r}"
+                    )
+                    last_error.__cause__ = exc
+            else:
+                last_error = None
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            last_error = exc
+            last_status = None
+        if attempt < attempts:
+            print(f"  KBO game list attempt {attempt}/{attempts} failed "
+                  f"(status={last_status}, error={type(last_error).__name__ if last_error else None}); "
+                  f"retrying in {backoff * attempt:.0f}s")
+            sleep(backoff * attempt)
+    if last_error is not None:
+        raise last_error
+    return None
+
+
 def scrape_starters_with_pcodes(timeout_ms=15000, lookup_timeout_ms=10000):
     game_list_url = "https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList"
     eng_player_url = "http://eng.koreabaseball.com/Teams/PlayerInfoPitcher/Summary.aspx?pcode={}"
@@ -399,15 +452,11 @@ def scrape_starters_with_pcodes(timeout_ms=15000, lookup_timeout_ms=10000):
         if date_str >= "20241026":
             sr_id = "0,1,3,4,5,6,7,8,9"
         payload = {"leId": "1", "srId": sr_id, "date": date_str}
-        resp = requests.post(
+        obj = fetch_kbo_game_list_json(
             game_list_url,
-            data=payload,
+            payload,
             timeout=max(8, int(timeout_ms / 1000)),
-            headers={"User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest"},
         )
-        if resp.status_code != 200:
-            return []
-        obj = resp.json()
         return obj.get("game", []) if isinstance(obj, dict) else []
 
     selected_games = []

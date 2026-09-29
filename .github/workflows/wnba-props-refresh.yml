@@ -25,7 +25,10 @@ name: Refresh WNBA PrizePicks Lines (30 min)
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # every 30 minutes (UTC)
+    # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
+    # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
+    # job actually ran only every ~3-6 h). Same 30-minute cadence.
+    - cron: "22,52 * * * *" # every 30 minutes (UTC)
   workflow_dispatch:
 
 permissions:

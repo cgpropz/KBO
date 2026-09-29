@@ -1,0 +1,55 @@
+# Pull-request checks. Read-only: never deploys, publishes, or commits.
+# Before this, no workflow ran the existing Python/JS test suites on PRs.
+name: CI (PR checks)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run tests (offline; no network or secrets needed)
+        run: python -m pytest -q -p no:cacheprovider test_*.py pipeline/memory ml/tests
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: kbo-props-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: kbo-props-ui/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: API unit tests
+        run: npm run test:api
+      - name: Production build
+        run: npm run build
+      # `npm run lint` currently reports pre-existing errors on main
+      # (SlipOptimizer.jsx, StrikeoutProjections.jsx, ...). Report them without
+      # blocking until they are cleaned up.
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: npm run lint
