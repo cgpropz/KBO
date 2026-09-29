@@ -80,7 +80,15 @@ are not rewritten; `meta.json` and `summary.json` show an `evaluation` block
 
 - `waiting` — slate frozen (or empty) but finals/actuals not ready
 - `partial` — some props graded, some still missing actuals (`summary.json` written if any graded)
-- `complete` — every slate prop graded (OVER/UNDER/PUSH/DNP) and `recap.json` + `summary.json` written
+- `complete` — every slate prop graded (OVER/UNDER/PUSH/DNP/VOID) and `recap.json` + `summary.json` written
+
+## Voids
+
+`result: "VOID"` is graded, so a day can still reach `complete`, but it is excluded from the hit rate the same way a push or DNP is. `summary.json` and `meta.json` include a `voids` count.
+
+- `memory/postponements.json` lists postponed or cancelled games (rainouts). Those props are VOID with `void_reason: "postponed"`.
+- A KBO starter scrape that recorded `game_sc: "4"` for that date (postponed/cancelled on the KBO game center) is treated the same way.
+- `memory/starter_matchups.json`, or `games` on `Pitchers-Data/player_names_meta.json` when its `game_date` matches, lists the real matchups. Props whose team/opponent is not in that list are VOID with `void_reason: "not_on_slate"`. If neither source has the date, matchups are not used as a filter.
 
 ## Hit-rate summary (`summary.json`)
 
@@ -90,7 +98,7 @@ Produced automatically by `grade_{kbo,wnba,nfl}_day.py` when a day reaches `comp
 
 - **Hit** = `model_result == "HIT"` (recommendation direction matched OVER/UNDER)
 - **Miss** = `model_result == "MISS"`
-- **PUSH** / **DNP** are counted but excluded from the hit-rate denominator
+- **PUSH** / **DNP** / **VOID** are counted but excluded from the hit-rate denominator
 - `hit_rate` = hits / (hits + misses), or `null` when denominator is 0
 - `hit_rate_pct` = same ratio × 100, rounded to 1 decimal, or `null`
 

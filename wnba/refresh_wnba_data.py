@@ -26,9 +26,20 @@ import requests
 
 ROOT = Path(__file__).resolve().parent
 BOX_SCORE_CSV = ROOT / "wnba_boxscores_2025_2026.csv"
+# Playoff box scores. Read only by the memory grader. Never merged into
+# BOX_SCORE_CSV, which feeds live projection averages.
+POSTSEASON_BOX_SCORE_CSV = ROOT / "wnba_boxscores_postseason.csv"
 POSITIONS_JSON = ROOT / "mappings" / "player_positions.json"
 SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 SUMMARY_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
+# site.api.espn.com is what CI uses. site.web.api.espn.com is a fallback when
+# the primary host rejects the request. Postseason fetches try both; the
+# regular-season refresh stays on SCOREBOARD_URL / SUMMARY_URL.
+ESPN_API_ROOTS = (
+    "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba",
+    "https://site.web.api.espn.com/apis/site/v2/sports/basketball/wnba",
+)
+POSTSEASON_SLUGS = {"post-season", "postseason", "playoffs"}
 TEAMS_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams"
 ROSTER_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/{team_id}/roster"
 DEFAULT_SEASONS = [2025, 2026]
@@ -65,7 +76,21 @@ def percentage(made: int, attempted: int) -> float:
     return round((made / attempted) * 100, 1) if attempted else 0.0
 
 
-def event_to_rows(event: dict, season: int) -> tuple[list[dict], dict[str, str]]:
+def fetch_espn(path: str, params: dict[str, object]) -> dict:
+    """GET an ESPN WNBA endpoint, trying the fallback host if the primary fails."""
+    errors: list[Exception] = []
+    for root in ESPN_API_ROOTS:
+        try:
+            return fetch_json(f"{root}/{path.lstrip('/')}", params)
+        except Exception as exc:  # noqa: BLE001 - try the next host
+            errors.append(exc)
+            print(f"  [espn] {root} failed: {exc}")
+    raise errors[-1]
+
+
+def event_to_rows(
+    event: dict, season: int, *, summary_url: str = SUMMARY_URL
+) -> tuple[list[dict], dict[str, str]]:
     competition = event["competitions"][0]
     teams = competition["competitors"]
     team_details = {
@@ -75,7 +100,7 @@ def event_to_rows(event: dict, season: int) -> tuple[list[dict], dict[str, str]]
         }
         for entry in teams
     }
-    summary = fetch_json(SUMMARY_URL, {"event": event["id"]})
+    summary = fetch_json(summary_url, {"event": event["id"]})
     game_date = (
         datetime.fromisoformat(event["date"].replace("Z", "+00:00"))
         .astimezone(ZoneInfo("America/New_York"))
@@ -157,6 +182,56 @@ def fetch_player_gamelogs(
     )
 
 
+def fetch_postseason_gamelogs(seasons: list[int], official_teams: set[str]) -> pd.DataFrame:
+    """Completed postseason box scores. Not written into the regular-season CSV."""
+    frames = []
+    for season in seasons:
+        scoreboard = fetch_espn("scoreboard", {"limit": 1000, "dates": season})
+        events = [
+            event for event in scoreboard.get("events", [])
+            if event.get("season", {}).get("slug") in POSTSEASON_SLUGS
+            and event.get("status", {}).get("type", {}).get("completed")
+            and {
+                competitor.get("team", {}).get("abbreviation")
+                for competitor in event.get("competitions", [{}])[0].get("competitors", [])
+            }.issubset(official_teams)
+        ]
+        print(f"  Fetching {len(events)} completed postseason games for {season}")
+        rows: list[dict] = []
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = []
+            for event in events:
+                # summary host follows whichever scoreboard host answered
+                futures.append(executor.submit(_postseason_event_rows, event, season))
+            for future in as_completed(futures):
+                rows.extend(future.result())
+        if rows:
+            frames.append(pd.DataFrame(rows, columns=OUTPUT_COLUMNS))
+    if not frames:
+        return pd.DataFrame(columns=OUTPUT_COLUMNS)
+    combined = pd.concat(frames, ignore_index=True)
+    combined["_sort"] = pd.to_datetime(combined["Game Date"], format="%m/%d/%Y", errors="coerce")
+    return (
+        combined.sort_values("_sort", ascending=False, na_position="last")
+        .drop(columns=["_sort"])
+        .reset_index(drop=True)
+    )
+
+
+def _postseason_event_rows(event: dict, season: int) -> list[dict]:
+    """Box score rows for one postseason event, trying each ESPN host."""
+    last: Exception | None = None
+    for root in ESPN_API_ROOTS:
+        try:
+            rows, _positions = event_to_rows(event, season, summary_url=f"{root}/summary")
+            return rows
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+    if last:
+        raise last
+    return []
+
+
 def fetch_current_roster_positions() -> tuple[dict[str, str], set[str]]:
     league = fetch_json(TEAMS_URL, {"limit": 100})
     teams = league["sports"][0]["leagues"][0].get("teams", [])
@@ -234,7 +309,52 @@ def main() -> int:
     POSITIONS_JSON.write_text(json.dumps(dict(sorted(positions.items())), indent=2) + "\n", encoding="utf-8")
     print(f"\n✅ Wrote {BOX_SCORE_CSV.name}: {len(gamelogs)} rows (newest game: {newest})")
     print(f"✅ Wrote {POSITIONS_JSON.name}: {len(positions)} official player positions")
+    _write_postseason_boxscores(args.seasons)
     return 0
+
+
+def _official_teams_for_postseason() -> set[str]:
+    """Team abbreviations used to keep exhibition games out of the playoff file.
+
+    The roster endpoint is the same source as the regular refresh. If that host
+    is unreachable, fall back to abbreviations already in the regular-season
+    CSV so a playoff fetch can still run without rewriting that file.
+    """
+    try:
+        _roster, official_teams = fetch_current_roster_positions()
+        if official_teams:
+            return official_teams
+    except Exception as exc:  # noqa: BLE001 - roster host can 403 while the scoreboard works
+        print(f"  [postseason] roster lookup failed ({exc}); using regular-season team abbreviations")
+    teams: set[str] = set()
+    if BOX_SCORE_CSV.exists():
+        import csv
+
+        with BOX_SCORE_CSV.open(encoding="utf-8-sig", newline="") as handle:
+            for row in csv.DictReader(handle):
+                team = (row.get("Team") or "").strip()
+                if team:
+                    teams.add(team)
+    return teams
+
+
+def _write_postseason_boxscores(seasons: list[int]) -> None:
+    """Write playoff box scores to a separate CSV. Failure must not roll back the regular file."""
+    try:
+        official_teams = _official_teams_for_postseason()
+        if not official_teams:
+            raise RuntimeError("no official team abbreviations for the postseason filter")
+        postseason = fetch_postseason_gamelogs(seasons, official_teams)
+    except Exception as exc:  # noqa: BLE001 - grading-only; keep the regular-season refresh
+        print(f"\n⚠ Postseason box score refresh failed: {exc}")
+        print(f"  Leaving {POSTSEASON_BOX_SCORE_CSV.name} unchanged.")
+        return
+    if postseason.empty:
+        print(f"\n⚠ No completed postseason games; leaving {POSTSEASON_BOX_SCORE_CSV.name} unchanged.")
+        return
+    postseason.to_csv(POSTSEASON_BOX_SCORE_CSV, index=False)
+    newest = str(postseason.iloc[0]["Game Date"])
+    print(f"✅ Wrote {POSTSEASON_BOX_SCORE_CSV.name}: {len(postseason)} rows (newest game: {newest})")
 
 
 if __name__ == "__main__":

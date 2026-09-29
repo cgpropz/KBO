@@ -14,15 +14,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pipeline.memory.common import (
     REPO_ROOT,
     RESULT_DNP,
+    RESULT_VOID,
     format_iso,
     format_mmddyyyy,
     grade_line,
     load_json,
+    matchup_pair,
     memory_dir,
     model_result,
-    normalize_name,
+    name_match_key,
     parse_cli_date,
     parse_date,
+    postponed_matchups,
+    scheduled_matchups,
+    team_key,
     utc_now_iso,
     write_meta,
     write_partial_progress,
@@ -121,7 +126,8 @@ def build_actuals() -> dict[tuple[str, str], dict]:
             if log.get("Role") != "SP":
                 continue
             d = parse_date(log.get("Date"))
-            if not d:
+            name_key = name_match_key(log.get("Name", ""))
+            if not d or not name_key:
                 continue
             ip = float(log.get("IP") or 0)
             so = log.get("SO", log.get("K", 0)) or 0
@@ -129,9 +135,10 @@ def build_actuals() -> dict[tuple[str, str], dict]:
             outs = log.get("PitOuts")
             if outs is None:
                 outs = round(ip * 3)
-            lookup[(format_iso(d), normalize_name(log.get("Name", "")))] = {
+            lookup[(format_iso(d), name_key)] = {
                 "type": "pitcher",
                 "team": log.get("Tm") or log.get("Team") or "",
+                "opponent": log.get("Opp") or log.get("Opponent") or "",
                 "so": so,
                 "ip": ip,
                 "ha": ha,
@@ -144,7 +151,8 @@ def build_actuals() -> dict[tuple[str, str], dict]:
         with batter_path.open(encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
                 d = parse_date(row.get("DATE"))
-                if not d:
+                name_key = name_match_key(row.get("Name", ""))
+                if not d or not name_key:
                     continue
                 h = int(row.get("H") or 0)
                 r = int(row.get("R") or 0)
@@ -155,6 +163,7 @@ def build_actuals() -> dict[tuple[str, str], dict]:
                 entry = {
                     "type": "batter",
                     "team": row.get("Team") or "",
+                    "opponent": row.get("OPP") or row.get("Opp") or "",
                     "h": h,
                     "r": r,
                     "rbi": rbi,
@@ -170,9 +179,21 @@ def build_actuals() -> dict[tuple[str, str], dict]:
                 if "fs" not in entry:
                     # Logs carry components only — derive Hitter Fantasy Score.
                     entry["fs"] = hitter_fantasy_score(row)
-                lookup[(format_iso(d), normalize_name(row.get("Name", "")))] = entry
+                lookup[(format_iso(d), name_key)] = entry
 
     return lookup
+
+
+def _void_prop(prop: dict, reason: str) -> dict:
+    """Graded VOID: out of the W-L and the hit rate, but the prop is graded."""
+    return {
+        **prop,
+        "actual": None,
+        "result": RESULT_VOID,
+        "model_result": model_result(RESULT_VOID, prop.get("recommendation")),
+        "void_reason": reason,
+        "graded_at": utc_now_iso(),
+    }
 
 
 def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = False) -> dict:
@@ -196,23 +217,44 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
     graded = []
     missing = []
 
-    teams_done = {
-        normalize_name(v.get("team", ""))
-        for (day, _), v in actuals.items()
-        if day == iso and v.get("team")
+    # A team counts as having played only when a log row's team/opponent pair
+    # is one of this slate's games. A mis-tagged row (Koo logged as LOTTE vs
+    # Hanwha on a day Lotte was scheduled against Doosan) must not mark Lotte.
+    slate_pairs = {
+        pair
+        for prop in props
+        if (pair := matchup_pair(prop.get("team"), prop.get("opponent")))
     }
+    teams_done = set()
+    for (day, _), row in actuals.items():
+        if day != iso or not row.get("team"):
+            continue
+        pair = matchup_pair(row.get("team"), row.get("opponent"))
+        if pair and pair in slate_pairs:
+            teams_done.add(team_key(row.get("team")))
+
+    postponed = postponed_matchups("kbo", d)
+    scheduled = scheduled_matchups("kbo", d)
 
     for prop in props:
         player = prop.get("player") or ""
         stat = prop.get("stat") or ""
         stat_key = STAT_KEY.get(stat)
         line = prop.get("line")
-        key = (iso, normalize_name(player))
+        pair = matchup_pair(prop.get("team"), prop.get("opponent"))
+        if pair and pair in postponed:
+            graded.append(_void_prop(prop, "postponed"))
+            continue
+        if scheduled is not None and pair not in scheduled:
+            graded.append(_void_prop(prop, "not_on_slate"))
+            continue
+
+        key = (iso, name_match_key(player))
         stats = actuals.get(key)
 
         if not stats:
-            team_key = normalize_name(prop.get("team") or "")
-            if team_key and team_key in teams_done:
+            prop_team = team_key(prop.get("team") or "")
+            if prop_team and prop_team in teams_done:
                 # Team has finals for this date but player has no log row → DNP
                 entry = {
                     **prop,

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "description": "Scheduled games for dates whose starter scrape was not retained. Used only by memory grading. Props whose team/opponent pair is not listed are VOID with reason not_on_slate. Dates omitted here are not filtered. The live KBO freeze reads Pitchers-Data/player_names_meta.json games when game_date matches, and does not filter when that list is absent.",
+  "matchups": [
+    {
+      "sport": "kbo",
+      "date": "2026-09-27",
+      "games": [
+        ["KT", "Doosan"],
+        ["Lotte", "Hanwha"],
+        ["Kiwoom", "NC"],
+        ["LG", "Kia"]
+      ]
+    }
+  ]
+}

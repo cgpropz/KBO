@@ -28,11 +28,16 @@ RESULT_OVER = "OVER"
 RESULT_UNDER = "UNDER"
 RESULT_PUSH = "PUSH"
 RESULT_DNP = "DNP"
+RESULT_VOID = "VOID"
 
 MODEL_HIT = "HIT"
 MODEL_MISS = "MISS"
 MODEL_PUSH = "PUSH"
 MODEL_NA = "N/A"
+
+# KBO game center marks a postponed/cancelled game game_sc=4 and the page
+# refuses to open it (li:not([game_sc=4])). Finished games are game_sc=3.
+KBO_POSTPONED_GAME_SC = {"4"}
 
 
 def utc_now_iso() -> str:
@@ -42,6 +47,29 @@ def utc_now_iso() -> str:
 def normalize_name(name: str) -> str:
     nfkd = unicodedata.normalize("NFKD", str(name or ""))
     return "".join(c for c in nfkd if not unicodedata.combining(c)).strip().lower()
+
+
+def name_match_key(name: str | None) -> str:
+    """Token-sorted name key.
+
+    'Chang Mo Koo' matches 'Koo Chang-Mo'; 'Bae Je Seong' matches 'Bae Je-seong'.
+    Accent-folding matches normalize_name. Token order and hyphens do not.
+    """
+    text = normalize_name(name).replace("-", " ")
+    tokens = [tok for tok in re.split(r"[^a-z0-9]+", text) if tok]
+    return " ".join(sorted(tokens))
+
+
+def team_key(name: str | None) -> str:
+    return normalize_name(name)
+
+
+def matchup_pair(team: str | None, opponent: str | None) -> frozenset[str] | None:
+    """Unordered team/opponent key. Empty or identical sides are not a game."""
+    a, b = team_key(team), team_key(opponent)
+    if not a or not b or a == b:
+        return None
+    return frozenset((a, b))
 
 
 def parse_date(value: Any) -> date | None:
@@ -174,7 +202,7 @@ def grade_line(actual: float | int | None, line: float | int | None) -> str:
 
 def model_result(outcome: str, recommendation: str | None) -> str:
     """HIT/MISS/PUSH/N/A vs model recommendation direction."""
-    if outcome == RESULT_DNP:
+    if outcome in (RESULT_DNP, RESULT_VOID):
         return MODEL_NA
     if outcome == RESULT_PUSH:
         return MODEL_PUSH
@@ -220,12 +248,16 @@ def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
     misses = 0
     pushes = 0
     dnps = 0
+    voids = 0
     props_hit: list[dict] = []
     props_miss: list[dict] = []
 
     for prop in props or []:
         mr = str(prop.get("model_result") or "").strip().upper()
         result = str(prop.get("result") or "").strip().upper()
+        if result == RESULT_VOID:
+            voids += 1
+            continue
         if mr == MODEL_HIT:
             hits += 1
             props_hit.append(summary_prop_entry(prop))
@@ -253,6 +285,7 @@ def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
         "misses": misses,
         "pushes": pushes,
         "dnps": dnps,
+        "voids": voids,
         "hit_rate": hit_rate,
         "hit_rate_pct": hit_rate_pct,
         "props_hit": props_hit,
@@ -267,6 +300,7 @@ def hit_rate_meta_extra(stats: dict) -> dict:
         "misses": stats.get("misses", 0),
         "pushes": stats.get("pushes", 0),
         "dnps": stats.get("dnps", 0),
+        "voids": stats.get("voids", 0),
         "hit_rate": stats.get("hit_rate"),
         "hit_rate_pct": stats.get("hit_rate_pct"),
     }
@@ -305,6 +339,89 @@ def is_excluded_from_evaluation(sport: str, d: date) -> bool:
     return evaluation_status(sport, d) is not None
 
 
+def postponements_path() -> Path:
+    return MEMORY_ROOT / "postponements.json"
+
+
+def starter_matchups_path() -> Path:
+    return MEMORY_ROOT / "starter_matchups.json"
+
+
+def _pair_from_game(game: Any) -> frozenset[str] | None:
+    if isinstance(game, dict):
+        return matchup_pair(
+            game.get("away") or game.get("team") or game.get("home_team"),
+            game.get("home") or game.get("opponent") or game.get("away_team"),
+        )
+    if isinstance(game, (list, tuple)) and len(game) >= 2:
+        return matchup_pair(game[0], game[1])
+    return None
+
+
+def kbo_meta_games(d: date) -> list[dict] | None:
+    """Starter matchups persisted by daily_pitchers2 for this KST date.
+
+    Returns None when the scrape is for another date or did not record games,
+    so callers leave the slate unfiltered.
+    """
+    meta = load_json(REPO_ROOT / "Pitchers-Data" / "player_names_meta.json", default={}) or {}
+    if parse_date(meta.get("game_date")) != d:
+        return None
+    games = meta.get("games")
+    if not isinstance(games, list) or not games:
+        return None
+    return [g for g in games if isinstance(g, dict)]
+
+
+def scheduled_matchups(sport: str, d: date) -> set[frozenset[str]] | None:
+    """Team pairs known to be on the slate, or None when that list is unavailable."""
+    found: list[frozenset[str]] = []
+    data = load_json(starter_matchups_path(), default={}) or {}
+    for entry in data.get("matchups") or []:
+        if str(entry.get("sport") or "").lower() != sport.lower():
+            continue
+        if parse_date(entry.get("date") or entry.get("slate_date")) != d:
+            continue
+        for game in entry.get("games") or []:
+            pair = _pair_from_game(game)
+            if pair:
+                found.append(pair)
+    if sport.lower() == "kbo":
+        for game in kbo_meta_games(d) or []:
+            pair = _pair_from_game(game)
+            if pair:
+                found.append(pair)
+    if not found:
+        return None
+    return set(found)
+
+
+def postponed_matchups(sport: str, d: date) -> set[frozenset[str]]:
+    """Team pairs that were postponed or cancelled and must grade VOID."""
+    out: set[frozenset[str]] = set()
+    data = load_json(postponements_path(), default={}) or {}
+    for entry in data.get("postponements") or []:
+        if str(entry.get("sport") or "").lower() != sport.lower():
+            continue
+        if parse_date(entry.get("date") or entry.get("slate_date")) != d:
+            continue
+        teams = entry.get("teams")
+        if isinstance(teams, (list, tuple)) and len(teams) >= 2:
+            pair = matchup_pair(teams[0], teams[1])
+        else:
+            pair = _pair_from_game(entry)
+        if pair:
+            out.add(pair)
+    if sport.lower() == "kbo":
+        for game in kbo_meta_games(d) or []:
+            if str(game.get("game_sc") or "") not in KBO_POSTPONED_GAME_SC:
+                continue
+            pair = _pair_from_game(game)
+            if pair:
+                out.add(pair)
+    return out
+
+
 def build_day_summary(
     sport: str,
     d: date,
@@ -335,6 +452,7 @@ def build_day_summary(
         "misses": stats["misses"],
         "pushes": stats["pushes"],
         "dnps": stats["dnps"],
+        "voids": stats["voids"],
         "hit_rate": stats["hit_rate"],
         "hit_rate_pct": stats["hit_rate_pct"],
         "props_hit": stats["props_hit"],
