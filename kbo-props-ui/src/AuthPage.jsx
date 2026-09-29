@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+import { getAttribution } from './tracking';
 import './AuthPage.css';
 
 export default function AuthPage({ initialMode = 'login', onBack } = {}) {
@@ -36,7 +37,14 @@ export default function AuthPage({ initialMode = 'login', onBack } = {}) {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) setError(err.message);
     } else {
-      const { error: err } = await supabase.auth.signUp({ email, password });
+      // Keep marketing attribution (utm_* / twclid captured on landing) with the
+      // new account as Supabase user metadata.
+      const attribution = getAttribution();
+      const { error: err } = await supabase.auth.signUp({
+        email,
+        password,
+        ...(Object.keys(attribution).length ? { options: { data: { attribution } } } : {}),
+      });
       if (err) {
         setError(err.message);
       } else {
