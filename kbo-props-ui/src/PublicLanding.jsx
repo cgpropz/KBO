@@ -3,6 +3,8 @@ import { SPORTS } from './sportsMeta';
 import { TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
+import FreePicksPreview from './FreePicksPreview';
+import { buildCheckoutUrl } from './tracking';
 import './PublicLanding.css';
 
 /*
@@ -11,6 +13,7 @@ import './PublicLanding.css';
  * Props:
  *   onGetStarted() → reveal AuthPage in 'signup' mode
  *   onLogin()      → reveal AuthPage in 'login' mode
+ *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl') in free preview mode
  */
 
 const TOOLS = [
@@ -59,10 +62,14 @@ const FAQS = [
   },
 ];
 
-export default function PublicLanding({ onGetStarted, onLogin }) {
-  const [planId, setPlanId] = useState('combined');
+export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
+  const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
   const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
+  const scrollToPricing = () => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Logged-out checkout: Stripe collects the email; access is matched to it
+  // when the buyer signs up with the same email (webhook + sync-subscription).
+  const checkout = (tier) => { if (tier?.link) window.location.assign(buildCheckoutUrl(tier.link, null)); };
 
   return (
     <div className="pl-landing">
@@ -73,6 +80,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
           cg<span className="pl-wordmark-accent">propz</span>
         </div>
         <nav className="pl-nav">
+          <a href="#free-picks">Free Picks</a>
           <a href="#sports">Sports</a>
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
@@ -100,7 +108,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
             </div>
             <div className="pl-hero-cta">
               <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
-              <a className="pl-cta-ghost" href="#pricing">View Plans</a>
+              <a className="pl-cta-ghost" href="#free-picks">See today's free picks</a>
             </div>
             <TrustStrip />
           </div>
@@ -114,6 +122,12 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
             </div>
           </div>
         </section>
+
+        <FreePicksPreview
+          onSignUp={onGetStarted}
+          onOpenBoard={(sport) => onOpenBoard?.(sport)}
+          onSeePlans={scrollToPricing}
+        />
 
         <section className="pl-tools" id="features">
           <div className="pl-section-heading">
@@ -145,7 +159,7 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
                 key={s.id}
                 className="pl-sport-card"
                 style={{ '--accent': s.accent, '--glow': s.glow }}
-                onClick={onGetStarted}
+                onClick={() => (onOpenBoard ? onOpenBoard(s.id) : onGetStarted())}
               >
                 <div className="pl-sport-emoji">{s.emoji}</div>
                 <div className="pl-sport-head">
@@ -188,8 +202,15 @@ export default function PublicLanding({ onGetStarted, onLogin }) {
             <ul className="pl-pricing-features">
               {activeTier.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
-            <button className="pl-cta-primary pl-pricing-cta" onClick={onGetStarted}>Get Started</button>
+            <button className="pl-cta-primary pl-pricing-cta" onClick={() => checkout(activeTier)}>
+              {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
+            </button>
             <p className="pl-pricing-alt">{activeTier.description}</p>
+            <p className="ff-checkout-note">
+              No account needed to check out. Afterwards, sign up with the <strong>same email</strong> you
+              used at checkout and your plan unlocks automatically. Not ready?{' '}
+              <button type="button" onClick={onGetStarted}>Start free</button>
+            </p>
           </div>
         </section>
 

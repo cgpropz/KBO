@@ -75,7 +75,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
         </div>
         <PlayerSearch onSelect={openPlayer} />
         <button className="kbo-app-pro-badge" onClick={() => setView('pricing')}>{isPaid ? 'MANAGE' : 'UPGRADE'}</button>
-        <button className="kbo-app-signout" onClick={signOut} title={user?.email}>Sign Out</button>
+        {user && <button className="kbo-app-signout" onClick={signOut} title={user.email}>Sign Out</button>}
       </nav>
       {/* keyed on tier so data views refetch (full vs. preview) when the tier changes */}
       <main className="kbo-app-content" key={tier || 'free'}>

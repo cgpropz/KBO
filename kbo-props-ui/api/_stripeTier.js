@@ -94,3 +94,16 @@ export async function computeStripeTier(stripe, email) {
 
   return tierFromSports(sports, hasAny);
 }
+
+// Current plans keyed by charged amount (cents). Used for analytics/purchase
+// tracking only (never for entitlement): api/checkout-session.js and the X
+// Conversions API report in api/stripe-webhook.js.
+export const PLAN_BY_AMOUNT = {
+  999: 'weekly',    // Weekly All-Access   $9.99  / wk
+  2999: 'monthly',  // Monthly All-Access  $29.99 / mo
+  9999: 'lifetime', // Lifetime All-Access $99.99 once
+};
+
+export function planForAmount(amountCents) {
+  return PLAN_BY_AMOUNT[Number(amountCents)] || 'other';
+}

@@ -6,6 +6,8 @@ import KboApp from './KboApp'
 import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
 import NflApp from './nfl/NflApp'
+import CheckoutSuccess from './CheckoutSuccess'
+import './FreeFunnel.css'
 import './App.css'
 
 const SPORT_STORAGE_KEY = 'cg_sport';
@@ -48,42 +50,65 @@ function App() {
     );
   }
 
-  /* Not logged in → marketing page first, then login/signup */
-  if (!user) {
-    if (publicView === 'landing') {
-      return (
-        <PublicLanding
-          onGetStarted={() => { setAuthMode('signup'); setPublicView('auth'); }}
-          onLogin={() => { setAuthMode('login'); setPublicView('auth'); }}
-        />
-      );
-    }
-    return <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />;
-  }
+  const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
+  const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };
+  // Pops up after a Stripe Payment Link redirects back with ?checkout=success.
+  // Stable key keeps it mounted if the page behind it switches branches.
+  const checkoutSuccess = <CheckoutSuccess key="checkout-success" onSignUp={openSignUp} onLogin={openLogin} />;
 
-  /* cgpropz hub — sport-agnostic front door (sits above both sports) */
-  if (view === 'hub') {
+  /* Not logged in → login/signup form when requested */
+  if (!user && publicView === 'auth') {
     return (
-      <CgpropzLanding
-        onEnterSport={(s) => { setSport(s); setView('home'); }}
-        onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
-      />
+      <>
+        <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />
+        {checkoutSuccess}
+      </>
     );
   }
 
-  /* WNBA section — separate sport shell behind the same auth */
-  if (sport === 'wnba') {
+  /* Front door: marketing page (logged out) or cgpropz hub (logged in) */
+  if (view === 'hub') {
     return (
+      <>
+        {user ? (
+          <CgpropzLanding
+            onEnterSport={(s) => { setSport(s); setView('home'); }}
+            onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
+          />
+        ) : (
+          <PublicLanding
+            onGetStarted={openSignUp}
+            onLogin={openLogin}
+            onOpenBoard={(s) => { setSport(s); setView('home'); window.scrollTo(0, 0); }}
+          />
+        )}
+        {checkoutSuccess}
+      </>
+    );
+  }
+
+  /* Logged-out visitors can browse the boards in preview mode (the server
+     only sends them the top 3 lines per board + a locked count). */
+  const previewBar = !user && (
+    <div className="ff-preview-bar" role="note">
+      <span>👀 Free preview: you're seeing the top 3 lines on each board.</span>
+      <button className="ff-btn ff-btn-primary ff-btn-small" onClick={openSignUp}>Sign up free</button>
+      <button className="ff-btn ff-btn-ghost ff-btn-small" onClick={openLogin}>Log in</button>
+    </div>
+  );
+
+  let sportApp;
+  if (sport === 'wnba') {
+    /* WNBA section — separate sport shell behind the same auth */
+    sportApp = (
       <WnbaApp
         sport={sport}
         setSport={setSport}
         onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
       />
     );
-  }
-
-  if (sport === 'nfl') {
-    return (
+  } else if (sport === 'nfl') {
+    sportApp = (
       <NflApp
         sport={sport}
         setSport={setSport}
@@ -91,16 +116,24 @@ function App() {
         onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
     );
+  } else {
+    /* KBO section — same nav + board shell as WNBA/NFL */
+    sportApp = (
+      <KboApp
+        sport={sport}
+        setSport={setSport}
+        onNavigateHome={() => setView('hub')}
+        initialView={view}
+      />
+    );
   }
 
-  /* KBO section — same nav + board shell as WNBA/NFL */
   return (
-    <KboApp
-      sport={sport}
-      setSport={setSport}
-      onNavigateHome={() => setView('hub')}
-      initialView={view}
-    />
+    <>
+      {previewBar}
+      {sportApp}
+      {checkoutSuccess}
+    </>
   );
 }
 

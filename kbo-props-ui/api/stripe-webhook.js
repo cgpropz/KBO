@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { tierForPrice, mergeTier, computeStripeTier } from './_stripeTier.js';
+import { reportPurchaseToX } from './_xConversions.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -156,6 +157,11 @@ export default async function handler(req, res) {
     } else {
       console.error('[webhook] checkout.session.completed: no user ID or email');
     }
+
+    // Server-side X purchase conversion (same Event ID + conversion_id = session
+    // id as the browser pixel, so X de-duplicates). No-op unless the X_* env
+    // vars are set; never throws, so it cannot fail the webhook.
+    await reportPurchaseToX(obj, { conversionTime: (event.created || 0) * 1000 || undefined });
   }
 
   // ── customer.subscription.created ──────────────────────────────────────

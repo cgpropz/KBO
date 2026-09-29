@@ -20,35 +20,15 @@ export const ALL_ACCESS_FEATURES = [
   'Full game log history',
 ];
 
+// Order = display order. Weekly is the featured, first-shown plan; Free is last.
 export const TIERS = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: '$0',
-    period: '',
-    badge: null,
-    description: 'Preview CGPropz before you commit',
-    features: [
-      'Today\'s KBO & WNBA schedules',
-      'Top 3 projections — KBO, WNBA & NFL',
-      'Landing page overview',
-    ],
-    limited: [
-      'Full KBO, WNBA + NFL projections',
-      'Player prop cards & PrizePicks edge',
-      'Slip builder & optimizer',
-      'Matchups, lineups & tracker',
-    ],
-    cta: 'Current Plan',
-    ctaStyle: 'free',
-    link: null,
-  },
   {
     id: 'weekly',
     name: 'Weekly All-Access',
     price: '$9.99',
     period: '/ week',
-    badge: null,
+    badge: 'START HERE',
+    featured: true,
     description: 'Try everything, week to week',
     features: ALL_ACCESS_FEATURES,
     limited: [],
@@ -81,5 +61,27 @@ export const TIERS = [
     cta: 'Buy Lifetime Access',
     ctaStyle: 'season',
     link: STRIPE_LINKS.lifetime,
+  },
+  {
+    id: 'free',
+    name: 'Free',
+    price: '$0',
+    period: '',
+    badge: null,
+    description: 'Preview CGPropz before you commit',
+    features: [
+      'Today\'s KBO & WNBA schedules',
+      'Top 3 projections — KBO, WNBA & NFL',
+      'Landing page overview',
+    ],
+    limited: [
+      'Full KBO, WNBA + NFL projections',
+      'Player prop cards & PrizePicks edge',
+      'Slip builder & optimizer',
+      'Matchups, lineups & tracker',
+    ],
+    cta: 'Current Plan',
+    ctaStyle: 'free',
+    link: null,
   },
 ];

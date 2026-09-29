@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
+import { buildCheckoutUrl } from './tracking';
 import './SubscriptionPage.css';
+import './FreeFunnel.css';
 
 // Human-readable label for the user's current tier (used in the active banner).
 const TIER_LABELS = {
@@ -38,23 +40,28 @@ function SubscriptionPage() {
     return () => clearInterval(pollRef.current);
   }, [awaitingPayment, refreshTier]);
 
-  // Stop polling once tier becomes paid
+  // Stop polling once tier becomes paid.
+  // The X purchase event is NOT fired here any more: it fires once, with the
+  // real amount and conversion_id = Stripe session id, on the checkout-success
+  // screen (CheckoutSuccess.jsx) and server-side from api/stripe-webhook.js.
   useEffect(() => {
     if (tier && tier !== 'free' && awaitingPayment) {
       clearInterval(pollRef.current);
       setAwaitingPayment(false);
-      // X (Twitter) conversion tracking event
-      window.twq && window.twq('event', 'tw-pul9k-pul9m', {});
     }
   }, [tier, awaitingPayment]);
 
   const handleSubscribe = (tier) => {
     if (!tier.link) return;
-    // Pass Supabase user ID + prefill email so Stripe webhook can match the payment
-    const url = new URL(tier.link);
-    if (user?.id) url.searchParams.set('client_reference_id', user.id);
-    if (user?.email) url.searchParams.set('prefilled_email', user.email);
-    window.open(url.toString(), '_blank', 'noopener');
+    // Logged in: pass Supabase user ID + prefill email so the webhook links the
+    // payment instantly. Logged out: Stripe collects the email and access is
+    // matched to it when they sign up (webhook + /api/sync-subscription).
+    const url = buildCheckoutUrl(tier.link, user);
+    if (!user) {
+      window.location.assign(url);
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
     setAwaitingPayment(true);
   };
 
@@ -123,7 +130,7 @@ function SubscriptionPage() {
         {TIERS.map((tier) => (
           <div
             key={tier.id}
-            className={`sub-card ${tier.id === 'combined' ? 'sub-card-featured' : ''} ${selectedTier === tier.id ? 'sub-card-selected' : ''}`}
+            className={`sub-card ${tier.featured ? 'sub-card-featured' : ''} ${selectedTier === tier.id ? 'sub-card-selected' : ''}`}
             onClick={() => setSelectedTier(tier.id)}
           >
             {tier.badge && <div className="sub-card-badge">{tier.badge}</div>}
@@ -159,11 +166,18 @@ function SubscriptionPage() {
               }}
               disabled={tier.id === 'free' || (!tier.link && tier.id !== 'free')}
             >
-              {tier.cta}
+              {tier.id === 'free' && !user ? 'Free with an account' : tier.cta}
             </button>
           </div>
         ))}
       </div>
+
+      {!user && (
+        <p className="ff-checkout-note" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 1.5rem' }}>
+          No account yet? You can check out now. Afterwards, sign up (or log in) with the
+          <strong> same email you used at checkout</strong> and your plan unlocks automatically.
+        </p>
+      )}
 
       {awaitingPayment && (
         <div className="sub-setup-notice" style={{ borderColor: '#22c55e40', background: '#22c55e10' }}>
