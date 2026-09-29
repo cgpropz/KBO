@@ -381,6 +381,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [projections, setProjections] = useState(null)
   const [players, setPlayers] = useState(null)
   const [projLoading, setProjLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -403,6 +404,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     let cancelled = false
     const load = async () => {
       setProjLoading(true)
+      setLoadError('')
       try {
         const [pr, pl] = await Promise.all([
           fetchWnbaSnapshot('wnba/projections_standard.json'),
@@ -412,8 +414,12 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         setLockedCount(pr?.preview ? pr.lockedCount : 0)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
-      } catch {
-        if (!cancelled) { setProjections([]); setPlayers([]) }
+      } catch (err) {
+        if (!cancelled) {
+          setProjections([])
+          setPlayers([])
+          setLoadError(err?.message || 'Request failed')
+        }
       } finally {
         if (!cancelled) setProjLoading(false)
       }
@@ -600,7 +606,9 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           </div>
 
           {projLoading && <div className="wnba-notice">Loading WNBA prop lines…</div>}
-          {!projLoading && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
+          {!projLoading && loadError && <div className="wnba-notice">Unable to load WNBA prop lines: {loadError}. Please refresh to try again.</div>}
+          {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
+          {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
             <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
               <table className="wnba-lines-table">

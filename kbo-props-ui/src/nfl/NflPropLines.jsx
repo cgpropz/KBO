@@ -231,6 +231,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -247,7 +248,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setLockedCount(preview ? locked : 0) }).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setLockedCount(preview ? locked : 0); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
@@ -323,7 +324,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         </div>
       </div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
-      {!error && !rows.length && <div className="nfl-notice">Loading NFL prop lines.</div>}
+      {!error && !loaded && <div className="nfl-notice">Loading NFL prop lines.</div>}
+      {!error && loaded && !projections.length && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
+      {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap" ref={tableWrapRef}>
           <table className="nfl-lines-table">

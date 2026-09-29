@@ -81,6 +81,7 @@ function ChartFilterChip({ label, valueLabel, valueColor, open, onToggle, childr
 export default function NflPlayerPage({ player, prop, onBack }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
   const [selectedProp, setSelectedProp] = useState(prop)
   const [selectedRange, setSelectedRange] = useState('l10')
   const [dvpThreshold, setDvpThreshold] = useState(null)
@@ -90,7 +91,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next }) => active && setProjections(next)).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections()
+      .then(({ projections: next }) => { if (!active) return; setProjections(next); setLoaded(true) })
+      .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
@@ -111,7 +114,15 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   }
 
   if (error) return <div className="nfl-notice">Unable to load player data: {error}</div>
-  if (!playerRows.length) return <div className="nfl-notice">Loading player data for {player}.</div>
+  if (!loaded) return <div className="nfl-notice">Loading player data for {player}.</div>
+  if (!playerRows.length) {
+    return (
+      <div className="nfl-notice">
+        No current prop lines for {player}. They may have been pulled from the board, or they are outside your plan&apos;s preview.
+        {onBack && <> <button type="button" onClick={onBack}>Back</button></>}
+      </div>
+    )
+  }
 
   const recent = Array.isArray(currentRow.recent) ? currentRow.recent : []
   const gameDates = Array.isArray(currentRow.gameDates) ? currentRow.gameDates : []
