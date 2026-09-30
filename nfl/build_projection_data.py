@@ -3,13 +3,22 @@
 import datetime
 import json
 import re
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ROOT.parent
+# Refresh NFL PrizePicks Board runs `python nfl/build_projection_data.py`.
+# That puts nfl/ on sys.path[0], not the repo root, so `import pipeline` fails.
+# KBO generators live at the repo root. WNBA inserts the repo root in
+# pipeline/apply_live_formula.py before importing pipeline. Do the same here.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import pandas as pd
 import requests
 
 
-ROOT = Path(__file__).resolve().parent
 OUTPUT_PATH = ROOT / 'projections.json'
 LINEUPS_OUTPUT_PATH = ROOT / 'lineups.json'
 HISTORY_SEASONS = (2025, 2026)

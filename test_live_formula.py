@@ -1,9 +1,13 @@
 """Live tuned-formula switch. Reads the real ml/params files; does not refit anything."""
 from __future__ import annotations
 
+import ast
 import os
+import subprocess
+import sys
 import unittest
 from datetime import date
+from pathlib import Path
 
 from pipeline.live_formula import (
     apply_wnba_players,
@@ -210,6 +214,70 @@ class TestShadowStillComparesBoth(unittest.TestCase):
         self.assertEqual(graded["current_result"], "MISS")
         self.assertEqual(graded["published_result"], "HIT")
         self.assertEqual(graded["shadow_result"], "HIT")
+
+
+class TestNflWorkflowImport(unittest.TestCase):
+    def test_builder_can_import_pipeline_when_launched_as_a_file(self):
+        """`python nfl/build_projection_data.py` does not put the repo root on sys.path."""
+        repo = Path(__file__).resolve().parent
+        probe = r"""
+import ast
+import sys
+from pathlib import Path
+
+repo = Path(sys.argv[1]).resolve()
+script = repo / "nfl" / "build_projection_data.py"
+stdlib = {"sys", "datetime", "json", "re", "pathlib"}
+tree = ast.parse(script.read_text(encoding="utf-8"))
+prefix = []
+for node in tree.body:
+    if isinstance(node, ast.Import):
+        roots = [alias.name.split(".")[0] for alias in node.names]
+    elif isinstance(node, ast.ImportFrom):
+        roots = [(node.module or "").split(".")[0]]
+    else:
+        roots = []
+    if roots and any(name not in stdlib for name in roots):
+        break
+    prefix.append(node)
+module = ast.Module(body=prefix, type_ignores=[])
+ast.fix_missing_locations(module)
+kept = []
+for entry in sys.path:
+    if entry in ("", str(repo)):
+        continue
+    try:
+        if Path(entry).resolve() == repo:
+            continue
+    except OSError:
+        pass
+    kept.append(entry)
+sys.path = [str(script.parent)] + kept
+namespace = {"__file__": str(script), "__name__": "nfl_build_projection_data"}
+exec(compile(module, str(script), "exec"), namespace)
+from pipeline.live_formula import formula_mode, promote_nfl
+mode = formula_mode()
+if mode != "tuned":
+    raise SystemExit(f"mode={mode}")
+# Real Rush Yards candidate: 5.858 + 0.7909 * baseline, rounded to 0.1.
+got = promote_nfl("Rush Yards", [10.0, 20.0, 30.0, 40.0], 40.0)
+expected = round(5.858 + 0.7909 * 40.0, 1)
+if got != expected:
+    raise SystemExit(f"promote={got} expected={expected}")
+print(mode, got)
+"""
+        env = os.environ.copy()
+        env.pop("PYTHONPATH", None)
+        result = subprocess.run(
+            [sys.executable, "-c", probe, str(repo)],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+        self.assertIn("tuned", result.stdout)
 
 
 if __name__ == "__main__":
