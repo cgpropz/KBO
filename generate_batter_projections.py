@@ -1023,6 +1023,23 @@ for pp_entry in [*pp_hrr.values(), *pp_tb.values(), *pp_fs.values()]:
         team_opponent[pp_team] = pp_opp
 
 
+def apply_batter_formula(row, games=None, factors=None, opponent=None):
+    """Publish the tuned batter fit when this prop is a Phase 2 candidate."""
+    from pipeline.live_formula import KBO_THRESHOLDS, attach_kbo_formula, tune_kbo_hrr, tune_kbo_published
+    stat = row.get("prop")
+    tuned = None
+    shown = None
+    if stat == "Hits+Runs+RBIs":
+        result = tune_kbo_hrr(games or [], factors or {}, opponent or row.get("opponent"))
+        if result:
+            tuned = result["value"]
+            shown = result["factors"]
+    elif stat == "Fantasy Score":
+        tuned = tune_kbo_published(stat, row.get("projection"))
+    attach_kbo_formula(row, tuned, KBO_THRESHOLDS.get(stat, 0.3), shown)
+    return row
+
+
 def build_hrr_projections():
     """Build H+R+RBI projections."""
     print("\n── H+R+RBI Projections ──")
@@ -1201,7 +1218,12 @@ def build_hrr_projections():
             **hit_rates,
             "recent_game_log": recent_game_log,
         })
-        print(f"  {pp_name:25s} ({team} vs {opp}): projPA={proj_pa or 0:.2f} base={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
+        apply_batter_formula(projections[-1], recent_games, {
+            "opp_factor": opp_factor, "park_factor": pf,
+            "split_factor": split_factor, "pitcher_factor": pitcher_factor,
+        }, opp)
+        tuned = projections[-1]["projection"]
+        print(f"  {pp_name:25s} ({team} vs {opp}): projPA={proj_pa or 0:.2f} base={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {tuned:.2f} (Line={line}, baseline={proj:.2f})")
 
 
 def build_tb_projections():
@@ -1331,6 +1353,7 @@ def build_tb_projections():
             **hit_rates,
             "recent_game_log": recent_game_log,
         })
+        apply_batter_formula(projections[-1])
         print(f"  {pp_name:25s} ({team} vs {opp}): TB/G={base:.2f} x Opp={opp_factor:.3f} x PF={pf:.3f} x Split={split_factor:.3f} x Pitch={pitcher_factor:.3f} => {proj:.2f} (Line={line}, Edge={edge:+.2f} => {rec})")
 
 
@@ -1602,6 +1625,7 @@ def build_fantasy_projections():
             **hit_rates,
             "recent_game_log": recent_game_log,
         })
+        apply_batter_formula(projections[-1])
         edge_txt = f"{edge:+.2f}" if edge is not None else "N/A"
         line_txt = f"{line}" if line is not None else "None"
         print(f"  {pp_name:25s} ({team} vs {opp}): FS={proj:.2f} (Line={line_txt}, Edge={edge_txt} => {rec})")
@@ -1619,6 +1643,7 @@ out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "batter_projecti
 backup_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "batter_projections.last_good.json")
 payload = {
     "generated_at": datetime.now(timezone.utc).isoformat(),
+    "formula_mode": projections[0].get("formula_mode") if projections else "current",
     "projections": projections,
     "league_avg_hrr_per_g": round(league_avg_hrr_per_g, 2),
     "league_avg_tb_per_g": round(league_avg_tb_per_g, 2),

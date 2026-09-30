@@ -1,10 +1,15 @@
 # ml/: offline datasets, formula replay and baselines (Phase 1), tuning (Phase 2), shadow mode (Phase 3)
 
-Everything here runs **offline**. The live pipeline, the Vercel site and the
-scheduled workflows never import anything from `ml/`, and no live projection
-math is changed here (approved decisions D5 and D7). The scripts read the repo
-(working files plus **git history**) and write only to an output folder, which
-defaults to `ml/out/` and is gitignored.
+Training, replay, and shadow scoring stay **offline**. They read the repo
+(working files plus **git history**) and write to `ml/out/` (gitignored) or
+`memory/**/shadow*.json`.
+
+The live boards now **read** `ml/params` when `pipeline/projection_formula.json`
+is `"mode": "tuned"`. That switch publishes the Phase 2 candidate formulas
+(the same fits shadow scores). Set the mode to `"current"` to restore the
+previous formulas. The formula sheet is `docs/live_formulas.md`. Shadow still
+records both: `baseline_projection` is the previous formula, and the site
+number is the tuned fit.
 
 Phase 1 is **Python stdlib only**: no `pip install` is needed.
 `requirements-ml.txt` lists what Phase 2 (calibrators/tuning) will use.
@@ -233,11 +238,14 @@ weeks of lines.
 **Phase 3 (below):** open slates are scored in shadow with the `candidate`
 params and compared with the live projection on the same graded props.
 
-## Phase 3: shadow mode (offline)
+## Phase 3: shadow mode (offline scoring)
 
-Shadow mode never changes what the site shows. Nothing in `pipeline/`, the UI
-or the refresh workflows reads these files. The only files it writes are
-`memory/**/shadow*.json`.
+Shadow still only **writes** `memory/**/shadow*.json`. It does not publish the
+site. While the live switch above is `tuned`, a slate row's `projection` is
+the tuned number the site showed, and `baseline_projection` is the previous
+formula. The scorer grades `current_*` from that baseline so the old-vs-tuned
+scoreboard keeps meaning the same thing. `published_projection` is what the
+site showed.
 
 ```bash
 python3 -m ml.shadow.score --sport kbo|wnba|nfl|all [--date YYYY-MM-DD]   # -> shadow.json

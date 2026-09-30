@@ -251,6 +251,10 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
             "recent_values": values[:10],
             "recommendation": stat_proj.get("recommendation"),
             "cg_projection": stat_proj.get("cg_projection"),
+            "baseline_projection": stat_proj.get("baseline_projection"),
+            "baseline_recommendation": stat_proj.get("baseline_recommendation"),
+            "formula_applied": stat_proj.get("formula_applied"),
+            "formula_mode": stat_proj.get("formula_mode"),
         })
 
     return card
@@ -359,6 +363,10 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
             "rating": proj.get("rating"),
             "recommendation": proj.get("recommendation"),
             "cg_projection": proj.get("cg_projection"),
+            "baseline_projection": proj.get("baseline_projection"),
+            "baseline_recommendation": proj.get("baseline_recommendation"),
+            "formula_applied": proj.get("formula_applied"),
+            "formula_mode": proj.get("formula_mode"),
         })
 
     return card
