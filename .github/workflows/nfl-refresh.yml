@@ -36,6 +36,12 @@ jobs:
       - name: Build current NFL projections and starting lineups
         run: python nfl/build_projection_data.py
 
+      # Public Unabated JSON (same feed as WNBA). No ODDS_API_KEY. A failure
+      # here must not block the PrizePicks board publish below.
+      - name: Match NFL PrizePicks lines to Unabated sportsbook odds
+        continue-on-error: true
+        run: python nfl/sharp_odds.py
+
       - name: Publish protected NFL snapshot
         run: python publish_supabase.py
         env:

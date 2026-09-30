@@ -36,6 +36,13 @@ const TABLES = {
   wnba_lineups: Array.from({ length: 6 }, (_, i) => ({ game: i })),
   nfl_projections: Array.from({ length: 15 }, (_, i) => ({ player: `N${i}`, line: 50, projection: 40 + i })),
   nfl_lineups: Array.from({ length: 4 }, (_, i) => ({ game: i })),
+  nfl_sharp_odds: {
+    generated_at: NOW,
+    provider: 'unabated',
+    status: 'ok',
+    message: 'matched',
+    records: Array.from({ length: 8 }, (_, i) => ({ player: `S${i}`, prop: 'Receptions', pp_line: 4.5, ev_pct: i })),
+  },
 }
 
 const USERS = { 'tok-free': 'u-free', 'tok-kbo': 'u-kbo', 'tok-owner': 'u-owner', 'tok-combined': 'u-comb', 'tok-noprofile': 'u-none' }
@@ -183,6 +190,20 @@ test('unknown / non-whitelisted datasets and methods are rejected', async () => 
   }
   const post = await call('prizepicks_props', null, 'POST')
   assert.equal(post.statusCode, 405)
+})
+
+test('NFL sharp odds preview keeps the best EV rows and the snapshot message', async () => {
+  const res = await call('nfl_sharp_odds')
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, true)
+  assert.equal(res.body.data.status, 'ok')
+  assert.equal(res.body.data.message, 'matched')
+  assert.equal(res.body.data.provider, 'unabated')
+  assert.deepEqual(res.body.data.records.map((row) => row.ev_pct), [7, 6, 5])
+  assert.equal(res.body.lockedCount, 5)
+  const paid = await call('nfl_sharp_odds', 'tok-owner')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.records.length, 8)
 })
 
 test('unpublished table returns 404', async () => {

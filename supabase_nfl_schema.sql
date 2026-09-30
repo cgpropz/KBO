@@ -60,3 +60,20 @@ drop policy if exists nfl_lineups_read_all on public.nfl_lineups;
 create policy nfl_lineups_read_all
 on public.nfl_lineups for select
 using (true);
+
+-- Sharp-odds snapshot (Unabated ↔ PrizePicks). Same single-row jsonb shape as
+-- the other NFL tables. Created without a public read policy: the site reads
+-- it through /api/data with the service role. Safe to run on its own.
+create table if not exists public.nfl_sharp_odds (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists nfl_sharp_odds_set_updated_at on public.nfl_sharp_odds;
+create trigger nfl_sharp_odds_set_updated_at
+before update on public.nfl_sharp_odds
+for each row execute function public.set_updated_at();
+
+alter table public.nfl_sharp_odds enable row level security;
+revoke all on public.nfl_sharp_odds from anon, authenticated;

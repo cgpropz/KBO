@@ -23,3 +23,17 @@ export async function fetchNflLineups() {
     lockedCount: snapshot.lockedCount,
   }
 }
+
+export async function fetchNflSharpOdds() {
+  const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json' })
+  const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+    ? snapshot.data
+    : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+  return {
+    payload,
+    records: Array.isArray(payload.records) ? payload.records : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+  }
+}
