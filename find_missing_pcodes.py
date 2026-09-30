@@ -8,11 +8,13 @@ Strategy:
 3. Scrape the KBO English leaderboard
    (eng.koreabaseball.com/stats/PitchingLeaders.aspx) and try to fill gaps
    by matching on word-order-insensitive normalized name.
-4. With --apply, append newly-resolved entries to:
+4. Starter rows in player_names.csv already carry a KBO pcode. Those ids
+   are authoritative (the pitching leaderboard drops low-IP pitchers such
+   as Owen White). With --apply, write them even when the leaderboard misses.
+5. With --apply, append newly-resolved entries to:
      - Pitchers-Data/kbo_pitcher_throwing_hands.csv
-     - Pitchers-Data/NEWPITCHER_LOG25.py PLAYER_NAMES + the pitcher's team
-       in PLAYER_TEAMS (so the next NEWPITCHER_LOG25.py run pulls their
-       game logs).
+     - Pitchers-Data/NEWPITCHER_LOG25.py PLAYER_NAMES and PLAYER_TEAMS
+       (a name without a team slot is never scraped).
 
 Usage:
     python3 find_missing_pcodes.py            # dry-run (report only)
@@ -30,6 +32,8 @@ import sys
 import unicodedata
 import urllib.request
 from typing import Dict, Iterable, Tuple
+
+from pipeline.pitcher_identity import insert_player_name, insert_team_pcode, slate_additions
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PD = os.path.join(BASE, "Pitchers-Data")
@@ -231,30 +235,58 @@ def append_to_throwing_hands(rows: list) -> int:
     return added
 
 
-def append_to_log25(rows: list) -> int:
-    """Add to PLAYER_NAMES dict in NEWPITCHER_LOG25.py (PLAYER_TEAMS update is
-    left manual since team mapping requires roster context the leaderboard
-    doesn't provide)."""
+def load_log25_team_pcodes() -> set:
+    """Pcodes already listed under any PLAYER_TEAMS entry."""
+    with open(LOG25_PY) as f:
+        src = f.read()
+    match = re.search(r"PLAYER_TEAMS\s*=\s*\{(.*?)\n\}\s*\n", src, re.S)
+    if not match:
+        return set()
+    return set(re.findall(r"""['"](\d+)['"]""", match.group(1)))
+
+
+def load_slate_rows() -> list:
+    if not os.path.exists(SLATE_CSV):
+        return []
+    with open(SLATE_CSV, newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def apply_roster_rows(rows: list) -> Tuple[int, int]:
+    """Write pcode/name/team into NEWPITCHER_LOG25.py.
+
+    A PLAYER_NAMES entry alone does not get scraped. PLAYER_TEAMS is updated
+    whenever the row carries a team (lineup file) so the next log run includes
+    the pitcher. Returns (names_added, team_slots_added).
+    """
     if not rows:
-        return 0
+        return 0, 0
     with open(LOG25_PY) as f:
         src = f.read()
     existing = load_log25_player_names()
-    new_entries = []
-    for r in rows:
-        if r["pcode"] in existing:
+    names_added = 0
+    teams_added = 0
+    for row in rows:
+        pcode = str(row.get("pcode") or "").strip()
+        name = str(row.get("name") or "").strip()
+        team = str(row.get("team") or "").strip()
+        if not pcode.isdigit() or not name:
             continue
-        new_entries.append(f'    "{r["pcode"]}": "{r["name"]}",')
-    if not new_entries:
-        return 0
-    insertion = "\n".join(new_entries) + "\n}"
-    new_src = re.sub(r"\n\}\nPLAYER_TEAMS", "\n" + insertion + "\nPLAYER_TEAMS",
-                     src, count=1)
-    if new_src == src:
-        return 0
-    with open(LOG25_PY, "w") as f:
-        f.write(new_src)
-    return len(new_entries)
+        if pcode not in existing:
+            updated = insert_player_name(src, pcode, name)
+            if updated != src:
+                src = updated
+                existing[pcode] = name
+                names_added += 1
+        if team:
+            updated = insert_team_pcode(src, team, pcode)
+            if updated != src:
+                src = updated
+                teams_added += 1
+    if names_added or teams_added:
+        with open(LOG25_PY, "w") as f:
+            f.write(src)
+    return names_added, teams_added
 
 
 # ---------- main ----------
@@ -262,7 +294,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true",
                     help="Write resolved pcodes back to throwing_hands.csv "
-                         "and NEWPITCHER_LOG25.py PLAYER_NAMES.")
+                         "and NEWPITCHER_LOG25.py PLAYER_NAMES plus PLAYER_TEAMS.")
     args = ap.parse_args()
 
     unified, name_to_pcode = build_unified_index()
@@ -272,59 +304,86 @@ def main() -> int:
     active = list(collect_active_pitcher_names())
     print(f"[info] active pitcher names to check: {len(active)}")
 
+    roster_pcodes = set(load_log25_player_names()) | load_log25_team_pcodes()
+    slate_rows = load_slate_rows()
+    slate_resolved = slate_additions(slate_rows, roster_pcodes)
+    slate_name_keys = set()
+    for row in slate_rows:
+        slate_name = (row.get("Player") or "").strip()
+        if slate_name and str(row.get("Pcode") or "").strip().isdigit():
+            slate_name_keys.add(norm(slate_name))
+            slate_name_keys.add(sig(slate_name))
+
     missing = []  # list of (name, source)
     for nm, src in active:
         if name_to_pcode.get(norm(nm)) or name_to_pcode.get(sig(nm)):
             continue
+        if norm(nm) in slate_name_keys or sig(nm) in slate_name_keys:
+            continue
         missing.append((nm, src))
 
-    if not missing:
+    if slate_resolved:
+        print(f"[info] {len(slate_resolved)} starter(s) resolved from lineup pcodes:")
+        for row in slate_resolved:
+            print(f"   + {row['pcode']} -> {row['name']} ({row['team'] or 'no team'})")
+
+    if not missing and not slate_resolved:
         print("[ok] all active pitchers have a known pcode")
         return 0
 
-    print(f"[warn] {len(missing)} pitcher(s) missing pcode:")
-    for nm, src in missing:
-        print(f"   - {nm} (source: {src})")
-
-    print("\n[info] fetching KBO English leaderboard for resolution...")
-    lb = fetch_leaderboard_pcodes()
-    print(f"[info] leaderboard returned {len(lb)} pcodes")
-
-    # Build a sig->pcode map from leaderboard with canonicalized names
-    lb_sig: Dict[str, Tuple[str, str]] = {}
-    for pc, raw in lb.items():
-        canon = canonicalize_kbo_name(raw)
-        lb_sig.setdefault(sig(canon), (pc, canon))
-        lb_sig.setdefault(norm(canon), (pc, canon))
+    if missing:
+        print(f"[warn] {len(missing)} pitcher(s) missing pcode:")
+        for nm, src in missing:
+            print(f"   - {nm} (source: {src})")
 
     resolved = []
     still_missing = []
-    for nm, src in missing:
-        hit = lb_sig.get(norm(nm)) or lb_sig.get(sig(nm))
-        if hit:
-            pc, canon = hit
-            resolved.append({"pcode": pc, "name": canon, "alias": nm, "source": src})
-        else:
-            still_missing.append((nm, src))
+    if missing:
+        print("\n[info] fetching KBO English leaderboard for resolution...")
+        lb = fetch_leaderboard_pcodes()
+        print(f"[info] leaderboard returned {len(lb)} pcodes")
 
-    print(f"\n[info] resolved via leaderboard: {len(resolved)}")
-    for r in resolved:
-        print(f"   + {r['pcode']} -> {r['name']:<25} (alias: {r['alias']})")
+        # Build a sig->pcode map from leaderboard with canonicalized names
+        lb_sig: Dict[str, Tuple[str, str]] = {}
+        for pc, raw in lb.items():
+            canon = canonicalize_kbo_name(raw)
+            lb_sig.setdefault(sig(canon), (pc, canon))
+            lb_sig.setdefault(norm(canon), (pc, canon))
+
+        for nm, src in missing:
+            hit = lb_sig.get(norm(nm)) or lb_sig.get(sig(nm))
+            if hit:
+                pc, canon = hit
+                resolved.append({"pcode": pc, "name": canon, "alias": nm, "source": src, "team": ""})
+            else:
+                still_missing.append((nm, src))
+
+        print(f"\n[info] resolved via leaderboard: {len(resolved)}")
+        for r in resolved:
+            print(f"   + {r['pcode']} -> {r['name']:<25} (alias: {r['alias']})")
     if still_missing:
         print(f"\n[warn] still unresolved: {len(still_missing)}")
         for nm, src in still_missing:
             print(f"   ? {nm} (source: {src})")
 
+    by_pcode = {row["pcode"]: row for row in resolved}
+    for row in slate_resolved:
+        # Lineup ids win over a leaderboard guess and carry the team slot.
+        current = by_pcode.get(row["pcode"], {})
+        by_pcode[row["pcode"]] = {**current, **row, "alias": row["name"]}
+    resolved = list(by_pcode.values())
+
     if not args.apply:
         print("\n[dry-run] re-run with --apply to write changes")
-        return 1 if still_missing else 0
+        return 1 if still_missing or slate_resolved else 0
 
     n1 = append_to_throwing_hands(resolved)
-    n2 = append_to_log25(resolved)
+    n2, n3 = apply_roster_rows(resolved)
     print(f"\n[apply] kbo_pitcher_throwing_hands.csv: +{n1} rows")
     print(f"[apply] NEWPITCHER_LOG25.py PLAYER_NAMES: +{n2} entries")
-    print("[note] PLAYER_TEAMS in NEWPITCHER_LOG25.py needs manual team "
-          "assignment for the new pcodes before logs will be scraped.")
+    print(f"[apply] NEWPITCHER_LOG25.py PLAYER_TEAMS: +{n3} team slots")
+    # Unresolved names are reported above. They must not fail the refresh;
+    # the log scrape still runs for everyone already on the roster.
     return 0
 
 
