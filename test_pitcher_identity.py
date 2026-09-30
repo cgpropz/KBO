@@ -2,6 +2,7 @@
 
 import json
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 import generate_props
@@ -94,7 +95,18 @@ class OwenWhiteRosterTests(unittest.TestCase):
 
         games = card["games"]
         self.assertGreaterEqual(len(games), 20)
-        self.assertEqual(games[0]["date"], "09/25/2026")
+        # The card is newest-first and must follow pitcher_logs.json. Pinning one
+        # scrape date (09/25) fails as soon as the next start lands.
+        log_dates = [
+            row["Date"] for row in logs
+            if row.get("Name") == "Owen White" and row.get("Date")
+        ]
+        latest_log = max(log_dates, key=lambda value: datetime.strptime(value, "%m/%d/%Y"))
+        self.assertEqual(games[0]["date"], latest_log)
+        self.assertGreaterEqual(
+            datetime.strptime(games[0]["date"], "%m/%d/%Y"),
+            datetime.strptime("09/25/2026", "%m/%d/%Y"),
+        )
         september = [g for g in games if g["date"].startswith("09/")]
         self.assertGreaterEqual(len(september), 4)
         self.assertEqual(card["props"][0]["total_games"], len(games))
