@@ -13,7 +13,7 @@ import './nfl.css'
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projections', label: 'PrizePicks Board' },
-  { id: 'sharp', label: 'Sharp Odds' },
+  { id: 'sharp', label: 'PP Odds' },
   { id: 'lineups', label: 'Starting Lineups' },
 ]
 

@@ -60,8 +60,11 @@ function nflScore(row) {
   return ratioScore(row?.projection, row?.line);
 }
 
-// Sharp odds board: keep the highest expected-value rows in the free preview.
+// PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
+// Older snapshots that only stored sportsbook EV still sort on that.
 function nflSharpScore(row) {
+  const edge = num(row?.pp_edge_flex ?? row?.pp_edge_pct);
+  if (Number.isFinite(edge)) return edge;
   const ev = num(row?.ev_pct);
   return Number.isFinite(ev) ? ev : -Infinity;
 }

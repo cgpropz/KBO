@@ -62,5 +62,21 @@
 @media (max-width: 900px) { .nfl-player-summary { flex-wrap: wrap; }.nfl-player-summary > div { flex: 1 1 33%; margin-bottom: 12px; } }
 @media (max-width: 760px) { .nfl-player-header { flex-wrap: wrap; }.nfl-player-summary > div { flex: 1 1 50%; }.nfl-player-range-strip { flex-wrap: wrap; }.nfl-player-range-strip button { flex: 1 1 30%; } }
 .nfl-sharp-price { font-weight: 800; }.nfl-sharp-book { margin-top: 3px; color: #78918a; font: 10px monospace; }.nfl-sharp-page .over { color: #7fff68; }.nfl-sharp-page .under { color: #ff7b79; }.nfl-sharp-ev { font-weight: 800; }
+.nfl-sharp-help { margin: -6px 0 16px; max-width: 760px; color: #8ba39c; font: 12px/1.45 monospace; }
+.nfl-sharp-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-bottom: 14px; }
+.nfl-sharp-controls input, .nfl-sharp-controls select { box-sizing: border-box; height: 36px; border: 1px solid #23443d; border-radius: 3px; color: #e8f4e6; background: #0b1c19; font: 12px monospace; }
+.nfl-sharp-controls input { min-width: 180px; padding: 0 11px; }
+.nfl-sharp-controls label > span { display: block; margin: 0 0 3px 2px; color: #78918a; font: 9px monospace; }
+.nfl-sharp-controls select { min-width: 110px; padding: 0 8px; }
+.nfl-sharp-baseline { display: flex; gap: 4px; padding: 3px; border: 1px solid #1a3c36; border-radius: 999px; background: #0a1615; }
+.nfl-sharp-baseline button { border: 0; padding: 7px 12px; border-radius: 999px; color: #8ba39c; background: transparent; font: 800 11px monospace; cursor: pointer; }
+.nfl-sharp-baseline button.active { color: #06100f; background: #7fff68; }
+.nfl-sharp-check { display: flex; align-items: center; gap: 8px; height: 36px; color: #b7cac3; font: 11px monospace; cursor: pointer; }
+.nfl-sharp-check input { width: 14px; min-width: 0; height: 14px; accent-color: #7fff68; }
+.nfl-sharp-edge { white-space: normal; min-width: 128px; }
+.nfl-sharp-sides { margin-top: 3px; color: #78918a; font: 10px monospace; }
+.nfl-sharp-badge { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 999px; font: 800 9px monospace; letter-spacing: .04em; }
+.nfl-sharp-badge.line { color: #14110a; background: #f6c35f; }
+.nfl-sharp-badge.price { margin-left: 4px; color: #06100f; background: #54e0bf; }
 @media (max-width: 760px) { .nfl-nav { flex-wrap: wrap; height: auto; gap: 9px; padding: 8px 12px; }.nfl-nav-links { display: flex; flex: 1 0 100%; overflow-x: auto; }.nfl-nav-links button { white-space: nowrap; }.nfl-content { padding: 25px 12px 40px; }.nfl-hero, .nfl-board-header { align-items: start; flex-direction: column; gap: 12px; }.nfl-top-grid { grid-template-columns: 1fr; }.nfl-filters { flex-direction: column; }.nfl-filters input { min-width: 0; width: 100%; }.nfl-live { align-items: flex-start; flex-wrap: wrap; }.nfl-pro-badge { font-size: 9px; }.nfl-root .sport-switcher button { padding: 5px; font-size: 10px; } }.nfl-placeholder-row td { height: 58px; }
 .nfl-placeholder-bar { display: block; width: 70%; height: 14px; border-radius: 7px; background: linear-gradient(90deg, #143029, #1f4a40, #143029); }
