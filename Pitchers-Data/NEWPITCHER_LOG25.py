@@ -3,12 +3,20 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
+import sys
+import csv
 import json
 from playwright.sync_api import sync_playwright
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(BASE_DIR)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+from pipeline.pitcher_identity import merge_roster_entries
+
 PITCHER_MAP_PATH = os.path.join(BASE_DIR, "mykbostats_pitcher_map.json")
+SLATE_CSV_PATH = os.path.join(BASE_DIR, "player_names.csv")
 
 PLAYER_NAMES = {
     "54640": "Naile James",
@@ -91,13 +99,14 @@ PLAYER_NAMES = {
     "56459": "Chris Paddack",
     "54362": "Jun Pyo Jhun",
     "56801": "Pedro Avila",
+    "56724": "Owen White",
 }
 
 PLAYER_TEAMS = {
     "KIA": ['54640', '77637', '55633', '69745', '77637', '51648'],
     "LG": ['51111', '54119', '61101', '67143', '55146', '55130', '55348', '56103'],
     "KT": ['54354', '69032', '50859', '64001', '50030', '56036', '65516'],
-    "HANWHA": ['76715', '55730', '65056', '52701', '54755', '56719', '52731'],
+    "HANWHA": ['76715', '55730', '65056', '52701', '54755', '56719', '52731', '56724'],
     "LOTTE": ['55536', '64021', '52528', '67539', '51516', '55532', '56531', '56712', '56032', '65933', '56523'],
     "NC": ['55912', '68902', '53973', '55903', '56966', '56911'],
     "SSG": ['62869', '77829', '54833', '60841', '55855', '56841', '51867', '68856', '56801'],
@@ -145,6 +154,8 @@ NAME_ALIASES = {
     "CHOI Won Tae": "Choi Won-tae",
     "Irvin Cole": "Cole Irvin",
     "WANG Yan Cheng": "Wang Yan-cheng",
+    "WHITE Owen": "Owen White",
+    "White Owen": "Owen White",
     "WILES Nathan": "Nathan Wiles",
     "BEASLEY Jeremy": "Jeremy Beasley",
     "OLOUGHLIN Jack": "Jack O'loughlin",
@@ -215,6 +226,29 @@ def load_mapped_pitchers():
                 if pcode not in PLAYER_TEAMS[team]:
                     PLAYER_TEAMS[team].append(pcode)
     print(f"Loaded pitcher map entries with KBO IDs: {added}")
+
+
+def load_slate_pitchers(path=None):
+    """Merge today's starter pcodes into the scrape roster.
+
+    player_names.csv is written by daily_pitchers2.py with the official KBO
+    pcode. That id is enough to pull game logs even when mykbostats never
+    stored kbo_player_id (the gap that left Owen White on three April/May lines).
+    """
+    path = path or SLATE_CSV_PATH
+    if not os.path.exists(path):
+        return 0
+    entries = []
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            entries.append({
+                "pcode": row.get("Pcode") or row.get("pcode") or "",
+                "name": row.get("Player") or row.get("name") or "",
+                "team": row.get("Team") or row.get("team") or "",
+            })
+    added = merge_roster_entries(PLAYER_NAMES, PLAYER_TEAMS, NAME_ALIASES, entries)
+    print(f"Loaded slate starter pcodes into scrape roster: +{added}")
+    return added
 
 def convert_date(date_str, default_year=None):
     if default_year is None:
@@ -345,6 +379,8 @@ def format_team_name(team):
     return team.upper() if team.upper() in special_teams else team.capitalize()
 
 def get_pitcher_list():
+    load_mapped_pitchers()
+    load_slate_pitchers()
     data = []
     for team, pcodes in PLAYER_TEAMS.items():
         for pcode in pcodes:
@@ -525,7 +561,6 @@ def scrape_game_logs():
         print(df)
 
 def main():
-    load_mapped_pitchers()
     pitchers = get_pitcher_list()
     print(f"🔍 Found {len(pitchers)} pitchers to scrape...")
 
