@@ -34,7 +34,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 # Tables that may not exist yet in every environment (created by a later
 # migration). A missing table is reported and skipped instead of failing the
 # whole publish.
-OPTIONAL_TABLES = {"nfl_lineups", "graded_props_history"}
+OPTIONAL_TABLES = {"nfl_lineups", "nfl_sharp_odds", "graded_props_history"}
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
 # is an idempotent upsert of the single `id = 1` row, so re-sending the same
@@ -106,6 +106,7 @@ TABLES = {
     "wnba/dvp_center.json": "wnba_dvp_center",
     "nfl/projections.json": "nfl_projections",
     "nfl/lineups.json": "nfl_lineups",
+    "nfl/sharp_odds.json": "nfl_sharp_odds",
 }
 
 

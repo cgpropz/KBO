@@ -60,6 +60,12 @@ function nflScore(row) {
   return ratioScore(row?.projection, row?.line);
 }
 
+// Sharp odds board: keep the highest expected-value rows in the free preview.
+function nflSharpScore(row) {
+  const ev = num(row?.ev_pct);
+  return Number.isFinite(ev) ? ev : -Infinity;
+}
+
 function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
   return items
     .map((item, index) => ({ item, index, score: scoreFn(item) }))
@@ -215,6 +221,7 @@ export const DATASETS = {
   // NFL
   nfl_projections: { table: 'nfl_projections', sport: 'nfl', free: previewList(nflScore) },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
+  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
 };
 
 // Decide what the caller receives for one dataset snapshot.

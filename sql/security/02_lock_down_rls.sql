@@ -49,7 +49,7 @@ declare
     'wnba_projections_goblin', 'wnba_players', 'wnba_teams', 'wnba_lineups',
     'wnba_edge', 'wnba_dvp_guard', 'wnba_dvp_forward', 'wnba_dvp_center',
     -- NFL
-    'nfl_projections', 'nfl_lineups'
+    'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds'
   ];
 begin
   foreach t in array paid_tables loop
