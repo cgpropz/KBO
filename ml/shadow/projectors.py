@@ -22,6 +22,17 @@ KBO_PITCHER_PAYLOAD = "kbo-props-ui/public/data/strikeout_projections.json"
 WNBA_BOARDS = {t: f"kbo-props-ui/public/data/wnba/projections_{t}.json" for t in ("standard", "goblin", "demon")}
 
 
+def calibration_input(prop: dict):
+    """Value the Phase 2 line a + b*x was fit on.
+
+    After the live promotion, `projection` is already tuned. Calibrating it
+    again would apply a and b twice, so the pre-promotion number is used.
+    """
+    if prop.get("formula_applied") and prop.get("baseline_projection") is not None:
+        return to_float(prop.get("baseline_projection"))
+    return to_float(prop.get("projection"))
+
+
 def current_projection_valid(sport: str, prop: dict) -> tuple[bool, str]:
     """Is the slate `projection` a real stat projection (usable for MAE / edge)?"""
     proj, line = to_float(prop.get("projection")), to_float(prop.get("line"))
@@ -69,8 +80,10 @@ class KboProjector:
         p = self.params[stat]
         knobs, cal = p["formula"]["knobs"], p.get("linear_calibration")
         if knobs.get("source") == "published":
-            ok, why = current_projection_valid("kbo", prop)
-            return (linear(cal, float(prop["projection"])), "published_x_calibration") if ok else (None, why)
+            raw = calibration_input(prop)
+            probe = dict(prop, projection=raw) if raw is not None else prop
+            ok, why = current_projection_valid("kbo", probe)
+            return (linear(cal, float(raw)), "published_x_calibration") if ok and raw is not None else (None, why)
         data = self._load(sha)
         if stat in PITCHER_PROPS:
             if knobs.get("dedupe") != "fixed":
@@ -232,8 +245,10 @@ class NflProjector:
         p = self.params[stat]
         knobs, cal = p["formula"]["knobs"], p.get("linear_calibration")
         if p["formula"].get("is_current"):
-            ok, why = current_projection_valid("nfl", prop)
-            return (linear(cal, float(prop["projection"])), "current_x_calibration") if ok else (None, why)
+            raw = calibration_input(prop)
+            probe = dict(prop, projection=raw) if raw is not None else prop
+            ok, why = current_projection_valid("nfl", probe)
+            return (linear(cal, float(raw)), "current_x_calibration") if ok and raw is not None else (None, why)
         vals, src = self.values.values(prop.get("player"), prop.get("team"), stat, d)
         if vals is None:
             return None, src

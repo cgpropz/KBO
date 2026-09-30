@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from ml.common.util import norm_name, parse_date, to_float  # noqa: E402
 from ml.shadow import common as C  # noqa: E402
+from pipeline.memory.common import model_result  # noqa: E402
 
 DECIDED = ("OVER", "UNDER")
 
@@ -172,10 +173,18 @@ def grade_rows(shadow: dict, recap: dict) -> list[dict]:
         has_actual = actual is not None and res not in ("DNP", "VOID")
         cur, sh = s.get("current_projection"), s.get("shadow_projection")
         cur_edge_side = None if cur is None or line is None or cur == line else ("OVER" if cur > line else "UNDER")
+        if s.get("current_from_baseline"):
+            # Site pick is the tuned formula. Keep "current" on the pre-promotion side
+            # so the running old-vs-tuned scoreboard does not collapse.
+            graded_current = current_outcome({"model_result": model_result(res, s.get("current_side")), "result": res})
+        else:
+            graded_current = current_outcome(r)
         out.append({
             "player": s.get("player"), "team": s.get("team"), "stat": s.get("stat"), "odds_type": s.get("odds_type"),
             "line": line, "actual": actual, "result": res,
-            "current_projection": cur, "current_side": s.get("current_side"), "current_result": current_outcome(r),
+            "current_projection": cur, "current_side": s.get("current_side"), "current_result": graded_current,
+            "published_projection": s.get("published_projection"), "published_side": s.get("published_side"),
+            "published_result": current_outcome(r) if s.get("current_from_baseline") else None,
             "shadow_projection": sh, "shadow_side": s.get("shadow_side"), "shadow_result": outcome(s.get("shadow_side"), res),
             "shadow_source": s.get("shadow_source"), "p_over": s.get("p_over"),
             "current_edge_result": outcome(cur_edge_side, res),
@@ -222,7 +231,12 @@ def grade_day(sport: str, d, ddir: Path, excluded: dict) -> tuple[dict | None, s
                     or next((p.get("graded_at") for p in recap.get("props") or []), None)},
         "params": shadow.get("params"),
         "definitions": {
-            "current": "recap.json model_result (the site's pick), same as summary.json",
+            "current": (
+                "pre-promotion formula (baseline_recommendation vs recap result) while the site is publishing "
+                "the tuned formula; published_result is the site pick (recap model_result)"
+                if any(p.get("current_from_baseline") for p in (shadow.get("props") or []))
+                else "recap.json model_result (the site's pick), same as summary.json"
+            ),
             "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
             "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
             "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",

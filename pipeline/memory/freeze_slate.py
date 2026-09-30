@@ -81,6 +81,12 @@ def _stamp(prop: dict, start: datetime, start_source: str, now: datetime, commit
     return prop
 
 
+def _formula_fields(dest: dict, *sources: dict) -> dict:
+    """Carry baseline (pre-promotion) numbers onto the slate so shadow can keep both."""
+    from pipeline.live_formula import copy_formula_fields
+    return copy_formula_fields(dest, *sources)
+
+
 def _edge(projection, line):
     try:
         return round(float(projection) - float(line), 3)
@@ -268,6 +274,7 @@ def build_kbo_props(
             }
             if ignore_cutoff:
                 row["cutoff_ignored"] = True
+            _formula_fields(row, src, prop)
             out.append(_stamp(row, start, start_source, now, commit))
     return out, stats
 
@@ -384,6 +391,7 @@ def freeze_wnba(
                 }
                 if ignore_cutoff:
                     entry["cutoff_ignored"] = True
+                _formula_fields(entry, prop, row)
                 by_date[gamedate].append(_stamp(entry, start, start_source, now, commit))
 
     skipped = {format_mmddyyyy(d): n for d, n in sorted(skipped_past.items())}
@@ -566,6 +574,7 @@ def freeze_nfl(
         }
         if ignore_cutoff:
             entry["cutoff_ignored"] = True
+        _formula_fields(entry, row)
         by_date[gameday].append(_stamp(entry, start, start_source, now, commit))
         hist = {
             "ts": now_iso,

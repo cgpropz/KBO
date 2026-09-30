@@ -15,6 +15,7 @@
  * Python generator so CI (GitHub Actions) can produce these snapshots without a
  * running Node server.
  */
+import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -139,6 +140,15 @@ async function main() {
   if (failures.length) {
     console.error(`\n\u26a0 WNBA snapshot export failed for: ${failures.join(', ')}`)
     process.exit(1)
+  }
+  const py = process.env.PYTHON_BIN || 'python3'
+  const apply = spawnSync(py, ['pipeline/apply_live_formula.py', '--sport', 'wnba'], {
+    cwd: resolve(__dirname, '..'),
+    stdio: 'inherit',
+  })
+  if (apply.status !== 0) {
+    console.error('Live formula apply failed')
+    process.exit(apply.status || 1)
   }
   console.log('\n\u2705 WNBA snapshots exported.')
 }

@@ -73,13 +73,29 @@ def score_prop(sport: str, d: date, slate: dict, prop: dict, params: dict, proje
     p = params.get(stat)
     line = to_float(prop.get("line"))
     odds = str(prop.get("odds_type") or "standard").lower()
-    cur_ok, cur_why = current_projection_valid(sport, prop)
-    current = float(prop["projection"]) if cur_ok else None
+    published_ok, published_why = current_projection_valid(sport, prop)
+    published = float(prop["projection"]) if published_ok else None
+    use_baseline = bool(prop.get("formula_applied")) and prop.get("baseline_projection") is not None
+    if use_baseline:
+        raw_base = float(prop["baseline_projection"])
+        base_ok, base_why = current_projection_valid(sport, dict(prop, projection=raw_base))
+        current = raw_base if base_ok else None
+        cur_why = base_why
+        current_side = prop.get("baseline_recommendation") or None
+        if current is not None and current_side not in ("OVER", "UNDER", "PUSH"):
+            current_side = side_of(current, line)
+    else:
+        current = published
+        cur_why = published_why
+        current_side = norm_side(prop.get("recommendation"))
     row = {
         "player": prop.get("player"), "team": prop.get("team"), "opponent": prop.get("opponent"),
         "stat": label, "params_stat": stat if p else None, "odds_type": odds, "line": line,
         "current_projection": r3(current), "current_projection_note": cur_why or None,
-        "current_side": norm_side(prop.get("recommendation")),
+        "current_side": current_side,
+        "current_from_baseline": True if use_baseline else None,
+        "published_projection": r3(published) if use_baseline else None,
+        "published_side": (prop.get("recommendation") if use_baseline else None),
         "shadow_projection": None, "shadow_side": None, "shadow_source": None, "carried_current": None,
         "flag": None, "fit_projection": None, "fit_note": None, "p_over": None, "p_over_note": None,
         "input_ref": None, "pin": None, "start_time_utc": prop.get("start_time_utc"),
@@ -160,6 +176,8 @@ def score_day(sport: str, d: date, ddir: Path, params: dict, pver: dict, project
         "rules": {
             "shadow_projection": "Phase 2 final fit (knobs + linear calibration) for stats with recommendation=candidate; "
                                  "otherwise the current projection is carried (carried_current=true)",
+            "current_projection": "pre-promotion formula when the slate row has formula_applied and baseline_projection "
+                                  "(the site projection is then published_projection); otherwise the slate projection",
             "shadow_side": "candidate stats: sign(shadow_projection - line); carried stats: current pick",
             "p_over": "Phase 2 logistic on (fit_projection - line, line); standard lines only",
             "top_bucket": f"top {int(C.TOP_FRACTION * 100)}% of the day's standard lines by |projection - line| / "

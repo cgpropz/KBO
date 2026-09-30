@@ -200,6 +200,11 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         projection = last_three * .50 + last_nine * .25 + last_fifteen * .25
     else:
         projection = row.line
+    baseline = projection
+    from pipeline.live_formula import formula_mode, promote_nfl
+    tuned = None if len(values) < 3 else promote_nfl(row.prop, values, baseline)
+    if tuned is not None:
+        projection = tuned
     player = directory.get(key, {})
     default_position = 'QB' if row.prop.startswith('Pass') else 'RB' if 'Rush' in row.prop else 'WR'
     position = text_or_empty(player.get('position')) or default_position
@@ -224,6 +229,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
         'player': text_or_empty(row.player), 'position': position, 'team': text_or_empty(row.team), 'opponent': text_or_empty(row.opponent),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
+        'baseline_projection': round(float(baseline), 1),
+        'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
+        'formula_applied': tuned is not None,
+        'formula_mode': formula_mode(),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,

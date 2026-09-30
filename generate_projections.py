@@ -879,6 +879,19 @@ def classify_recommendation(edge, threshold, odds_type="standard"):
     return "PUSH"
 
 
+def finish_pitcher_row(row, stat, games, ctx, games_by_name):
+    """Keep the previous formula on the row, then publish the tuned fit when it is a candidate."""
+    from pipeline.live_formula import KBO_THRESHOLDS, attach_kbo_formula, tune_kbo_pitcher
+    tuned = tune_kbo_pitcher(stat, games, ctx, games_by_name)
+    factors = None
+    value = None
+    if tuned:
+        value = tuned["value"]
+        factors = {"opp_factor": tuned["opp_factor"], "form_factor": tuned["form_factor"]}
+    attach_kbo_formula(row, value, KBO_THRESHOLDS[stat], factors)
+    return row
+
+
 def shrink_pitcher_stats(stats, league_soip, league_ipg, league_hits_per_ip):
     if not stats:
         return None
@@ -1198,6 +1211,11 @@ def main():
             "recent_values": so_recent,
             "source": source,
         })
+        finish_pitcher_row(
+            projections[-1], "Strikeouts", games,
+            (opp_so_g, league_avg_so_per_g, opp_h_per_ip, league_avg_h_per_ip),
+            games_by_name,
+        )
 
         base_hits = hits_per_ip * ip_per_g
         hits_opp_factor = clamp(1.0 + 0.40 * ((opp_h_per_ip / league_avg_h_per_ip) - 1.0), 0.88, 1.12)
@@ -1234,6 +1252,11 @@ def main():
             "recent_values": ha_recent,
             "source": source,
         })
+        finish_pitcher_row(
+            projections[-1], "Hits Allowed", games,
+            (opp_so_g, league_avg_so_per_g, opp_h_per_ip, league_avg_h_per_ip),
+            games_by_name,
+        )
 
         outs_base = ip_per_g * 3.0
         outs_opp_factor = clamp(
@@ -1275,6 +1298,11 @@ def main():
             "recent_values": outs_recent,
             "source": source,
         })
+        finish_pitcher_row(
+            projections[-1], "Pitching Outs", games,
+            (opp_so_g, league_avg_so_per_g, opp_h_per_ip, league_avg_h_per_ip),
+            games_by_name,
+        )
 
     out_path = os.path.join(BASE, "kbo-props-ui", "public", "data", "strikeout_projections.json")
     with open(out_path, "w", encoding="utf-8") as f:
@@ -1287,10 +1315,11 @@ def main():
                 "league_avg_h_per_ip": round(league_avg_h_per_ip, 3),
                 "team_so_per_g": {k: round(v["so_per_g"], 3) for k, v in team_batting_ctx.items()},
                 "team_h_per_ip": {k: round(v["h_per_ip"], 3) for k, v in team_batting_ctx.items()},
+                "formula_mode": projections[0].get("formula_mode") if projections else "current",
                 "models": {
-                    "strikeouts": "weighted_soip_ipg_with_opp_whip_form",
-                    "hits_allowed": "weighted_hip_ipg_with_opp_hitrate_whip_form",
-                    "pitching_outs": "ipg_times_three_with_opp_context_whip_form",
+                    "strikeouts": "phase2_candidate_or_weighted_soip_ipg_with_opp_whip_form",
+                    "hits_allowed": "phase2_candidate_or_weighted_hip_ipg_with_opp_hitrate_whip_form",
+                    "pitching_outs": "phase2_candidate_or_ipg_times_three_with_opp_context_whip_form",
                 },
             },
             f,
