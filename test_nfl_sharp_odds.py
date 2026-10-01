@@ -150,32 +150,54 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(row["best_under"]["price"], 100)
         self.assertNotEqual(row["best_over"]["price"], 500)
         self.assertEqual(row["fair_source"], "sharp_books")
+        self.assertEqual(row["fair_books"], ["Circa"])
+        self.assertEqual(row["sharp_over"]["book"], "Circa")
+        self.assertEqual(row["sharp_over"]["price"], -120)
+        # Circa -120 / +100 de-vigged alone. FanDuel's -115 is not mixed in.
+        fair_over = (120 / 220) / ((120 / 220) + 0.5)
+        self.assertEqual(row["fair_over_pct"], round(fair_over * 100, 1))
+        self.assertEqual(row["pp_edge_over_flex"], round((fair_over - (119 / 219)) * 100, 1))
+        self.assertEqual(row["pp_edge_flex"], row["pp_edge_over_flex"])
+        self.assertLess(row["pp_edge_flex"], 0)
+        self.assertEqual(row["grade"], "D")
+        self.assertEqual(row["quoted_book"], "Circa")
+        self.assertEqual(row["quoted_price"], -120)
+        self.assertTrue(row["pp_best_price_flex"])
+        self.assertFalse(row["pp_best_price_power"])
         self.assertEqual(row["recommendation"], "OVER")
         self.assertEqual(row["hitRateL5"], 80)
         self.assertEqual(row["hitRate"], 60)
         self.assertLess(row["ev_pct"], 0)
-        self.assertIsNone(row["grade"])
         self.assertFalse(snapshot["odds_api_required"])
         self.assertEqual(snapshot["provider"], "unabated")
+        self.assertEqual(snapshot["pp_baseline"], "flex")
+        self.assertEqual(snapshot["pp_baselines"]["flex"]["american"], -119)
+        self.assertEqual(snapshot["pp_baselines"]["power"]["american"], -137)
 
-    def test_nearest_yardage_line_and_grade_penalty(self):
-        # Force a plus-EV price so the grade step-down is visible.
+    def test_nearest_half_point_badges_line_plus_without_padding_the_edge(self):
         books = [
             {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
-             "side": "over", "line": 70.5, "price": 150, "book": "FanDuel", "book_key": "fanduel"},
+             "side": "over", "line": 74.5, "price": -168, "book": "Circa", "book_key": "circa"},
             {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
-             "side": "under", "line": 70.5, "price": -130, "book": "Circa", "book_key": "circa"},
-            {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
-             "side": "over", "line": 70.5, "price": -110, "book": "Circa", "book_key": "circa"},
+             "side": "under", "line": 74.5, "price": 110, "book": "Circa", "book_key": "circa"},
         ]
-        exact = sharp.build_snapshot([self._pp(pp_line=70.5, projection=80)], books)
-        nearest = sharp.build_snapshot([self._pp(pp_line=68.5, projection=80)], books)
-        self.assertEqual(exact["records"][0]["line_match"], "exact")
-        self.assertEqual(exact["records"][0]["grade"], "A+")
-        self.assertEqual(nearest["records"][0]["line_match"], "nearest")
-        self.assertEqual(nearest["records"][0]["matched_line"], 70.5)
-        self.assertEqual(nearest["records"][0]["line_delta"], 2.0)
-        self.assertEqual(nearest["records"][0]["grade"], "B")
+        exact = sharp.build_snapshot([self._pp(pp_line=74.5, projection=80)], books)["records"][0]
+        easier = sharp.build_snapshot([self._pp(pp_line=74.0, projection=80)], books)["records"][0]
+        harder = sharp.build_snapshot([self._pp(pp_line=75.0, projection=80)], books)["records"][0]
+        wide = sharp.build_snapshot([self._pp(pp_line=72.5, projection=80)], books)["records"][0]
+        self.assertEqual(exact["line_match"], "exact")
+        self.assertFalse(exact["line_plus"])
+        self.assertEqual(exact["grade"], "A")
+        self.assertEqual(easier["line_match"], "nearest")
+        self.assertEqual(easier["line_delta"], 0.5)
+        self.assertTrue(easier["line_plus"])
+        self.assertEqual(easier["pp_edge_flex"], exact["pp_edge_flex"])
+        self.assertEqual(easier["grade"], "A+")
+        self.assertFalse(harder["line_plus"])
+        self.assertEqual(harder["grade"], "A")
+        self.assertEqual(wide["line_delta"], 2.0)
+        self.assertFalse(wide["line_plus"])
+        self.assertEqual(wide["grade"], exact["grade"])
 
     def test_count_prop_rejects_a_far_line(self):
         snapshot = sharp.build_snapshot(
@@ -202,14 +224,143 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(snapshot["records"][0]["best_over"]["book"], "Bookmaker")
 
     def test_grade_bands(self):
-        self.assertEqual(sharp.letter_grade(9, "exact", 0), "A+")
-        self.assertEqual(sharp.letter_grade(5, "exact", 0), "A")
-        self.assertEqual(sharp.letter_grade(2, "exact", 0), "B")
-        self.assertEqual(sharp.letter_grade(0.2, "exact", 0), "C")
-        self.assertIsNone(sharp.letter_grade(-1, "exact", 0))
-        self.assertEqual(sharp.letter_grade(9, "nearest", 0.5), "A")
-        self.assertEqual(sharp.letter_grade(9, "nearest", 5), "B")
-        self.assertEqual(sharp.letter_grade(2, "nearest", 5), "C")
+        self.assertEqual(sharp.letter_grade(4), "A+")
+        self.assertEqual(sharp.letter_grade(2), "A")
+        self.assertEqual(sharp.letter_grade(0.5), "B")
+        self.assertEqual(sharp.letter_grade(0), "C")
+        self.assertEqual(sharp.letter_grade(-0.1), "D")
+        self.assertIsNone(sharp.letter_grade(None))
+        self.assertEqual(sharp.letter_grade(2, line_plus=True), "A+")
+        self.assertEqual(sharp.letter_grade(0.2, line_plus=True), "B")
+        self.assertEqual(sharp.letter_grade(4, line_plus=True), "A+")
+        self.assertEqual(sharp.letter_grade(-1, line_plus=True), "D")
+
+    def test_american_implied_and_pp_edge(self):
+        flex = sharp.american_to_implied(-119)
+        power = sharp.american_to_implied(-137)
+        self.assertAlmostEqual(flex, 119 / 219)
+        self.assertAlmostEqual(power, 137 / 237)
+        self.assertAlmostEqual(sharp.american_to_implied(100), 0.5)
+        self.assertAlmostEqual(sharp.american_to_implied(-140), 140 / 240)
+        self.assertIsNone(sharp.american_to_implied(0))
+        self.assertIsNone(sharp.american_to_implied("juice"))
+        self.assertEqual(sharp.pp_edge_pct(0.60, flex), round((0.60 - flex) * 100, 1))
+        self.assertGreater(sharp.pp_edge_pct(0.60, flex), 0)
+        self.assertLess(sharp.pp_edge_pct(0.50, flex), 0)
+        # -140 / -120 de-vigged is under Flex break-even even though -140 loses to -119 on price.
+        over = sharp.american_to_implied(-140)
+        under = sharp.american_to_implied(-120)
+        fair_over = over / (over + under)
+        self.assertLess(sharp.pp_edge_pct(fair_over, flex), 0)
+        self.assertLess(sharp.pp_edge_pct(fair_over, power), sharp.pp_edge_pct(fair_over, flex))
+        self.assertTrue(sharp.pp_price_beats_book(-140, -119))
+        self.assertTrue(sharp.pp_price_beats_book(-140, -137))
+        self.assertFalse(sharp.pp_price_beats_book(-110, -119))
+        self.assertFalse(sharp.pp_price_beats_book(100, -119))
+
+    def _book(self, side, line, price, book, prop="Receiving Yards"):
+        return {
+            "player": "Ja'Marr Chase",
+            "player_key": sharp.name_key("Ja'Marr Chase"),
+            "prop": prop,
+            "side": side,
+            "line": line,
+            "price": price,
+            "book": book,
+            "book_key": sharp.book_key(book),
+        }
+
+    def test_devig_stays_inside_one_book(self):
+        books = [
+            self._book("over", 74.5, -110, "Pinnacle"),
+            self._book("under", 74.5, -110, "DraftKings"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        self.assertIsNone(row["fair_over_pct"])
+        self.assertIsNone(row["pp_edge_flex"])
+        self.assertIsNone(row["grade"])
+        self.assertEqual(row["best_over"]["book"], "Pinnacle")
+        self.assertEqual(row["best_under"]["book"], "DraftKings")
+        self.assertEqual(row["fair_book_count"], 0)
+
+    def test_sharp_consensus_ignores_a_soft_book_pair(self):
+        books = [
+            self._book("over", 74.5, -150, "Circa"),
+            self._book("under", 74.5, 130, "Circa"),
+            self._book("over", 74.5, -140, "Pinnacle"),
+            self._book("under", 74.5, 120, "Pinnacle"),
+            self._book("over", 74.5, -300, "FanDuel"),
+            self._book("under", 74.5, -200, "FanDuel"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        circa_over = (150 / 250) / ((150 / 250) + (100 / 230))
+        pin_over = (140 / 240) / ((140 / 240) + (100 / 220))
+        fair_over = (circa_over + pin_over) / 2
+        self.assertEqual(row["fair_source"], "sharp_books")
+        self.assertEqual(set(row["fair_books"]), {"Circa", "Pinnacle"})
+        self.assertEqual(row["fair_over_pct"], round(fair_over * 100, 1))
+        self.assertEqual(row["pp_edge_flex"], round((fair_over - (119 / 219)) * 100, 1))
+        self.assertEqual(row["pp_edge_power"], round((fair_over - (137 / 237)) * 100, 1))
+        self.assertGreater(row["pp_edge_flex"], 0)
+        self.assertLess(row["pp_edge_power"], 0)
+        self.assertEqual(row["grade_flex"], "A")
+        self.assertEqual(row["grade_power"], "D")
+        # Sharp anchor on the recommended over, not FanDuel's juicier number.
+        self.assertEqual(row["quoted_book"], "Pinnacle")
+        self.assertEqual(row["quoted_price"], -140)
+
+    def test_one_sided_sharp_price_does_not_replace_the_devig(self):
+        books = [
+            self._book("over", 74.5, -200, "Pinnacle"),
+            self._book("over", 74.5, -110, "FanDuel"),
+            self._book("under", 74.5, -110, "FanDuel"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        self.assertEqual(row["fair_source"], "all_books")
+        self.assertEqual(row["fair_books"], ["FanDuel"])
+        self.assertEqual(row["fair_over_pct"], 50.0)
+        self.assertEqual(row["quoted_book"], "FanDuel")
+        self.assertEqual(row["quoted_price"], -110)
+        self.assertEqual(row["price_book"], "Pinnacle")
+        self.assertEqual(row["price_american"], -200)
+        self.assertTrue(row["pp_best_price_flex"])
+        self.assertTrue(row["pp_best_price_power"])
+
+    def test_soft_books_are_the_fallback_consensus(self):
+        books = [
+            self._book("over", 74.5, -130, "FanDuel"),
+            self._book("under", 74.5, 110, "FanDuel"),
+            self._book("over", 74.5, -120, "DraftKings"),
+            self._book("under", 74.5, 100, "DraftKings"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        self.assertEqual(row["fair_source"], "all_books")
+        self.assertEqual(row["fair_book_count"], 2)
+        self.assertIsNone(row["sharp_over"])
+        # No sharp quote, so the anchor is the best American over (-120 beats -130).
+        self.assertEqual(row["quoted_book"], "DraftKings")
+        self.assertEqual(row["quoted_price"], -120)
+
+    def test_rows_sort_by_flex_pp_edge(self):
+        chase = [
+            self._book("over", 74.5, -180, "Circa"),
+            self._book("under", 74.5, 140, "Circa"),
+        ]
+        other = [
+            self._book("over", 54.5, -105, "Bookmaker", prop="Rush Yards"),
+            self._book("under", 54.5, -115, "Bookmaker", prop="Rush Yards"),
+        ]
+        other[0]["player"] = other[1]["player"] = "Brian Robinson"
+        other[0]["player_key"] = other[1]["player_key"] = sharp.name_key("Brian Robinson")
+        snapshot = sharp.build_snapshot(
+            [
+                self._pp(player="Brian Robinson Jr.", prop="Rush Yards", pp_line=54.5, projection=60, position="RB", id="rb"),
+                self._pp(),
+            ],
+            chase + other,
+        )
+        self.assertEqual([row["player"] for row in snapshot["records"]], ["Ja'Marr Chase", "Brian Robinson Jr."])
+        self.assertGreater(snapshot["records"][0]["pp_edge_flex"], snapshot["records"][1]["pp_edge_flex"])
 
 
 class PipelineTests(unittest.TestCase):

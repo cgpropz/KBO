@@ -206,6 +206,31 @@ test('NFL sharp odds preview keeps the best EV rows and the snapshot message', a
   assert.equal(paid.body.data.records.length, 8)
 })
 
+test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () => {
+  const original = TABLES.nfl_sharp_odds
+  TABLES.nfl_sharp_odds = {
+    generated_at: NOW,
+    provider: 'unabated',
+    status: 'ok',
+    message: 'matched',
+    records: [
+      { player: 'LowEdge', ev_pct: 9, pp_edge_flex: 0.2 },
+      { player: 'HighEdge', ev_pct: -4, pp_edge_flex: 6 },
+      { player: 'Mid', ev_pct: 1, pp_edge_flex: 3 },
+      { player: 'Legacy', ev_pct: 8 },
+    ],
+  }
+  try {
+    const res = await call('nfl_sharp_odds')
+    // Rows with pp_edge_flex sort on that number, so HighEdge (edge 6, EV -4)
+    // beats LowEdge (edge 0.2, EV 9). A legacy row with only ev_pct still sorts on EV.
+    assert.deepEqual(res.body.data.records.map((row) => row.player), ['Legacy', 'HighEdge', 'Mid'])
+    assert.equal(res.body.lockedCount, 1)
+  } finally {
+    TABLES.nfl_sharp_odds = original
+  }
+})
+
 test('unpublished table returns 404', async () => {
   const original = TABLES.nfl_lineups
   delete TABLES.nfl_lineups

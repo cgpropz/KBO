@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
 
 const PROP_ORDER = ['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets']
-const GRADE_RANK = { 'A+': 4, A: 3, B: 2, C: 1 }
+const GRADE_RANK = { 'A+': 5, A: 4, B: 3, C: 2, D: 1 }
+const GRADE_BANDS = [[4, 'A+'], [2, 'A'], [0.5, 'B'], [0, 'C']]
+const GRADE_LADDER = ['A+', 'A', 'B', 'C', 'D']
+
+// American implied break-evens. Flex is the default screen; Power is ~2-pick Power.
+const BASELINES = {
+  flex: { id: 'flex', label: 'Flex', american: -119, breakeven: 119 / 219 },
+  power: { id: 'power', label: 'Power', american: -137, breakeven: 137 / 237 },
+}
 
 function formatValue(value) {
   if (value == null || value === '') return '—'
@@ -23,11 +31,16 @@ function formatHit(rate) {
   return Number.isFinite(number) ? `${Math.round(number)}%` : '—'
 }
 
-function formatEv(value) {
+function formatEdge(value) {
   if (value == null || !Number.isFinite(Number(value))) return '—'
   const number = Number(value)
-  const text = `${number > 0 ? '+' : ''}${number.toFixed(1)}%`
-  return text
+  return `${number > 0 ? '+' : ''}${number.toFixed(1)}%`
+}
+
+function formatBreakeven(baseline, payload) {
+  const stored = payload?.pp_baselines?.[baseline.id]?.breakeven_pct
+  const pct = Number.isFinite(Number(stored)) ? Number(stored) : baseline.breakeven * 100
+  return pct.toFixed(2)
 }
 
 function initials(name) {
@@ -37,6 +50,70 @@ function initials(name) {
 function gradeClass(grade) {
   if (!grade) return 'grade-na'
   return `grade-${grade[0].toLowerCase()}`
+}
+
+function gradeFromEdge(edge, linePlus) {
+  if (edge == null || !Number.isFinite(Number(edge))) return null
+  let band = 'D'
+  for (const [threshold, grade] of GRADE_BANDS) {
+    if (Number(edge) >= threshold) {
+      band = grade
+      break
+    }
+  }
+  if (linePlus && band !== 'D') band = GRADE_LADDER[Math.max(GRADE_LADDER.indexOf(band) - 1, 0)]
+  return band
+}
+
+function scoredSide(item) {
+  if (item.recommendation === 'UNDER') return 'under'
+  if (item.recommendation === 'OVER') return 'over'
+  return null
+}
+
+function sideEdge(item, side, mode) {
+  const stored = item?.[`pp_edge_${side}_${mode}`]
+  if (Number.isFinite(Number(stored))) return Number(stored)
+  const fair = Number(side === 'under' ? item?.fair_under_pct : item?.fair_over_pct)
+  if (!Number.isFinite(fair)) return null
+  return Math.round((fair / 100 - BASELINES[mode].breakeven) * 1000) / 10
+}
+
+function activeEdge(item, mode) {
+  const side = scoredSide(item)
+  if (side) return sideEdge(item, side, mode)
+  const fallback = mode === 'power' ? item?.pp_edge_power : (item?.pp_edge_flex ?? item?.pp_edge_pct)
+  return Number.isFinite(Number(fallback)) ? Number(fallback) : null
+}
+
+function activeGrade(item, mode, edge) {
+  const stored = mode === 'power' ? item?.grade_power : (item?.grade_flex || item?.grade)
+  if (stored) return stored
+  return gradeFromEdge(edge, !!item?.line_plus)
+}
+
+function anchorQuote(item) {
+  if (item?.quoted_price != null && item?.quoted_book) {
+    return { price: item.quoted_price, book: item.quoted_book }
+  }
+  return priceShopQuote(item)
+}
+
+function priceShopQuote(item) {
+  if (item?.price_american != null && item?.price_book) {
+    return { price: item.price_american, book: item.price_book }
+  }
+  const side = scoredSide(item)
+  if (!side) return null
+  const sharp = side === 'under' ? item.sharp_under : item.sharp_over
+  const best = side === 'under' ? item.best_under : item.best_over
+  return sharp || best || null
+}
+
+function ppPriceBadge(item, baselineAmerican) {
+  const quote = priceShopQuote(item)
+  if (!quote || !Number.isFinite(Number(quote.price))) return false
+  return Number(quote.price) < Number(baselineAmerican)
 }
 
 function Quote({ quote, side }) {
@@ -49,10 +126,18 @@ function Quote({ quote, side }) {
   )
 }
 
-function SharpRow({ item, onSelectPlayer }) {
+function SharpRow({ item, mode, baselineAmerican, onSelectPlayer }) {
   const side = item.recommendation === 'UNDER' ? 'under' : 'over'
   const label = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
-  const evClass = item.ev_pct == null ? '' : item.ev_pct >= 0 ? 'over' : 'under'
+  const edge = activeEdge(item, mode)
+  const grade = activeGrade(item, mode, edge)
+  const edgeClass = edge == null ? '' : edge > 0 ? 'over' : edge < 0 ? 'under' : ''
+  const overEdge = sideEdge(item, 'over', mode)
+  const underEdge = sideEdge(item, 'under', mode)
+  const quote = anchorQuote(item)
+  const shop = priceShopQuote(item)
+  const showPrice = ppPriceBadge(item, baselineAmerican)
+  const bookCount = Number(item.fair_book_count) || (Array.isArray(item.fair_books) ? item.fair_books.length : 0)
 
   return (
     <tr className="nfl-lines-row">
@@ -66,13 +151,26 @@ function SharpRow({ item, onSelectPlayer }) {
       <td>
         <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}</div>
         {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
+        {item.line_plus && (
+          <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
+        )}
       </td>
       <td><Quote quote={item.best_over} side="over" /></td>
       <td><Quote quote={item.best_under} side="under" /></td>
       <td>{formatValue(item.projection)}</td>
       <td>{formatHit(item.hitRateL5)} / {formatHit(item.hitRate)}</td>
-      <td className={`nfl-sharp-ev ${evClass}`}>{formatEv(item.ev_pct)}</td>
-      <td><span className={`nfl-grade ${gradeClass(item.grade)}`}>{item.grade || '—'}</span></td>
+      <td className="nfl-sharp-edge">
+        <div className={`nfl-sharp-ev ${edgeClass}`}>{formatEdge(edge)}</div>
+        <div className="nfl-sharp-book">
+          {quote ? `${quote.book} ${formatAmerican(quote.price)}` : 'No sharp price'}
+          {bookCount > 1 ? ` · ${bookCount} books` : ''}
+        </div>
+        <div className="nfl-sharp-sides">O {formatEdge(overEdge)} · U {formatEdge(underEdge)}</div>
+        {showPrice && (
+          <span className="nfl-sharp-badge price" title={`Sharp price ${shop ? `${shop.book} ${formatAmerican(shop.price)}` : ''} is worse for a bettor than this PrizePicks juice. Badge only — the sort uses de-vigged fair edge.`}>PP PRICE</span>
+        )}
+      </td>
+      <td><span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span></td>
     </tr>
   )
 }
@@ -86,7 +184,9 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [query, setQuery] = useState('')
   const [prop, setProp] = useState('All')
   const [side, setSide] = useState('All')
-  const [sort, setSort] = useState('Grade')
+  const [sort, setSort] = useState('PP Edge')
+  const [mode, setMode] = useState('flex')
+  const [plusOnly, setPlusOnly] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -104,6 +204,8 @@ export default function NflSharpOdds({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const baseline = BASELINES[mode] || BASELINES.flex
+
   const props = useMemo(() => {
     const present = new Set(records.map((item) => item.prop).filter(Boolean))
     const ordered = PROP_ORDER.filter((item) => present.has(item))
@@ -116,48 +218,72 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       if (prop !== 'All' && item.prop !== prop) return false
       if (side === 'Overs' && item.recommendation !== 'OVER') return false
       if (side === 'Unders' && item.recommendation !== 'UNDER') return false
+      if (plusOnly && !(activeEdge(item, mode) > 0)) return false
       if (query && !String(item.player || '').toLowerCase().includes(query.toLowerCase())) return false
       return true
     })
-    const rank = (item) => GRADE_RANK[item.grade] || 0
-    const ev = (item) => (Number.isFinite(Number(item.ev_pct)) ? Number(item.ev_pct) : -999)
+    const rank = (item) => GRADE_RANK[activeGrade(item, mode, activeEdge(item, mode))] || 0
+    const edge = (item) => {
+      const value = activeEdge(item, mode)
+      return Number.isFinite(value) ? value : -999
+    }
     return filtered.sort((a, b) => {
-      if (sort === 'EV') return ev(b) - ev(a)
+      if (sort === 'Grade') return (rank(b) - rank(a)) || (edge(b) - edge(a)) || String(a.player).localeCompare(String(b.player))
       if (sort === 'L10') return (b.hitRate ?? -1) - (a.hitRate ?? -1)
       if (sort === 'L5') return (b.hitRateL5 ?? -1) - (a.hitRateL5 ?? -1)
-      return (rank(b) - rank(a)) || (ev(b) - ev(a)) || String(a.player).localeCompare(String(b.player))
+      return (edge(b) - edge(a)) || (rank(b) - rank(a)) || String(a.player).localeCompare(String(b.player))
     })
-  }, [records, prop, side, query, sort])
+  }, [records, prop, side, query, sort, mode, plusOnly])
 
   const status = payload?.status || 'ok'
   const matched = payload?.matched_count
   const showStatus = loaded && !error && payload && status !== 'ok'
+  const breakeven = formatBreakeven(baseline, payload)
 
   return (
     <section className="nfl-lines-page nfl-sharp-page">
       <div className="nfl-board-header">
         <div>
-          <p>NFL / SHARP ODDS</p>
-          <h1>Sharp Odds</h1>
+          <p>NFL / PRIZEPICKS ODDS</p>
+          <h1>PrizePicks Odds</h1>
         </div>
         <span>{loaded ? `${rows.length} props` : ''}</span>
       </div>
       <div className="nfl-board-meta">
         <span><i /> {payload?.provider === 'unabated' || !payload ? 'UNABATED PUBLIC ODDS' : String(payload.provider).toUpperCase()}</span>
-        <span>{matched != null ? `${matched} matched to a book` : 'Best price vs no-vig fair'}</span>
-        <span>A+ / A / B / C from EV</span>
+        <span title="Break-even is the implied probability of the selected PrizePicks baseline.">
+          {baseline.label} {formatAmerican(baseline.american)} · {breakeven}% break-even
+        </span>
+        <span>{matched != null ? `${matched} matched to a book` : 'Same-book no-vig fair'}</span>
+        <span title="A+ at least 4 percentage points, A at least 2, B at least 0.5, C at least 0, otherwise D. LINE+ bumps one letter when the edge is already non-negative.">Grades from fair PP edge</span>
       </div>
+      <p className="nfl-sharp-help" title="PP Edge is 100 × (same-book no-vig fair win% − PrizePicks break-even), averaged across sharp books when one posted both sides. PP PRICE is a separate badge when the sharp American number is worse for a bettor than this juice, for example -140 versus -119. That badge is not the sort.">
+        Green when the no-vig sportsbook chance on your PrizePicks side is higher than Flex or Power juice.
+      </p>
       <div className="nfl-lines-tabs" role="tablist" aria-label="Prop type">
         {props.map((item) => (
           <button key={item} className={prop === item ? 'active' : ''} onClick={() => setProp(item)}>{item === 'All' ? 'All Props' : item}</button>
         ))}
       </div>
-      <section className="nfl-edge-controls" aria-label="Sharp odds filters">
+      <section className="nfl-sharp-controls" aria-label="PrizePicks odds filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
+        <div className="nfl-sharp-baseline" role="group" aria-label="PrizePicks baseline">
+          {Object.values(BASELINES).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={mode === item.id ? 'active' : ''}
+              aria-pressed={mode === item.id}
+              onClick={() => setMode(item.id)}
+            >
+              {item.label} ({formatAmerican(item.american)})
+            </button>
+          ))}
+        </div>
         <label><span>SORT</span>
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
+            <option>PP Edge</option>
             <option>Grade</option>
-            <option>EV</option>
             <option>L10</option>
             <option>L5</option>
           </select>
@@ -169,13 +295,17 @@ export default function NflSharpOdds({ onSelectPlayer }) {
             <option>Unders</option>
           </select>
         </label>
+        <label className="nfl-sharp-check">
+          <input type="checkbox" checked={plusOnly} onChange={(event) => setPlusOnly(event.target.checked)} />
+          Only +EV vs PP
+        </label>
       </section>
       {error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading sharp odds.</div>}
+      {!error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
       {showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
       {!error && loaded && !records.length && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
       {!error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">Free preview: showing the top {records.length} by EV. {lockedCount} more are locked.</div>}
+      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">Free preview: showing the top {records.length} by PP Edge. {lockedCount} more are locked.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table">
@@ -187,13 +317,19 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                 <th>Best Under</th>
                 <th>Our Proj</th>
                 <th>L5 / L10</th>
-                <th>EV</th>
+                <th title="De-vigged fair win% minus the selected PrizePicks break-even">PP Edge</th>
                 <th>Grade</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((item) => (
-                <SharpRow key={item.id || `${item.player}-${item.prop}-${item.pp_line}`} item={item} onSelectPlayer={onSelectPlayer} />
+                <SharpRow
+                  key={item.id || `${item.player}-${item.prop}-${item.pp_line}`}
+                  item={item}
+                  mode={mode}
+                  baselineAmerican={baseline.american}
+                  onSelectPlayer={onSelectPlayer}
+                />
               ))}
             </tbody>
           </table>
