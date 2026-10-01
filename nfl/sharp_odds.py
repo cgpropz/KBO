@@ -7,6 +7,8 @@ the same public Unabated snapshot WNBA already uses:
     https://content.unabated.com/markets/b_playerprops.json
 
 NFL players are leagueId 1 in that file. No Odds API key is required.
+CloudFront caches that file for over an hour, so each fetch sends a fresh
+query string. A cached copy hides lines books have already posted.
 
 Plug-in point: OddsProvider.fetch_records(). Unabated is the only enabled
 provider. The Odds API is intentionally not called — set
@@ -25,6 +27,7 @@ import json
 import os
 import re
 import urllib.parse
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +64,10 @@ DISPLAY_STAT_PHRASES = (
     ("passing and rushing yards", "Pass+Rush Yds"),
     ("rush + rec yards", "Rush+Rec Yds"),
     ("rushing and receiving yards", "Rush+Rec Yds"),
+    ("rushing + receiving yards", "Rush+Rec Yds"),
+    ("rush + receiving yards", "Rush+Rec Yds"),
+    ("receiving targets", "Rec Targets"),
+    ("rec targets", "Rec Targets"),
     ("receiving yards", "Receiving Yards"),
     ("rushing yards", "Rush Yards"),
     ("rush yards", "Rush Yards"),
@@ -74,6 +81,7 @@ DISPLAY_STAT_PHRASES = (
     ("pass completions", "Pass Completions"),
     ("completions", "Pass Completions"),
     ("receptions", "Receptions"),
+    ("targets", "Rec Targets"),
 )
 
 COUNT_PROPS = {"Receptions", "Pass Attempts", "Pass Completions", "Rush Attempts", "Rec Targets"}
@@ -119,11 +127,21 @@ class UnabatedProvider(OddsProvider):
     def __init__(self, url=UNABATED_PROPS_URL, timeout=90):
         self.url = url
         self.timeout = timeout
+        self.feed_snapshot_at = None
 
     def fetch_records(self):
-        response = requests.get(self.url, timeout=self.timeout)
+        # A stable URL is a CloudFront hit. Age on that hit was over an hour,
+        # and the cached body was missing lines the origin file already had.
+        response = requests.get(
+            self.url,
+            params={"uuid": str(uuid.uuid4())},
+            headers={"Cache-Control": "no-cache", "Pragma": "no-cache"},
+            timeout=self.timeout,
+        )
         response.raise_for_status()
-        records, event_count = normalize_unabated_payload(response.json())
+        payload = response.json()
+        self.feed_snapshot_at = payload.get("snapshotStartedAtUtc")
+        records, event_count = normalize_unabated_payload(payload)
         return records, event_count
 
 
@@ -572,20 +590,44 @@ def _scored_side(recommendation, over_rows, under_rows, sharp_over, sharp_under,
     return edge_flex, edge_power, _edge_quote(side_rows, fair_books) or sharp_quote or best_quote, sharp_quote or best_quote, line_plus
 
 
-def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0):
+def _unmatched_reason(pp, available, line_match, props_in_feed, players_with_books):
+    """Why a PrizePicks row has no sportsbook price. None when a line is attached.
+
+    ``market_not_in_feed`` means Unabated posted no prices for that stat at all
+    (Rec Targets, today). ``no_market`` means the player has other stats but not
+    this one. ``line_too_far`` means a price exists, just not near this line.
+    """
+    if line_match != "none":
+        return None
+    if pp["prop"] not in props_in_feed:
+        return "market_not_in_feed"
+    if pp["player_key"] not in players_with_books:
+        return "no_player"
+    if not available:
+        return "no_market"
+    return "line_too_far"
+
+
+def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None):
     books_by_player_prop = {}
+    props_in_feed = set()
+    players_with_books = set()
     for row in book_rows:
         books_by_player_prop.setdefault((row["player_key"], row["prop"]), []).append(row)
+        props_in_feed.add(row["prop"])
+        players_with_books.add(row["player_key"])
     flex_be = american_to_implied(PP_FLEX_AMERICAN)
     power_be = american_to_implied(PP_POWER_AMERICAN)
 
     records = []
     for pp in pp_rows:
+        available = books_by_player_prop.get((pp["player_key"], pp["prop"]), [])
         matched_rows, matched_line, line_match, line_delta = _select_line(
-            books_by_player_prop.get((pp["player_key"], pp["prop"]), []),
+            available,
             pp["pp_line"],
             pp["prop"],
         )
+        unmatched_reason = _unmatched_reason(pp, available, line_match, props_in_feed, players_with_books)
         over_rows = [row for row in matched_rows if row["side"] == "over"]
         under_rows = [row for row in matched_rows if row["side"] == "under"]
         best_over = _best_quote(over_rows)
@@ -673,6 +715,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0)
                 "line_match": line_match,
                 "matched_line": matched_line,
                 "line_delta": line_delta,
+                "unmatched_reason": unmatched_reason,
                 "matched_books_count": len({row["book_key"] for row in matched_rows}),
             }
         )
@@ -686,12 +729,22 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0)
         )
     )
     matched_count = sum(1 for row in records if row["line_match"] != "none")
+    unmatched_count = len(records) - matched_count
+    unmatched_market_props = sorted(
+        {row["prop"] for row in records if row.get("unmatched_reason") == "market_not_in_feed"}
+    )
     if not pp_rows:
         message = "No NFL PrizePicks lines are posted right now."
     elif matched_count:
         message = f"Matched {matched_count} of {len(pp_rows)} PrizePicks props to Unabated sportsbook lines."
+        if unmatched_count:
+            message += f" {unmatched_count} still have no sportsbook price."
+        if unmatched_market_props:
+            message += f" Unabated does not post {', '.join(unmatched_market_props)}."
     else:
         message = "PrizePicks board loaded. No sportsbook line matched this slate yet."
+        if unmatched_market_props:
+            message += f" Unabated does not post {', '.join(unmatched_market_props)}."
     return {
         "generated_at": now_iso(),
         "provider": provider,
@@ -699,6 +752,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0)
         "league_id": NFL_LEAGUE_ID,
         "status": "ok",
         "message": message,
+        "feed_snapshot_at": feed_snapshot_at,
         "odds_api_required": False,
         "pp_baseline": "flex",
         "pp_baselines": {
@@ -710,6 +764,8 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0)
         "sportsbook_record_count": len(book_rows),
         "prizepicks_prop_count": len(pp_rows),
         "matched_count": matched_count,
+        "unmatched_count": unmatched_count,
+        "unmatched_market_props": unmatched_market_props,
         "records": records,
     }
 
@@ -731,7 +787,13 @@ def run(projections_path, provider_name="unabated", fetch=None):
         book_rows, events_scanned = provider.fetch_records()
     else:
         book_rows, events_scanned = fetch()
-    return build_snapshot(pp_rows, book_rows, provider=provider.name, events_scanned=events_scanned)
+    return build_snapshot(
+        pp_rows,
+        book_rows,
+        provider=provider.name,
+        events_scanned=events_scanned,
+        feed_snapshot_at=getattr(provider, "feed_snapshot_at", None),
+    )
 
 
 def main(argv=None):

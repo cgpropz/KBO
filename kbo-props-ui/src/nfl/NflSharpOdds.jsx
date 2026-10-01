@@ -43,6 +43,19 @@ function formatBreakeven(baseline, payload) {
   return pct.toFixed(2)
 }
 
+function formatFeedTime(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`
+}
+
+function noBookNote(item) {
+  if (item?.line_match !== 'none') return null
+  if (item.unmatched_reason === 'market_not_in_feed') return 'No book market'
+  if (item.unmatched_reason === 'line_too_far') return 'Book line too far'
+  return 'No book line'
+}
+
 function initials(name) {
   return String(name || '').split(' ').map((part) => part[0]).join('').slice(0, 2)
 }
@@ -138,6 +151,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer }) {
   const shop = priceShopQuote(item)
   const showPrice = ppPriceBadge(item, baselineAmerican)
   const bookCount = Number(item.fair_book_count) || (Array.isArray(item.fair_books) ? item.fair_books.length : 0)
+  const gap = noBookNote(item)
 
   return (
     <tr className="nfl-lines-row">
@@ -151,6 +165,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer }) {
       <td>
         <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}</div>
         {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
+        {gap && <div className="nfl-sharp-book">{gap}</div>}
         {item.line_plus && (
           <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
         )}
@@ -162,7 +177,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer }) {
       <td className="nfl-sharp-edge">
         <div className={`nfl-sharp-ev ${edgeClass}`}>{formatEdge(edge)}</div>
         <div className="nfl-sharp-book">
-          {quote ? `${quote.book} ${formatAmerican(quote.price)}` : 'No sharp price'}
+          {quote ? `${quote.book} ${formatAmerican(quote.price)}` : (gap || 'No sharp price')}
           {bookCount > 1 ? ` · ${bookCount} books` : ''}
         </div>
         <div className="nfl-sharp-sides">O {formatEdge(overEdge)} · U {formatEdge(underEdge)}</div>
@@ -237,6 +252,13 @@ export default function NflSharpOdds({ onSelectPlayer }) {
 
   const status = payload?.status || 'ok'
   const matched = payload?.matched_count
+  const unmatched = payload?.unmatched_count ?? (
+    payload?.prizepicks_prop_count != null && matched != null
+      ? Math.max(0, payload.prizepicks_prop_count - matched)
+      : null
+  )
+  const marketGaps = Array.isArray(payload?.unmatched_market_props) ? payload.unmatched_market_props : []
+  const feedTime = formatFeedTime(payload?.feed_snapshot_at)
   const showStatus = loaded && !error && payload && status !== 'ok'
   const breakeven = formatBreakeven(baseline, payload)
 
@@ -254,12 +276,18 @@ export default function NflSharpOdds({ onSelectPlayer }) {
         <span title="Break-even is the implied probability of the selected PrizePicks baseline.">
           {baseline.label} {formatAmerican(baseline.american)} · {breakeven}% break-even
         </span>
-        <span>{matched != null ? `${matched} matched to a book` : 'Same-book no-vig fair'}</span>
+        <span>{matched != null ? `${matched} matched to a book` : 'Same-book no-vig fair'}{unmatched ? ` · ${unmatched} no book line` : ''}</span>
+        {feedTime && <span title="When Unabated built the odds file this board used">Odds file {feedTime}</span>}
         <span title="A+ at least 4 percentage points, A at least 2, B at least 0.5, C at least 0, otherwise D. LINE+ bumps one letter when the edge is already non-negative.">Grades from fair PP edge</span>
       </div>
       <p className="nfl-sharp-help" title="PP Edge is 100 × (same-book no-vig fair win% − PrizePicks break-even), averaged across sharp books when one posted both sides. PP PRICE is a separate badge when the sharp American number is worse for a bettor than this juice, for example -140 versus -119. That badge is not the sort.">
         Green when the no-vig sportsbook chance on your PrizePicks side is higher than Flex or Power juice.
       </p>
+      {!!marketGaps.length && (
+        <p className="nfl-sharp-help">
+          Unabated does not post {marketGaps.join(', ')}. Those rows stay on the board with a dash.
+        </p>
+      )}
       <div className="nfl-lines-tabs" role="tablist" aria-label="Prop type">
         {props.map((item) => (
           <button key={item} className={prop === item ? 'active' : ''} onClick={() => setProp(item)}>{item === 'All' ? 'All Props' : item}</button>
