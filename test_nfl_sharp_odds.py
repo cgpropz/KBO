@@ -109,6 +109,10 @@ class NormalizeTests(unittest.TestCase):
         self.assertEqual(sharp.prop_from_display_stat("Pass + Rush Yards"), "Pass+Rush Yds")
         self.assertIsNone(sharp.prop_from_display_stat("Longest Reception"))
         self.assertIsNone(sharp.prop_from_display_stat("Rush + Rec TDs"))
+        self.assertEqual(sharp.prop_from_display_stat("Rushing + Receiving Yards"), "Rush+Rec Yds")
+        self.assertEqual(sharp.prop_from_display_stat("Rec Targets"), "Rec Targets")
+        self.assertEqual(sharp.prop_from_display_stat("Receiving Targets"), "Rec Targets")
+        self.assertEqual(sharp.prop_from_display_stat("Amon-Ra St. Brown Targets O/U"), "Rec Targets")
 
 
 class MatchTests(unittest.TestCase):
@@ -208,6 +212,7 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(row["line_match"], "none")
         self.assertIsNone(row["best_over"])
         self.assertIsNone(row["grade"])
+        self.assertEqual(row["unmatched_reason"], "line_too_far")
 
     def test_name_key_joins_suffix_and_punctuation(self):
         books = [
@@ -222,6 +227,81 @@ class MatchTests(unittest.TestCase):
         )
         self.assertEqual(snapshot["records"][0]["line_match"], "exact")
         self.assertEqual(snapshot["records"][0]["best_over"]["book"], "Bookmaker")
+        self.assertIsNone(snapshot["records"][0]["unmatched_reason"])
+
+    def test_aaron_jones_sr_joins_rush_and_rec_yards(self):
+        books = [
+            {"player": "Aaron Jones", "player_key": sharp.name_key("Aaron Jones"), "prop": "Rush+Rec Yds",
+             "side": "over", "line": 88.5, "price": -114, "book": "DraftKings", "book_key": "draftkings"},
+            {"player": "Aaron Jones", "player_key": sharp.name_key("Aaron Jones"), "prop": "Rush+Rec Yds",
+             "side": "under", "line": 88.5, "price": -112, "book": "DraftKings", "book_key": "draftkings"},
+        ]
+        row = sharp.build_snapshot(
+            [self._pp(player="Aaron Jones Sr.", prop="Rush+Rec Yds", pp_line=88.5, projection=80, position="RB")],
+            books,
+        )["records"][0]
+        self.assertEqual(row["line_match"], "exact")
+        self.assertEqual(row["best_over"]["price"], -114)
+        self.assertEqual(row["best_under"]["price"], -112)
+        self.assertIsNone(row["unmatched_reason"])
+        self.assertEqual(row["player"], "Aaron Jones Sr.")
+
+    def test_combo_yard_label_is_not_read_as_receiving_yards(self):
+        payload = json.loads(json.dumps(PAYLOAD))
+        event = payload["propsPeopleEvents"]["lg1:pt1:pregame"][0]
+        event["propsMarketSourcesLines"]["si0:ms1:an0"]["bt16"] = _line(
+            16, 1, -110, 80.5, "display_stat=Rushing%20%2B%20Receiving%20Yards"
+        )
+        event["propsMarketSourcesLines"]["si1:ms1:an0"]["bt16"] = _line(
+            16, 1, -110, 80.5, "display_stat=Rushing%20%2B%20Receiving%20Yards"
+        )
+        records, _events = sharp.normalize_unabated_payload(payload)
+        combo = [row for row in records if row["line"] == 80.5]
+        self.assertTrue(combo)
+        self.assertTrue(all(row["prop"] == "Rush+Rec Yds" for row in combo))
+        self.assertFalse(any(row["prop"] == "Receiving Yards" and row["line"] == 80.5 for row in records))
+
+    def test_rec_targets_stay_on_the_board_when_unabated_has_no_market(self):
+        books = [
+            self._book("over", 22.5, -114, "DraftKings", prop="Receiving Yards"),
+            self._book("under", 22.5, -110, "DraftKings", prop="Receiving Yards"),
+        ]
+        for row in books:
+            row["player"] = "Ashton Jeanty"
+            row["player_key"] = sharp.name_key("Ashton Jeanty")
+        snapshot = sharp.build_snapshot(
+            [self._pp(player="Ashton Jeanty", prop="Rec Targets", pp_line=4.0, projection=4.2, position="RB", id="targets")],
+            books,
+        )
+        self.assertEqual(len(snapshot["records"]), 1)
+        row = snapshot["records"][0]
+        self.assertEqual(row["player"], "Ashton Jeanty")
+        self.assertEqual(row["prop"], "Rec Targets")
+        self.assertEqual(row["line_match"], "none")
+        self.assertIsNone(row["best_over"])
+        self.assertIsNone(row["best_under"])
+        self.assertEqual(row["unmatched_reason"], "market_not_in_feed")
+        self.assertEqual(snapshot["unmatched_count"], 1)
+        self.assertEqual(snapshot["unmatched_market_props"], ["Rec Targets"])
+        self.assertIn("Rec Targets", snapshot["message"])
+
+    def test_rec_targets_attach_when_the_feed_has_a_line(self):
+        books = [
+            self._book("over", 4.0, 118, "DraftKings", prop="Rec Targets"),
+            self._book("under", 4.0, -141, "Novig", prop="Rec Targets"),
+        ]
+        for row in books:
+            row["player"] = "AJ Barner"
+            row["player_key"] = sharp.name_key("A.J. Barner")
+        row = sharp.build_snapshot(
+            [self._pp(player="AJ Barner", prop="Rec Targets", pp_line=4.0, projection=3.4, position="TE", id="barner")],
+            books,
+        )["records"][0]
+        self.assertEqual(row["line_match"], "exact")
+        self.assertEqual(row["best_over"]["book"], "DraftKings")
+        self.assertEqual(row["best_under"]["book"], "Novig")
+        self.assertIsNone(row["unmatched_reason"])
+        self.assertEqual(row["recommendation"], "UNDER")
 
     def test_grade_bands(self):
         self.assertEqual(sharp.letter_grade(4), "A+")
@@ -373,6 +453,43 @@ class PipelineTests(unittest.TestCase):
             os.environ.pop("ODDS_API_KEY", None)
         self.assertNotIn("secret-key-should-not-leak", str(caught.exception))
         self.assertIn("Unabated", str(caught.exception))
+
+    def test_unabated_fetch_bypasses_the_cloudfront_cache(self):
+        captured = {}
+
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "snapshotStartedAtUtc": "2026-10-01T12:49:08Z",
+                    "people": {},
+                    "teams": {},
+                    "marketSources": [],
+                    "propsPeopleEvents": {},
+                }
+
+        def fake_get(url, params=None, headers=None, timeout=None):
+            captured["url"] = url
+            captured["params"] = params
+            captured["headers"] = headers
+            captured["timeout"] = timeout
+            return Response()
+
+        original = sharp.requests.get
+        sharp.requests.get = fake_get
+        try:
+            provider = sharp.UnabatedProvider()
+            records, events = provider.fetch_records()
+        finally:
+            sharp.requests.get = original
+        self.assertEqual(captured["url"], sharp.UNABATED_PROPS_URL)
+        self.assertTrue(captured["params"]["uuid"])
+        self.assertEqual(captured["headers"]["Cache-Control"], "no-cache")
+        self.assertEqual(records, [])
+        self.assertEqual(events, 0)
+        self.assertEqual(provider.feed_snapshot_at, "2026-10-01T12:49:08Z")
 
     def test_main_skips_when_projections_are_missing(self):
         with tempfile.TemporaryDirectory() as tmp:
