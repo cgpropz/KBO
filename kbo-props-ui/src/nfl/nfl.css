@@ -88,12 +88,17 @@
 .nfl-sharp-strip-note { margin: 8px 0 0; color: #78918a; font: 10px monospace; line-height: 1.45; }
 .nfl-sharp-books { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .nfl-sharp-book-cell { flex: 0 0 auto; min-width: 92px; padding: 8px 8px 7px; border: 1px solid #1a3c36; border-radius: 6px; background: #0b1c19; text-align: center; }
-.nfl-sharp-book-cell.is-best { border-color: #7fff68; box-shadow: inset 0 0 0 1px #7fff68; }
+.nfl-sharp-book-cell.is-best { border-color: #e8f4e6; box-shadow: inset 0 0 0 1px #e8f4e6; }
 .nfl-sharp-book-name { color: #8ba39c; font: 10px monospace; }
 .nfl-sharp-side-main, .nfl-sharp-side-alt { display: flex; align-items: baseline; justify-content: center; gap: 5px; }
 .nfl-sharp-side-main { margin-top: 4px; }
 .nfl-sharp-side-main b { font: 800 15px monospace; }
-.nfl-sharp-side-main small, .nfl-sharp-side-alt small { font: 800 9px monospace; letter-spacing: .04em; }
+.nfl-sharp-side-main small, .nfl-sharp-side-alt small { padding: 1px 4px; border-radius: 999px; font: 800 9px monospace; letter-spacing: .04em; }
+.nfl-sharp-side-main[data-tone="worse"] b, .nfl-sharp-side-alt[data-tone="worse"] b { color: #7fff68; }
+.nfl-sharp-side-main[data-tone="better"] b, .nfl-sharp-side-alt[data-tone="better"] b { color: #ff5c57; }
+.nfl-sharp-side-main[data-tone="even"] b, .nfl-sharp-side-alt[data-tone="even"] b { color: #b7cac3; }
+.nfl-sharp-side-main[data-tone="worse"] small, .nfl-sharp-side-alt[data-tone="worse"] small { color: #06210f; background: #7fff68; }
+.nfl-sharp-side-main[data-tone="better"] small, .nfl-sharp-side-alt[data-tone="better"] small { color: #2a0908; background: #ff5c57; }
 .nfl-sharp-side-alt { margin-top: 5px; }
 .nfl-sharp-side-alt b { font: 800 11px monospace; }
 .nfl-sharp-side-label { color: #78918a; font: 9px monospace; }

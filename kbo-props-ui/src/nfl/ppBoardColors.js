@@ -5,7 +5,7 @@
 // Hit rate color is a three-anchor scale: 30 red, 50 board text, 70 green.
 
 export const PRICE_GREEN = '#7fff68'
-export const PRICE_RED = '#ff7b79'
+export const PRICE_RED = '#ff5c57'
 export const PRICE_NEUTRAL = '#b7cac3'
 
 export const HIT_RED = [255, 123, 121]

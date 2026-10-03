@@ -191,14 +191,13 @@ function HitRate({ rate }) {
 
 function SidePrice({ price, baselineAmerican, label, prominent }) {
   if (price == null) return null
-  const color = priceColor(price, baselineAmerican)
   const ev = priceEvLabel(price, baselineAmerican)
   const tone = priceTone(price, baselineAmerican)
   return (
     <div className={prominent ? 'nfl-sharp-side-main' : 'nfl-sharp-side-alt'} data-tone={tone || undefined}>
       {label && <span className="nfl-sharp-side-label">{label}</span>}
-      <b style={color ? { color } : undefined}>{formatAmerican(price)}</b>
-      {ev && <small style={color ? { color } : undefined}>{ev}</small>}
+      <b>{formatAmerican(price)}</b>
+      {ev && <small>{ev}</small>}
     </div>
   )
 }
@@ -207,15 +206,12 @@ function BookCell({ book, side, baselineAmerican, bestPrice }) {
   const hasSide = side && book?.[side] != null
   const primarySide = hasSide ? side : (book?.over != null ? 'over' : book?.under != null ? 'under' : null)
   const primary = primarySide ? book[primarySide] : null
-  const otherSide = primarySide === 'over' ? 'under' : primarySide === 'under' ? 'over' : null
-  const other = otherSide != null ? book[otherSide] : null
   const highlighted = hasSide && sameAmericanPrice(book[side], bestPrice)
-  const sideLabel = (value) => value === 'over' ? 'O' : value === 'under' ? 'U' : null
+  const sideLabel = !hasSide && primarySide === 'over' ? 'O' : !hasSide && primarySide === 'under' ? 'U' : null
   return (
     <div className={`nfl-sharp-book-cell${highlighted ? ' is-best' : ''}`}>
       <div className="nfl-sharp-book-name">{book.book}</div>
-      <SidePrice price={primary} baselineAmerican={baselineAmerican} label={sideLabel(primarySide)} prominent />
-      {other != null && <SidePrice price={other} baselineAmerican={baselineAmerican} label={sideLabel(otherSide)} />}
+      <SidePrice price={primary} baselineAmerican={baselineAmerican} label={sideLabel} prominent />
     </div>
   )
 }
@@ -251,7 +247,7 @@ function BookStrip({ item, mode, baselineAmerican }) {
         <p className="nfl-sharp-strip-note">{gap || 'No book line'}</p>
       )}
       <p className="nfl-sharp-strip-note">
-        Green +EV means that book&apos;s price is a worse number for the bettor than {baseline.label} ({formatAmerican(baseline.american)}), so PrizePicks is the better price. The PP Edge column is still the no-vig fair edge.
+        Green +EV means that price is a worse deal for the bettor than {baseline.label} ({formatAmerican(baseline.american)}). Red -EV means the book is an easier price for the bettor. Plus-money is red against Flex or Power. PP Edge is still the no-vig fair edge.
       </p>
     </div>
   )

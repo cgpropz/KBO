@@ -29,13 +29,23 @@ test('book -115 is red versus Flex -119 because the book is easier than PrizePic
   assert.equal(priceEvLabel(-115, -119), '-EV')
 })
 
-test('plus-money is compared on implied probability, not the raw string', () => {
+test('Flex -119, book +140 is not green and is -EV', () => {
+  assert.notEqual(priceColor(140, -119), PRICE_GREEN)
+  assert.notEqual(priceColor('+140', -119), PRICE_GREEN)
   assert.equal(priceTone(140, -119), 'better')
+  assert.equal(priceTone('+140', -119), 'better')
   assert.equal(priceColor(140, -119), PRICE_RED)
+  assert.equal(priceColor('+140', -119), PRICE_RED)
   assert.equal(priceEvLabel(140, -119), '-EV')
+  assert.equal(priceEvLabel('+140', -119), '-EV')
+})
+
+test('plus-money is compared on implied probability, not the raw string', () => {
   assert.equal(priceTone(100, -100), 'even')
   assert.equal(priceColor(100, -100), PRICE_NEUTRAL)
   assert.equal(priceEvLabel(100, -100), null)
+  assert.equal(priceColor(140, -137), PRICE_RED)
+  assert.equal(priceEvLabel(140, -137), '-EV')
 })
 
 test('Power -137 uses the same direction', () => {
