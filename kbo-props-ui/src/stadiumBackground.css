@@ -1,0 +1,59 @@
+/*
+ * Night stadium photo for the NFL section only.
+ * The picture stays fixed while NFL content scrolls. Boards use a dark wash
+ * that opens at the edges so the photo shows through and text stays readable.
+ * Odds and grade colors are unchanged. Other sports keep their own fills.
+ */
+
+.nfl-root {
+  background-color: #07090d;
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 12, 0.4), rgba(4, 7, 11, 0.48)),
+    url('/stadium-bg.webp');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.nfl-nav {
+  background: rgba(5, 8, 12, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.nfl-lines-table-wrap,
+.nfl-table-wrap,
+.nfl-edge-controls {
+  background: linear-gradient(
+    180deg,
+    rgba(6, 14, 16, 0.05) 0%,
+    rgba(6, 14, 16, 0.38) 28px,
+    rgba(6, 14, 16, 0.46) calc(100% - 40px),
+    rgba(6, 14, 16, 0.04) 100%
+  );
+  border-color: rgba(186, 206, 196, 0.2);
+}
+
+.nfl-lines-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nfl-sharp-row.is-open {
+  background: rgba(12, 28, 25, 0.4);
+}
+
+.nfl-sharp-strip-row td {
+  background: rgba(7, 19, 17, 0.55);
+}
+
+.nfl-top-card,
+.nfl-matchup-card,
+.nfl-edge-card,
+.nfl-notice,
+.nfl-player-summary {
+  background-color: rgba(8, 16, 18, 0.62);
+}
+
+.nfl-player-range-strip button:not(.active) {
+  background-color: rgba(8, 21, 19, 0.55);
+}
