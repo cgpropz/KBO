@@ -1,0 +1,636 @@
+{
+  "schema": 1,
+  "sport": "kbo",
+  "slate_date": "10/03/2026",
+  "slate_date_iso": "2026-10-03",
+  "period": "2026-10-03",
+  "graded_at": "2026-10-03T20:10:47+00:00",
+  "status": "graded",
+  "evaluation": {
+    "excluded": false
+  },
+  "sources": {
+    "shadow": "shadow.json",
+    "recap": "recap.json",
+    "recap_graded_at": "2026-10-03T19:41:23.464857+00:00"
+  },
+  "params": {
+    "sha256": "d8ff68ba6527a1ae",
+    "files": 6,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "7daee36463af"
+  },
+  "definitions": {
+    "current": "pre-promotion formula (baseline_recommendation vs recap result) while the site is publishing the tuned formula; published_result is the site pick (recap model_result)",
+    "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
+    "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
+    "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
+    "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
+    "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
+    "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
+  },
+  "overall": {
+    "graded_props": 54,
+    "current": {
+      "hits": 12,
+      "misses": 18,
+      "pushes": 7,
+      "dnps": 7,
+      "voids": 0,
+      "no_pick": 17,
+      "hit_rate": 0.4,
+      "hit_rate_pct": 40.0
+    },
+    "shadow": {
+      "hits": 13,
+      "misses": 21,
+      "pushes": 7,
+      "dnps": 7,
+      "voids": 0,
+      "no_pick": 13,
+      "hit_rate": 0.382353,
+      "hit_rate_pct": 38.2
+    },
+    "hit_rate_delta_pct_points": -1.8,
+    "paired": {
+      "n": 30,
+      "current_hits": 12,
+      "shadow_hits": 12,
+      "current_hit_rate_pct": 40.0,
+      "shadow_hit_rate_pct": 40.0
+    },
+    "current_edge": {
+      "hits": 19,
+      "misses": 28,
+      "pushes": 7,
+      "dnps": 7,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.404255,
+      "hit_rate_pct": 40.4
+    },
+    "mae": {
+      "n": 54,
+      "current": 2.572,
+      "shadow": 2.4266,
+      "delta": -0.1454,
+      "sum_abs_current": 138.89,
+      "sum_abs_shadow": 131.038
+    },
+    "mae_shadow_all": {
+      "n": 54,
+      "shadow": 2.4266,
+      "sum_abs": 131.038
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 1,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 4,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.166667,
+        "hit_rate_pct": 16.7
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      }
+    }
+  },
+  "candidate_rows_only": {
+    "graded_props": 33,
+    "current": {
+      "hits": 9,
+      "misses": 13,
+      "pushes": 7,
+      "dnps": 4,
+      "voids": 0,
+      "no_pick": 4,
+      "hit_rate": 0.409091,
+      "hit_rate_pct": 40.9
+    },
+    "shadow": {
+      "hits": 10,
+      "misses": 16,
+      "pushes": 7,
+      "dnps": 4,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.384615,
+      "hit_rate_pct": 38.5
+    },
+    "hit_rate_delta_pct_points": -2.4,
+    "paired": {
+      "n": 22,
+      "current_hits": 9,
+      "shadow_hits": 9,
+      "current_hit_rate_pct": 40.9,
+      "shadow_hit_rate_pct": 40.9
+    },
+    "current_edge": {
+      "hits": 12,
+      "misses": 14,
+      "pushes": 7,
+      "dnps": 4,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.461538,
+      "hit_rate_pct": 46.2
+    },
+    "mae": {
+      "n": 33,
+      "current": 2.4045,
+      "shadow": 2.1666,
+      "delta": -0.2379,
+      "sum_abs_current": 79.35,
+      "sum_abs_shadow": 71.498
+    },
+    "mae_shadow_all": {
+      "n": 33,
+      "shadow": 2.1666,
+      "sum_abs": 71.498
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 0,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 4,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      }
+    }
+  },
+  "per_stat": {
+    "Hits Allowed": {
+      "graded_props": 6,
+      "current": {
+        "hits": 0,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 4,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 4,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 0,
+        "shadow_hits": 0,
+        "current_hit_rate_pct": 0.0,
+        "shadow_hit_rate_pct": 0.0
+      },
+      "current_edge": {
+        "hits": 0,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "mae": {
+        "n": 6,
+        "current": 2.1417,
+        "shadow": 2.1417,
+        "delta": 0.0,
+        "sum_abs_current": 12.85,
+        "sum_abs_shadow": 12.85
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 2.1417,
+        "sum_abs": 12.85
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Hits+Runs+RBIs": {
+      "graded_props": 25,
+      "current": {
+        "hits": 5,
+        "misses": 10,
+        "pushes": 6,
+        "dnps": 5,
+        "voids": 0,
+        "no_pick": 4,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "shadow": {
+        "hits": 6,
+        "misses": 13,
+        "pushes": 6,
+        "dnps": 5,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.315789,
+        "hit_rate_pct": 31.6
+      },
+      "hit_rate_delta_pct_points": -1.8,
+      "paired": {
+        "n": 15,
+        "current_hits": 5,
+        "shadow_hits": 5,
+        "current_hit_rate_pct": 33.3,
+        "shadow_hit_rate_pct": 33.3
+      },
+      "current_edge": {
+        "hits": 8,
+        "misses": 11,
+        "pushes": 6,
+        "dnps": 5,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.421053,
+        "hit_rate_pct": 42.1
+      },
+      "mae": {
+        "n": 25,
+        "current": 1.464,
+        "shadow": 1.2048,
+        "delta": -0.2592,
+        "sum_abs_current": 36.6,
+        "sum_abs_shadow": 30.12
+      },
+      "mae_shadow_all": {
+        "n": 25,
+        "shadow": 1.2048,
+        "sum_abs": 30.12
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 3,
+          "pushes": 0,
+          "dnps": 2,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Hitter Fantasy Score": {
+      "graded_props": 8,
+      "current": {
+        "hits": 4,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.571429,
+        "hit_rate_pct": 57.1
+      },
+      "shadow": {
+        "hits": 4,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.571429,
+        "hit_rate_pct": 57.1
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 7,
+        "current_hits": 4,
+        "shadow_hits": 4,
+        "current_hit_rate_pct": 57.1,
+        "shadow_hit_rate_pct": 57.1
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.571429,
+        "hit_rate_pct": 57.1
+      },
+      "mae": {
+        "n": 8,
+        "current": 5.3438,
+        "shadow": 5.1723,
+        "delta": -0.1715,
+        "sum_abs_current": 42.75,
+        "sum_abs_shadow": 41.378
+      },
+      "mae_shadow_all": {
+        "n": 8,
+        "shadow": 5.1723,
+        "sum_abs": 41.378
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 2,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 3,
+          "pushes": 0,
+          "dnps": 2,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Pitcher Strikeouts": {
+      "graded_props": 9,
+      "current": {
+        "hits": 0,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 6,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 6,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 3,
+        "current_hits": 0,
+        "shadow_hits": 0,
+        "current_hit_rate_pct": 0.0,
+        "shadow_hit_rate_pct": 0.0
+      },
+      "current_edge": {
+        "hits": 3,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "mae": {
+        "n": 9,
+        "current": 2.4778,
+        "shadow": 2.4778,
+        "delta": 0.0,
+        "sum_abs_current": 22.3,
+        "sum_abs_shadow": 22.3
+      },
+      "mae_shadow_all": {
+        "n": 9,
+        "shadow": 2.4778,
+        "sum_abs": 22.3
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Pitching Outs": {
+      "graded_props": 6,
+      "current": {
+        "hits": 3,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 3,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 3,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 3,
+        "current_hits": 3,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 100.0,
+        "shadow_hit_rate_pct": 100.0
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "mae": {
+        "n": 6,
+        "current": 4.065,
+        "shadow": 4.065,
+        "delta": 0.0,
+        "sum_abs_current": 24.39,
+        "sum_abs_shadow": 24.39
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 4.065,
+        "sum_abs": 24.39
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 2,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    }
+  },
+  "props": [
+    {"player":"Ahn Hyun-min","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":2.42,"current_side":"OVER","current_result":"PUSH","published_projection":1.94,"published_side":"PUSH","published_result":"PUSH","shadow_projection":1.938,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4621,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.42,"abs_err_shadow":0.062},
+    {"player":"Austin Dean","team":"LG","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":2.05,"current_side":"PUSH","current_result":"PUSH","published_projection":1.91,"published_side":"PUSH","published_result":"PUSH","shadow_projection":1.907,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4589,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.05,"abs_err_shadow":0.093},
+    {"player":"Austin Dean","team":"LG","stat":"Hitter Fantasy Score","odds_type":"standard","line":7.0,"actual":7.0,"result":"PUSH","current_projection":7.19,"current_side":"PUSH","current_result":"PUSH","published_projection":7.22,"published_side":"PUSH","published_result":"PUSH","shadow_projection":7.218,"shadow_side":"OVER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.601,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.19,"abs_err_shadow":0.218},
+    {"player":"Carlos Carrasco","team":"LG","stat":"Hits Allowed","odds_type":"standard","line":5.0,"actual":7.0,"result":"OVER","current_projection":4.25,"current_side":"UNDER","current_result":"MISS","published_projection":4.91,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":4.25,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":2.75,"abs_err_shadow":2.75},
+    {"player":"Carlos Carrasco","team":"LG","stat":"Pitcher Strikeouts","odds_type":"standard","line":4.5,"actual":4.0,"result":"UNDER","current_projection":5.53,"current_side":"OVER","current_result":"MISS","published_projection":4.32,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":5.53,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":1.53,"abs_err_shadow":1.53},
+    {"player":"Carlos Carrasco","team":"LG","stat":"Pitching Outs","odds_type":"standard","line":17.5,"actual":13.0,"result":"UNDER","current_projection":16.29,"current_side":"UNDER","current_result":"HIT","published_projection":16.72,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":16.29,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":3.29,"abs_err_shadow":3.29},
+    {"player":"Choi In-ho","team":"Hanwha","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":5.0,"result":"OVER","current_projection":1.85,"current_side":"PUSH","current_result":"NO_PICK","published_projection":1.6,"published_side":"UNDER","published_result":"MISS","shadow_projection":1.605,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4278,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.15,"abs_err_shadow":3.395},
+    {"player":"Choi Seung-yong","team":"Doosan","stat":"Pitcher Strikeouts","odds_type":"demon","line":3.5,"actual":2.0,"result":"UNDER","current_projection":3.17,"current_side":"PUSH","current_result":"NO_PICK","published_projection":3.02,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":3.17,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.17,"abs_err_shadow":1.17},
+    {"player":"Choi Won-jun","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":4.0,"result":"OVER","current_projection":3.5,"current_side":"OVER","current_result":"HIT","published_projection":2.43,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.432,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4639,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.5,"abs_err_shadow":1.568},
+    {"player":"Choi Won-jun","team":"KT","stat":"Hitter Fantasy Score","odds_type":"standard","line":7.5,"actual":17.0,"result":"OVER","current_projection":10.97,"current_side":"OVER","current_result":"HIT","published_projection":9.11,"published_side":"OVER","published_result":"HIT","shadow_projection":9.107,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.582,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":6.03,"abs_err_shadow":7.893},
+    {"player":"Choi Won-tae","team":"Samsung","stat":"Hits Allowed","odds_type":"demon","line":5.5,"actual":6.0,"result":"OVER","current_projection":4.62,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.39,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":4.62,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.38,"abs_err_shadow":1.38},
+    {"player":"Choi Won-tae","team":"Samsung","stat":"Pitcher Strikeouts","odds_type":"standard","line":5.0,"actual":4.0,"result":"UNDER","current_projection":5.03,"current_side":"PUSH","current_result":"NO_PICK","published_projection":4.45,"published_side":"UNDER","published_result":"HIT","shadow_projection":5.03,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.03,"abs_err_shadow":1.03},
+    {"player":"Choi Won-tae","team":"Samsung","stat":"Pitching Outs","odds_type":"standard","line":15.5,"actual":10.0,"result":"UNDER","current_projection":12.14,"current_side":"UNDER","current_result":"HIT","published_projection":15.68,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":12.14,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.14,"abs_err_shadow":2.14},
+    {"player":"Choo Jae-hyun","team":"Kiwoom","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":3.0,"result":"OVER","current_projection":2.22,"current_side":"PUSH","current_result":"NO_PICK","published_projection":1.84,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.841,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.452,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.78,"abs_err_shadow":1.159},
+    {"player":"Guillermo Heredia","team":"SSG","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":3.0,"result":"OVER","current_projection":2.57,"current_side":"OVER","current_result":"HIT","published_projection":1.87,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.871,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4551,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.43,"abs_err_shadow":1.129},
+    {"player":"Guillermo Heredia","team":"SSG","stat":"Hitter Fantasy Score","odds_type":"standard","line":6.0,"actual":10.0,"result":"OVER","current_projection":9.26,"current_side":"OVER","current_result":"HIT","published_projection":8.25,"published_side":"OVER","published_result":"HIT","shadow_projection":8.252,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5769,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.74,"abs_err_shadow":1.748},
+    {"player":"Ha Yeong-min","team":"Kiwoom","stat":"Pitcher Strikeouts","odds_type":"standard","line":4.5,"actual":9.0,"result":"OVER","current_projection":4.03,"current_side":"UNDER","current_result":"MISS","published_projection":4.49,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":4.03,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.97,"abs_err_shadow":4.97},
+    {"player":"Harold Castro","team":"Kia","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":3.0,"result":"OVER","current_projection":2.59,"current_side":"OVER","current_result":"HIT","published_projection":2.13,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.127,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4816,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.41,"abs_err_shadow":0.873},
+    {"player":"Harold Castro","team":"Kia","stat":"Hitter Fantasy Score","odds_type":"standard","line":6.5,"actual":10.0,"result":"OVER","current_projection":8.64,"current_side":"OVER","current_result":"HIT","published_projection":7.94,"published_side":"OVER","published_result":"HIT","shadow_projection":7.943,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5863,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.36,"abs_err_shadow":2.057},
+    {"player":"Hwang Seong-bin","team":"Lotte","stat":"Hits+Runs+RBIs","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.96,"current_side":"OVER","current_result":"MISS","published_projection":1.83,"published_side":"OVER","published_result":"MISS","shadow_projection":1.827,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.96,"abs_err_shadow":1.827},
+    {"player":"James Naile","team":"Kia","stat":"Hits Allowed","odds_type":"standard","line":5.5,"actual":8.0,"result":"OVER","current_projection":5.32,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.53,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":5.32,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.68,"abs_err_shadow":2.68},
+    {"player":"James Naile","team":"Kia","stat":"Pitcher Strikeouts","odds_type":"standard","line":5.0,"actual":6.0,"result":"OVER","current_projection":5.32,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.04,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":5.32,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.68,"abs_err_shadow":0.68},
+    {"player":"James Naile","team":"Kia","stat":"Pitching Outs","odds_type":"goblin","line":17.5,"actual":19.0,"result":"OVER","current_projection":17.09,"current_side":"PUSH","current_result":"NO_PICK","published_projection":17.72,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":17.09,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.91,"abs_err_shadow":1.91},
+    {"player":"Jeremy Beasley","team":"Lotte","stat":"Hits Allowed","odds_type":"standard","line":5.5,"actual":5.0,"result":"UNDER","current_projection":5.63,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.96,"published_side":"OVER","published_result":"MISS","shadow_projection":5.63,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.63,"abs_err_shadow":0.63},
+    {"player":"Jeremy Beasley","team":"Lotte","stat":"Pitcher Strikeouts","odds_type":"standard","line":5.5,"actual":2.0,"result":"UNDER","current_projection":7.03,"current_side":"OVER","current_result":"MISS","published_projection":6.13,"published_side":"OVER","published_result":"MISS","shadow_projection":7.03,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":5.03,"abs_err_shadow":5.03},
+    {"player":"Jeremy Beasley","team":"Lotte","stat":"Pitching Outs","odds_type":"goblin","line":17.5,"actual":9.0,"result":"UNDER","current_projection":17.17,"current_side":"PUSH","current_result":"NO_PICK","published_projection":16.77,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":17.17,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":8.17,"abs_err_shadow":8.17},
+    {"player":"Kang Baek-ho","team":"Hanwha","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":0.0,"result":"UNDER","current_projection":1.74,"current_side":"PUSH","current_result":"NO_PICK","published_projection":2.05,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.047,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4733,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.74,"abs_err_shadow":2.047},
+    {"player":"Keston Hiura","team":"Kiwoom","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":0.0,"result":"UNDER","current_projection":2.53,"current_side":"OVER","current_result":"MISS","published_projection":2.05,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.047,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4734,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.53,"abs_err_shadow":2.047},
+    {"player":"Kim Do-yeong","team":"Kia","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":3.39,"current_side":"OVER","current_result":"MISS","published_projection":2.41,"published_side":"OVER","published_result":"MISS","shadow_projection":2.413,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5115,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":2.39,"abs_err_shadow":1.413},
+    {"player":"Kim Do-yeong","team":"Kia","stat":"Hitter Fantasy Score","odds_type":"standard","line":6.5,"actual":4.0,"result":"UNDER","current_projection":11.43,"current_side":"OVER","current_result":"MISS","published_projection":9.34,"published_side":"OVER","published_result":"MISS","shadow_projection":9.338,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5682,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":7.43,"abs_err_shadow":5.338},
+    {"player":"Kim Ji-chan","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":2.16,"current_side":"PUSH","current_result":"NO_PICK","published_projection":1.56,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.556,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.16,"abs_err_shadow":0.556},
+    {"player":"Kim Ju-Won","team":"NC","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":2.05,"current_side":"PUSH","current_result":"PUSH","published_projection":1.73,"published_side":"PUSH","published_result":"PUSH","shadow_projection":1.729,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4405,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.05,"abs_err_shadow":0.271},
+    {"player":"Kim Min-suk","team":"Doosan","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":2.54,"current_side":"OVER","current_result":"MISS","published_projection":1.6,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.6,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4274,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.54,"abs_err_shadow":0.6},
+    {"player":"Kim Whee-Jip","team":"NC","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":null,"result":"DNP","current_projection":2.0,"current_side":null,"current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.0,"shadow_side":null,"shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Ko Young-Pyo","team":"KT","stat":"Hits Allowed","odds_type":"standard","line":5.5,"actual":4.0,"result":"UNDER","current_projection":5.59,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.74,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":5.59,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.59,"abs_err_shadow":1.59},
+    {"player":"Ko Young-Pyo","team":"KT","stat":"Pitcher Strikeouts","odds_type":"standard","line":6.0,"actual":8.0,"result":"OVER","current_projection":6.27,"current_side":"PUSH","current_result":"NO_PICK","published_projection":5.95,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":6.27,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.73,"abs_err_shadow":1.73},
+    {"player":"Ko Young-Pyo","team":"KT","stat":"Pitching Outs","odds_type":"demon","line":18.5,"actual":27.0,"result":"OVER","current_projection":19.63,"current_side":"OVER","current_result":"HIT","published_projection":17.7,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":19.63,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":7.37,"abs_err_shadow":7.37},
+    {"player":"Koo Chang-Mo","team":"NC","stat":"Hits Allowed","odds_type":"goblin","line":5.5,"actual":4.0,"result":"UNDER","current_projection":7.82,"current_side":"OVER","current_result":"MISS","published_projection":5.82,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":7.82,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.82,"abs_err_shadow":3.82},
+    {"player":"Koo Chang-Mo","team":"NC","stat":"Pitcher Strikeouts","odds_type":"demon","line":4.5,"actual":7.0,"result":"OVER","current_projection":3.92,"current_side":"PUSH","current_result":"NO_PICK","published_projection":4.7,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":3.92,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.08,"abs_err_shadow":3.08},
+    {"player":"Koo Chang-Mo","team":"NC","stat":"Pitcher Strikeouts","odds_type":"standard","line":4.0,"actual":7.0,"result":"OVER","current_projection":3.92,"current_side":"PUSH","current_result":"NO_PICK","published_projection":4.7,"published_side":"OVER","published_result":"HIT","shadow_projection":3.92,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.08,"abs_err_shadow":3.08},
+    {"player":"Koo Chang-Mo","team":"NC","stat":"Pitching Outs","odds_type":"standard","line":16.5,"actual":18.0,"result":"OVER","current_projection":16.49,"current_side":"PUSH","current_result":"NO_PICK","published_projection":17.08,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":16.49,"shadow_side":"PUSH","shadow_result":"NO_PICK","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.51,"abs_err_shadow":1.51},
+    {"player":"Koo Ja-wook","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":null,"result":"DNP","current_projection":4.03,"current_side":"OVER","current_result":"DNP","published_projection":2.28,"published_side":"PUSH","published_result":"DNP","shadow_projection":2.275,"shadow_side":"UNDER","shadow_result":"DNP","shadow_source":"candidate","p_over":0.4477,"current_edge_result":"DNP","top_current":true,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Koo Ja-wook","team":"Samsung","stat":"Hitter Fantasy Score","odds_type":"standard","line":8.0,"actual":null,"result":"DNP","current_projection":16.75,"current_side":"OVER","current_result":"DNP","published_projection":12.0,"published_side":"OVER","published_result":"DNP","shadow_projection":11.998,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"candidate","p_over":0.5497,"current_edge_result":"DNP","top_current":true,"top_shadow":true,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Lewin Diaz","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":6.0,"result":"OVER","current_projection":3.19,"current_side":"OVER","current_result":"HIT","published_projection":2.07,"published_side":"UNDER","published_result":"MISS","shadow_projection":2.072,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4269,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.81,"abs_err_shadow":3.928},
+    {"player":"Lewin Diaz","team":"Samsung","stat":"Hitter Fantasy Score","odds_type":"standard","line":7.5,"actual":21.0,"result":"OVER","current_projection":11.56,"current_side":"OVER","current_result":"HIT","published_projection":9.4,"published_side":"OVER","published_result":"HIT","shadow_projection":9.402,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5782,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":9.44,"abs_err_shadow":11.598},
+    {"player":"Matt Davidson","team":"Kiwoom","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":null,"result":"DNP","current_projection":3.34,"current_side":"OVER","current_result":"DNP","published_projection":2.44,"published_side":null,"published_result":"DNP","shadow_projection":2.436,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"candidate","p_over":0.5138,"current_edge_result":"DNP","top_current":true,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Matt Davidson","team":"Kiwoom","stat":"Hitter Fantasy Score","odds_type":"standard","line":6.5,"actual":null,"result":"DNP","current_projection":12.96,"current_side":"OVER","current_result":"DNP","published_projection":10.1,"published_side":null,"published_result":"DNP","shadow_projection":10.103,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"candidate","p_over":0.5582,"current_edge_result":"DNP","top_current":true,"top_shadow":true,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Moon Hyun-bin","team":"Hanwha","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":3.0,"result":"OVER","current_projection":1.16,"current_side":"UNDER","current_result":"MISS","published_projection":1.76,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.764,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4442,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.84,"abs_err_shadow":1.236},
+    {"player":"Park Hae-min","team":"LG","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":1.66,"current_side":"UNDER","current_result":"PUSH","published_projection":1.55,"published_side":"UNDER","published_result":"PUSH","shadow_projection":1.55,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4223,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.34,"abs_err_shadow":0.45},
+    {"player":"Park Jun-soon","team":"Doosan","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":2.51,"current_side":"OVER","current_result":"PUSH","published_projection":1.71,"published_side":"PUSH","published_result":"PUSH","shadow_projection":1.706,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4382,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.51,"abs_err_shadow":0.294},
+    {"player":"Park Jung-woo","team":"Kia","stat":"Hits+Runs+RBIs","odds_type":"goblin","line":1.5,"actual":null,"result":"DNP","current_projection":1.5,"current_side":null,"current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.5,"shadow_side":null,"shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Park Jung-woo","team":"Kia","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":null,"result":"DNP","current_projection":2.0,"current_side":null,"current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.0,"shadow_side":null,"shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Park Min-woo","team":"NC","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":2.0,"result":"PUSH","current_projection":3.28,"current_side":"OVER","current_result":"PUSH","published_projection":1.96,"published_side":"PUSH","published_result":"PUSH","shadow_projection":1.962,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4645,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":1.28,"abs_err_shadow":0.038},
+    {"player":"Park Seong-Han","team":"SSG","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":3.67,"current_side":"OVER","current_result":"MISS","published_projection":2.03,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.032,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4718,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":2.67,"abs_err_shadow":1.032},
+    {"player":"Roh Si-hwan","team":"Hanwha","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":0.0,"result":"UNDER","current_projection":1.48,"current_side":"UNDER","current_result":"HIT","published_projection":1.92,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.92,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4602,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.48,"abs_err_shadow":1.92},
+    {"player":"Sam Hilliard","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":3.56,"current_side":"OVER","current_result":"MISS","published_projection":2.45,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":2.449,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4657,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.56,"abs_err_shadow":0.449},
+    {"player":"Sam Hilliard","team":"KT","stat":"Hitter Fantasy Score","odds_type":"standard","line":7.5,"actual":7.0,"result":"UNDER","current_projection":13.13,"current_side":"OVER","current_result":"MISS","published_projection":10.19,"published_side":"OVER","published_result":"MISS","shadow_projection":10.188,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.568,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":6.13,"abs_err_shadow":3.188},
+    {"player":"Victor Reyes","team":"Lotte","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":0.0,"result":"UNDER","current_projection":3.98,"current_side":"OVER","current_result":"MISS","published_projection":2.61,"published_side":"OVER","published_result":"MISS","shadow_projection":2.611,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.532,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":3.98,"abs_err_shadow":2.611},
+    {"player":"Victor Reyes","team":"Lotte","stat":"Hitter Fantasy Score","odds_type":"standard","line":6.5,"actual":0.0,"result":"UNDER","current_projection":11.43,"current_side":"OVER","current_result":"MISS","published_projection":9.34,"published_side":"OVER","published_result":"MISS","shadow_projection":9.338,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5682,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":11.43,"abs_err_shadow":9.338},
+    {"player":"Yang Eui-ji","team":"Doosan","stat":"Hits+Runs+RBIs","odds_type":"goblin","line":1.5,"actual":1.0,"result":"UNDER","current_projection":2.51,"current_side":"OVER","current_result":"MISS","published_projection":1.56,"published_side":"PUSH","published_result":"NO_PICK","shadow_projection":1.561,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.51,"abs_err_shadow":0.561},
+    {"player":"Yang Eui-ji","team":"Doosan","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":2.51,"current_side":"OVER","current_result":"MISS","published_projection":1.56,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.561,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4233,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.51,"abs_err_shadow":0.561}
+  ]
+}
