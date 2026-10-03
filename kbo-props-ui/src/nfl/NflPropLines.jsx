@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections } from './nflData'
+import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
@@ -32,24 +33,6 @@ function ordinal(rank) {
     case 3: return `${rank}rd`
     default: return `${rank}th`
   }
-}
-
-// Buckets the DVP rank (1 = toughest matchup, 32 = easiest) into a letter grade, same idea as fantasy matchup grades.
-function dvpGrade(rank) {
-  if (!rank) return null
-  const pct = rank / 32
-  if (pct >= .9) return 'A+'
-  if (pct >= .78) return 'A'
-  if (pct >= .66) return 'A-'
-  if (pct >= .56) return 'B+'
-  if (pct >= .46) return 'B'
-  if (pct >= .36) return 'B-'
-  if (pct >= .26) return 'C+'
-  if (pct >= .16) return 'C'
-  if (pct >= .1) return 'C-'
-  if (pct >= .06) return 'D+'
-  if (pct >= .03) return 'D'
-  return 'F'
 }
 
 function gradeClass(grade) {

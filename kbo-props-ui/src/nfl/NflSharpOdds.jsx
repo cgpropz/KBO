@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { dvpGrade } from './matchupGrade'
+import {
+  bestAmerican,
+  hitRateColor,
+  priceColor,
+  priceEvLabel,
+  priceTone,
+  sameAmericanPrice,
+} from './ppBoardColors'
 
 const PROP_ORDER = ['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets']
 const GRADE_RANK = { 'A+': 5, A: 4, B: 3, C: 2, D: 1 }
 const GRADE_BANDS = [[4, 'A+'], [2, 'A'], [0.5, 'B'], [0, 'C']]
 const GRADE_LADDER = ['A+', 'A', 'B', 'C', 'D']
+const COLUMN_COUNT = 10
+
+// Display order for the expand strip. Unknown books follow, alphabetically.
+const BOOK_ORDER = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'Pinnacle', 'Bookmaker', 'Circa', 'Novig', 'Kalshi', 'BetOnline', 'Parx', 'Fanatics', 'Polymarket', 'TheScore']
 
 // American implied break-evens. Flex is the default screen; Power is ~2-pick Power.
 const BASELINES = {
@@ -93,6 +106,12 @@ function activeGrade(item, mode, edge) {
   return gradeFromEdge(edge, !!item?.line_plus)
 }
 
+function matchupGrade(item) {
+  const rank = Number(item?.dvpRank)
+  if (!Number.isFinite(rank) || rank <= 0) return null
+  return dvpGrade(rank)
+}
+
 function anchorQuote(item) {
   if (item?.quoted_price != null && item?.quoted_book) {
     return { price: item.quoted_price, book: item.quoted_book }
@@ -111,70 +130,204 @@ function priceShopQuote(item) {
   return sharp || best || null
 }
 
-function ppPriceBadge(item, baselineAmerican) {
-  const quote = priceShopQuote(item)
-  if (!quote || !Number.isFinite(Number(quote.price))) return false
-  return Number(quote.price) < Number(baselineAmerican)
+function bookKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-function Quote({ quote, side }) {
+function bookRank(book) {
+  const key = bookKey(book?.book_key || book?.book)
+  const index = BOOK_ORDER.findIndex((name) => {
+    const ordered = bookKey(name)
+    return key === ordered || key.startsWith(ordered)
+  })
+  return index === -1 ? BOOK_ORDER.length : index
+}
+
+function booksFor(item) {
+  if (Array.isArray(item?.book_prices) && item.book_prices.length) {
+    return [...item.book_prices].sort((a, b) => bookRank(a) - bookRank(b) || String(a.book).localeCompare(String(b.book)))
+  }
+  const map = new Map()
+  const quotes = [
+    ['over', item?.best_over],
+    ['under', item?.best_under],
+    ['over', item?.sharp_over],
+    ['under', item?.sharp_under],
+  ]
+  for (const [side, quote] of quotes) {
+    if (!quote?.book || quote.price == null) continue
+    const key = quote.book_key || quote.book
+    const slot = map.get(key) || { book: quote.book, book_key: quote.book_key || bookKey(quote.book), over: null, under: null }
+    if (slot[side] == null) slot[side] = quote.price
+    map.set(key, slot)
+  }
+  return [...map.values()].sort((a, b) => bookRank(a) - bookRank(b) || String(a.book).localeCompare(String(b.book)))
+}
+
+function rowId(item) {
+  return item.id || `${item.player}-${item.prop}-${item.pp_line}`
+}
+
+function stripDomId(item) {
+  return `nfl-sharp-strip-${String(rowId(item)).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
+}
+
+function Quote({ quote, baselineAmerican }) {
   if (!quote) return <span className="nfl-sharp-book">—</span>
+  const color = priceColor(quote.price, baselineAmerican)
   return (
     <>
-      <div className={`nfl-sharp-price ${side}`}>{formatAmerican(quote.price)}</div>
+      <div className="nfl-sharp-price" style={color ? { color } : undefined}>{formatAmerican(quote.price)}</div>
       <div className="nfl-sharp-book">{quote.book}{quote.implied_pct != null ? ` · ${Number(quote.implied_pct).toFixed(1)}%` : ''}</div>
     </>
   )
 }
 
-function SharpRow({ item, mode, baselineAmerican, onSelectPlayer }) {
+function HitRate({ rate }) {
+  const color = hitRateColor(rate)
+  return <span className="nfl-sharp-hit" style={color ? { color } : undefined}>{formatHit(rate)}</span>
+}
+
+function SidePrice({ price, baselineAmerican, label, prominent }) {
+  if (price == null) return null
+  const color = priceColor(price, baselineAmerican)
+  const ev = priceEvLabel(price, baselineAmerican)
+  const tone = priceTone(price, baselineAmerican)
+  return (
+    <div className={prominent ? 'nfl-sharp-side-main' : 'nfl-sharp-side-alt'} data-tone={tone || undefined}>
+      {label && <span className="nfl-sharp-side-label">{label}</span>}
+      <b style={color ? { color } : undefined}>{formatAmerican(price)}</b>
+      {ev && <small style={color ? { color } : undefined}>{ev}</small>}
+    </div>
+  )
+}
+
+function BookCell({ book, side, baselineAmerican, bestPrice }) {
+  const hasSide = side && book?.[side] != null
+  const primarySide = hasSide ? side : (book?.over != null ? 'over' : book?.under != null ? 'under' : null)
+  const primary = primarySide ? book[primarySide] : null
+  const otherSide = primarySide === 'over' ? 'under' : primarySide === 'under' ? 'over' : null
+  const other = otherSide != null ? book[otherSide] : null
+  const highlighted = hasSide && sameAmericanPrice(book[side], bestPrice)
+  const sideLabel = (value) => value === 'over' ? 'O' : value === 'under' ? 'U' : null
+  return (
+    <div className={`nfl-sharp-book-cell${highlighted ? ' is-best' : ''}`}>
+      <div className="nfl-sharp-book-name">{book.book}</div>
+      <SidePrice price={primary} baselineAmerican={baselineAmerican} label={sideLabel(primarySide)} prominent />
+      {other != null && <SidePrice price={other} baselineAmerican={baselineAmerican} label={sideLabel(otherSide)} />}
+    </div>
+  )
+}
+
+function BookStrip({ item, mode, baselineAmerican }) {
+  const side = scoredSide(item)
+  const books = booksFor(item)
+  const bestPrice = bestAmerican(books, side)
+  const gap = noBookNote(item)
+  const sideLabel = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
+  const baseline = BASELINES[mode] || BASELINES.flex
+  return (
+    <div className="nfl-sharp-strip">
+      <p className="nfl-sharp-strip-title">
+        Compare to PrizePicks line {formatValue(item.pp_line)} {item.prop} {sideLabel}
+      </p>
+      {item.line_match === 'nearest' && (
+        <p className="nfl-sharp-strip-note">Books below are on {formatValue(item.matched_line)}, the nearest posted line.</p>
+      )}
+      {books.length ? (
+        <div className="nfl-sharp-books">
+          {books.map((book) => (
+            <BookCell
+              key={book.book_key || book.book}
+              book={book}
+              side={side}
+              baselineAmerican={baselineAmerican}
+              bestPrice={bestPrice}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="nfl-sharp-strip-note">{gap || 'No book line'}</p>
+      )}
+      <p className="nfl-sharp-strip-note">
+        Green +EV means that book&apos;s price is a worse number for the bettor than {baseline.label} ({formatAmerican(baseline.american)}), so PrizePicks is the better price. The PP Edge column is still the no-vig fair edge.
+      </p>
+    </div>
+  )
+}
+
+function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle }) {
   const side = item.recommendation === 'UNDER' ? 'under' : 'over'
   const label = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
   const edge = activeEdge(item, mode)
   const grade = activeGrade(item, mode, edge)
+  const matchup = matchupGrade(item)
   const edgeClass = edge == null ? '' : edge > 0 ? 'over' : edge < 0 ? 'under' : ''
   const overEdge = sideEdge(item, 'over', mode)
   const underEdge = sideEdge(item, 'under', mode)
   const quote = anchorQuote(item)
   const shop = priceShopQuote(item)
-  const showPrice = ppPriceBadge(item, baselineAmerican)
+  const showPrice = priceTone(shop?.price, baselineAmerican) === 'worse'
   const bookCount = Number(item.fair_book_count) || (Array.isArray(item.fair_books) ? item.fair_books.length : 0)
   const gap = noBookNote(item)
 
   return (
-    <tr className="nfl-lines-row">
-      <td className="nfl-lines-player">
-        <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
-        <div className="nfl-lines-info">
-          <button className="nfl-player-link" onClick={() => onSelectPlayer?.(item.player, item.prop)}>{item.player}</button>
-          <span className="nfl-lines-tag">{[item.team, item.position].filter(Boolean).join(', ') || 'NFL'}</span>
-        </div>
-      </td>
-      <td>
-        <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}</div>
-        {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
-        {gap && <div className="nfl-sharp-book">{gap}</div>}
-        {item.line_plus && (
-          <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
-        )}
-      </td>
-      <td><Quote quote={item.best_over} side="over" /></td>
-      <td><Quote quote={item.best_under} side="under" /></td>
-      <td>{formatValue(item.projection)}</td>
-      <td>{formatHit(item.hitRateL5)} / {formatHit(item.hitRate)}</td>
-      <td className="nfl-sharp-edge">
-        <div className={`nfl-sharp-ev ${edgeClass}`}>{formatEdge(edge)}</div>
-        <div className="nfl-sharp-book">
-          {quote ? `${quote.book} ${formatAmerican(quote.price)}` : (gap || 'No sharp price')}
-          {bookCount > 1 ? ` · ${bookCount} books` : ''}
-        </div>
-        <div className="nfl-sharp-sides">O {formatEdge(overEdge)} · U {formatEdge(underEdge)}</div>
-        {showPrice && (
-          <span className="nfl-sharp-badge price" title={`Sharp price ${shop ? `${shop.book} ${formatAmerican(shop.price)}` : ''} is worse for a bettor than this PrizePicks juice. Badge only — the sort uses de-vigged fair edge.`}>PP PRICE</span>
-        )}
-      </td>
-      <td><span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span></td>
-    </tr>
+    <>
+      <tr
+        className={`nfl-lines-row nfl-sharp-row${open ? ' is-open' : ''}`}
+        onClick={onToggle}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onToggle()
+          }
+        }}
+        tabIndex={0}
+        aria-expanded={open}
+        aria-controls={stripDomId(item)}
+      >
+        <td className="nfl-lines-player">
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-info">
+            <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer?.(item.player, item.prop) }}>{item.player}</button>
+            <span className="nfl-lines-tag">{[item.team, item.position].filter(Boolean).join(', ') || 'NFL'}</span>
+          </div>
+        </td>
+        <td>
+          <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}</div>
+          {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
+          {gap && <div className="nfl-sharp-book">{gap}</div>}
+          {item.line_plus && (
+            <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
+          )}
+        </td>
+        <td><Quote quote={item.best_over} baselineAmerican={baselineAmerican} /></td>
+        <td><Quote quote={item.best_under} baselineAmerican={baselineAmerican} /></td>
+        <td>{formatValue(item.projection)}</td>
+        <td><span className={`nfl-grade ${gradeClass(matchup)}`}>{matchup || '—'}</span></td>
+        <td><HitRate rate={item.hitRateL5} /></td>
+        <td><HitRate rate={item.hitRate} /></td>
+        <td className="nfl-sharp-edge">
+          <div className={`nfl-sharp-ev ${edgeClass}`}>{formatEdge(edge)}</div>
+          <div className="nfl-sharp-book">
+            {quote ? `${quote.book} ${formatAmerican(quote.price)}` : (gap || 'No sharp price')}
+            {bookCount > 1 ? ` · ${bookCount} books` : ''}
+          </div>
+          <div className="nfl-sharp-sides">O {formatEdge(overEdge)} · U {formatEdge(underEdge)}</div>
+          {showPrice && (
+            <span className="nfl-sharp-badge price" title={`Sharp price ${shop ? `${shop.book} ${formatAmerican(shop.price)}` : ''} is worse for a bettor than this PrizePicks juice. Badge only — the sort uses de-vigged fair edge.`}>PP PRICE</span>
+          )}
+        </td>
+        <td><span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span></td>
+      </tr>
+      {open && (
+        <tr className="nfl-sharp-strip-row" id={stripDomId(item)}>
+          <td colSpan={COLUMN_COUNT}>
+            <BookStrip item={item} mode={mode} baselineAmerican={baselineAmerican} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -190,6 +343,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [sort, setSort] = useState('PP Edge')
   const [mode, setMode] = useState('flex')
   const [plusOnly, setPlusOnly] = useState(false)
+  const [openId, setOpenId] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -298,7 +452,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {!error && loaded && lockedCount > 0 && <div className="nfl-notice">Free preview: showing the top {records.length} by PP Edge. {lockedCount} more are locked.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
-          <table className="nfl-lines-table">
+          <table className="nfl-lines-table nfl-sharp-table">
             <thead>
               <tr>
                 <th>Player</th>
@@ -306,21 +460,28 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                 <th>Best Over</th>
                 <th>Best Under</th>
                 <th>Our Proj</th>
-                <th>L5 / L10</th>
+                <th>Matchup</th>
+                <th>L5</th>
+                <th>L10</th>
                 <th title="De-vigged fair win% minus the selected PrizePicks break-even">PP Edge</th>
                 <th>Grade</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((item) => (
-                <SharpRow
-                  key={item.id || `${item.player}-${item.prop}-${item.pp_line}`}
-                  item={item}
-                  mode={mode}
-                  baselineAmerican={baseline.american}
-                  onSelectPlayer={onSelectPlayer}
-                />
-              ))}
+              {rows.map((item) => {
+                const id = rowId(item)
+                return (
+                  <SharpRow
+                    key={id}
+                    item={item}
+                    mode={mode}
+                    baselineAmerican={baseline.american}
+                    onSelectPlayer={onSelectPlayer}
+                    open={openId === id}
+                    onToggle={() => setOpenId((current) => current === id ? null : id)}
+                  />
+                )
+              })}
             </tbody>
           </table>
         </div>
