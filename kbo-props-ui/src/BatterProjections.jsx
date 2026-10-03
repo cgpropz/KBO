@@ -3,6 +3,8 @@ import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
 import RecentGameLogChart from './RecentGameLogChart';
+import { RatingExplanation } from './RatingExplanation';
+import { boardFormulaLine } from './propExplanation.js';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -792,7 +794,7 @@ function BatterProjections() {
 
       <main className="bp-main">
         <div className="bp-table-toolbar">
-          <div><strong>{projections.length}</strong> projections <span>Sort any column to rank the board</span></div>
+          <div><strong>{projections.length}</strong> projections <span>Click a player, or Why, to read why the rating is what it is</span></div>
           {activeFilterCount > 0 && <span className="bp-active-filters">{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>}
         </div>
         <div className="bp-table-wrap">
@@ -848,7 +850,7 @@ function BatterProjections() {
                         className="bp-player-identity bp-player-trigger"
                         onClick={() => setExpandedPlayer((current) => current === `${p.name}@@${p.prop}` ? null : `${p.name}@@${p.prop}`)}
                         aria-expanded={expandedPlayer === `${p.name}@@${p.prop}`}
-                        title="Show last 10 game log"
+                        title="Why this rating, and the recent game log"
                       >
                         <span>{p.name}</span>
                         <span className="bp-mobile-matchup">{p.team} vs {p.opponent}</span>
@@ -919,7 +921,18 @@ function BatterProjections() {
                     {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '—'}
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
-                    {p.rating != null ? p.rating.toFixed(1) : ''}
+                    {p.rating != null ? (
+                      <button
+                        type="button"
+                        className="rating-why-link"
+                        aria-expanded={expandedPlayer === `${p.name}@@${p.prop}`}
+                        aria-label={`Why this rating is ${p.rating.toFixed(1)}`}
+                        onClick={() => setExpandedPlayer((current) => current === `${p.name}@@${p.prop}` ? null : `${p.name}@@${p.prop}`)}
+                      >
+                        <span>{p.rating.toFixed(1)}</span>
+                        <small>Why</small>
+                      </button>
+                    ) : ''}
                   </td>
                   <td className={`col-num mono ${p.cg_projection == null ? 'cell-na' : ''}`} style={{ color: getCgProjectionColor(p.cg_projection), fontWeight: 800 }}>
                     {p.cg_projection != null ? p.cg_projection : '—'}
@@ -935,6 +948,7 @@ function BatterProjections() {
                 {expandedPlayer === `${p.name}@@${p.prop}` && (
                   <tr className="bp-log-row">
                     <td colSpan="24">
+                      <RatingExplanation row={{ ...p, sport: 'kbo', scoreLabel: 'rating' }} />
                       <RecentGameLogChart
                         name={p.name}
                         prop={p.prop}
@@ -986,12 +1000,7 @@ function BatterProjections() {
 
         <div className="bp-formula-bar">
           <span className="bp-formula-icon">ƒ</span>
-          {propFilter === 'Total Bases'
-            ? <code>TB/G × (Opp Team TB/G ÷ League Avg TB/G)</code>
-            : propFilter === 'Fantasy Score'
-              ? <code>FS = 3×1B + 5×2B + 8×3B + 10×HR + 2×R + 2×RBI + 2×BB + 2×HBP + 2×SB</code>
-              : <code>HRR/G × (Opp Team HRR/G ÷ League Avg HRR/G)</code>
-          }
+          <code>{boardFormulaLine('kbo', propFilter === 'all' ? 'Hits+Runs+RBIs' : propFilter)}</code>
         </div>
       </main>
     </div>

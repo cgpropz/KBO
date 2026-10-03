@@ -3,6 +3,7 @@ import { fetchWnbaData } from './wnbaData'
 import { fmtDvpRank } from './utils/formatters'
 import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
+import { RatingWhyButton } from '../RatingExplanation'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const LINE_TYPES = ['standard', 'demon', 'goblin']
@@ -263,6 +264,8 @@ export default function Projections({ onSelectPlayer }) {
           sharpOdds: prop.sharpOdds ?? null,
           sharpSide: prop.sharpSide ?? null,
           recentGames: player.recentGames || [],
+          formula_applied: prop.formula_applied,
+          formula_mode: prop.formula_mode ?? player.formula_mode,
         })
       })
     })
@@ -294,7 +297,7 @@ export default function Projections({ onSelectPlayer }) {
       <div style={{ marginBottom: 18, position: 'relative' }}>
         <h1 className="edge-title">WNBA PrizePicks Edge</h1>
         <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
-          Formula: L3 x 0.5 + L7 x 0.3 + L15 x 0.2, then multiplied by expected minutes and DVP
+          Score = projection ÷ line × 50. Open Why this score on a card for the games behind that projection.
         </p>
       </div>
 
@@ -391,7 +394,7 @@ export default function Projections({ onSelectPlayer }) {
           ))}
 
           {!loading && cards.map(card => {
-            const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames, sharpOdds, sharpSide } = card
+            const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames, sharpOdds, sharpSide, hitRates, formula_applied, formula_mode } = card
             const matchupTag = opponent ? `vs ${opponent}` : (versus || 'vs —')
             return (
               <article
@@ -457,6 +460,21 @@ export default function Projections({ onSelectPlayer }) {
                 </div>
 
                 <L10HitRateChart games={recentGames} stat={stat} line={standardLine ?? line} />
+                <RatingWhyButton
+                  row={{
+                    sport: 'wnba',
+                    prop: stat,
+                    name: player.name,
+                    projection,
+                    line,
+                    rating: score,
+                    scoreLabel: 'score',
+                    hit_rate_l5: hitRates?.L5,
+                    hit_rate_full: hitRates?.FULL,
+                    formula_applied,
+                    formula_mode,
+                  }}
+                />
               </article>
             )
           })}
