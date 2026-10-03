@@ -99,11 +99,22 @@ export async function computeStripeTier(stripe, email) {
 // tracking only (never for entitlement): api/checkout-session.js and the X
 // Conversions API report in api/stripe-webhook.js.
 export const PLAN_BY_AMOUNT = {
+  499: 'weekly',   // Weekly All-Access with XWEEK ($5 off once) → $4.99 first week
   999: 'weekly',    // Weekly All-Access   $9.99  / wk
   2999: 'monthly',  // Monthly All-Access  $29.99 / mo
   9999: 'lifetime', // Lifetime All-Access $99.99 once
 };
 
+const CHECKOUT_PLANS = new Set(['weekly', 'monthly', 'lifetime']);
+
 export function planForAmount(amountCents) {
   return PLAN_BY_AMOUNT[Number(amountCents)] || 'other';
+}
+
+// Prefer the plan stamped on a Checkout Session (weekly + XWEEK is $4.99 before
+// tax, and tax can move the charged total off the table above).
+export function planForCheckout(session) {
+  const tagged = session?.metadata?.cg_plan;
+  if (CHECKOUT_PLANS.has(tagged)) return tagged;
+  return planForAmount(session?.amount_total);
 }

@@ -23,7 +23,7 @@
 //   If both are set, OAuth 1.0a is used.
 
 import crypto from 'node:crypto';
-import { planForAmount } from './_stripeTier.js';
+import { planForCheckout } from './_stripeTier.js';
 
 export const X_ADS_API_BASE = 'https://ads-api.x.com/12';
 const REQUEST_TIMEOUT_MS = 4000;
@@ -98,7 +98,7 @@ export function buildPurchaseConversion(session, { eventId, conversionTime } = {
   const hashed = hashEmail(session.customer_details?.email || session.customer_email);
   if (!hashed) return null; // X needs at least one strong identifier
 
-  const plan = planForAmount(amountCents);
+  const plan = planForCheckout(session);
   const value = (amountCents / 100).toFixed(2);
   return {
     conversion_time: new Date(conversionTime || Date.now()).toISOString(),

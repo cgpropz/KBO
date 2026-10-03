@@ -88,7 +88,14 @@ test('builds a purchase with plan value, session id as conversion_id and hashed 
   assert.ok(!JSON.stringify(c).toLowerCase().includes('buyer@example.com'))
 
   assert.equal(buildPurchaseConversion(paidSession({ amount_total: 999 }), { eventId: 'e' }).value, '9.99')
+  assert.equal(buildPurchaseConversion(paidSession({ amount_total: 999 }), { eventId: 'e' }).contents[0].content_id, 'weekly')
   assert.equal(buildPurchaseConversion(paidSession({ amount_total: 9999 }), { eventId: 'e' }).value, '99.99')
+  assert.equal(buildPurchaseConversion(paidSession({ amount_total: 499 }), { eventId: 'e' }).value, '4.99')
+  assert.equal(buildPurchaseConversion(paidSession({ amount_total: 499 }), { eventId: 'e' }).contents[0].content_id, 'weekly')
+  assert.equal(
+    buildPurchaseConversion(paidSession({ amount_total: 539, metadata: { cg_plan: 'weekly' } }), { eventId: 'e' }).contents[0].content_id,
+    'weekly',
+  )
 })
 
 test('unpaid, $0 or email-less sessions are not reported', () => {

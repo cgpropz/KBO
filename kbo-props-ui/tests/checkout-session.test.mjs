@@ -68,13 +68,22 @@ test('returns only amount, currency and plan for a paid session', async () => {
 })
 
 test('maps every current plan amount to its plan and value', async () => {
-  const cases = [[999, 9.99, 'weekly'], [2999, 29.99, 'monthly'], [9999, 99.99, 'lifetime'], [1999, 19.99, 'other']]
+  const cases = [[499, 4.99, 'weekly'], [999, 9.99, 'weekly'], [2999, 29.99, 'monthly'], [9999, 99.99, 'lifetime'], [1999, 19.99, 'other']]
   for (const [cents, amount, plan] of cases) {
     const res = await call(VALID_ID, mockStripe({ [VALID_ID]: session({ amount_total: cents }) }))
     assert.equal(res.body.amount, amount)
     assert.equal(res.body.plan, plan)
     assert.equal(planForAmount(cents), plan)
   }
+})
+
+test('a stamped weekly plan stays weekly when tax moves the total off $4.99', async () => {
+  const res = await call(VALID_ID, mockStripe({
+    [VALID_ID]: session({ amount_total: 539, metadata: { cg_plan: 'weekly' } }),
+  }))
+  assert.equal(res.body.paid, true)
+  assert.equal(res.body.amount, 5.39)
+  assert.equal(res.body.plan, 'weekly')
 })
 
 test('unpaid or incomplete sessions report paid:false', async () => {

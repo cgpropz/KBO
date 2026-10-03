@@ -4,7 +4,7 @@ import { TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import FreePicksPreview from './FreePicksPreview';
-import { buildCheckoutUrl } from './tracking';
+import { resolvePlanCheckoutUrl } from './tracking';
 import './PublicLanding.css';
 
 /*
@@ -69,7 +69,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const scrollToPricing = () => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   // Logged-out checkout: Stripe collects the email; access is matched to it
   // when the buyer signs up with the same email (webhook + sync-subscription).
-  const checkout = (tier) => { if (tier?.link) window.location.assign(buildCheckoutUrl(tier.link, null)); };
+  // Weekly opens a Checkout Session with XWEEK applied. Monthly and lifetime
+  // stay on their Payment Links.
+  const checkout = async (tier) => {
+    if (!tier?.link) return;
+    const url = await resolvePlanCheckoutUrl(tier, null);
+    if (url) window.location.assign(url);
+  };
 
   return (
     <div className="pl-landing">

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
-import { buildCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, resolvePlanCheckoutUrl } from './tracking';
 import './SubscriptionPage.css';
 import './FreeFunnel.css';
 
@@ -51,18 +51,48 @@ function SubscriptionPage() {
     }
   }, [tier, awaitingPayment]);
 
-  const handleSubscribe = (tier) => {
-    if (!tier.link) return;
+  const handleSubscribe = (plan) => {
+    if (!plan.link) return;
     // Logged in: pass Supabase user ID + prefill email so the webhook links the
     // payment instantly. Logged out: Stripe collects the email and access is
     // matched to it when they sign up (webhook + /api/sync-subscription).
-    const url = buildCheckoutUrl(tier.link, user);
-    if (!user) {
-      window.location.assign(url);
+    // Monthly and lifetime stay on Payment Links and navigate in this click.
+    if (plan.id !== 'weekly') {
+      const url = buildCheckoutUrl(plan.link, user);
+      if (!user) {
+        window.location.assign(url);
+        return;
+      }
+      window.open(url, '_blank', 'noopener');
+      setAwaitingPayment(true);
       return;
     }
-    window.open(url, '_blank', 'noopener');
-    setAwaitingPayment(true);
+
+    // Weekly: Stripe Payment Links reject prefilled_promo_code=XWEEK. Open a
+    // tab during the click, then send it to the Checkout Session (XWEEK applied).
+    const popup = user ? window.open('', '_blank', 'noopener') : null;
+    if (user) setAwaitingPayment(true);
+    void (async () => {
+      let token = null;
+      if (user) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          token = session?.access_token || null;
+        } catch { /* guest checkout still works */ }
+      }
+      const url = await resolvePlanCheckoutUrl(plan, user, { token });
+      if (!url) {
+        popup?.close();
+        setAwaitingPayment(false);
+        return;
+      }
+      if (!user) {
+        window.location.assign(url);
+        return;
+      }
+      if (popup) popup.location.href = url;
+      else window.location.assign(url);
+    })();
   };
 
   const handleCancel = async () => {
