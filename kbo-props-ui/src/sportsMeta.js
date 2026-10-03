@@ -10,6 +10,9 @@ export const SPORTS = [
     accent: '#22c55e',
     glow: 'rgba(34, 197, 94, 0.35)',
     features: ['Pitcher K projections', 'Batter props & hit rates', 'Slip builder + tracker'],
+    // Original illustration of a fictional player. Not a real athlete and not a league logo.
+    portrait: '/sport-cards/kbo-card.webp',
+    portraitAlt: 'Illustrated baseball player in a navy helmet and white jersey',
   },
   {
     id: 'wnba',
@@ -20,6 +23,8 @@ export const SPORTS = [
     accent: '#4ade80',
     glow: 'rgba(74, 222, 128, 0.35)',
     features: ['PrizePicks edge board', 'Points / reb / ast projections', 'DvP & daily lineups'],
+    portrait: '/sport-cards/wnba-card.webp',
+    portraitAlt: 'Illustrated basketball player in a dark jersey',
   },
   {
     id: 'nfl',
@@ -30,5 +35,7 @@ export const SPORTS = [
     accent: '#7fff68',
     glow: 'rgba(127, 255, 104, 0.35)',
     features: ['Top 3 daily props', 'Full PrizePicks edge board', '2025 + 2026 game logs'],
+    portrait: '/sport-cards/nfl-card.webp',
+    portraitAlt: 'Illustrated football player in a dark helmet',
   },
 ];

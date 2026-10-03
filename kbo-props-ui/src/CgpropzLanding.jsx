@@ -71,18 +71,29 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
               style={{ '--accent': s.accent, '--glow': s.glow }}
               onClick={() => onEnterSport(s.id)}
             >
-              <div className="cg-sport-emoji">{s.emoji}</div>
-              <div className="cg-sport-head">
-                <h2 className="cg-sport-name">{s.name}</h2>
-                <span className="cg-sport-full">{s.full}</span>
+              <div className="cg-sport-art">
+                <img
+                  src={s.portrait}
+                  alt={s.portraitAlt}
+                  width="960"
+                  height="720"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
-              <p className="cg-sport-tagline">{s.tagline}</p>
-              <ul className="cg-sport-features">
-                {s.features.map((f, i) => (
-                  <li key={i}><span className="cg-dot" />{f}</li>
-                ))}
-              </ul>
-              <span className="cg-sport-enter">Enter {s.name} →</span>
+              <div className="cg-sport-body">
+                <div className="cg-sport-head">
+                  <h2 className="cg-sport-name">{s.name}</h2>
+                  <span className="cg-sport-full">{s.full}</span>
+                </div>
+                <p className="cg-sport-tagline">{s.tagline}</p>
+                <ul className="cg-sport-features">
+                  {s.features.map((f, i) => (
+                    <li key={i}><span className="cg-dot" />{f}</li>
+                  ))}
+                </ul>
+                <span className="cg-sport-enter">Enter {s.name} →</span>
+              </div>
             </button>
           ))}
         </section>
