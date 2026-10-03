@@ -178,6 +178,29 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(snapshot["pp_baselines"]["flex"]["american"], -119)
         self.assertEqual(snapshot["pp_baselines"]["power"]["american"], -137)
 
+    def test_rebuilding_from_a_moved_unabated_line_rewrites_the_edge(self):
+        def books(line, over_price, under_price):
+            return [
+                {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
+                 "side": "over", "line": line, "price": over_price, "book": "Circa", "book_key": "circa"},
+                {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
+                 "side": "under", "line": line, "price": under_price, "book": "Circa", "book_key": "circa"},
+            ]
+
+        before = sharp.build_snapshot([self._pp()], books(74.5, -120, 100))["records"][0]
+        after = sharp.build_snapshot([self._pp()], books(80.5, -150, 120))["records"][0]
+        self.assertEqual(before["line_match"], "exact")
+        self.assertEqual(before["matched_line"], 74.5)
+        self.assertEqual(before["quoted_price"], -120)
+        self.assertEqual(after["line_match"], "nearest")
+        self.assertEqual(after["matched_line"], 80.5)
+        self.assertEqual(after["quoted_price"], -150)
+        self.assertEqual(after["book_prices"][0]["over"], -150)
+        self.assertNotEqual(before["pp_edge_flex"], after["pp_edge_flex"])
+        self.assertNotEqual(before["pp_edge_power"], after["pp_edge_power"])
+        self.assertNotEqual(before["ev_pct"], after["ev_pct"])
+        self.assertNotEqual(before["fair_over_pct"], after["fair_over_pct"])
+
     def test_nearest_half_point_badges_line_plus_without_padding_the_edge(self):
         books = [
             {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
@@ -515,6 +538,25 @@ class MatchTests(unittest.TestCase):
         self.assertIsNone(rows["No Grade"]["dvpRank"])
         self.assertIsNone(rows["No Grade"]["hitRateL5"])
         self.assertIsNone(rows["No Grade"]["hitRate"])
+
+
+class LiveRefreshWorkflowTests(unittest.TestCase):
+    def test_unabated_refresh_requeues_itself_and_does_not_add_another_feed(self):
+        root = Path(__file__).resolve().parent
+        live = (root / ".github" / "workflows" / "nfl-odds-live.yml").read_text(encoding="utf-8")
+        board = (root / ".github" / "workflows" / "nfl-refresh.yml").read_text(encoding="utf-8")
+        self.assertIn("python nfl/sharp_odds.py", live)
+        self.assertIn("python nfl/build_projection_data.py", live)
+        self.assertIn("publish_supabase.py", live)
+        self.assertIn("gh workflow run nfl-odds-live.yml --ref main", live)
+        self.assertIn("workflow_dispatch", live)
+        self.assertIn(".github/workflows/nfl-odds-live.yml", live)
+        self.assertIn("NFL_ODDS_REFRESH_WAIT_SECONDS", live)
+        self.assertNotIn("ODDS_API_KEY", live)
+        self.assertNotIn("the-odds-api.com", live)
+        self.assertNotIn("freeze_slate", live)
+        self.assertIn("gh workflow run nfl-odds-live.yml --ref main", board)
+        self.assertNotIn("the-odds-api.com", board)
 
 
 class PipelineTests(unittest.TestCase):

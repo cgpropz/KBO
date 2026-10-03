@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
 import { dvpGrade } from './matchupGrade'
 import { bookLogoSrc } from './bookLogos'
@@ -50,6 +50,13 @@ function formatEdge(value) {
   if (value == null || !Number.isFinite(Number(value))) return '—'
   const number = Number(value)
   return `${number > 0 ? '+' : ''}${number.toFixed(1)}%`
+}
+
+function formatSnapshotTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
 function noBookNote(item) {
@@ -355,21 +362,39 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [mode, setMode] = useState('flex')
   const [plusOnly, setPlusOnly] = useState(false)
   const [openId, setOpenId] = useState(null)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
     let active = true
-    fetchNflSharpOdds()
-      .then(({ payload: nextPayload, records: nextRecords, preview, lockedCount: locked }) => {
-        if (!active) return
-        setPayload(nextPayload)
-        setRecords(nextRecords)
-        setLockedCount(preview ? locked : 0)
-        setLoaded(true)
-      })
-      .catch((loadError) => {
-        if (active) setError(loadError.message)
-      })
-    return () => { active = false }
+    const load = () => {
+      fetchNflSharpOdds()
+        .then(({ payload: nextPayload, records: nextRecords, preview, lockedCount: locked }) => {
+          if (!active) return
+          loadedRef.current = true
+          setPayload(nextPayload)
+          setRecords(nextRecords)
+          setLockedCount(preview ? locked : 0)
+          setError('')
+          setLoaded(true)
+        })
+        .catch((loadError) => {
+          if (!active || loadedRef.current) return
+          setError(loadError.message)
+        })
+    }
+    load()
+    // The snapshot is republished about every 30 minutes. Polling picks up a
+    // new Unabated price, and the PP Edge computed from it, without a reload.
+    const refresh = window.setInterval(load, 60 * 1000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      active = false
+      window.clearInterval(refresh)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   const baseline = BASELINES[mode] || BASELINES.flex
@@ -405,6 +430,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
 
   const status = payload?.status || 'ok'
   const showStatus = loaded && !error && payload && status !== 'ok'
+  const snapshotLabel = formatSnapshotTime(payload?.generated_at) ? ` · odds ${formatSnapshotTime(payload.generated_at)}` : ''
 
   return (
     <section className="nfl-lines-page nfl-sharp-page">
@@ -413,7 +439,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
           <p>NFL / PRIZEPICKS ODDS</p>
           <h1>PrizePicks Odds</h1>
         </div>
-        <span>{loaded ? `${rows.length} props` : ''}</span>
+        <span title={payload?.feed_snapshot_at ? `Unabated snapshot ${payload.feed_snapshot_at}` : undefined}>{loaded ? `${rows.length} props${snapshotLabel}` : ''}</span>
       </div>
       <div className="nfl-lines-tabs" role="tablist" aria-label="Prop type">
         {props.map((item) => (
