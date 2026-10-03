@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
 import { dvpGrade } from './matchupGrade'
+import { bookLogoSrc } from './bookLogos'
 import {
   bestAmerican,
   finiteNumber,
@@ -173,13 +174,23 @@ function stripDomId(item) {
   return `nfl-sharp-strip-${String(rowId(item)).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
 }
 
+function BookLogo({ book, className, decorative = false }) {
+  const src = bookLogoSrc(book)
+  if (!src) return null
+  const name = book?.book || book?.book_key || ''
+  return <img className={className} src={src} alt={decorative ? '' : name} title={name} width="32" height="32" />
+}
+
 function Quote({ quote, baselineAmerican }) {
   if (!quote) return <span className="nfl-sharp-book">—</span>
   const color = priceColor(quote.price, baselineAmerican)
   return (
     <>
       <div className="nfl-sharp-price" style={color ? { color } : undefined}>{formatAmerican(quote.price)}</div>
-      <div className="nfl-sharp-book">{quote.book}{quote.implied_pct != null ? ` · ${Number(quote.implied_pct).toFixed(1)}%` : ''}</div>
+      <div className="nfl-sharp-quote-book">
+        <BookLogo book={quote} className="nfl-sharp-quote-logo" decorative />
+        <span>{quote.book}{quote.implied_pct != null ? ` · ${Number(quote.implied_pct).toFixed(1)}%` : ''}</span>
+      </div>
     </>
   )
 }
@@ -208,9 +219,12 @@ function BookCell({ book, side, baselineAmerican, bestPrice }) {
   const primary = primarySide ? book[primarySide] : null
   const highlighted = hasSide && sameAmericanPrice(book[side], bestPrice)
   const sideLabel = !hasSide && primarySide === 'over' ? 'O' : !hasSide && primarySide === 'under' ? 'U' : null
+  const logo = bookLogoSrc(book)
   return (
     <div className={`nfl-sharp-book-cell${highlighted ? ' is-best' : ''}`}>
-      <div className="nfl-sharp-book-name">{book.book}</div>
+      {logo
+        ? <BookLogo book={book} className="nfl-sharp-book-logo" />
+        : <div className="nfl-sharp-book-name">{book.book}</div>}
       <SidePrice price={primary} baselineAmerican={baselineAmerican} label={sideLabel} prominent />
     </div>
   )

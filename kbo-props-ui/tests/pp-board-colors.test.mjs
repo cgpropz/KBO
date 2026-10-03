@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { bookLogoKey, bookLogoSrc } from '../src/nfl/bookLogos.js'
 import { dvpGrade } from '../src/nfl/matchupGrade.js'
 import {
   HIT_GREEN,
@@ -90,6 +91,16 @@ test('a missing edge stays empty instead of becoming zero', () => {
   assert.equal(finiteNumber('nope'), null)
   assert.equal(finiteNumber(0), 0)
   assert.equal(finiteNumber(-2.3), -2.3)
+})
+
+test('sportsbook logos stay on local files and unknown books stay unnamed', () => {
+  assert.match(bookLogoSrc('DraftKings'), /\/sportsbooks\/draftkings\.svg$/)
+  assert.match(bookLogoSrc({ book_key: 'betonlineag', book: 'BetOnline.ag' }), /\/sportsbooks\/betonline\.svg$/)
+  assert.equal(bookLogoKey('Fanatics'), 'fanatics')
+  assert.equal(bookLogoKey('mgm'), 'betmgm')
+  assert.equal(bookLogoSrc('PrizePicks'), null)
+  assert.equal(bookLogoSrc({ book: 'Some House Book' }), null)
+  assert.equal(String(bookLogoSrc('DraftKings')).includes('http'), false)
 })
 
 test('matchup grades stay on the existing DVP scale', () => {
