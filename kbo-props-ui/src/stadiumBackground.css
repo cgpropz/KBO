@@ -1,66 +1,29 @@
 /*
- * Let the fixed stadium photo (set on :root) show through every public surface.
- * Page shells drop their solid fill. Scrolling boards keep a dark wash that
- * fades at the top and bottom so the picture shows at the edges and between
- * sections, instead of a solid panel sitting on top of the photo.
- * Odds, grades, and hit/miss colors are left alone.
+ * Night stadium photo for the NFL section only.
+ * The picture stays fixed while NFL content scrolls. Boards use a dark wash
+ * that opens at the edges so the photo shows through and text stays readable.
+ * Odds and grade colors are unchanged. Other sports keep their own fills.
  */
 
-.kbo-app-root,
-.nfl-root,
-.wnba-root,
-.pl-landing,
-.cg-landing,
-.lp,
-.auth-page,
-.rk-container,
-.so-container,
-.bp-container,
-.gt-container,
-.tutorial-page {
-  background: transparent;
+.nfl-root {
+  background-color: #07090d;
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 12, 0.4), rgba(4, 7, 11, 0.48)),
+    url('/stadium-bg.webp');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
-/* Section bands that used to be solid full-width fills. */
-.so-k-page .so-header,
-.bp-header,
-.gt-header,
-.so-header,
-.rk-header {
-  background: linear-gradient(180deg, rgba(6, 12, 16, 0.62), rgba(6, 12, 16, 0.28)) !important;
-}
-
-.app-nav,
-.nav-mobile-menu,
-.kbo-app-nav,
-.nfl-nav,
-.wnba-root .wnba-nav,
-.pl-header {
-  background: rgba(5, 8, 12, 0.46);
+.nfl-nav {
+  background: rgba(5, 8, 12, 0.42);
   backdrop-filter: blur(10px);
 }
 
-.wnba-propboard {
-  background: transparent;
-  border-color: rgba(26, 60, 54, 0.35);
-}
-
-.wnba-root .card {
-  background: linear-gradient(180deg, rgba(17, 17, 17, 0.62), rgba(13, 13, 13, 0.5));
-}
-.wnba-root .card:hover {
-  background: linear-gradient(180deg, rgba(23, 23, 23, 0.7), rgba(18, 18, 18, 0.58));
-}
-
-/* Inner scrolling boards: translucent wash, open at the edges. */
-.kbo-lines-table-wrap,
 .nfl-lines-table-wrap,
-.wnba-lines-table-wrap,
 .nfl-table-wrap,
-.bp-table-wrap,
-.so-table-wrap,
-.rk-table-wrap,
-.gt-table-wrap {
+.nfl-edge-controls {
   background: linear-gradient(
     180deg,
     rgba(6, 14, 16, 0.05) 0%,
@@ -71,73 +34,26 @@
   border-color: rgba(186, 206, 196, 0.2);
 }
 
-.kbo-lines-table tbody tr:hover,
-.nfl-lines-row:hover,
-.wnba-lines-row:hover,
-.gt-row:hover {
+.nfl-lines-row:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Projection / ranking rows were opaque, which hid the photo inside the scroll. */
-.so-table td,
-.so-row:nth-child(4n + 1) td,
-.so-row:nth-child(4n + 3) td,
-.bp-row:nth-child(odd),
-.bp-row:nth-child(even),
-.rk-row-even td,
-.rk-row-odd td {
-  background: transparent !important;
+.nfl-sharp-row.is-open {
+  background: rgba(12, 28, 25, 0.4);
 }
 
-.so-row:hover td,
-.bp-row:hover,
-.bp-row:hover td,
-.rk-row:hover td {
-  background: rgba(255, 255, 255, 0.07) !important;
-}
-
-.so-table th,
-.so-table thead th:first-child,
-.bp-table thead th,
-.bp-table thead th:first-child,
-.rk-table thead,
-.rk-table th,
-.gt-table thead th,
-.wnba-root .data-table th {
-  background: rgba(8, 14, 20, 0.78);
-}
-
-.so-table tbody td:first-child,
-.so-row:nth-child(4n + 1) td:first-child,
-.so-row:nth-child(4n + 3) td:first-child,
-.so-row:hover td:first-child,
-.bp-table thead th:first-child,
-.bp-row:nth-child(odd) td:first-child,
-.bp-row:nth-child(even) td:first-child,
-.bp-row:hover td:first-child {
-  background: rgba(8, 14, 20, 0.84) !important;
-}
-
-.so-log-row td,
-.bp-log-row td,
-.bp-row-expanded td {
-  background: rgba(8, 16, 24, 0.72) !important;
-}
-
-.wnba-root .data-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.06);
+.nfl-sharp-strip-row td {
+  background: rgba(7, 19, 17, 0.55);
 }
 
 .nfl-top-card,
 .nfl-matchup-card,
+.nfl-edge-card,
 .nfl-notice,
-.kbo-notice,
-.so-slip-summary,
-.so-prop-row {
+.nfl-player-summary {
   background-color: rgba(8, 16, 18, 0.62);
 }
 
-.auth-bg {
-  background: rgba(4, 8, 12, 0.28);
-  opacity: 1;
+.nfl-player-range-strip button:not(.active) {
+  background-color: rgba(8, 21, 19, 0.55);
 }

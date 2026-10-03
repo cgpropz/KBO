@@ -40,7 +40,7 @@ function App() {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        background: 'transparent',
+        background: 'linear-gradient(135deg, #04140a, #22c55e)',
         color: 'white',
         fontSize: '24px',
         fontFamily: 'Arial, sans-serif'
