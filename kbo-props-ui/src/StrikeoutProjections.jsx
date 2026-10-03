@@ -775,7 +775,7 @@ function StrikeoutProjections({ onNavigate }) {
                 {isExpanded && (
                   <tr className="so-detail-row">
                     <td colSpan="15">
-                      <div className="so-detail-panel">
+                      <div className={`so-detail-panel${detail ? '' : ' is-why-only'}`}>
                         <RatingExplanation row={{ ...p, sport: 'kbo', scoreLabel: 'rating' }} />
                         {detail ? (
                           <>
@@ -916,9 +916,7 @@ function StrikeoutProjections({ onNavigate }) {
                               )}
                             </div>
                           </>
-                        ) : (
-                          <p className="so-detail-empty">No matchup data available for this pitcher today.</p>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

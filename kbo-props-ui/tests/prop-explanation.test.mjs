@@ -88,27 +88,25 @@ const wesley = {
 }
 
 test('Wesley Benjamin: a high hits-allowed rating can sit next to a 20% last-5 hit rate', () => {
-  const text = textOf(wesley)
+  const explained = explainProp(wesley)
+  const text = explained.lines.join('\n')
+  assert.equal(explained.side, 'Over')
+  assert.match(text, /Leans Over/)
   assert.match(text, /57\.2/)
-  assert.match(text, /leans Over 4\.5 hits allowed/)
   assert.match(text, /projection \(5\.2\) is 0\.7 above/)
-  assert.match(text, /10% on the last 5 starts, 20% on this season, and 70% on all starts/)
-  assert.match(text, /2\.1558 \+ 0\.6238/)
-  assert.match(text, /last-5 hit rate is 20%/)
-  assert.match(text, /full hit rate is 50%/)
-  assert.match(text, /do not set the rating/)
-  assert.match(text, /last five games rarely cleared the line/)
-  assert.match(text, /longer track record/)
-  assert.match(text, /CG score of 73/)
-  assert.doesNotMatch(text, /Samsung|batting average|0\.277|17\.4|WHIP|feature vector|hit_rate|opp_mult|opp_factor|form_factor|knob/i)
+  assert.match(text, /Last 5 cleared the line 20% of the time/)
+  assert.match(text, /does not set the rating/)
+  assert.match(text, /longer record: 10% recent starts, 20% this season, and 70% all starts/)
+  assert.equal(explained.lines.length, 3)
+  assert.doesNotMatch(text, /2\.1558|0\.6238|CG score|Samsung|batting average|0\.277|17\.4|WHIP|feature vector|hit_rate|opp_mult|opp_factor|form_factor|knob/i)
 })
 
 test('hits allowed on the previous formula still uses the opponent and does not use the tuned line', () => {
   const text = textOf({ ...wesley, formula_applied: false, opp_h_per_ip: 1.12, league_avg_h_per_ip: 1.01, opp_factor: 1.04, form_factor: 0.96 })
-  assert.match(text, /Samsung has been hitting 1\.12 hits per inning/)
-  assert.match(text, /matchup multiplier is 1\.04/)
+  assert.match(text, /Samsung hits 1\.12 per inning/)
+  assert.match(text, /raises it/)
   assert.match(text, /multiplies the projection by 0\.96/)
-  assert.match(text, /50% on the last 5 starts/)
+  assert.match(text, /50% recent starts/)
   assert.doesNotMatch(text, /2\.1558/)
 })
 
@@ -129,8 +127,8 @@ test('a tuned strikeout rating names the opponent strikeout rate that actually m
     league_avg_so_per_g: 7.6,
   })
   assert.match(text, /Hanwha strikes out 8\.4 times a game/)
-  assert.match(text, /matchup multiplier is 1\.06/)
-  assert.doesNotMatch(text, /batting average|WHIP/)
+  assert.match(text, /raises it/)
+  assert.doesNotMatch(text, /batting average|WHIP|2\.1558/)
 })
 
 test('hitter hits+runs+RBI uses the tuned inputs and skips park, hand, and pitcher', () => {
@@ -150,13 +148,10 @@ test('hitter hits+runs+RBI uses the tuned inputs and skips park, hand, and pitch
     split_factor: 1.05,
     pitcher_factor: 1.04,
   })
-  assert.match(text, /20% on the last 3 games, 30% on the last 6 games, and 50% on the season/)
-  assert.match(text, /10% on the last 3 games, 20% on the last 6 games, and 70% on the season/)
-  assert.match(text, /opponent's pitchers/)
-  assert.match(text, /multiplier on this row is 1\.08/)
-  assert.match(text, /0\.3884 \+ 0\.6561/)
-  assert.match(text, /do not set the rating/)
-  assert.doesNotMatch(text, /park|WHIP|handedness|1\.04|1\.05|1\.10/)
+  assert.match(text, /Most of the weight is the season/)
+  assert.match(text, /Opponent pitchers raise it \(1\.08\)/)
+  assert.match(text, /does not set the rating/)
+  assert.doesNotMatch(text, /park|WHIP|handedness|0\.3884|1\.04|1\.05|1\.10/)
 })
 
 test('a low rating can sit next to a high last-5 hit rate', () => {
@@ -171,9 +166,10 @@ test('a low rating can sit next to a high last-5 hit rate', () => {
     hit_rate_full: 60,
     formula_applied: true,
   })
-  assert.match(text, /leans Under/)
-  assert.match(text, /last-5 hit rate is 80%/)
-  assert.match(text, /still lean under when the last five games cleared the line often/)
+  assert.match(text, /Leans Under/)
+  assert.match(text, /Last 5 cleared the line 80% of the time/)
+  assert.match(text, /does not set the rating/)
+  assert.match(text, /below the line/)
 })
 
 test('NFL receiving yards explains the live windows and not defense', () => {
@@ -195,11 +191,9 @@ test('NFL receiving yards explains the live windows and not defense', () => {
     dvpRank: 4,
     dvpRatio: 1.2,
   })
-  assert.match(text, /last 3 games, the last 9, and the last 15 at 25%, 25%, and 50%/)
-  assert.match(text, /most recent 15 games/)
-  assert.match(text, /0\.7672 \+ 0\.8528/)
-  assert.match(text, /last-10 hit rate is 40%/)
-  assert.doesNotMatch(text, /defense|DVP|snap|Variance/)
+  assert.match(text, /25%, 25%, and 50% on the last 3, last 9, and last 15/)
+  assert.match(text, /does not set the score/)
+  assert.doesNotMatch(text, /0\.7672|defense|DVP|snap|Variance/)
 })
 
 test('WNBA points use the tuned windows, and rebounds stay on the previous formula', () => {
@@ -227,8 +221,7 @@ test('WNBA points use the tuned windows, and rebounds stay on the previous formu
 
 test('board formula lines follow the live formula', () => {
   assert.match(boardFormulaLine('kbo', 'Hits Allowed'), /10%, 20%, and 70%/)
-  assert.match(boardFormulaLine('kbo', 'Hits Allowed'), /2\.1558/)
-  assert.doesNotMatch(boardFormulaLine('kbo', 'Hits Allowed'), /WHIP|form/i)
+  assert.doesNotMatch(boardFormulaLine('kbo', 'Hits Allowed'), /2\.1558|WHIP|form/i)
   assert.match(boardFormulaLine('kbo', 'Hits+Runs+RBIs'), /opponent's pitchers/)
   assert.doesNotMatch(boardFormulaLine('kbo', 'Hits+Runs+RBIs'), /WHIP|park/i)
 })

@@ -4,12 +4,19 @@ import './RatingExplanation.css'
 
 export function RatingExplanation({ row }) {
   const explanation = explainProp(row)
+  const side = String(explanation.side || 'push').toLowerCase()
   return (
-    <section className="rating-why" aria-label={explanation.title}>
-      <h4 className="rating-why-title">{explanation.title}</h4>
-      {explanation.paragraphs.map((paragraph) => (
-        <p key={paragraph} className="rating-why-copy">{paragraph}</p>
-      ))}
+    <section className={`rating-why is-${side}`} aria-label={explanation.title}>
+      <div className="rating-why-head">
+        <span className="rating-why-side">{explanation.side}</span>
+        {explanation.rating ? <span className="rating-why-score">{explanation.rating}</span> : null}
+        {explanation.headline ? <span className="rating-why-prop">{explanation.headline}</span> : null}
+      </div>
+      <ul className="rating-why-lines">
+        {explanation.lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
     </section>
   )
 }
