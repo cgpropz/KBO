@@ -241,7 +241,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
         'formula_applied': tuned is not None,
-        'formula_mode': formula_mode(),
+        'formula_mode': formula_mode("nfl"),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,

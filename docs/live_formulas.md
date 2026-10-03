@@ -1,28 +1,27 @@
 # Live projection formulas
 
-Config file: `pipeline/projection_formula.json` (mode **tuned**).
+Config file: `pipeline/projection_formula.json` (kbo **tuned**, wnba **current**, nfl **current**).
 
-The site publishes a tuned formula only when that stat's file in `ml/params` says `recommendation: candidate`. Those are the fits shadow mode has been comparing with the previous formula. Every other stat stays on the previous formula.
+A sport publishes a tuned formula only when its switch is `tuned` and that stat's file in `ml/params` says `recommendation: candidate`. Those are the fits shadow mode has been comparing with the previous formula. Every other stat, and every sport left on `current`, stays on the previous formula. Shadow still scores the candidates that are not published.
 
 Numbers below are copied from those params files. They are not re-fit here.
 
 ## How to roll back
 
-The live site is on the tuned formulas because `pipeline/projection_formula.json` says `"mode": "tuned"`.
+KBO publishes the tuned formulas because `pipeline/projection_formula.json` sets `sports.kbo` to `tuned`. WNBA and NFL stay on the previous formulas (`sports.wnba` and `sports.nfl` are `current`). The top-level `mode` is only the fallback when a sport is not listed.
 
-To put the previous formulas back:
+To put KBO back on the previous formulas:
 
-1. Change that file's `mode` from `tuned` to `current` (or run one job with `CG_PROJECTION_FORMULA=current`).
-2. Rerun the refresh that publishes each sport:
-   - KBO: **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
-   - WNBA: **Refresh WNBA Data** (`.github/workflows/wnba-refresh.yml`) and **Refresh WNBA PrizePicks Lines (30 min)** (`.github/workflows/wnba-props-refresh.yml`). Both export snapshots and then run `pipeline/apply_live_formula.py`. Supabase updates without a Vercel redeploy. Start either with `workflow_dispatch` if you do not want to wait for the schedule.
-   - NFL: **Refresh NFL PrizePicks Board** (`.github/workflows/nfl-refresh.yml`). It runs `python nfl/build_projection_data.py`, which reads the same switch. Start it with `workflow_dispatch` or wait for the next scheduled run.
+1. Set `sports.kbo` to `current`. One KBO job can instead set `CG_PROJECTION_FORMULA=current`. That env value overrides every sport for that one run, so do not set it on a WNBA or NFL refresh unless those sports should move too.
+2. Rerun **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
 
-Shadow keeps scoring both formulas either way. While mode is `tuned`, the site number is the tuned fit and `baseline_projection` on each row is the previous formula.
+WNBA and NFL publish the previous formula. Run **Refresh WNBA Data** or **Refresh WNBA PrizePicks Lines (30 min)** and **Refresh NFL PrizePicks Board** once after this change so boards generated while every sport was `tuned` are rewritten. Later, if either sport is set to `tuned`, rerun that same refresh.
+
+Shadow keeps scoring both formulas either way. While a sport is `tuned`, that sport's site number is the tuned fit and `baseline_projection` on each row is the previous formula.
 
 ## KBO
 
-Live on the tuned formula: 5. Still on the previous formula: 1.
+Live on the tuned formula: 5. Shadow candidates published as the previous formula: 0. Not adopted, previous formula: 1.
 
 ### Fantasy Score
 
@@ -129,154 +128,19 @@ Shadow did not adopt these. The site still uses the formula it used before this 
 
 ## WNBA
 
-Live on the tuned formula: 7. Still on the previous formula: 15.
+Live on the tuned formula: 0. Shadow candidates published as the previous formula: 7. Not adopted, previous formula: 15.
 
-### Assists
+### Tuned in shadow, previous formula on the site
 
-Expected assists, same shape as points.
+WNBA is `current`, so these candidates are not published. Shadow still scores them against the previous formula.
 
-Source: `ml/params/wnba/assists.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longest — last 7, 15, and 30 games
-- minutes are the average of the last 5 games
-- dvp = on — full defense-vs-position factor
-
-Per-minute weights on the last 7, 15, and 30 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 5 games. Defense factor = on.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 1.8218 on the previous formula, 1.6988 on this one (lower is closer).
-
-### FG Attempted
-
-Expected field-goal attempts.
-
-Source: `ml/params/wnba/fg_attempted.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longest — last 7, 15, and 30 games
-- minutes are the average of the last 10 games
-- dvp = off — defense-vs-position factor turned off
-
-Per-minute weights on the last 7, 15, and 30 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 10 games. Defense factor = off.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 3.0462 on the previous formula, 2.8627 on this one (lower is closer).
-
-### Fantasy Score
-
-Fantasy score from this stat's own per-minute rates for points, rebounds, assists, steals, blocks, and turnovers. It does not reuse the Points prop's formula.
-
-Source: `ml/params/wnba/fantasy_score.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longest — last 7, 15, and 30 games
-- minutes are the average of the last 15 games
-- dvp = on — full defense-vs-position factor
-
-Per-minute weights on the last 7, 15, and 30 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 15 games. Defense factor = on.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 8.5295 on the previous formula, 8.1485 on this one (lower is closer).
-
-### Points
-
-Expected points from per-minute scoring, projected minutes, and the opponent's defense.
-
-Source: `ml/params/wnba/points.json`.
-
-What goes in:
-
-- window_weights = balanced — about one third on each window
-- windows = longest — last 7, 15, and 30 games
-- minutes are the average of the last 15 games
-- dvp = half — square root of the defense-vs-position factor (a milder adjustment)
-
-Per-minute weights on the last 7, 15, and 30 games = 0.34, 0.33, 0.33.
-
-Minutes = average of the last 15 games. Defense factor = half.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 4.7696 on the previous formula, 4.6458 on this one (lower is closer).
-
-### Pts+Asts
-
-Expected points plus assists.
-
-Source: `ml/params/wnba/pts_plus_asts.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longer — last 5, 10, and 20 games
-- minutes are the average of the last 15 games
-- dvp = half — square root of the defense-vs-position factor (a milder adjustment)
-
-Per-minute weights on the last 5, 10, and 20 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 15 games. Defense factor = half.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 5.451 on the previous formula, 5.2854 on this one (lower is closer).
-
-### Pts+Rebs
-
-Expected points plus rebounds. Each piece uses this stat's own windows, then the pieces are added.
-
-Source: `ml/params/wnba/pts_plus_rebs.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longer — last 5, 10, and 20 games
-- minutes are the average of the last 15 games
-- dvp = half — square root of the defense-vs-position factor (a milder adjustment)
-
-Per-minute weights on the last 5, 10, and 20 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 15 games. Defense factor = half.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 5.8159 on the previous formula, 5.6862 on this one (lower is closer).
-
-### Rebs+Asts
-
-Expected rebounds plus assists.
-
-Source: `ml/params/wnba/rebs_plus_asts.json`.
-
-What goes in:
-
-- window_weights = long_heavy — 20% shortest, 30% middle, 50% longest
-- windows = longest — last 7, 15, and 30 games
-- minutes are the average of the last 15 games
-- dvp = half — square root of the defense-vs-position factor (a milder adjustment)
-
-Per-minute weights on the last 7, 15, and 30 games = 0.20, 0.30, 0.50.
-
-Minutes = average of the last 15 games. Defense factor = half.
-
-No extra line. The projection above is what gets published.
-
-Walk-forward average error in the Phase 2 report: 2.9583 on the previous formula, 2.8271 on this one (lower is closer).
+- **Assists** (`ml/params/wnba/assists.json`). Expected assists, same shape as points.
+- **FG Attempted** (`ml/params/wnba/fg_attempted.json`). Expected field-goal attempts.
+- **Fantasy Score** (`ml/params/wnba/fantasy_score.json`). Fantasy score from this stat's own per-minute rates for points, rebounds, assists, steals, blocks, and turnovers. It does not reuse the Points prop's formula.
+- **Points** (`ml/params/wnba/points.json`). Expected points from per-minute scoring, projected minutes, and the opponent's defense.
+- **Pts+Asts** (`ml/params/wnba/pts_plus_asts.json`). Expected points plus assists.
+- **Pts+Rebs** (`ml/params/wnba/pts_plus_rebs.json`). Expected points plus rebounds. Each piece uses this stat's own windows, then the pieces are added.
+- **Rebs+Asts** (`ml/params/wnba/rebs_plus_asts.json`). Expected rebounds plus assists.
 
 ### Left on the previous formula
 
@@ -300,133 +164,19 @@ Shadow did not adopt these. The site still uses the formula it used before this 
 
 ## NFL
 
-Live on the tuned formula: 7. Still on the previous formula: 3.
+Live on the tuned formula: 0. Shadow candidates published as the previous formula: 7. Not adopted, previous formula: 3.
 
-### Pass Yards
+### Tuned in shadow, previous formula on the site
 
-Expected passing yards, recalibrated with a straight line.
+NFL is `current`, so these candidates are not published. Shadow still scores them against the previous formula.
 
-Source: `ml/params/nfl/pass_yards.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 99.4568 + 0.547 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 68.3331 on the previous formula, 66.9322 on this one (lower is closer).
-
-### Pass+Rush Yds
-
-Expected passing plus rushing yards, recalibrated with a straight line.
-
-Source: `ml/params/nfl/pass_plus_rush_yds.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 109.181 + 0.5424 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 70.889 on the previous formula, 69.3233 on this one (lower is closer).
-
-### Rec Targets
-
-Expected targets, recalibrated with a straight line.
-
-Source: `ml/params/nfl/rec_targets.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 0.3888 + 0.8481 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 2.164 on the previous formula, 2.1219 on this one (lower is closer).
-
-### Receiving Yards
-
-Expected receiving yards from the player's earlier games.
-
-Source: `ml/params/nfl/receiving_yards.json`.
-
-What goes in:
-
-- weights = long_heavy — 25% on the shortest window, 25% on the middle, 50% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 15 games are kept. The previous formula capped this at 10, so the longest window was shorter than its name.
-
-Weights on the last 3, 9, and 15 games = 0.25, 0.25, 0.50, using only the most recent 15 games.
-
-Then a straight line is applied: published = 0.7672 + 0.8528 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 23.7235 on the previous formula, 22.7339 on this one (lower is closer).
-
-### Receptions
-
-Expected receptions, recalibrated with a straight line.
-
-Source: `ml/params/nfl/receptions.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 0.3103 + 0.8215 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 1.681 on the previous formula, 1.6366 on this one (lower is closer).
-
-### Rush Yards
-
-Expected rushing yards. The window mix stays the same; a straight line recalibrates it.
-
-Source: `ml/params/nfl/rush_yards.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 5.858 + 0.7909 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 25.7317 on the previous formula, 24.9146 on this one (lower is closer).
-
-### Rush+Rec Yds
-
-Expected rushing plus receiving yards, recalibrated with a straight line.
-
-Source: `ml/params/nfl/rush_plus_rec_yds.json`.
-
-What goes in:
-
-- weights = live — 50% on the shortest window, 25% on the middle, 25% on the longest
-- windows = live — means of the last 3, 9, and 15 games
-- only the last 10 games are kept. That is the previous cap, so a 15-game window only saw 10 games.
-
-Weights on the last 3, 9, and 15 games = 0.50, 0.25, 0.25, using only the most recent 10 games.
-
-Then a straight line is applied: published = 3.8716 + 0.8667 × (the projection above). The line was fit to pull the projection closer to what actually happened, without throwing the shape away.
-
-Walk-forward average error in the Phase 2 report: 29.9949 on the previous formula, 29.2547 on this one (lower is closer).
+- **Pass Yards** (`ml/params/nfl/pass_yards.json`). Expected passing yards, recalibrated with a straight line.
+- **Pass+Rush Yds** (`ml/params/nfl/pass_plus_rush_yds.json`). Expected passing plus rushing yards, recalibrated with a straight line.
+- **Rec Targets** (`ml/params/nfl/rec_targets.json`). Expected targets, recalibrated with a straight line.
+- **Receiving Yards** (`ml/params/nfl/receiving_yards.json`). Expected receiving yards from the player's earlier games.
+- **Receptions** (`ml/params/nfl/receptions.json`). Expected receptions, recalibrated with a straight line.
+- **Rush Yards** (`ml/params/nfl/rush_yards.json`). Expected rushing yards. The window mix stays the same; a straight line recalibrates it.
+- **Rush+Rec Yds** (`ml/params/nfl/rush_plus_rec_yds.json`). Expected rushing plus receiving yards, recalibrated with a straight line.
 
 ### Left on the previous formula
 
