@@ -442,6 +442,80 @@ class MatchTests(unittest.TestCase):
         self.assertEqual([row["player"] for row in snapshot["records"]], ["Ja'Marr Chase", "Brian Robinson Jr."])
         self.assertGreater(snapshot["records"][0]["pp_edge_flex"], snapshot["records"][1]["pp_edge_flex"])
 
+    def test_book_prices_list_every_book_on_the_matched_line(self):
+        books = [
+            self._book("over", 74.5, -115, "FanDuel"),
+            self._book("under", 74.5, -105, "FanDuel"),
+            self._book("over", 74.5, -140, "DraftKings"),
+            self._book("over", 74.5, 140, "Fanatics"),
+            self._book("under", 74.5, -150, "Fanatics"),
+            self._book("over", 80.5, -110, "Circa"),
+            self._book("under", 80.5, -110, "Circa"),
+            self._book("over", 74.5, 500, "PrizePicks"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        self.assertEqual(
+            [(item["book"], item["over"], item["under"]) for item in row["book_prices"]],
+            [
+                ("DraftKings", -140, None),
+                ("Fanatics", 140, -150),
+                ("FanDuel", -115, -105),
+            ],
+        )
+        self.assertTrue(all(item["book"] != "PrizePicks" for item in row["book_prices"]))
+        self.assertTrue(all(item["book"] != "Circa" for item in row["book_prices"]))
+
+    def test_one_sided_books_stay_on_the_board(self):
+        books = [
+            self._book("over", 74.5, -110, "Pinnacle"),
+            self._book("under", 74.5, -110, "DraftKings"),
+        ]
+        row = sharp.build_snapshot([self._pp()], books)["records"][0]
+        self.assertEqual(
+            {(item["book"], item["over"], item["under"]) for item in row["book_prices"]},
+            {("Pinnacle", -110, None), ("DraftKings", None, -110)},
+        )
+
+    def test_unmatched_rows_have_no_book_prices(self):
+        row = sharp.build_snapshot(
+            [self._pp(prop="Rec Targets", pp_line=4.0, projection=4.2, position="RB", id="targets")],
+            [self._book("over", 22.5, -114, "DraftKings")],
+        )["records"][0]
+        self.assertEqual(row["unmatched_reason"], "market_not_in_feed")
+        self.assertEqual(row["book_prices"], [])
+
+    def test_projection_hit_rates_and_matchup_rank_pass_through(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "projections.json"
+            path.write_text(json.dumps([
+                {
+                    "player": "Noah Fant",
+                    "prop": "Receptions",
+                    "line": 2.5,
+                    "projection": 2.3,
+                    "team": "SEA",
+                    "position": "TE",
+                    "hitRateL5": 30,
+                    "hitRate": 70,
+                    "dvpRank": 16,
+                },
+                {
+                    "player": "No Grade",
+                    "prop": "Receptions",
+                    "line": 3.5,
+                    "projection": 2.0,
+                    "dvpRank": "nope",
+                },
+            ]), encoding="utf-8")
+            rows = {row["player"]: row for row in sharp.load_pp_rows(path)}
+        self.assertEqual(rows["Noah Fant"]["hitRateL5"], 30)
+        self.assertEqual(rows["Noah Fant"]["hitRate"], 70)
+        self.assertEqual(rows["Noah Fant"]["dvpRank"], 16)
+        self.assertEqual(rows["Noah Fant"]["pp_line"], 2.5)
+        self.assertIsNone(rows["No Grade"]["dvpRank"])
+        self.assertIsNone(rows["No Grade"]["hitRateL5"])
+        self.assertIsNone(rows["No Grade"]["hitRate"])
+
 
 class PipelineTests(unittest.TestCase):
     def test_odds_api_provider_is_not_enabled_and_hides_any_key(self):

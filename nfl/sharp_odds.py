@@ -19,6 +19,9 @@ probabilities across sharp books when one has both sides (otherwise every
 complete book), then PP Edge = 100 * (fair side − PrizePicks break-even).
 Flex (-119) is the default. Power (-137) is stored beside it. A raw price
 shop such as books -140 vs PrizePicks -119 is a badge, not the sort key.
+Each matched row also carries book_prices (every book on that line) plus the
+projection's dvpRank so the board can show L5, L10, and the existing matchup
+grade without a second feed.
 """
 from __future__ import annotations
 
@@ -448,6 +451,7 @@ def load_pp_rows(path):
                 "gamesL5": item.get("gamesL5"),
                 "hitRate": item.get("hitRate"),
                 "gamesPlayed": item.get("gamesPlayed"),
+                "dvpRank": _whole_number(item.get("dvpRank")),
                 "hitRateL20": item.get("hitRateL20"),
                 "gamesL20": item.get("gamesL20"),
                 "hitRateL30": item.get("hitRateL30"),
@@ -510,6 +514,53 @@ def _fair_probs(rows):
     over = sum(pair["over"] for pair in chosen) / len(chosen)
     under = sum(pair["under"] for pair in chosen) / len(chosen)
     return over, under, source, [pair["book"] for pair in chosen]
+
+
+def _whole_number(value):
+    """Integer rank from projections. Missing or junk stays empty."""
+    if isinstance(value, bool) or value is None or value == "":
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    rounded = round(number)
+    if abs(number - rounded) > 1e-9:
+        return None
+    return int(rounded)
+
+
+def _book_prices(rows):
+    """Every sportsbook that posted the matched line, best price per side.
+
+    One-sided quotes stay. Pick'em books never reach this list. The UI compares
+    these Americans to Flex or Power; the row's PP Edge is still the de-vig.
+    """
+    by_book = {}
+    for row in rows:
+        side = row.get("side")
+        if side not in {"over", "under"}:
+            continue
+        key = row.get("book_key") or book_key(row.get("book"))
+        if not key or key in EXCLUDED_BOOK_KEYS:
+            continue
+        slot = by_book.setdefault(
+            key,
+            {"book": row.get("book"), "book_key": key, "over": None, "under": None},
+        )
+        price = row.get("price")
+        if isinstance(price, bool) or not isinstance(price, (int, float)):
+            continue
+        current = slot.get(side)
+        if current is None or price > current:
+            slot[side] = int(price)
+            if row.get("book"):
+                slot["book"] = row.get("book")
+    priced = [slot for slot in by_book.values() if slot["over"] is not None or slot["under"] is not None]
+    priced.sort(key=lambda item: (str(item.get("book") or "").lower(), item.get("book_key") or ""))
+    return priced
 
 
 def _best_quote(rows):
@@ -680,6 +731,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
                 "recommendation": recommendation,
                 "best_over": best_over,
                 "best_under": best_under,
+                "book_prices": _book_prices(matched_rows),
                 "sharp_over": sharp_over,
                 "sharp_under": sharp_under,
                 "fair_over_pct": pct(fair_over),
