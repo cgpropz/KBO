@@ -178,7 +178,7 @@ function BookLogo({ book, className, decorative = false }) {
   const src = bookLogoSrc(book)
   if (!src) return null
   const name = book?.book || book?.book_key || ''
-  return <img className={className} src={src} alt={decorative ? '' : name} title={name} width="32" height="32" />
+  return <img className={className} src={src} alt={decorative ? '' : name} title={name} />
 }
 
 function Quote({ quote, baselineAmerican }) {

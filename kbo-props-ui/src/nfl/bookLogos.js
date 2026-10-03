@@ -1,4 +1,4 @@
-// Local monogram marks in public/sportsbooks. Unknown books stay as text.
+// Local brand marks in public/sportsbooks. Unknown books stay as text.
 // Keys are the file names. Unabated often appends a state or ".ag".
 
 const LOGO_KEYS = [
