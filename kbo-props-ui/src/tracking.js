@@ -71,22 +71,51 @@ export function utmParams() {
  * - logged out: no identifiers; the webhook / sync-subscription match the
  *   payment by the checkout email once the buyer signs up with it.
  * Stored UTM codes are appended in both cases.
- * Weekly All-Access also prefills promo XWEEK (first-week ad offer).
+ *
+ * Weekly does not use prefilled_promo_code. Stripe Payment Links reject XWEEK
+ * ("This promotion code is invalid") and leave the price at $9.99. The weekly
+ * button uses requestWeeklyCheckoutUrl() instead, which opens a Checkout
+ * Session for the same weekly price with XWEEK already applied ($4.99).
  */
 export function buildCheckoutUrl(link, user) {
   const url = new URL(link);
   if (user?.id) url.searchParams.set('client_reference_id', user.id);
   if (user?.email) url.searchParams.set('prefilled_email', user.email);
-  // XWEEK is the first-week ad offer ($4.99 for new customers). Prefill it only
-  // on the Weekly All-Access payment link; monthly and lifetime stay full price.
-  if (isWeeklyPaymentLink(url)) url.searchParams.set('prefilled_promo_code', 'XWEEK');
   for (const [key, value] of Object.entries(utmParams())) url.searchParams.set(key, value);
   return url.toString();
 }
 
-function isWeeklyPaymentLink(url) {
-  const weekly = new URL(STRIPE_LINKS.weekly);
-  return url.origin === weekly.origin && url.pathname === weekly.pathname;
+const CHECKOUT_HOST = 'https://checkout.stripe.com/';
+
+// Ask the server for the live weekly Checkout Session (XWEEK applied).
+export async function requestWeeklyCheckoutUrl({ token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetchImpl('/api/weekly-checkout', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(utm || {}),
+  });
+  if (!res.ok) throw new Error('weekly checkout failed');
+  const data = await res.json();
+  const url = String(data?.url || '');
+  if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
+  return url;
+}
+
+// Weekly goes to the XWEEK Checkout Session. If that call fails, fall back to
+// the weekly Payment Link (full $9.99, no broken promo param) so the button
+// still opens the same plan. Monthly and lifetime stay on their Payment Links.
+export async function resolvePlanCheckoutUrl(tier, user, options = {}) {
+  if (tier?.id === 'weekly') {
+    try {
+      return await requestWeeklyCheckoutUrl(options);
+    } catch {
+      return buildCheckoutUrl(STRIPE_LINKS.weekly, user);
+    }
+  }
+  if (!tier?.link) return null;
+  return buildCheckoutUrl(tier.link, user);
 }
 
 export function purchaseAlreadyTracked(sessionId) {

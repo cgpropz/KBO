@@ -9,6 +9,13 @@ export const STRIPE_LINKS = {
   lifetime: 'https://buy.stripe.com/dRmeVfd8r3E2avo4qY5Ne03', // Lifetime All-Access $99.99 once
 };
 
+// Existing Weekly All-Access price (price_1TtFEr…, $9.99/week) and the live
+// XWEEK promotion code ($5 off once → $4.99 the first week). The weekly button
+// applies this code on a Checkout Session. Payment Link `prefilled_promo_code`
+// is rejected by Stripe for this code ("This promotion code is invalid.").
+export const WEEKLY_PRICE_ID = 'price_1TtFErPwL0k9PEMvIrEJajK1';
+export const XWEEK_PROMOTION_CODE_ID = 'promo_1UKqOLPwL0k9PEMvJZQU5GKA';
+
 // Every paid tier unlocks the same full toolkit — tiers differ only by
 // billing cadence/price, not by feature.
 export const ALL_ACCESS_FEATURES = [

@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { planForAmount } from './_stripeTier.js';
+import { planForCheckout } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -62,7 +62,7 @@ export async function handleCheckoutSessionRequest(req, res, client) {
     paid,
     amount: Math.round(amountCents) / 100,
     currency: String(session?.currency || 'usd').toUpperCase(),
-    plan: planForAmount(amountCents),
+    plan: planForCheckout(session),
   });
 }
 
