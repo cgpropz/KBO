@@ -16,6 +16,12 @@ const HIT_LOW = 30
 const HIT_MID = 50
 const HIT_HIGH = 70
 
+export function finiteNumber(value) {
+  if (value == null || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 export function americanImplied(american) {
   const odds = Number(american)
   if (!Number.isFinite(odds) || odds === 0) return null

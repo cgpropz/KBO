@@ -3,6 +3,7 @@ import { fetchNflSharpOdds } from './nflData'
 import { dvpGrade } from './matchupGrade'
 import {
   bestAmerican,
+  finiteNumber,
   hitRateColor,
   priceColor,
   priceEvLabel,
@@ -86,18 +87,18 @@ function scoredSide(item) {
 }
 
 function sideEdge(item, side, mode) {
-  const stored = item?.[`pp_edge_${side}_${mode}`]
-  if (Number.isFinite(Number(stored))) return Number(stored)
-  const fair = Number(side === 'under' ? item?.fair_under_pct : item?.fair_over_pct)
-  if (!Number.isFinite(fair)) return null
+  const stored = finiteNumber(item?.[`pp_edge_${side}_${mode}`])
+  if (stored != null) return stored
+  const fair = finiteNumber(side === 'under' ? item?.fair_under_pct : item?.fair_over_pct)
+  if (fair == null) return null
   return Math.round((fair / 100 - BASELINES[mode].breakeven) * 1000) / 10
 }
 
 function activeEdge(item, mode) {
   const side = scoredSide(item)
   if (side) return sideEdge(item, side, mode)
-  const fallback = mode === 'power' ? item?.pp_edge_power : (item?.pp_edge_flex ?? item?.pp_edge_pct)
-  return Number.isFinite(Number(fallback)) ? Number(fallback) : null
+  const fallback = finiteNumber(mode === 'power' ? item?.pp_edge_power : (item?.pp_edge_flex ?? item?.pp_edge_pct))
+  return fallback
 }
 
 function activeGrade(item, mode, edge) {

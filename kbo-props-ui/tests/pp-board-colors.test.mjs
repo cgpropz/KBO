@@ -9,6 +9,7 @@ import {
   PRICE_NEUTRAL,
   PRICE_RED,
   bestAmerican,
+  finiteNumber,
   hitRateColor,
   hitRateRgb,
   priceColor,
@@ -71,6 +72,14 @@ test('the highlighted book is the best price on the PrizePicks side', () => {
   ]
   assert.equal(bestAmerican(books, 'over'), 140)
   assert.equal(bestAmerican(books, 'under'), -130)
+})
+
+test('a missing edge stays empty instead of becoming zero', () => {
+  assert.equal(finiteNumber(null), null)
+  assert.equal(finiteNumber(''), null)
+  assert.equal(finiteNumber('nope'), null)
+  assert.equal(finiteNumber(0), 0)
+  assert.equal(finiteNumber(-2.3), -2.3)
 })
 
 test('matchup grades stay on the existing DVP scale', () => {
