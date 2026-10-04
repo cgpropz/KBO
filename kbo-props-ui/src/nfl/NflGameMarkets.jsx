@@ -92,9 +92,6 @@ function SpreadSide({ line, projection }) {
 }
 
 function GameCard({ game }) {
-  const awayScore = scoreText(game.awayScore)
-  const homeScore = scoreText(game.homeScore)
-  const sum = awayScore !== '—' && homeScore !== '—' ? `${awayScore}+${homeScore}` : null
   const awayLine = game.spread?.line
   const awayProj = finite(game.awayScore) != null && finite(game.homeScore) != null ? game.homeScore - game.awayScore : game.spread?.projection
   const homeProj = finite(awayProj) == null ? null : -awayProj
@@ -118,10 +115,7 @@ function GameCard({ game }) {
         <div><small>Line</small><strong>{formatPoints(game.total?.line)}</strong></div>
         <div>
           <small>Proj</small>
-          <strong>
-            {formatPoints(game.total?.projection)}
-            {sum ? <i>{sum}</i> : null}
-          </strong>
+          <strong>{formatPoints(game.total?.projection)}</strong>
         </div>
         <div><small>edge</small><strong className={edgeTone(game.total?.edge)}>{formatEdge(game.total?.edge)}</strong></div>
       </div>
