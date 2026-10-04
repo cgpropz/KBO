@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNflGameMarkets } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 
-const SORT_OPTIONS = ['Kickoff', 'Spread edge', 'Total edge', 'Moneyline edge']
-const SIDE_OPTIONS = ['All', 'Spread +', 'Total +', 'Home ML +']
+const SORT_OPTIONS = ['Kickoff', 'Spread edge', 'Total edge']
+const SIDE_OPTIONS = ['All', 'Spread +', 'Total +']
 const DEFAULT_FILTERS = { sortBy: 'Kickoff', side: 'All', edgeMin: '', edgeMax: '', team: '', day: 'All' }
 
 function finite(value) {
@@ -18,13 +18,6 @@ function formatPoints(value, signed = false) {
   const text = number.toFixed(1)
   if (!signed) return text
   return number > 0 ? `+${text}` : text
-}
-
-function formatAmerican(value) {
-  const number = finite(value)
-  if (number == null) return '—'
-  const rounded = Math.round(number)
-  return rounded > 0 ? `+${rounded}` : String(rounded)
 }
 
 function formatEdge(value, percent = false) {
@@ -60,31 +53,40 @@ function scoreText(value) {
   return String(Math.round(number))
 }
 
-function MarketColumn({ label, line, projection, edge, points = true, sum }) {
+function oppositeLine(line) {
+  const number = finite(line)
+  if (number == null) return null
+  return -number
+}
+
+function scoreResult(awayScore, homeScore, side) {
+  const away = finite(awayScore)
+  const home = finite(homeScore)
+  if (away == null || home == null || away === home) return null
+  const higher = side === 'away' ? away > home : home > away
+  return higher ? 'Winner' : 'Loser'
+}
+
+function TeamSide({ team, name, score, result }) {
   return (
-    <div className="nfl-game-market">
-      <b>{label}</b>
-      <div><small>Line</small><strong>{points ? formatPoints(line, label === 'Spread') : formatAmerican(line)}</strong></div>
-      <div>
-        <small>Proj</small>
-        <strong>
-          {points ? formatPoints(projection, label === 'Spread') : formatAmerican(projection)}
-          {sum ? <i>{sum}</i> : null}
-        </strong>
+    <div className="nfl-game-side">
+      <div className="nfl-game-team">
+        <TeamLogo team={team} />
+        <span className="nfl-game-team-copy">
+          <span className="nfl-game-team-name">{name || team}</span>
+          <b className="nfl-game-score">{scoreText(score)}</b>
+        </span>
       </div>
-      <div><small>edge</small><strong className={edgeTone(edge)}>{formatEdge(edge, !points)}</strong></div>
+      <span className={`nfl-game-result${result === 'Winner' ? ' over' : ''}${result === 'Loser' ? ' under' : ''}`}>{result || ''}</span>
     </div>
   )
 }
 
-function TeamRow({ team, name, score, side }) {
+function SpreadSide({ line, projection }) {
   return (
-    <div className={`nfl-game-team nfl-game-team-${side}`}>
-      <TeamLogo team={team} />
-      <span className="nfl-game-team-copy">
-        <span className="nfl-game-team-name">{name || team}</span>
-        <b className="nfl-game-score">{scoreText(score)}</b>
-      </span>
+    <div className="nfl-game-side-lines">
+      <div><small>Line</small><strong>{formatPoints(line, true)}</strong></div>
+      <div><small>Proj</small><strong>{formatPoints(projection, true)}</strong></div>
     </div>
   )
 }
@@ -93,15 +95,35 @@ function GameCard({ game }) {
   const awayScore = scoreText(game.awayScore)
   const homeScore = scoreText(game.homeScore)
   const sum = awayScore !== '—' && homeScore !== '—' ? `${awayScore}+${homeScore}` : null
+  const awayLine = game.spread?.line
+  const awayProj = finite(game.awayScore) != null && finite(game.homeScore) != null ? game.homeScore - game.awayScore : game.spread?.projection
+  const homeProj = finite(awayProj) == null ? null : -awayProj
   return (
     <article className="nfl-game-card">
       <p>{kickoffLabel(game)}</p>
-      <div className="nfl-game-layout">
-        <TeamRow team={game.awayTeam} name={game.awayName} score={game.awayScore} side="away" />
-        <TeamRow team={game.homeTeam} name={game.homeName} score={game.homeScore} side="home" />
-        <MarketColumn label="Spread" line={game.spread?.line} projection={game.spread?.projection} edge={game.spread?.edge} />
-        <MarketColumn label="Total" line={game.total?.line} projection={game.total?.projection} edge={game.total?.edge} sum={sum} />
-        <MarketColumn label="Moneyline" line={game.moneyline?.line} projection={game.moneyline?.projection} edge={game.moneyline?.edge} points={false} />
+      <div className="nfl-game-sides">
+        <TeamSide team={game.awayTeam} name={game.awayName} score={game.awayScore} result={scoreResult(game.awayScore, game.homeScore, 'away')} />
+        <TeamSide team={game.homeTeam} name={game.homeName} score={game.homeScore} result={scoreResult(game.awayScore, game.homeScore, 'home')} />
+        <b>Spread</b>
+        <b className="nfl-game-spread-spacer" />
+        <SpreadSide line={awayLine} projection={awayProj} />
+        <SpreadSide line={oppositeLine(awayLine)} projection={homeProj} />
+      </div>
+      <div className="nfl-game-spread-edge">
+        <small>edge</small>
+        <strong className={edgeTone(game.spread?.edge)}>{formatEdge(game.spread?.edge)}</strong>
+      </div>
+      <div className="nfl-game-market">
+        <b>Total</b>
+        <div><small>Line</small><strong>{formatPoints(game.total?.line)}</strong></div>
+        <div>
+          <small>Proj</small>
+          <strong>
+            {formatPoints(game.total?.projection)}
+            {sum ? <i>{sum}</i> : null}
+          </strong>
+        </div>
+        <div><small>edge</small><strong className={edgeTone(game.total?.edge)}>{formatEdge(game.total?.edge)}</strong></div>
       </div>
     </article>
   )
@@ -134,8 +156,7 @@ function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
 function relevantEdge(game, filters) {
   if (filters.side === 'Spread +' || filters.sortBy === 'Spread edge') return finite(game.spread?.edge)
   if (filters.side === 'Total +' || filters.sortBy === 'Total edge') return finite(game.total?.edge)
-  if (filters.side === 'Home ML +' || filters.sortBy === 'Moneyline edge') return finite(game.moneyline?.edge)
-  const edges = [game.spread?.edge, game.total?.edge, game.moneyline?.edge].map(finite).filter((value) => value != null)
+  const edges = [game.spread?.edge, game.total?.edge].map(finite).filter((value) => value != null)
   return edges.length ? Math.max(...edges) : null
 }
 
@@ -223,7 +244,6 @@ export default function NflGameMarkets() {
       }
       if (filters.side === 'Spread +' && !(finite(game.spread?.edge) > 0)) return false
       if (filters.side === 'Total +' && !(finite(game.total?.edge) > 0)) return false
-      if (filters.side === 'Home ML +' && !(finite(game.moneyline?.edge) > 0)) return false
       const edge = relevantEdge(game, filters)
       if (filters.edgeMin !== '' || filters.edgeMax !== '') {
         if (edge == null || edge < edgeMin || edge > edgeMax) return false
@@ -233,7 +253,6 @@ export default function NflGameMarkets() {
     const rank = {
       'Spread edge': (game) => finite(game.spread?.edge) ?? -Infinity,
       'Total edge': (game) => finite(game.total?.edge) ?? -Infinity,
-      'Moneyline edge': (game) => finite(game.moneyline?.edge) ?? -Infinity,
     }[filters.sortBy]
     if (!rank) return filtered
     return [...filtered].sort((a, b) => rank(b) - rank(a))
@@ -247,14 +266,14 @@ export default function NflGameMarkets() {
       <div className="nfl-board-header">
         <div>
           <p>NFL / GAME MARKETS</p>
-          <h1>Spread, Total, ML</h1>
+          <h1>Spread, Total</h1>
         </div>
         <div className="nfl-lines-header-actions">
           <span>{loaded ? `${rows.length} game${rows.length === 1 ? '' : 's'}` : 'Loading'}{week ? ` · Week ${week}` : ''}</span>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Spread and total sit with the away team. Moneyline is the home price.</p>}
+      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Each team shows its own spread. The higher score is the winner.</p>}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {!error && loaded && !games.length && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}
