@@ -187,38 +187,95 @@ def load_player_directory():
     return choose_player_directory(pd.read_csv(PLAYERS_URL, low_memory=False))
 
 
-# PrizePicks stat_type values for the NFL board. Pass TDs is the standard
-# quarterback passing-touchdown market. Demon/goblin alts and other TD markets
-# (Anytime TDs, Rush TDs) stay off the board, same as every other NFL prop.
+# PrizePicks stat_type values for the NFL board. Pass TDs is the Players-board
+# passing-touchdown chip (not Anytime TDs, Rush TDs, or Pass+Rush+Rec TDs).
+# Other props stay on the standard full-game line only.
 SUPPORTED_PROPS = {
     'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds',
     'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds',
     'Receiving Yards', 'Receptions', 'Rec Targets',
 }
+BOARD_ODDS_TYPES = {'standard', 'demon', 'goblin'}
+
+
+def full_game_opponent(description):
+    """Opponent abbreviation for a full-game line.
+
+    Season totals ("2026 NFL Season"), halves ("WAS 2nd Half"), and quarters
+    ("BAL 1Q") are not the Players-board game line. Combo cards use slashes.
+    """
+    text = text_or_empty(description).strip()
+    if not re.fullmatch(r'[A-Za-z]{2,3}', text):
+        return None
+    return canonical_team(text) or None
+
+
+def _trending_count(value):
+    if value is None or value == '':
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def choose_published_line(candidates):
+    """One full-game card per player and prop.
+
+    The standard line is the card when PrizePicks posted one. Pass TDs is the
+    market the Players board still shows when a quarterback has no standard
+    line: the primary demon (lowest demon line that has a pick count), which
+    is the 1.5 card for Jones, Mariota, Bagent, and Geno. Higher demon alts
+    and goblin alts stay off. Other props do not get that fallback.
+    """
+    standards = [row for row in candidates if row['odds_type'] == 'standard']
+    if standards:
+        return max(standards, key=lambda row: (row['trending'] or 0, -row['line']))
+    if not candidates or candidates[0]['prop'] != 'Pass TDs':
+        return None
+    demons = [row for row in candidates if row['odds_type'] == 'demon']
+    featured = [row for row in demons if row['trending'] is not None]
+    pool = featured or demons
+    if not pool:
+        return None
+    return min(pool, key=lambda row: (row['line'], -(row['trending'] or 0)))
 
 
 def slate_records(payload):
-    """Standard NFL PrizePicks lines the board publishes. One row per player and prop."""
+    """NFL PrizePicks lines the board publishes. One row per player and prop."""
     players = {
         item['id']: item.get('attributes', {})
         for item in payload.get('included', [])
         if item.get('attributes', {}).get('name')
     }
-    records = []
+    grouped = {}
     for item in payload.get('data', []):
         attrs = item.get('attributes', {})
         player_id = item.get('relationships', {}).get('new_player', {}).get('data', {}).get('id')
         player = players.get(player_id, {})
         stat = attrs.get('stat_type')
-        if player.get('league') != 'NFL' or attrs.get('odds_type') != 'standard' or stat not in SUPPORTED_PROPS:
+        opponent = full_game_opponent(attrs.get('description'))
+        odds_type = attrs.get('odds_type')
+        if player.get('league') != 'NFL' or opponent is None or stat not in SUPPORTED_PROPS or odds_type not in BOARD_ODDS_TYPES:
             continue
         try:
             line = float(attrs.get('line_score'))
         except (TypeError, ValueError):
             continue
+        team = canonical_team(player.get('team', '—')) or '—'
+        key = (player['name'], team, stat)
+        grouped.setdefault(key, []).append({
+            'player': player['name'], 'team': team, 'opponent': opponent, 'prop': stat,
+            'line': line, 'odds_type': odds_type, 'trending': _trending_count(attrs.get('trending_count')),
+        })
+    records = []
+    for candidates in grouped.values():
+        chosen = choose_published_line(candidates)
+        if chosen is None:
+            continue
         records.append({
-            'player': player['name'], 'team': canonical_team(player.get('team', '—')) or '—',
-            'opponent': canonical_team(attrs.get('description', '—')) or '—', 'prop': stat, 'line': line,
+            'player': chosen['player'], 'team': chosen['team'], 'opponent': chosen['opponent'],
+            'prop': chosen['prop'], 'line': chosen['line'],
         })
     return records
 

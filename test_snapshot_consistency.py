@@ -51,6 +51,15 @@ class WorkflowGuardTests(unittest.TestCase):
         self.assertIn("--skip-snapshot-regen", deploy)
         self.assertNotIn("max-skew-minutes", deploy)
         self.assertIn("default=180.0", verifier)
+        # The Vercel step stays a no-regen deploy. NFL rows live in Supabase,
+        # so the refresh step that has the service role key has to rebuild them.
+        refresh = deploy.split("- name: Deploy to Vercel")[0]
+        self.assertIn("python nfl/build_projection_data.py", refresh)
+        self.assertIn("python nfl/sharp_odds.py", refresh)
+        self.assertIn('PUBLISH_ONLY_PREFIX: "nfl/"', refresh)
+        nfl_refresh = (root / ".github" / "workflows" / "nfl-refresh.yml").read_text()
+        self.assertIn("push:", nfl_refresh)
+        self.assertIn("nfl/**", nfl_refresh)
 
 
 class PublishGateTests(unittest.TestCase):

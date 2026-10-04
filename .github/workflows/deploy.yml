@@ -98,6 +98,25 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # NFL snapshots are gitignored and are not part of the KBO release above.
+      # Deploy run 37204386295 shipped the Pass TDs UI and left Supabase on the
+      # pre-merge slate, so the live board had the tab and no rows. Rebuild and
+      # publish here, in the step that has the service role key. The Vercel
+      # step below still must not regenerate snapshots.
+      - name: Build current NFL projections and starting lineups
+        run: python nfl/build_projection_data.py
+
+      - name: Match NFL PrizePicks lines to Unabated sportsbook odds
+        continue-on-error: true
+        run: python nfl/sharp_odds.py
+
+      - name: Publish protected NFL snapshot
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nfl/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Check for duplicate data generation steps
         run: |
           if grep -E 'python.*(refresh_data\.py|refresh_odds\.py)' .github/workflows/deploy.yml | grep -v 'pipeline/run_release.sh'; then
