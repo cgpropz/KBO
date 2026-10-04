@@ -78,6 +78,11 @@ async function optionalUser(req, authenticate) {
  * Session with discounts[promotion_code] applies the same $5-off code, so the
  * first week is $4.99 and renewals stay $9.99.
  *
+ * Automatic tax is off on this session. Turning it on with
+ * billing_address_collection "auto" makes Checkout require a full billing
+ * address. Phone is not collected. Monthly and lifetime checkouts are not
+ * created here.
+ *
  * Returns only `{ url }`. The client cannot choose a different price or code.
  */
 export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
@@ -105,7 +110,7 @@ export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
     discounts: [{ promotion_code: XWEEK_PROMOTION_CODE_ID }],
     success_url: SUCCESS_URL,
     cancel_url: CANCEL_URL,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: false },
     billing_address_collection: 'auto',
     metadata,
     integration_identifier: `cgpropz_weekly_${randomSuffix()}`,
