@@ -50,7 +50,7 @@ declare
     'wnba_edge', 'wnba_dvp_guard', 'wnba_dvp_forward', 'wnba_dvp_center',
     'wnba_sharp_odds',
     -- NFL
-    'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds'
+    'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds', 'nfl_game_markets'
   ];
 begin
   foreach t in array paid_tables loop

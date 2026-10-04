@@ -24,6 +24,20 @@ export async function fetchNflLineups() {
   }
 }
 
+export async function fetchNflGameMarkets() {
+  const snapshot = await fetchApiDataset('nfl_game_markets', { devStaticPath: 'nfl/game_markets.json' })
+  const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+    ? snapshot.data
+    : { games: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+  return {
+    payload,
+    games: Array.isArray(payload.games) ? payload.games : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+  }
+}
+
 export async function fetchNflSharpOdds() {
   const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json' })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
