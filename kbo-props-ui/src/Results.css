@@ -1,0 +1,80 @@
+/* Shared Results gallery. In normal flow under the sport cards on both
+   landing pages — never fixed, sticky, or pulled up over those cards. */
+.results-section {
+  position: relative;
+  z-index: 1;
+  clear: both;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: clamp(8px, 2vw, 20px) 0 clamp(48px, 8vw, 96px);
+}
+
+.results-heading {
+  max-width: 620px;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+.results-kicker {
+  color: #4ade80;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.results-heading h2 {
+  margin: 8px 0 8px;
+  color: #fff;
+  font-size: clamp(24px, 3.4vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.6px;
+}
+.results-heading p {
+  margin: 0;
+  color: #a1a1aa;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+.results-card {
+  margin: 0;
+  min-width: 0;
+  background: #080c0a;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+}
+
+.results-frame {
+  width: 100%;
+  overflow: hidden;
+  background: #050506;
+}
+.results-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--results-x, 50%) var(--results-y, 50%);
+}
+
+@media (max-width: 900px) {
+  .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+
+@media (max-width: 640px) {
+  .results-section { margin-bottom: 36px; }
+  .results-heading { margin-bottom: 16px; }
+  .results-heading p { font-size: 14px; }
+  .results-grid { grid-template-columns: 1fr; gap: 12px; }
+  .results-card { border-radius: 14px; }
+}

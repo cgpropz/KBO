@@ -3,6 +3,7 @@ import { SPORTS } from './sportsMeta';
 import { TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
+import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
 import { resolvePlanCheckoutUrl } from './tracking';
 import './PublicLanding.css';
@@ -89,6 +90,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           <a href="#free-picks">Free Picks</a>
           <a href="#sports">Sports</a>
           <a href="#features">Features</a>
+          <a href="#results">Results</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </nav>
@@ -193,6 +195,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             ))}
           </div>
         </section>
+
+        <Results />
 
         <section className="pl-pricing" id="pricing">
           <div className="pl-section-heading">
