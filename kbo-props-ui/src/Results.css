@@ -37,6 +37,9 @@
 }
 
 .results-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
@@ -45,15 +48,14 @@
 }
 
 .results-card {
-  margin: 0;
   min-width: 0;
-  background: #080c0a;
+  margin: 0;
+  background: #050506;
   border: 1px solid rgba(74, 222, 128, 0.22);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
 }
-
 .results-frame {
   width: 100%;
   overflow: hidden;
@@ -63,6 +65,7 @@
   display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
   object-fit: cover;
   object-position: var(--results-x, 50%) var(--results-y, 50%);
 }
