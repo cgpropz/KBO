@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
 
 import pandas as pd
 import requests
+from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES
 
 
 OUTPUT_PATH = ROOT / 'projections.json'
@@ -32,6 +33,16 @@ SNAP_COUNTS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/s
 PRIZEPICKS_URL = 'https://partner-api.prizepicks.com/projections?per_page=1000'
 
 STARTER_SLOTS = [('QB', 1), ('RB', 1), ('WR', 3), ('TE', 1), ('PK', 1)]
+DVP_POSITIONS = ('QB', 'RB', 'WR', 'TE')
+# Rec Targets is a board prop. Leaving it out made every targets line the neutral fallback.
+DVP_STATS = (
+    'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds',
+    'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds',
+    'Receiving Yards', 'Receptions', 'Rec Targets',
+)
+# Fullbacks are ranked with running backs. Other non-skill tags (a corner who
+# catches passes) use the prop family below.
+DVP_POSITION_ALIASES = {'FB': 'RB'}
 
 
 def name_key(name):
@@ -41,6 +52,25 @@ def name_key(name):
 
 def text_or_empty(value):
     return '' if pd.isna(value) else str(value)
+
+
+def canonical_team(value):
+    """PrizePicks abbreviations joined to nflverse. JAC and JAX are the Jaguars."""
+    text = text_or_empty(value).strip().upper()
+    return NFL_TEAM_ALIASES.get(text, text)
+
+
+def dvp_position(position, prop):
+    """Skill-position table a defense is ranked against for this prop."""
+    mapped = DVP_POSITION_ALIASES.get(position, position)
+    if mapped in DVP_POSITIONS:
+        return mapped
+    prop = text_or_empty(prop)
+    if prop.startswith('Pass'):
+        return 'QB'
+    if 'Rush' in prop and 'Rec' not in prop:
+        return 'RB'
+    return 'WR'
 
 
 def stat_values(frame, stat):
@@ -78,18 +108,30 @@ def load_snap_counts():
     return season_average, per_game
 
 
+def _rank_defenses(per_game):
+    """Unique ranks: 1 is the fewest allowed (toughest), N is the most (easiest).
+
+    Equal averages are split by team code so a position/stat table never repeats
+    a rank or skips a number. The ratio is still allowed / league average.
+    """
+    table = per_game.rename('allowed').reset_index()
+    table = table.sort_values(['allowed', 'opponent'], kind='mergesort')
+    return {opponent: rank for rank, opponent in enumerate(table['opponent'], start=1)}
+
+
 def load_dvp_ratings(history):
     season = history[history['season'] == CURRENT_SEASON].copy()
     if season.empty or 'opponent_team' not in season:
         season = history.copy()
     ratings = {}
-    for position in ('QB', 'RB', 'WR', 'TE'):
+    for position in DVP_POSITIONS:
         frame = season[season['position'] == position]
-        for stat in ('Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions'):
+        for stat in DVP_STATS:
             values = stat_values(frame, stat)
             if values is None or frame.empty:
                 continue
-            aggregate = pd.DataFrame({'opponent': frame['opponent_team'], 'value': pd.to_numeric(values, errors='coerce')}).dropna()
+            aggregate = pd.DataFrame({'opponent': frame['opponent_team'].map(canonical_team), 'value': pd.to_numeric(values, errors='coerce')}).dropna()
+            aggregate = aggregate[aggregate['opponent'] != '']
             if aggregate.empty:
                 continue
             per_game = aggregate.groupby('opponent')['value'].mean()
@@ -97,13 +139,13 @@ def load_dvp_ratings(history):
             if not average:
                 continue
             ratios = per_game / average
-            ranks = ratios.rank(method='min', ascending=True).astype(int)
-            ratings[(position, stat)] = (ranks.to_dict(), ratios.to_dict())
+            ratings[(position, stat)] = (_rank_defenses(per_game), ratios.to_dict())
     return ratings
 
 
 def dvp_for(position, stat, opponent, ratings):
     ranks, ratios = ratings.get((position, stat), ({}, {}))
+    opponent = canonical_team(opponent)
     rank = ranks.get(opponent)
     ratio = ratios.get(opponent)
     if rank is None or ratio is None:
@@ -128,11 +170,20 @@ def load_history():
     return stats.dropna(subset=['date'])
 
 
-def load_player_directory():
-    players = pd.read_csv(PLAYERS_URL, low_memory=False)
+def choose_player_directory(players):
+    """One row per name. An active roster player beats a same-named practice-squad player."""
+    players = players.copy()
     players['name_key'] = players['display_name'].map(name_key)
-    players = players.sort_values('last_season').drop_duplicates('name_key', keep='last')
+    if 'status' in players.columns:
+        players['_roster_priority'] = players['status'].map(lambda status: {'ACT': 2, 'RES': 1}.get(status, 0))
+    else:
+        players['_roster_priority'] = 0
+    players = players.sort_values(['last_season', '_roster_priority']).drop_duplicates('name_key', keep='last')
     return players.set_index('name_key')[['position', 'headshot']].to_dict('index')
+
+
+def load_player_directory():
+    return choose_player_directory(pd.read_csv(PLAYERS_URL, low_memory=False))
 
 
 def load_slate():
@@ -158,8 +209,8 @@ def load_slate():
         except (TypeError, ValueError):
             continue
         records.append({
-            'player': player['name'], 'team': player.get('team', '—'),
-            'opponent': attrs.get('description', '—'), 'prop': stat, 'line': line,
+            'player': player['name'], 'team': canonical_team(player.get('team', '—')) or '—',
+            'opponent': canonical_team(attrs.get('description', '—')) or '—', 'prop': stat, 'line': line,
         })
     return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
 
@@ -199,8 +250,9 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON) / season_games * 100) if season_games else None
     prior_season_games = sum(1 for s in recent_seasons if s == CURRENT_SEASON - 1)
     prior_season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON - 1) / prior_season_games * 100) if prior_season_games else None
-    h2h_games = sum(1 for o in recent_opponents if o == row.opponent)
-    h2h_hit_rate = round(sum(v >= row.line for v, o in zip(recent, recent_opponents) if o == row.opponent) / h2h_games * 100) if h2h_games else None
+    opponent_key = canonical_team(row.opponent)
+    h2h_games = sum(1 for o in recent_opponents if canonical_team(o) == opponent_key)
+    h2h_hit_rate = round(sum(v >= row.line for v, o in zip(recent, recent_opponents) if canonical_team(o) == opponent_key) / h2h_games * 100) if h2h_games else None
 
     if len(values) >= 3:
         last_three = sum(values[-3:]) / 3
@@ -217,10 +269,11 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
     player = directory.get(key, {})
     default_position = 'QB' if row.prop.startswith('Pass') else 'RB' if 'Rush' in row.prop else 'WR'
     position = text_or_empty(player.get('position')) or default_position
-    dvp_rank, dvp_ratio = dvp_for(position, row.prop, row.opponent, dvp_ratings)
+    rated_position = dvp_position(position, row.prop)
+    dvp_rank, dvp_ratio = dvp_for(rated_position, row.prop, row.opponent, dvp_ratings)
 
     # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
-    recent_dvp_ranks = [dvp_for(position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
+    recent_dvp_ranks = [dvp_for(rated_position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
     recent_snap_pcts = [snap_games.get((key, season_value, int(week_value))) for season_value, week_value in zip(recent_seasons, recent_weeks)]
     usage_stat = 'Pass Attempts' if position == 'QB' else 'Rush Attempts' if position == 'RB' else 'Rec Targets'
     usage_label = {'Pass Attempts': 'Pass Att', 'Rush Attempts': 'Rush Att', 'Rec Targets': 'Targets'}[usage_stat]
