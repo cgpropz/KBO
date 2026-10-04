@@ -7,6 +7,7 @@ const SIDE_OPTIONS = ['All', 'Spread +', 'Total +', 'Home ML +']
 const DEFAULT_FILTERS = { sortBy: 'Kickoff', side: 'All', edgeMin: '', edgeMax: '', team: '', day: 'All' }
 
 function finite(value) {
+  if (value == null || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
@@ -53,32 +54,53 @@ function TeamLogo({ team }) {
   return url ? <img src={url} alt="" /> : <i aria-hidden="true" />
 }
 
-function MarketColumn({ label, line, projection, edge, points = true }) {
+function scoreText(value) {
+  const number = finite(value)
+  if (number == null) return '—'
+  return String(Math.round(number))
+}
+
+function MarketColumn({ label, line, projection, edge, points = true, sum }) {
   return (
     <div className="nfl-game-market">
       <b>{label}</b>
       <div><small>Line</small><strong>{points ? formatPoints(line, label === 'Spread') : formatAmerican(line)}</strong></div>
-      <div><small>Proj</small><strong>{points ? formatPoints(projection, label === 'Spread') : formatAmerican(projection)}</strong></div>
+      <div>
+        <small>Proj</small>
+        <strong>
+          {points ? formatPoints(projection, label === 'Spread') : formatAmerican(projection)}
+          {sum ? <i>{sum}</i> : null}
+        </strong>
+      </div>
       <div><small>edge</small><strong className={edgeTone(edge)}>{formatEdge(edge, !points)}</strong></div>
     </div>
   )
 }
 
+function TeamRow({ team, name, score, side }) {
+  return (
+    <div className={`nfl-game-team nfl-game-team-${side}`}>
+      <TeamLogo team={team} />
+      <span className="nfl-game-team-copy">
+        <span className="nfl-game-team-name">{name || team}</span>
+        <b className="nfl-game-score">{scoreText(score)}</b>
+      </span>
+    </div>
+  )
+}
+
 function GameCard({ game }) {
+  const awayScore = scoreText(game.awayScore)
+  const homeScore = scoreText(game.homeScore)
+  const sum = awayScore !== '—' && homeScore !== '—' ? `${awayScore}+${homeScore}` : null
   return (
     <article className="nfl-game-card">
       <p>{kickoffLabel(game)}</p>
       <div className="nfl-game-layout">
-        <div className="nfl-game-team nfl-game-team-away">
-          <TeamLogo team={game.awayTeam} />
-          <span>{game.awayName || game.awayTeam}</span>
-        </div>
-        <div className="nfl-game-team nfl-game-team-home">
-          <TeamLogo team={game.homeTeam} />
-          <span>{game.homeName || game.homeTeam}</span>
-        </div>
+        <TeamRow team={game.awayTeam} name={game.awayName} score={game.awayScore} side="away" />
+        <TeamRow team={game.homeTeam} name={game.homeName} score={game.homeScore} side="home" />
         <MarketColumn label="Spread" line={game.spread?.line} projection={game.spread?.projection} edge={game.spread?.edge} />
-        <MarketColumn label="Total" line={game.total?.line} projection={game.total?.projection} edge={game.total?.edge} />
+        <MarketColumn label="Total" line={game.total?.line} projection={game.total?.projection} edge={game.total?.edge} sum={sum} />
         <MarketColumn label="Moneyline" line={game.moneyline?.line} projection={game.moneyline?.projection} edge={game.moneyline?.edge} points={false} />
       </div>
     </article>
@@ -232,7 +254,7 @@ export default function NflGameMarkets() {
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. Spread and total sit with the away team. Moneyline is the home price.</p>}
+      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Spread and total sit with the away team. Moneyline is the home price.</p>}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {!error && loaded && !games.length && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}

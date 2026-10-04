@@ -109,6 +109,12 @@
     min-height: 40px;
     padding: 8px 12px;
   }
+  /* NFL labels such as "Game Markets" stay whole. KBO and WNBA keep the scroller. */
+  .nfl-root .nfl-nav-links {
+    flex-wrap: wrap;
+    overflow: visible;
+    row-gap: 2px;
+  }
 
   .kbo-player-search,
   .nfl-player-search,

@@ -3,13 +3,13 @@
 
 Posted lines come only from the public Unabated full-game feed
 (content.unabated.com/markets/v2/league/1/odds.json). The Odds API is not
-called. nflverse schedule scores are history for the projection, never the
-posted number.
+called. A game's own nflverse spread_line and total_line are never the posted
+number. Older nflverse closes are an input to team strength only.
 
-There is no walk-forward-proven spread, total, or moneyline formula in this
-repo. The number on the card is the live NFL player-prop window applied to
-team points, then turned into a margin and a normal win probability. It is
-labeled unproven. This module does not change the player-prop formula.
+The card projects a score for each team. The spread is the difference and the
+total is the sum of those two scores. This is not the live player-prop window,
+and it does not change that formula. It is also not a proven bet against the
+closing line. See MODEL["summary"].
 """
 from __future__ import annotations
 
@@ -40,8 +40,9 @@ DEV_COPY_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "nfl" / "game_m
 GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv"
 UNABATED_ODDS_URL = "https://content.unabated.com/markets/v2/league/1/odds.json"
 NFL_PREGAME_KEY = "lg1:pt1:pregame"
-HISTORY_SEASONS = (2025, 2026)
-CURRENT_SEASON = max(HISTORY_SEASONS)
+# 2022 is burn-in. The rating then walks forward through the current season.
+RATING_SEASONS = (2022, 2023, 2024, 2025, 2026)
+CURRENT_SEASON = 2026
 BET_MONEYLINE = 1
 BET_SPREAD = 2
 BET_TOTAL = 3
@@ -51,24 +52,42 @@ POSTED_BOOK_ORDER = ("pinnacle", "circa", "bookmaker", "betonlineag", "betonline
 FALLBACK_MARGIN_SIGMA = 13.5
 MIN_SIGMA_GAMES = 32
 
-# Same live window as nfl/build_projection_data.py make_record. Not retuned here.
-LIVE_WEIGHTS = (0.50, 0.25, 0.25)
-LIVE_WINDOWS = (3, 9, 15)
-LIVE_MIN_GAMES = 3
+# Locked on 2023–2024 regular-season MAE, then checked on 2025–2026.
+# Learning rate on the points residual, blend of that rating with the same
+# rating built from past closing implied scores, games of shrinkage toward
+# the league, and points of margin per extra day of rest.
+ALPHA = 0.08
+MARKET_WEIGHT = 0.35
+SHRINK_GAMES = 6
+REST_POINTS = 0.15
+MIN_TEAM_GAMES = 3
+LEAGUE_START = 22.0
+HFA_START = 1.5
+HFA_ALPHA = 0.02
 
 MODEL = {
-    "id": "live_window_points",
+    "id": "opponent_adjusted_market_scores",
     "proven": False,
-    "label": "Not a proven spread, total, or moneyline formula",
+    "label": "Opponent-adjusted scores. Not proven to beat the closing line",
     "summary": (
-        "No walk-forward test in this repo has adopted a spread, total, or "
-        "moneyline formula. Each team's points scored and points allowed use "
-        "the live NFL window (50% last 3, 25% last 9, 25% last 15, at least "
-        "3 games). Expected points average that team's scoring projection "
-        "with the opponent's points-allowed projection. The spread is the "
-        "difference and the total is the sum. The moneyline is a normal "
-        "curve on that margin, using the standard deviation of completed "
-        "NFL home margins. Posted lines stay Unabated-only."
+        "Each team gets a projected score. The spread is the home score minus "
+        "the away score, and the total is the two scores added together. "
+        "A team's score is the league scoring rate, plus that team's "
+        "opponent-adjusted offense, plus the opponent's opponent-adjusted "
+        "defense, plus home field and rest. The offense and defense ratings "
+        "learn from each past game's points and, separately, from the points "
+        "implied by that game's closing spread and total. The card uses "
+        "65 percent of the score rating and 35 percent of the closing-line "
+        "rating. Today's Unabated line is not an input, so the projection can "
+        "disagree with the book. Ratings shrink toward the league until a "
+        "team has a few games. "
+        "On 321 regular-season games in 2025–2026 this was 10.34 points off "
+        "the final margin and 10.93 points off the final total. The plain "
+        "recent-points blend on the same games was 10.36 and 11.34. The "
+        "closing line was better than both, at 9.81 and 10.51. Taking every "
+        "side the model liked by at least a point against that close, at "
+        "-110, won 51.2 percent of 254 spread bets and still lost 2.3 percent. "
+        "This is not a proven closing-line formula. Posted lines stay Unabated-only."
     ),
 }
 
@@ -93,33 +112,143 @@ def canonical_team(value):
     return GAME_TEAM_ALIASES.get(text, text)
 
 
-def live_window_projection(values):
-    """Live NFL window. None when fewer than 3 games, matching player props.
+def _new_state():
+    return {
+        "off_s": {}, "def_s": {}, "n": {},
+        "off_m": {}, "def_m": {}, "nm": {},
+        "league": LEAGUE_START,
+        "hfa": HFA_START,
+    }
 
-    projection = 0.50 * mean(last 3) + 0.25 * mean(last 9) + 0.25 * mean(last 15)
-    """
-    if values is None or len(values) < LIVE_MIN_GAMES:
+
+def _get(store, team):
+    return store.get(team, 0.0)
+
+
+def _shrunk(store, counts, team):
+    games = counts.get(team, 0)
+    return _get(store, team) * games / (games + SHRINK_GAMES)
+
+
+def _rated_points(state, away, home):
+    """Opponent-adjusted points before the market blend and rest."""
+    league = state["league"]
+    hfa = state["hfa"]
+
+    def pair(offense, defense, counts):
+        away_points = league + _shrunk(offense, counts, away) + _shrunk(defense, counts, home) - hfa / 2.0
+        home_points = league + _shrunk(offense, counts, home) + _shrunk(defense, counts, away) + hfa / 2.0
+        return away_points, home_points
+
+    return pair(state["off_s"], state["def_s"], state["n"])
+
+
+def project_scores(state, away, home, rest_away, rest_home):
+    """Projected points for each team. None until both teams have 3 prior games."""
+    if state["n"].get(away, 0) < MIN_TEAM_GAMES or state["n"].get(home, 0) < MIN_TEAM_GAMES:
+        return None, None
+    away_points, home_points = _rated_points(state, away, home)
+    if state["nm"].get(away, 0) >= MIN_TEAM_GAMES and state["nm"].get(home, 0) >= MIN_TEAM_GAMES:
+        market_away, market_home = _rated_points(
+            {"off_s": state["off_m"], "def_s": state["def_m"], "n": state["nm"], "league": state["league"], "hfa": state["hfa"]},
+            away,
+            home,
+        )
+        away_points = (1.0 - MARKET_WEIGHT) * away_points + MARKET_WEIGHT * market_away
+        home_points = (1.0 - MARKET_WEIGHT) * home_points + MARKET_WEIGHT * market_home
+    if rest_away is not None and rest_home is not None:
+        bump = max(-4.0, min(4.0, float(rest_home) - float(rest_away))) * REST_POINTS
+        home_points += bump / 2.0
+        away_points -= bump / 2.0
+    return away_points, home_points
+
+
+def whole_points(value):
+    """Round half up so the two scores on the card add to the total."""
+    if value is None:
         return None
-    weights = LIVE_WEIGHTS
-    windows = LIVE_WINDOWS
-    means = []
-    for window in windows:
-        sample = values[-window:]
-        means.append(sum(sample) / len(sample))
-    return means[0] * weights[0] + means[1] * weights[1] + means[2] * weights[2]
+    return int(math.floor(float(value) + 0.5))
 
 
-def expected_points(own_scored, opponent_allowed):
-    """Average of two live-window projections. Either side can stand alone."""
-    offense = live_window_projection(own_scored)
-    defense = live_window_projection(opponent_allowed)
-    if offense is None and defense is None:
-        return None
-    if offense is None:
-        return defense
-    if defense is None:
-        return offense
-    return (offense + defense) / 2.0
+def _update_ratings(state, game):
+    away = game["away_team"]
+    home = game["home_team"]
+    away_score = game.get("away_score")
+    home_score = game.get("home_score")
+    if away_score is None or home_score is None:
+        return
+    league = state["league"]
+    hfa = state["hfa"]
+    expected_away = league + _get(state["off_s"], away) + _get(state["def_s"], home) - hfa / 2.0
+    expected_home = league + _get(state["off_s"], home) + _get(state["def_s"], away) + hfa / 2.0
+    error_away = away_score - expected_away
+    error_home = home_score - expected_home
+    state["off_s"][away] = (1.0 - ALPHA) * _get(state["off_s"], away) + ALPHA * error_away
+    state["def_s"][home] = (1.0 - ALPHA) * _get(state["def_s"], home) + ALPHA * error_away
+    state["off_s"][home] = (1.0 - ALPHA) * _get(state["off_s"], home) + ALPHA * error_home
+    state["def_s"][away] = (1.0 - ALPHA) * _get(state["def_s"], away) + ALPHA * error_home
+    state["n"][away] = state["n"].get(away, 0) + 1
+    state["n"][home] = state["n"].get(home, 0) + 1
+    state["league"] = (1.0 - ALPHA * 0.25) * league + (ALPHA * 0.25) * ((home_score + away_score) / 2.0)
+    state["hfa"] = (1.0 - HFA_ALPHA) * hfa + HFA_ALPHA * (home_score - away_score)
+    spread_line = game.get("spread_line")
+    total_line = game.get("total_line")
+    if spread_line is None or total_line is None:
+        return
+    implied_away = (total_line - spread_line) / 2.0
+    implied_home = (total_line + spread_line) / 2.0
+    league = state["league"]
+    hfa = state["hfa"]
+    expected_away = league + _get(state["off_m"], away) + _get(state["def_m"], home) - hfa / 2.0
+    expected_home = league + _get(state["off_m"], home) + _get(state["def_m"], away) + hfa / 2.0
+    error_away = implied_away - expected_away
+    error_home = implied_home - expected_home
+    state["off_m"][away] = (1.0 - ALPHA) * _get(state["off_m"], away) + ALPHA * error_away
+    state["def_m"][home] = (1.0 - ALPHA) * _get(state["def_m"], home) + ALPHA * error_away
+    state["off_m"][home] = (1.0 - ALPHA) * _get(state["off_m"], home) + ALPHA * error_home
+    state["def_m"][away] = (1.0 - ALPHA) * _get(state["def_m"], away) + ALPHA * error_home
+    state["nm"][away] = state["nm"].get(away, 0) + 1
+    state["nm"][home] = state["nm"].get(home, 0) + 1
+
+
+def prior_games(history, before_date):
+    """Completed regular-season games strictly before `before_date`, oldest first."""
+    rows = [
+        game for game in history
+        if game.get("game_type") == "REG"
+        and game.get("season") in RATING_SEASONS
+        and game.get("gameday")
+        and game["gameday"] < before_date
+        and game.get("away_score") is not None
+        and game.get("home_score") is not None
+        and game.get("away_team")
+        and game.get("home_team")
+    ]
+    rows.sort(key=lambda game: (game["gameday"], game.get("gametime") or "", game.get("away_team") or ""))
+    return rows
+
+
+def replay(history, before_date):
+    """Ratings from games before `before_date`, plus margin residuals of those projections."""
+    state = _new_state()
+    residuals = []
+    for game in prior_games(history, before_date):
+        away_points, home_points = project_scores(
+            state, game["away_team"], game["home_team"], game.get("away_rest"), game.get("home_rest"),
+        )
+        if away_points is not None:
+            actual_margin = game["home_score"] - game["away_score"]
+            residuals.append(actual_margin - (home_points - away_points))
+        _update_ratings(state, game)
+    return state, residuals
+
+
+def residual_sigma(residuals):
+    if len(residuals) < MIN_SIGMA_GAMES:
+        return FALLBACK_MARGIN_SIGMA, "fallback_13_5"
+    mean = sum(residuals) / len(residuals)
+    variance = sum((residual - mean) ** 2 for residual in residuals) / (len(residuals) - 1)
+    return math.sqrt(variance), "model_margin_residual_sd"
 
 
 def norm_cdf(value):
@@ -201,43 +330,6 @@ def moneyline_edge(model_probability, fair_probability):
     return (model_probability - fair_probability) * 100.0
 
 
-def home_margin_sigma(history):
-    margins = []
-    for game in history:
-        if game.get("game_type") != "REG" or game.get("season") not in HISTORY_SEASONS:
-            continue
-        if game.get("home_score") is None or game.get("away_score") is None:
-            continue
-        margins.append(float(game["home_score"]) - float(game["away_score"]))
-    if len(margins) < MIN_SIGMA_GAMES:
-        return FALLBACK_MARGIN_SIGMA, "fallback_13_5"
-    mean = sum(margins) / len(margins)
-    variance = sum((margin - mean) ** 2 for margin in margins) / (len(margins) - 1)
-    return math.sqrt(variance), "nflverse_home_margin_sd"
-
-
-def team_history(history, team, before_date):
-    """Points scored and allowed before `before_date`, oldest first."""
-    rows = [
-        game for game in history
-        if game.get("game_type") == "REG"
-        and game.get("season") in HISTORY_SEASONS
-        and game.get("gameday")
-        and game["gameday"] < before_date
-        and game.get("home_score") is not None
-        and game.get("away_score") is not None
-        and team in (game.get("away_team"), game.get("home_team"))
-    ]
-    rows.sort(key=lambda game: (game["gameday"], game.get("gametime") or ""))
-    scored, allowed = [], []
-    for game in rows:
-        if game["home_team"] == team:
-            scored.append(float(game["home_score"]))
-            allowed.append(float(game["away_score"]))
-        else:
-            scored.append(float(game["away_score"]))
-            allowed.append(float(game["home_score"]))
-    return scored, allowed
 
 
 def parse_side_key(side_key):
@@ -453,26 +545,29 @@ def current_week(schedule, today):
     return max(weeks) if weeks else None
 
 
-def project_matchup(history, away, home, before_date, sigma):
-    away_scored, away_allowed = team_history(history, away, before_date)
-    home_scored, home_allowed = team_history(history, home, before_date)
-    away_points = expected_points(away_scored, home_allowed)
-    home_points = expected_points(home_scored, away_allowed)
+def project_matchup(history, away, home, before_date, sigma, rest_away=None, rest_home=None):
+    """Integer team scores. Spread and total are that difference and that sum."""
+    state, _residuals = replay(history, before_date)
+    away_raw, home_raw = project_scores(state, away, home, rest_away, rest_home)
+    away_score = whole_points(away_raw)
+    home_score = whole_points(home_raw)
+    home_prob = home_win_probability(home_score, away_score, sigma)
     return {
-        "away_points": None if away_points is None else round1(away_points),
-        "home_points": None if home_points is None else round1(home_points),
-        "spread": round1(spread_projection(away_points, home_points)),
-        "total": round1(total_projection(away_points, home_points)),
-        "home_win_probability": None if home_win_probability(home_points, away_points, sigma) is None else round(home_win_probability(home_points, away_points, sigma), 4),
-        "away_games": len(away_scored),
-        "home_games": len(home_scored),
+        "away_score": away_score,
+        "home_score": home_score,
+        "spread": None if away_score is None else spread_projection(away_score, home_score),
+        "total": None if away_score is None else total_projection(away_score, home_score),
+        "home_win_probability": None if home_prob is None else round(home_prob, 4),
+        "away_games": state["n"].get(away, 0),
+        "home_games": state["n"].get(home, 0),
     }
 
 
 def build_games(schedule, history, markets, today=None):
     today = today or date.today().isoformat()
     week = current_week(schedule, today)
-    sigma, sigma_source = home_margin_sigma(history)
+    _state, residuals = replay(history, today)
+    sigma, sigma_source = residual_sigma(residuals)
     slate = [
         game for game in schedule
         if game.get("season") == CURRENT_SEASON
@@ -487,7 +582,10 @@ def build_games(schedule, history, markets, today=None):
     for game in slate:
         away = canonical_team(game["away_team"])
         home = canonical_team(game["home_team"])
-        projected = project_matchup(history, away, home, game.get("gameday") or today, sigma)
+        projected = project_matchup(
+            history, away, home, game.get("gameday") or today, sigma,
+            rest_away=game.get("away_rest"), rest_home=game.get("home_rest"),
+        )
         posted = markets.get((away, home)) or {}
         spread_line = (posted.get("spread") or {}).get("line")
         total_line = (posted.get("total") or {}).get("line")
@@ -506,6 +604,8 @@ def build_games(schedule, history, markets, today=None):
             "homeTeam": home,
             "awayName": NICKNAMES.get(away, away),
             "homeName": NICKNAMES.get(home, home),
+            "awayScore": projected["away_score"],
+            "homeScore": projected["home_score"],
             "spread": {
                 "line": spread_line,
                 "projection": projected["spread"],
@@ -598,6 +698,10 @@ def frame_to_games(frame):
             "home_team": canonical_team(record.get("home_team")),
             "away_score": _score(record.get("away_score")),
             "home_score": _score(record.get("home_score")),
+            "spread_line": _score(record.get("spread_line")),
+            "total_line": _score(record.get("total_line")),
+            "away_rest": _score(record.get("away_rest")),
+            "home_rest": _score(record.get("home_rest")),
         })
     return rows
 
@@ -606,7 +710,7 @@ def load_schedule(url=GAMES_URL):
     import pandas as pd
 
     frame = pd.read_csv(url, low_memory=False)
-    frame = frame[frame["season"].isin(HISTORY_SEASONS)]
+    frame = frame[frame["season"].isin(RATING_SEASONS)]
     return frame_to_games(frame)
 
 

@@ -35,26 +35,58 @@ SOURCES = {
 }
 
 
-class LiveWindowTests(unittest.TestCase):
-    def test_weights_match_the_live_player_prop_formula(self):
+class RatingTests(unittest.TestCase):
+    def test_live_player_prop_formula_is_unchanged(self):
         source = Path("nfl/build_projection_data.py").read_text(encoding="utf-8")
         self.assertIn("last_three * .50 + last_nine * .25 + last_fifteen * .25", source)
-        values = [float(value) for value in range(1, 16)]
-        last_three = sum(values[-3:]) / 3
-        last_nine = sum(values[-9:]) / 9
-        last_fifteen = sum(values[-15:]) / 15
-        expected = last_three * 0.50 + last_nine * 0.25 + last_fifteen * 0.25
-        self.assertAlmostEqual(markets.live_window_projection(values), expected)
-        self.assertIsNone(markets.live_window_projection([10, 14]))
+        self.assertNotIn("opponent_adjusted_market_scores", source)
 
-    def test_expected_points_average_offense_and_opponent_defense(self):
-        own = [20, 24, 28, 16]
-        allowed = [18, 22, 30, 14]
-        offense = markets.live_window_projection(own)
-        defense = markets.live_window_projection(allowed)
-        self.assertAlmostEqual(markets.expected_points(own, allowed), (offense + defense) / 2)
-        self.assertEqual(markets.expected_points([1, 2], [3, 4]), None)
-        self.assertAlmostEqual(markets.expected_points(own, [1]), offense)
+    def test_displayed_scores_add_up_to_the_total_and_the_spread(self):
+        self.assertEqual(markets.whole_points(27.5), 28)
+        self.assertEqual(markets.whole_points(20.4), 20)
+        away, home = 27, 20
+        self.assertEqual(markets.total_projection(away, home), 47)
+        self.assertEqual(markets.spread_projection(away, home), -7)
+
+    def test_rest_moves_the_margin_without_changing_the_total(self):
+        state = markets._new_state()
+        for team in ("DAL", "HOU"):
+            state["n"][team] = 6
+        away, home = markets.project_scores(state, "DAL", "HOU", None, None)
+        rested_away, rested_home = markets.project_scores(state, "DAL", "HOU", 5, 9)
+        self.assertAlmostEqual(away + home, rested_away + rested_home)
+        self.assertGreater(rested_home - rested_away, home - away)
+
+    def test_a_same_day_result_does_not_leak_into_the_projection(self):
+        history = []
+        for index in range(4):
+            history.append({
+                "season": 2026, "game_type": "REG", "week": index + 1,
+                "gameday": f"2026-09-0{index + 6}", "gametime": "13:00",
+                "away_team": "DAL", "home_team": "NYG",
+                "away_score": 20.0, "home_score": 17.0,
+                "spread_line": 3.0, "total_line": 44.0,
+            })
+            history.append({
+                "season": 2026, "game_type": "REG", "week": index + 1,
+                "gameday": f"2026-09-0{index + 6}", "gametime": "16:00",
+                "away_team": "ARI", "home_team": "HOU",
+                "away_score": 17.0, "home_score": 24.0,
+                "spread_line": 3.0, "total_line": 44.0,
+            })
+        before = markets.project_matchup(history, "DAL", "HOU", "2026-10-04", 13.5)
+        history.append({
+            "season": 2026, "game_type": "REG", "week": 4,
+            "gameday": "2026-10-04", "gametime": "09:30",
+            "away_team": "DAL", "home_team": "HOU",
+            "away_score": 70.0, "home_score": 0.0,
+            "spread_line": -99.0, "total_line": 99.0,
+        })
+        after = markets.project_matchup(history, "DAL", "HOU", "2026-10-04", 13.5)
+        self.assertEqual(after["away_score"], before["away_score"])
+        self.assertEqual(after["home_score"], before["home_score"])
+        self.assertEqual(after["total"], after["away_score"] + after["home_score"])
+        self.assertEqual(after["spread"], after["home_score"] - after["away_score"])
 
     def test_rams_and_jaguars_match_the_lineup_abbreviations(self):
         self.assertEqual(markets.canonical_team("LAR"), "LA")
@@ -63,7 +95,8 @@ class LiveWindowTests(unittest.TestCase):
 
     def test_model_is_labeled_unproven(self):
         self.assertFalse(markets.MODEL["proven"])
-        self.assertIn("Not a proven", markets.MODEL["label"])
+        self.assertIn("Not proven", markets.MODEL["label"])
+        self.assertIn("closing line", markets.MODEL["summary"].lower())
 
 
 class MarketMathTests(unittest.TestCase):
@@ -198,8 +231,11 @@ class PostedLineTests(unittest.TestCase):
         self.assertNotEqual(game["spread"]["line"], -99.0)
         self.assertEqual(game["total"]["line"], 44.5)
         self.assertEqual(game["moneyline"]["line"], 110)
-        self.assertIsNotNone(game["spread"]["projection"])
-        self.assertIsNotNone(game["total"]["projection"])
+        self.assertIsNotNone(game["awayScore"])
+        self.assertIsNotNone(game["homeScore"])
+        self.assertEqual(game["total"]["projection"], game["awayScore"] + game["homeScore"])
+        self.assertEqual(game["spread"]["projection"], game["homeScore"] - game["awayScore"])
+        self.assertNotEqual(game["spread"]["projection"], -99.0)
         self.assertIsNotNone(game["moneyline"]["projection"])
         self.assertAlmostEqual(game["spread"]["edge"], round(game["spread"]["line"] - game["spread"]["projection"], 1))
         self.assertAlmostEqual(game["total"]["edge"], round(game["total"]["projection"] - game["total"]["line"], 1))

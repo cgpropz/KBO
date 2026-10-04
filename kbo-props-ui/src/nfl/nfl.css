@@ -121,17 +121,25 @@
 .nfl-game-team-home { grid-column: 3; }
 .nfl-game-team img, .nfl-game-team i { flex: 0 0 auto; width: 28px; height: 28px; object-fit: contain; }
 .nfl-game-team i { border-radius: 50%; background: #143029; }
-.nfl-game-team span { overflow: hidden; color: #e8f4e6; font-size: 14px; font-weight: 800; letter-spacing: .02em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.nfl-game-team-copy { display: flex; flex: 1 1 auto; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.nfl-game-team-name { min-width: 0; color: #e8f4e6; font-size: 14px; font-weight: 800; letter-spacing: .01em; line-height: 1.05; text-transform: uppercase; }
+.nfl-game-score { flex: 0 0 auto; color: #e8f4e6; font: 800 18px/1 monospace; }
 .nfl-game-market { min-width: 0; }
 .nfl-game-market > b { display: block; margin-bottom: 6px; color: #54e0bf; font: 800 10px monospace; letter-spacing: .06em; text-transform: uppercase; }
 .nfl-game-market > div { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 3px 0; border-top: 1px solid #142a25; }
 .nfl-game-market small { color: #78918a; font: 10px monospace; }
-.nfl-game-market strong { color: #e8f4e6; font: 800 13px monospace; }
+.nfl-game-market strong { color: #e8f4e6; font: 800 13px monospace; text-align: right; }
+.nfl-game-market strong i { display: block; margin-top: 2px; color: #78918a; font: normal 9px monospace; letter-spacing: 0; }
 .nfl-game-page .nfl-filter-row-body input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid #23443d; border-radius: 5px; color: #e8f4e6; background: #0b1c19; font: 12px monospace; }
 @media (max-width: 980px) { .nfl-game-board { grid-template-columns: 1fr; } }
-@media (max-width: 420px) {
-  .nfl-game-team span { font-size: 12px; }
-  .nfl-game-team img, .nfl-game-team i { width: 22px; height: 22px; }
+@media (max-width: 520px) {
+  .nfl-game-layout { grid-template-columns: minmax(0, 0.9fr) minmax(0, 0.75fr) minmax(76px, 1.2fr); gap: 8px 6px; }
+  .nfl-game-team-copy { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .nfl-game-team-name { font-size: 11px; letter-spacing: 0; }
+  .nfl-game-team img, .nfl-game-team i { width: 20px; height: 20px; }
+  .nfl-game-score { font-size: 16px; }
   .nfl-game-market strong { font-size: 12px; }
-  .nfl-game-layout { gap: 8px 6px; }
+}
+@media (max-width: 760px) {
+  .nfl-root .nfl-nav-links { flex-wrap: wrap; overflow: visible; row-gap: 2px; }
 }
