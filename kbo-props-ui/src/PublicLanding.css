@@ -490,9 +490,24 @@
   .pl-tool-row.reverse .pl-tool-visual { order: 1; }
   .pl-tool-row.reverse .pl-tool-copy { order: 2; }
   .pl-tool-copy p { max-width: none; }
-  .pl-sports-grid { grid-template-columns: 1fr; }
+  .pl-sports-grid { grid-template-columns: 1fr; gap: 14px; }
+  .pl-sport-art { aspect-ratio: 2.5 / 1; max-height: 200px; }
+  .pl-sport-art img { object-position: center 22%; }
+}
+@media (max-width: 640px) {
+  .pl-sports-grid { gap: 12px; }
+  .pl-sport-card { flex-direction: row; align-items: stretch; }
+  .pl-sport-art { flex: 0 0 38%; width: 38%; aspect-ratio: auto; max-height: none; min-height: 0; align-self: stretch; }
+  .pl-sport-art img { height: 100%; object-position: center top; }
+  .pl-sport-art::after { height: 0; }
+  .pl-sport-body { padding: 10px 12px; }
+  .pl-sport-head { align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 4px; }
+  .pl-sport-name { font-size: 20px; }
+  .pl-sport-full { font-size: 12px; }
+  .pl-sport-tagline { font-size: 13px; line-height: 1.35; margin: 0 0 6px; }
+  .pl-sport-features li { padding: 1px 0; font-size: 12.5px; line-height: 1.3; }
 }
 @media (max-width: 480px) {
-  .pl-header { padding: 14px 16px; }
-  .pl-header-actions .pl-link-btn { display: none; }
+  .pl-header { padding: 14px 16px; flex-wrap: wrap; }
+  .pl-header-actions .pl-link-btn { display: inline-flex; align-items: center; min-height: 40px; }
 }

@@ -4,6 +4,7 @@ import './index.css'
 import { AuthProvider } from './AuthContext.jsx'
 import App from './App.jsx'
 import './stadiumBackground.css'
+import './mobile.css'
 import { captureAttribution } from './tracking.js'
 
 // Remember utm_* / twclid from the landing URL before anything rewrites it.
