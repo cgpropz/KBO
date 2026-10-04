@@ -1,5 +1,6 @@
-/* Shared Results gallery. In normal flow under the sport cards on both
-   landing pages — never fixed, sticky, or pulled up over those cards. */
+/* Shared Results row. In normal flow under the sport cards on both
+   landing pages — never fixed, sticky, or pulled up over those cards.
+   Slips stay on one line; the row slides, it does not wrap. */
 .results-section {
   position: relative;
   z-index: 1;
@@ -36,18 +37,47 @@
   line-height: 1.5;
 }
 
-.results-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  align-items: start;
+.results-carousel {
+  position: relative;
   min-width: 0;
 }
 
+.results-viewport {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.results-viewport.is-loop {
+  touch-action: pan-y;
+  transition: height 480ms ease;
+}
+.results-viewport.is-reduced {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 222, 128, 0.4) transparent;
+  transition: none;
+}
+
+.results-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  will-change: transform;
+}
+
 .results-card {
+  flex: 0 0 auto;
   min-width: 0;
   margin: 0;
   background: #050506;
@@ -55,6 +85,18 @@
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.results-viewport.is-reduced .results-card {
+  scroll-snap-align: var(--results-snap, start);
+}
+.results-card:focus {
+  outline: none;
+}
+.results-card:focus-visible {
+  outline: 2px solid #4ade80;
+  outline-offset: 3px;
 }
 .results-frame {
   width: 100%;
@@ -68,16 +110,50 @@
   max-width: none;
   object-fit: cover;
   object-position: var(--results-x, 50%) var(--results-y, 50%);
+  pointer-events: none;
 }
 
-@media (max-width: 900px) {
-  .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.results-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.results-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(8, 16, 12, 0.9);
+  color: #4ade80;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.results-nav:hover {
+  border-color: rgba(74, 222, 128, 0.7);
+  background: rgba(16, 36, 24, 0.95);
+}
+.results-nav:focus-visible {
+  outline: 2px solid #4ade80;
+  outline-offset: 2px;
 }
 
 @media (max-width: 640px) {
   .results-section { margin-bottom: 36px; }
   .results-heading { margin-bottom: 16px; }
   .results-heading p { font-size: 14px; }
-  .results-grid { grid-template-columns: 1fr; gap: 12px; }
   .results-card { border-radius: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-viewport,
+  .results-track,
+  .results-nav {
+    transition: none !important;
+    animation: none !important;
+  }
 }
