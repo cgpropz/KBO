@@ -167,17 +167,28 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
                 style={{ '--accent': s.accent, '--glow': s.glow }}
                 onClick={() => (onOpenBoard ? onOpenBoard(s.id) : onGetStarted())}
               >
-                <div className="pl-sport-emoji">{s.emoji}</div>
-                <div className="pl-sport-head">
-                  <h3 className="pl-sport-name">{s.name}</h3>
-                  <span className="pl-sport-full">{s.full}</span>
+                <div className="pl-sport-art">
+                  <img
+                    src={s.portrait}
+                    alt={s.portraitAlt}
+                    width="960"
+                    height="720"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
-                <p className="pl-sport-tagline">{s.tagline}</p>
-                <ul className="pl-sport-features">
-                  {s.features.map((f, i) => (
-                    <li key={i}><span className="pl-dot" />{f}</li>
-                  ))}
-                </ul>
+                <div className="pl-sport-body">
+                  <div className="pl-sport-head">
+                    <h3 className="pl-sport-name">{s.name}</h3>
+                    <span className="pl-sport-full">{s.full}</span>
+                  </div>
+                  <p className="pl-sport-tagline">{s.tagline}</p>
+                  <ul className="pl-sport-features">
+                    {s.features.map((f, i) => (
+                      <li key={i}><span className="pl-dot" />{f}</li>
+                    ))}
+                  </ul>
+                </div>
               </button>
             ))}
           </div>
