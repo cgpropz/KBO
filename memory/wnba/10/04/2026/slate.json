@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-04",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-10-04T00:09:46.111531+00:00",
+  "frozen_at": "2026-10-04T02:15:47.069105+00:00",
   "source": "kbo-props-ui/public/data/wnba/projections_*.json",
-  "source_commit": "2b75e4e451fd",
+  "source_commit": "8efc90702c9a",
   "props": [
     {
       "projection": 0.62,
@@ -32,8 +32,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.84,
@@ -60,8 +60,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.97,
@@ -88,8 +88,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 45.59,
@@ -117,8 +117,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 45.59,
@@ -146,8 +146,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.71,
@@ -173,8 +173,37 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 25.91,
+      "edge": -0.59,
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "position": "Center",
+      "opponent": "GSV",
+      "stat": "Points",
+      "line": 26.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 48.9,
+      "standard_line": 25.5,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 5,
+      "avg_mins": 31.6,
+      "dvp_opponent": "GSV",
+      "spread": 1.5,
+      "baseline_projection": 24.96,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-03T09:32:28+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 25.91,
@@ -185,40 +214,11 @@
       "opponent": "GSV",
       "stat": "Points",
       "line": 25.5,
-      "odds_type": "demon",
-      "recommendation": "OVER",
-      "projection_source": "wnba/backend/index.js",
-      "rating": 50.8,
-      "standard_line": 24.5,
-      "game_date_iso": "2026-10-04",
-      "effective_dvp_factor": 5,
-      "avg_mins": 31.6,
-      "dvp_opponent": "GSV",
-      "spread": 1.5,
-      "baseline_projection": 24.96,
-      "formula_mode": "tuned",
-      "formula_applied": true,
-      "projection_schema": 2,
-      "start_time_utc": "2026-10-04T16:00:00+00:00",
-      "start_time_source": "fallback_wnba_noon_et",
-      "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
-    },
-    {
-      "projection": 25.91,
-      "edge": 1.41,
-      "player": "A'ja Wilson",
-      "team": "LVA",
-      "position": "Center",
-      "opponent": "GSV",
-      "stat": "Points",
-      "line": 24.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 52.9,
-      "standard_line": 24.5,
+      "rating": 50.8,
+      "standard_line": 25.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 5,
       "avg_mins": 31.6,
@@ -231,8 +231,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 29.43,
@@ -259,8 +259,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 28
     },
     {
@@ -289,8 +289,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 34.89,
@@ -318,8 +318,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 34.89,
@@ -347,8 +347,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 36.59,
@@ -375,8 +375,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 36.59,
@@ -403,8 +403,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.63,
@@ -431,8 +431,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.63,
@@ -459,8 +459,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.09,
@@ -488,8 +488,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.09,
@@ -517,8 +517,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.25,
@@ -545,8 +545,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.25,
@@ -573,8 +573,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.03,
@@ -602,8 +602,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.03,
@@ -631,8 +631,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.61,
@@ -660,8 +660,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.61,
@@ -689,8 +689,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.87,
@@ -718,8 +718,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.87,
@@ -747,8 +747,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.28,
@@ -776,8 +776,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.28,
@@ -805,8 +805,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.42,
@@ -834,8 +834,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.42,
@@ -863,8 +863,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 25.88,
@@ -879,7 +879,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 47.1,
-      "standard_line": 25.5,
+      "standard_line": 24.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 31.2,
@@ -891,23 +891,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 25.88,
-      "edge": 0.38,
+      "edge": 1.38,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Rebs+Asts",
-      "line": 25.5,
+      "line": 24.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 50.7,
-      "standard_line": 25.5,
+      "rating": 52.8,
+      "standard_line": 24.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 31.2,
@@ -919,8 +919,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.85,
@@ -947,8 +947,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.85,
@@ -975,8 +975,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.11,
@@ -1004,8 +1004,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.11,
@@ -1033,8 +1033,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.36,
@@ -1060,8 +1060,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.69,
@@ -1089,8 +1089,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.69,
@@ -1118,8 +1118,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.04,
@@ -1146,8 +1146,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 40.74,
@@ -1175,8 +1175,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 40.74,
@@ -1204,8 +1204,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.78,
@@ -1232,8 +1232,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.04,
@@ -1261,8 +1261,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.04,
@@ -1290,8 +1290,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 21.89,
@@ -1319,8 +1319,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 21.89,
@@ -1348,22 +1348,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.23,
-      "edge": -4.27,
+      "edge": 0.73,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
       "opponent": "NYL",
       "stat": "Pts+Rebs",
-      "line": 34.5,
+      "line": 29.5,
       "odds_type": "demon",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 43.8,
+      "rating": 51.2,
       "standard_line": 28,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 4,
@@ -1377,8 +1377,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.23,
@@ -1406,22 +1406,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 31.73,
-      "edge": -1.77,
+      "edge": -0.77,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
       "opponent": "NYL",
       "stat": "Pts+Rebs+Asts",
-      "line": 33.5,
+      "line": 32.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 47.4,
+      "rating": 48.8,
       "standard_line": 30.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 5,
@@ -1434,8 +1434,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 31.73,
@@ -1462,8 +1462,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.82,
@@ -1490,8 +1490,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.82,
@@ -1518,8 +1518,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.22,
@@ -1547,8 +1547,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.22,
@@ -1576,8 +1576,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.5,
@@ -1603,8 +1603,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.18,
@@ -1632,8 +1632,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.18,
@@ -1661,8 +1661,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.56,
@@ -1689,8 +1689,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 39.11,
@@ -1718,8 +1718,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 39.11,
@@ -1747,8 +1747,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.28,
@@ -1775,8 +1775,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.11,
@@ -1804,8 +1804,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.11,
@@ -1833,8 +1833,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.48,
@@ -1862,8 +1862,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.48,
@@ -1891,8 +1891,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.81,
@@ -1920,8 +1920,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.81,
@@ -1949,8 +1949,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 34.52,
@@ -1977,8 +1977,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 34.52,
@@ -2005,8 +2005,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.57,
@@ -2033,8 +2033,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.57,
@@ -2061,8 +2061,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.0,
@@ -2090,8 +2090,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.0,
@@ -2119,8 +2119,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.58,
@@ -2146,8 +2146,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.73,
@@ -2175,8 +2175,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.73,
@@ -2204,8 +2204,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.14,
@@ -2233,8 +2233,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.14,
@@ -2262,8 +2262,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.09,
@@ -2291,8 +2291,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.09,
@@ -2320,8 +2320,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.76,
@@ -2349,8 +2349,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.76,
@@ -2407,8 +2407,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.74,
@@ -2436,8 +2436,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.51,
@@ -2464,8 +2464,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.51,
@@ -2492,8 +2492,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.85,
@@ -2519,8 +2519,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.33,
@@ -2548,8 +2548,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.2,
@@ -2575,8 +2575,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.15,
@@ -2603,8 +2603,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 6
     },
     {
@@ -2633,8 +2633,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.68,
@@ -2662,8 +2662,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.68,
@@ -2691,8 +2691,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.28,
@@ -2720,8 +2720,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.28,
@@ -2749,8 +2749,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.0,
@@ -2778,8 +2778,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.0,
@@ -2807,22 +2807,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.14,
-      "edge": -5.36,
+      "edge": -1.36,
       "player": "Chelsea Gray",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs",
-      "line": 19.5,
+      "line": 15.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 36.3,
+      "rating": 45.6,
       "standard_line": 14.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
@@ -2836,8 +2836,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.14,
@@ -2865,23 +2865,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.37,
-      "edge": -5.13,
+      "edge": -4.13,
       "player": "Chelsea Gray",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs+Asts",
-      "line": 23.5,
+      "line": 22.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 39.1,
-      "standard_line": 21.5,
+      "rating": 40.8,
+      "standard_line": 20.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
       "avg_mins": 30.6,
@@ -2893,23 +2893,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.37,
-      "edge": -3.13,
+      "edge": -2.13,
       "player": "Chelsea Gray",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs+Asts",
-      "line": 21.5,
+      "line": 20.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 42.7,
-      "standard_line": 21.5,
+      "rating": 44.8,
+      "standard_line": 20.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
       "avg_mins": 30.6,
@@ -2921,8 +2921,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.35,
@@ -2948,8 +2948,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.84,
@@ -2977,8 +2977,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.84,
@@ -3006,8 +3006,63 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 5.68,
+      "edge": -3.82,
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "position": "Forward",
+      "opponent": "GSV",
+      "stat": "Points",
+      "line": 9.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 29.9,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 1,
+      "avg_mins": 12.6,
+      "dvp_opponent": "GSV",
+      "spread": 1.5,
+      "baseline_projection": 4.69,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 2.83,
+      "edge": -0.67,
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "position": "Forward",
+      "opponent": "GSV",
+      "stat": "Rebounds",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 40.4,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 5,
+      "avg_mins": 12.6,
+      "dvp_opponent": "GSV",
+      "spread": 1.5,
+      "formula_mode": "tuned",
+      "formula_applied": false,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.71,
@@ -3033,8 +3088,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.44,
@@ -3062,8 +3117,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.44,
@@ -3091,8 +3146,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.92,
@@ -3120,8 +3175,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.92,
@@ -3149,8 +3204,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.02,
@@ -3177,8 +3232,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.59,
@@ -3206,8 +3261,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.59,
@@ -3235,22 +3290,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.3,
-      "edge": 3.8,
+      "edge": -1.2,
       "player": "DeWanna Bonner",
       "team": "ATL",
       "position": "Forward",
       "opponent": "NYL",
       "stat": "Pts+Asts",
-      "line": 9.5,
+      "line": 14.5,
       "odds_type": "demon",
-      "recommendation": "OVER",
+      "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 70.0,
+      "rating": 45.9,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 7,
       "avg_mins": 24.7,
@@ -3263,8 +3318,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.76,
@@ -3292,8 +3347,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.76,
@@ -3321,8 +3376,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.22,
@@ -3349,8 +3404,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.22,
@@ -3404,8 +3459,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 4.5
     },
     {
@@ -3433,8 +3488,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.22,
@@ -3461,8 +3516,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.99,
@@ -3488,8 +3543,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.16,
@@ -3516,8 +3571,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.92,
@@ -3545,8 +3600,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.92,
@@ -3574,8 +3629,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.4,
@@ -3601,8 +3656,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.63,
@@ -3630,8 +3685,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.63,
@@ -3659,8 +3714,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.81,
@@ -3688,8 +3743,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.81,
@@ -3717,8 +3772,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.62,
@@ -3746,8 +3801,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.62,
@@ -3775,8 +3830,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.05,
@@ -3803,8 +3858,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.05,
@@ -3831,8 +3886,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.12,
@@ -3858,8 +3913,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 4
     },
     {
@@ -3887,8 +3942,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.22,
@@ -3915,8 +3970,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 7
     },
     {
@@ -3945,8 +4000,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.06,
@@ -3972,8 +4027,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.06,
@@ -4000,8 +4055,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 6
     },
     {
@@ -4030,8 +4085,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.87,
@@ -4059,8 +4114,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.87,
@@ -4088,8 +4143,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.6,
@@ -4115,37 +4170,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
-    },
-    {
-      "projection": 19.8,
-      "edge": -1.7,
-      "player": "Jackie Young",
-      "team": "LVA",
-      "position": "Guard",
-      "opponent": "GSV",
-      "stat": "Points",
-      "line": 21.5,
-      "odds_type": "demon",
-      "recommendation": "UNDER",
-      "projection_source": "wnba/backend/index.js",
-      "rating": 46.0,
-      "standard_line": 19.5,
-      "game_date_iso": "2026-10-04",
-      "effective_dvp_factor": 1,
-      "avg_mins": 31.9,
-      "dvp_opponent": "GSV",
-      "spread": 1.5,
-      "baseline_projection": 14.84,
-      "formula_mode": "tuned",
-      "formula_applied": true,
-      "projection_schema": 2,
-      "start_time_utc": "2026-10-04T16:00:00+00:00",
-      "start_time_source": "fallback_wnba_noon_et",
-      "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 19.8,
@@ -4156,11 +4182,11 @@
       "opponent": "GSV",
       "stat": "Points",
       "line": 19.5,
-      "odds_type": "standard",
+      "odds_type": "demon",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
       "rating": 50.8,
-      "standard_line": 19.5,
+      "standard_line": 18.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 1,
       "avg_mins": 31.9,
@@ -4173,8 +4199,37 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 19.8,
+      "edge": 1.3,
+      "player": "Jackie Young",
+      "team": "LVA",
+      "position": "Guard",
+      "opponent": "GSV",
+      "stat": "Points",
+      "line": 18.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 53.5,
+      "standard_line": 18.5,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 1,
+      "avg_mins": 31.9,
+      "dvp_opponent": "GSV",
+      "spread": 1.5,
+      "baseline_projection": 14.84,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-03T09:32:28+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.05,
@@ -4189,7 +4244,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 45.8,
-      "standard_line": 25.5,
+      "standard_line": 25,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 2,
       "avg_mins": 31.9,
@@ -4202,23 +4257,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.05,
-      "edge": 1.55,
+      "edge": 2.05,
       "player": "Jackie Young",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Asts",
-      "line": 25.5,
+      "line": 25,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 53.0,
-      "standard_line": 25.5,
+      "rating": 54.1,
+      "standard_line": 25,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 2,
       "avg_mins": 31.9,
@@ -4231,23 +4286,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.07,
-      "edge": -5.43,
+      "edge": -0.43,
       "player": "Jackie Young",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs",
-      "line": 29.5,
+      "line": 24.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 40.8,
-      "standard_line": 23.5,
+      "rating": 49.1,
+      "standard_line": 23,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
       "avg_mins": 31.9,
@@ -4260,23 +4315,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 24.07,
-      "edge": 0.57,
+      "edge": 1.07,
       "player": "Jackie Young",
       "team": "LVA",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs",
-      "line": 23.5,
+      "line": 23,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 51.2,
-      "standard_line": 23.5,
+      "rating": 52.3,
+      "standard_line": 23,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
       "avg_mins": 31.9,
@@ -4289,8 +4344,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.05,
@@ -4317,8 +4372,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.05,
@@ -4345,8 +4400,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.5,
@@ -4372,8 +4427,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 4
     },
     {
@@ -4401,8 +4456,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.0,
@@ -4429,8 +4484,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 10.5
     },
     {
@@ -4459,8 +4514,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.26,
@@ -4486,8 +4541,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.91,
@@ -4514,8 +4569,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.6,
@@ -4543,8 +4598,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.6,
@@ -4572,8 +4627,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.2,
@@ -4599,8 +4654,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.71,
@@ -4628,8 +4683,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.71,
@@ -4657,8 +4712,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.15,
@@ -4686,8 +4741,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.15,
@@ -4715,8 +4770,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.2,
@@ -4744,8 +4799,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.2,
@@ -4773,8 +4828,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.2,
@@ -4800,8 +4855,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 11
     },
     {
@@ -4829,8 +4884,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.83,
@@ -4856,8 +4911,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.1,
@@ -4885,8 +4940,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.07,
@@ -4912,8 +4967,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.25,
@@ -4940,8 +4995,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.43,
@@ -4968,8 +5023,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.66,
@@ -4997,8 +5052,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 32.66,
@@ -5026,8 +5081,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.66,
@@ -5053,8 +5108,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.35,
@@ -5082,8 +5137,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.35,
@@ -5111,8 +5166,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.19,
@@ -5140,8 +5195,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.19,
@@ -5169,8 +5224,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.95,
@@ -5198,8 +5253,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.95,
@@ -5227,8 +5282,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.03,
@@ -5255,8 +5310,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 27.03,
@@ -5283,8 +5338,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.4,
@@ -5311,8 +5366,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.4,
@@ -5339,8 +5394,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.98,
@@ -5368,8 +5423,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.98,
@@ -5397,8 +5452,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.3,
@@ -5424,8 +5479,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.69,
@@ -5453,8 +5508,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.69,
@@ -5482,8 +5537,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.03,
@@ -5511,8 +5566,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.03,
@@ -5540,8 +5595,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.48,
@@ -5568,23 +5623,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.11,
-      "edge": 0.61,
+      "edge": -0.39,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Points",
-      "line": 11.5,
+      "line": 12.5,
       "odds_type": "demon",
-      "recommendation": "OVER",
+      "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 52.7,
-      "standard_line": 10.5,
+      "rating": 48.4,
+      "standard_line": 11,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 29.7,
@@ -5597,23 +5652,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.11,
-      "edge": 1.61,
+      "edge": 1.11,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Points",
-      "line": 10.5,
+      "line": 11,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 57.7,
-      "standard_line": 10.5,
+      "rating": 55.0,
+      "standard_line": 11,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 29.7,
@@ -5626,22 +5681,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 19.62,
-      "edge": -4.88,
+      "edge": 0.12,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Asts",
-      "line": 24.5,
+      "line": 19.5,
       "odds_type": "demon",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 40.0,
+      "rating": 50.3,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
@@ -5655,8 +5710,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 19.62,
@@ -5684,8 +5739,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-03T23:28:38+00:00",
-      "source_commit": "87f71e58c681"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.37,
@@ -5713,8 +5768,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.37,
@@ -5742,8 +5797,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.34,
@@ -5770,8 +5825,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.34,
@@ -5798,8 +5853,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.52,
@@ -5826,8 +5881,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.52,
@@ -5854,8 +5909,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.05,
@@ -5870,7 +5925,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 43.7,
-      "standard_line": 11,
+      "standard_line": 10.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 29.7,
@@ -5883,23 +5938,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.05,
-      "edge": -0.95,
+      "edge": -0.45,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Rebs+Asts",
-      "line": 11,
+      "line": 10.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 45.7,
-      "standard_line": 11,
+      "rating": 47.9,
+      "standard_line": 10.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 29.7,
@@ -5912,8 +5967,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.14,
@@ -5941,8 +5996,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.14,
@@ -5970,8 +6025,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.04,
@@ -5998,8 +6053,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.07,
@@ -6025,8 +6080,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 4
     },
     {
@@ -6054,8 +6109,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.88,
@@ -6081,8 +6136,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.67,
@@ -6109,8 +6164,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.96,
@@ -6138,8 +6193,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.96,
@@ -6167,8 +6222,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.87,
@@ -6195,8 +6250,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.67,
@@ -6224,8 +6279,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.67,
@@ -6253,8 +6308,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.38,
@@ -6282,8 +6337,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.38,
@@ -6311,8 +6366,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.49,
@@ -6340,8 +6395,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.49,
@@ -6369,8 +6424,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.9,
@@ -6397,8 +6452,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.9,
@@ -6425,8 +6480,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.83,
@@ -6453,8 +6508,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.83,
@@ -6481,8 +6536,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.64,
@@ -6510,8 +6565,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.29,
@@ -6537,8 +6592,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.3,
@@ -6566,8 +6621,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.3,
@@ -6595,8 +6650,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.92,
@@ -6623,8 +6678,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.38,
@@ -6652,8 +6707,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.38,
@@ -6681,8 +6736,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.85,
@@ -6708,8 +6763,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.6,
@@ -6737,8 +6792,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.6,
@@ -6766,8 +6821,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.69,
@@ -6794,8 +6849,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.19,
@@ -6823,8 +6878,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.19,
@@ -6852,22 +6907,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.78,
-      "edge": -1.72,
+      "edge": -0.72,
       "player": "Kiah Stokes",
       "team": "GSV",
       "position": "Center",
       "opponent": "LVA",
       "stat": "Pts+Rebs+Asts",
-      "line": 13.5,
+      "line": 12.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 43.6,
+      "rating": 47.1,
       "standard_line": 11.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 7,
@@ -6880,8 +6935,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.78,
@@ -6908,8 +6963,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.79,
@@ -6935,8 +6990,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 6
     },
     {
@@ -6964,8 +7019,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T10:42:31+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.97,
@@ -6993,8 +7048,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.97,
@@ -7022,8 +7077,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.06,
@@ -7050,8 +7105,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.06,
@@ -7078,8 +7133,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.85,
@@ -7106,8 +7161,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.32,
@@ -7135,8 +7190,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.32,
@@ -7164,8 +7219,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.3,
@@ -7191,8 +7246,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.85,
@@ -7220,8 +7275,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.85,
@@ -7249,8 +7304,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.55,
@@ -7278,8 +7333,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.55,
@@ -7307,8 +7362,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.68,
@@ -7336,8 +7391,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 10.68,
@@ -7365,8 +7420,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.07,
@@ -7393,8 +7448,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.07,
@@ -7421,8 +7476,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.24,
@@ -7449,8 +7504,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.24,
@@ -7477,8 +7532,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.44,
@@ -7506,8 +7561,91 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 1.23,
+      "edge": -0.27,
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "ATL",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 41,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 2,
+      "avg_mins": 16.2,
+      "dvp_opponent": "ATL",
+      "spread": 3.5,
+      "formula_mode": "tuned",
+      "formula_applied": false,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 1.32,
+      "edge": -0.18,
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "ATL",
+      "stat": "Assists",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 44.0,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 1,
+      "avg_mins": 16.2,
+      "dvp_opponent": "ATL",
+      "spread": 3.5,
+      "baseline_projection": 2.24,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
+    },
+    {
+      "projection": 5.95,
+      "edge": -3.55,
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "position": "Guard",
+      "opponent": "ATL",
+      "stat": "Points",
+      "line": 9.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 31.3,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 2,
+      "avg_mins": 16.2,
+      "dvp_opponent": "ATL",
+      "spread": 3.5,
+      "baseline_projection": 4.21,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.61,
@@ -7533,8 +7671,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.52,
@@ -7561,8 +7699,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.02,
@@ -7590,8 +7728,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 18.02,
@@ -7619,8 +7757,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.9,
@@ -7646,8 +7784,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.95,
@@ -7675,8 +7813,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.95,
@@ -7704,8 +7842,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.14,
@@ -7732,8 +7870,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.53,
@@ -7761,8 +7899,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 13.53,
@@ -7790,8 +7928,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.47,
@@ -7818,8 +7956,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.47,
@@ -7846,8 +7984,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.51,
@@ -7874,8 +8012,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.51,
@@ -7902,8 +8040,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.26,
@@ -7931,8 +8069,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 6.26,
@@ -7960,8 +8098,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.5,
@@ -7987,8 +8125,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.75,
@@ -8015,8 +8153,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.9,
@@ -8044,8 +8182,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.9,
@@ -8073,8 +8211,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.14,
@@ -8102,8 +8240,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 8.14,
@@ -8131,8 +8269,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.27,
@@ -8160,8 +8298,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.27,
@@ -8189,8 +8327,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.55,
@@ -8218,8 +8356,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.55,
@@ -8247,8 +8385,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.39,
@@ -8275,8 +8413,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.39,
@@ -8303,22 +8441,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.13,
-      "edge": -0.37,
+      "edge": 0.63,
       "player": "Pauline Astier",
       "team": "NYL",
       "position": "Guard",
       "opponent": "ATL",
       "stat": "Rebounds",
-      "line": 4.5,
+      "line": 3.5,
       "odds_type": "demon",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 45.9,
+      "rating": 59,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 2,
       "avg_mins": 22.9,
@@ -8330,8 +8468,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 3.5
     },
     {
@@ -8388,8 +8526,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.44,
@@ -8409,7 +8547,7 @@
       "effective_dvp_factor": 2,
       "avg_mins": 22.9,
       "dvp_opponent": "ATL",
-      "spread": 4.5,
+      "spread": 3.5,
       "baseline_projection": 6.73,
       "formula_mode": "tuned",
       "formula_applied": true,
@@ -8417,8 +8555,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-03T18:44:25+00:00",
-      "source_commit": "446cc680c087"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.3,
@@ -8445,8 +8583,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.3,
@@ -8473,8 +8611,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.79,
@@ -8501,8 +8639,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 36.03,
@@ -8530,8 +8668,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 36.03,
@@ -8559,8 +8697,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.68,
@@ -8587,8 +8725,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.65,
@@ -8603,7 +8741,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 45.3,
-      "standard_line": 19,
+      "standard_line": 18.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8616,23 +8754,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.65,
-      "edge": -1.35,
+      "edge": -0.85,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Points",
-      "line": 19,
+      "line": 18.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 46.4,
-      "standard_line": 19,
+      "rating": 47.7,
+      "standard_line": 18.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8645,8 +8783,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 21.27,
@@ -8661,7 +8799,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 43.4,
-      "standard_line": 22.5,
+      "standard_line": 21.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8674,23 +8812,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 21.27,
-      "edge": -1.23,
+      "edge": -0.23,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Asts",
-      "line": 22.5,
+      "line": 21.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 47.3,
-      "standard_line": 22.5,
+      "rating": 49.5,
+      "standard_line": 21.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8703,8 +8841,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.91,
@@ -8719,7 +8857,7 @@
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
       "rating": 42.7,
-      "standard_line": 22.5,
+      "standard_line": 21.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8732,23 +8870,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.91,
-      "edge": -1.59,
+      "edge": -0.59,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Rebs",
-      "line": 22.5,
+      "line": 21.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 46.5,
-      "standard_line": 22.5,
+      "rating": 48.6,
+      "standard_line": 21.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8761,23 +8899,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.45,
-      "edge": -5.05,
+      "edge": -4.05,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Rebs+Asts",
-      "line": 28.5,
+      "line": 27.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 41.1,
-      "standard_line": 26.5,
+      "rating": 42.6,
+      "standard_line": 25.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8789,23 +8927,23 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 23.45,
-      "edge": -3.05,
+      "edge": -2.05,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
       "opponent": "NYL",
       "stat": "Pts+Rebs+Asts",
-      "line": 26.5,
+      "line": 25.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 44.2,
-      "standard_line": 26.5,
+      "rating": 46,
+      "standard_line": 25.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 11,
       "avg_mins": 33,
@@ -8817,8 +8955,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.02,
@@ -8845,8 +8983,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.02,
@@ -8873,8 +9011,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.9,
@@ -8902,8 +9040,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.9,
@@ -8931,8 +9069,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.31,
@@ -8959,8 +9097,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.31,
@@ -8987,8 +9125,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.71,
@@ -9016,8 +9154,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 3.71,
@@ -9045,8 +9183,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.68,
@@ -9074,8 +9212,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 22.68,
@@ -9103,8 +9241,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.31,
@@ -9131,22 +9269,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.29,
-      "edge": -5.21,
+      "edge": -4.21,
       "player": "Sabrina Ionescu",
       "team": "NYL",
       "position": "Guard",
       "opponent": "ATL",
       "stat": "Points",
-      "line": 17.5,
+      "line": 16.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 35.1,
+      "rating": 37.2,
       "standard_line": 15.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 2,
@@ -9160,8 +9298,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 12.29,
@@ -9189,8 +9327,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T05:50:41+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.66,
@@ -9218,8 +9356,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.66,
@@ -9247,8 +9385,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.3,
@@ -9276,8 +9414,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 16.3,
@@ -9305,8 +9443,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.16,
@@ -9333,8 +9471,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.16,
@@ -9361,8 +9499,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.69,
@@ -9388,8 +9526,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 3.5
     },
     {
@@ -9417,8 +9555,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-03T23:28:38+00:00",
-      "source_commit": "87f71e58c681"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.8,
@@ -9446,8 +9584,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.8,
@@ -9475,8 +9613,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.9,
@@ -9503,8 +9641,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.89,
@@ -9532,8 +9670,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.89,
@@ -9561,8 +9699,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.67,
@@ -9590,8 +9728,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.67,
@@ -9619,22 +9757,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.73,
-      "edge": -3.77,
+      "edge": -0.77,
       "player": "Stephanie Talbot",
       "team": "LVA",
       "position": "Forward",
       "opponent": "GSV",
       "stat": "Pts+Asts",
-      "line": 9.5,
+      "line": 6.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 30.2,
+      "rating": 44.1,
       "standard_line": 6.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 2,
@@ -9648,8 +9786,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T10:42:31+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.73,
@@ -9682,17 +9820,17 @@
     },
     {
       "projection": 7.17,
-      "edge": -2.33,
+      "edge": -1.33,
       "player": "Stephanie Talbot",
       "team": "LVA",
       "position": "Forward",
       "opponent": "GSV",
       "stat": "Pts+Rebs",
-      "line": 9.5,
+      "line": 8.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 37.7,
+      "rating": 42.2,
       "standard_line": 8.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
@@ -9706,8 +9844,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 7.17,
@@ -9762,24 +9900,24 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
-      "standard_line": 10
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
+      "standard_line": 9.5
     },
     {
       "projection": 9.75,
-      "edge": -0.25,
+      "edge": 0.25,
       "player": "Stephanie Talbot",
       "team": "LVA",
       "position": "Forward",
       "opponent": "GSV",
       "stat": "Pts+Rebs+Asts",
-      "line": 10,
+      "line": 9.5,
       "odds_type": "standard",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 48.8,
-      "standard_line": 10,
+      "rating": 51.3,
+      "standard_line": 9.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 3,
       "avg_mins": 19.2,
@@ -9791,8 +9929,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.67,
@@ -9818,8 +9956,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.92,
@@ -9847,8 +9985,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 2.89,
@@ -9875,8 +10013,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.24,
@@ -9903,8 +10041,38 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T18:44:25+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
+      "standard_line": 8.5
+    },
+    {
+      "projection": 11.24,
+      "edge": 2.74,
+      "player": "Tiffany Hayes",
+      "team": "GSV",
+      "position": "Guard",
+      "opponent": "LVA",
+      "stat": "Points",
+      "line": 8.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 66.1,
+      "standard_line": 8.5,
+      "game_date_iso": "2026-10-04",
+      "effective_dvp_factor": 7,
+      "avg_mins": 19.2,
+      "dvp_opponent": "LVA",
+      "spread": 1.5,
+      "baseline_projection": 10.32,
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-04T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-04T02:15:46+00:00",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 14.93,
@@ -9930,8 +10098,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-04T00:09:45+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.84,
@@ -9957,8 +10125,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-04T00:09:45+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.36,
@@ -9985,8 +10153,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-04T00:09:45+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 1.16,
@@ -10012,8 +10180,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 5.85,
@@ -10040,8 +10208,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd",
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a",
       "standard_line": 5.5
     },
     {
@@ -10070,8 +10238,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.23,
@@ -10099,8 +10267,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 30.23,
@@ -10128,8 +10296,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T14:58:12+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 0.82,
@@ -10155,22 +10323,22 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T21:51:06+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.45,
-      "edge": -2.05,
+      "edge": -1.05,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
       "opponent": "LVA",
       "stat": "Points",
-      "line": 13.5,
+      "line": 12.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 42.4,
+      "rating": 45.8,
       "standard_line": 11.5,
       "game_date_iso": "2026-10-04",
       "effective_dvp_factor": 7,
@@ -10184,8 +10352,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 11.45,
@@ -10213,8 +10381,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.27,
@@ -10242,8 +10410,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 17.27,
@@ -10271,8 +10439,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.62,
@@ -10300,8 +10468,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 15.62,
@@ -10329,8 +10497,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.63,
@@ -10357,8 +10525,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 20.63,
@@ -10385,8 +10553,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.12,
@@ -10413,8 +10581,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 4.12,
@@ -10441,8 +10609,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.87,
@@ -10470,8 +10638,8 @@
       "start_time_utc": "2026-10-04T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-03T09:32:28+00:00",
-      "last_pregame_frozen_at": "2026-10-04T00:09:45+00:00",
-      "source_commit": "2b75e4e451fd"
+      "last_pregame_frozen_at": "2026-10-04T02:15:46+00:00",
+      "source_commit": "8efc90702c9a"
     },
     {
       "projection": 9.87,
