@@ -100,19 +100,42 @@ class NormalizeTests(unittest.TestCase):
         )
         records, _events = sharp.normalize_unabated_payload(payload)
         self.assertFalse(any(row["prop"] == "Pass Yards" and row["line"] == 1.5 for row in records))
+        labeled = [row for row in records if row["line"] == 1.5 and row["prop"] == "Pass TDs"]
+        self.assertTrue(labeled)
+        self.assertTrue(all(row["side"] == "over" for row in labeled))
 
     def test_id_map_used_when_the_feed_has_no_label(self):
         self.assertEqual(sharp.resolve_prop(14, "15301940"), "Pass Yards")
         self.assertEqual(sharp.resolve_prop(61, None), "Pass Attempts")
+        self.assertEqual(sharp.resolve_prop(65, None), "Pass TDs")
         self.assertIsNone(sharp.resolve_prop(66, None))
         self.assertEqual(sharp.prop_from_display_stat("Aaron Rodgers Passing Attempts O/U"), "Pass Attempts")
         self.assertEqual(sharp.prop_from_display_stat("Pass + Rush Yards"), "Pass+Rush Yds")
+        self.assertEqual(sharp.prop_from_display_stat("Pass TDs"), "Pass TDs")
+        self.assertEqual(sharp.prop_from_display_stat("Passing Touchdowns"), "Pass TDs")
+        self.assertEqual(sharp.prop_from_display_stat("Joe Burrow Player Pass TDs O/U"), "Pass TDs")
         self.assertIsNone(sharp.prop_from_display_stat("Longest Reception"))
         self.assertIsNone(sharp.prop_from_display_stat("Rush + Rec TDs"))
+        self.assertIsNone(sharp.prop_from_display_stat("Passing Interceptions"))
+        self.assertIsNone(sharp.prop_from_display_stat("Anytime TDs"))
         self.assertEqual(sharp.prop_from_display_stat("Rushing + Receiving Yards"), "Rush+Rec Yds")
         self.assertEqual(sharp.prop_from_display_stat("Rec Targets"), "Rec Targets")
         self.assertEqual(sharp.prop_from_display_stat("Receiving Targets"), "Rec Targets")
         self.assertEqual(sharp.prop_from_display_stat("Amon-Ra St. Brown Targets O/U"), "Rec Targets")
+
+    def test_unlabeled_pass_td_bet_type_and_player_label(self):
+        payload = json.loads(json.dumps(PAYLOAD))
+        event = payload["propsPeopleEvents"]["lg1:pt1:pregame"][0]
+        event["propsMarketSourcesLines"]["si0:ms1:an0"]["bt65"] = _line(65, 1, -115, 1.5)
+        event["propsMarketSourcesLines"]["si1:ms1:an0"]["bt65"] = _line(65, 1, -105, 1.5)
+        event["propsMarketSourcesLines"]["si0:ms2:an0"]["bt65"] = _line(
+            65, 2, -120, 1.5, "display_stat=Joe%20Burrow%20Player%20Pass%20TDs%20O%2FU"
+        )
+        records, _events = sharp.normalize_unabated_payload(payload)
+        tds = [row for row in records if row["prop"] == "Pass TDs"]
+        self.assertEqual(len(tds), 3)
+        self.assertTrue(all(row["line"] == 1.5 for row in tds))
+        self.assertEqual({row["book"] for row in tds}, {"FanDuel", "Circa"})
 
 
 class MatchTests(unittest.TestCase):
@@ -284,6 +307,36 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(snapshot["unmatched_count"], 1)
         self.assertEqual(snapshot["unmatched_market_props"], ["Rec Targets"])
         self.assertIn("Rec Targets", snapshot["message"])
+
+    def test_pass_tds_match_the_posted_line_and_ignore_a_far_count(self):
+        books = [
+            self._book("over", 1.5, -110, "DraftKings", prop="Pass TDs"),
+            self._book("under", 1.5, -110, "DraftKings", prop="Pass TDs"),
+            self._book("over", 1.5, -105, "Pinnacle", prop="Pass TDs"),
+            self._book("under", 1.5, -115, "Pinnacle", prop="Pass TDs"),
+            self._book("over", 8.5, -110, "FanDuel", prop="Pass TDs"),
+            self._book("under", 8.5, -110, "FanDuel", prop="Pass TDs"),
+        ]
+        for row in books:
+            row["player"] = "Joe Burrow"
+            row["player_key"] = sharp.name_key("Joe Burrow")
+        matched = sharp.build_snapshot(
+            [self._pp(player="Joe Burrow", prop="Pass TDs", pp_line=1.5, projection=1.8, position="QB", id="burrow-pass-tds")],
+            books,
+        )["records"][0]
+        self.assertEqual(sharp.max_line_delta("Pass TDs"), 1.5)
+        self.assertEqual(matched["line_match"], "exact")
+        self.assertEqual(matched["matched_line"], 1.5)
+        self.assertEqual({item["book"] for item in matched["book_prices"]}, {"DraftKings", "Pinnacle"})
+        self.assertIsNone(matched["unmatched_reason"])
+
+        far = sharp.build_snapshot(
+            [self._pp(player="Joe Burrow", prop="Pass TDs", pp_line=1.5, projection=1.8, position="QB", id="far")],
+            books[-2:],
+        )["records"][0]
+        self.assertEqual(far["line_match"], "none")
+        self.assertEqual(far["unmatched_reason"], "line_too_far")
+        self.assertEqual(far["book_prices"], [])
 
     def test_rec_targets_attach_when_the_feed_has_a_line(self):
         books = [

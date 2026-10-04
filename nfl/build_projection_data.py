@@ -36,7 +36,7 @@ STARTER_SLOTS = [('QB', 1), ('RB', 1), ('WR', 3), ('TE', 1), ('PK', 1)]
 DVP_POSITIONS = ('QB', 'RB', 'WR', 'TE')
 # Rec Targets is a board prop. Leaving it out made every targets line the neutral fallback.
 DVP_STATS = (
-    'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds',
+    'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds',
     'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds',
     'Receiving Yards', 'Receptions', 'Rec Targets',
 )
@@ -78,6 +78,7 @@ def stat_values(frame, stat):
         'Pass Yards': 'passing_yards',
         'Pass Attempts': 'attempts',
         'Pass Completions': 'completions',
+        'Pass TDs': 'passing_tds',
         'Rush Yards': 'rushing_yards',
         'Rush Attempts': 'carries',
         'Receiving Yards': 'receiving_yards',
@@ -186,23 +187,30 @@ def load_player_directory():
     return choose_player_directory(pd.read_csv(PLAYERS_URL, low_memory=False))
 
 
-def load_slate():
-    response = requests.get(PRIZEPICKS_URL, timeout=30)
-    response.raise_for_status()
-    payload = response.json()
+# PrizePicks stat_type values for the NFL board. Pass TDs is the standard
+# quarterback passing-touchdown market. Demon/goblin alts and other TD markets
+# (Anytime TDs, Rush TDs) stay off the board, same as every other NFL prop.
+SUPPORTED_PROPS = {
+    'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds',
+    'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds',
+    'Receiving Yards', 'Receptions', 'Rec Targets',
+}
+
+
+def slate_records(payload):
+    """Standard NFL PrizePicks lines the board publishes. One row per player and prop."""
     players = {
         item['id']: item.get('attributes', {})
         for item in payload.get('included', [])
         if item.get('attributes', {}).get('name')
     }
-    supported = {'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets'}
     records = []
     for item in payload.get('data', []):
         attrs = item.get('attributes', {})
         player_id = item.get('relationships', {}).get('new_player', {}).get('data', {}).get('id')
         player = players.get(player_id, {})
         stat = attrs.get('stat_type')
-        if player.get('league') != 'NFL' or attrs.get('odds_type') != 'standard' or stat not in supported:
+        if player.get('league') != 'NFL' or attrs.get('odds_type') != 'standard' or stat not in SUPPORTED_PROPS:
             continue
         try:
             line = float(attrs.get('line_score'))
@@ -212,6 +220,13 @@ def load_slate():
             'player': player['name'], 'team': canonical_team(player.get('team', '—')) or '—',
             'opponent': canonical_team(attrs.get('description', '—')) or '—', 'prop': stat, 'line': line,
         })
+    return records
+
+
+def load_slate():
+    response = requests.get(PRIZEPICKS_URL, timeout=30)
+    response.raise_for_status()
+    records = slate_records(response.json())
     return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
 
 

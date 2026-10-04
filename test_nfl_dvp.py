@@ -6,6 +6,13 @@ import pandas as pd
 import nfl.build_projection_data as nfl
 
 
+def _pp(player_id, stat, odds_type, line, opponent):
+    return {
+        'relationships': {'new_player': {'data': {'id': player_id}}},
+        'attributes': {'stat_type': stat, 'odds_type': odds_type, 'line_score': line, 'description': opponent},
+    }
+
+
 def _history(rows):
     frame = pd.DataFrame(rows)
     for column in ('passing_yards', 'rushing_yards', 'receiving_yards', 'receptions', 'targets', 'attempts', 'completions', 'carries'):
@@ -52,6 +59,50 @@ class DvpRankTests(unittest.TestCase):
         self.assertEqual((jac_rank, jac_ratio), (jax_rank, jax_ratio))
         self.assertEqual(jac_rank, 1)
         self.assertNotEqual((jac_rank, jac_ratio), (16, 1.0))
+
+    def test_pass_td_props_are_ranked_from_passing_tds(self):
+        frame = pd.DataFrame({'passing_tds': [2, 0, 1]})
+        self.assertEqual(nfl.stat_values(frame, 'Pass TDs').tolist(), [2, 0, 1])
+        history = _history([
+            {'season': 2026, 'position': 'QB', 'opponent_team': 'TEN', 'passing_tds': 0},
+            {'season': 2026, 'position': 'QB', 'opponent_team': 'ATL', 'passing_tds': 3},
+        ])
+        ratings = nfl.load_dvp_ratings(history)
+        self.assertIn(('QB', 'Pass TDs'), ratings)
+        rank, ratio = nfl.dvp_for('QB', 'Pass TDs', 'TEN', ratings)
+        self.assertEqual(rank, 1)
+        self.assertLess(ratio, 1)
+
+    def test_standard_pass_tds_stay_and_other_td_markets_do_not(self):
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {'name': 'Joe Burrow', 'team': 'CIN', 'league': 'NFL'}},
+                {'id': '2', 'attributes': {'name': 'Joe Mixon', 'team': 'HOU', 'league': 'NFL'}},
+                {'id': '3', 'attributes': {'name': 'Shohei', 'team': 'LAD', 'league': 'MLB'}},
+            ],
+            'data': [
+                _pp('1', 'Pass TDs', 'standard', 2, 'JAC'),
+                _pp('1', 'Pass TDs', 'demon', 3.5, 'JAC'),
+                _pp('1', 'Pass TDs', 'goblin', 0.5, 'JAC'),
+                _pp('1', 'Pass Yards', 'standard', 250.5, 'JAC'),
+                _pp('2', 'Anytime TDs', 'standard', 0.5, 'JAC'),
+                _pp('2', 'Rush TDs', 'standard', 0.5, 'JAC'),
+                _pp('2', 'Pass+Rush+Rec TDs', 'standard', 1.5, 'JAC'),
+                _pp('3', 'Pass TDs', 'standard', 1.5, 'NYY'),
+            ],
+        }
+        rows = {(row['player'], row['prop'], row['line'], row['opponent']) for row in nfl.slate_records(payload)}
+        self.assertEqual(rows, {
+            ('Joe Burrow', 'Pass TDs', 2.0, 'JAX'),
+            ('Joe Burrow', 'Pass Yards', 250.5, 'JAX'),
+        })
+
+    def test_pass_td_grading_uses_passing_tds(self):
+        from pipeline.memory.grade_nfl_day import actual_for_stat
+        self.assertEqual(actual_for_stat({'passing_tds': 2}, 'Pass TDs'), 2.0)
+        self.assertEqual(actual_for_stat({'passing_tds': None}, 'Pass TDs'), 0.0)
+        self.assertIsNone(actual_for_stat({'passing_tds': 1}, 'Anytime TDs'))
+        self.assertEqual(actual_for_stat({'passing_yards': 250}, 'Pass Yards'), 250.0)
 
     def test_target_props_are_ranked(self):
         history = _history([
