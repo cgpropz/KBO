@@ -6,10 +6,13 @@ import pandas as pd
 import nfl.build_projection_data as nfl
 
 
-def _pp(player_id, stat, odds_type, line, opponent):
+def _pp(player_id, stat, odds_type, line, opponent, trending=None):
     return {
         'relationships': {'new_player': {'data': {'id': player_id}}},
-        'attributes': {'stat_type': stat, 'odds_type': odds_type, 'line_score': line, 'description': opponent},
+        'attributes': {
+            'stat_type': stat, 'odds_type': odds_type, 'line_score': line,
+            'description': opponent, 'trending_count': trending,
+        },
     }
 
 
@@ -95,6 +98,38 @@ class DvpRankTests(unittest.TestCase):
         self.assertEqual(rows, {
             ('Joe Burrow', 'Pass TDs', 2.0, 'JAX'),
             ('Joe Burrow', 'Pass Yards', 250.5, 'JAX'),
+        })
+
+    def test_pass_td_board_keeps_the_featured_line_when_standard_is_missing(self):
+        # 9:37 ET Players board: Jones, Mariota, Bagent, and Geno are 1.5 cards
+        # with no standard line. The higher demon and the goblin are alts.
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {'name': 'Daniel Jones', 'team': 'IND', 'league': 'NFL'}},
+                {'id': '2', 'attributes': {'name': 'C.J. Stroud', 'team': 'HOU', 'league': 'NFL'}},
+                {'id': '3', 'attributes': {'name': 'Tyson Bagent', 'team': 'CHI', 'league': 'NFL'}},
+            ],
+            'data': [
+                _pp('1', 'Pass TDs', 'demon', 1.5, 'WAS', trending=2542),
+                _pp('1', 'Pass TDs', 'demon', 3.5, 'WAS'),
+                _pp('1', 'Pass TDs', 'goblin', 0.5, 'WAS', trending=5687),
+                _pp('1', 'Pass TDs', 'demon', 24.5, '2026 NFL Season'),
+                _pp('1', 'Pass TDs', 'demon', 0.5, 'WAS 2nd Half', trending=100),
+                _pp('1', 'Anytime TDs', 'standard', 0.5, 'WAS', trending=9000),
+                _pp('2', 'Pass TDs', 'standard', 1.5, 'DAL', trending=2182),
+                _pp('2', 'Pass TDs', 'standard', 19.5, '2026 NFL Season', trending=50),
+                _pp('2', 'Pass TDs', 'demon', 2.5, 'DAL', trending=102),
+                _pp('2', 'Pass TDs', 'goblin', 0.5, 'DAL', trending=679),
+                _pp('3', 'Pass TDs', 'demon', 1.5, 'NYJ', trending=1142),
+                _pp('3', 'Pass TDs', 'goblin', 0.5, 'NYJ', trending=645),
+                _pp('3', 'Pass Yards', 'demon', 199.5, 'NYJ', trending=4000),
+            ],
+        }
+        rows = {(row['player'], row['prop'], row['line'], row['opponent']) for row in nfl.slate_records(payload)}
+        self.assertEqual(rows, {
+            ('Daniel Jones', 'Pass TDs', 1.5, 'WAS'),
+            ('C.J. Stroud', 'Pass TDs', 1.5, 'DAL'),
+            ('Tyson Bagent', 'Pass TDs', 1.5, 'NYJ'),
         })
 
     def test_pass_td_grading_uses_passing_tds(self):

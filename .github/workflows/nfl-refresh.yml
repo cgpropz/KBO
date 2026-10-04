@@ -7,6 +7,17 @@ on:
     # job actually ran only every ~3-6 h). Same 30-minute cadence.
     - cron: "17,47 * * * *"
   workflow_dispatch:
+  # A merge that changes the NFL builder or board used to wait on that flaky
+  # cron. The site reads Supabase, so the push that lands the code has to
+  # publish nfl_projections and nfl_sharp_odds itself.
+  push:
+    branches:
+      - main
+    paths:
+      - "nfl/**"
+      - ".github/workflows/nfl-refresh.yml"
+      - "kbo-props-ui/src/nfl/**"
+      - "pipeline/memory/grade_nfl_day.py"
 
 permissions:
   contents: write
