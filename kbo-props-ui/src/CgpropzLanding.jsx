@@ -4,6 +4,7 @@ import { SPORTS } from './sportsMeta';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
+import Results from './Results';
 import './CgpropzLanding.css';
 
 /*
@@ -97,6 +98,8 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
             </button>
           ))}
         </section>
+
+        <Results />
 
         <Testimonials />
         <TestimonialForm />
