@@ -80,8 +80,8 @@ class DvpRankTests(unittest.TestCase):
             {'display_name': 'DeVonta Smith', 'position': 'WR', 'headshot': 'wr.png', 'last_season': 2026, 'status': 'ACT'},
         ])
         chosen = nfl.choose_player_directory(players)
-        self.assertEqual(chosen['devantasmith']['position'], 'WR')
-        self.assertEqual(chosen['devantasmith']['headshot'], 'wr.png')
+        self.assertEqual(chosen['devontasmith']['position'], 'WR')
+        self.assertEqual(chosen['devontasmith']['headshot'], 'wr.png')
 
     def test_schedule_alias_is_the_dvp_alias(self):
         from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES
