@@ -37,6 +37,24 @@ function randomSuffix() {
   return [...bytes].map((b) => LETTERS[b % 26]).join('');
 }
 
+// Stripe: "This promotion code cannot be redeemed because the associated
+// customer has prior transactions."
+function isPromoRejected(err) {
+  const msg = String(err?.message || err?.raw?.message || '').toLowerCase();
+  return msg.includes('prior transaction') || msg.includes('promotion code') || msg.includes('coupon');
+}
+
+async function stripeCustomerId(client, email) {
+  if (typeof client.customers?.list !== 'function') return null;
+  try {
+    const listed = await client.customers.list({ email, limit: 1 });
+    const id = listed?.data?.[0]?.id;
+    return id ? String(id) : null;
+  } catch {
+    return null;
+  }
+}
+
 function readBody(req) {
   const body = req.body;
   if (body && typeof body === 'object') return body;
@@ -114,14 +132,31 @@ export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
     params.client_reference_id = String(buyer.id);
   }
   const email = String(buyer?.email || '').trim();
-  if (email.includes('@')) params.customer_email = email;
+  // An existing Stripe customer with prior payments cannot redeem XWEEK
+  // (first_time_transaction). Attach them so Stripe rejects the promo at
+  // session creation, then retry below at the full weekly price.
+  const existingCustomerId = email.includes('@') ? await stripeCustomerId(client, email) : null;
+  if (existingCustomerId) params.customer = existingCustomerId;
+  else if (email.includes('@')) params.customer_email = email;
 
   let session;
   try {
     session = await client.checkout.sessions.create(params);
   } catch (err) {
-    console.error('[weekly-checkout] create failed:', err?.message);
-    return res.status(502).json({ error: 'Checkout unavailable' });
+    if (!isPromoRejected(err)) {
+      console.error('[weekly-checkout] create failed:', err?.message);
+      return res.status(502).json({ error: 'Checkout unavailable' });
+    }
+    // XWEEK is not valid for this buyer. Same weekly price, no discount,
+    // so they can still pay $9.99.
+    delete params.discounts;
+    params.integration_identifier = `cgpropz_weekly_${randomSuffix()}`;
+    try {
+      session = await client.checkout.sessions.create(params);
+    } catch (retryErr) {
+      console.error('[weekly-checkout] create failed:', retryErr?.message);
+      return res.status(502).json({ error: 'Checkout unavailable' });
+    }
   }
 
   const url = String(session?.url || '');

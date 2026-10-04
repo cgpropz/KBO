@@ -11,7 +11,7 @@ globalThis.localStorage = {
   removeItem(key) { memory.delete(key) },
 }
 
-const { buildCheckoutUrl, captureAttribution, requestWeeklyCheckoutUrl, resolvePlanCheckoutUrl } = await import('../src/tracking.js')
+const { buildCheckoutUrl, captureAttribution, requestWeeklyCheckoutUrl, resolvePlanCheckoutUrl, prefetchWeeklyCheckoutUrl, weeklyCheckoutHref } = await import('../src/tracking.js')
 
 const USER = { id: 'user-1', email: 'buyer@example.com' }
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_live_weeklyxweek'
@@ -118,6 +118,34 @@ test('resolvePlanCheckoutUrl sends weekly to the session and falls back to the w
   assert.equal(query.get('prefilled_promo_code'), null)
   assert.equal(query.get('client_reference_id'), 'user-1')
   assert.equal(query.get('prefilled_email'), 'buyer@example.com')
+})
+
+test('weeklyCheckoutHref navigates immediately and upgrades to the session once it is ready', async () => {
+  memory.clear()
+  const before = weeklyCheckoutHref(USER, 'token-href')
+  assert.equal(before.startsWith(STRIPE_LINKS.weekly), true)
+  assert.equal(new URL(before).searchParams.get('prefilled_promo_code'), null)
+  assert.equal(new URL(before).searchParams.get('client_reference_id'), 'user-1')
+
+  const got = await prefetchWeeklyCheckoutUrl({
+    token: 'token-href',
+    utm: {},
+    fetchImpl: async () => jsonResponse({ url: SESSION_URL }),
+  })
+  assert.equal(got, SESSION_URL)
+  assert.equal(weeklyCheckoutHref(USER, 'token-href'), SESSION_URL)
+})
+
+test('a failed weekly prefetch leaves the payment link without a promo code', async () => {
+  memory.clear()
+  await assert.rejects(() => prefetchWeeklyCheckoutUrl({
+    token: 'token-fail',
+    utm: {},
+    fetchImpl: async () => jsonResponse({}, false),
+  }))
+  const href = weeklyCheckoutHref(null, 'token-fail')
+  assert.equal(href.startsWith(STRIPE_LINKS.weekly), true)
+  assert.equal(new URL(href).searchParams.get('prefilled_promo_code'), null)
 })
 
 test('resolvePlanCheckoutUrl keeps monthly on its payment link', async () => {

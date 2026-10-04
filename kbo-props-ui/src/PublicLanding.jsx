@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SPORTS } from './sportsMeta';
-import { TIERS } from './pricingTiers';
+import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
-import { resolvePlanCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl } from './tracking';
 import './PublicLanding.css';
 
 /*
@@ -68,14 +68,23 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
   const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
   const scrollToPricing = () => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // The weekly href starts as the Payment Link so the click navigates even if
+  // the Checkout Session request hasn't returned. Once it has, the href is the
+  // session (XWEEK applied for a new buyer).
+  const [weeklyHref, setWeeklyHref] = useState(() => buildCheckoutUrl(STRIPE_LINKS.weekly, null));
+  useEffect(() => {
+    let cancelled = false;
+    prefetchWeeklyCheckoutUrl().then((url) => {
+      if (!cancelled && url) setWeeklyHref(url);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   // Logged-out checkout: Stripe collects the email; access is matched to it
   // when the buyer signs up with the same email (webhook + sync-subscription).
-  // Weekly opens a Checkout Session with XWEEK applied. Monthly and lifetime
-  // stay on their Payment Links.
-  const checkout = async (tier) => {
+  // Monthly and lifetime stay on their Payment Links and navigate in this click.
+  const checkout = (tier) => {
     if (!tier?.link) return;
-    const url = await resolvePlanCheckoutUrl(tier, null);
-    if (url) window.location.assign(url);
+    window.location.assign(buildCheckoutUrl(tier.link, null));
   };
 
   return (
@@ -223,9 +232,15 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <ul className="pl-pricing-features">
               {activeTier.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
-            <button className="pl-cta-primary pl-pricing-cta" onClick={() => checkout(activeTier)}>
-              {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
-            </button>
+            {activeTier.id === 'weekly' ? (
+              <a className="pl-cta-primary pl-pricing-cta" href={weeklyHref}>
+                {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
+              </a>
+            ) : (
+              <button className="pl-cta-primary pl-pricing-cta" onClick={() => checkout(activeTier)}>
+                {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
+              </button>
+            )}
             <p className="pl-pricing-alt">{activeTier.description}</p>
             <p className="ff-checkout-note">
               No account needed to check out. Afterwards, sign up with the <strong>same email</strong> you
