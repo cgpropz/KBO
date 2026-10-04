@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './AuthContext'
+import { isBoardView } from './appRoute'
 import Paywall from './Paywall'
 import SportSwitcher from './SportSwitcher'
 import KboPropBoard from './KboPropBoard'
@@ -31,20 +32,31 @@ if (import.meta.env.DEV) NAV_ITEMS.push({ id: 'tutorial', label: 'Tutorial' })
    matching the WNBA and NFL dashboards. */
 const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
-export default function KboApp({ sport, setSport, onNavigateHome, initialView }) {
+export default function KboApp({ sport, setSport, onNavigateHome, routeView, onViewChange }) {
   const { signOut, user, tier } = useAuth()
-  const [view, setView] = useState(NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board')
-  const [previousView, setPreviousView] = useState('board')
+  const view = isBoardView('kbo', routeView) ? routeView : 'board'
   const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [playerBoard, setPlayerBoard] = useState(view)
+  if (playerBoard !== view) {
+    setPlayerBoard(view)
+    setSelectedPlayer(null)
+  }
   const isPaid = tier && tier !== 'free'
 
+  const setView = (next) => {
+    const resolved = next === 'home' ? 'board' : next
+    setSelectedPlayer(null)
+    onViewChange?.(resolved)
+  }
+
   const openPlayer = (name) => {
-    setPreviousView(view)
     setSelectedPlayer(name)
-    setView('player')
   }
 
   const content = (() => {
+    if (selectedPlayer) {
+      return <KboPlayerPage playerName={selectedPlayer} onBack={() => setSelectedPlayer(null)} />
+    }
     switch (view) {
       case 'projections': return <StrikeoutProjections onNavigate={setView} />
       case 'batters':     return <BatterProjections />
@@ -54,12 +66,12 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
       case 'matchups':    return <MatchupDeepDive />
       case 'pricing':     return <SubscriptionPage />
       case 'tutorial':    return <TutorialPage onNavigate={setView} />
-      case 'player':      return <KboPlayerPage playerName={selectedPlayer} onBack={() => setView(previousView)} />
       default:            return <KboPropBoard onNavigatePricing={() => setView('pricing')} onSelectPlayer={openPlayer} />
     }
   })()
 
-  const needsPaywall = PAID_VIEWS.has(view)
+  // Player pages were never in PAID_VIEWS, including when opened from a paid board.
+  const needsPaywall = PAID_VIEWS.has(view) && !selectedPlayer
 
   return (
     <div className="kbo-app-root">
@@ -68,7 +80,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="kbo-app-nav-links">
           {NAV_ITEMS.map((item) => (
-            <button key={item.id} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
+            <button key={item.id} className={!selectedPlayer && view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
               {item.label}
             </button>
           ))}
