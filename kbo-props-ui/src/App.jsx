@@ -7,27 +7,91 @@ import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
 import NflApp from './nfl/NflApp'
 import CheckoutSuccess from './CheckoutSuccess'
+import { buildAppPath, defaultBoardView, hubPath, isBoardView, parseAppRoute } from './appRoute'
 import './FreeFunnel.css'
 import './App.css'
 
 const SPORT_STORAGE_KEY = 'cg_sport';
+const ROUTE_BASE = import.meta.env.BASE_URL || '/';
+
+function readBootRoute() {
+  if (typeof window === 'undefined') return { screen: 'hub', sport: null, view: null };
+  return parseAppRoute(window.location.pathname, ROUTE_BASE);
+}
+
+function rememberSport(next) {
+  try { localStorage.setItem(SPORT_STORAGE_KEY, next); } catch { /* ignore */ }
+}
+
+// Push the board path without dropping checkout/UTM query params. A matching
+// path is left alone so reload and repeat clicks do not stack history entries.
+function assignPath(path) {
+  if (typeof window === 'undefined' || !path) return;
+  if (window.location.pathname === path) return;
+  window.history.pushState(null, '', path + window.location.search);
+}
 
 function App() {
   const { user, loading } = useAuth();
   const [showUI, setShowUI] = useState(false);
-  const [view, setView] = useState('hub');
+  const [boot] = useState(readBootRoute);
+  // 'hub' is the front door. 'home' is whichever sport board the URL names.
+  const [view, setView] = useState(boot.screen === 'home' ? 'home' : 'hub');
   // Pre-login flow: marketing page first, then the login/signup form.
   const [publicView, setPublicView] = useState('landing'); // 'landing' | 'auth'
   const [authMode, setAuthMode] = useState('login');
   const [sport, setSportState] = useState(() => {
+    if (boot.sport) return boot.sport;
     if (typeof localStorage === 'undefined') return 'kbo';
     return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
   });
+  const [boardView, setBoardView] = useState(boot.view || defaultBoardView(boot.sport || 'kbo'));
 
   const setSport = (next) => {
+    if (next === sport) return;
     setSportState(next);
-    try { localStorage.setItem(SPORT_STORAGE_KEY, next); } catch { /* ignore */ }
+    rememberSport(next);
+    const nextBoard = defaultBoardView(next);
+    setBoardView(nextBoard);
+    assignPath(buildAppPath(next, nextBoard, ROUTE_BASE));
   };
+
+  const openBoard = (nextSport, nextView) => {
+    const nextBoard = isBoardView(nextSport, nextView) ? nextView : defaultBoardView(nextSport);
+    setSportState(nextSport);
+    rememberSport(nextSport);
+    setBoardView(nextBoard);
+    setView('home');
+    assignPath(buildAppPath(nextSport, nextBoard, ROUTE_BASE));
+    window.scrollTo(0, 0);
+  };
+
+  const goHub = () => {
+    setView('hub');
+    assignPath(hubPath(ROUTE_BASE));
+  };
+
+  const onBoardView = (next) => {
+    if (!isBoardView(sport, next)) return;
+    setBoardView(next);
+    assignPath(buildAppPath(sport, next, ROUTE_BASE));
+  };
+
+  useEffect(() => {
+    const onPop = () => {
+      const route = parseAppRoute(window.location.pathname, ROUTE_BASE);
+      if (route.screen !== 'home') {
+        setView('hub');
+        return;
+      }
+      setSportState(route.sport);
+      rememberSport(route.sport);
+      setBoardView(route.view || defaultBoardView(route.sport));
+      setView('home');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     setTimeout(() => setShowUI(true), 100);
@@ -72,14 +136,14 @@ function App() {
       <>
         {user ? (
           <CgpropzLanding
-            onEnterSport={(s) => { setSport(s); setView('home'); }}
-            onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
+            onEnterSport={(s) => openBoard(s, defaultBoardView(s))}
+            onNavigate={(nextView) => (nextView && nextView !== 'hub' ? openBoard('kbo', nextView) : goHub())}
           />
         ) : (
           <PublicLanding
             onGetStarted={openSignUp}
             onLogin={openLogin}
-            onOpenBoard={(s) => { setSport(s); setView('home'); window.scrollTo(0, 0); }}
+            onOpenBoard={(s) => openBoard(s, defaultBoardView(s))}
           />
         )}
         {checkoutSuccess}
@@ -104,7 +168,9 @@ function App() {
       <WnbaApp
         sport={sport}
         setSport={setSport}
-        onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
+        routeView={boardView}
+        onViewChange={onBoardView}
+        onNavigateKbo={(nextView) => (nextView && nextView !== 'hub' ? openBoard('kbo', nextView) : goHub())}
       />
     );
   } else if (sport === 'nfl') {
@@ -112,8 +178,10 @@ function App() {
       <NflApp
         sport={sport}
         setSport={setSport}
-        onNavigateHome={() => setView('hub')}
-        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
+        routeView={boardView}
+        onViewChange={onBoardView}
+        onNavigateHome={goHub}
+        onNavigatePricing={() => openBoard('kbo', 'pricing')}
       />
     );
   } else {
@@ -122,8 +190,9 @@ function App() {
       <KboApp
         sport={sport}
         setSport={setSport}
-        onNavigateHome={() => setView('hub')}
-        initialView={view}
+        routeView={boardView}
+        onViewChange={onBoardView}
+        onNavigateHome={goHub}
       />
     );
   }

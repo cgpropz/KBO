@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../AuthContext'
+import { isBoardView } from '../appRoute'
 import './wnba.css'
 import Projections from './Projections'
 import Dashboard from './Dashboard'
@@ -31,18 +32,25 @@ function ComingSoon({ label }) {
   )
 }
 
-export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
+export default function WnbaApp({ sport, setSport, onNavigateKbo, routeView, onViewChange }) {
   const { tier } = useAuth()
-  const [view, setView] = useState('dashboard')
+  const view = isBoardView('wnba', routeView) ? routeView : 'dashboard'
   const [teamFilter, setTeamFilter] = useState('All')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const [returnView, setReturnView] = useState('players')
+  const [playerBoard, setPlayerBoard] = useState(view)
+  if (playerBoard !== view) {
+    setPlayerBoard(view)
+    setSelectedPlayer(null)
+  }
+
+  const setView = (next) => {
+    setSelectedPlayer(null)
+    onViewChange(next)
+  }
 
   const handleSelectPlayer = name => {
     if (!name) return
-    setReturnView(view)
     setSelectedPlayer(name)
-    setView('playerDetail')
   }
 
   const handleSelectTeam = team => {
@@ -51,18 +59,21 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
   }
 
   const content = (() => {
+    if (selectedPlayer) {
+      return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setSelectedPlayer(null)} />
+    }
     switch (view) {
       case 'projections': return <Projections onSelectPlayer={handleSelectPlayer} />
       case 'dashboard':   return <Dashboard onSelectPlayer={handleSelectPlayer} onNavigate={setView} onNavigatePricing={() => onNavigateKbo('pricing')} />
       case 'players':     return <PlayerMap onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
       case 'teams':       return <Teams onSelectTeam={handleSelectTeam} />
       case 'lineups':     return <Lineups />
-      case 'playerDetail': return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
       default:            return <ComingSoon label="WNBA" />
     }
   })()
 
-  const needsPaywall = WNBA_PAID_VIEWS.has(view)
+  // Player pages stay open without the board paywall, matching the old playerDetail view.
+  const needsPaywall = WNBA_PAID_VIEWS.has(view) && !selectedPlayer
 
 
   return (
@@ -74,7 +85,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              className={`btn-ghost${view === item.id ? ' active' : ''}`}
+              className={`btn-ghost${!selectedPlayer && view === item.id ? ' active' : ''}`}
               onClick={() => setView(item.id)}
             >
               {item.label}
