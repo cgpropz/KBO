@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchWnbaData } from './wnbaData'
+import PlayerOddsTable from '../PlayerOddsTable'
+import { rowsFromBookPrices, wnbaOddsRows } from '../playerOdds'
+import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 
 const PROP_PRIORITY = [
   'Points', 'Rebounds', 'Assists', '3-PT Made', 'Pts+Rebs+Asts', 'Pts+Rebs', 'Pts+Asts', 'Rebs+Asts',
@@ -177,6 +179,27 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
 
   const propRows = useMemo(() => sortProps(player?.ppAllProps || []), [player])
   const currentProp = useMemo(() => propRows.find(p => p.stat === selectedStat) || propRows[0], [propRows, selectedStat])
+  const [oddsRecords, setOddsRecords] = useState(null)
+  const [oddsError, setOddsError] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    fetchWnbaSnapshot('wnba/pp_line_matched_odds.json')
+      .then((snapshot) => {
+        if (!active) return
+        // A free preview is only a few rows and would hide this player's books.
+        if (snapshot.preview) {
+          setOddsRecords(null)
+          setOddsError(true)
+          return
+        }
+        const payload = snapshot.data
+        setOddsRecords(Array.isArray(payload?.records) ? payload.records : [])
+        setOddsError(false)
+      })
+      .catch(() => { if (active) { setOddsRecords(null); setOddsError(true) } })
+    return () => { active = false }
+  }, [])
 
   // Chart filters reset to "All" whenever the selected prop changes.
   const [seededStat, setSeededStat] = useState(null)
@@ -198,6 +221,10 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   const games = player.recentGames || []
   const getValue = PROP_GAME_VALUE[currentProp.stat]
   const line = currentProp.standardLine ?? currentProp.line
+  const oddsRows = oddsRecords
+    ? wnbaOddsRows(oddsRecords, player.name, currentProp.stat, line)
+    : rowsFromBookPrices(currentProp.bookPrices, line)
+  const oddsStatus = !oddsRecords && !oddsError && !currentProp.bookPrices ? 'loading' : 'ready'
   const opponentToday = currentProp.opponent
   const dvpMax = dvpByPosition[`${player.position}__max`] || 15
   const hasDvpData = !!dvpByPosition[player.position]
@@ -390,6 +417,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        <PlayerOddsTable key={currentProp.stat} propLabel={currentProp.stat} rows={oddsRows} status={oddsStatus} />
       </section>
     </div>
   )

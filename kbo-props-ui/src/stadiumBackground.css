@@ -38,6 +38,23 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* Prop Lines sits on the bright field. Keep the photo on the page, and give
+   this table a dark solid surface so names, scores, and bars stay readable.
+   PP Odds keeps the lighter wash above. */
+.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table-wrap {
+  background: rgba(6, 11, 13, 0.94);
+  border-color: rgba(26, 60, 54, 0.95);
+}
+
+.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table th,
+.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table td {
+  background: rgba(6, 11, 13, 0.96);
+}
+
+.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-row:hover td {
+  background: rgba(16, 36, 32, 0.98);
+}
+
 .nfl-sharp-row.is-open {
   background: rgba(12, 28, 25, 0.4);
 }

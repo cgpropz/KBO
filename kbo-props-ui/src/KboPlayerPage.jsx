@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import PlayerOddsTable from './PlayerOddsTable'
+import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 
 const TEAM_COLORS = {
@@ -112,6 +114,10 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const isPitcher = player?.type === 'pitcher'
   const propRows = useMemo(() => sortProps(player?.props || [], player?.type), [player])
   const currentProp = useMemo(() => propRows.find(p => p.stat === selectedStat) || propRows[0], [propRows, selectedStat])
+  const oddsRows = useMemo(
+    () => rowsFromBookPrices(currentProp?.bookPrices || currentProp?.book_prices, currentProp?.line),
+    [currentProp],
+  )
 
   // Chart filters reset to "All" whenever the selected prop changes.
   const [seededStat, setSeededStat] = useState(null)
@@ -305,6 +311,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        <PlayerOddsTable key={currentProp.stat} propLabel={currentProp.stat} rows={oddsRows} status="ready" />
       </section>
     </div>
   )

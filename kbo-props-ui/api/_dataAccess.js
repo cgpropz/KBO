@@ -69,6 +69,13 @@ function nflSharpScore(row) {
   return Number.isFinite(ev) ? ev : -Infinity;
 }
 
+function wnbaSharpScore(row) {
+  const books = num(row?.matched_books_count);
+  if (Number.isFinite(books)) return books;
+  const outcomes = num(row?.matched_outcomes_count);
+  return Number.isFinite(outcomes) ? outcomes : -Infinity;
+}
+
 function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
   return items
     .map((item, index) => ({ item, index, score: scoreFn(item) }))
@@ -221,6 +228,7 @@ export const DATASETS = {
   wnba_dvp_guard: { table: 'wnba_dvp_guard', sport: 'wnba', free: FULL },
   wnba_dvp_forward: { table: 'wnba_dvp_forward', sport: 'wnba', free: FULL },
   wnba_dvp_center: { table: 'wnba_dvp_center', sport: 'wnba', free: FULL },
+  wnba_sharp_odds: { table: 'wnba_sharp_odds', sport: 'wnba', free: previewObjectList('records', wnbaSharpScore) },
   // NFL
   nfl_projections: { table: 'nfl_projections', sport: 'nfl', free: previewList(nflScore) },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },

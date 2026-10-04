@@ -34,7 +34,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 # Tables that may not exist yet in every environment (created by a later
 # migration). A missing table is reported and skipped instead of failing the
 # whole publish.
-OPTIONAL_TABLES = {"nfl_lineups", "nfl_sharp_odds", "graded_props_history"}
+OPTIONAL_TABLES = {"nfl_lineups", "nfl_sharp_odds", "graded_props_history", "wnba_sharp_odds"}
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
 # is an idempotent upsert of the single `id = 1` row, so re-sending the same
@@ -104,6 +104,7 @@ TABLES = {
     "wnba/dvp_guard.json": "wnba_dvp_guard",
     "wnba/dvp_forward.json": "wnba_dvp_forward",
     "wnba/dvp_center.json": "wnba_dvp_center",
+    "wnba/wnba_pp_line_matched_odds.json": "wnba_sharp_odds",
     "nfl/projections.json": "nfl_projections",
     "nfl/lineups.json": "nfl_lineups",
     "nfl/sharp_odds.json": "nfl_sharp_odds",
@@ -159,7 +160,10 @@ def main():
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
 
     for filename, table in tables.items():
-        file_path = os.path.join(BASE, filename) if filename.startswith("nfl/") else os.path.join(DATA_DIR, filename)
+        # NFL snapshots and the WNBA Unabated match file live at the repo root.
+        # The other WNBA snapshots are written under public/data before publish.
+        repo_root_file = filename.startswith("nfl/") or filename == "wnba/wnba_pp_line_matched_odds.json"
+        file_path = os.path.join(BASE, filename) if repo_root_file else os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):
             if table in OPTIONAL_TABLES:

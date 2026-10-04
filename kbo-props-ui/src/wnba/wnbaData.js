@@ -15,6 +15,7 @@ const FILE_TO_DATASET = {
   'wnba/dvp_guard.json': 'wnba_dvp_guard',
   'wnba/dvp_forward.json': 'wnba_dvp_forward',
   'wnba/dvp_center.json': 'wnba_dvp_center',
+  'wnba/pp_line_matched_odds.json': 'wnba_sharp_odds',
 }
 
 // Returns { data, updatedAt, source, preview, lockedCount }.

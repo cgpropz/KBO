@@ -62,6 +62,68 @@ function buildSharpKey(player, statLabel, line) {
   return `${normalizeNameKey(player)}|${normalizeTextKey(statLabel)}|${normalizeLineKey(line)}`;
 }
 
+const PICKEM_BOOK_PREFIXES = [
+  'prizepicks', 'underdog', 'sleeper', 'splashsports', 'unabated',
+  'sharpbook', 'draftkingspick6', '4castersinternal',
+];
+
+function sportsbookKey(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function isPickemBook(key) {
+  return !key || PICKEM_BOOK_PREFIXES.some(prefix => key === prefix || key.startsWith(prefix));
+}
+
+function bookPricesFromRecord(record) {
+  if (!record) return [];
+  const line = record.sharp_reference_line ?? record.pp_line ?? null;
+  const map = new Map();
+  for (const side of ['over', 'under']) {
+    const books = record[side]?.books;
+    if (!Array.isArray(books)) continue;
+    for (const item of books) {
+      const name = item?.bookmaker || item?.book;
+      const key = sportsbookKey(name);
+      if (isPickemBook(key)) continue;
+      const price = Number(item?.price);
+      if (!Number.isFinite(price)) continue;
+      const rounded = Math.round(price);
+      const slot = map.get(key) || { book: name, book_key: key, line, over: null, under: null };
+      if (slot[side] == null || rounded > slot[side]) {
+        slot[side] = rounded;
+        slot.book = name;
+      }
+      map.set(key, slot);
+    }
+  }
+  return [...map.values()].sort((a, b) => String(a.book).localeCompare(String(b.book)));
+}
+
+const matchedOddsCache = { map: new Map(), ts: 0 };
+
+function loadMatchedOddsMap() {
+  const now = Date.now();
+  if (matchedOddsCache.map.size && now - matchedOddsCache.ts < 60 * 1000) {
+    return matchedOddsCache.map;
+  }
+
+  const map = new Map();
+  try {
+    const payload = JSON.parse(fs.readFileSync(SHARP_ODDS_PATH, 'utf8'));
+    const records = Array.isArray(payload?.records) ? payload.records : [];
+    records.forEach(record => {
+      map.set(buildSharpKey(record.player, record.stat_label, record.pp_line), record);
+    });
+  } catch {
+    // Book rows are optional; a missing artifact leaves every prop without prices.
+  }
+
+  matchedOddsCache.map = map;
+  matchedOddsCache.ts = now;
+  return map;
+}
+
 function loadSharpOddsMap() {
   const now = Date.now();
   if (sharpOddsCache.map.size && now - sharpOddsCache.ts < 60 * 1000) {
@@ -843,6 +905,7 @@ app.get('/api/dvp/:position', async (req, res) => {
 app.get('/api/projections/v2', async (req, res) => {
   try {
     const sharpOddsMap = loadSharpOddsMap();
+    const matchedOddsMap = loadMatchedOddsMap();
     const lineType = normalizeOddsType(req.query.lineType);
     const ppLinesPromise = fetchPrizePicks(lineType);
     const ppStandardPromise = lineType === 'standard' ? ppLinesPromise : fetchPrizePicks('standard');
@@ -924,7 +987,8 @@ app.get('/api/projections/v2', async (req, res) => {
           l3ppm: {}, l7ppm: {}, l15ppm: {},
           recentGames: logGames.slice(0, 40).map(toRecentGame),
           ppAllProps: playerProps.map(prop => {
-            const sharpRow = sharpOddsMap.get(buildSharpKey(name, prop?.stat, prop?.line));
+            const sharpKey = buildSharpKey(name, prop?.stat, prop?.line);
+            const sharpRow = sharpOddsMap.get(sharpKey);
             return {
               ...prop,
               standardLine: standardLineForStat(prop.stat),
@@ -933,6 +997,7 @@ app.get('/api/projections/v2', async (req, res) => {
               sharpScore: sharpRow?.sharp_score ?? null,
               sharpOdds: sharpRow?.sharp_odds ?? null,
               sharpSide: sharpRow?.sharp_side ?? null,
+              bookPrices: bookPricesFromRecord(matchedOddsMap.get(sharpKey)),
             };
           }),
         };
@@ -1049,7 +1114,8 @@ app.get('/api/projections/v2', async (req, res) => {
           const rating = (line != null && line > 0 && projection != null)
             ? parseFloat(((projection / line) * 50).toFixed(1))
             : null;
-          const sharpRow = sharpOddsMap.get(buildSharpKey(name, prop.stat, line));
+          const sharpKey = buildSharpKey(name, prop.stat, line);
+          const sharpRow = sharpOddsMap.get(sharpKey);
           return {
           ...prop,
           standardLine: standardLineForStat(prop.stat),
@@ -1059,6 +1125,7 @@ app.get('/api/projections/v2', async (req, res) => {
             sharpScore: sharpRow?.sharp_score ?? null,
             sharpOdds: sharpRow?.sharp_odds ?? null,
             sharpSide: sharpRow?.sharp_side ?? null,
+            bookPrices: bookPricesFromRecord(matchedOddsMap.get(sharpKey)),
           };
         }),
         ppRating: {
