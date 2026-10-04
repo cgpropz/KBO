@@ -594,6 +594,17 @@
   max-width: 1400px;
   margin: 0 auto;
 }
+.wnba-root .wnba-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.wnba-root .wnba-insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.wnba-root .wnba-team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 36px; }
+.wnba-root .wnba-dvp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.wnba-root .wnba-dvp-compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) {
+  .wnba-root .wnba-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wnba-root .wnba-insight-grid,
+  .wnba-root .wnba-team-grid,
+  .wnba-root .wnba-dvp-compare { grid-template-columns: 1fr; }
+}
 
 /* ── Edge cards / dashboard board (ported from WNBA index.css) ────────────── */
 .wnba-root .edge-search,

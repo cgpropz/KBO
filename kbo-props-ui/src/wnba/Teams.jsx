@@ -175,7 +175,7 @@ export default function Teams({ onSelectTeam }) {
       </div>
 
       {/* Team cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, marginBottom: 36 }}>
+      <div className="wnba-team-grid">
         {TEAMS.map(abbr => (
           <TeamCard key={abbr} abbr={abbr} onSelectTeam={onSelectTeam} projections={projections ?? []} />
         ))}
@@ -183,7 +183,7 @@ export default function Teams({ onSelectTeam }) {
 
       {/* DVP tables */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div className="wnba-dvp-head">
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'white' }}>Defense vs Position</h2>
           <div style={{ display: 'flex', gap: 6 }}>
             {['Guard', 'Forward', 'Center'].map(pos => (
@@ -197,7 +197,7 @@ export default function Teams({ onSelectTeam }) {
 
       {/* All 3 DVP tables */}
       <h2 style={{ fontSize: 16, fontWeight: 700, color: 'white', margin: '32px 0 16px' }}>All Position DVP Comparison</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="wnba-dvp-compare">
         {['Guard', 'Forward', 'Center'].map(pos => (
           <DVPCard key={pos} position={pos} data={dvpByPos[pos]} />
         ))}

@@ -1,0 +1,262 @@
+/*
+ * Phone layout fixes. Desktop rules live in each page stylesheet.
+ * Everything here is inside a max-width query so the wide layout stays put.
+ */
+
+@media (max-width: 860px) {
+  /* Marketing header: keep section links reachable instead of dropping them. */
+  .pl-header { flex-wrap: wrap; row-gap: 8px; }
+  .pl-nav {
+    display: flex;
+    order: 3;
+    flex: 1 0 100%;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pl-nav::-webkit-scrollbar { display: none; }
+  .pl-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 760px) {
+  .kbo-app-root,
+  .nfl-root,
+  .wnba-root,
+  .cg-landing,
+  .pl-landing {
+    max-width: 100%;
+  }
+
+  .kbo-app-nav,
+  .nfl-nav,
+  .wnba-root .wnba-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .kbo-app-logo,
+  .nfl-logo,
+  .wnba-root .wnba-nav-logo {
+    min-height: 40px;
+    padding: 8px 2px;
+  }
+
+  .kbo-app-pro-badge,
+  .nfl-pro-badge,
+  .kbo-app-signout {
+    order: 1;
+    margin-left: auto;
+    min-height: 36px;
+  }
+  .kbo-app-signout { margin-left: 0; padding: 8px 6px; }
+
+  .kbo-app-root .sport-switcher,
+  .nfl-root .sport-switcher,
+  .wnba-root .sport-switcher {
+    order: 2;
+    flex: 1 1 100%;
+    display: flex;
+    margin: 0;
+    min-width: 0;
+  }
+  .kbo-app-root .sport-switcher button,
+  .nfl-root .sport-switcher button,
+  .wnba-root .sport-switcher button {
+    flex: 1 1 0;
+    min-height: 40px;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .kbo-app-nav-links,
+  .nfl-nav-links,
+  .wnba-root .wnba-nav-links {
+    display: flex;
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    gap: 2px;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .kbo-app-nav-links::-webkit-scrollbar,
+  .nfl-nav-links::-webkit-scrollbar,
+  .wnba-root .wnba-nav-links::-webkit-scrollbar { display: none; }
+  .kbo-app-nav-links button,
+  .nfl-nav-links button,
+  .wnba-root .wnba-nav-links button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
+  .kbo-player-search,
+  .nfl-player-search,
+  .wnba-root .wnba-player-search {
+    order: 4;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+  .kbo-player-search input,
+  .nfl-player-search input,
+  .wnba-root .wnba-player-search input {
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .kbo-app-content,
+  .nfl-content,
+  .wnba-root .wnba-content {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 16px 12px calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .kbo-lines-page { padding: 0; }
+
+  .kbo-board-header,
+  .nfl-board-header,
+  .nfl-hero,
+  .wnba-board-header,
+  .nfl-lineups-header {
+    align-items: flex-start;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .kbo-board-header h1,
+  .nfl-hero h1,
+  .nfl-board-header h1,
+  .wnba-board-header h1,
+  .nfl-lineups-header h1 {
+    font-size: clamp(28px, 8vw, 40px);
+    overflow-wrap: anywhere;
+  }
+  .kbo-header-actions,
+  .nfl-lines-header-actions,
+  .wnba-lines-header-actions,
+  .nfl-live {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    white-space: normal;
+    row-gap: 8px;
+  }
+  .wnba-lines-header-actions > span,
+  .nfl-board-header > span,
+  .kbo-header-actions {
+    white-space: normal;
+  }
+
+  .kbo-prop-tabs button,
+  .nfl-lines-tabs button,
+  .wnba-lines-tabs button,
+  .kbo-player-tabs button,
+  .nfl-player-tabs button,
+  .wnba-player-tabs button,
+  .wnba-root .btn-ghost {
+    min-height: 40px;
+  }
+
+  .kbo-lines-table-wrap,
+  .nfl-lines-table-wrap,
+  .wnba-lines-table-wrap,
+  .nfl-table-wrap,
+  .rk-table-wrap,
+  .so-table-wrap,
+  .bp-table-wrap,
+  .gt-table-wrap,
+  .nfl-sharp-books,
+  .so-recent-table-wrap {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .nfl-lineups-grid { grid-template-columns: 1fr; }
+  .wnba-root .edge-grid { grid-template-columns: 1fr; }
+
+  .nfl-sharp-controls { width: 100%; min-width: 0; }
+  .nfl-sharp-controls input,
+  .nfl-sharp-controls select {
+    min-width: 0;
+    flex: 1 1 140px;
+    max-width: 100%;
+  }
+  .nfl-filters { max-width: 100%; }
+  .nfl-filters input { min-width: 0; width: 100%; }
+
+  .kbo-filter-panel,
+  .nfl-filters-panel,
+  .wnba-filters-panel {
+    width: min(420px, 100%);
+    max-width: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Line labels sit inside the chart so they do not stick off the left edge. */
+  .kbo-player-chart-line span,
+  .nfl-player-chart-line span,
+  .wnba-player-chart-line span {
+    left: 4px;
+    transform: none;
+  }
+
+  .nfl-history-bars span:active i,
+  .nfl-history-bars span:focus-visible i { display: block; }
+
+  .ff-preview-bar {
+    padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px));
+    text-align: center;
+  }
+  .ff-preview-bar > span { min-width: 0; flex: 1 1 200px; }
+  .ff-preview-bar .ff-btn-small { min-height: 40px; }
+
+  .ff-modal {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .cg-header,
+  .pl-header {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .cg-link-btn,
+  .cg-signout { min-height: 40px; }
+
+  .pw-card { margin-inline: 12px; box-sizing: border-box; }
+
+  .auth-page { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}

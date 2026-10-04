@@ -662,7 +662,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       </div>
 
       {/* ── KPI strip ────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="wnba-kpi-grid">
         <KpiCard label="Active Players" value={totalPlayers} sub="2025–2026 roster" color="#FF6900" />
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="combined 2025+2026" color="#3b82f6" />
         <KpiCard label="Props on Board" value={projLoading ? '…' : allRows.length.toLocaleString()} sub="scored & rated" color="#a855f7" />
@@ -670,7 +670,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       </div>
 
       {/* ── Insight panels ───────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      <div className="wnba-insight-grid">
         <InsightPanel title="Hottest Streaks" kicker="L10 hit rate" accent="#22c55e">
           {projLoading
             ? Array(insightLimit).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)

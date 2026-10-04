@@ -5,7 +5,7 @@ export const SPORTS = [
     id: 'kbo',
     emoji: '⚾',
     name: 'KBO',
-    full: 'Korea Baseball',
+    full: 'Korean Baseball',
     tagline: 'Strikeout & batter projections, prop cards, slip builder, and matchup breakdowns.',
     accent: '#22c55e',
     glow: 'rgba(34, 197, 94, 0.35)',
