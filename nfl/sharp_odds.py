@@ -59,6 +59,9 @@ BET_TYPE_TO_PROP = {
     68: "Rush+Rec Yds",
     16: "Receiving Yards",
     15: "Receptions",
+    # Confirmed 2026-10-04: unlabeled rows and display_stat "Pass TDs" /
+    # "{Player} Player Pass TDs O/U" both use bt65.
+    65: "Pass TDs",
 }
 
 # Longer phrases first so "pass + rush yards" is not read as "pass yards".
@@ -69,6 +72,10 @@ DISPLAY_STAT_PHRASES = (
     ("rushing and receiving yards", "Rush+Rec Yds"),
     ("rushing + receiving yards", "Rush+Rec Yds"),
     ("rush + receiving yards", "Rush+Rec Yds"),
+    ("passing touchdowns", "Pass TDs"),
+    ("pass touchdowns", "Pass TDs"),
+    ("passing tds", "Pass TDs"),
+    ("pass tds", "Pass TDs"),
     ("receiving targets", "Rec Targets"),
     ("rec targets", "Rec Targets"),
     ("receiving yards", "Receiving Yards"),
@@ -87,7 +94,7 @@ DISPLAY_STAT_PHRASES = (
     ("targets", "Rec Targets"),
 )
 
-COUNT_PROPS = {"Receptions", "Pass Attempts", "Pass Completions", "Rush Attempts", "Rec Targets"}
+COUNT_PROPS = {"Receptions", "Pass Attempts", "Pass Completions", "Pass TDs", "Rush Attempts", "Rec Targets"}
 # Pick'em apps and in-house composites are not sportsbook prices.
 EXCLUDED_BOOK_KEYS = {
     "prizepicks",

@@ -4,7 +4,7 @@ import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 
-const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
+const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)

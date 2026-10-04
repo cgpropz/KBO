@@ -57,6 +57,41 @@ test('a prop with no unabated market does not keep the previous prop rows', () =
   assert.deepEqual(nflOddsRows(nflRecords, 'Zay Flowers', 'Rush Yards', 40), [])
 })
 
+test('passing touchdown odds follow the Pass TDs prop and leave other props alone', () => {
+  const records = [
+    ...nflRecords,
+    {
+      player: 'Joe Burrow',
+      prop: 'Pass Yards',
+      pp_line: 250.5,
+      matched_line: 250.5,
+      line_match: 'exact',
+      book_prices: [
+        { book: 'FanDuel', book_key: 'fanduel', over: -115, under: -105 },
+      ],
+    },
+    {
+      player: 'Joe Burrow',
+      prop: 'Pass TDs',
+      pp_line: 2,
+      matched_line: 1.5,
+      line_match: 'nearest',
+      book_prices: [
+        { book: 'DraftKings', book_key: 'draftkings', over: -110, under: -110 },
+        { book: 'PrizePicks', book_key: 'prizepicks', over: -119, under: -119 },
+        { book: 'Pinnacle', book_key: 'pinnacle', over: -105, under: null },
+      ],
+    },
+  ]
+  const touchdowns = nflOddsRows(records, 'Joe Burrow', 'Pass TDs', 2)
+  assert.deepEqual(touchdowns.map((row) => [row.book, row.line, row.over, row.under]), [
+    ['DraftKings', 1.5, -110, -110],
+    ['Pinnacle', 1.5, -105, null],
+  ])
+  assert.deepEqual(nflOddsRows(records, 'Joe Burrow', 'Pass Yards', 250.5).map((row) => row.book), ['FanDuel'])
+  assert.deepEqual(nflOddsRows(records, 'Joe Burrow', 'Receptions', 5), [])
+})
+
 test('wnba matched books merge over and under for the exact prop line', () => {
   const records = [
     {

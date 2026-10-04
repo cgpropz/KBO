@@ -12,7 +12,7 @@ import {
   sameAmericanPrice,
 } from './ppBoardColors'
 
-const PROP_ORDER = ['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets']
+const PROP_ORDER = ['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets']
 const GRADE_RANK = { 'A+': 5, A: 4, B: 3, C: 2, D: 1 }
 const GRADE_BANDS = [[4, 'A+'], [2, 'A'], [0.5, 'B'], [0, 'C']]
 const GRADE_LADDER = ['A+', 'A', 'B', 'C', 'D']
