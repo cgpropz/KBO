@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchNflProjections } from './nflData'
+import PlayerOddsTable from '../PlayerOddsTable'
+import { nflOddsRows } from '../playerOdds'
+import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
@@ -88,6 +90,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const [snapThreshold, setSnapThreshold] = useState(null)
   const [usageThreshold, setUsageThreshold] = useState(null)
   const [openFilter, setOpenFilter] = useState(null)
+  const [oddsRecords, setOddsRecords] = useState(null)
+  const [oddsError, setOddsError] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -97,11 +101,24 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     return () => { active = false }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    fetchNflSharpOdds()
+      .then(({ records }) => { if (active) setOddsRecords(Array.isArray(records) ? records : []) })
+      .catch(() => { if (active) { setOddsRecords([]); setOddsError(true) } })
+    return () => { active = false }
+  }, [])
+
   const playerRows = useMemo(() => sortProps(projections
     .filter((item) => item.player === player)
     .map((item) => ({ ...item, score: item.line ? (item.projection / item.line) * 50 : 0 }))), [projections, player])
 
   const currentRow = useMemo(() => playerRows.find((item) => item.prop === selectedProp) || playerRows[0], [playerRows, selectedProp])
+  const oddsRows = useMemo(
+    () => nflOddsRows(oddsRecords, player, currentRow?.prop, currentRow?.line),
+    [oddsRecords, player, currentRow],
+  )
+  const oddsStatus = oddsError ? 'error' : oddsRecords == null ? 'loading' : 'ready'
 
   // Chart filters default to "All" (unfiltered) whenever the player/prop changes, so the chart never starts empty.
   const [seededRowId, setSeededRowId] = useState(null)
@@ -283,6 +300,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           </span>
         ))}
       </div>
+      <PlayerOddsTable key={currentRow.prop} propLabel={currentRow.prop} rows={oddsRows} status={oddsStatus} />
     </section>
   )
 }

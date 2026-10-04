@@ -77,3 +77,19 @@ for each row execute function public.set_updated_at();
 
 alter table public.nfl_sharp_odds enable row level security;
 revoke all on public.nfl_sharp_odds from anon, authenticated;
+
+-- WNBA Unabated line-matched odds. Same single-row jsonb shape. The player
+-- page reads it through /api/data. Created without a public read policy.
+create table if not exists public.wnba_sharp_odds (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists wnba_sharp_odds_set_updated_at on public.wnba_sharp_odds;
+create trigger wnba_sharp_odds_set_updated_at
+before update on public.wnba_sharp_odds
+for each row execute function public.set_updated_at();
+
+alter table public.wnba_sharp_odds enable row level security;
+revoke all on public.wnba_sharp_odds from anon, authenticated;

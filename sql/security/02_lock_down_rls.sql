@@ -48,6 +48,7 @@ declare
     'wnba_projections_standard', 'wnba_projections_demon',
     'wnba_projections_goblin', 'wnba_players', 'wnba_teams', 'wnba_lineups',
     'wnba_edge', 'wnba_dvp_guard', 'wnba_dvp_forward', 'wnba_dvp_center',
+    'wnba_sharp_odds',
     -- NFL
     'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds'
   ];

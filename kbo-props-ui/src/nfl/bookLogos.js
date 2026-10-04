@@ -44,6 +44,8 @@ const LOGO_KEYS = [
 // Names that do not share a prefix with the file.
 const LOGO_ALIASES = {
   mgm: 'betmgm',
+  prophetexchange: 'prophetx',
+  sugarhouse: 'betrivers',
 }
 
 function normalizeBookKey(value) {
