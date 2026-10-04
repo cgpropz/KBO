@@ -36,6 +36,21 @@ const TABLES = {
   wnba_lineups: Array.from({ length: 6 }, (_, i) => ({ game: i })),
   nfl_projections: Array.from({ length: 15 }, (_, i) => ({ player: `N${i}`, line: 50, projection: 40 + i })),
   nfl_lineups: Array.from({ length: 4 }, (_, i) => ({ game: i })),
+  nfl_game_markets: {
+    generated_at: NOW,
+    provider: 'unabated',
+    status: 'ok',
+    model: { proven: false, label: 'Not a proven spread, total, or moneyline formula' },
+    week: 4,
+    games: Array.from({ length: 6 }, (_, i) => ({
+      id: `g${i}`,
+      awayTeam: 'ARI',
+      homeTeam: 'NYG',
+      spread: { edge: i },
+      total: { edge: i - 1 },
+      moneyline: { edge: 0.5 },
+    })),
+  },
   nfl_sharp_odds: {
     generated_at: NOW,
     provider: 'unabated',
@@ -229,6 +244,19 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
   } finally {
     TABLES.nfl_sharp_odds = original
   }
+})
+
+test('NFL game markets preview keeps the biggest edges and the model label', async () => {
+  const res = await call('nfl_game_markets')
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, true)
+  assert.equal(res.body.data.provider, 'unabated')
+  assert.equal(res.body.data.model.proven, false)
+  assert.deepEqual(res.body.data.games.map((game) => game.spread.edge), [5, 4, 3])
+  assert.equal(res.body.lockedCount, 3)
+  const paid = await call('nfl_game_markets', 'tok-owner')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.games.length, 6)
 })
 
 test('unpublished table returns 404', async () => {

@@ -42,6 +42,12 @@ jobs:
         continue-on-error: true
         run: python nfl/sharp_odds.py
 
+      # Full-game spread, total, and moneyline. Unabated only. A failure here
+      # must not block the PrizePicks board publish below.
+      - name: Build NFL game-market projections
+        continue-on-error: true
+        run: python nfl/game_markets.py
+
       - name: Publish protected NFL snapshot
         run: python publish_supabase.py
         env:

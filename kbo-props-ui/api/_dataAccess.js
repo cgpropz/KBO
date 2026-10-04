@@ -62,6 +62,14 @@ function nflScore(row) {
 
 // PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
 // Older snapshots that only stored sportsbook EV still sort on that.
+function nflGameMarketScore(row) {
+  const edges = [row?.spread?.edge, row?.total?.edge, row?.moneyline?.edge]
+    .map(num)
+    .filter(Number.isFinite)
+    .map((value) => Math.abs(value));
+  return edges.length ? Math.max(...edges) : -Infinity;
+}
+
 function nflSharpScore(row) {
   const edge = num(row?.pp_edge_flex ?? row?.pp_edge_pct);
   if (Number.isFinite(edge)) return edge;
@@ -233,6 +241,7 @@ export const DATASETS = {
   nfl_projections: { table: 'nfl_projections', sport: 'nfl', free: previewList(nflScore) },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
+  nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },
 };
 
 // Decide what the caller receives for one dataset snapshot.

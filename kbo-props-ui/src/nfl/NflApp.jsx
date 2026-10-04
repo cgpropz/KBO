@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
+import NflGameMarkets from './NflGameMarkets'
 import NflLineups from './NflLineups'
 import NflProjections from './NflProjections'
 import NflPropLines from './NflPropLines'
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projections', label: 'PrizePicks Board' },
   { id: 'sharp', label: 'PP Odds' },
+  { id: 'markets', label: 'Game Markets' },
   { id: 'lineups', label: 'Starting Lineups' },
 ]
 
@@ -35,12 +37,14 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
       ? <NflProjections onSelectPlayer={openPlayer} />
       : view === 'sharp'
         ? <NflSharpOdds onSelectPlayer={openPlayer} />
-        : view === 'lineups'
-          ? <NflLineups />
-          : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
+        : view === 'markets'
+          ? <NflGameMarkets />
+          : view === 'lineups'
+            ? <NflLineups />
+            : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
 
   // The dashboard gates itself (top 3 free, rest blurred by membership), so it skips the full-page paywall.
-  // Sharp Odds is a paid board, same as the PrizePicks board and lineups.
+  // Sharp Odds, Game Markets, the PrizePicks board, and lineups are paid boards.
   const isDashboard = view === 'dashboard'
 
   return (

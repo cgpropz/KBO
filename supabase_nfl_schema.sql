@@ -78,6 +78,22 @@ for each row execute function public.set_updated_at();
 alter table public.nfl_sharp_odds enable row level security;
 revoke all on public.nfl_sharp_odds from anon, authenticated;
 
+-- Game-market snapshot (spread, total, moneyline). Same single-row jsonb shape.
+-- The site reads it through /api/data with the service role.
+create table if not exists public.nfl_game_markets (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists nfl_game_markets_set_updated_at on public.nfl_game_markets;
+create trigger nfl_game_markets_set_updated_at
+before update on public.nfl_game_markets
+for each row execute function public.set_updated_at();
+
+alter table public.nfl_game_markets enable row level security;
+revoke all on public.nfl_game_markets from anon, authenticated;
+
 -- WNBA Unabated line-matched odds. Same single-row jsonb shape. The player
 -- page reads it through /api/data. Created without a public read policy.
 create table if not exists public.wnba_sharp_odds (
