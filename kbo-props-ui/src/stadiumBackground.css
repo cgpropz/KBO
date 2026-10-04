@@ -1,7 +1,8 @@
 /*
  * Night stadium photo for the NFL section only.
- * The picture stays fixed while NFL content scrolls. Boards use a dark wash
- * that opens at the edges so the photo shows through and text stays readable.
+ * The picture stays fixed while NFL content scrolls. Most boards use a dark wash
+ * that opens at the edges so the photo shows through. Prop Lines and PP Odds
+ * sit on a solid dark panel so the table stays readable on the bright field.
  * Odds and grade colors are unchanged. Other sports keep their own fills.
  */
 
@@ -38,29 +39,26 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Prop Lines sits on the bright field. Keep the photo on the page, and give
-   this table a dark solid surface so names, scores, and bars stay readable.
-   PP Odds keeps the lighter wash above. */
-.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table-wrap {
+/* Prop Lines and PP Odds sit on the bright field. Keep the photo on the page,
+   and give these tables the same dark solid surface so names, odds, and edges
+   stay readable. */
+.nfl-lines-page .nfl-lines-table-wrap {
   background: rgba(6, 11, 13, 0.94);
   border-color: rgba(26, 60, 54, 0.95);
 }
 
-.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table th,
-.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-table td {
+.nfl-lines-page .nfl-lines-table th,
+.nfl-lines-page .nfl-lines-table td {
   background: rgba(6, 11, 13, 0.96);
 }
 
-.nfl-lines-page:not(.nfl-sharp-page) .nfl-lines-row:hover td {
+.nfl-lines-page .nfl-lines-row:hover td,
+.nfl-sharp-page .nfl-sharp-row.is-open td {
   background: rgba(16, 36, 32, 0.98);
 }
 
-.nfl-sharp-row.is-open {
-  background: rgba(12, 28, 25, 0.4);
-}
-
-.nfl-sharp-strip-row td {
-  background: rgba(7, 19, 17, 0.55);
+.nfl-sharp-page .nfl-sharp-strip-row td {
+  background: #071311;
 }
 
 .nfl-top-card,
