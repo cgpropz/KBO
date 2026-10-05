@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
 import { bookLogoSrc } from './bookLogos'
 import {
@@ -349,6 +350,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [query, setQuery] = useState('')
+  const [matchup, setMatchup] = useState(ALL_MATCHUPS)
   const [prop, setProp] = useState('All')
   const [side, setSide] = useState('All')
   const [sort, setSort] = useState('PP Edge')
@@ -381,9 +383,12 @@ export default function NflSharpOdds({ onSelectPlayer }) {
     return ['All', ...ordered, ...extras]
   }, [records])
 
+  const matchups = useMemo(() => listMatchups(records), [records])
+
   const rows = useMemo(() => {
     const filtered = records.filter((item) => {
       if (prop !== 'All' && item.prop !== prop) return false
+      if (!rowMatchesMatchup(item, matchup)) return false
       if (side === 'Overs' && item.recommendation !== 'OVER') return false
       if (side === 'Unders' && item.recommendation !== 'UNDER') return false
       if (plusOnly && !(activeEdge(item, mode) > 0)) return false
@@ -401,7 +406,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       if (sort === 'L5') return (b.hitRateL5 ?? -1) - (a.hitRateL5 ?? -1)
       return (edge(b) - edge(a)) || (rank(b) - rank(a)) || String(a.player).localeCompare(String(b.player))
     })
-  }, [records, prop, side, query, sort, mode, plusOnly])
+  }, [records, prop, matchup, side, query, sort, mode, plusOnly])
 
   const status = payload?.status || 'ok'
   const showStatus = loaded && !error && payload && status !== 'ok'
@@ -448,6 +453,14 @@ export default function NflSharpOdds({ onSelectPlayer }) {
             <option>All</option>
             <option>Overs</option>
             <option>Unders</option>
+          </select>
+        </label>
+        <label className="nfl-sharp-matchup"><span>MATCHUP</span>
+          <select value={matchup} onChange={(event) => setMatchup(event.target.value)} aria-label="Matchup">
+            <option value={ALL_MATCHUPS}>All matchups</option>
+            {matchups.map((game) => (
+              <option key={game.id} value={game.id}>{game.label}</option>
+            ))}
           </select>
         </label>
         <label className="nfl-sharp-check">
