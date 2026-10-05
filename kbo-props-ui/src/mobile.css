@@ -265,4 +265,11 @@
   .pw-card { margin-inline: 12px; box-sizing: border-box; }
 
   .auth-page { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+
+  .nfl-teammate { flex: 1 1 100%; justify-content: space-between; border-radius: 12px; }
+  .nfl-teammate-name { font-size: 13px; }
+  .nfl-teammate-modes button,
+  .nfl-chart-filter-chip > button,
+  .nfl-chart-filter-clear { min-height: 40px; }
+  .nfl-chart-sample { font-size: 13px; }
 }
