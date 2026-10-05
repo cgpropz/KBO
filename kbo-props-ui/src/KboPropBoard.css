@@ -54,3 +54,30 @@
 .kbo-player-dates { display: flex; gap: 5px; padding: 0 6px; }.kbo-player-dates span { display: flex; flex: 1 1 0; min-width: 0; flex-direction: column; align-items: center; gap: 4px; overflow: hidden; color: #78918a; font: 9px monospace; text-align: center; text-overflow: ellipsis; white-space: nowrap; }.kbo-player-date-team { font: 800 9px monospace; }.kbo-player-date-logo { width: 16px; height: 16px; object-fit: contain; }
 @media (max-width: 900px) { .kbo-player-summary { flex-wrap: wrap; }.kbo-player-summary > div { flex: 1 1 33%; margin-bottom: 12px; } }
 @media (max-width: 760px) { .kbo-player-header { flex-wrap: wrap; }.kbo-player-summary > div { flex: 1 1 50%; }.kbo-player-range-strip { flex-wrap: wrap; }.kbo-player-range-strip button { flex: 1 1 30%; } }
+
+.kbo-pitcher-matchup { min-width: 0; margin: 22px 0 4px; overflow-x: clip; }
+.kbo-pitcher-matchup-head { margin-bottom: 12px; }
+.kbo-pitcher-matchup-head h2 { margin: 0 0 8px; color: #e8f4e6; font: 800 22px/1.1 monospace; letter-spacing: -.02em; }
+.kbo-pitcher-matchup-legend { display: block; margin: 0; padding: 8px 10px; border: 1px solid #2a5148; border-radius: 8px; color: #f4fff1; background: rgba(6, 16, 15, 0.94); font: 700 13px/1.45 monospace; }
+.kbo-pitcher-matchup-note { margin: 0 0 10px; color: #d5e0db; font: 12px/1.45 monospace; }
+.kbo-pitcher-matchup-note { margin: 0 0 10px; }
+.kbo-pitcher-matchup-empty, .kbo-pitcher-matchup-identity { display: flex; align-items: center; gap: 12px; min-width: 0; margin-bottom: 10px; padding: 14px 16px; border: 1px solid #15302b; border-radius: 10px; background: #0a1615; }
+.kbo-pitcher-matchup-empty { flex-direction: column; align-items: flex-start; gap: 4px; }
+.kbo-pitcher-matchup-empty strong { color: #e8f4e6; font: 800 16px monospace; }
+.kbo-pitcher-matchup-empty span, .kbo-pitcher-matchup-identity span { color: #6b8781; font: 11px/1.4 monospace; }
+.kbo-pitcher-matchup-identity img { width: 32px; height: 32px; flex: 0 0 auto; object-fit: contain; }
+.kbo-pitcher-matchup-identity div { min-width: 0; }
+.kbo-pitcher-matchup-identity strong { display: block; overflow: hidden; color: #e8f4e6; font: 800 16px/1.2 monospace; text-overflow: ellipsis; }
+.kbo-pitcher-matchup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+.kbo-pitcher-matchup-card { min-width: 0; padding: 14px 8px 12px; border: 1px solid #15302b; border-radius: 10px; background: #0a1615; text-align: center; }
+.kbo-pitcher-matchup-card small { display: flex; align-items: flex-end; justify-content: center; min-height: 2.4em; margin-bottom: 8px; color: #6b8781; font: 9px/1.3 monospace; letter-spacing: .06em; text-transform: uppercase; }
+.kbo-pitcher-matchup-card strong { display: block; color: #e8f4e6; font: 800 20px/1 monospace; letter-spacing: -.02em; }
+.kbo-pitcher-matchup-card span { display: block; margin-top: 6px; color: #6b8781; font: 10px monospace; }
+.kbo-pitcher-matchup-card.easy strong { color: #7fff68; }
+.kbo-pitcher-matchup-card.tough strong { color: #ff7b79; }
+.kbo-pitcher-matchup-card.neutral strong { color: #d5e0db; }
+@media (max-width: 760px) {
+  .kbo-pitcher-matchup-head h2 { font-size: 18px; }
+  .kbo-pitcher-matchup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kbo-pitcher-matchup-card strong { font-size: 18px; }
+}

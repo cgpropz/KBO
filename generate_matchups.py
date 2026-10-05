@@ -450,6 +450,112 @@ def _as_int(value):
         return 0
 
 
+# A stat within this fraction of the league rate is treated as near average.
+NEUTRAL_BAND = 0.05
+
+LEAGUE_REFERENCE_PATH = os.path.join(UI_DATA, "kbo_league_pitching.json")
+SEASON_RATES_PATH = os.path.join(UI_DATA, "kbo_pitcher_season_rates.json")
+
+
+def _active_season(logs):
+    seasons = [_log_season(log) for log in logs if valid_pitch_row(log)]
+    seasons = [season for season in seasons if isinstance(season, int)]
+    return max(seasons) if seasons else None
+
+
+def _pitching_totals(games):
+    totals = {"outs": 0, "er": 0, "so": 0, "bb": 0, "ha": 0, "hr": 0, "hbp": 0}
+    for game in games:
+        totals["outs"] += int(game.get("PitOuts", ip_to_outs(game.get("IP", 0))) or 0)
+        totals["er"] += _as_int(game.get("ER"))
+        totals["so"] += _as_int(game.get("SO"))
+        totals["bb"] += _as_int(game.get("BB"))
+        totals["ha"] += _as_int(game.get("HA"))
+        totals["hr"] += _as_int(game.get("HR"))
+        totals["hbp"] += _as_int(game.get("HBP"))
+    totals["ip"] = outs_to_ip(totals["outs"])
+    return totals
+
+
+def rates_from_totals(totals):
+    """Season rate line. BAA/K%/BB% use estimated batters faced.
+
+    Pitching logs do not store at-bats. Batters faced is outs + hits + walks
+    + hit-by-pitches, the same denominator Pitcher Rankings uses for BAA and K%.
+    """
+    ip = totals["ip"]
+    hits = totals["ha"]
+    walks = totals["bb"]
+    faced = totals["outs"] + hits + walks + totals["hbp"]
+    return {
+        "era": round((totals["er"] / ip * 9), 2) if ip > 0 else None,
+        "whip": round((hits + walks) / ip, 2) if ip > 0 else None,
+        "k_per_9": round((totals["so"] / ip * 9), 2) if ip > 0 else None,
+        "h_per_ip": round(hits / ip, 3) if ip > 0 else None,
+        "hr_per_9": round((totals["hr"] * 9) / ip, 2) if ip > 0 else None,
+        "baa": round(hits / faced, 3) if faced > 0 else None,
+        "k_pct": round((totals["so"] / faced) * 100, 1) if faced > 0 else None,
+        "bb_pct": round((walks / faced) * 100, 1) if faced > 0 else None,
+        "ip": round(ip, 1) if ip > 0 else 0.0,
+        "tbf": faced,
+    }
+
+
+def build_league_pitching(logs, active_season=None):
+    """Innings-true league rates: one sum across the season, not an average of averages."""
+    if active_season is None:
+        active_season = _active_season(logs)
+    rows = []
+    for log in logs:
+        if not valid_pitch_row(log):
+            continue
+        if active_season is not None and _log_season(log) != active_season:
+            continue
+        rows.append(log)
+    rates = rates_from_totals(_pitching_totals(rows))
+    names = {log.get("Name") for log in rows if log.get("Name")}
+    return {
+        "season": active_season,
+        "sample": "valid pitching log rows for the active season",
+        "pitchers": len(names),
+        "appearances": len(rows),
+        "neutral_band": NEUTRAL_BAND,
+        "era": rates["era"],
+        "whip": rates["whip"],
+        "baa": rates["baa"],
+        "k_pct": rates["k_pct"],
+        "bb_pct": rates["bb_pct"],
+        "h_per_ip": rates["h_per_ip"],
+        "hr_per_9": rates["hr_per_9"],
+        "ip": rates["ip"],
+        "definitions": {
+            "batters_faced": "outs + hits + walks + hit by pitch",
+            "baa": "hits / batters faced",
+            "k_pct": "strikeouts / batters faced",
+            "bb_pct": "walks / batters faced",
+            "h_per_ip": "hits / innings",
+            "hr_per_9": "home runs * 9 / innings",
+            "neutral_band": "within 5% of the league rate is neutral",
+        },
+    }
+
+
+def _starter_game_date():
+    """KST game date of the probable-starter file, as YYYY-MM-DD."""
+    path = os.path.join(BASE, "Pitchers-Data", "player_names_meta.json")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            meta = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return None
+    raw = str((meta or {}).get("game_date") or "").strip()
+    if len(raw) == 8 and raw.isdigit():
+        return f"{raw[0:4]}-{raw[4:6]}-{raw[6:8]}"
+    if len(raw) >= 10 and raw[4] == "-" and raw[7] == "-":
+        return raw[:10]
+    return None
+
+
 def load_pitcher_logs():
     # Canonical source: same combined pitching CSV consumed by
     # generate_batter_projections.py to keep WHIP/ERA consistent across pages.
@@ -556,12 +662,41 @@ def _log_season(log):
     return None
 
 
-def build_pitcher_profiles(logs, active_season=None):
+def _game_date(game):
+    """Parse a pitching-log date. Missing dates sort first."""
+    from datetime import datetime
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str((game or {}).get("Date") or ""), fmt)
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def _profile_team(games):
+    """Team on the latest start.
+
+    The combined log repeats some starts under two team codes, and refresh
+    jobs rewrite those rows in either order. File order must not change the
+    published team. On a tied date, the team with more starts wins, then the
+    team code in alphabetical order.
+    """
+    counts = {}
+    for game in games or []:
+        team = str(game.get("Tm") or "")
+        counts[team] = counts.get(team, 0) + 1
+    latest = max(_game_date(game) for game in games)
+    on_latest = [game for game in games if _game_date(game) == latest]
+    on_latest.sort(key=lambda game: (-counts.get(str(game.get("Tm") or ""), 0), str(game.get("Tm") or "")))
+    return on_latest[0].get("Tm")
+
+
+def build_pitcher_profiles(logs, active_season=None, hands=None):
     """Build per-pitcher season stats and last starts from game logs."""
     if active_season is None:
-        seasons = [_log_season(l) for l in logs if valid_pitch_row(l)]
-        seasons = [s for s in seasons if isinstance(s, int)]
-        active_season = max(seasons) if seasons else None
+        active_season = _active_season(logs)
+    if hands is None:
+        hands = load_pitcher_hands()
 
     pitcher_games = defaultdict(list)
     for log in logs:
@@ -577,21 +712,19 @@ def build_pitcher_profiles(logs, active_season=None):
                 sp_games = season_sp_games
         if not sp_games:
             continue
-        team_raw = sp_games[-1]["Tm"]
+        team_raw = _profile_team(sp_games)
         team = TEAM_SHORT.get(team_raw, team_raw)
 
-        total_outs = sum(int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) for g in sp_games)
-        total_ip = outs_to_ip(total_outs)
-        total_er = sum(_as_int(g.get("ER")) for g in sp_games)
-        total_so = sum(_as_int(g.get("SO")) for g in sp_games)
-        total_bb = sum(_as_int(g.get("BB")) for g in sp_games)
-        total_ha = sum(_as_int(g.get("HA")) for g in sp_games)
-        total_hr = sum(_as_int(g.get("HR")) for g in sp_games)
+        totals = _pitching_totals(sp_games)
+        total_ip = totals["ip"]
+        total_so = totals["so"]
+        total_hr = totals["hr"]
+        rates = rates_from_totals(totals)
         n = len(sp_games)
 
-        era = round((total_er / total_ip * 9), 2) if total_ip > 0 else 0
-        whip = round((total_ha + total_bb) / total_ip, 2) if total_ip > 0 else 0
-        k_per_9 = round((total_so / total_ip * 9), 2) if total_ip > 0 else 0
+        era = rates["era"] if rates["era"] is not None else 0
+        whip = rates["whip"] if rates["whip"] is not None else 0
+        k_per_9 = rates["k_per_9"] if rates["k_per_9"] is not None else 0
         ip_per_g = round(total_ip / n, 1) if n > 0 else 0
 
         from datetime import datetime
@@ -616,7 +749,7 @@ def build_pitcher_profiles(logs, active_season=None):
                 if int(g.get("PitOuts", ip_to_outs(g.get("IP", 0))) or 0) > 0 else 0,
             })
 
-        profiles[name] = {
+        profile = {
             "name": name,
             "team": team,
             "era": era,
@@ -624,11 +757,20 @@ def build_pitcher_profiles(logs, active_season=None):
             "k_per_9": k_per_9,
             "ip_per_g": ip_per_g,
             "starts": n,
-            "total_ip": round(total_ip, 1),
+            "total_ip": rates["ip"],
             "total_so": total_so,
             "total_hr": total_hr,
+            "baa": rates["baa"],
+            "k_pct": rates["k_pct"],
+            "bb_pct": rates["bb_pct"],
+            "h_per_ip": rates["h_per_ip"],
+            "hr_per_9": rates["hr_per_9"],
             "recent": recent,
         }
+        hand = resolve_pitcher_hand(name, hands)
+        if hand:
+            profile["hand"] = hand
+        profiles[name] = profile
     return profiles
 
 
@@ -702,6 +844,87 @@ def _parts_match(name_a, name_b):
     return _name_parts(name_a or "") == _name_parts(name_b or "")
 
 
+def load_pitcher_hands():
+    """Own-record throwing hands. Alias lists are ignored because they mix players."""
+    path = os.path.join(BASE, "Pitchers-Data", "kbo_pitcher_handedness_map.json")
+    hands = {}
+    if not os.path.exists(path):
+        return hands
+    try:
+        with open(path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return hands
+    players = payload.get("players", {}) if isinstance(payload, dict) else {}
+    for name, info in players.items():
+        if not isinstance(info, dict):
+            continue
+        hand = str(info.get("hand") or "").strip().upper()
+        if hand in ("L", "R"):
+            hands[str(name).strip()] = hand
+    return hands
+
+
+def resolve_pitcher_hand(name, hands):
+    """L or R when every name-order variant agrees. Blank when they conflict."""
+    if not name or not hands:
+        return None
+    parts = _name_parts(name)
+    matches = {
+        hand for other, hand in hands.items()
+        if hand in ("L", "R") and _name_parts(other) == parts
+    }
+    if len(matches) == 1:
+        return next(iter(matches))
+    return None
+
+
+def season_rate_rows(logs, hands=None):
+    """Compact season lines for the batter-page matchup section."""
+    profiles = build_pitcher_profiles(logs, hands=hands)
+    rows = []
+    for profile in profiles.values():
+        row = {
+            "name": profile["name"],
+            "team": profile.get("team"),
+            "era": profile.get("era"),
+            "whip": profile.get("whip"),
+            "baa": profile.get("baa"),
+            "k_pct": profile.get("k_pct"),
+            "bb_pct": profile.get("bb_pct"),
+            "h_per_ip": profile.get("h_per_ip"),
+            "hr_per_9": profile.get("hr_per_9"),
+            "ip": profile.get("total_ip"),
+            "starts": profile.get("starts"),
+        }
+        if profile.get("hand") in ("L", "R"):
+            row["hand"] = profile["hand"]
+        rows.append(row)
+    rows.sort(key=lambda row: (row.get("team") or "", row.get("name") or "", row.get("ip") or 0))
+    return rows
+
+
+def write_pitching_reference_files(logs=None):
+    """Publish league averages and per-pitcher season rates for the UI."""
+    if logs is None:
+        logs = load_pitcher_logs()
+    hands = load_pitcher_hands()
+    league = build_league_pitching(logs)
+    payload = {
+        "season": league.get("season"),
+        "source": "Pitchers-Data/KBO_daily_pitching_stats_combined.csv",
+        "pitchers": season_rate_rows(logs, hands=hands),
+    }
+    os.makedirs(UI_DATA, exist_ok=True)
+    with open(LEAGUE_REFERENCE_PATH, "w", encoding="utf-8") as handle:
+        json.dump(league, handle, indent=2)
+        handle.write("\n")
+    with open(SEASON_RATES_PATH, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
+    return league, payload
+
+
 def build_team_sp_whip(profiles):
     """Compute per-team average SP WHIP from individual pitcher profiles.
     Used as a soft fallback when a new starter has no individual log history.
@@ -726,6 +949,11 @@ def main():
     logs = load_pitcher_logs()
     league_batting = load_league_batting()
     park_factors = load_park_factors()
+    league_pitching = build_league_pitching(logs)
+    try:
+        write_pitching_reference_files(logs)
+    except Exception as exc:
+        print(f"Pitching reference write warning: {exc}")
     pitcher_profiles = build_pitcher_profiles(logs)
     team_sp_whip = build_team_sp_whip(pitcher_profiles)
     team_pitching = build_team_pitching(logs)
@@ -809,6 +1037,7 @@ def main():
     for g in game_lines:
         _add_game_if_new_teams(g.get("away"), g.get("home"))
 
+    starter_game_date = _starter_game_date()
     matchups = []
     for key, game in game_map.items():
         away, home = game["away"], game["home"]
@@ -917,6 +1146,7 @@ def main():
         matchup = {
             "away": away,
             "home": home,
+            "game_date": starter_game_date,
             "stadium": STADIUMS.get(home, park.get("stadium", "Unknown")),
             "weather": weather_cache.get(STADIUMS.get(home, ""), None),
             "market": line_map.get(f"{away}@{home}") or line_map.get(f"{home}@{away}"),
@@ -947,8 +1177,10 @@ def main():
 
     output = {
         "generated_at": generated_at,
+        "game_date": starter_game_date,
         "matchups": matchups,
         "league_batting": league_batting,
+        "league_pitching": league_pitching,
         "team_pitching": team_pitching,
         "park_factors": park_factors,
     }

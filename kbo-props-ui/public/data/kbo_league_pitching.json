@@ -1,0 +1,24 @@
+{
+  "season": 2026,
+  "sample": "valid pitching log rows for the active season",
+  "pitchers": 84,
+  "appearances": 1951,
+  "neutral_band": 0.05,
+  "era": 4.34,
+  "whip": 1.38,
+  "baa": 0.232,
+  "k_pct": 19.6,
+  "bb_pct": 7.9,
+  "h_per_ip": 1.032,
+  "hr_per_9": 0.92,
+  "ip": 7610.3,
+  "definitions": {
+    "batters_faced": "outs + hits + walks + hit by pitch",
+    "baa": "hits / batters faced",
+    "k_pct": "strikeouts / batters faced",
+    "bb_pct": "walks / batters faced",
+    "h_per_ip": "hits / innings",
+    "hr_per_9": "home runs * 9 / innings",
+    "neutral_band": "within 5% of the league rate is neutral"
+  }
+}

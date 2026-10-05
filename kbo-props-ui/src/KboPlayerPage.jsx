@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import PitcherMatchup from './PitcherMatchup'
 import PlayerOddsTable from './PlayerOddsTable'
 import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
@@ -96,6 +97,13 @@ function ChartFilterChip({ label, valueLabel, open, onToggle, children }) {
 export default function KboPlayerPage({ playerName, onBack }) {
   const [cards, setCards] = useState([])
   const [error, setError] = useState('')
+  const [matchups, setMatchups] = useState([])
+  const [rankings, setRankings] = useState([])
+  const [matchupLeague, setMatchupLeague] = useState(null)
+  const [matchupSlateDate, setMatchupSlateDate] = useState(null)
+  const [leagueFile, setLeagueFile] = useState(null)
+  const [seasonRates, setSeasonRates] = useState([])
+  const [matchupStatus, setMatchupStatus] = useState('loading')
   const [selectedStat, setSelectedStat] = useState(null)
   const [selectedRange, setSelectedRange] = useState('l10')
   const [workloadThreshold, setWorkloadThreshold] = useState(null)
@@ -112,6 +120,30 @@ export default function KboPlayerPage({ playerName, onBack }) {
 
   const player = useMemo(() => cards.find(c => c.name === playerName), [cards, playerName])
   const isPitcher = player?.type === 'pitcher'
+
+  useEffect(() => {
+    if (!player || isPitcher) return undefined
+    let active = true
+    Promise.all([
+      fetchDataSnapshot('matchup_data.json').catch(() => null),
+      fetchDataSnapshot('pitcher_rankings.json').catch(() => null),
+      fetchDataSnapshot('kbo_league_pitching.json').catch(() => null),
+      fetchDataSnapshot('kbo_pitcher_season_rates.json').catch(() => null),
+    ]).then(([matchupSnap, rankingsSnap, leagueSnap, ratesSnap]) => {
+      if (!active) return
+      const slate = matchupSnap?.data
+      setMatchups(Array.isArray(slate?.matchups) ? slate.matchups : [])
+      setMatchupSlateDate(slate?.game_date || slate?.gameDate || null)
+      setMatchupLeague(slate?.league_pitching || null)
+      const rows = rankingsSnap?.data
+      setRankings(Array.isArray(rows) ? rows : [])
+      setLeagueFile(leagueSnap?.data || null)
+      const pitchers = ratesSnap?.data?.pitchers
+      setSeasonRates(Array.isArray(pitchers) ? pitchers : [])
+      setMatchupStatus(slate ? 'ready' : 'error')
+    })
+    return () => { active = false }
+  }, [player, isPitcher])
   const propRows = useMemo(() => sortProps(player?.props || [], player?.type), [player])
   const currentProp = useMemo(() => propRows.find(p => p.stat === selectedStat) || propRows[0], [propRows, selectedStat])
   const oddsRows = useMemo(
@@ -311,6 +343,21 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        {!isPitcher && (
+          <PitcherMatchup
+            batterTeam={player.team}
+            opponent={player.opponent}
+            card={player}
+            prop={currentProp}
+            matchups={matchups}
+            slateDate={matchupSlateDate}
+            rankings={rankings}
+            matchupLeague={matchupLeague}
+            leagueFile={leagueFile}
+            seasonRates={seasonRates}
+            status={matchupStatus}
+          />
+        )}
         <PlayerOddsTable key={currentProp.stat} propLabel={currentProp.stat} rows={oddsRows} status="ready" />
       </section>
     </div>
