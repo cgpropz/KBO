@@ -34,6 +34,9 @@ PRIZEPICKS_URL = 'https://partner-api.prizepicks.com/projections?per_page=1000'
 
 STARTER_SLOTS = [('QB', 1), ('RB', 1), ('WR', 3), ('TE', 1), ('PK', 1)]
 DVP_POSITIONS = ('QB', 'RB', 'WR', 'TE')
+# Other skill players shown on the player-page on/off filters. Enough to cover
+# a WR room without listing the whole roster.
+MAX_TEAMMATES = 6
 # Rec Targets is a board prop. Leaving it out made every targets line the neutral fallback.
 DVP_STATS = (
     'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds',
@@ -94,19 +97,165 @@ def stat_values(frame, stat):
 
 
 def load_snap_counts():
-    """Read each player's offensive snap share from nflverse: a season average plus a per-game lookup."""
-    frame = pd.read_csv(SNAP_COUNTS_URL.format(season=CURRENT_SEASON), low_memory=False)
-    frame = frame[frame['game_type'].isin(['REG', 'POST'])]
+    """Offensive snap share from nflverse, plus who was on the field each week.
+
+    The season-average badge stays on the current year. Per-game snap share and
+    teammate on/off participation cover every season in the chart window.
+    """
+    frames = []
+    for season in HISTORY_SEASONS:
+        frame = pd.read_csv(SNAP_COUNTS_URL.format(season=season), low_memory=False)
+        frame = frame[frame['game_type'].isin(['REG', 'POST'])]
+        frames.append(frame)
+    frame = pd.concat(frames, ignore_index=True)
     frame['name_key'] = frame['player'].map(name_key)
     frame['offense_pct'] = pd.to_numeric(frame['offense_pct'], errors='coerce')
-    valid = frame.dropna(subset=['offense_pct'])
-    average_pct = valid.groupby('name_key')['offense_pct'].mean()
+    if 'offense_snaps' in frame.columns:
+        frame['offense_snaps'] = pd.to_numeric(frame['offense_snaps'], errors='coerce')
+    frame['team'] = frame['team'].map(canonical_team)
+    current = frame[frame['season'] == CURRENT_SEASON]
+    valid_current = current.dropna(subset=['offense_pct'])
+    average_pct = valid_current.groupby('name_key')['offense_pct'].mean()
     season_average = (average_pct * 100).round(1).to_dict()
+    valid = frame.dropna(subset=['offense_pct'])
     per_game = {
-        (row.name_key, CURRENT_SEASON, int(row.week)): round(float(row.offense_pct) * 100, 1)
+        (row.name_key, int(row.season), int(row.week)): round(float(row.offense_pct) * 100, 1)
         for row in valid.itertuples(index=False)
     }
-    return season_average, per_game
+    return season_average, per_game, build_participation(frame)
+
+
+def played_offense(snaps, pct):
+    """True when the player took at least one offensive snap.
+
+    A special-teams-only line does not count as on the field. If the snap
+    total is missing, a positive snap share is the fallback.
+    """
+    if pd.notna(snaps):
+        return float(snaps) > 0
+    if pd.notna(pct):
+        return float(pct) > 0
+    return False
+
+
+def skill_group(position, prop=None):
+    """QB, RB, WR, or TE group used to pick teammates for a prop."""
+    if prop:
+        return dvp_position(text_or_empty(position).upper(), prop)
+    raw = text_or_empty(position).upper()
+    mapped = DVP_POSITION_ALIASES.get(raw, raw)
+    token = re.split(r'[^A-Z]', mapped)[0]
+    mapped = DVP_POSITION_ALIASES.get(token, token)
+    return mapped if mapped in DVP_POSITIONS else None
+
+
+def build_participation(frame):
+    """Who played offense, and which team-weeks have a published snap file.
+
+    `on_field` is (name_key, season, week, team) with offensive snaps.
+    `covered` is (season, week, team) present in the snap file. A covered week
+    with no row for a teammate means they were off, not that the week is unknown.
+    `players` keeps the latest name and position plus this season's offensive
+    snap totals by team, which ranks the toggle list.
+    """
+    empty = {'on_field': set(), 'covered': set(), 'players': {}}
+    if frame is None or len(frame) == 0 or 'team' not in frame.columns:
+        return empty
+
+    work = frame.copy()
+    if 'name_key' not in work.columns:
+        name_col = 'player' if 'player' in work.columns else 'player_display_name'
+        work['name_key'] = work[name_col].map(name_key)
+    work['team'] = work['team'].map(canonical_team)
+    work['season'] = pd.to_numeric(work['season'], errors='coerce')
+    work['week'] = pd.to_numeric(work['week'], errors='coerce')
+    if 'offense_snaps' in work.columns:
+        work['offense_snaps'] = pd.to_numeric(work['offense_snaps'], errors='coerce')
+    else:
+        work['offense_snaps'] = pd.NA
+    if 'offense_pct' in work.columns:
+        work['offense_pct'] = pd.to_numeric(work['offense_pct'], errors='coerce')
+    else:
+        work['offense_pct'] = pd.NA
+    if 'position' not in work.columns:
+        work['position'] = ''
+    if 'player' not in work.columns:
+        work['player'] = ''
+
+    work = work.dropna(subset=['season', 'week'])
+    work = work[(work['name_key'].astype(str).str.len() > 0) & (work['team'].astype(str).str.len() > 0)]
+    work = work.drop_duplicates(['name_key', 'season', 'week', 'team'], keep='last')
+
+    on_field = set()
+    covered = set()
+    latest = {}
+    snaps_by_team = {}
+    for row in work.itertuples(index=False):
+        season = int(row.season)
+        week = int(row.week)
+        team = row.team
+        key = row.name_key
+        covered.add((season, week, team))
+        snaps = row.offense_snaps
+        pct = row.offense_pct
+        if played_offense(snaps, pct):
+            on_field.add((key, season, week, team))
+            if season == CURRENT_SEASON:
+                weight = float(snaps) if pd.notna(snaps) else float(pct)
+                bucket = snaps_by_team.setdefault(key, {})
+                bucket[team] = bucket.get(team, 0) + weight
+        order = (season, week)
+        prev = latest.get(key)
+        if prev is None or order >= prev[0]:
+            latest[key] = (order, text_or_empty(row.player), text_or_empty(row.position))
+
+    players = {
+        key: {'name': name, 'position': position, 'snaps_by_team': snaps_by_team.get(key, {})}
+        for key, (_order, name, position) in latest.items()
+    }
+    return {'on_field': on_field, 'covered': covered, 'players': players}
+
+
+def select_teammates(player_name, team, position, prop, players, limit=MAX_TEAMMATES):
+    """Same-team teammates in the prop's skill group, most offensive snaps first."""
+    group = skill_group(position, prop)
+    team = canonical_team(team)
+    self_key = name_key(player_name)
+    if not group or not team:
+        return []
+    ranked = []
+    for key, info in players.items():
+        if key == self_key:
+            continue
+        if skill_group(info.get('position')) != group:
+            continue
+        snaps = float((info.get('snaps_by_team') or {}).get(team, 0) or 0)
+        if snaps <= 0:
+            continue
+        ranked.append((-snaps, text_or_empty(info.get('name')) or key, key))
+    ranked.sort()
+    return [{'id': key, 'name': name, 'position': group} for _snaps, name, key in ranked[:limit]]
+
+
+def teammate_on_by_game(teammate_ids, seasons, weeks, teams, on_field, covered):
+    """Per game, teammate ids who played offense. None when that week has no snap file."""
+    rows = []
+    for season, week, team in zip(seasons, weeks, teams):
+        try:
+            season_i = int(season)
+            week_i = int(week)
+        except (TypeError, ValueError):
+            rows.append(None)
+            continue
+        team_key = canonical_team(team)
+        if (season_i, week_i, team_key) not in covered:
+            rows.append(None)
+            continue
+        rows.append([
+            tid for tid in teammate_ids
+            if (tid, season_i, week_i, team_key) in on_field
+        ])
+    return rows
 
 
 def _rank_defenses(per_game):
@@ -287,11 +436,12 @@ def load_slate():
     return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
 
 
-def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
+def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, participation=None):
+    participation = participation or {'on_field': set(), 'covered': set(), 'players': {}}
     key = name_key(row.player)
     player_history = history[history['name_key'] == key].sort_values('date')
     series = stat_values(player_history, row.prop)
-    values, dates, opponents, weeks, seasons = [], [], [], [], []
+    values, dates, opponents, weeks, seasons, teams = [], [], [], [], [], []
     hit_rate_l5, games_l5 = None, 0
     hit_rate_l20, games_l20 = None, 0
     hit_rate_l30, games_l30 = None, 0
@@ -303,6 +453,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         opponents = player_history.loc[valid, 'opponent_team'].fillna('').tolist()
         weeks = player_history.loc[valid, 'week'].tolist()
         seasons = player_history.loc[valid, 'season'].tolist()
+        if 'team' in player_history.columns:
+            teams = player_history.loc[valid, 'team'].map(canonical_team).tolist()
+        else:
+            teams = [canonical_team(row.team)] * len(values)
         games_l5 = min(5, len(values))
         if games_l5:
             hit_rate_l5 = round(sum(value >= row.line for value in values[-5:]) / games_l5 * 100)
@@ -314,6 +468,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
             hit_rate_l30 = round(sum(value >= row.line for value in values[-30:]) / games_l30 * 100)
     recent, recent_dates, recent_opponents = values[-30:], dates[-30:], opponents[-30:]
     recent_weeks, recent_seasons = weeks[-30:], seasons[-30:]
+    recent_teams = teams[-30:]
+    if len(recent_teams) != len(recent_seasons):
+        fallback = canonical_team(row.team)
+        recent_teams = (list(recent_teams) + [fallback] * len(recent_seasons))[:len(recent_seasons)]
     last10 = values[-10:]
 
     # Season/prior season/H2H hit rates are computed from the same shipped 30-game window as the
@@ -346,7 +504,12 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
 
     # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
     recent_dvp_ranks = [dvp_for(rated_position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
-    recent_snap_pcts = [snap_games.get((key, season_value, int(week_value))) for season_value, week_value in zip(recent_seasons, recent_weeks)]
+    recent_snap_pcts = []
+    for season_value, week_value in zip(recent_seasons, recent_weeks):
+        try:
+            recent_snap_pcts.append(snap_games.get((key, int(season_value), int(week_value))))
+        except (TypeError, ValueError):
+            recent_snap_pcts.append(None)
     usage_stat = 'Pass Attempts' if position == 'QB' else 'Rush Attempts' if position == 'RB' else 'Rec Targets'
     usage_label = {'Pass Attempts': 'Pass Att', 'Rush Attempts': 'Rush Att', 'Rec Targets': 'Targets'}[usage_stat]
     usage_series = stat_values(player_history, usage_stat)
@@ -358,6 +521,18 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         recent_usage = [round(float(v), 1) for v in usage_values[-30:]]
         if usage_stat == 'Rec Targets' and usage_values:
             targets_per_game = round(sum(usage_values) / len(usage_values), 1)
+
+    teammates = select_teammates(
+        row.player, row.team, position, row.prop, participation.get('players') or {},
+    )
+    teammate_on = teammate_on_by_game(
+        [item['id'] for item in teammates],
+        recent_seasons,
+        recent_weeks,
+        recent_teams,
+        participation.get('on_field') or set(),
+        participation.get('covered') or set(),
+    )
 
     return {
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
@@ -381,6 +556,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games):
         'hitRateL30': hit_rate_l30, 'gamesL30': games_l30,
         'recentDvpRanks': recent_dvp_ranks, 'recentSnapPercents': recent_snap_pcts,
         'recentUsage': recent_usage, 'usageLabel': usage_label, 'targetsPerGame': targets_per_game,
+        'teammates': teammates, 'teammateOn': teammate_on,
     }
 
 
@@ -453,8 +629,8 @@ def main():
     slate = load_slate()
     directory = load_player_directory()
     dvp_ratings = load_dvp_ratings(history)
-    snap_counts, snap_games = load_snap_counts()
-    records = [make_record(row, history, directory, dvp_ratings, snap_counts, snap_games) for row in slate.itertuples(index=False)]
+    snap_counts, snap_games, participation = load_snap_counts()
+    records = [make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, participation) for row in slate.itertuples(index=False)]
     if not records:
         raise RuntimeError('Refusing to publish an empty NFL PrizePicks slate.')
     OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')

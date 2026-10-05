@@ -3,6 +3,7 @@ import PlayerOddsTable from '../PlayerOddsTable'
 import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
+import { gameMatchesTeammates, hitRateForValues, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
 
@@ -68,6 +69,18 @@ function average(values) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
 }
 
+function TeammateToggle({ teammate, mode, onChange }) {
+  return (
+    <div className={`nfl-teammate${mode ? ` is-${mode}` : ''}`}>
+      <span className="nfl-teammate-name" title={teammate.name}>{teammate.name}</span>
+      <div className="nfl-teammate-modes" role="group" aria-label={`${teammate.name} on or off the field`}>
+        <button type="button" aria-pressed={mode === 'on'} className={mode === 'on' ? 'active on' : ''} onClick={() => onChange(mode === 'on' ? null : 'on')}>On</button>
+        <button type="button" aria-pressed={mode === 'off'} className={mode === 'off' ? 'active off' : ''} onClick={() => onChange(mode === 'off' ? null : 'off')}>Off</button>
+      </div>
+    </div>
+  )
+}
+
 function ChartFilterChip({ label, valueLabel, valueColor, open, onToggle, children }) {
   return (
     <div className={`nfl-chart-filter-chip${open ? ' open' : ''}`}>
@@ -89,6 +102,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const [dvpThreshold, setDvpThreshold] = useState(null)
   const [snapThreshold, setSnapThreshold] = useState(null)
   const [usageThreshold, setUsageThreshold] = useState(null)
+  const [teammateModes, setTeammateModes] = useState({})
   const [openFilter, setOpenFilter] = useState(null)
   const [oddsRecords, setOddsRecords] = useState(null)
   const [oddsError, setOddsError] = useState(false)
@@ -127,6 +141,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     setDvpThreshold(null)
     setSnapThreshold(null)
     setUsageThreshold(null)
+    setTeammateModes({})
     setOpenFilter(null)
   }
 
@@ -148,6 +163,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const recentDvpRanks = Array.isArray(currentRow.recentDvpRanks) ? currentRow.recentDvpRanks : []
   const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
   const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
+  const teammates = (Array.isArray(currentRow.teammates) ? currentRow.teammates : []).filter((item) => item && item.id && item.name)
+  const teammateOn = Array.isArray(currentRow.teammateOn) ? currentRow.teammateOn : []
   const usageLabel = currentRow.usageLabel || 'Usage'
   const validSnaps = recentSnapPercents.filter((value) => value != null)
   const validUsage = recentUsage.filter((value) => value != null)
@@ -186,7 +203,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
     const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
     const passesUsage = usageThreshold == null || (recentUsage[index] != null && recentUsage[index] >= usageThreshold)
-    return passesDvp && passesSnap && passesUsage
+    const passesTeammates = gameMatchesTeammates(teammateOn[index], teammateModes)
+    return passesDvp && passesSnap && passesUsage && passesTeammates
   })
   const chartValues = chartIndices.map((index) => recent[index])
   const chartDates = chartIndices.map((index) => gameDates[index])
@@ -195,7 +213,21 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const linePct = Math.min(100, (currentRow.line / maxValue) * 100)
 
   const toggleFilter = (id) => setOpenFilter((current) => (current === id ? null : id))
-  const clearFilters = () => { setDvpThreshold(null); setSnapThreshold(null); setUsageThreshold(null); setOpenFilter(null) }
+  const clearFilters = () => { setDvpThreshold(null); setSnapThreshold(null); setUsageThreshold(null); setTeammateModes({}); setOpenFilter(null) }
+  const setTeammateMode = (id, mode) => {
+    setTeammateModes((current) => {
+      const next = { ...current }
+      if (mode) next[id] = mode
+      else delete next[id]
+      return next
+    })
+  }
+  const filterLabel = teammateFilterLabel(teammates, teammateModes)
+  const chartHit = hitRateForValues(chartValues, currentRow.line)
+  const rangeLabel = rangeOptions.find((option) => option.id === selectedRange)?.label || 'Games'
+  const filtersActive = Boolean(filterLabel) || dvpThreshold != null || snapThreshold != null || usageThreshold != null
+  const sampleShrunk = chartValues.length !== baseIndices.length
+  const smallSample = filtersActive && chartHit.games > 0 && chartHit.games < 5
 
   return (
     <section className="nfl-player-page">
@@ -278,6 +310,33 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <button className="nfl-chart-filter-more" title="More filters coming soon" disabled>More</button>
       </div>
 
+      {teammates.length > 0 && (
+        <div className="nfl-teammates">
+          <div className="nfl-teammates-head">
+            <span>Teammates</span>
+            <small>On keeps games they played offense. Off keeps games they did not. A game counts only when every choice matches.</small>
+          </div>
+          <div className="nfl-teammates-list">
+            {teammates.map((teammate) => (
+              <TeammateToggle
+                key={teammate.id}
+                teammate={teammate}
+                mode={teammateModes[teammate.id] || null}
+                onChange={(mode) => setTeammateMode(teammate.id, mode)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="nfl-chart-sample" aria-live="polite">
+        <span>{rangeLabel}{filterLabel ? ` · ${filterLabel}` : ''}</span>
+        <strong className={chartHit.rate == null ? '' : chartHit.rate >= 50 ? 'over' : 'under'}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong>
+        <span>{chartHit.games === 0 ? '0 games' : `${chartHit.hits} of ${chartHit.games} hit`}</span>
+        {sampleShrunk && <span>{chartHit.games} of {baseIndices.length} games</span>}
+        {smallSample && <em>Small sample</em>}
+      </div>
+
       <div className="nfl-player-chart">
         <div className="nfl-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(currentRow.line)}</span></div>
         <div className="nfl-player-bars">
@@ -290,7 +349,11 @@ export default function NflPlayerPage({ player, prop, onBack }) {
             )
           })}
         </div>
-        {!chartValues.length && <div className="nfl-notice nfl-player-chart-empty">No games match these filters.</div>}
+        {!chartValues.length && (
+          <div className="nfl-notice nfl-player-chart-empty">
+            {filterLabel ? 'No games match. Weeks without snap counts are left out.' : 'No games match these filters.'}
+          </div>
+        )}
       </div>
       <div className="nfl-player-dates">
         {chartDates.map((date, index) => (
