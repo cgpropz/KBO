@@ -40,7 +40,7 @@ jobs:
           cache: pip
 
       - name: Install snapshot dependencies
-        run: pip install pandas requests
+        run: pip install pandas requests pyarrow
 
       # The builder inserts the repo root on sys.path before importing pipeline.
       # This invocation puts nfl/ on sys.path[0], so the import needs that insert.
