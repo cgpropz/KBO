@@ -24,6 +24,8 @@ const PUBLIC_STATIC_FILES = new Set([
   'teams.json',
   'team_opponent_stats_2026.json',
   'game_lines.json',
+  'kbo_league_pitching.json',
+  'kbo_pitcher_season_rates.json',
 ]);
 
 export const dataUrl = (path) =>
