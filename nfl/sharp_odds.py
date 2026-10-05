@@ -417,6 +417,13 @@ def _normalize_line(type_key, line_data, sources, side, player, team, event):
     }
 
 
+def _optional_text(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def load_pp_rows(path):
     if not path.exists():
         return None
@@ -450,6 +457,11 @@ def load_pp_rows(path):
                 "team": item.get("team"),
                 "position": item.get("position"),
                 "opponent": item.get("opponent"),
+                "awayTeam": _optional_text(item.get("awayTeam") or item.get("away_team")),
+                "homeTeam": _optional_text(item.get("homeTeam") or item.get("home_team")),
+                "gameday": _optional_text(item.get("gameday")),
+                "gametime": _optional_text(item.get("gametime")),
+                "start_time": _optional_text(item.get("start_time") or item.get("startTime")),
                 "imageUrl": item.get("imageUrl") or "",
                 "prop": prop,
                 "pp_line": line,

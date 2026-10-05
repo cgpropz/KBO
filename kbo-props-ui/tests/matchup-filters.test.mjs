@@ -51,6 +51,30 @@ test('a selected matchup keeps both teams and still combines with prop and searc
   assert.equal(everyone.length, SLATE.length)
 })
 
+test('labels use the real away team at home, and earlier kickoffs come first', () => {
+  const rows = [
+    { player: 'Dak Prescott', team: 'DAL', opponent: 'TB', prop: 'Pass TDs', awayTeam: 'TB', homeTeam: 'DAL', start_time: '2026-10-08T20:15:00.000-04:00' },
+    { player: 'Baker Mayfield', team: 'TB', opponent: 'DAL', prop: 'Pass Yards', awayTeam: 'TB', homeTeam: 'DAL', start_time: '2026-10-08T20:15:00.000-04:00' },
+    { player: 'Bijan Robinson', team: 'ATL', opponent: 'NO', prop: 'Rush Yards', awayTeam: 'ATL', homeTeam: 'NO', start_time: '2026-10-05T20:15:00.000-04:00' },
+    { player: 'Trevor Lawrence', team: 'JAC', opponent: 'PHI', prop: 'Pass TDs', awayTeam: 'PHI', homeTeam: 'JAX', start_time: '2026-10-11T13:00:00.000-04:00' },
+    { player: 'Jalen Hurts', team: 'PHI', opponent: 'JAX', prop: 'Rush Yards' },
+  ]
+  const games = listMatchups(rows)
+  assert.deepEqual(games.map((game) => game.label), ['ATL @ NO', 'TB @ DAL', 'PHI @ JAX'])
+  assert.equal(games.filter((game) => game.id === 'DAL@TB').length, 1)
+  assert.equal(games.filter((game) => game.id === 'JAX@PHI').length, 1)
+})
+
+test('a game missing from the schedule keeps an alphabetical label and still sorts by kickoff', () => {
+  const games = listMatchups([
+    { team: 'GB', opponent: 'CHI', start_time: '2026-10-11T16:25:00.000-04:00' },
+    { team: 'CHI', opponent: 'GB', gameday: '2026-10-11', gametime: '13:00' },
+  ])
+  assert.equal(games.length, 1)
+  assert.equal(games[0].label, 'CHI @ GB')
+  assert.equal(games[0].kickoff, Date.parse('2026-10-11T13:00:00.000-04:00'))
+})
+
 test('empty or one-sided rows do not invent a matchup', () => {
   assert.deepEqual(listMatchups(null), [])
   assert.deepEqual(listMatchups([{ team: 'DAL' }, { opponent: 'HOU' }, { team: 'DAL', opponent: 'DAL' }]), [])
