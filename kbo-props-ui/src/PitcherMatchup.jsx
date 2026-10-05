@@ -16,7 +16,11 @@ function identityLine(model) {
 
 export default function PitcherMatchup({
   batterTeam,
+  opponent,
+  card,
+  prop,
   matchups,
+  slateDate,
   rankings,
   matchupLeague,
   leagueFile,
@@ -28,8 +32,17 @@ export default function PitcherMatchup({
     [matchupLeague, leagueFile, rankings],
   )
   const model = useMemo(
-    () => buildPitcherMatchup({ batterTeam, matchups, rankings, league, seasonRates }),
-    [batterTeam, matchups, rankings, league, seasonRates],
+    () => buildPitcherMatchup({
+      batterTeam,
+      opponent,
+      sources: [prop, card],
+      matchups,
+      slateDate,
+      rankings,
+      league,
+      seasonRates,
+    }),
+    [batterTeam, opponent, prop, card, matchups, slateDate, rankings, league, seasonRates],
   )
   const logo = TEAM_LOGOS[model.team]
   const meta = identityLine(model)
@@ -38,7 +51,7 @@ export default function PitcherMatchup({
     <section className="kbo-pitcher-matchup" aria-label="Pitcher Matchup">
       <div className="kbo-pitcher-matchup-head">
         <h2>Pitcher Matchup</h2>
-        <p>Green = easier matchup for the hitter. Red = tougher. Close to the league average stays neutral.</p>
+        <p className="kbo-pitcher-matchup-legend">Green = easier matchup for the hitter. Red = tougher. Close to the league average stays neutral.</p>
       </div>
 
       {status === 'loading' && <div className="kbo-notice">Loading today's starter.</div>}

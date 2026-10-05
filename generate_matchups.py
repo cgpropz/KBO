@@ -540,6 +540,22 @@ def build_league_pitching(logs, active_season=None):
     }
 
 
+def _starter_game_date():
+    """KST game date of the probable-starter file, as YYYY-MM-DD."""
+    path = os.path.join(BASE, "Pitchers-Data", "player_names_meta.json")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            meta = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return None
+    raw = str((meta or {}).get("game_date") or "").strip()
+    if len(raw) == 8 and raw.isdigit():
+        return f"{raw[0:4]}-{raw[4:6]}-{raw[6:8]}"
+    if len(raw) >= 10 and raw[4] == "-" and raw[7] == "-":
+        return raw[:10]
+    return None
+
+
 def load_pitcher_logs():
     # Canonical source: same combined pitching CSV consumed by
     # generate_batter_projections.py to keep WHIP/ERA consistent across pages.
@@ -992,6 +1008,7 @@ def main():
     for g in game_lines:
         _add_game_if_new_teams(g.get("away"), g.get("home"))
 
+    starter_game_date = _starter_game_date()
     matchups = []
     for key, game in game_map.items():
         away, home = game["away"], game["home"]
@@ -1100,6 +1117,7 @@ def main():
         matchup = {
             "away": away,
             "home": home,
+            "game_date": starter_game_date,
             "stadium": STADIUMS.get(home, park.get("stadium", "Unknown")),
             "weather": weather_cache.get(STADIUMS.get(home, ""), None),
             "market": line_map.get(f"{away}@{home}") or line_map.get(f"{home}@{away}"),
@@ -1130,6 +1148,7 @@ def main():
 
     output = {
         "generated_at": generated_at,
+        "game_date": starter_game_date,
         "matchups": matchups,
         "league_batting": league_batting,
         "league_pitching": league_pitching,

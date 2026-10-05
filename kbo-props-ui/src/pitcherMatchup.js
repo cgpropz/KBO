@@ -38,6 +38,112 @@ function sameTeam(a, b) {
   return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 }
 
+const DATE_FIELDS = ['game_date', 'gameDate', 'start_time', 'startTime', 'starts_at', 'start_time_utc']
+const PITCHER_FIELDS = ['opp_pitcher', 'opposing_pitcher', 'oppPitcher', 'opposingPitcher', 'vs_pitcher', 'versus_pitcher']
+
+export function gameDateKey(value) {
+  if (value == null || value === '') return null
+  const text = String(value).trim()
+  const compact = text.match(/^(\d{4})(\d{2})(\d{2})$/)
+  if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`
+  const slash = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (slash) return `${slash[3]}-${slash[1].padStart(2, '0')}-${slash[2].padStart(2, '0')}`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text
+  const parsed = Date.parse(text)
+  if (!Number.isFinite(parsed)) return null
+  return new Date(parsed + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+export function readGameDate(...sources) {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+    for (const key of DATE_FIELDS) {
+      const date = gameDateKey(source[key])
+      if (date) return date
+    }
+  }
+  return null
+}
+
+function readNamedPitcher(source) {
+  if (!source || typeof source !== 'object') return null
+  for (const key of PITCHER_FIELDS) {
+    const value = source[key]
+    if (value == null || value === '') continue
+    if (typeof value === 'string' || typeof value === 'number') {
+      const name = String(value).trim()
+      if (!name) continue
+      return {
+        name,
+        team: source.opp_pitcher_team || source.opposing_pitcher_team || source.oppPitcherTeam || null,
+        profile: null,
+      }
+    }
+    if (typeof value === 'object') {
+      const name = String(value.name || value.profile?.name || '').trim()
+      if (!name) continue
+      return {
+        name,
+        team: value.team || source.opp_pitcher_team || null,
+        profile: value.profile || null,
+        hand: value.hand || value.profile?.hand || null,
+      }
+    }
+  }
+  return null
+}
+
+export function readOppPitcher(...sources) {
+  for (const source of sources) {
+    const pitcher = readNamedPitcher(source)
+    if (pitcher) return pitcher
+  }
+  return null
+}
+
+function teamsForName(name, rows) {
+  const key = nameKey(name)
+  if (!key) return []
+  return [...new Set(
+    (rows || [])
+      .filter((row) => row && nameKey(row.name) === key && row.team)
+      .map((row) => row.team),
+  )]
+}
+
+function teamConflicts(name, statedTeam, opponent, seasonRates, rankings) {
+  if (!opponent) return true
+  if (statedTeam && !sameTeam(statedTeam, opponent)) return true
+  if (statedTeam && sameTeam(statedTeam, opponent)) return false
+  const known = [...teamsForName(name, seasonRates), ...teamsForName(name, rankings)]
+  if (!known.length) return false
+  return !known.some((team) => sameTeam(team, opponent))
+}
+
+function samePairing(game, batterTeam, opponent) {
+  if (!game || !batterTeam || !opponent) return false
+  const sides = [game.home, game.away]
+  return sides.some((side) => sameTeam(side, batterTeam)) && sides.some((side) => sameTeam(side, opponent))
+}
+
+function resolvedGameDate(game, slateDate) {
+  return readGameDate(game) || gameDateKey(slateDate)
+}
+
+function gameOnDate(game, propDate, slateDate) {
+  if (!propDate) return true
+  const gameDate = resolvedGameDate(game, slateDate)
+  if (!gameDate) return false
+  return gameDate === propDate
+}
+
+function opponentSide(game, opponent) {
+  if (!game) return null
+  if (sameTeam(game.away, opponent)) return { pitcher: game.away_pitcher || null, team: game.away || opponent }
+  if (sameTeam(game.home, opponent)) return { pitcher: game.home_pitcher || null, team: game.home || opponent }
+  return null
+}
+
 export function normalizeHand(value) {
   const hand = String(value || '').trim().toUpperCase()
   return hand === 'L' || hand === 'R' ? hand : null
@@ -53,21 +159,6 @@ function isFallbackProfile(profile) {
   if (!profile || typeof profile !== 'object') return false
   const keys = Object.keys(profile)
   return keys.length === 1 && keys[0] === 'whip'
-}
-
-export function opposingStarter(matchups, batterTeam) {
-  const team = String(batterTeam || '').trim()
-  if (!team) return null
-  for (const game of matchups || []) {
-    if (!game || typeof game !== 'object') continue
-    if (sameTeam(game.home, team)) {
-      return { game, pitcher: game.away_pitcher || null, opponentTeam: game.away || '' }
-    }
-    if (sameTeam(game.away, team)) {
-      return { game, pitcher: game.home_pitcher || null, opponentTeam: game.home || '' }
-    }
-  }
-  return null
 }
 
 export function announcedStarter(pitcher) {
@@ -91,8 +182,9 @@ function pickByName(rows, name, team, teamField = 'team') {
   if (!key) return null
   const matches = (rows || []).filter((row) => row && nameKey(row.name) === key)
   if (!matches.length) return null
-  const onTeam = matches.filter((row) => sameTeam(row[teamField], team))
-  const pool = onTeam.length ? onTeam : matches
+  const onTeam = team ? matches.filter((row) => sameTeam(row[teamField], team)) : matches
+  const pool = onTeam.length ? onTeam : []
+  if (!pool.length) return null
   return pool.slice().sort((a, b) => (num(b.starts) || num(b.gs) || 0) - (num(a.starts) || num(a.gs) || 0))[0]
 }
 
@@ -192,29 +284,65 @@ export function formatStat(value, spec) {
   return spec.pct ? `${text}%` : text
 }
 
-export function buildPitcherMatchup({ batterTeam, matchups, rankings, league, seasonRates }) {
+function emptyMatch(detail) {
+  return { starterName: null, team: '', emptyDetail: detail, stats: [] }
+}
+
+export function buildPitcherMatchup({
+  batterTeam,
+  opponent,
+  sources,
+  matchups,
+  slateDate,
+  rankings,
+  league,
+  seasonRates,
+}) {
   const team = String(batterTeam || '').trim()
-  const found = opposingStarter(matchups, team)
-  if (!found) {
-    return {
-      starterName: null,
-      emptyDetail: team
-        ? `${team} is not on today's slate.`
-        : 'No probable starter is posted for this game.',
-    }
+  const opponentTeam = String(opponent || '').trim()
+  const gameLabel = [team, opponentTeam].filter(Boolean).join(' vs ')
+  if (!opponentTeam) {
+    return emptyMatch(team
+      ? `${team} does not have an opponent on this PrizePicks prop.`
+      : 'This PrizePicks prop does not list an opponent.')
   }
-  const starterName = announcedStarter(found.pitcher)
-  if (!starterName) {
-    return {
-      starterName: null,
-      emptyDetail: team
-        ? `The probable starter against ${team} has not been posted yet.`
-        : 'The probable starter has not been posted yet.',
+
+  const propDate = readGameDate(...(sources || []))
+  const slate = gameDateKey(slateDate)
+  const pairing = (matchups || []).filter((game) => samePairing(game, team, opponentTeam))
+  const dated = pairing.filter((game) => gameOnDate(game, propDate, slate))
+  const listed = readOppPitcher(...(sources || []))
+  const listedOk = listed && !teamConflicts(listed.name, listed.team, opponentTeam, seasonRates, rankings)
+    ? listed
+    : null
+
+  let starterName = null
+  let profile = null
+  if (listedOk) {
+    starterName = listedOk.name
+    profile = isFallbackProfile(listedOk.profile) ? null : listedOk.profile
+    const side = dated.map((game) => opponentSide(game, opponentTeam)).find((entry) => {
+      const announced = announcedStarter(entry?.pitcher)
+      return announced && nameKey(announced) === nameKey(starterName)
+    })
+    if (side?.pitcher?.profile && !isFallbackProfile(side.pitcher.profile)) profile = side.pitcher.profile
+  } else if (propDate && pairing.length && !dated.length) {
+    return emptyMatch(`No starter is posted for ${gameLabel} on this game date.`)
+  } else if (!dated.length) {
+    return emptyMatch(`No starter is posted for ${gameLabel}.`)
+  } else {
+    const side = dated.map((game) => opponentSide(game, opponentTeam)).find((entry) => announcedStarter(entry?.pitcher))
+    starterName = announcedStarter(side?.pitcher)
+    if (!starterName || teamConflicts(starterName, side?.team, opponentTeam, seasonRates, rankings)) {
+      return emptyMatch(`The starter for ${opponentTeam} has not been posted yet.`)
     }
+    profile = isFallbackProfile(side?.pitcher?.profile) ? null : side?.pitcher?.profile
   }
-  const ranking = pickByName(rankings, starterName, found.opponentTeam)
-  const seasonRate = pickByName(seasonRates, starterName, found.opponentTeam)
-  const rates = resolvePitcherRates(found.pitcher?.profile, ranking, seasonRate)
+
+  const ranking = pickByName(rankings, starterName, opponentTeam)
+  const seasonRate = pickByName(seasonRates, starterName, opponentTeam)
+  const rates = resolvePitcherRates(profile, ranking, seasonRate)
+  if (listedOk?.hand) rates.hand = normalizeHand(listedOk.hand) || rates.hand
   const stats = MATCHUP_STATS.map((spec) => {
     const value = rates[spec.key]
     const leagueValue = spec.direction ? num(league?.[spec.key]) : null
@@ -230,7 +358,7 @@ export function buildPitcherMatchup({ batterTeam, matchups, rankings, league, se
   const hasRate = stats.some((stat) => stat.direction && stat.value != null)
   return {
     starterName,
-    team: found.opponentTeam || seasonRate?.team || ranking?.team || '',
+    team: opponentTeam,
     hand: rates.hand,
     handLabel: handLabel(rates.hand),
     starts: rates.starts,

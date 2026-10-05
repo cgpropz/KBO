@@ -100,6 +100,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const [matchups, setMatchups] = useState([])
   const [rankings, setRankings] = useState([])
   const [matchupLeague, setMatchupLeague] = useState(null)
+  const [matchupSlateDate, setMatchupSlateDate] = useState(null)
   const [leagueFile, setLeagueFile] = useState(null)
   const [seasonRates, setSeasonRates] = useState([])
   const [matchupStatus, setMatchupStatus] = useState('loading')
@@ -132,6 +133,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
       if (!active) return
       const slate = matchupSnap?.data
       setMatchups(Array.isArray(slate?.matchups) ? slate.matchups : [])
+      setMatchupSlateDate(slate?.game_date || slate?.gameDate || null)
       setMatchupLeague(slate?.league_pitching || null)
       const rows = rankingsSnap?.data
       setRankings(Array.isArray(rows) ? rows : [])
@@ -344,7 +346,11 @@ export default function KboPlayerPage({ playerName, onBack }) {
         {!isPitcher && (
           <PitcherMatchup
             batterTeam={player.team}
+            opponent={player.opponent}
+            card={player}
+            prop={currentProp}
             matchups={matchups}
+            slateDate={matchupSlateDate}
             rankings={rankings}
             matchupLeague={matchupLeague}
             leagueFile={leagueFile}
