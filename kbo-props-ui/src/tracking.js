@@ -87,7 +87,17 @@ export function buildCheckoutUrl(link, user) {
 
 const CHECKOUT_HOST = 'https://checkout.stripe.com/';
 
-// Ask the server for the live weekly Checkout Session (XWEEK applied).
+// Session URLs fetched before the click, keyed by access token ('' = guest).
+// The weekly button navigates to one of these synchronously. Waiting on the
+// network inside the click drops the navigation in in-app browsers.
+const readyWeeklyUrls = new Map();
+
+export function readyWeeklyCheckoutUrl(token = '') {
+  return readyWeeklyUrls.get(token || '') || null;
+}
+
+// Ask the server for the live weekly Checkout Session (XWEEK applied when the
+// code is valid for this buyer; otherwise the full $9.99 weekly checkout).
 export async function requestWeeklyCheckoutUrl({ token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -101,6 +111,33 @@ export async function requestWeeklyCheckoutUrl({ token, utm = utmParams(), fetch
   const url = String(data?.url || '');
   if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
   return url;
+}
+
+// Start the weekly Checkout Session request as soon as the page is shown, so
+// the button's href is a real checkout URL by the time it's clicked.
+const inflightWeekly = new Map();
+
+export function prefetchWeeklyCheckoutUrl(options = {}) {
+  const key = options.token || '';
+  const ready = readyWeeklyUrls.get(key);
+  if (ready) return Promise.resolve(ready);
+  if (!inflightWeekly.has(key)) {
+    const pending = requestWeeklyCheckoutUrl(options).then((url) => {
+      readyWeeklyUrls.set(key, url);
+      return url;
+    }).finally(() => {
+      inflightWeekly.delete(key);
+    });
+    inflightWeekly.set(key, pending);
+  }
+  return inflightWeekly.get(key);
+}
+
+// URL the weekly button can open immediately. Prefers the Checkout Session.
+// If that isn't ready, the weekly Payment Link (no promo param) still charges
+// the same plan.
+export function weeklyCheckoutHref(user, token = '') {
+  return readyWeeklyCheckoutUrl(token) || buildCheckoutUrl(STRIPE_LINKS.weekly, user);
 }
 
 // Weekly goes to the XWEEK Checkout Session. If that call fails, fall back to

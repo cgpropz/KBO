@@ -154,6 +154,32 @@ test('returns 503 when Stripe is not configured', async () => {
   }
 })
 
+test('a returning customer whose XWEEK code is rejected still gets a payable weekly checkout', async () => {
+  const calls = []
+  const promoError = new Error('This promotion code cannot be redeemed because the associated customer has prior transactions.')
+  let n = 0
+  const stripe = {
+    customers: { async list() { return { data: [{ id: 'cus_existing' }] } } },
+    checkout: { sessions: { async create(params) {
+      calls.push(structuredClone(params))
+      n += 1
+      if (n === 1) throw promoError
+      return { url: SESSION_URL }
+    } } },
+  }
+  const res = await call({}, { stripe, user: { id: 'user_123', email: 'buyer@example.com' } })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { url: SESSION_URL })
+  assert.equal(calls.length, 2)
+  assert.equal(calls[0].customer, 'cus_existing')
+  assert.deepEqual(calls[0].discounts, [{ promotion_code: XWEEK_PROMOTION_CODE_ID }])
+  assert.equal(calls[0].customer_email, undefined)
+  assert.equal(calls[1].customer, 'cus_existing')
+  assert.equal(calls[1].discounts, undefined)
+  assert.equal(calls[1].line_items[0].price, WEEKLY_PRICE_ID)
+  assert.equal(calls[1].client_reference_id, 'user_123')
+})
+
 test('returns 502 when Stripe throws or the session URL is not hosted checkout', async () => {
   const thrown = await call({}, { stripe: mockStripe(new Error('boom')), user: null })
   assert.equal(thrown.statusCode, 502)

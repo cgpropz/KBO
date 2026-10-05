@@ -90,6 +90,8 @@
 
 /* CTAs (shared) */
 .pl-cta-primary {
+  display: inline-block;
+  box-sizing: border-box;
   background: linear-gradient(90deg, #16a34a, #22c55e);
   color: #fff;
   border: none;
@@ -97,6 +99,8 @@
   border-radius: 999px;
   font-weight: 800;
   font-size: 15px;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   box-shadow: 0 8px 24px rgba(34, 197, 94, 0.28);
