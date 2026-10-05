@@ -150,6 +150,124 @@ test('missing starter name is the not-announced state', () => {
   assert.match(model.emptyDetail, /not been posted/)
 })
 
+const TODAY = [
+  { away: 'KT', home: 'Kiwoom', game_date: '2026-10-06', away_pitcher: { name: 'Davis Daniel' }, home_pitcher: { name: 'Park Jun Hyun' } },
+  { away: 'NC', home: 'LG', game_date: '2026-10-06', away_pitcher: { name: 'Choi Sung Young' }, home_pitcher: { name: 'Park Si Won' } },
+  { away: 'Doosan', home: 'Lotte', game_date: '2026-10-06', away_pitcher: { name: 'Gwak Been' }, home_pitcher: { name: 'Park Se Woong' } },
+  { away: 'SSG', home: 'Hanwha', game_date: '2026-10-06', away_pitcher: { name: 'Kim Keon Woo' }, home_pitcher: { name: 'Owen White' } },
+  { away: 'Samsung', home: 'Kia', game_date: '2026-10-06', away_pitcher: { name: 'Jang Chan Hee' }, home_pitcher: { name: 'Kim Tae Hyeong' } },
+]
+
+const starterRates = [
+  { name: 'Kim Tae Hyeong', team: 'Kia', era: 5.04, whip: 1.57, starts: 23, hand: 'R' },
+  { name: 'Kim Tae Gyeong', team: 'Kia', era: 9.99, whip: 2.5, starts: 4 },
+  { name: 'Jang Chan Hee', team: 'Samsung', era: 4.3, whip: 1.36, starts: 39 },
+  { name: 'Park Jun Hyun', team: 'Kiwoom', era: 5.55, whip: 1.73, starts: 21 },
+  { name: 'Park Jun Young', team: 'Hanwha', era: 6.44, whip: 1.51, starts: 48 },
+  { name: 'Owen White', team: 'Hanwha', era: 3.94, whip: 1.28, starts: 24 },
+  { name: 'Mitch White', team: 'SSG', era: 4.11, whip: 1.7, starts: 6 },
+  { name: 'Davis Daniel', team: 'KT', era: 2.16, whip: 1.18, starts: 9 },
+  { name: 'Kim Keon Woo', team: 'SSG', era: 6.03, whip: 1.72, starts: 27 },
+  { name: 'Park Se Woong', team: 'Lotte', era: 4.92, whip: 1.54, starts: 25 },
+  { name: 'Gwak Been', team: 'Doosan', era: 2.26, whip: 1.06, starts: 26 },
+  { name: 'Park Si Won', team: 'LG', era: 4.0, whip: 1.52, starts: 28 },
+  { name: 'Choi Sung Young', team: 'NC', era: 1.42, whip: 1.58, starts: 6 },
+]
+
+function eraOf(model) {
+  return model.stats.find((stat) => stat.key === 'era').display
+}
+
+test('today slate uses the opposing starter from the batter card game', () => {
+  const expected = {
+    Samsung: ['Kim Tae Hyeong', '5.04'],
+    Kia: ['Jang Chan Hee', '4.30'],
+    NC: ['Park Si Won', '4.00'],
+    LG: ['Choi Sung Young', '1.42'],
+    Doosan: ['Park Se Woong', '4.92'],
+    Lotte: ['Gwak Been', '2.26'],
+    SSG: ['Owen White', '3.94'],
+    Hanwha: ['Kim Keon Woo', '6.03'],
+    KT: ['Park Jun Hyun', '5.55'],
+    Kiwoom: ['Davis Daniel', '2.16'],
+  }
+  for (const [batterTeam, [starter, era]] of Object.entries(expected)) {
+    const game = TODAY.find((row) => row.away === batterTeam || row.home === batterTeam)
+    const opponent = game.away === batterTeam ? game.home : game.away
+    const model = buildPitcherMatchup({
+      batterTeam,
+      opponent,
+      matchups: TODAY,
+      slateDate: '2026-10-06',
+      rankings: [],
+      league,
+      seasonRates: starterRates,
+    })
+    assert.equal(model.starterName, starter, batterTeam)
+    assert.equal(model.team, opponent, batterTeam)
+    assert.equal(eraOf(model), era, batterTeam)
+  }
+})
+
+test('name variants load that pitcher and not a lookalike', () => {
+  const hyeong = buildPitcherMatchup({
+    batterTeam: 'Samsung',
+    opponent: 'Kia',
+    matchups: [{
+      away: 'Samsung',
+      home: 'Kia',
+      game_date: '2026-10-06',
+      away_pitcher: { name: 'Jang Chan-hee' },
+      home_pitcher: { name: 'Kim Tae-hyeong' },
+    }],
+    slateDate: '2026-10-06',
+    rankings: [],
+    league,
+    seasonRates: starterRates,
+  })
+  assert.equal(hyeong.starterName, 'Kim Tae Hyeong')
+  assert.equal(eraOf(hyeong), '5.04')
+
+  const jun = buildPitcherMatchup({
+    batterTeam: 'KT',
+    opponent: 'Kiwoom',
+    sources: [{ opp_pitcher: 'Park Jun-hyun', opp_pitcher_team: 'Kiwoom' }],
+    matchups: TODAY,
+    slateDate: '2026-10-06',
+    rankings: [],
+    league,
+    seasonRates: starterRates,
+  })
+  assert.equal(jun.starterName, 'Park Jun Hyun')
+  assert.equal(eraOf(jun), '5.55')
+
+  const white = buildPitcherMatchup({
+    batterTeam: 'SSG',
+    opponent: 'Hanwha',
+    sources: [{ opp_pitcher: 'White', opp_pitcher_team: 'Hanwha' }],
+    matchups: TODAY,
+    slateDate: '2026-10-06',
+    rankings: [],
+    league,
+    seasonRates: starterRates,
+  })
+  assert.equal(white.starterName, 'Owen White')
+  assert.equal(eraOf(white), '3.94')
+
+  const daniel = buildPitcherMatchup({
+    batterTeam: 'Kiwoom',
+    opponent: 'KT',
+    sources: [{ opp_pitcher: 'Daniel', opp_pitcher_team: 'KT' }],
+    matchups: TODAY,
+    slateDate: '2026-10-06',
+    rankings: [],
+    league,
+    seasonRates: starterRates,
+  })
+  assert.equal(daniel.starterName, 'Davis Daniel')
+  assert.equal(eraOf(daniel), '2.16')
+})
+
 test('game dates normalize compact and KST timestamps', () => {
   assert.equal(gameDateKey('20261006'), '2026-10-06')
   assert.equal(gameDateKey('2026-10-05T18:30:00Z'), '2026-10-06')

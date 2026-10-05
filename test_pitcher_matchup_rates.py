@@ -30,6 +30,17 @@ class PitchingRateTests(unittest.TestCase):
         # CSV row is UNK, but the verified "Kim Tae-hyeong" / "Tae Hyeong Kim" rows are R.
         self.assertEqual(matchups.resolve_pitcher_hand("Kim Tae Hyeong", hands), "R")
 
+    def test_season_rates_do_not_depend_on_log_order(self):
+        logs = matchups.load_pitcher_logs()
+        forward = matchups.season_rate_rows(logs)
+        backward = matchups.season_rate_rows(list(reversed(logs)))
+        shuffled = list(logs)
+        shuffled.sort(key=lambda row: (row.get("Tm") or "", row.get("Date") or "", row.get("Name") or ""))
+        self.assertEqual(forward, backward)
+        self.assertEqual(forward, matchups.season_rate_rows(shuffled))
+        allen = next(row for row in forward if row["name"] == "Allen Logan")
+        self.assertEqual(allen["team"], "KT")
+
     def test_checked_in_reference_matches_the_pitching_logs(self):
         logs = matchups.load_pitcher_logs()
         league = matchups.build_league_pitching(logs)

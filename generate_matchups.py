@@ -662,6 +662,35 @@ def _log_season(log):
     return None
 
 
+def _game_date(game):
+    """Parse a pitching-log date. Missing dates sort first."""
+    from datetime import datetime
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str((game or {}).get("Date") or ""), fmt)
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def _profile_team(games):
+    """Team on the latest start.
+
+    The combined log repeats some starts under two team codes, and refresh
+    jobs rewrite those rows in either order. File order must not change the
+    published team. On a tied date, the team with more starts wins, then the
+    team code in alphabetical order.
+    """
+    counts = {}
+    for game in games or []:
+        team = str(game.get("Tm") or "")
+        counts[team] = counts.get(team, 0) + 1
+    latest = max(_game_date(game) for game in games)
+    on_latest = [game for game in games if _game_date(game) == latest]
+    on_latest.sort(key=lambda game: (-counts.get(str(game.get("Tm") or ""), 0), str(game.get("Tm") or "")))
+    return on_latest[0].get("Tm")
+
+
 def build_pitcher_profiles(logs, active_season=None, hands=None):
     """Build per-pitcher season stats and last starts from game logs."""
     if active_season is None:
@@ -683,7 +712,7 @@ def build_pitcher_profiles(logs, active_season=None, hands=None):
                 sp_games = season_sp_games
         if not sp_games:
             continue
-        team_raw = sp_games[-1]["Tm"]
+        team_raw = _profile_team(sp_games)
         team = TEAM_SHORT.get(team_raw, team_raw)
 
         totals = _pitching_totals(sp_games)
@@ -871,7 +900,7 @@ def season_rate_rows(logs, hands=None):
         if profile.get("hand") in ("L", "R"):
             row["hand"] = profile["hand"]
         rows.append(row)
-    rows.sort(key=lambda row: (row.get("team") or "", row.get("name") or ""))
+    rows.sort(key=lambda row: (row.get("team") or "", row.get("name") or "", row.get("ip") or 0))
     return rows
 
 

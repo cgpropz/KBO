@@ -177,15 +177,39 @@ export function rateTone(value, league, direction, band = NEUTRAL_BAND) {
   return easier ? 'easy' : 'tough'
 }
 
+function nameParts(value) {
+  return nameKey(value).split(' ').filter(Boolean)
+}
+
 function pickByName(rows, name, team, teamField = 'team') {
-  const key = nameKey(name)
-  if (!key) return null
-  const matches = (rows || []).filter((row) => row && nameKey(row.name) === key)
+  const parts = nameParts(name)
+  if (!parts.length) return null
+  const exactKey = parts.join(' ')
+  let matches = (rows || []).filter((row) => row && nameKey(row.name) === exactKey)
+  const exact = matches.length > 0
+  // "Daniel" / "White" are the single names mykbostats shows. Use one only when
+  // a single pitcher on that team has it, so Owen White is not Mitch White.
+  if (!matches.length && parts.length === 1) {
+    matches = (rows || []).filter((row) => nameParts(row.name).includes(parts[0]))
+  }
   if (!matches.length) return null
-  const onTeam = team ? matches.filter((row) => sameTeam(row[teamField], team)) : matches
-  const pool = onTeam.length ? onTeam : []
-  if (!pool.length) return null
-  return pool.slice().sort((a, b) => (num(b.starts) || num(b.gs) || 0) - (num(a.starts) || num(a.gs) || 0))[0]
+  if (team) {
+    const onTeam = matches.filter((row) => sameTeam(row[teamField], team))
+    if (!onTeam.length) return null
+    matches = onTeam
+  }
+  if (!exact && new Set(matches.map((row) => nameKey(row.name))).size > 1) return null
+  return matches.slice().sort((a, b) => (num(b.starts) || num(b.gs) || 0) - (num(a.starts) || num(a.gs) || 0))[0]
+}
+
+function canonicalStarterName(announced, row) {
+  if (!row?.name) return announced
+  const announcedParts = nameParts(announced)
+  const rowParts = nameParts(row.name)
+  if (!announcedParts.length) return row.name
+  if (announcedParts.join(' ') === rowParts.join(' ')) return row.name
+  if (announcedParts.length < rowParts.length && announcedParts.every((part) => rowParts.includes(part))) return row.name
+  return announced
 }
 
 export function leagueFromRankings(rankings) {
@@ -341,6 +365,7 @@ export function buildPitcherMatchup({
 
   const ranking = pickByName(rankings, starterName, opponentTeam)
   const seasonRate = pickByName(seasonRates, starterName, opponentTeam)
+  starterName = canonicalStarterName(starterName, seasonRate || ranking)
   const rates = resolvePitcherRates(profile, ranking, seasonRate)
   if (listedOk?.hand) rates.hand = normalizeHand(listedOk.hand) || rates.hand
   const stats = MATCHUP_STATS.map((spec) => {
