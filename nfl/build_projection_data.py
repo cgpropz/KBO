@@ -17,9 +17,12 @@ if str(REPO_ROOT) not in sys.path:
 
 import pandas as pd
 import requests
+from zoneinfo import ZoneInfo
+
 from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES
 
 
+ET = ZoneInfo('America/New_York')
 OUTPUT_PATH = ROOT / 'projections.json'
 LINEUPS_OUTPUT_PATH = ROOT / 'lineups.json'
 HISTORY_SEASONS = (2025, 2026)
@@ -416,6 +419,7 @@ def slate_records(payload):
         grouped.setdefault(key, []).append({
             'player': player['name'], 'team': team, 'opponent': opponent, 'prop': stat,
             'line': line, 'odds_type': odds_type, 'trending': _trending_count(attrs.get('trending_count')),
+            'start_time': text_or_empty(attrs.get('start_time')),
         })
     records = []
     for candidates in grouped.values():
@@ -425,8 +429,106 @@ def slate_records(payload):
         records.append({
             'player': chosen['player'], 'team': chosen['team'], 'opponent': chosen['opponent'],
             'prop': chosen['prop'], 'line': chosen['line'],
+            'start_time': chosen.get('start_time') or '',
         })
     return records
+
+
+def _schedule_value(game, key):
+    if isinstance(game, dict):
+        value = game.get(key)
+    else:
+        value = game[key] if key in getattr(game, 'index', ()) else None
+    if value is None or (not isinstance(value, str) and pd.isna(value)):
+        return ''
+    return str(value).strip()
+
+
+def _kickoff_et(gameday, gametime):
+    day = str(gameday or '').strip()
+    clock = str(gametime or '').strip() or '00:00'
+    if len(clock) == 5:
+        clock = f'{clock}:00'
+    try:
+        parsed = datetime.datetime.fromisoformat(f'{day}T{clock}')
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ET)
+    return parsed.astimezone(ET)
+
+
+def _start_et(start_time):
+    text = str(start_time or '').strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.datetime.fromisoformat(text.replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ET)
+    return parsed.astimezone(ET)
+
+
+def annotate_slate_rows(rows, games, today=None):
+    """Add away/home and the nflverse kickoff for each PrizePicks slate row.
+
+    PrizePicks stores the opponent and a start time, not which side is home.
+    The schedule is the same nflverse games file the lineup snapshot uses.
+    A pair that is not on that schedule keeps its start time and leaves
+    away/home empty so the board can fall back to an alphabetical label.
+    """
+    catalog = []
+    for game in games or []:
+        away = canonical_team(_schedule_value(game, 'away_team') or _schedule_value(game, 'awayTeam'))
+        home = canonical_team(_schedule_value(game, 'home_team') or _schedule_value(game, 'homeTeam'))
+        gameday = _schedule_value(game, 'gameday')
+        gametime = _schedule_value(game, 'gametime')
+        if not away or not home or not gameday:
+            continue
+        catalog.append({
+            'away': away, 'home': home, 'gameday': gameday, 'gametime': gametime,
+            'pair': frozenset((away, home)), 'kickoff': _kickoff_et(gameday, gametime),
+        })
+    today = today or datetime.date.today()
+    annotated = []
+    for row in rows or []:
+        item = dict(row)
+        team = canonical_team(item.get('team'))
+        opponent = canonical_team(item.get('opponent'))
+        item['awayTeam'] = ''
+        item['homeTeam'] = ''
+        item['gameday'] = ''
+        item['gametime'] = ''
+        matches = [game for game in catalog if game['pair'] == frozenset((team, opponent)) and team and opponent and team != opponent]
+        chosen = _choose_schedule_game(matches, item.get('start_time'), today)
+        if chosen:
+            item['awayTeam'] = chosen['away']
+            item['homeTeam'] = chosen['home']
+            item['gameday'] = chosen['gameday']
+            item['gametime'] = chosen['gametime']
+        annotated.append(item)
+    return annotated
+
+
+def _choose_schedule_game(matches, start_time, today):
+    if not matches:
+        return None
+    target = _start_et(start_time)
+    dated = [game for game in matches if game['kickoff'] is not None]
+    if target is not None and dated:
+        return min(dated, key=lambda game: abs((game['kickoff'] - target).total_seconds()))
+    upcoming = []
+    for game in matches:
+        try:
+            day = datetime.date.fromisoformat(game['gameday'])
+        except ValueError:
+            continue
+        if day >= today:
+            upcoming.append(game)
+    pool = upcoming or matches
+    return min(pool, key=lambda game: (game['gameday'], game['gametime'] or ''))
 
 
 def load_slate():
@@ -537,6 +639,9 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
     return {
         'id': f"{key}-{re.sub(r'[^a-z0-9]+', '-', row.prop.lower()).strip('-')}",
         'player': text_or_empty(row.player), 'position': position, 'team': text_or_empty(row.team), 'opponent': text_or_empty(row.opponent),
+        'awayTeam': text_or_empty(getattr(row, 'awayTeam', '')), 'homeTeam': text_or_empty(getattr(row, 'homeTeam', '')),
+        'gameday': text_or_empty(getattr(row, 'gameday', '')), 'gametime': text_or_empty(getattr(row, 'gametime', '')),
+        'start_time': text_or_empty(getattr(row, 'start_time', '')),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
@@ -624,9 +729,22 @@ def build_lineups():
     return matchups
 
 
+def load_schedule_games():
+    """Season schedule from the same nflverse file the lineup snapshot uses."""
+    frame = pd.read_csv(GAMES_URL, usecols=['season', 'game_type', 'gameday', 'gametime', 'away_team', 'home_team'])
+    frame = frame[(frame['season'] == CURRENT_SEASON) & (frame['game_type'].isin(['REG', 'POST']))]
+    return frame.to_dict('records')
+
+
 def main():
     history = load_history()
     slate = load_slate()
+    try:
+        schedule = load_schedule_games()
+    except Exception as exc:
+        print(f'NFL schedule unavailable ({exc}); matchup rows will keep kickoff only.')
+        schedule = []
+    slate = pd.DataFrame(annotate_slate_rows(slate.to_dict('records'), schedule))
     directory = load_player_directory()
     dvp_ratings = load_dvp_ratings(history)
     snap_counts, snap_games, participation = load_snap_counts()

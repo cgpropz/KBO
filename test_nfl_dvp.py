@@ -1,4 +1,5 @@
 """NFL defense-vs-position ranks. Offline: no PrizePicks or nflverse calls."""
+import datetime
 import unittest
 
 import pandas as pd
@@ -131,6 +132,47 @@ class DvpRankTests(unittest.TestCase):
             ('C.J. Stroud', 'Pass TDs', 1.5, 'DAL'),
             ('Tyson Bagent', 'Pass TDs', 1.5, 'NYJ'),
         })
+
+    def test_slate_keeps_prizepicks_start_time(self):
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {'name': 'Dak Prescott', 'team': 'DAL', 'league': 'NFL'}},
+            ],
+            'data': [
+                {
+                    'relationships': {'new_player': {'data': {'id': '1'}}},
+                    'attributes': {
+                        'stat_type': 'Pass TDs', 'odds_type': 'standard', 'line_score': 1.5,
+                        'description': 'TB', 'start_time': '2026-10-08T20:15:00.000-04:00',
+                    },
+                },
+            ],
+        }
+        row = nfl.slate_records(payload)[0]
+        self.assertEqual(row['start_time'], '2026-10-08T20:15:00.000-04:00')
+        self.assertEqual(row['opponent'], 'TB')
+
+    def test_schedule_sets_away_at_home_and_picks_the_kickoff_nearest_the_prop(self):
+        rows = [
+            {'player': 'Dak Prescott', 'team': 'DAL', 'opponent': 'TB', 'prop': 'Pass TDs', 'line': 1.5, 'start_time': '2026-10-08T20:15:00.000-04:00'},
+            {'player': 'Bijan Robinson', 'team': 'ATL', 'opponent': 'NO', 'prop': 'Rush Yards', 'line': 80.5, 'start_time': '2026-10-05T20:15:00.000-04:00'},
+            {'player': 'Trevor Lawrence', 'team': 'JAC', 'opponent': 'PHI', 'prop': 'Pass TDs', 'line': 1.5, 'start_time': '2026-10-11T09:30:00.000-04:00'},
+            {'player': 'Mystery', 'team': 'BUF', 'opponent': 'NE', 'prop': 'Pass Yards', 'line': 220.5, 'start_time': ''},
+        ]
+        games = [
+            {'away_team': 'DAL', 'home_team': 'TB', 'gameday': '2026-09-01', 'gametime': '20:15'},
+            {'away_team': 'TB', 'home_team': 'DAL', 'gameday': '2026-10-08', 'gametime': '20:15'},
+            {'away_team': 'ATL', 'home_team': 'NO', 'gameday': '2026-10-05', 'gametime': '20:15'},
+            {'away_team': 'PHI', 'home_team': 'JAX', 'gameday': '2026-10-11', 'gametime': '09:30'},
+        ]
+        annotated = {row['player']: row for row in nfl.annotate_slate_rows(rows, games, today=datetime.date(2026, 10, 5))}
+        self.assertEqual((annotated['Dak Prescott']['awayTeam'], annotated['Dak Prescott']['homeTeam']), ('TB', 'DAL'))
+        self.assertEqual(annotated['Dak Prescott']['gameday'], '2026-10-08')
+        self.assertEqual((annotated['Bijan Robinson']['awayTeam'], annotated['Bijan Robinson']['homeTeam']), ('ATL', 'NO'))
+        self.assertEqual((annotated['Trevor Lawrence']['awayTeam'], annotated['Trevor Lawrence']['homeTeam']), ('PHI', 'JAX'))
+        self.assertEqual(annotated['Mystery']['awayTeam'], '')
+        self.assertEqual(annotated['Mystery']['homeTeam'], '')
+        self.assertEqual(annotated['Mystery']['start_time'], '')
 
     def test_pass_td_grading_uses_passing_tds(self):
         from pipeline.memory.grade_nfl_day import actual_for_stat

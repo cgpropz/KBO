@@ -551,6 +551,11 @@ class MatchTests(unittest.TestCase):
                     "hitRateL5": 30,
                     "hitRate": 70,
                     "dvpRank": 16,
+                    "awayTeam": "TB",
+                    "homeTeam": "DAL",
+                    "gameday": "2026-10-08",
+                    "gametime": "20:15",
+                    "start_time": "2026-10-08T20:15:00-04:00",
                 },
                 {
                     "player": "No Grade",
@@ -565,6 +570,13 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(rows["Noah Fant"]["hitRate"], 70)
         self.assertEqual(rows["Noah Fant"]["dvpRank"], 16)
         self.assertEqual(rows["Noah Fant"]["pp_line"], 2.5)
+        self.assertEqual(rows["Noah Fant"]["awayTeam"], "TB")
+        self.assertEqual(rows["Noah Fant"]["homeTeam"], "DAL")
+        self.assertEqual(rows["Noah Fant"]["gameday"], "2026-10-08")
+        self.assertEqual(rows["Noah Fant"]["gametime"], "20:15")
+        self.assertEqual(rows["Noah Fant"]["start_time"], "2026-10-08T20:15:00-04:00")
+        self.assertIsNone(rows["No Grade"]["awayTeam"])
+        self.assertIsNone(rows["No Grade"]["start_time"])
         self.assertIsNone(rows["No Grade"]["dvpRank"])
         self.assertIsNone(rows["No Grade"]["hitRateL5"])
         self.assertIsNone(rows["No Grade"]["hitRate"])

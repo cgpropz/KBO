@@ -209,12 +209,15 @@
   .wnba-root .edge-grid { grid-template-columns: 1fr; }
 
   .nfl-sharp-controls { width: 100%; min-width: 0; }
+  .nfl-sharp-controls > label { min-width: 0; max-width: 100%; }
   .nfl-sharp-controls input,
   .nfl-sharp-controls select {
     min-width: 0;
     flex: 1 1 140px;
     max-width: 100%;
   }
+  .nfl-sharp-matchup { flex: 1 1 100%; }
+  .nfl-sharp-matchup select { width: 100%; min-width: 0; }
   .nfl-filters { max-width: 100%; }
   .nfl-filters input { min-width: 0; width: 100%; }
 
