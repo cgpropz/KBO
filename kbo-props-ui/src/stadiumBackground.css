@@ -1,9 +1,11 @@
 /*
- * Night stadium photo for the NFL section only.
- * The picture stays fixed while NFL content scrolls. Most boards use a dark wash
- * that opens at the edges so the photo shows through. Prop Lines and PP Odds
- * sit on a solid dark panel so the table stays readable on the bright field.
- * Odds and grade colors are unchanged. Other sports keep their own fills.
+ * Night stadium photos, one per section.
+ * NFL uses stadium-bg.webp. KBO uses kbo-stadium-bg.webp. WNBA is unchanged.
+ * The picture stays fixed while that section scrolls. Boards sit on a dark wash
+ * that opens at the edges so the photo shows through. Tables and cards sit on a
+ * solid dark panel so text stays readable. Heat-map and grade colors are inline
+ * or their own classes — table cell fills here do not use !important, so those
+ * scales stay put.
  */
 
 .nfl-root {
@@ -71,4 +73,301 @@
 
 .nfl-player-range-strip button:not(.active) {
   background-color: rgba(8, 21, 19, 0.55);
+}
+
+/* ── KBO: same chrome as NFL, baseball photo only ── */
+.kbo-app-root.kbo-app-root {
+  background-color: #07090d;
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 12, 0.4), rgba(4, 7, 11, 0.48)),
+    url('/kbo-stadium-bg.webp');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #e8f4e6;
+}
+
+.kbo-app-nav {
+  background: rgba(5, 8, 12, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+/* Page shells were opaque flat fills. Drop them so the stadium shows
+   around the board the way it does on NFL. */
+.kbo-app-root .so-container,
+.kbo-app-root .bp-container,
+.kbo-app-root .rk-container,
+.kbo-app-root .gt-container,
+.kbo-app-root .so-header,
+.kbo-app-root .bp-header,
+.kbo-app-root .rk-header,
+.kbo-app-root .gt-header,
+.kbo-app-root .gt-tabs,
+.kbo-app-root .gt-date-bar,
+.kbo-app-root .gt-filter-bar {
+  background: transparent;
+  background-image: none;
+  color: #e8f4e6;
+  font-family: inherit;
+}
+
+.kbo-app-root .so-k-page .so-header,
+.kbo-app-root .bp-header {
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: rgba(26, 60, 54, 0.75);
+}
+
+.kbo-app-root .rk-header,
+.kbo-app-root .gt-header,
+.kbo-app-root .gt-tabs,
+.kbo-app-root .gt-filter-bar,
+.kbo-app-root .so-container:not(.so-k-page) .so-header {
+  border-bottom-color: rgba(26, 60, 54, 0.75);
+  text-align: left;
+}
+
+.kbo-app-root .rk-toolbar,
+.kbo-app-root .gt-tabs,
+.kbo-app-root .gt-date-bar,
+.kbo-app-root .so-mode-bar {
+  justify-content: flex-start;
+}
+
+.kbo-app-root .so-filter-shell,
+.kbo-app-root .bp-filter-shell {
+  border-top-color: rgba(26, 60, 54, 0.75);
+}
+
+.kbo-app-root .so-k-page .so-title,
+.kbo-app-root .bp-title,
+.kbo-app-root .rk-title,
+.kbo-app-root .gt-title,
+.kbo-app-root .so-container:not(.so-k-page) .so-title,
+.kbo-app-root .mdd-title {
+  margin: 0;
+  color: #e8f4e6;
+  font-family: inherit;
+  font-size: clamp(34px, 5vw, 58px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.kbo-app-root .so-eyebrow,
+.kbo-app-root .bp-eyebrow,
+.kbo-app-root .so-filter-label,
+.kbo-app-root .bp-filter-label,
+.kbo-app-root .kbo-board-header p {
+  color: #54e0bf;
+  font: 800 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.13em;
+}
+
+.kbo-app-root .so-description,
+.kbo-app-root .bp-description,
+.kbo-app-root .gt-subtitle,
+.kbo-app-root .mdd-subtitle,
+.kbo-app-root .rk-updated,
+.kbo-app-root .so-live-status,
+.kbo-app-root .bp-update-status {
+  color: #b7cac3;
+  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.kbo-app-root .so-live-status span,
+.kbo-app-root .bp-live-dot {
+  background: #7fff68;
+  box-shadow: 0 0 8px #7fff68;
+}
+
+.kbo-app-root .so-table th,
+.kbo-app-root .bp-table thead th,
+.kbo-app-root .rk-table th,
+.kbo-app-root .gt-table thead th,
+.kbo-app-root .kbo-lines-table th {
+  color: #54e0bf;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Filter and mode controls match NFL pills. */
+.kbo-app-root .so-filter-btn,
+.kbo-app-root .bp-filter-btn,
+.kbo-app-root .rk-chip,
+.kbo-app-root .gt-tab,
+.kbo-app-root .gt-date-btn,
+.kbo-app-root .so-mode-btn,
+.kbo-app-root .so-filter-chip,
+.kbo-app-root .so-legs-btn,
+.kbo-app-root .mdd-header-pill {
+  border: 1px solid #1a3c36;
+  border-radius: 999px;
+  color: #8ba39c;
+  background: #0a1615;
+  font: 800 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.kbo-app-root .so-filter-btn:hover,
+.kbo-app-root .bp-filter-btn:hover,
+.kbo-app-root .gt-tab:hover,
+.kbo-app-root .gt-date-btn:hover,
+.kbo-app-root .so-mode-btn:hover:not(.active),
+.kbo-app-root .so-filter-chip:hover,
+.kbo-app-root .so-legs-btn:hover:not(.active) {
+  color: #e8f4e6;
+  border-color: #2a5148;
+  background: #0a1615;
+}
+
+.kbo-app-root .so-filter-btn.active,
+.kbo-app-root .bp-filter-btn.active,
+.kbo-app-root .rk-chip-btn.active,
+.kbo-app-root .gt-tab.active,
+.kbo-app-root .gt-date-btn.active,
+.kbo-app-root .so-mode-btn.active,
+.kbo-app-root .so-filter-chip.active,
+.kbo-app-root .so-legs-btn.active {
+  color: #06100f;
+  background: #7fff68;
+  border-color: #7fff68;
+}
+
+.kbo-app-root .gt-tab.active .gt-tab-count {
+  color: #06100f;
+  background: rgba(6, 16, 15, 0.18);
+}
+
+.kbo-app-root .so-hitrate-select,
+.kbo-app-root .bp-hitrate-select,
+.kbo-app-root .bp-search-wrap,
+.kbo-app-root .gt-filter-input,
+.kbo-app-root .gt-filter-select,
+.kbo-app-root .gt-filter-date {
+  border: 1px solid #23443d;
+  border-radius: 5px;
+  color: #e8f4e6;
+  background: #0b1c19;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.kbo-app-root .bp-player-search {
+  color: #e8f4e6;
+}
+
+.kbo-app-root .so-clear-filters,
+.kbo-app-root .bp-clear-filters {
+  color: #7fff68;
+  font: 800 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Tables and cards: solid dark panel. background-color only, and never
+   !important, so inline red/green heat scales keep the cell. */
+.kbo-app-root .so-table-wrap,
+.kbo-app-root .bp-table-wrap,
+.kbo-app-root .rk-table-wrap,
+.kbo-app-root .gt-table-wrap,
+.kbo-app-root .kbo-lines-table-wrap,
+.kbo-app-root .so-panel,
+.kbo-app-root .bp-panel,
+.kbo-app-root .bp-formula-bar,
+.kbo-app-root .so-formula-bar,
+.kbo-app-root .so-detail-panel,
+.kbo-app-root .so-team-card,
+.kbo-app-root .bp-team-card,
+.kbo-app-root .rgl-chart,
+.kbo-app-root .so-slip-summary,
+.kbo-app-root .so-auto-card,
+.kbo-app-root .so-saved-card,
+.kbo-app-root .so-prop-row,
+.kbo-app-root .so-auto-controls,
+.kbo-app-root .gt-summary-card,
+.kbo-app-root .gt-section-rate,
+.kbo-app-root .kbo-notice,
+.kbo-app-root .kbo-player-summary,
+.kbo-app-root .kbo-filter-panel,
+.kbo-app-root .parlay-tray,
+.kbo-app-root .mdd-game-tab,
+.kbo-app-root .mdd-market-card,
+.kbo-app-root .mdd-game-header,
+.kbo-app-root .mdd-section,
+.kbo-app-root .so-market-notice {
+  background-color: rgba(6, 11, 13, 0.94);
+  border-color: rgba(26, 60, 54, 0.95);
+}
+
+.kbo-app-root .so-table th,
+.kbo-app-root .so-table td,
+.kbo-app-root .so-table tbody td:first-child,
+.kbo-app-root .bp-table thead th,
+.kbo-app-root .bp-table tbody td,
+.kbo-app-root .bp-table tbody td:first-child,
+.kbo-app-root .rk-table th,
+.kbo-app-root .rk-table td,
+.kbo-app-root .gt-table thead th,
+.kbo-app-root .gt-table tbody td,
+.kbo-app-root .kbo-lines-table th,
+.kbo-app-root .kbo-lines-table td {
+  background-color: rgba(6, 11, 13, 0.96);
+}
+
+.kbo-app-root .so-row:hover td,
+.kbo-app-root .bp-row:hover td,
+.kbo-app-root .gt-row:hover td,
+.kbo-app-root .kbo-lines-table tbody tr:hover td {
+  background-color: rgba(16, 36, 32, 0.98);
+}
+
+.kbo-app-root .so-log-row td,
+.kbo-app-root .bp-log-row td {
+  background-color: #071311;
+}
+
+.kbo-app-root .so-prop-selected {
+  background-color: #10241c;
+  border-color: #7fff68;
+}
+
+.kbo-app-root .mdd-slate-top,
+.kbo-app-root .mdd-slate-bottom {
+  background: #081513;
+  border-top-color: #1a3c36;
+}
+
+.kbo-app-root .mdd-slate-pill,
+.kbo-app-root .mdd-header-pill {
+  color: #e8f4e6;
+  background: #0a1615;
+  border-color: #1a3c36;
+}
+
+.kbo-app-root .mdd-vs {
+  color: #7fff68;
+}
+
+.kbo-app-root .so-table-toolbar,
+.kbo-app-root .bp-table-toolbar,
+.kbo-app-root .so-table-toolbar strong,
+.kbo-app-root .bp-table-toolbar strong {
+  color: #b7cac3;
+}
+
+.kbo-app-root .so-table-toolbar strong,
+.kbo-app-root .bp-table-toolbar strong {
+  color: #e8f4e6;
+}
+
+@media (max-width: 760px) {
+  .kbo-app-root .so-k-page .so-title,
+  .kbo-app-root .bp-title,
+  .kbo-app-root .rk-title,
+  .kbo-app-root .gt-title,
+  .kbo-app-root .so-container:not(.so-k-page) .so-title,
+  .kbo-app-root .mdd-title {
+    font-size: clamp(28px, 8vw, 40px);
+  }
 }
