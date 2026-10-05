@@ -891,7 +891,8 @@ def main(argv=None):
     print(
         f"Wrote {payload['matched_count']} matched / {payload['prizepicks_prop_count']} "
         f"PrizePicks props ({payload['sportsbook_record_count']} sportsbook prices, "
-        f"{payload['events_scanned']} events) to {args.output}"
+        f"{payload['events_scanned']} events, feed {payload.get('feed_snapshot_at')}) "
+        f"to {args.output}"
     )
     return 0
 

@@ -1,5 +1,11 @@
 name: Refresh NFL PrizePicks Board
 
+# This cron is the full board plus the memory freeze. It is not the live odds
+# clock. GitHub drops most "every 30 minutes" schedules (this one was landing
+# every 3-6 hours). nfl-odds-live.yml re-queues itself so Unabated prices and
+# PrizePicks EV actually refresh about every 30 minutes. The step at the
+# bottom starts that chain if it is not already running.
+
 on:
   schedule:
     # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
@@ -21,6 +27,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: nfl-refresh-pipeline
@@ -76,3 +83,10 @@ jobs:
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: nfl memory slate freeze"
+
+      - name: Keep Unabated odds refreshing
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run nfl-odds-live.yml --ref main

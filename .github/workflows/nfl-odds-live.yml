@@ -1,0 +1,77 @@
+name: Refresh NFL Unabated Odds
+
+# Keeps the PP Odds board on the public Unabated file.
+# https://content.unabated.com/markets/b_playerprops.json
+#
+# The 30-minute cron on nfl-refresh.yml is not actually 30 minutes. GitHub
+# drops most of those schedule ticks, so that job was landing every 3-6 hours
+# while Unabated itself moves within seconds. This workflow is the same
+# refresh (projections, then nfl/sharp_odds.py, then the Supabase snapshot).
+# A finished run queues the next one. The hourly cron only restarts the chain
+# if that handoff dies. No Odds API key and no other book feed.
+
+on:
+  schedule:
+    # Restarts the chain if a run is killed before it can queue the next one.
+    # GitHub often delivers this late. The push below starts it on merge.
+    - cron: "13 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-odds-live.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: nfl-unabated-odds
+  cancel-in-progress: false
+
+jobs:
+  refresh-nfl-odds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # The fetch itself is about a minute. Sleeping here keeps one chain
+      # about 30 minutes apart without another scheduler.
+      NFL_ODDS_REFRESH_WAIT_SECONDS: "1500"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install pandas requests
+
+      # PrizePicks lines live in projections.json, which is not in git.
+      # sharp_odds.py skips the snapshot when that file is missing.
+      - name: Build current NFL projections and starting lineups
+        run: timeout 240 python nfl/build_projection_data.py
+
+      - name: Match NFL PrizePicks lines to Unabated sportsbook odds
+        continue-on-error: true
+        run: timeout 180 python nfl/sharp_odds.py
+
+      - name: Publish protected NFL snapshot
+        if: github.ref == 'refs/heads/main'
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nfl/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Queue the next Unabated refresh
+        if: ${{ always() && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Next Unabated fetch in ${NFL_ODDS_REFRESH_WAIT_SECONDS}s"
+          sleep "${NFL_ODDS_REFRESH_WAIT_SECONDS}"
+          gh workflow run nfl-odds-live.yml --ref main
