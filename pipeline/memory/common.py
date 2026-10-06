@@ -486,6 +486,33 @@ def write_day_summary(
     return path, summary
 
 
+def write_graded_snapshot(sport: str, d: date, props: list[dict]) -> Path:
+    """Per-prop grades for a day that is not complete yet.
+
+    Same rows recap.json would hold. The tuned-vs-current comparison can use
+    this when the only leftovers are stats the box score cannot grade.
+    Removed once the day is complete.
+    """
+    payload = {
+        "sport": sport.lower(),
+        "slate_date": format_mmddyyyy(d),
+        "slate_date_iso": format_iso(d),
+        "timezone_basis": TIMEZONE_BASIS[sport.lower()],
+        "coverage": "partial",
+        "graded_at": utc_now_iso(),
+        "props": list(props or []),
+    }
+    path = ensure_memory_dir(sport, d) / "graded.json"
+    save_json(path, payload)
+    return path
+
+
+def clear_graded_snapshot(sport: str, d: date) -> None:
+    path = memory_dir(sport, d) / "graded.json"
+    if path.exists():
+        path.unlink()
+
+
 def write_partial_progress(
     sport: str,
     d: date,
@@ -497,7 +524,8 @@ def write_partial_progress(
     """
     Persist meta for waiting|partial days; write summary.json when any props graded.
 
-    Does not write recap.json (complete-only).
+    Does not write recap.json (complete-only). Does write graded.json so the
+    props that did grade are not thrown away.
     """
     n_graded = len(graded or [])
     status = "partial" if n_graded else "waiting"
@@ -507,6 +535,9 @@ def write_partial_progress(
             sport, d, graded, status="partial", props_total=props_total
         )
         extra = hit_rate_meta_extra(summary)
+        write_graded_snapshot(sport, d, graded)
+    else:
+        clear_graded_snapshot(sport, d)
     return write_meta(
         sport,
         d,
@@ -617,6 +648,7 @@ def write_recap(sport: str, d: date, props: list[dict], *, missing: list[Any] | 
     }
     path = day_dir / "recap.json"
     save_json(path, payload)
+    clear_graded_snapshot(sport, d)
     _, summary = write_day_summary(
         sport, d, props, status="complete", props_total=len(props)
     )

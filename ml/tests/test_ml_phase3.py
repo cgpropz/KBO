@@ -343,6 +343,39 @@ class TestDayGuards(unittest.TestCase):
             self.assertFalse((excl / "shadow_summary.json").exists())
             self.assertFalse((open_day / "shadow_summary.json").exists())
 
+    def test_partial_unmapped_day_is_compared_and_a_waiting_box_score_is_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            slate = {"slate_date": "x", "props": [s2()]}
+            ddir = _mk_day(root, "wnba", date(2026, 9, 29), slate, status="partial")
+            (ddir / "meta.json").write_text(json.dumps({
+                "status": "partial",
+                "missing": [{"player": "Z", "stat": "Quarters with 3+ Points", "reason": "unmapped_stat"}],
+                "missing_truncated": False,
+            }))
+            (ddir / "graded.json").write_text(json.dumps({
+                "coverage": "partial",
+                "props": [dict(s2(), actual=12, result="OVER", model_result="HIT")],
+            }))
+            raw = (ddir / "slate.json").read_text()
+            (ddir / "shadow.json").write_text(json.dumps({
+                "status": "scored",
+                "slate_sha256": C.sha256_text(raw)[:16],
+                "slate_date": "09/29/2026",
+                "props": [shadow_row("A", "Points", "OVER", 13.0)],
+            }))
+            out, why = G.grade_day("wnba", date(2026, 9, 29), ddir, {})
+            self.assertEqual(why, "graded")
+            self.assertEqual(out["sources"]["recap"], "graded.json")
+            self.assertEqual(out["overall"]["current"]["hits"], 1)
+
+            (ddir / "meta.json").write_text(json.dumps({
+                "status": "partial",
+                "missing": [{"player": "Z", "stat": "Points", "reason": "no_boxscore"}],
+                "missing_truncated": False,
+            }))
+            self.assertEqual(G.grade_day("wnba", date(2026, 9, 29), ddir, {})[1], "day_not_complete")
+
 
 def _have(rev: str) -> bool:
     return subprocess.run(["git", "-C", str(REPO), "cat-file", "-e", f"{rev}^{{commit}}"],

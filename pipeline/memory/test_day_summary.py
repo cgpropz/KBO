@@ -168,6 +168,12 @@ class DaySummaryTests(unittest.TestCase):
         self.assertEqual(meta["status"], "partial")
         self.assertEqual(meta["hit_rate_pct"], 50.0)
         self.assertFalse((day / "recap.json").exists())
+        graded_file = json.loads((day / "graded.json").read_text())
+        self.assertEqual(graded_file["coverage"], "partial")
+        self.assertEqual(len(graded_file["props"]), 2)
+        common.write_recap("wnba", d, graded)
+        self.assertTrue((day / "recap.json").exists())
+        self.assertFalse((day / "graded.json").exists())
 
 
 if __name__ == "__main__":

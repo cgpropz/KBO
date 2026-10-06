@@ -8,7 +8,11 @@ recap.json exists), not excluded in memory/evaluation_exclusions.json, and has a
 scored shadow.json whose slate_sha256 matches the current slate.json, writes
 memory/<sport>/<mm>/<dd>/<yyyy>/shadow_summary.json with current vs shadow side by
 side (hits, misses, hit rate, MAE, top-confidence bucket), per stat and overall,
-using the SAME actuals and results as recap.json. Then rebuilds
+using the SAME actuals and results as recap.json.
+
+A partial day is included too when every leftover prop is an unmapped stat
+(the box score will never fill those in) and graded.json has the rows that did
+grade. A partial day still waiting on box scores is left alone. Then rebuilds
 memory/<sport>/shadow_scoreboard.json (running totals since shadow start, D3
 promotion thresholds, status).
 
@@ -30,6 +34,9 @@ from ml.shadow import common as C  # noqa: E402
 from pipeline.memory.common import model_result  # noqa: E402
 
 DECIDED = ("OVER", "UNDER")
+# Missing reasons that will not clear up on the next box-score refresh.
+# no_boxscore is not in this set: those days are still waiting on finals.
+NONBLOCKING_MISSING = frozenset({"unmapped_stat"})
 
 
 def key(row: dict) -> tuple:
@@ -206,12 +213,38 @@ def summarize_rows(rows: list[dict]) -> dict:
             "per_stat": {k: per[k].out() for k in sorted(per)}}
 
 
-def grade_day(sport: str, d, ddir: Path, excluded: dict) -> tuple[dict | None, str]:
+def comparison_actuals(ddir: Path) -> tuple[dict | None, str, str]:
+    """(payload, source filename, skip reason).
+
+    Complete days use recap.json. Partial days use graded.json only when every
+    missing prop is an unmapped stat, so a handful of quarter props does not
+    hide the rest of the day's tuned-vs-current file.
+    """
     state = C.day_state(ddir)
-    if not state["complete"]:
-        return None, "day_not_complete"
+    if state["complete"]:
+        return C.load_json(ddir / "recap.json") or {}, "recap.json", ""
+    if state["status"] != "partial":
+        return None, "", "day_not_complete"
+    meta = C.load_json(ddir / "meta.json") or {}
+    if meta.get("missing_truncated"):
+        return None, "", "day_not_complete"
+    reasons = []
+    for item in meta.get("missing") or []:
+        reasons.append(item.get("reason") if isinstance(item, dict) else "other")
+    if not reasons or any(reason not in NONBLOCKING_MISSING for reason in reasons):
+        return None, "", "day_not_complete"
+    graded = C.load_json(ddir / "graded.json") or {}
+    if not graded.get("props"):
+        return None, "", "partial_without_graded_rows"
+    return graded, "graded.json", ""
+
+
+def grade_day(sport: str, d, ddir: Path, excluded: dict) -> tuple[dict | None, str]:
     if (sport, d.isoformat()) in excluded:
         return None, "excluded"
+    recap, actuals_file, skip = comparison_actuals(ddir)
+    if recap is None:
+        return None, skip
     shadow = C.load_json(ddir / C.SHADOW_FILE)
     if not shadow:
         return None, "no_shadow"
@@ -220,14 +253,13 @@ def grade_day(sport: str, d, ddir: Path, excluded: dict) -> tuple[dict | None, s
     slate_raw = (ddir / "slate.json").read_text(encoding="utf-8")
     if shadow.get("slate_sha256") != C.sha256_text(slate_raw)[:16]:
         return None, "shadow_stale(slate_changed); run ml.shadow.score first"
-    recap = C.load_json(ddir / "recap.json") or {}
     rows = grade_rows(shadow, recap)
     summ = summarize_rows(rows)
     out = {
         "schema": C.SHADOW_SCHEMA, "sport": sport, "slate_date": shadow.get("slate_date"),
         "slate_date_iso": d.isoformat(), "period": C.period_of(sport, d), "graded_at": C.utc_now_iso(),
         "status": "graded", "evaluation": {"excluded": False},
-        "sources": {"shadow": C.SHADOW_FILE, "recap": "recap.json", "recap_graded_at": recap.get("graded_at")
+        "sources": {"shadow": C.SHADOW_FILE, "recap": actuals_file, "recap_graded_at": recap.get("graded_at")
                     or next((p.get("graded_at") for p in recap.get("props") or []), None)},
         "params": shadow.get("params"),
         "definitions": {

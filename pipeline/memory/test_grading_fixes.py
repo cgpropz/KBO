@@ -305,6 +305,47 @@ class WnbaPostseasonTests(_MemoryCase):
         self.assertIn("wnba_boxscores_2025_2026.csv", dvp)
         self.assertNotIn("wnba_boxscores_postseason", dvp)
 
+    def test_minutes_grade_and_quarter_props_stay_partial(self):
+        header = ["Player", "Team", "Match Up", "Game Date", "Season", "W/L", "MIN", "PTS", "FGM", "FGA", "FG%",
+                  "3PM", "3PA", "3P%", "FTM", "FTA", "FT%", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "+/-"]
+        row = {k: "0" for k in header}
+        row.update({"Player": "Sabrina Ionescu", "Team": "NY", "Match Up": "NY vs. PHX", "Game Date": "09/30/2026",
+                    "Season": "2026", "MIN": "34", "PTS": "22"})
+        blank = dict(row, Player="Sat Minutes", MIN="--", PTS="0")
+        post = self.root / "wnba" / "wnba_boxscores_postseason.csv"
+        with post.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=header)
+            writer.writeheader()
+            writer.writerow(row)
+            writer.writerow(blank)
+        regular = self.root / "wnba" / "wnba_boxscores_2025_2026.csv"
+        with regular.open("w", newline="", encoding="utf-8") as handle:
+            csv.DictWriter(handle, fieldnames=header).writeheader()
+        d = date(2026, 9, 30)
+        common.write_slate("wnba", d, [
+            {"player": "Sabrina Ionescu", "team": "NYL", "opponent": "PHX", "stat": "Minutes Played",
+             "odds_type": "standard", "line": 30.5, "recommendation": "OVER"},
+            {"player": "Sabrina Ionescu", "team": "NYL", "opponent": "PHX", "stat": "Quarters with 3+ Points",
+             "odds_type": "demon", "line": 3.5, "recommendation": "OVER"},
+            {"player": "Sat Minutes", "team": "NYL", "opponent": "PHX", "stat": "Minutes Played",
+             "odds_type": "standard", "line": 20.5, "recommendation": "UNDER"},
+        ])
+        result = grade_wnba_day.grade_day(d)
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(result["props_graded"], 1)
+        day = common.memory_dir("wnba", d)
+        self.assertFalse((day / "recap.json").exists())
+        graded = json.loads((day / "graded.json").read_text())["props"]
+        self.assertEqual(graded[0]["stat"], "Minutes Played")
+        self.assertEqual(graded[0]["actual"], 34.0)
+        self.assertEqual(graded[0]["result"], "OVER")
+        missing = json.loads((day / "meta.json").read_text())["missing"]
+        self.assertEqual(
+            sorted(item["stat"] for item in missing),
+            ["Minutes Played", "Quarters with 3+ Points"],
+        )
+        self.assertTrue(all(item["reason"] == "unmapped_stat" for item in missing))
+
 
 if __name__ == "__main__":
     unittest.main()
