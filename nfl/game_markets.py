@@ -37,7 +37,8 @@ from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES  # noqa: E402
 
 OUTPUT_PATH = ROOT / "game_markets.json"
 DEV_COPY_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "nfl" / "game_markets.json"
-GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv"
+# nflverse dropped uncompressed games.csv on 2026-10-06. pandas reads this gzip URL.
+GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
 UNABATED_ODDS_URL = "https://content.unabated.com/markets/v2/league/1/odds.json"
 NFL_PREGAME_KEY = "lg1:pt1:pregame"
 # 2022 is burn-in. The rating then walks forward through the current season.
