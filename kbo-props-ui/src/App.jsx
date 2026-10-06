@@ -6,6 +6,8 @@ import KboApp from './KboApp'
 import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
 import NflApp from './nfl/NflApp'
+import NbaApp from './nba/NbaApp'
+import { canSeeNba } from './entitlements'
 import CheckoutSuccess from './CheckoutSuccess'
 import './FreeFunnel.css'
 import './App.css'
@@ -49,6 +51,14 @@ function App() {
       </div>
     );
   }
+
+  // Stored cg_sport=nba must not stick for anyone except the owner. Adjusted
+  // during render (not in an effect) so the next pass opens KBO. The loading
+  // return above waits for the session, so the owner is not bounced.
+  if (sport === 'nba' && !canSeeNba(user)) {
+    setSport('kbo');
+  }
+  const visibleSport = sport === 'nba' && !canSeeNba(user) ? 'kbo' : sport;
 
   const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
   const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };
@@ -98,19 +108,27 @@ function App() {
   );
 
   let sportApp;
-  if (sport === 'wnba') {
+  if (visibleSport === 'wnba') {
     /* WNBA section — separate sport shell behind the same auth */
     sportApp = (
       <WnbaApp
-        sport={sport}
+        sport={visibleSport}
         setSport={setSport}
         onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
       />
     );
-  } else if (sport === 'nfl') {
+  } else if (visibleSport === 'nba') {
+    sportApp = (
+      <NbaApp
+        sport={visibleSport}
+        setSport={setSport}
+        onNavigateHome={() => setView('hub')}
+      />
+    );
+  } else if (visibleSport === 'nfl') {
     sportApp = (
       <NflApp
-        sport={sport}
+        sport={visibleSport}
         setSport={setSport}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
@@ -120,7 +138,7 @@ function App() {
     /* KBO section — same nav + board shell as WNBA/NFL */
     sportApp = (
       <KboApp
-        sport={sport}
+        sport={visibleSport}
         setSport={setSport}
         onNavigateHome={() => setView('hub')}
         initialView={view}

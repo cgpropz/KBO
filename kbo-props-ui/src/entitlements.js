@@ -19,6 +19,15 @@ export function sportAccess(tier) {
   return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false };
 }
 
+// Display-only. Paid NBA data is gated in api/data.js. This does not read
+// nba_public; until the unlock phase, the hub and switcher stay on this email.
+export const NBA_OWNER_EMAIL = 'cgpropz@gmail.com';
+
+export function canSeeNba(user) {
+  const email = typeof user?.email === 'string' ? user.email.trim().toLowerCase() : '';
+  return email === NBA_OWNER_EMAIL;
+}
+
 export function hasAnyPaidAccess(tier) {
   const a = sportAccess(tier);
   return a.kbo || a.wnba || a.nfl;

@@ -1,5 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { DATASETS, shapeForTier, sportAccess } from './_dataAccess.js';
+import {
+  DATASETS,
+  NBA_PUBLIC_FLAG,
+  isNbaDataset,
+  nbaAccessDecision,
+  shapeForTier,
+  sportAccess,
+} from './_dataAccess.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -84,6 +91,131 @@ async function readSnapshot(client, table) {
   }
 }
 
+// NBA caller identity. Unlike resolveTier, a bad token or a missing email is
+// a hard failure (emailResolved false) so the NBA gate can fail closed.
+export async function resolveNbaCaller(client, authorization) {
+  const token = (authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return { emailResolved: true, email: null, tierResolved: true, tier: 'free' };
+  }
+  const { data, error } = await client.auth.getUser(token);
+  const user = data?.user;
+  if (error || !user || typeof user.email !== 'string' || !user.email.trim()) {
+    return { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
+  }
+  const { data: profile, error: profileError } = await client
+    .from('user_profiles')
+    .select('tier')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profileError) {
+    return { emailResolved: true, email: user.email, tierResolved: false, tier: 'free' };
+  }
+  return {
+    emailResolved: true,
+    email: user.email,
+    tierResolved: true,
+    tier: profile?.tier || 'free',
+  };
+}
+
+const NBA_FLAG_CACHE_KEY = `app_flags:${NBA_PUBLIC_FLAG}`;
+
+// Missing row is not public. A query error throws so the caller can fail closed.
+export async function readNbaPublicFlag(client) {
+  const hit = cache.get(NBA_FLAG_CACHE_KEY);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
+
+  const { data, error } = await client
+    .from('app_flags')
+    .select('value')
+    .eq('key', NBA_PUBLIC_FLAG)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const value = data?.value === true;
+  cache.set(NBA_FLAG_CACHE_KEY, { at: Date.now(), value });
+  return value;
+}
+
+function forbid(res) {
+  return res.status(403).json({ error: 'Forbidden' });
+}
+
+async function handleNbaRequest(req, res, client, ds) {
+  let caller;
+  try {
+    caller = await withTimeout(
+      resolveNbaCaller(client, req.headers?.authorization),
+      timeouts.tierLookupMs,
+      'NBA access lookup timed out'
+    );
+  } catch {
+    return forbid(res);
+  }
+  // Auth/email failures deny before the flag read, so a hanging flag cannot
+  // turn a bad token into a long request or an open gate.
+  if (caller.emailResolved !== true) return forbid(res);
+
+  let nbaPublic = false;
+  let flagResolved = false;
+  try {
+    nbaPublic = await withTimeout(
+      readNbaPublicFlag(client),
+      timeouts.tierLookupMs,
+      'NBA flag lookup timed out'
+    );
+    flagResolved = true;
+  } catch {
+    flagResolved = false;
+  }
+
+  const decision = nbaAccessDecision({
+    emailResolved: caller.emailResolved,
+    email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
+    flagResolved,
+    nbaPublic,
+  });
+  if (decision === 'deny') return forbid(res);
+
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  if (!spec || spec.sport !== 'nba') {
+    return res.status(400).json({ error: 'Unknown dataset' });
+  }
+
+  let row;
+  try {
+    row = await readSnapshot(client, spec.table);
+  } catch (err) {
+    console.error(`[api/data] ${ds} read failed:`, err.message);
+    if (err?.code === 'UPSTREAM_TIMEOUT') {
+      return res.status(503).json({
+        error: 'Dataset temporarily unavailable',
+        code: 'upstream_timeout',
+        message: 'Upstream data store timed out. Please refresh in a moment.',
+      });
+    }
+    return res.status(502).json({ error: 'Dataset unavailable' });
+  }
+  if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
+
+  // No nba_* datasets are registered in this phase. Full access returns the
+  // snapshot directly because sportAccess() has no nba key and must stay that
+  // way. Preview uses the free trimmer once a dataset exists.
+  const shaped = decision === 'full'
+    ? { data: row.data, preview: false, lockedCount: 0 }
+    : shapeForTier(ds, row.data, 'free');
+  return res.status(200).json({
+    data: shaped.data,
+    updatedAt: row.updated_at || null,
+    preview: shaped.preview,
+    lockedCount: shaped.lockedCount,
+    tier: caller.tier,
+    access: sportAccess(caller.tier),
+  });
+}
+
 // Resolve the caller's tier from a Supabase access token. Anonymous or invalid
 // tokens are treated as 'free' (they still receive the public preview).
 export async function resolveTier(client, authorization) {
@@ -119,6 +251,9 @@ export async function handleDataRequest(req, res, client) {
   }
 
   const ds = String(req.query?.ds || '');
+  if (isNbaDataset(ds)) {
+    return handleNbaRequest(req, res, client || getClient(), ds);
+  }
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) return res.status(400).json({ error: 'Unknown dataset' });
 

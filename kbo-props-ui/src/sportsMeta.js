@@ -39,3 +39,19 @@ export const SPORTS = [
     portraitAlt: 'Illustrated football player in a dark helmet',
   },
 ];
+
+// Owner-only hub card. Kept out of SPORTS so the public landing, trust strip,
+// and logged-out marketing never list NBA. The logged-in hub appends it only
+// when canSeeNba(user) is true.
+export const NBA_OWNER_CARD = {
+  id: 'nba',
+  emoji: '🏀',
+  name: 'NBA',
+  full: 'Pro Basketball',
+  tagline: 'Owner preview. Rosters, logs, and five-position DVP are not public yet.',
+  accent: '#38bdf8',
+  glow: 'rgba(56, 189, 248, 0.35)',
+  features: ['PrizePicks edge board', 'Player and team stats', 'PG / SG / SF / PF / C DVP'],
+  portrait: '/sport-cards/wnba-card.webp',
+  portraitAlt: 'Illustrated basketball player in a dark jersey',
+};

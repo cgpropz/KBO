@@ -1,0 +1,26 @@
+/* NBA shell reuses .wnba-root styles. These rules only cover the five-slot
+   DVP grid, which WNBA lays out as three columns. */
+
+.nba-root .nba-dvp-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.nba-root .nba-dvp-empty {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .nba-root .nba-dvp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .nba-root .nba-dvp-grid {
+    grid-template-columns: 1fr;
+  }
+}

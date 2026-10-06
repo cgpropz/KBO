@@ -1,6 +1,6 @@
 import { useAuth } from './AuthContext';
-import { sportAccess } from './entitlements';
-import { SPORTS } from './sportsMeta';
+import { canSeeNba, sportAccess } from './entitlements';
+import { NBA_OWNER_CARD, SPORTS } from './sportsMeta';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
@@ -22,6 +22,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
+  const sports = canSeeNba(user) ? [...SPORTS, NBA_OWNER_CARD] : SPORTS;
 
   return (
     <div className="cg-landing">
@@ -65,7 +66,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         </section>
 
         <section className="cg-sports">
-          {SPORTS.map((s) => (
+          {sports.map((s) => (
             <button
               key={s.id}
               className="cg-sport-card"
