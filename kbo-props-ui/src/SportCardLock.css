@@ -1,0 +1,58 @@
+/* Locked NBA card. The art stays visible under a blur; the overlay is the only
+   sharp layer. A locked card does not navigate. */
+.pl-sport-card.is-locked,
+.cg-sport-card.is-locked {
+  cursor: default;
+}
+.pl-sport-card.is-locked:hover,
+.cg-sport-card.is-locked:hover {
+  transform: none;
+  border-color: rgba(74, 222, 128, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+}
+.pl-sport-card.is-locked .pl-sport-art,
+.pl-sport-card.is-locked .pl-sport-body,
+.cg-sport-card.is-locked .cg-sport-art,
+.cg-sport-card.is-locked .cg-sport-body {
+  filter: blur(6px);
+  transform: scale(1.04);
+  user-select: none;
+}
+.sport-card-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px;
+  background: rgba(5, 8, 6, 0.46);
+  color: #f8fafc;
+  pointer-events: none;
+  text-align: center;
+}
+.sport-card-lock-icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
+}
+.sport-card-lock-title {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+}
+.sport-card-lock-sub {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #e4e4e7;
+}
+
+@media (max-width: 640px) {
+  .sport-card-lock-icon { width: 22px; height: 22px; margin-bottom: 2px; }
+  .sport-card-lock-title { font-size: 14px; }
+  .sport-card-lock-sub { font-size: 10px; }
+}

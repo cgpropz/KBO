@@ -19,6 +19,23 @@ export function sportAccess(tier) {
   return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false };
 }
 
+// Display shortcut for the owner email. The landing card, switcher, and stored
+// sport also follow GET /api/nba-access, which is full access from api/data.js
+// (owner always, all-access tiers only after nba_public). Paid rows stay on
+// the nba_* 403 gate.
+export const NBA_OWNER_EMAIL = 'cgpropz@gmail.com';
+
+export function canSeeNba(user) {
+  const email = typeof user?.email === 'string' ? user.email.trim().toLowerCase() : '';
+  return email === NBA_OWNER_EMAIL;
+}
+
+// Landing cards. NBA opens only when the access check says full.
+export function landingSportOpens(sportId, nbaOpen) {
+  if (sportId === 'nba') return nbaOpen === true;
+  return sportId === 'kbo' || sportId === 'wnba' || sportId === 'nfl';
+}
+
 export function hasAnyPaidAccess(tier) {
   const a = sportAccess(tier);
   return a.kbo || a.wnba || a.nfl;

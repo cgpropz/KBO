@@ -21,6 +21,58 @@ export function sportAccess(tier) {
   return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false };
 }
 
+// Must match src/entitlements.js NBA_OWNER_EMAIL. Server-side gate only.
+export const NBA_OWNER_EMAIL = 'cgpropz@gmail.com';
+export const NBA_PUBLIC_FLAG = 'nba_public';
+
+export function isNbaDataset(ds) {
+  return typeof ds === 'string' && ds.startsWith('nba_');
+}
+
+/**
+ * NBA visibility. Returns 'full', 'preview', or 'deny'.
+ *
+ * emailResolved false (bad token, missing email, timed-out auth) denies
+ * everyone. flagResolved false (missing table, query error, timeout) does
+ * not unlock the public; the owner email is still allowed. tierResolved
+ * false denies non-owners even when the flag is on, so a profile blip
+ * cannot fall open to a preview.
+ *
+ * Once nba_public is true, all-access tiers get full data. Legacy kbo/wnba
+ * tiers and free accounts get the preview path. sportAccess() itself stays
+ * { kbo, wnba, nfl } so existing boards are unchanged.
+ */
+export function nbaAccessDecision({
+  emailResolved,
+  email,
+  tierResolved,
+  tier,
+  flagResolved,
+  nbaPublic,
+}) {
+  if (emailResolved !== true) return 'deny';
+  const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (normalized === NBA_OWNER_EMAIL) return 'full';
+  if (flagResolved !== true || nbaPublic !== true) return 'deny';
+  if (tierResolved !== true) return 'deny';
+  if (ALL_ACCESS_TIERS.has(tier)) return 'full';
+  return 'preview';
+}
+
+export function nbaAllowed(email, tier, nbaPublic) {
+  // A missing email is not a resolved caller. Anonymous preview is decided
+  // separately in nbaAccessDecision once the API has confirmed there is no token.
+  const emailResolved = typeof email === 'string' && email.trim() !== '';
+  return nbaAccessDecision({
+    emailResolved,
+    email,
+    tierResolved: true,
+    tier,
+    flagResolved: true,
+    nbaPublic,
+  }) === 'full';
+}
+
 // ── Scoring helpers (mirror each board's default "CG Score" sort) ──────────
 function num(value) {
   const n = Number(value);
