@@ -15,6 +15,10 @@ function cleanEnv(value) {
 // Same server-side env vars as the other api/ functions. Created lazily so the
 // module can be imported (and unit-tested) without credentials.
 let supabase = null;
+export function getDataClient() {
+  return getClient();
+}
+
 function getClient() {
   if (!supabase) {
     supabase = createClient(
@@ -214,6 +218,44 @@ async function handleNbaRequest(req, res, client, ds) {
     tier: caller.tier,
     access: sportAccess(caller.tier),
   });
+}
+
+// Landing-card bit only. Same decision as handleNbaRequest, and never a snapshot.
+// True solely when nbaAccessDecision is 'full'. Errors and preview are false.
+export async function nbaSectionOpen(req, client) {
+  let caller;
+  try {
+    caller = await withTimeout(
+      resolveNbaCaller(client, req.headers?.authorization),
+      timeouts.tierLookupMs,
+      'NBA access lookup timed out'
+    );
+  } catch {
+    return false;
+  }
+  if (caller.emailResolved !== true) return false;
+
+  let nbaPublic = false;
+  let flagResolved = false;
+  try {
+    nbaPublic = await withTimeout(
+      readNbaPublicFlag(client),
+      timeouts.tierLookupMs,
+      'NBA flag lookup timed out'
+    );
+    flagResolved = true;
+  } catch {
+    flagResolved = false;
+  }
+
+  return nbaAccessDecision({
+    emailResolved: caller.emailResolved,
+    email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
+    flagResolved,
+    nbaPublic,
+  }) === 'full';
 }
 
 // Resolve the caller's tier from a Supabase access token. Anonymous or invalid

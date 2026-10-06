@@ -12,8 +12,10 @@ import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/d
 import {
   NBA_OWNER_EMAIL as CLIENT_EMAIL,
   canSeeNba,
+  landingSportOpens,
   sportAccess as clientAccess,
 } from '../src/entitlements.js'
+import { handleNbaAccessRequest } from '../api/nba-access.js'
 
 const SPORT_ACCESS = {
   undefined: { kbo: false, wnba: false, nfl: false },
@@ -89,6 +91,79 @@ test('the hub treats only the owner email as able to see NBA', () => {
   assert.equal(canSeeNba({}), false)
 })
 
+test('a locked NBA landing card does not open and the other sports still do', () => {
+  assert.equal(landingSportOpens('nba', false), false)
+  assert.equal(landingSportOpens('nba', undefined), false)
+  assert.equal(landingSportOpens('nba', true), true)
+  assert.equal(landingSportOpens('kbo', false), true)
+  assert.equal(landingSportOpens('wnba', false), true)
+  assert.equal(landingSportOpens('nfl', false), true)
+  assert.equal(landingSportOpens('mlb', true), false)
+})
+
+async function callAccess(token, options) {
+  _clearCache()
+  const res = mockRes()
+  const client = mockClient(options)
+  const req = { method: 'GET', query: {}, headers: token ? { authorization: `Bearer ${token}` } : {} }
+  await handleNbaAccessRequest(req, res, client)
+  return { res, client }
+}
+
+test('nba-access returns only an open bit and stays closed without full access', async () => {
+  const anon = await callAccess(undefined, { flag: true })
+  assert.equal(anon.res.statusCode, 200)
+  assert.deepEqual(anon.res.body, { open: false })
+
+  const fan = await callAccess('tok-fan', { flag: false })
+  assert.deepEqual(fan.res.body, { open: false })
+
+  const legacy = await callAccess('tok-fan', { flag: true, profileErrorFor: 'u-fan' })
+  assert.deepEqual(legacy.res.body, { open: false })
+
+  const forged = await callAccess('forged-token', { flag: true })
+  assert.deepEqual(forged.res.body, { open: false })
+  assert.equal(forged.client.calls.some((c) => c.table === 'app_flags'), false)
+  assert.equal(forged.res.body.data, undefined)
+  assert.equal(forged.res.body.email, undefined)
+  assert.equal(forged.res.body.tier, undefined)
+})
+
+test('nba-access opens for the owner and for all-access only when the flag is on', async () => {
+  for (const flag of [false, 'missing', 'error']) {
+    const owner = await callAccess('tok-owner', { flag })
+    assert.deepEqual(owner.res.body, { open: true }, String(flag))
+  }
+  const combinedOff = await callAccess('tok-fan', { flag: false })
+  assert.deepEqual(combinedOff.res.body, { open: false })
+  const combinedOn = await callAccess('tok-fan', { flag: true })
+  assert.deepEqual(combinedOn.res.body, { open: true })
+  const weeklyOn = await callAccess('tok-weekly', { flag: true })
+  assert.deepEqual(weeklyOn.res.body, { open: true })
+  const singleSport = await callAccess('tok-kbo', { flag: true })
+  assert.deepEqual(singleSport.res.body, { open: false })
+})
+
+test('nba-access fails closed when the flag hangs, and still opens for the owner', async () => {
+  const prev = { ...timeouts }
+  _setTimeouts({ snapshotReadMs: 40, tierLookupMs: 40 })
+  try {
+    const fan = await callAccess('tok-fan', { flag: 'hang' })
+    assert.deepEqual(fan.res.body, { open: false })
+    const owner = await callAccess('tok-owner', { flag: 'hang' })
+    assert.deepEqual(owner.res.body, { open: true })
+  } finally {
+    _setTimeouts(prev)
+  }
+})
+
+test('nba-access rejects non-GET without an open bit', async () => {
+  const res = mockRes()
+  await handleNbaAccessRequest({ method: 'POST', headers: {} }, res, mockClient())
+  assert.equal(res.statusCode, 405)
+  assert.equal(res.body.open, undefined)
+})
+
 function mockRes() {
   return {
     statusCode: 200, headers: {}, body: undefined,
@@ -104,12 +179,14 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
     'tok-owner': { id: 'u-owner', email: 'CGPropz@gmail.com' },
     'tok-fan': { id: 'u-fan', email: 'fan@example.com' },
     'tok-weekly': { id: 'u-weekly', email: 'weekly@example.com' },
+    'tok-kbo': { id: 'u-kbo', email: 'kbo@example.com' },
     'tok-noemail': { id: 'u-noemail' },
   }
   const profiles = {
     'u-owner': 'free',
     'u-fan': 'combined',
     'u-weekly': 'weekly',
+    'u-kbo': 'kbo',
   }
   return {
     calls,

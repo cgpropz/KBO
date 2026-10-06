@@ -1,6 +1,8 @@
 import { useAuth } from './AuthContext';
-import { canSeeNba, sportAccess } from './entitlements';
-import { NBA_OWNER_CARD, SPORTS } from './sportsMeta';
+import { sportAccess } from './entitlements';
+import { NBA_CARD, SPORTS } from './sportsMeta';
+import LandingSportCard from './LandingSportCard';
+import { useNbaOpen } from './useNbaOpen';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
@@ -19,10 +21,10 @@ import './CgpropzLanding.css';
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
+  const { open: nbaOpen } = useNbaOpen();
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
-  const sports = canSeeNba(user) ? [...SPORTS, NBA_OWNER_CARD] : SPORTS;
 
   return (
     <div className="cg-landing">
@@ -66,37 +68,14 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         </section>
 
         <section className="cg-sports">
-          {sports.map((s) => (
-            <button
+          {[...SPORTS, NBA_CARD].map((s) => (
+            <LandingSportCard
               key={s.id}
-              className="cg-sport-card"
-              style={{ '--accent': s.accent, '--glow': s.glow }}
-              onClick={() => onEnterSport(s.id)}
-            >
-              <div className="cg-sport-art">
-                <img
-                  src={s.portrait}
-                  alt={s.portraitAlt}
-                  width="960"
-                  height="720"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <div className="cg-sport-body">
-                <div className="cg-sport-head">
-                  <h2 className="cg-sport-name">{s.name}</h2>
-                  <span className="cg-sport-full">{s.full}</span>
-                </div>
-                <p className="cg-sport-tagline">{s.tagline}</p>
-                <ul className="cg-sport-features">
-                  {s.features.map((f, i) => (
-                    <li key={i}><span className="cg-dot" />{f}</li>
-                  ))}
-                </ul>
-                <span className="cg-sport-enter">Enter {s.name} →</span>
-              </div>
-            </button>
+              variant="hub"
+              sport={s}
+              nbaOpen={nbaOpen}
+              onOpen={onEnterSport}
+            />
           ))}
         </section>
 

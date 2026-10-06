@@ -40,18 +40,18 @@ export const SPORTS = [
   },
 ];
 
-// Owner-only hub card. Kept out of SPORTS so the public landing, trust strip,
-// and logged-out marketing never list NBA. The logged-in hub appends it only
-// when canSeeNba(user) is true.
-export const NBA_OWNER_CARD = {
+// Shown beside SPORTS on both landings. Kept out of SPORTS so the trust strip
+// does not list NBA as a live sport. The card stays blurred until nbaSectionOpen.
+export const NBA_CARD = {
   id: 'nba',
   emoji: '🏀',
   name: 'NBA',
   full: 'Pro Basketball',
-  tagline: 'Owner preview. Rosters, logs, and five-position DVP are not public yet.',
+  tagline: 'PrizePicks edge board, player projections, and defense vs position.',
   accent: '#38bdf8',
   glow: 'rgba(56, 189, 248, 0.35)',
   features: ['PrizePicks edge board', 'Player and team stats', 'PG / SG / SF / PF / C DVP'],
-  portrait: '/sport-cards/wnba-card.webp',
+  // Original illustration of a fictional player. Not a real athlete and not a league logo.
+  portrait: '/sport-cards/nba-card.webp',
   portraitAlt: 'Illustrated basketball player in a dark jersey',
 };

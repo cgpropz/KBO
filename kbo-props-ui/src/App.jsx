@@ -7,7 +7,7 @@ import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
 import NflApp from './nfl/NflApp'
 import NbaApp from './nba/NbaApp'
-import { canSeeNba } from './entitlements'
+import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import './FreeFunnel.css'
 import './App.css'
@@ -16,6 +16,7 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 
 function App() {
   const { user, loading } = useAuth();
+  const nba = useNbaOpen();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('hub');
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -52,13 +53,29 @@ function App() {
     );
   }
 
-  // Stored cg_sport=nba must not stick for anyone except the owner. Adjusted
-  // during render (not in an effect) so the next pass opens KBO. The loading
-  // return above waits for the session, so the owner is not bounced.
-  if (sport === 'nba' && !canSeeNba(user)) {
+  // Stored cg_sport=nba stays put until the access check finishes, so a later
+  // public flag does not wipe All-Access. Until then the NBA shell is not
+  // mounted. Adjusted during render (not in an effect) once the check is closed.
+  if (sport === 'nba' && !nba.ready) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #04140a, #22c55e)',
+        color: 'white',
+        fontSize: '24px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        Loading cgpropz…
+      </div>
+    );
+  }
+  if (sport === 'nba' && !nba.open) {
     setSport('kbo');
   }
-  const visibleSport = sport === 'nba' && !canSeeNba(user) ? 'kbo' : sport;
+  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? 'kbo' : sport;
 
   const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
   const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };

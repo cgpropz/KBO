@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { SPORTS } from './sportsMeta';
+import { NBA_CARD, SPORTS } from './sportsMeta';
+import LandingSportCard from './LandingSportCard';
+import { useNbaOpen } from './useNbaOpen';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
@@ -14,7 +16,8 @@ import './PublicLanding.css';
  * Props:
  *   onGetStarted() → reveal AuthPage in 'signup' mode
  *   onLogin()      → reveal AuthPage in 'login' mode
- *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl') in free preview mode
+ *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl') in free preview mode.
+ *   The NBA card is visible but locked for logged-out visitors and does not open.
  */
 
 const TOOLS = [
@@ -64,6 +67,7 @@ const FAQS = [
 ];
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
+  const { open: nbaOpen } = useNbaOpen();
   const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
   const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
@@ -171,36 +175,14 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <h2>One subscription. Every sport.</h2>
           </div>
           <div className="pl-sports-grid">
-            {SPORTS.map((s) => (
-              <button
+            {[...SPORTS, NBA_CARD].map((s) => (
+              <LandingSportCard
                 key={s.id}
-                className="pl-sport-card"
-                style={{ '--accent': s.accent, '--glow': s.glow }}
-                onClick={() => (onOpenBoard ? onOpenBoard(s.id) : onGetStarted())}
-              >
-                <div className="pl-sport-art">
-                  <img
-                    src={s.portrait}
-                    alt={s.portraitAlt}
-                    width="960"
-                    height="720"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="pl-sport-body">
-                  <div className="pl-sport-head">
-                    <h3 className="pl-sport-name">{s.name}</h3>
-                    <span className="pl-sport-full">{s.full}</span>
-                  </div>
-                  <p className="pl-sport-tagline">{s.tagline}</p>
-                  <ul className="pl-sport-features">
-                    {s.features.map((f, i) => (
-                      <li key={i}><span className="pl-dot" />{f}</li>
-                    ))}
-                  </ul>
-                </div>
-              </button>
+                variant="public"
+                sport={s}
+                nbaOpen={nbaOpen}
+                onOpen={(id) => (onOpenBoard ? onOpenBoard(id) : onGetStarted())}
+              />
             ))}
           </div>
         </section>
