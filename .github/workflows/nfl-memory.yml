@@ -1,11 +1,18 @@
 name: NFL Props Memory Grade
 
 # Grades completed NFL gamedays after nflverse weekly stats catch up
-# (typically Tue/Wed).
+# (typically Tue/Wed). The script grades every unfinished slate through
+# yesterday, not only the most recent Sunday, so Thursday and Monday
+# Night Football are included.
 
 on:
   schedule:
-    - cron: "0 14 * * 2,3" # 10:00 AM ET Tue/Wed
+    # 10:11 AM ET Tue/Wed while daylight time is in effect (14:11 UTC).
+    # After clocks fall back this is 9:11 AM ET. The minute is 11 on purpose:
+    # GitHub drops a lot of schedules that land on :00. This job's 14:00 UTC
+    # tick on 2026-10-06 never started; 2026-09-29 and 2026-09-30 only
+    # landed about five hours late.
+    - cron: "11 14 * * 2,3"
   workflow_dispatch:
     inputs:
       date:

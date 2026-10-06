@@ -51,10 +51,22 @@ def name_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", stripped)
 
 
+def slate_is_final(day_games) -> bool:
+    """True only when every game that day has both scores.
+
+    One finished game is not enough. A Sunday slate still in progress would
+    otherwise mark the remaining players as DNP and lock the day.
+    """
+    if day_games is None or len(day_games) == 0:
+        return False
+    scored = day_games["home_score"].notna() & day_games["away_score"].notna()
+    return bool(scored.all())
+
+
 def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bool]:
     """
     Returns (lookup keyed by (iso_date, name_key), game_finalized).
-    game_finalized is True when schedule shows scores for that gameday.
+    game_finalized is True when every scheduled game that day has a score.
     """
     try:
         import pandas as pd
@@ -67,11 +79,7 @@ def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bo
     if day_games.empty:
         return {}, False
 
-    finalized = bool(day_games["home_score"].notna().any() and day_games["away_score"].notna().any())
-    # Prefer fully scored games: at least one game that day has both scores
-    finalized = bool(
-        ((day_games["home_score"].notna()) & (day_games["away_score"].notna())).any()
-    )
+    finalized = slate_is_final(day_games)
 
     seasons = sorted({int(s) for s in day_games["season"].dropna().unique()} | set(HISTORY_SEASONS))
     frames = []
@@ -266,19 +274,73 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     }
 
 
+DEFAULT_CATCH_UP_DAYS = 14
+
+
+def incomplete_slate_dates(start: date, end: date) -> list[date]:
+    """Inclusive dates that have a slate and are not graded complete.
+
+    Thursday and Monday slates sit outside "last Sunday". A dropped Tuesday
+    run used to leave them, and the next week's Sunday, waiting forever.
+    """
+    if end < start:
+        return []
+    out: list[date] = []
+    cursor = start
+    while cursor <= end:
+        day_dir = memory_dir("nfl", cursor)
+        if (day_dir / "slate.json").exists():
+            meta = load_json(day_dir / "meta.json", default={}) or {}
+            done = meta.get("status") == "complete" and (day_dir / "recap.json").exists()
+            if not done:
+                out.append(cursor)
+        cursor += timedelta(days=1)
+    return out
+
+
+def scheduled_dates(today: date | None = None, lookback_days: int = DEFAULT_CATCH_UP_DAYS) -> list[date]:
+    """Unfinished slates from `lookback_days` ago through yesterday ET.
+
+    Yesterday covers Monday Night Football on the Tuesday morning run.
+    Days after yesterday are left alone (Thursday's slate is not final yet).
+    """
+    today = today or today_et()
+    through = today - timedelta(days=1)
+    span = max(0, lookback_days)
+    return incomplete_slate_dates(through - timedelta(days=span), through)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Grade NFL memory slate for a gameday")
-    parser.add_argument("--date", help="Gameday mm/dd/YYYY or YYYY-MM-DD (default: last Sunday ET)")
+    parser.add_argument("--date", help="Gameday mm/dd/YYYY or YYYY-MM-DD (default: unfinished slates through yesterday)")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--catch-up-days",
+        type=int,
+        default=None,
+        help=(
+            "How many days before yesterday to include on a scheduled run, "
+            f"or before --date when that flag is set (default: {DEFAULT_CATCH_UP_DAYS} "
+            "without --date, 0 with --date)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.date:
         d = parse_cli_date(args.date, today_et())
+        catch_up = 0 if args.catch_up_days is None else args.catch_up_days
+        dates = incomplete_slate_dates(d - timedelta(days=catch_up), d - timedelta(days=1)) if catch_up else []
+        dates.append(d)
     else:
-        # Default: most recent Sunday (common NFL slate day)
-        today = today_et()
-        d = today - timedelta(days=(today.weekday() - 6) % 7)
-    print(json.dumps(grade_day(d, dry_run=args.dry_run), indent=2))
+        catch_up = DEFAULT_CATCH_UP_DAYS if args.catch_up_days is None else args.catch_up_days
+        dates = scheduled_dates(today_et(), catch_up)
+
+    if not dates:
+        print(json.dumps({"status": "idle", "reason": "no unfinished slates"}, indent=2))
+        return 0
+
+    results = [grade_day(d, dry_run=args.dry_run) for d in dates]
+    print(json.dumps(results if len(results) > 1 else results[0], indent=2))
     return 0
 
 

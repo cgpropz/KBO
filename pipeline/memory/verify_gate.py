@@ -30,8 +30,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         from datetime import timedelta
 
-        today = today_et()
-        default = today - timedelta(days=(today.weekday() - 6) % 7)
+        # Same horizon as the scheduled grader: yesterday, not "last Sunday".
+        default = today_et() - timedelta(days=1)
         d = parse_cli_date(args.date, default)
         result = grade_nfl_day.grade_day(d, dry_run=True)
 
