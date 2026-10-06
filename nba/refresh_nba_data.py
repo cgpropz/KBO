@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -396,6 +397,21 @@ def hex_color(value: object) -> str:
     return text if text.startswith("#") else f"#{text}"
 
 
+def json_safe(value):
+    """Drop pandas NaN so the snapshot is real JSON. Missing text becomes ''."""
+    if value is None:
+        return None
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return None
+    try:
+        missing = bool(pd.isna(value))
+    except (TypeError, ValueError):
+        missing = False
+    if missing:
+        return None
+    return value
+
+
 def mean_stat(series: pd.Series) -> float | None:
     numbers = pd.to_numeric(series, errors="coerce").dropna()
     if numbers.empty:
@@ -420,20 +436,21 @@ def build_player_snapshot(roster: list[dict], positions_by_id: dict[str, str], l
             ordered["_sort"] = pd.to_datetime(ordered["Game Date"], format="%m/%d/%Y", errors="coerce")
             ordered = ordered.sort_values("_sort", ascending=False, na_position="last")
             for record in ordered.drop(columns=["_sort"]).to_dict(orient="records"):
+                position = json_safe(record["Position"])
                 game_logs.append({
-                    "date": record["Game Date"],
-                    "team": record["Team"],
-                    "matchup": record["Match Up"],
-                    "result": record["W/L"],
-                    "min": record["MIN"],
-                    "pts": record["PTS"],
-                    "reb": record["REB"],
-                    "ast": record["AST"],
-                    "fg3m": record["3PM"],
-                    "stl": record["STL"],
-                    "blk": record["BLK"],
-                    "tov": record["TOV"],
-                    "position": record["Position"],
+                    "date": json_safe(record["Game Date"]) or "",
+                    "team": json_safe(record["Team"]) or "",
+                    "matchup": json_safe(record["Match Up"]) or "",
+                    "result": json_safe(record["W/L"]) or "",
+                    "min": json_safe(record["MIN"]),
+                    "pts": json_safe(record["PTS"]),
+                    "reb": json_safe(record["REB"]),
+                    "ast": json_safe(record["AST"]),
+                    "fg3m": json_safe(record["3PM"]),
+                    "stl": json_safe(record["STL"]),
+                    "blk": json_safe(record["BLK"]),
+                    "tov": json_safe(record["TOV"]),
+                    "position": "" if position is None else str(position),
                 })
         headshot = athlete.get("headshot") or {}
         players.append({
@@ -533,8 +550,8 @@ def write_snapshots(roster: list[dict], positions_by_id: dict[str, str], logs: p
     PUBLIC_NBA.mkdir(parents=True, exist_ok=True)
     players = build_player_snapshot(roster, positions_by_id, logs, teams)
     team_rows = build_team_snapshot(teams, roster)
-    PLAYERS_JSON.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
-    TEAMS_SNAPSHOT.write_text(json.dumps(team_rows, indent=2) + "\n", encoding="utf-8")
+    PLAYERS_JSON.write_text(json.dumps(players, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    TEAMS_SNAPSHOT.write_text(json.dumps(team_rows, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"✅ Wrote {PLAYERS_JSON.relative_to(REPO)}: {len(players)} players (gitignored snapshot)")
     print(f"✅ Wrote {TEAMS_SNAPSHOT.relative_to(REPO)}: {len(team_rows)} teams (gitignored snapshot)")
 

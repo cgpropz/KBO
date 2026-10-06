@@ -1,5 +1,9 @@
 """NBA season filter and depth-chart positions. No network."""
+import json
+import math
 import unittest
+
+import pandas as pd
 
 import nba.refresh_nba_data as nba
 
@@ -107,6 +111,33 @@ class PositionMappingTests(unittest.TestCase):
             "team": "ATL",
             "rosterPosition": "G",
         }])
+
+
+class SnapshotJsonTests(unittest.TestCase):
+    def test_missing_log_position_is_blank_and_json_safe(self):
+        self.assertIsNone(nba.json_safe(float("nan")))
+        self.assertIsNone(nba.json_safe(math.nan))
+        logs = pd.DataFrame([{
+            "Athlete ID": "1",
+            "Game Date": "12/16/2025",
+            "Team": "ATL",
+            "Match Up": "ATL vs. BOS",
+            "W/L": "W",
+            "MIN": 30,
+            "PTS": 10,
+            "REB": 4,
+            "AST": 3,
+            "3PM": 1,
+            "STL": 1,
+            "BLK": 0,
+            "TOV": 2,
+            "Position": float("nan"),
+        }])
+        roster = [{"id": "1", "displayName": "Blank Position", "_team": "ATL", "headshot": {}, "age": "", "displayHeight": "", "displayWeight": "", "college": ""}]
+        players = nba.build_player_snapshot(roster, {}, logs, {"ATL": {"fullName": "Atlanta Hawks", "color": "#e03a3e"}})
+        self.assertEqual(players[0]["gameLogs"][0]["position"], "")
+        encoded = json.dumps(players, allow_nan=False)
+        self.assertNotIn("NaN", encoded)
 
 
 if __name__ == "__main__":
