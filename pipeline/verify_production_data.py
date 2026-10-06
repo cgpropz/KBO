@@ -53,7 +53,16 @@ MUST_NOT_BE_PUBLIC = [
 	"/data/graded_props_history.json",
 	"/data/prop_results.json",
 	"/data/wnba/projections_standard.json",
+	"/data/nba/players.json",
+	"/data/nba/teams.json",
+	"/data/nba/dvp_pg.json",
+	"/data/nba/dvp_sg.json",
+	"/data/nba/dvp_sf.json",
+	"/data/nba/dvp_pf.json",
+	"/data/nba/dvp_c.json",
 	"/data/nba/projections_standard.json",
+	"/data/nba/projections_demon.json",
+	"/data/nba/projections_goblin.json",
 ]
 
 CORE_CORRELATED = [

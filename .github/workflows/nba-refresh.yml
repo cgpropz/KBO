@@ -1,0 +1,161 @@
+name: Refresh NBA Data
+
+# Python-only NBA refresh. There is no NBA Express backend.
+#
+# Refreshes ESPN rosters and 2025-26 regular-season box scores, rebuilds the
+# five-position DVP tables, pulls PrizePicks lines, fills projections, and
+# publishes the gitignored snapshots to Supabase. nba_public is not changed.
+#
+# Paid JSON under kbo-props-ui/public/data/nba/ is published, never committed.
+# A 2026-27 box score file is committed only if the refresh script has written
+# one. This job does not call Unabated or apply_live_formula.py.
+
+on:
+  schedule:
+    # GitHub cron is UTC. Labels below are Eastern Daylight (UTC-4). During
+    # Eastern Standard the same crons run one hour earlier.
+    - cron: "0 22 * * *" # 6:00 PM ET, before the early tip
+    - cron: "0 1 * * *" # 9:00 PM ET, during the national window
+    - cron: "0 8 * * *" # 4:00 AM ET, after west-coast finals
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: nba-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  refresh-nba:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install requests pandas
+
+      - name: Refresh NBA gamelogs (ESPN)
+        run: python nba/refresh_nba_data.py
+
+      - name: Generate five-position NBA DVP tables
+        run: python nba/generate_nba_dvp.py
+
+      - name: Verify NBA DVP
+        run: python nba/verify_nba_dvp.py
+
+      # Fills only files this checkout does not already have. Fresh rosters,
+      # DVP, and a new PrizePicks board are not overwritten. A zero-line pull
+      # can then keep the last published board instead of leaving the file absent.
+      - name: Restore last published NBA snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py --prefix nba/
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Fetch NBA PrizePicks lines
+        run: python nba/nba-pp-odds.py
+
+      - name: Fill NBA projections and edges
+        run: |
+          set +e
+          python nba/generate_nba_projections.py
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          board="kbo-props-ui/public/data/nba"
+          if [ ! -f "$board/projections_standard.json" ] \
+            && [ ! -f "$board/projections_demon.json" ] \
+            && [ ! -f "$board/projections_goblin.json" ]; then
+            echo "No PrizePicks board to project. Rosters and DVP still publish."
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Publish NBA snapshots to Supabase
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nba/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Commit non-paid NBA artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # kbo-props-ui/public/data/nba/* is paid data. It is git-ignored.
+          # Never add it. The optional 2026-27 CSV is committed only once a
+          # refresh writes it.
+          git add \
+            nba/nba_boxscores_2025_26.csv \
+            nba/mappings/player_positions.json \
+            nba/mappings/team_mappings.json \
+            nba/mappings/unset_positions.json \
+            nba/nbaPGdvp.csv \
+            nba/nbaSGdvp.csv \
+            nba/nbaSFdvp.csv \
+            nba/nbaPFdvp.csv \
+            nba/nbaCdvp.csv
+          if [ -f nba/nba_boxscores_2026_27.csv ]; then
+            git add nba/nba_boxscores_2026_27.csv
+          fi
+
+          if git diff --cached --name-only | grep -q 'kbo-props-ui/public/data/nba/'; then
+            echo "Refusing to commit paid NBA snapshots"
+            exit 1
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No NBA data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: auto-refresh NBA data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          if git push origin HEAD:main; then
+            echo "Push succeeded on first attempt"
+            exit 0
+          fi
+
+          echo "Push rejected; fetching latest and rebasing..."
+          if git pull --rebase origin main; then
+            git push origin HEAD:main \
+              && echo "Push succeeded after clean rebase" \
+              || git push --force-with-lease origin HEAD:main \
+              && echo "Push succeeded with --force-with-lease" \
+              || echo "All push attempts failed — snapshots still published to Supabase"
+          else
+            CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+            if [ -n "$CONFLICTS" ]; then
+              echo "Conflicted files: $CONFLICTS"
+              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+            fi
+            GIT_EDITOR=true git rebase --continue \
+              && git push origin HEAD:main \
+              && echo "Push succeeded after conflict auto-resolution" \
+              || {
+                git rebase --abort >/dev/null 2>&1 || true
+                echo "Push failed after conflict resolution — snapshots still published to Supabase"
+              }
+          fi
+
+      - name: Notify on failure (open/update issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/notify-failure.sh "🚨 NBA data refresh FAILED"
