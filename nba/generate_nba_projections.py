@@ -42,15 +42,19 @@ from __future__ import annotations
 import csv
 import json
 import math
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent
+REPO = ROOT.parent
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 import nba.generate_nba_dvp as dvp
 
 
-ROOT = Path(__file__).resolve().parent
-REPO = ROOT.parent
 PUBLIC_NBA = REPO / "kbo-props-ui" / "public" / "data" / "nba"
 BOX_2026 = dvp.BOX_SCORES
 BOX_2027 = ROOT / "nba_boxscores_2026_27.csv"
