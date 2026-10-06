@@ -51,6 +51,9 @@ def restore(prefix: str = "", force: bool = False) -> int:
     for filename, table in TABLES.items():
         if filename.startswith("nfl/"):
             continue  # NFL snapshots are rebuilt from scratch every run
+        # NBA snapshots are restored only for an explicit nba/ prefix.
+        if filename.startswith("nba/") and not prefix.startswith("nba/"):
+            continue
         if prefix and not filename.startswith(prefix):
             continue
         path = os.path.join(DATA_DIR, filename)

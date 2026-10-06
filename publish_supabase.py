@@ -109,7 +109,23 @@ TABLES = {
     "nfl/lineups.json": "nfl_lineups",
     "nfl/sharp_odds.json": "nfl_sharp_odds",
     "nfl/game_markets.json": "nfl_game_markets",
+    # Published only when PUBLISH_ONLY_PREFIX starts with nba/. A full publish
+    # leaves these alone so a missing local snapshot cannot fail the other sports.
+    "nba/players.json": "nba_players",
+    "nba/teams.json": "nba_teams",
 }
+
+
+def tables_for_prefix(only_prefix: str) -> dict:
+    """Snapshot files to publish. nba/ is included only for an nba/ prefix."""
+    selected = {}
+    for filename, table in TABLES.items():
+        if filename.startswith("nba/") and not only_prefix.startswith("nba/"):
+            continue
+        if only_prefix and not filename.startswith(only_prefix):
+            continue
+        selected[filename] = table
+    return selected
 
 
 def verify_wnba_gamelogs(only_prefix):
@@ -136,11 +152,7 @@ def main():
     # files whose path starts with it (e.g. "wnba/"). This lets a sport-specific
     # workflow republish just its own tables without touching the others.
     only_prefix = os.environ.get("PUBLISH_ONLY_PREFIX", "").strip()
-    tables = {
-        filename: table
-        for filename, table in TABLES.items()
-        if not only_prefix or filename.startswith(only_prefix)
-    }
+    tables = tables_for_prefix(only_prefix)
     if only_prefix and not tables:
         print(f"✗ No snapshots match PUBLISH_ONLY_PREFIX={only_prefix!r}")
         sys.exit(1)

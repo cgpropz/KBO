@@ -294,6 +294,10 @@ export const DATASETS = {
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },
+  // NBA. The /api/data gate still denies these unless the caller is full access.
+  // The free builder is only the preview path after nba_public is on.
+  nba_players: { table: 'nba_players', sport: 'nba', free: previewList(() => 0) },
+  nba_teams: { table: 'nba_teams', sport: 'nba', free: previewList(() => 0) },
 };
 
 // Decide what the caller receives for one dataset snapshot.

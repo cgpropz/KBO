@@ -219,6 +219,15 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
             if (flag === 'missing') return Promise.resolve({ data: null, error: null })
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
+          if (table === 'nba_players' || table === 'nba_teams') {
+            return Promise.resolve({
+              data: {
+                data: [{ name: 'Jaren Jackson Jr.', team: 'MEM', athleteId: '4277961' }],
+                updated_at: '2026-04-12T00:00:00Z',
+              },
+              error: null,
+            })
+          }
           return Promise.resolve({ data: null, error: null })
         },
       }
@@ -266,12 +275,31 @@ test('the owner is allowed when the flag is missing or the flag lookup fails', a
 
 test('a public flag lets all-access through the gate and still denies a failed tier lookup', async () => {
   const combined = await call('nba_players', 'tok-fan', { flag: true })
-  assert.equal(combined.res.statusCode, 400)
-  const weekly = await call('nba_players', 'tok-weekly', { flag: true })
-  assert.equal(weekly.res.statusCode, 400)
+  assert.equal(combined.res.statusCode, 200)
+  assert.equal(combined.res.body.data[0].name, 'Jaren Jackson Jr.')
+  const weekly = await call('nba_teams', 'tok-weekly', { flag: true })
+  assert.equal(weekly.res.statusCode, 200)
+  assert.equal(weekly.res.body.data[0].team, 'MEM')
   const profileDown = await call('nba_players', 'tok-fan', { flag: true, profileErrorFor: 'u-fan' })
   assert.equal(profileDown.res.statusCode, 403)
   assert.equal(profileDown.res.body.data, undefined)
+})
+
+test('the owner receives nba player and team snapshots while a combined tier is still 403', async () => {
+  const owner = await call('nba_players', 'tok-owner', { flag: false })
+  assert.equal(owner.res.statusCode, 200)
+  assert.equal(owner.res.body.preview, false)
+  assert.equal(owner.res.body.data[0].athleteId, '4277961')
+  const teams = await call('nba_teams', 'tok-owner', { flag: 'missing' })
+  assert.equal(teams.res.statusCode, 200)
+  assert.equal(teams.res.body.data[0].name, 'Jaren Jackson Jr.')
+  const combined = await call('nba_players', 'tok-fan', { flag: false })
+  assert.equal(combined.res.statusCode, 403)
+  assert.equal(combined.res.body.data, undefined)
+  assert.equal(combined.client.calls.some((entry) => entry.table === 'nba_players'), false)
+  const forged = await call('nba_teams', 'forged-token')
+  assert.equal(forged.res.statusCode, 403)
+  assert.equal(forged.res.body.data, undefined)
 })
 
 test('an auth timeout denies NBA instead of falling open to a preview', async () => {
@@ -293,7 +321,8 @@ test('a flag timeout denies a paying subscriber and still allows the owner', asy
     const fan = await call('nba_players', 'tok-fan', { flag: 'hang' })
     assert.equal(fan.res.statusCode, 403)
     const owner = await call('nba_players', 'tok-owner', { flag: 'hang' })
-    assert.equal(owner.res.statusCode, 400)
+    assert.equal(owner.res.statusCode, 200)
+    assert.equal(owner.res.body.data[0].name, 'Jaren Jackson Jr.')
   } finally {
     _setTimeouts(prev)
   }
