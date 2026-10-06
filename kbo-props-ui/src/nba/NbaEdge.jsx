@@ -18,8 +18,22 @@ const HIT_RATE_SORTS = [
   { value: 'FULL', label: 'Sort: Full Hit Rate' },
 ]
 
-function pendingText() {
-  return 'pending'
+function formatProjection(value) {
+  const numeric = Number(value)
+  if (value == null || Number.isNaN(numeric)) return null
+  return numeric.toFixed(1)
+}
+
+function formatEdge(value) {
+  const numeric = Number(value)
+  if (value == null || Number.isNaN(numeric)) return null
+  return numeric.toFixed(1)
+}
+
+function formatHitRate(value) {
+  const numeric = Number(value)
+  if (value == null || Number.isNaN(numeric)) return null
+  return `${numeric.toFixed(1)}%`
 }
 
 export default function NbaEdge() {
@@ -139,12 +153,31 @@ export default function NbaEdge() {
           versus: prop.versus || '',
           opponent: prop.opponent || '',
           gameDate: prop.gameDate || '',
+          projection: prop.projection,
+          rating: prop.rating,
+          hitRates: prop.hitRates || {},
         })
       })
     })
-    rows.sort((a, b) => a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat))
+    const sortValue = (card) => (
+      hitRateSort === 'score' ? card.rating : card.hitRates?.[hitRateSort]
+    )
+    rows.sort((a, b) => {
+      const left = sortValue(a)
+      const right = sortValue(b)
+      const leftMissing = left == null || Number.isNaN(Number(left))
+      const rightMissing = right == null || Number.isNaN(Number(right))
+      if (leftMissing && rightMissing) {
+        return a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat)
+      }
+      if (leftMissing) return 1
+      if (rightMissing) return -1
+      const difference = Number(right) - Number(left)
+      if (difference !== 0) return difference
+      return a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat)
+    })
     return rows
-  }, [filtered, propType])
+  }, [filtered, propType, hitRateSort])
 
   return (
     <div className="fade-in edge-board-wrap">
@@ -152,7 +185,7 @@ export default function NbaEdge() {
       <div style={{ marginBottom: 18, position: 'relative' }}>
         <h1 className="edge-title">NBA PrizePicks Edge</h1>
         <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
-          Live PrizePicks lines{activeSlateDate ? ` for ${activeSlateDate}` : ''}. Projections and edge are pending.
+          Live PrizePicks lines{activeSlateDate ? ` for ${activeSlateDate}` : ''}. Projection is the last 3/7/15 per-minute rates (0.5/0.3/0.2) times last-10 minutes times a PG/SG/SF/PF/C DVP factor clamped to 0.85–1.15. Edge is (projection / line) × 50.
         </p>
       </div>
 
@@ -257,8 +290,12 @@ export default function NbaEdge() {
                   <td>{card.stat}</td>
                   <td>{card.line}</td>
                   <td>{card.opponent ? `vs ${card.opponent}` : (card.versus || '—')}</td>
-                  <td className="nba-edge-pending">{pendingText()}</td>
-                  <td className="nba-edge-pending">{pendingText()}</td>
+                  <td className={formatProjection(card.projection) == null ? 'nba-edge-pending' : ''}>
+                    {formatProjection(card.projection) ?? 'pending'}
+                  </td>
+                  <td className={formatEdge(card.rating) == null ? 'nba-edge-pending' : 'edge-score'}>
+                    {formatEdge(card.rating) ?? 'pending'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -310,11 +347,19 @@ export default function NbaEdge() {
                   </div>
                   <div>
                     <p className="edge-stat-label">Projection</p>
-                    <p className="edge-stat-value nba-edge-pending">{pendingText()}</p>
+                    <p className={`edge-stat-value${formatProjection(card.projection) == null ? ' nba-edge-pending' : ''}`}>
+                      {formatProjection(card.projection) ?? 'pending'}
+                    </p>
                   </div>
                   <div>
                     <p className="edge-stat-label">Edge</p>
-                    <p className="edge-stat-value nba-edge-pending">{pendingText()}</p>
+                    <p className={`edge-stat-value${formatEdge(card.rating) == null ? ' nba-edge-pending' : ' edge-score'}`}>
+                      {formatEdge(card.rating) ?? 'pending'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="edge-stat-label">L10</p>
+                    <p className="edge-stat-value">{formatHitRate(card.hitRates?.L10) ?? '—'}</p>
                   </div>
                 </div>
               </article>
