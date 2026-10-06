@@ -1,10 +1,126 @@
-/* NBA shell reuses .wnba-root styles. These rules only cover the five-slot
-   DVP grid, which WNBA lays out as three columns. */
+/* NBA shell reuses .wnba-root styles. These rules cover the five-slot DVP
+   cards. WNBA lays the same card out in three columns. */
 
 .nba-root .nba-dvp-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 16px;
+}
+
+.nba-root .nba-dvp-card {
+  padding: 20px;
+}
+
+.nba-root .nba-dvp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.nba-root .nba-dvp-card-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.nba-root .nba-dvp-card-head p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+}
+
+.nba-root .nba-dvp-card-head p span {
+  font-weight: 700;
+}
+
+.nba-root .nba-dvp-extremes {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.nba-root .nba-dvp-extremes > div {
+  flex: 1;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.nba-root .nba-dvp-extreme-team {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.nba-root .nba-dvp-extreme-val {
+  margin: 0;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.nba-root .nba-dvp-columns {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nba-root .nba-dvp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.nba-root .nba-dvp-order {
+  width: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b5563;
+  text-align: right;
+}
+
+.nba-root .nba-dvp-team {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.nba-root .nba-dvp-bar {
+  flex: 1;
+  height: 5px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.nba-root .nba-dvp-bar > div {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.nba-root .nba-dvp-pts {
+  width: 42px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+.nba-root .nba-dvp-badge {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  min-width: 72px;
+  text-align: center;
 }
 
 .nba-root .nba-dvp-empty {
@@ -13,14 +129,20 @@
   font-size: 12px;
 }
 
-@media (max-width: 1100px) {
-  .nba-root .nba-dvp-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 720px) {
   .nba-root .nba-dvp-grid {
     grid-template-columns: 1fr;
+  }
+
+  .nba-root .nba-dvp-extremes {
+    flex-direction: column;
+  }
+
+  .nba-root .nba-dvp-card-head {
+    flex-direction: column;
+  }
+
+  .nba-root .nba-dvp-card-head p {
+    text-align: left;
   }
 }

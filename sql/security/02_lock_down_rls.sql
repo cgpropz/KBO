@@ -52,7 +52,8 @@ declare
     -- NFL
     'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds', 'nfl_game_markets',
     -- NBA
-    'nba_players', 'nba_teams'
+    'nba_players', 'nba_teams',
+    'nba_dvp_pg', 'nba_dvp_sg', 'nba_dvp_sf', 'nba_dvp_pf', 'nba_dvp_c'
   ];
 begin
   foreach t in array paid_tables loop
