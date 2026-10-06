@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from pipeline.memory import common, freeze_slate, grade_kbo_day, grade_wnba_day
+from pipeline.memory import common, freeze_slate, grade_kbo_day, grade_nfl_day, grade_wnba_day
 
 COMMIT_MEMORY = Path(__file__).resolve().parent / "commit_memory.sh"
 
@@ -142,6 +142,61 @@ class CatchUpDatesTests(_TmpMemoryCase):
         common.write_slate("wnba", date(2026, 9, 19), [prop])  # outside window
         self.assertEqual(grade_wnba_day.catch_up_dates(base, 3), [date(2026, 9, 23)])
         self.assertEqual(grade_wnba_day.catch_up_dates(base, 0), [])
+
+
+class NflCatchUpDatesTests(_TmpMemoryCase):
+    def test_tuesday_run_grades_thursday_sunday_and_monday_not_next_week(self):
+        prop = {
+            "player": "A",
+            "stat": "Pass Yards",
+            "odds_type": "standard",
+            "line": 200.5,
+            "recommendation": "OVER",
+        }
+        for d in (
+            date(2026, 9, 24),
+            date(2026, 9, 28),
+            date(2026, 10, 1),
+            date(2026, 10, 4),
+            date(2026, 10, 5),
+            date(2026, 10, 8),
+        ):
+            common.write_slate("nfl", d, [prop])
+        common.write_slate("nfl", date(2026, 9, 27), [prop])
+        common.write_recap(
+            "nfl",
+            date(2026, 9, 27),
+            [dict(prop, actual=210, result="OVER", model_result="HIT")],
+        )
+        # Tuesday 2026-10-06. Yesterday is Monday 10/05. 10/08 has not been played.
+        dates = grade_nfl_day.scheduled_dates(date(2026, 10, 6), lookback_days=14)
+        self.assertEqual(
+            dates,
+            [
+                date(2026, 9, 24),
+                date(2026, 9, 28),
+                date(2026, 10, 1),
+                date(2026, 10, 4),
+                date(2026, 10, 5),
+            ],
+        )
+
+    def test_one_unfinished_game_does_not_count_as_final(self):
+        import pandas as pd
+
+        open_slate = pd.DataFrame({"home_score": [24.0, None], "away_score": [17.0, None]})
+        closed = pd.DataFrame({"home_score": [24.0, 27.0], "away_score": [17.0, 7.0]})
+        self.assertFalse(grade_nfl_day.slate_is_final(open_slate))
+        self.assertTrue(grade_nfl_day.slate_is_final(closed))
+        self.assertFalse(grade_nfl_day.slate_is_final(pd.DataFrame({"home_score": [], "away_score": []})))
+
+    def test_schedule_is_not_on_the_hour(self):
+        import re
+
+        text = (Path(__file__).resolve().parents[2] / ".github/workflows/nfl-memory.yml").read_text()
+        crons = re.findall(r'cron:\s*"([^"]+)"', text)
+        self.assertEqual(crons, ["11 14 * * 2,3"])
+        self.assertNotIn(crons[0].split()[0], ("0", "00", "30"))
 
 
 class KboCatchUpDatesTests(_TmpMemoryCase):

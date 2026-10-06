@@ -17,7 +17,7 @@
 #   41 17 daily    KBO grade (kbo-memory runs 17:00 UTC = 1 PM ET); lands
 #                  before the 2:12 PM ET digest
 #   47 23 daily    WNBA + NFL score (pregame boards; ~7:47 PM ET)
-#   41 14 Tue/Wed  NFL grade (nfl-memory runs 14:00 UTC Tue/Wed = 10 AM ET)
+#   41 14 Tue/Wed  NFL grade (nfl-memory runs 14:11 UTC Tue/Wed)
 # Scores are leak-free whenever they run: inputs are pinned per prop to the
 # pregame git ref the slate was frozen from (see ml/shadow/common.py).
 name: ML shadow (offline, Phase 3)
