@@ -184,12 +184,12 @@ class NflValues:
         self.error: str | None = None
 
     def _build(self) -> dict:
-        from ml.nfl.replay import GAMES_URL, STATS_URL, fetch
+        from ml.nfl.replay import GAMES_CACHE_NAME, STATS_URL, fetch, open_games_csv
         if self.refresh_current:
-            for name in ("games.csv", f"stats_player_week_{max(self.seasons)}.csv"):
+            for name in (GAMES_CACHE_NAME, "games.csv", f"stats_player_week_{max(self.seasons)}.csv"):
                 (self.data_dir / name).unlink(missing_ok=True)
         games = {}
-        with fetch(GAMES_URL, self.data_dir / "games.csv").open(encoding="utf-8") as handle:
+        with open_games_csv(self.data_dir) as handle:
             for g in csv.DictReader(handle):
                 if int(g["season"]) in self.seasons:
                     for side in ("away_team", "home_team"):

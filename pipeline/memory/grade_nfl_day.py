@@ -30,7 +30,8 @@ from pipeline.memory.common import (
 )
 
 STATS_URL = "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv"
-GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv"
+# nflverse dropped uncompressed games.csv on 2026-10-06. pandas reads this gzip URL.
+GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
 HISTORY_SEASONS = (2025, 2026)
 
 STAT_COLUMNS = {

@@ -18,7 +18,7 @@ from pathlib import Path
 from ml.common.util import to_float
 from ml.common.walkforward import Problem
 from ml.nfl import formula
-from ml.nfl.replay import GAMES_URL, STATS, STATS_URL, eligible, fetch, stat_value
+from ml.nfl.replay import STATS, STATS_URL, eligible, fetch, open_games_csv, stat_value
 
 WEIGHTS = {"live": (0.50, 0.25, 0.25), "balanced": (0.34, 0.33, 0.33), "long_heavy": (0.25, 0.25, 0.50),
            "short_heavy": (0.60, 0.20, 0.20)}
@@ -51,7 +51,7 @@ def resolve_knobs(k: dict) -> dict:
 def load_rows(data_dir: Path, seasons: list[int]) -> list[dict]:
     """One row per eligible player-game-stat with the player's prior values (oldest first)."""
     games = {}
-    with fetch(GAMES_URL, data_dir / "games.csv").open(encoding="utf-8") as handle:
+    with open_games_csv(data_dir) as handle:
         for g in csv.DictReader(handle):
             if int(g["season"]) in seasons:
                 for side in ("away_team", "home_team"):

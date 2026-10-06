@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import sys
 import urllib.request
 from collections import defaultdict
@@ -28,7 +29,10 @@ from ml.common.util import DEFAULT_OUT, ML_ROOT, to_float, write_csv
 from ml.nfl import formula
 
 STATS_URL = "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv"
-GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv"
+# nflverse dropped uncompressed games.csv on 2026-10-06. csv.DictReader cannot
+# read the gzip bytes, so open_games_csv decompresses the cached asset.
+GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
+GAMES_CACHE_NAME = "games.csv.gz"
 
 
 def stat_value(row: dict, stat: str) -> float:
@@ -62,6 +66,12 @@ def fetch(url: str, dest: Path) -> Path:
     return dest
 
 
+def open_games_csv(data_dir: Path):
+    """Schedule rows from the gzip nflverse asset, as text for csv.DictReader."""
+    path = fetch(GAMES_URL, Path(data_dir) / GAMES_CACHE_NAME)
+    return gzip.open(path, mode="rt", encoding="utf-8", newline="")
+
+
 def ewm(values: list[float], halflife: float = 4.0) -> float:
     """pandas .ewm(halflife=h, adjust=True).mean() final value."""
     alpha = 1 - 0.5 ** (1 / halflife)
@@ -75,7 +85,7 @@ def ewm(values: list[float], halflife: float = 4.0) -> float:
 
 def build(data_dir: Path, seasons: list[int], p: dict) -> list[dict]:
     games = {}
-    with fetch(GAMES_URL, data_dir / "games.csv").open(encoding="utf-8") as handle:
+    with open_games_csv(data_dir) as handle:
         for g in csv.DictReader(handle):
             if int(g["season"]) in seasons:
                 for side in ("away_team", "home_team"):

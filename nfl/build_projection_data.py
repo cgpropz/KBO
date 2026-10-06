@@ -28,7 +28,8 @@ LINEUPS_OUTPUT_PATH = ROOT / 'lineups.json'
 HISTORY_SEASONS = (2025, 2026)
 CURRENT_SEASON = max(HISTORY_SEASONS)
 STATS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv'
-GAMES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv'
+# nflverse dropped uncompressed games.csv on 2026-10-06. pandas reads this gzip URL.
+GAMES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz'
 PLAYERS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/players/players.csv'
 DEPTH_URL = 'https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_{season}.csv'
 INJURIES_URL = 'https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv'
