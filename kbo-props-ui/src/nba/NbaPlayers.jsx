@@ -59,7 +59,7 @@ export default function NbaPlayers() {
     const color = selected.teamColor || '#94a3b8'
     return (
       <div className="fade-in">
-        <button className="btn-ghost" onClick={() => setSelectedId(null)}>← Players</button>
+        <button className="btn-ghost" onClick={() => setSelectedId(null)}>← Dashboard</button>
         <div style={{ margin: '16px 0 20px' }}>
           <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, color: 'white' }}>{selected.name}</h1>
           <p style={{ margin: 0, color, fontSize: 13, fontWeight: 700 }}>
