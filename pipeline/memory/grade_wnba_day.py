@@ -44,6 +44,17 @@ def _num(value) -> float:
         return 0.0
 
 
+def _minutes(value) -> float | None:
+    """Box-score minutes. '--' and blanks are missing, not zero."""
+    text = str(value or "").strip()
+    if not text or text in {"--", "—", "NA", "N/A"}:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 def calc_fantasy(stats: dict) -> float:
     return (
         stats["pts"]
@@ -109,6 +120,7 @@ def _load_boxscore_file(path: Path, lookup: dict[tuple[str, str], dict]) -> None
                 "ftm": _num(row.get("FTM")),
                 "fta": _num(row.get("FTA")),
                 "min": row.get("MIN"),
+                "min_played": _minutes(row.get("MIN")),
                 "team": cutoff.wnba_team(row.get("Team")),
                 "matchup": row.get("Match Up"),
                 "present": True,
@@ -152,6 +164,7 @@ STAT_VALUE = {
     "Pts+Rebs+Asts": "ptsRebAst",
     "Double-Double": "doubleDouble",
     "Triple-Double": "tripleDouble",
+    "Minutes Played": "min_played",
 }
 
 
@@ -208,6 +221,10 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
             missing.append({"player": player, "stat": stat, "reason": "unmapped_stat"})
             continue
         actual_val = stats.get(key)
+        if actual_val is None:
+            # Known stat, but this box score has no number (for example minutes "--").
+            missing.append({"player": player, "stat": stat, "reason": "unmapped_stat"})
+            continue
         try:
             outcome = grade_line(actual_val, line)
         except ValueError:
@@ -264,7 +281,10 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     }
 
 
-DEFAULT_CATCH_UP_DAYS = 3
+# Long enough that a mapping fix landing a week later still retries a partial
+# day. A 3-day window dropped 09/29 once the calendar moved on, even though
+# the only leftovers were stats the box score does not carry.
+DEFAULT_CATCH_UP_DAYS = 10
 
 
 def catch_up_dates(d: date, days: int) -> list[date]:
