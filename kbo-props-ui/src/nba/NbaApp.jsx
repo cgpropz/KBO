@@ -3,6 +3,7 @@ import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
 import SportSwitcher from '../SportSwitcher'
+import NbaPlayers from './NbaPlayers'
 import NbaTeams from './NbaTeams'
 
 const NAV_ITEMS = [
@@ -45,9 +46,10 @@ export default function NbaApp({ sport, setSport, onNavigateHome }) {
   const { tier } = useAuth()
   const [view, setView] = useState('dashboard')
 
-  const content = view === 'teams'
-    ? <NbaTeams />
-    : <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.dashboard)} />
+  let content
+  if (view === 'teams') content = <NbaTeams />
+  else if (view === 'players') content = <NbaPlayers />
+  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.dashboard)} />
 
   return (
     <div className="wnba-root nba-root">

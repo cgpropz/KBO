@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { NBA_DVP_POSITIONS } from './positions'
+import { fetchNbaData } from './nbaData'
 
 function DvpSlot({ position, data }) {
   const teams = Array.isArray(data?.teams) ? data.teams : []
@@ -25,6 +27,21 @@ function DvpSlot({ position, data }) {
 }
 
 export default function NbaTeams({ boards = {} }) {
+  const [teams, setTeams] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const rows = await fetchNbaData('nba/teams.json')
+        if (!cancelled) setTeams(Array.isArray(rows) ? rows : [])
+      } catch {
+        if (!cancelled) setTeams([])
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <div className="fade-in">
       <div style={{ marginBottom: 28 }}>
@@ -33,6 +50,27 @@ export default function NbaTeams({ boards = {} }) {
           Defense vs position — point guard, shooting guard, small forward, power forward, and center.
         </p>
       </div>
+      {teams.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+          {teams.map((team) => (
+            <span
+              key={team.abbr}
+              title={team.fullName}
+              style={{
+                color: team.color || '#e5e5e5',
+                background: `${team.color || '#94a3b8'}18`,
+                border: `1px solid ${team.color || '#94a3b8'}55`,
+                borderRadius: 999,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              {team.abbr}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="nba-dvp-grid">
         {NBA_DVP_POSITIONS.map((position) => (
           <DvpSlot key={position.id} position={position} data={boards[position.id]} />

@@ -204,9 +204,9 @@ async function handleNbaRequest(req, res, client, ds) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
-  // No nba_* datasets are registered in this phase. Full access returns the
-  // snapshot directly because sportAccess() has no nba key and must stay that
-  // way. Preview uses the free trimmer once a dataset exists.
+  // sportAccess() has no nba key and must stay that way. Full access returns
+  // the snapshot directly. Preview (flag on, non-all-access tier) uses the
+  // free trimmer. Unregistered nba_* names stay 400.
   const shaped = decision === 'full'
     ? { data: row.data, preview: false, lockedCount: 0 }
     : shapeForTier(ds, row.data, 'free');
