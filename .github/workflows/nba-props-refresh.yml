@@ -1,0 +1,98 @@
+name: Refresh NBA PrizePicks Lines (30 min)
+
+# Lightweight refresh of NBA PrizePicks lines and the projections on them.
+#
+# Rebuilds DVP from the committed box scores, fetches the current board, fills
+# projections, and publishes only the three projection tables. It does not
+# refresh ESPN logs, commit anything, or publish players, teams, or DVP.
+#
+# A pull with zero lines skips publish. publish_supabase.py also refuses to
+# replace a projection table with a zero-line file. nba_public is not changed.
+
+on:
+  schedule:
+    # Off the top and bottom of the hour. GitHub delays or drops :00/:30
+    # schedules under load. Same cadence as the WNBA props job.
+    - cron: "22,52 * * * *" # every 30 minutes (UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Share the full-refresh lock so a props job never publishes projections
+  # built from an older checkout after a gamelog refresh has completed.
+  group: nba-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  refresh-nba-props:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install requests pandas
+
+      - name: Generate five-position NBA DVP tables
+        run: python nba/generate_nba_dvp.py
+
+      - name: Verify NBA DVP
+        run: python nba/verify_nba_dvp.py
+
+      - name: Restore last published NBA snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py --prefix nba/
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Fetch NBA PrizePicks lines
+        id: lines
+        run: |
+          set -o pipefail
+          python nba/nba-pp-odds.py | tee "$RUNNER_TEMP/nba-pp.txt"
+          TOTAL=$(sed -n 's/^Lines:.*(\([0-9][0-9]*\))$/\1/p' "$RUNNER_TEMP/nba-pp.txt" | tail -n 1)
+          if [ -z "$TOTAL" ]; then
+            echo "Could not read the fresh PrizePicks line count."
+            exit 1
+          fi
+          echo "Fresh PrizePicks line count: $TOTAL"
+          echo "line_count=$TOTAL" >> "$GITHUB_OUTPUT"
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "has_lines=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_lines=false" >> "$GITHUB_OUTPUT"
+            echo "No PrizePicks lines this run. Publish will be skipped."
+          fi
+
+      - name: Fill NBA projections and edges
+        run: |
+          set +e
+          python nba/generate_nba_projections.py
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if [ "${{ steps.lines.outputs.has_lines }}" != "true" ]; then
+            echo "No fresh lines to project."
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Publish NBA prop lines to Supabase
+        if: steps.lines.outputs.has_lines == 'true'
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nba/projections"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
