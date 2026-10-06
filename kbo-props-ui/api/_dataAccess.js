@@ -298,6 +298,11 @@ export const DATASETS = {
   // The free builder is only the preview path after nba_public is on.
   nba_players: { table: 'nba_players', sport: 'nba', free: previewList(() => 0) },
   nba_teams: { table: 'nba_teams', sport: 'nba', free: previewList(() => 0) },
+  nba_dvp_pg: { table: 'nba_dvp_pg', sport: 'nba', free: previewObjectList('teams', () => 0) },
+  nba_dvp_sg: { table: 'nba_dvp_sg', sport: 'nba', free: previewObjectList('teams', () => 0) },
+  nba_dvp_sf: { table: 'nba_dvp_sf', sport: 'nba', free: previewObjectList('teams', () => 0) },
+  nba_dvp_pf: { table: 'nba_dvp_pf', sport: 'nba', free: previewObjectList('teams', () => 0) },
+  nba_dvp_c: { table: 'nba_dvp_c', sport: 'nba', free: previewObjectList('teams', () => 0) },
 };
 
 // Decide what the caller receives for one dataset snapshot.

@@ -219,12 +219,12 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
             if (flag === 'missing') return Promise.resolve({ data: null, error: null })
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
-          if (table === 'nba_players' || table === 'nba_teams') {
+          if (table === 'nba_players' || table === 'nba_teams' || String(table).startsWith('nba_dvp_')) {
+            const data = String(table).startsWith('nba_dvp_')
+              ? { position: 'PG', leagueAvgOppPts: 26.21, teams: [{ team: 'WSH', oppPts: 29.1, dvpFactor: 30 }, { team: 'OKC', oppPts: 22.2, dvpFactor: 1 }] }
+              : [{ name: 'Jaren Jackson Jr.', team: 'MEM', athleteId: '4277961' }]
             return Promise.resolve({
-              data: {
-                data: [{ name: 'Jaren Jackson Jr.', team: 'MEM', athleteId: '4277961' }],
-                updated_at: '2026-04-12T00:00:00Z',
-              },
+              data: { data, updated_at: '2026-04-12T00:00:00Z' },
               error: null,
             })
           }
@@ -300,6 +300,25 @@ test('the owner receives nba player and team snapshots while a combined tier is 
   const forged = await call('nba_teams', 'forged-token')
   assert.equal(forged.res.statusCode, 403)
   assert.equal(forged.res.body.data, undefined)
+})
+
+test('the owner receives NBA DVP while a combined tier and a forged token stay 403', async () => {
+  const owner = await call('nba_dvp_pg', 'tok-owner', { flag: false })
+  assert.equal(owner.res.statusCode, 200)
+  assert.equal(owner.res.body.preview, false)
+  assert.equal(owner.res.body.data.teams[0].team, 'WSH')
+  const missingFlag = await call('nba_dvp_c', 'tok-owner', { flag: 'missing' })
+  assert.equal(missingFlag.res.statusCode, 200)
+  assert.equal(missingFlag.res.body.data.position, 'PG')
+  const combined = await call('nba_dvp_sg', 'tok-fan', { flag: false })
+  assert.equal(combined.res.statusCode, 403)
+  assert.equal(combined.res.body.data, undefined)
+  assert.equal(combined.client.calls.some((entry) => entry.table === 'nba_dvp_sg'), false)
+  const forged = await call('nba_dvp_pf', 'forged-token')
+  assert.equal(forged.res.statusCode, 403)
+  assert.equal(forged.res.body.data, undefined)
+  const flagError = await call('nba_dvp_sf', 'tok-fan', { flag: 'error' })
+  assert.equal(flagError.res.statusCode, 403)
 })
 
 test('an auth timeout denies NBA instead of falling open to a preview', async () => {
