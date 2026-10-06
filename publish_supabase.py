@@ -118,7 +118,34 @@ TABLES = {
     "nba/dvp_sf.json": "nba_dvp_sf",
     "nba/dvp_pf.json": "nba_dvp_pf",
     "nba/dvp_c.json": "nba_dvp_c",
+    "nba/projections_standard.json": "nba_projections_standard",
+    "nba/projections_demon.json": "nba_projections_demon",
+    "nba/projections_goblin.json": "nba_projections_goblin",
 }
+
+# Lines-only boards. A missing file or a zero-line file must not replace a
+# board that was already published.
+NBA_LINE_TABLES = {
+    "nba_projections_standard",
+    "nba_projections_demon",
+    "nba_projections_goblin",
+}
+
+
+def nba_line_count(data) -> int:
+    """Number of PrizePicks props on an NBA lines snapshot."""
+    if not isinstance(data, list):
+        return 0
+    total = 0
+    for player in data:
+        props = player.get("ppAllProps") if isinstance(player, dict) else None
+        if isinstance(props, list):
+            total += len(props)
+    return total
+
+
+def should_publish_nba_lines(data) -> bool:
+    return nba_line_count(data) > 0
 
 
 def tables_for_prefix(only_prefix: str) -> dict:
@@ -184,6 +211,9 @@ def main():
         file_path = os.path.join(BASE, filename) if repo_root_file else os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):
+            if table in NBA_LINE_TABLES:
+                print(f"  ! {filename} not found; leaving {table} unchanged")
+                continue
             if table in OPTIONAL_TABLES:
                 print(f"  ! {filename} not found; skipping optional snapshot")
                 continue
@@ -195,6 +225,10 @@ def main():
         try:
             with open(file_path, "r", encoding="utf-8") as file_handle:
                 data = json.load(file_handle)
+
+            if table in NBA_LINE_TABLES and not should_publish_nba_lines(data):
+                print(f"  ! {table}: 0 lines; leaving the published board unchanged")
+                continue
 
             payload = {"id": 1, "data": data}
             response = post_with_retry(
