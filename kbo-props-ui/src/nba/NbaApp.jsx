@@ -9,23 +9,42 @@ import NbaTeams from './NbaTeams'
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
   { id: 'lineups', label: 'Lineups' },
 ]
+
+const NAV_IDS = new Set(NAV_ITEMS.map((item) => item.id))
+
+// The player-card grid moved onto Dashboard. A stored or linked "players"
+// tab (cg_nba_tab / nba_tab, or ?nbaTab=players) opens Dashboard instead.
+const STORED_TAB_KEYS = ['cg_nba_tab', 'nba_tab']
+
+function resolveNbaView(view) {
+  if (view === 'players') return 'dashboard'
+  return NAV_IDS.has(view) ? view : 'dashboard'
+}
+
+function readLinkedNbaView() {
+  if (typeof window === 'undefined') return 'dashboard'
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const linked = params.get('nbaTab')
+    let stored = ''
+    for (const key of STORED_TAB_KEYS) {
+      const value = localStorage.getItem(key)
+      if (value === 'players') localStorage.setItem(key, 'dashboard')
+      if (!stored && value) stored = value
+    }
+    return resolveNbaView(linked || stored || 'dashboard')
+  } catch {
+    return 'dashboard'
+  }
+}
 
 const EMPTY_COPY = {
   projections: {
     title: 'PrizePicks Edge',
     body: 'NBA lines and projections are not loaded yet.',
-  },
-  dashboard: {
-    title: 'Dashboard',
-    body: 'The NBA dashboard fills in once rosters and logs are published.',
-  },
-  players: {
-    title: 'Players',
-    body: 'Current rosters and 2025-26 player stats land in the next data pass.',
   },
   lineups: {
     title: 'Lineups',
@@ -44,12 +63,13 @@ function EmptyTab({ title, body }) {
 
 export default function NbaApp({ sport, setSport, onNavigateHome }) {
   const { tier } = useAuth()
-  const [view, setView] = useState('dashboard')
+  const [view, setView] = useState(readLinkedNbaView)
+  const openView = (next) => setView(resolveNbaView(next))
 
   let content
   if (view === 'teams') content = <NbaTeams />
-  else if (view === 'players') content = <NbaPlayers />
-  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.dashboard)} />
+  else if (view === 'dashboard') content = <NbaPlayers />
+  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.projections)} />
 
   return (
     <div className="wnba-root nba-root">
@@ -61,7 +81,7 @@ export default function NbaApp({ sport, setSport, onNavigateHome }) {
             <button
               key={item.id}
               className={`btn-ghost${view === item.id ? ' active' : ''}`}
-              onClick={() => setView(item.id)}
+              onClick={() => openView(item.id)}
             >
               {item.label}
             </button>
