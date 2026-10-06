@@ -5,6 +5,7 @@ import './nba.css'
 import SportSwitcher from '../SportSwitcher'
 import NbaPlayers from './NbaPlayers'
 import NbaTeams from './NbaTeams'
+import NbaEdge from './NbaEdge'
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
@@ -69,7 +70,8 @@ export default function NbaApp({ sport, setSport, onNavigateHome }) {
   let content
   if (view === 'teams') content = <NbaTeams />
   else if (view === 'dashboard') content = <NbaPlayers />
-  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.projections)} />
+  else if (view === 'projections') content = <NbaEdge />
+  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.lineups)} />
 
   return (
     <div className="wnba-root nba-root">

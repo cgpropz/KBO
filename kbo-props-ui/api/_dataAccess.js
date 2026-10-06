@@ -303,6 +303,9 @@ export const DATASETS = {
   nba_dvp_sf: { table: 'nba_dvp_sf', sport: 'nba', free: previewObjectList('teams', () => 0) },
   nba_dvp_pf: { table: 'nba_dvp_pf', sport: 'nba', free: previewObjectList('teams', () => 0) },
   nba_dvp_c: { table: 'nba_dvp_c', sport: 'nba', free: previewObjectList('teams', () => 0) },
+  nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewWnbaProjections },
+  nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewWnbaProjections },
+  nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewWnbaProjections },
 };
 
 // Decide what the caller receives for one dataset snapshot.

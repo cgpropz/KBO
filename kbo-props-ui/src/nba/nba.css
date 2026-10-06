@@ -129,6 +129,17 @@
   font-size: 12px;
 }
 
+.nba-root .nba-edge-card {
+  cursor: default;
+}
+
+.nba-root .nba-edge-pending {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
 @media (max-width: 720px) {
   .nba-root .nba-dvp-grid {
     grid-template-columns: 1fr;

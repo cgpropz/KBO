@@ -53,6 +53,7 @@ MUST_NOT_BE_PUBLIC = [
 	"/data/graded_props_history.json",
 	"/data/prop_results.json",
 	"/data/wnba/projections_standard.json",
+	"/data/nba/projections_standard.json",
 ]
 
 CORE_CORRELATED = [

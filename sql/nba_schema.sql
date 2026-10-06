@@ -1,7 +1,7 @@
--- NBA roster, team, and five-position DVP snapshots. Run this in the Supabase
--- SQL editor (project ocaqjkfdjqxszevtllew) before the first `nba/` publish,
--- and re-run it before publishing DVP if the five nba_dvp_* tables are not
--- there yet.
+-- NBA roster, team, five-position DVP, and PrizePicks line snapshots. Run this
+-- in the Supabase SQL editor (project ocaqjkfdjqxszevtllew) before the first
+-- `nba/` publish, and re-run it before publishing DVP or lines if those
+-- tables are not there yet.
 --
 -- Safe to re-run. It does not turn on nba_public, does not grant anon or
 -- authenticated access, and does not drop existing rows. The repo does not
@@ -56,6 +56,24 @@ create table if not exists public.nba_dvp_c (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.nba_projections_standard (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.nba_projections_demon (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.nba_projections_goblin (
+  id bigint primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
@@ -101,6 +119,21 @@ create trigger nba_dvp_c_set_updated_at
 before update on public.nba_dvp_c
 for each row execute function set_updated_at();
 
+drop trigger if exists nba_projections_standard_set_updated_at on public.nba_projections_standard;
+create trigger nba_projections_standard_set_updated_at
+before update on public.nba_projections_standard
+for each row execute function set_updated_at();
+
+drop trigger if exists nba_projections_demon_set_updated_at on public.nba_projections_demon;
+create trigger nba_projections_demon_set_updated_at
+before update on public.nba_projections_demon
+for each row execute function set_updated_at();
+
+drop trigger if exists nba_projections_goblin_set_updated_at on public.nba_projections_goblin;
+create trigger nba_projections_goblin_set_updated_at
+before update on public.nba_projections_goblin
+for each row execute function set_updated_at();
+
 alter table public.nba_players enable row level security;
 alter table public.nba_teams enable row level security;
 alter table public.nba_dvp_pg enable row level security;
@@ -108,6 +141,9 @@ alter table public.nba_dvp_sg enable row level security;
 alter table public.nba_dvp_sf enable row level security;
 alter table public.nba_dvp_pf enable row level security;
 alter table public.nba_dvp_c enable row level security;
+alter table public.nba_projections_standard enable row level security;
+alter table public.nba_projections_demon enable row level security;
+alter table public.nba_projections_goblin enable row level security;
 
 revoke all on public.nba_players from anon, authenticated;
 revoke all on public.nba_teams from anon, authenticated;
@@ -116,5 +152,8 @@ revoke all on public.nba_dvp_sg from anon, authenticated;
 revoke all on public.nba_dvp_sf from anon, authenticated;
 revoke all on public.nba_dvp_pf from anon, authenticated;
 revoke all on public.nba_dvp_c from anon, authenticated;
+revoke all on public.nba_projections_standard from anon, authenticated;
+revoke all on public.nba_projections_demon from anon, authenticated;
+revoke all on public.nba_projections_goblin from anon, authenticated;
 
 commit;
