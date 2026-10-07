@@ -6,22 +6,24 @@ import SportSwitcher from '../SportSwitcher'
 import NbaPlayers from './NbaPlayers'
 import NbaTeams from './NbaTeams'
 import NbaEdge from './NbaEdge'
+import NbaDashboard from './NbaDashboard'
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
   { id: 'lineups', label: 'Lineups' },
 ]
 
 const NAV_IDS = new Set(NAV_ITEMS.map((item) => item.id))
 
-// The player-card grid moved onto Dashboard. A stored or linked "players"
-// tab (cg_nba_tab / nba_tab, or ?nbaTab=players) opens Dashboard instead.
+// Dashboard is the PrizePicks prop-lines board. Players stays its own roster
+// page. A stored or linked tab (cg_nba_tab / nba_tab, or ?nbaTab=) opens that
+// page when it is one of the nav items.
 const STORED_TAB_KEYS = ['cg_nba_tab', 'nba_tab']
 
 function resolveNbaView(view) {
-  if (view === 'players') return 'dashboard'
   return NAV_IDS.has(view) ? view : 'dashboard'
 }
 
@@ -33,7 +35,6 @@ function readLinkedNbaView() {
     let stored = ''
     for (const key of STORED_TAB_KEYS) {
       const value = localStorage.getItem(key)
-      if (value === 'players') localStorage.setItem(key, 'dashboard')
       if (!stored && value) stored = value
     }
     return resolveNbaView(linked || stored || 'dashboard')
@@ -62,14 +63,30 @@ function EmptyTab({ title, body }) {
   )
 }
 
-export default function NbaApp({ sport, setSport, onNavigateHome }) {
+export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const { tier } = useAuth()
   const [view, setView] = useState(readLinkedNbaView)
-  const openView = (next) => setView(resolveNbaView(next))
+  const [playerName, setPlayerName] = useState('')
+  const openView = (next) => {
+    if (next !== 'players') setPlayerName('')
+    setView(resolveNbaView(next))
+  }
+  const openPlayer = (name) => {
+    setPlayerName(name || '')
+    setView('players')
+  }
 
   let content
   if (view === 'teams') content = <NbaTeams />
-  else if (view === 'dashboard') content = <NbaPlayers />
+  else if (view === 'dashboard') {
+    content = (
+      <NbaDashboard
+        onSelectPlayer={openPlayer}
+        onNavigate={openView}
+        onNavigatePricing={onNavigatePricing}
+      />
+    )
+  } else if (view === 'players') content = <NbaPlayers initialName={playerName} />
   else if (view === 'projections') content = <NbaEdge />
   else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.lineups)} />
 

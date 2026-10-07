@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NBA_DVP_POSITIONS } from './positions'
 import { fetchNbaData } from './nbaData'
 
@@ -12,8 +12,9 @@ function positionColor(position) {
   return NBA_DVP_POSITIONS.find((slot) => slot.id === position)?.color || '#9ca3af'
 }
 
-export default function NbaPlayers() {
+export default function NbaPlayers({ initialName = '' }) {
   const [players, setPlayers] = useState(null)
+  const appliedName = useRef('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
@@ -35,6 +36,14 @@ export default function NbaPlayers() {
     })()
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (!initialName || !players || appliedName.current === initialName) return
+    const match = players.find((player) => player.name === initialName)
+    if (!match) return
+    appliedName.current = initialName
+    setSelectedId(match.athleteId)
+  }, [initialName, players])
 
   const teams = useMemo(() => {
     const names = new Set((players || []).map((player) => player.team).filter(Boolean))
@@ -59,7 +68,7 @@ export default function NbaPlayers() {
     const color = selected.teamColor || '#94a3b8'
     return (
       <div className="fade-in">
-        <button className="btn-ghost" onClick={() => setSelectedId(null)}>← Dashboard</button>
+        <button className="btn-ghost" onClick={() => setSelectedId(null)}>← Players</button>
         <div style={{ margin: '16px 0 20px' }}>
           <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, color: 'white' }}>{selected.name}</h1>
           <p style={{ margin: 0, color, fontSize: 13, fontWeight: 700 }}>
