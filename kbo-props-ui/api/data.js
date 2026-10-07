@@ -60,6 +60,85 @@ function withTimeout(promise, ms, message) {
   ]).finally(() => clearTimeout(timer));
 }
 
+// nba_players may be one id=1 array, or a manifest plus id=2..n slices.
+// The prop board needs every game log, so publish splits the row instead of
+// trimming it. Callers always receive the joined player list.
+export function assembleNbaPlayerRows(head, extraRows) {
+  if (!head) return null;
+  const marker = head.data && typeof head.data === 'object' && !Array.isArray(head.data)
+    ? head.data.nbaPlayerChunks
+    : null;
+  if (marker == null) return head;
+  const chunkIds = Array.isArray(marker)
+    ? marker
+    : (Number.isInteger(marker) && marker >= 1
+      ? Array.from({ length: marker }, (_, index) => index + 2)
+      : null);
+  if (!chunkIds || chunkIds.length === 0 || chunkIds.some((id) => !Number.isInteger(id))) {
+    throw new Error('nba_players chunk manifest is invalid');
+  }
+  const byId = new Map((extraRows || []).map((row) => [Number(row.id), row]));
+  const players = [];
+  let updated = head.updated_at || null;
+  for (let index = 0; index < chunkIds.length; index += 1) {
+    const id = chunkIds[index];
+    const row = byId.get(id);
+    if (!row || !Array.isArray(row.data)) {
+      throw new Error(`nba_players is missing chunk ${index + 1} of ${chunkIds.length}`);
+    }
+    players.push(...row.data);
+    if (row.updated_at && (!updated || row.updated_at > updated)) updated = row.updated_at;
+  }
+  return { data: players, updated_at: updated };
+}
+
+async function readNbaPlayerChunks(client) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  try {
+    let builder = client
+      .from('nba_players')
+      .select('id, data, updated_at')
+      .gt('id', 1)
+      .order('id');
+    if (typeof builder.abortSignal === 'function') {
+      builder = builder.abortSignal(controller.signal);
+    }
+    const { data, error } = await withTimeout(
+      builder,
+      timeouts.snapshotReadMs,
+      'Dataset read timed out'
+    );
+    if (error) throw new Error(error.message);
+    return data || [];
+  } catch (err) {
+    if (err?.code === 'UPSTREAM_TIMEOUT') throw err;
+    if (err?.name === 'AbortError' || controller.signal.aborted) {
+      throw timeoutError('Dataset read timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function readNbaPlayers(client) {
+  const head = await readSnapshot(client, 'nba_players');
+  if (!head) return null;
+  const marker = head.data && typeof head.data === 'object' && !Array.isArray(head.data)
+    ? head.data.nbaPlayerChunks
+    : null;
+  if (marker == null) return head;
+  try {
+    const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client));
+    cache.set('nba_players', { at: Date.now(), row: assembled });
+    return assembled;
+  } catch (err) {
+    cache.delete('nba_players');
+    throw err;
+  }
+}
+
 async function readSnapshot(client, table) {
   const hit = cache.get(table);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.row;
@@ -190,7 +269,9 @@ async function handleNbaRequest(req, res, client, ds) {
 
   let row;
   try {
-    row = await readSnapshot(client, spec.table);
+    row = ds === 'nba_players'
+      ? await readNbaPlayers(client)
+      : await readSnapshot(client, spec.table);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
