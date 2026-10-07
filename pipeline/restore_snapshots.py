@@ -35,7 +35,13 @@ import requests
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
-from publish_supabase import DATA_DIR, SUPABASE_URL, TABLES, _get_service_role_key  # noqa: E402
+from publish_supabase import (  # noqa: E402
+    DATA_DIR,
+    SUPABASE_URL,
+    TABLES,
+    _get_service_role_key,
+    assemble_nba_player_rows,
+)
 
 
 def restore(prefix: str = "", force: bool = False) -> int:
@@ -60,12 +66,22 @@ def restore(prefix: str = "", force: bool = False) -> int:
         if os.path.exists(path) and not force:
             continue
         try:
-            resp = session.get(
-                f"{SUPABASE_URL}/rest/v1/{table}",
-                params={"id": "eq.1", "select": "data"},
-                headers=headers,
-                timeout=120,
-            )
+            if table == "nba_players":
+                # A chunked publish stores the player list on the ids named by
+                # id=1. Other tables are still the single id=1 row.
+                resp = session.get(
+                    f"{SUPABASE_URL}/rest/v1/{table}",
+                    params={"select": "id,data", "order": "id.asc"},
+                    headers=headers,
+                    timeout=120,
+                )
+            else:
+                resp = session.get(
+                    f"{SUPABASE_URL}/rest/v1/{table}",
+                    params={"id": "eq.1", "select": "data"},
+                    headers=headers,
+                    timeout=120,
+                )
         except Exception as exc:  # network hiccup: keep going
             print(f"  ! {table}: {exc}")
             continue
@@ -73,12 +89,16 @@ def restore(prefix: str = "", force: bool = False) -> int:
             print(f"  ! {table}: HTTP {resp.status_code} (skipped)")
             continue
         rows = resp.json()
-        if not rows or rows[0].get("data") is None:
+        if table == "nba_players":
+            payload = assemble_nba_player_rows(rows)
+        else:
+            payload = rows[0].get("data") if rows else None
+        if payload is None:
             print(f"  ! {table}: no published snapshot yet (skipped)")
             continue
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(rows[0]["data"], fh, ensure_ascii=False, indent=2)
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
         restored += 1
         print(f"  ✓ restored {filename} from {table}")
 

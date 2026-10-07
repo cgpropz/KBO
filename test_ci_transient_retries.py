@@ -38,6 +38,42 @@ STATEMENT_TIMEOUT = FakeResponse(
 )
 
 
+class NbaPlayerChunkTests(unittest.TestCase):
+    def test_small_list_stays_one_row_and_a_dict_is_left_alone(self):
+        players = [{"athleteId": "1", "gameLogs": [{"pts": 10}]}]
+        self.assertEqual(publish.nba_player_rows(players), [(1, players)])
+        self.assertIsNone(publish.nba_player_rows({"not": "a list"}))
+
+    def test_chunks_stay_under_the_budget_and_round_trip_in_order(self):
+        players = [{"athleteId": str(i), "gameLogs": [{"pts": i, "note": "x" * 40}]} for i in range(12)]
+        rows = publish.nba_player_rows(players, max_bytes=220, id_base=50_000)
+        self.assertGreater(len(rows), 2)
+        manifest = dict(rows)[1]
+        chunk_ids = [row_id for row_id, _chunk in rows if row_id != 1]
+        self.assertEqual(manifest["nbaPlayerChunks"], chunk_ids)
+        self.assertGreaterEqual(min(chunk_ids), 10_000)
+        posted = []
+        for row_id, chunk in rows:
+            if row_id == 1:
+                self.assertLessEqual(publish._posted_bytes(chunk), 220)
+                continue
+            self.assertLessEqual(publish._posted_bytes(chunk), 220)
+            posted.extend(chunk)
+        self.assertEqual(posted, players)
+        self.assertEqual(
+            publish.assemble_nba_player_rows([{"id": row_id, "data": chunk} for row_id, chunk in rows]),
+            players,
+        )
+
+    def test_legacy_single_row_and_incomplete_chunks(self):
+        legacy = [{"athleteId": "1"}]
+        self.assertEqual(publish.assemble_nba_player_rows([{"id": 1, "data": legacy}]), legacy)
+        self.assertIsNone(publish.assemble_nba_player_rows([
+            {"id": 1, "data": {"nbaPlayerChunks": 2}},
+            {"id": 2, "data": [{"athleteId": "1"}]},
+        ]))
+
+
 class PublishRetryTests(unittest.TestCase):
     def test_retries_statement_timeout_then_succeeds(self):
         session = FakeSession([STATEMENT_TIMEOUT, FakeResponse(201, "")])

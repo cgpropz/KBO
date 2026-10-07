@@ -8,7 +8,7 @@ import {
   nbaAllowed,
   sportAccess as serverAccess,
 } from '../api/_dataAccess.js'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
+import { assembleNbaPlayerRows, handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
 import {
   NBA_OWNER_EMAIL as CLIENT_EMAIL,
   canSeeNba,
@@ -82,6 +82,38 @@ test('nbaAccessDecision fails closed on auth, email, flag, and tier lookup error
   assert.equal(nbaAccessDecision({
     emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: true,
   }), 'preview')
+})
+
+test('nba_players chunks join in order and a single row stays as stored', () => {
+  const legacy = assembleNbaPlayerRows(
+    { data: [{ athleteId: '1', gameLogs: [{ pts: 9 }] }], updated_at: '2026-10-06T00:00:00Z' },
+    [],
+  )
+  assert.equal(legacy.data.length, 1)
+  assert.equal(legacy.data[0].gameLogs[0].pts, 9)
+
+  const joined = assembleNbaPlayerRows(
+    { data: { nbaPlayerChunks: 2 }, updated_at: '2026-10-07T00:00:00Z' },
+    [
+      { id: 3, data: [{ athleteId: 'b' }], updated_at: '2026-10-07T01:00:00Z' },
+      { id: 2, data: [{ athleteId: 'a' }], updated_at: '2026-10-07T00:30:00Z' },
+    ],
+  )
+  assert.deepEqual(joined.data.map((player) => player.athleteId), ['a', 'b'])
+  assert.equal(joined.updated_at, '2026-10-07T01:00:00Z')
+
+  const listed = assembleNbaPlayerRows(
+    { data: { nbaPlayerChunks: [30, 20] }, updated_at: '2026-10-07T00:00:00Z' },
+    [
+      { id: 20, data: [{ athleteId: 'second' }], updated_at: '2026-10-07T00:00:00Z' },
+      { id: 30, data: [{ athleteId: 'first' }], updated_at: '2026-10-07T00:00:00Z' },
+    ],
+  )
+  assert.deepEqual(listed.data.map((player) => player.athleteId), ['first', 'second'])
+  assert.throws(
+    () => assembleNbaPlayerRows({ data: { nbaPlayerChunks: 2 }, updated_at: null }, []),
+    /missing chunk/,
+  )
 })
 
 test('the hub treats only the owner email as able to see NBA', () => {
