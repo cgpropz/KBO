@@ -9,7 +9,7 @@ const TEAM_LOGOS = {
 }
 
 function identityLine(model) {
-  return [model.team, model.handLabel, model.starts != null ? `${model.starts} starts` : null]
+  return [model.team, model.starts != null ? `${model.starts} starts` : null]
     .filter(Boolean)
     .join(' · ')
 }
@@ -69,7 +69,14 @@ export default function PitcherMatchup({
           <div className="kbo-pitcher-matchup-identity">
             {logo && <img src={logo} alt="" />}
             <div>
-              <strong>{model.starterName}</strong>
+              <div className="kbo-pitcher-matchup-name">
+                <strong>{model.starterName}</strong>
+                {model.handLabel ? (
+                  <span className="kbo-hand-badge" title={model.hand === 'L' ? 'Throws left' : 'Throws right'}>{model.handLabel}</span>
+                ) : (
+                  <span className="kbo-hand-badge kbo-hand-badge-unknown">Hand unknown</span>
+                )}
+              </div>
               {meta && <span>{meta}</span>}
             </div>
           </div>

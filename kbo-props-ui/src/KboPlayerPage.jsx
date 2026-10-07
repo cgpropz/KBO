@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import BatterSplits from './BatterSplits'
 import PitcherMatchup from './PitcherMatchup'
 import PlayerOddsTable from './PlayerOddsTable'
+import { batterProfile, battingHandPhrase, projectionRow, resolveBattingHand } from './batterSplits'
 import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 
@@ -104,6 +106,9 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const [leagueFile, setLeagueFile] = useState(null)
   const [seasonRates, setSeasonRates] = useState([])
   const [matchupStatus, setMatchupStatus] = useState('loading')
+  const [handContext, setHandContext] = useState(null)
+  const [batterProjection, setBatterProjection] = useState(null)
+  const [handStatus, setHandStatus] = useState('loading')
   const [selectedStat, setSelectedStat] = useState(null)
   const [selectedRange, setSelectedRange] = useState('l10')
   const [workloadThreshold, setWorkloadThreshold] = useState(null)
@@ -144,6 +149,24 @@ export default function KboPlayerPage({ playerName, onBack }) {
     })
     return () => { active = false }
   }, [player, isPitcher])
+
+  useEffect(() => {
+    if (!player || isPitcher) return undefined
+    let active = true
+    setHandStatus('loading')
+    Promise.all([
+      fetchDataSnapshot('kbo_batter_hand_context.json').catch(() => null),
+      fetchDataSnapshot('batter_projections.json').catch(() => null),
+    ]).then(([handSnap, projectionSnap]) => {
+      if (!active) return
+      const context = handSnap?.data?.batters ? handSnap.data : null
+      const projectionRows = projectionSnap?.data?.projections
+      setHandContext(context)
+      setBatterProjection(projectionRow(Array.isArray(projectionRows) ? projectionRows : [], playerName))
+      setHandStatus(context || (Array.isArray(projectionRows) && projectionRows.length) ? 'ready' : 'error')
+    })
+    return () => { active = false }
+  }, [player, isPitcher, playerName])
   const propRows = useMemo(() => sortProps(player?.props || [], player?.type), [player])
   const currentProp = useMemo(() => propRows.find(p => p.stat === selectedStat) || propRows[0], [propRows, selectedStat])
   const oddsRows = useMemo(
@@ -234,6 +257,9 @@ export default function KboPlayerPage({ playerName, onBack }) {
 
   const toggleFilter = id => setOpenFilter(current => (current === id ? null : id))
   const clearFilters = () => { setWorkloadThreshold(null); setOpenFilter(null) }
+  const platoonProfile = !isPitcher ? batterProfile(handContext, player.name) : null
+  const shownBattingHand = !isPitcher ? resolveBattingHand(player, platoonProfile, batterProjection) : null
+  const battingHandText = battingHandPhrase(shownBattingHand)
 
   return (
     <div className="kbo-lines-page">
@@ -247,6 +273,14 @@ export default function KboPlayerPage({ playerName, onBack }) {
           <div className="kbo-player-title">
             <h1>{player.name}<span>{isPitcher ? 'P' : 'B'}</span></h1>
             <p>
+              {!isPitcher && (
+                <>
+                  <span className={battingHandText ? 'kbo-bats-known' : 'kbo-bats-unknown'}>
+                    {battingHandText || (handStatus === 'loading' ? 'Batting hand…' : 'Batting hand unknown')}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
               {player.team} vs {' '}
               {TEAM_LOGOS[opponentToday] && <img className="kbo-player-opp-logo" src={TEAM_LOGOS[opponentToday]} alt={opponentToday} />}
               {opponentToday || '—'}
@@ -305,6 +339,20 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </button>
           ))}
         </div>
+
+        {!isPitcher && (
+          <BatterSplits
+            games={games}
+            starters={handContext?.starters}
+            getValue={getValue}
+            line={line}
+            season={currentSeason}
+            stat={currentProp.stat}
+            profile={platoonProfile}
+            projection={batterProjection}
+            status={handStatus}
+          />
+        )}
 
         <div className="kbo-chart-filters">
           <span className="kbo-chart-filters-label">Chart Filters</span>
