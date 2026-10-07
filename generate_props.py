@@ -259,7 +259,9 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
 
     return card
 
-def build_batter_card(name, props, batter_logs_by_name, b_proj):
+def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, profiles=None):
+    from batter_hand_context import name_key, starter_key
+
     logs = batter_logs_by_name.get(name, [])
     # Sort by date descending (handles YYYY-MM-DD correctly)
     logs.sort(key=lambda x: _parse_date(x.get("date", "")), reverse=True)
@@ -277,7 +279,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         hbp = g.get("hbp", 0) or 0
         sb = g.get("sb", 0) or 0
         fs = singles * 3 + doubles * 5 + triples * 8 + hr * 10 + r * 2 + rbi * 2 + bb * 2 + hbp * 2 + sb * 2
-        games.append({
+        game = {
             "date": g.get("date", ""),
             "opp": g.get("opponent", ""),
             "season": g.get("season", ""),
@@ -290,7 +292,11 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
             "hrr": g.get("hrr", 0),
             "tb": g.get("tb", 0),
             "fs": fs,
-        })
+        }
+        opp_hand = starters.get(starter_key(game["date"], game["opp"])) if starters else None
+        if opp_hand in ("L", "R"):
+            game["opp_hand"] = opp_hand
+        games.append(game)
 
     card = {
         "name": name,
@@ -300,6 +306,10 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj):
         "props": [],
         "games": games[:200],  # full multi-season history for the player detail page
     }
+    if profiles:
+        profile = profiles.get(name_key(name)) or {}
+        if profile.get("hand") in ("L", "R", "S"):
+            card["batting_hand"] = profile["hand"]
 
     for p in props:
         stat = p["stat"]
@@ -482,6 +492,15 @@ def main():
             continue
         pitcher_logs_by_name[nm].append(log)
 
+    hand_context = {}
+    try:
+        from batter_hand_context import build_batter_hand_context
+        hand_context = build_batter_hand_context()
+    except Exception as exc:
+        print(f"  ⚠️  Batter hand context unavailable: {exc}")
+    starter_hands = hand_context.get("starters") or {}
+    batter_profiles = hand_context.get("batters") or {}
+
     # Index batter logs by name
     batter_logs_by_name = defaultdict(list)
     for s in batter_data.get("stats", []):
@@ -573,7 +592,14 @@ def main():
             else:
                 log_name = player_name
             batter_props = [p for p in props if p["stat"] in ("Hits+Runs+RBIs", "Total Bases", "Hitter Fantasy Score")]
-            card = build_batter_card(log_name, batter_props, batter_logs_by_name, b_proj)
+            card = build_batter_card(
+                log_name,
+                batter_props,
+                batter_logs_by_name,
+                b_proj,
+                starters=starter_hands,
+                profiles=batter_profiles,
+            )
             card["name"] = player_name
             cards.append(card)
 

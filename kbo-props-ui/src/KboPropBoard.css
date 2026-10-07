@@ -38,7 +38,9 @@
 .kbo-player-header { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #15302b; }
 .kbo-player-avatar { position: relative; display: grid; flex: 0 0 auto; place-items: center; width: 68px; height: 68px; overflow: hidden; border: 2px solid #1a3c36; border-radius: 50%; background: #143029; font: 800 18px monospace; }
 .kbo-player-avatar-badge { position: absolute; right: -4px; bottom: -4px; width: 26px; height: 26px; padding: 3px; border: 2px solid #06100f; border-radius: 50%; background: #0a1615; object-fit: contain; }
-.kbo-player-title { flex: 1 1 auto; min-width: 0; }.kbo-player-title h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: clamp(20px, 3vw, 28px); line-height: 1.1; letter-spacing: -.01em; }.kbo-player-title h1 span { padding: 3px 7px; border: 1px solid #1a3c36; border-radius: 4px; color: #54e0bf; font: 800 11px monospace; }.kbo-player-title p { display: flex; align-items: center; gap: 5px; margin: 6px 0 0; color: #78918a; font: 11px monospace; letter-spacing: .05em; text-transform: uppercase; }
+.kbo-player-title { flex: 1 1 auto; min-width: 0; }.kbo-player-title h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: clamp(20px, 3vw, 28px); line-height: 1.1; letter-spacing: -.01em; }.kbo-player-title h1 span { padding: 3px 7px; border: 1px solid #1a3c36; border-radius: 4px; color: #54e0bf; font: 800 11px monospace; }.kbo-player-title p { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; color: #78918a; font: 11px monospace; letter-spacing: .05em; text-transform: uppercase; }
+.kbo-bats-known { color: #54e0bf; font-weight: 800; }
+.kbo-bats-unknown { color: #8aa39c; font-weight: 800; }
 .kbo-player-opp-logo { width: 15px; height: 15px; object-fit: contain; }
 .kbo-player-prop-pill { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; padding: 10px 16px; border: 1px solid #1e3f38; border-radius: 10px; background: linear-gradient(180deg, #0c1a17, #0a1614); font: 800 13px monospace; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }.kbo-player-prop-pill b { padding: 4px 8px; border-radius: 5px; background: rgba(255,255,255,.04); font-size: 12px; }
 .kbo-player-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #15302b; }.kbo-player-tabs button { border: 1px solid #1a3c36; padding: 8px 13px; border-radius: 999px; color: #8ba39c; background: #0a1615; font: 800 11px monospace; letter-spacing: .02em; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }.kbo-player-tabs button:hover { color: #e8f4e6; border-color: #2a5148; }.kbo-player-tabs button.active { color: #06100f; background: #7fff68; border-color: #7fff68; }
@@ -67,7 +69,10 @@
 .kbo-pitcher-matchup-empty span, .kbo-pitcher-matchup-identity span { color: #6b8781; font: 11px/1.4 monospace; }
 .kbo-pitcher-matchup-identity img { width: 32px; height: 32px; flex: 0 0 auto; object-fit: contain; }
 .kbo-pitcher-matchup-identity div { min-width: 0; }
-.kbo-pitcher-matchup-identity strong { display: block; overflow: hidden; color: #e8f4e6; font: 800 16px/1.2 monospace; text-overflow: ellipsis; }
+.kbo-pitcher-matchup-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.kbo-pitcher-matchup-identity strong { display: block; overflow: hidden; color: #e8f4e6; font: 800 16px/1.2 monospace; text-overflow: ellipsis; white-space: nowrap; }
+.kbo-hand-badge { flex: 0 0 auto; padding: 3px 7px; border: 1px solid #2a5148; border-radius: 4px; color: #54e0bf; background: #0f231f; font: 800 11px/1 monospace; letter-spacing: .04em; }
+.kbo-hand-badge-unknown { color: #8aa39c; border-style: dashed; background: transparent; }
 .kbo-pitcher-matchup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; min-width: 0; }
 .kbo-pitcher-matchup-card { min-width: 0; padding: 14px 8px 12px; border: 1px solid #15302b; border-radius: 10px; background: #0a1615; text-align: center; }
 .kbo-pitcher-matchup-card small { display: flex; align-items: flex-end; justify-content: center; min-height: 2.4em; margin-bottom: 8px; color: #6b8781; font: 9px/1.3 monospace; letter-spacing: .06em; text-transform: uppercase; }
@@ -76,8 +81,21 @@
 .kbo-pitcher-matchup-card.easy strong { color: #7fff68; }
 .kbo-pitcher-matchup-card.tough strong { color: #ff7b79; }
 .kbo-pitcher-matchup-card.neutral strong { color: #d5e0db; }
+.kbo-splits { min-width: 0; margin: 0 0 18px; }
+.kbo-splits-head { margin-bottom: 10px; }
+.kbo-splits-head h2 { margin: 0 0 8px; color: #e8f4e6; font: 800 22px/1.1 monospace; letter-spacing: -.02em; }
+.kbo-splits-head p { display: block; margin: 0; padding: 8px 10px; border: 1px solid #2a5148; border-radius: 8px; color: #f4fff1; background: rgba(6, 16, 15, 0.94); font: 700 13px/1.45 monospace; letter-spacing: 0; text-transform: none; }
+.kbo-splits-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.kbo-splits-card { min-width: 0; padding: 14px 12px 12px; border: 1px solid #15302b; border-radius: 10px; background: #0a1615; text-align: center; }
+.kbo-splits-card small { display: block; margin-bottom: 8px; color: #6b8781; font: 10px monospace; letter-spacing: .08em; text-transform: uppercase; }
+.kbo-splits-card strong { display: block; color: #e8f4e6; font: 800 28px/1 monospace; letter-spacing: -.02em; }
+.kbo-splits-card span, .kbo-splits-empty { display: block; margin-top: 6px; color: #b7cac3; font: 12px/1.4 monospace; }
+.kbo-splits-empty { margin: 4px 0 8px; color: #8aa39c; }
+.kbo-splits-season { color: #6b8781 !important; font-size: 11px !important; }
 @media (max-width: 760px) {
-  .kbo-pitcher-matchup-head h2 { font-size: 18px; }
+  .kbo-pitcher-matchup-head h2, .kbo-splits-head h2 { font-size: 18px; }
   .kbo-pitcher-matchup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kbo-pitcher-matchup-card strong { font-size: 18px; }
+  .kbo-splits-grid { grid-template-columns: 1fr; }
+  .kbo-splits-card strong { font-size: 24px; }
 }

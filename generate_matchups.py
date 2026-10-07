@@ -922,6 +922,11 @@ def write_pitching_reference_files(logs=None):
     with open(SEASON_RATES_PATH, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
         handle.write("\n")
+    try:
+        import batter_hand_context
+        batter_hand_context.write_batter_hand_context()
+    except Exception as exc:
+        print(f"Batter hand context write warning: {exc}")
     return league, payload
 
 
