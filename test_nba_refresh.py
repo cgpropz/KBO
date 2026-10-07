@@ -139,6 +139,41 @@ class SnapshotJsonTests(unittest.TestCase):
         encoded = json.dumps(players, allow_nan=False)
         self.assertNotIn("NaN", encoded)
 
+    def test_game_log_keeps_the_box_score_stats_the_chart_needs(self):
+        logs = pd.DataFrame([{
+            "Athlete ID": "1",
+            "Game Date": "12/16/2025",
+            "Team": "ATL",
+            "Match Up": "ATL vs. BOS",
+            "W/L": "W",
+            "MIN": 30,
+            "PTS": 10,
+            "REB": 8,
+            "AST": 1,
+            "FGM": 4,
+            "FGA": 9,
+            "3PM": 1,
+            "3PA": 3,
+            "FTM": 1,
+            "FTA": 2,
+            "OREB": 3,
+            "DREB": 5,
+            "STL": 1,
+            "BLK": 2,
+            "TOV": 1,
+            "Position": "C",
+        }])
+        roster = [{"id": "1", "displayName": "Chart Stats", "_team": "ATL", "headshot": {}, "age": "", "displayHeight": "", "displayWeight": "", "college": ""}]
+        players = nba.build_player_snapshot(roster, {}, logs, {"ATL": {"fullName": "Atlanta Hawks", "color": "#e03a3e"}})
+        game = players[0]["gameLogs"][0]
+        self.assertEqual(game["fgm"], 4)
+        self.assertEqual(game["fga"], 9)
+        self.assertEqual(game["fg3a"], 3)
+        self.assertEqual(game["ftm"], 1)
+        self.assertEqual(game["fta"], 2)
+        self.assertEqual(game["oreb"], 3)
+        self.assertEqual(game["dreb"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()

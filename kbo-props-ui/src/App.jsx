@@ -140,6 +140,7 @@ function App() {
         sport={visibleSport}
         setSport={setSport}
         onNavigateHome={() => setView('hub')}
+        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
     );
   } else if (visibleSport === 'nfl') {

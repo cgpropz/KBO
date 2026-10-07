@@ -182,7 +182,22 @@ class LogWindowTests(unittest.TestCase):
         self.assertEqual(filled["projectionStatus"], "pending")
         self.assertIsNone(filled["ppAllProps"][0]["projection"])
         self.assertIsNone(filled["ppAllProps"][0]["rating"])
+        self.assertIsNone(filled["ppAllProps"][0]["l10Values"])
         self.assertIsNone(filled["avgMins"])
+
+    def test_l10_chart_uses_the_same_games_as_the_hit_rate(self):
+        games = [counting_game(30, 10, oreb=index) for index in range(12, 0, -1)]
+        player = {
+            "athleteId": "4",
+            "name": "Rebounder",
+            "position": "C",
+            "dvpOpponent": "BOS",
+            "ppAllProps": [{"stat": "Offensive Rebounds", "line": 5.5, "opponent": "BOS"}],
+        }
+        filled = proj.apply_player(player, games, {"C": {}}, {"C": {}}, "C", "roster")
+        prop = filled["ppAllProps"][0]
+        self.assertEqual(prop["l10Values"], [12, 11, 10, 9, 8, 7, 6, 5, 4, 3])
+        self.assertEqual(prop["hitRates"]["L10"], 70.0)
 
     def test_one_qualifying_game_still_projects(self):
         games = [counting_game(20, 10)]

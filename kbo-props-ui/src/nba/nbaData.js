@@ -13,9 +13,13 @@ const FILE_TO_DATASET = {
   'nba/projections_goblin.json': 'nba_projections_goblin',
 }
 
-export async function fetchNbaData(path) {
+export async function fetchNbaSnapshot(path) {
   const ds = FILE_TO_DATASET[path]
   if (!ds) throw new Error(`Unknown NBA data file: ${path}`)
-  const snapshot = await fetchApiDataset(ds, { devStaticPath: path })
+  return fetchApiDataset(ds, { devStaticPath: path })
+}
+
+export async function fetchNbaData(path) {
+  const snapshot = await fetchNbaSnapshot(path)
   return snapshot.data
 }

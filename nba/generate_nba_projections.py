@@ -322,6 +322,27 @@ def edge_rating(projection, line):
     return to_fixed((projection_n / line_n) * 50, 1)
 
 
+def l10_values(games: list[dict], label: str) -> list | None:
+    """Newest-first values for the same 10 games the L10 hit rate uses.
+
+    The roster file omits field goals, free throws, and offensive/defensive
+    rebounds. Saving the series here lets the chart draw for every prop that
+    has a hit rate, from the box score that already produced that rate.
+    """
+    if stat_value({}, label) is None:
+        return None
+    window = games[:10]
+    if not window:
+        return None
+    values = []
+    for game in window:
+        value = stat_value(game, label)
+        if value is None:
+            return None
+        values.append(value)
+    return values
+
+
 def hit_rate(games: list[dict], label: str, line, n: int | None) -> float | None:
     if stat_value({}, label) is None:
         return None
@@ -601,10 +622,12 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
             }
             rank_map = ranks_for(slot, opponent, dvp_ranks)
             filled["effectiveDvpRank"] = effective_dvp_rank(label, rank_map)
+            filled["l10Values"] = l10_values(qualifying, label)
             any_projection = True
         else:
             filled["hitRates"] = {"L5": None, "L10": None, "L15": None, "FULL": None}
             filled["effectiveDvpRank"] = None
+            filled["l10Values"] = None
         props.append(filled)
     updated["ppAllProps"] = props
     sample = None
