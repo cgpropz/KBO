@@ -24,10 +24,10 @@ export const DEFAULT_FILTERS = {
   lineMax: '',
 }
 
-// Counting stats the roster game log actually stores (refresh_nba_data.py).
-// Offensive/defensive rebounds, field goals, and free throws are in the box
-// score file used to build projections, but they are not copied onto
-// players.json, so those props fall back to the stored hit rates.
+// Counting stats on the roster game log. Field goals, free throws, and
+// offensive/defensive rebounds are copied from the same box score that builds
+// the hit rate. Older roster files omit them; those props chart from l10Values
+// saved next to the hit rate.
 const LOG_FIELDS = {
   Points: ['pts'],
   Rebounds: ['reb'],
@@ -158,6 +158,26 @@ export function computeRate(games, label, line) {
   return { hits, total: counted, pct: (hits / counted) * 100 }
 }
 
+function rateFromSeries(values, line) {
+  const numericLine = num(line)
+  if (!values?.length || numericLine == null) return null
+  let hits = 0
+  values.forEach((value) => {
+    if (value > numericLine) hits += 1
+  })
+  return { hits, total: values.length, pct: (hits / values.length) * 100 }
+}
+
+// Newest-first series saved with the hit rate. Empty when the snapshot is
+// from before that series was stored, or the stat is not in the box score.
+export function storedL10Values(prop) {
+  const values = prop?.l10Values
+  if (!Array.isArray(values) || !values.length) return null
+  const numeric = values.map((value) => Number(value))
+  if (numeric.some((value) => !Number.isFinite(value))) return null
+  return numeric
+}
+
 export function computeH2H(games, label, line, opponent) {
   const target = String(opponent || '').trim().toUpperCase()
   if (!target) return null
@@ -247,12 +267,19 @@ export function buildPropRows(projections, players) {
 
       const recentGames = logsSupport(logs, prop.stat) ? logs : []
       const l10Games = recentGames.slice(0, 10)
-      const l10Obj = computeRate(l10Games, prop.stat, line)
+      let l10Obj = computeRate(l10Games, prop.stat, line)
       const seasonObj = computeRate(recentGames, prop.stat, line)
       const h2hObj = computeH2H(recentGames, prop.stat, line, prop.opponent ?? null)
-      const recent = l10Obj
+      let recent = l10Obj
         ? l10Games.map((game) => statValue(game, prop.stat)).filter((value) => value != null).reverse()
         : []
+      if (!recent.length) {
+        const series = storedL10Values(prop)
+        if (series) {
+          l10Obj = rateFromSeries(series, line)
+          recent = series.slice().reverse()
+        }
+      }
       const storedL10 = percent(prop.hitRates?.L10)
       const storedSeason = percent(prop.hitRates?.FULL)
       const gamesPlayed = l10Obj

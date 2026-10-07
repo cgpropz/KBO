@@ -76,7 +76,7 @@ test('board rows use the roster log for the chart and skip lines with no project
   assert.equal(dvpGrade(row.dvpRank), 'A')
 })
 
-test('missing box-score fields fall back to the stored hit rate instead of a fake zero', () => {
+test('offensive rebounds chart from the saved last-10 when the roster log dropped them', () => {
   const projections = [{
     name: 'Clint Capela',
     team: 'ATL',
@@ -89,6 +89,7 @@ test('missing box-score fields fall back to the stored hit rate instead of a fak
       opponent: 'NY',
       effectiveDvpRank: 4,
       hitRates: { L10: 62.4, FULL: 55 },
+      l10Values: [5, 4, 2, 6, 1, 3, 4, 0],
     }],
   }]
   const players = [{
@@ -99,11 +100,38 @@ test('missing box-score fields fall back to the stored hit rate instead of a fak
     gameLogs: [game(10, { matchup: 'ATL @ NY' })],
   }]
   const [row] = buildPropRows(projections, players)
-  assert.deepEqual(row.recent, [])
-  assert.equal(row.hitRate, 62)
+  assert.deepEqual(row.recent, [0, 4, 3, 1, 6, 2, 4, 5])
+  assert.equal(row.hitRate, 50)
   assert.equal(row.seasonHitRate, 55)
   assert.equal(row.h2hHitRate, null)
   assert.equal(row.gamesPlayed, 8)
+})
+
+test('a roster log that kept offensive rebounds charts those games', () => {
+  const projections = [{
+    name: 'Clint Capela',
+    team: 'ATL',
+    position: 'C',
+    ppAllProps: [{
+      stat: 'Offensive Rebounds',
+      line: 2.5,
+      projection: 3,
+      opponent: 'BOS',
+      l10Values: [9, 9],
+    }],
+  }]
+  const players = [{
+    name: 'Clint Capela',
+    team: 'ATL',
+    gameLogs: [
+      { ...game(10, { matchup: 'ATL vs. BOS' }), oreb: 4 },
+      { ...game(8, { matchup: 'ATL @ NY' }), oreb: 1 },
+    ],
+  }]
+  const [row] = buildPropRows(projections, players)
+  assert.deepEqual(row.recent, [1, 4])
+  assert.equal(row.hitRate, 50)
+  assert.equal(row.h2hHitRate, 100)
 })
 
 test('filters keep one prop type and sort by last-10 hit rate', () => {
