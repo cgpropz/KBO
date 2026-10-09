@@ -2,11 +2,24 @@ name: Refresh NHL PrizePicks Board
 
 # Schedule runs only on the default branch, and the job also refuses any
 # other ref. A pull request cannot publish NHL snapshots.
+#
+# A merge that adds or changes the NHL board used to wait on the next cron.
+# GitHub often skips the first tick of a brand-new schedule, so the push that
+# lands the code publishes the PrizePicks board itself. The site reads
+# Supabase, not git.
 
 on:
   schedule:
     - cron: "19,49 * * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "nhl/**"
+      - ".github/workflows/nhl-refresh.yml"
+      - "kbo-props-ui/src/nhl/**"
+      - "pipeline/memory/grade_nhl_day.py"
 
 permissions:
   contents: write
