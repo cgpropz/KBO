@@ -1,7 +1,9 @@
 """Offline checks for the NHL formulas. No network."""
 import math
 import unittest
+from pathlib import Path
 
+from nhl.build_board import _history_for, _index_players, _line_label, build_lineups
 from nhl.closers import posted_half, saves_line
 from nhl.model import (
     adjust_pp_seconds,
@@ -79,6 +81,110 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(adjust_pp_seconds(60, None), 60)
         self.assertGreaterEqual(adjust_pp_seconds(60, "pp1"), 150)
         self.assertEqual(adjust_pp_seconds(100, "none"), 5)
+
+    def test_traded_goalie_keeps_starts_from_the_old_team(self):
+        # Clay Stevenson has one Winnipeg game and four Washington games.
+        # The same picker is what skaters use.
+        rows = []
+        for index, team in enumerate(("WSH", "WSH", "WSH", "WSH", "WPG")):
+            rows.append({
+                "player_id": 7,
+                "name": "Clay Stevenson",
+                "team": team,
+                "date": f"20260{index + 1}01",
+                "game_id": index,
+                "sa": 30,
+                "ga": 3,
+                "xga": 2.8,
+                "toi": 3600,
+                "saves": 27,
+            })
+        rows.append({
+            "player_id": 8,
+            "name": "Clay Stevenson",
+            "team": "OTT",
+            "date": "20260901",
+            "game_id": 99,
+            "sa": 20,
+            "saves": 18,
+        })
+        history = _history_for(_index_players(rows), "Clay Stevenson", "WPG")
+        self.assertEqual([row["team"] for row in history], ["WSH", "WSH", "WSH", "WSH", "WPG"])
+        self.assertIsNotNone(project_saves(
+            history, team_sa_per_game=30, opponent_sf_per_game=30,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=True,
+        ))
+
+    def test_lineups_label_a_projection_and_a_real_last_game(self):
+        games = [{
+            "date": "2026-10-10",
+            "start": "2026-10-10T23:00:00Z",
+            "away": "BOS",
+            "home": "PHI",
+            "state": "FUT",
+        }]
+        lines = {
+            "BOS": {
+                "source": "projected",
+                "players": [{
+                    "name": "Morgan Geekie",
+                    "position": "F",
+                    "group": "f1",
+                    "category": "ev",
+                    "injury": None,
+                }],
+            },
+            "PHI": {
+                "source": "last_game",
+                "gameDate": "2026-10-08",
+                "players": [{
+                    "name": "Travis Konecny",
+                    "position": "F",
+                    "group": "f",
+                    "category": "last_game",
+                    "injury": None,
+                }],
+            },
+        }
+        card = build_lineups(games, {}, lines)[0]
+        self.assertEqual(card["lineLabels"]["BOS"], "PROJECTED")
+        self.assertEqual(card["lineLabels"]["PHI"], "LAST GAME 10/08")
+        self.assertEqual(card["lineups"]["BOS"][0]["name"], "Morgan Geekie")
+        self.assertEqual(card["lineups"]["PHI"][0]["name"], "Travis Konecny")
+        self.assertEqual(_line_label({}), "NOT POSTED")
+        self.assertEqual(_line_label({"source": "projected", "players": []}), "NOT POSTED")
+
+    def test_a_confirmed_goalie_already_on_the_lines_is_not_repeated(self):
+        games = [{
+            "date": "2026-10-09",
+            "start": "2026-10-10T00:00:00Z",
+            "away": "ANA",
+            "home": "WPG",
+            "state": "FUT",
+        }]
+        lines = {
+            "WPG": {
+                "source": "projected",
+                "players": [
+                    {"name": "Kyle Connor", "position": "F", "group": "f1", "category": "ev", "injury": None},
+                    {"name": "Clay Stevenson", "position": "G", "group": "g", "category": "ev", "injury": None},
+                ],
+            },
+        }
+        goalies = {"WPG": {"name": "Clay Stevenson", "confirmed": True}}
+        shown = build_lineups(games, goalies, lines)[0]["lineups"]["WPG"]
+        stevenson = [player for player in shown if player["name"] == "Clay Stevenson"]
+        self.assertEqual(len(stevenson), 1)
+        self.assertEqual(stevenson[0]["status"], "CONFIRMED")
+
+    def test_refresh_workflow_requeues_itself_on_main(self):
+        text = (Path(__file__).resolve().parent / ".github/workflows/nhl-refresh.yml").read_text(encoding="utf-8")
+        self.assertIn('cron: "19,49 * * * *"', text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertIn("actions: write", text)
+        self.assertIn("gh workflow run nhl-refresh.yml --ref main", text)
+        self.assertIn("NHL_REFRESH_WAIT_SECONDS", text)
+        self.assertIn("github.ref == 'refs/heads/main'", text)
 
     def test_unabated_labels_do_not_leak_hidden_props(self):
         self.assertEqual(prop_from_label("Shots on Goal", 86), "Shots On Goal")

@@ -141,7 +141,7 @@
   background: #ff7b79;
 }
 
-.nhl-probable, .nhl-confirmed {
+.nhl-probable, .nhl-confirmed, .nhl-projected, .nhl-last-game, .nhl-unposted {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 5px;
@@ -152,6 +152,8 @@
 }
 .nhl-probable { color: #2c2100; background: #f1c85b; }
 .nhl-confirmed { color: #06210f; background: #7fff68; }
+.nhl-projected { color: #071018; background: #8ecfff; }
+.nhl-last-game, .nhl-unposted { color: #e7eef8; background: #1c3a52; }
 .nhl-odds {
   margin-left: 6px;
   color: #9ad7ff;
