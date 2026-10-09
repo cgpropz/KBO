@@ -1,10 +1,12 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useAuth } from './AuthContext';
-import { canSeeNhl, nhlDevBypass } from './entitlements';
+import { nhlDevBypass } from './entitlements';
 import { supabase } from './supabaseClient';
 
-// Same shape as useNbaOpen. The owner email is full immediately. Logged-out
-// visitors stay closed. Other accounts ask /api/nhl-access.
+// The browser does not decide. Every signed-in account, including the admin
+// email, asks /api/nhl-access and stays closed until that says open. That
+// endpoint reads the email from the Supabase session. Logged-out visitors
+// stay closed and do not call it.
 // A dev server with ?nhl=1 opens the tab for screenshots. Production builds
 // compile DEV to false, so that query cannot open the live site.
 const listeners = new Set();
@@ -55,9 +57,8 @@ async function resolveRemote(key, id) {
 
 export function useNhlOpen() {
   const { user, loading } = useAuth();
-  const owner = canSeeNhl(user);
   const dev = devOpen();
-  const key = loading ? '' : dev ? 'dev' : owner ? 'owner' : !user ? 'anon' : `user:${user.id || ''}`;
+  const key = loading ? '' : dev ? 'dev' : !user ? 'anon' : `user:${user.id || ''}`;
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function useNhlOpen() {
   }, [key]);
 
   if (!key) return { open: false, ready: false };
-  if (key === 'dev' || key === 'owner') return { open: true, ready: true };
+  if (key === 'dev') return { open: true, ready: true };
   if (key === 'anon') return { open: false, ready: true };
   if (snap.key !== key) return { open: false, ready: false };
   return { open: snap.open === true, ready: snap.ready === true };

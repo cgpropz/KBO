@@ -1,13 +1,10 @@
 -- NHL visibility switch.
 -- Run once in the Supabase SQL editor. Nothing in the repo applies this file.
 --
--- While nhl_public is false, /api/data denies every NHL dataset except
--- cgpropz@gmail.com. A missing row fails closed the same way.
---
--- Do not flip this for an October 13 launch. The 2025-26 backtest did not pass.
---
--- Unlock later, only after a backtest pass:
---   update public.app_flags set value = true where key = 'nhl_public';
+-- NHL stays locked for every account except cgpropz@gmail.com.
+-- The API reads that email from the Supabase session. A paid tier does not
+-- qualify, and setting nhl_public to true does not open the tab.
+-- A missing row fails closed the same way. Leave the flag false.
 
 begin;
 

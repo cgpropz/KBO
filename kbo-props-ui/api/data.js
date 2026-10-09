@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import {
   DATASETS,
   NBA_PUBLIC_FLAG,
-  NHL_PUBLIC_FLAG,
   isNbaDataset,
   isNhlDataset,
   nbaAccessDecision,
@@ -342,22 +341,6 @@ export async function nbaSectionOpen(req, client) {
   }) === 'full';
 }
 
-const NHL_FLAG_CACHE_KEY = `app_flags:${NHL_PUBLIC_FLAG}`;
-
-export async function readNhlPublicFlag(client) {
-  const hit = cache.get(NHL_FLAG_CACHE_KEY);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
-  const { data, error } = await client
-    .from('app_flags')
-    .select('value')
-    .eq('key', NHL_PUBLIC_FLAG)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const value = data?.value === true;
-  cache.set(NHL_FLAG_CACHE_KEY, { at: Date.now(), value });
-  return value;
-}
-
 async function handleNhlRequest(req, res, client, ds) {
   let caller;
   try {
@@ -369,30 +352,13 @@ async function handleNhlRequest(req, res, client, ds) {
   } catch {
     return forbid(res);
   }
-  if (caller.emailResolved !== true) return forbid(res);
-
-  let nhlPublic = false;
-  let flagResolved = false;
-  try {
-    nhlPublic = await withTimeout(
-      readNhlPublicFlag(client),
-      timeouts.tierLookupMs,
-      'NHL flag lookup timed out'
-    );
-    flagResolved = true;
-  } catch {
-    flagResolved = false;
-  }
-
+  // The email on this object came from Supabase auth.getUser. A paid tier
+  // and the nhl_public flag are not consulted.
   const decision = nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
-    tierResolved: caller.tierResolved,
-    tier: caller.tier,
-    flagResolved,
-    nhlPublic,
   });
-  if (decision === 'deny') return forbid(res);
+  if (decision !== 'full') return forbid(res);
 
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
@@ -415,14 +381,11 @@ async function handleNhlRequest(req, res, client, ds) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
-  const shaped = decision === 'full'
-    ? { data: row.data, preview: false, lockedCount: 0 }
-    : shapeForTier(ds, row.data, 'free');
   return res.status(200).json({
-    data: shaped.data,
+    data: row.data,
     updatedAt: row.updated_at || null,
-    preview: shaped.preview,
-    lockedCount: shaped.lockedCount,
+    preview: false,
+    lockedCount: 0,
     tier: caller.tier,
     access: sportAccess(caller.tier),
   });
@@ -439,22 +402,9 @@ export async function nhlSectionOpen(req, client) {
   } catch {
     return false;
   }
-  if (caller.emailResolved !== true) return false;
-  let nhlPublic = false;
-  let flagResolved = false;
-  try {
-    nhlPublic = await withTimeout(readNhlPublicFlag(client), timeouts.tierLookupMs, 'NHL flag lookup timed out');
-    flagResolved = true;
-  } catch {
-    flagResolved = false;
-  }
   return nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
-    tierResolved: caller.tierResolved,
-    tier: caller.tier,
-    flagResolved,
-    nhlPublic,
   }) === 'full';
 }
 

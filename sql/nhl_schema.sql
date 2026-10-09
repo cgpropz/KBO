@@ -1,6 +1,6 @@
 -- NHL PrizePicks board, lineups, and Unabated odds. Run this in the Supabase
 -- SQL editor before the first nhl/ publish. The repo does not apply it, and
--- it does not turn on nhl_public.
+-- it does not turn on nhl_public. That flag does not grant NHL access.
 --
 -- After the tables exist, publish with:
 --   PUBLISH_ONLY_PREFIX=nhl/ python publish_supabase.py

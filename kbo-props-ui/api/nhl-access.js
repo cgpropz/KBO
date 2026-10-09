@@ -3,9 +3,9 @@ import { getDataClient, nhlSectionOpen } from './data.js';
 /**
  * GET /api/nhl-access
  *
- * { open: true } only when the caller would get full NHL access (owner email,
- * or an all-access tier once nhl_public is true). Preview and any lookup
- * failure are { open: false }. No email, tier, flag, or dataset payload.
+ * { open: true } only for the admin account, identified from the Supabase
+ * session. Paid members and everyone else get { open: false }. No email,
+ * tier, flag, or dataset payload.
  */
 export async function handleNhlAccessRequest(req, res, client) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
