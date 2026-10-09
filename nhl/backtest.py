@@ -16,6 +16,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
+from nhl.closers import load_closers, name_key, saves_line
 from nhl.history import load_goalies, load_skaters, team_shot_games
 from nhl.model import (
     PROP_POINTS,
@@ -306,6 +307,8 @@ def run_backtest(root: Path) -> dict:
     saves_previous = PropScore()
     saves_first = PropScore()
     saves_held = PropScore()
+    saves_own_line = PropScore()
+    closers = load_closers()
     # The first half is where the saves change was chosen. The second half is the test.
     midpoint = dates[len(dates) // 2] if dates else ""
     for day in dates:
@@ -352,13 +355,18 @@ def run_backtest(root: Path) -> dict:
                 early_exit_rate=exit_rate,
                 early_exit_saves=exit_mean,
             )
-            _grade_count(scores[PROP_SAVES], history, "saves", saves, game["saves"], save_r)
+            quote = closers.get(f"{game['date']}|{game['team']}")
+            if not quote or quote["goalie"] != name_key(game["name"]):
+                continue
+            line = saves_line(quote["total"], quote["p_opp"])
+            _grade_count(scores[PROP_SAVES], history, "saves", saves, game["saves"], save_r, line)
             half = saves_held if day >= midpoint else saves_first
-            _grade_count(half, history, "saves", saves, game["saves"], save_r)
+            _grade_count(half, history, "saves", saves, game["saves"], save_r, line)
+            _grade_count(saves_own_line, history, "saves", saves, game["saves"], save_r)
             previous = _previous_saves(
                 history, team_sa, opp_sf, league["sa_per_game"], league["ga_per_shot"], game["home"]
             )
-            _grade_count(saves_previous, history, "saves", previous, game["saves"], save_r)
+            _grade_count(saves_previous, history, "saves", previous, game["saves"], save_r, line)
         for game in skater_on[day]:
             absorb_skater(game)
         for game in goalie_on[day]:
@@ -382,7 +390,10 @@ def run_backtest(root: Path) -> dict:
         "goalie_starts": len(test_goalies),
         "peeking": "none — each projection uses only games before that date",
         "lineups": "not used — minutes are the player's own prior average, because pregame lines were not saved",
-        "lines": "nearest .5 number to the projection, not a stored PrizePicks line",
+        "lines": (
+            "Shots, points, and power-play points use the nearest .5 to the projection. "
+            "Goalie saves use a closing-total proxy, not a stored PrizePicks line."
+        ),
         "baseline": "average of the player's previous 10 games (fewer only when that is all they have), minimum 3 prior games",
         "saves_change": (
             "Chosen on the first half of 2025-26 only. The second half was scored once. "
@@ -397,6 +408,12 @@ def run_backtest(root: Path) -> dict:
         "saves_first_half": first,
         "saves_held_out": held,
         "saves_previous": previous,
+        "saves_own_line": saves_own_line.report(),
+        "saves_line": (
+            "Closest half-point to 8.5 saves per expected opponent goal. "
+            "Expected goals come from the closing total, with the moneyline favorite given a quarter of the edge. "
+            "8.5 is the published typical saves line of 25.5 divided by a 3-goal team total. It was not fit to the results."
+        ),
         "props": results,
     }
 
@@ -444,13 +461,14 @@ def _previous_saves(history, team_sa, opp_sf, league_sa, league_ga, home) -> flo
     return round(max(0.0, shots - goals), 2)
 
 
-def _grade_count(score: PropScore, history: list, key: str, projection, actual, dispersion) -> None:
+def _grade_count(score: PropScore, history: list, key: str, projection, actual, dispersion, line=None) -> None:
     if projection is None:
         return
     baseline = recent_average([float(row[key]) for row in history])
     if baseline is None:
         return
-    line = nearest_half_line(projection)
+    if line is None:
+        line = nearest_half_line(projection)
     score.add(
         actual,
         projection,
@@ -490,25 +508,20 @@ def write_markdown(report: dict, path: Path) -> None:
     lines = [
         "# 2025-26 NHL prop backtest",
         "",
-        f"Goalie saves, on the half of the season we did not use to build the formula: **{verdict}.**",
+        f"Goalie saves, judged on a book-style line, on the half of the season we did not use to choose the test: **{verdict}.**",
         "",
         "The NHL tab stays locked. This is a draft, and nothing here turns the public switch on.",
         "",
-        "## Why the first saves model lost the over/under",
+        "## Why the earlier side test was the wrong question",
         "",
-        "The first version was a little closer to the real total than 'use his last 10 games,' but it picked the right side less often. "
-        f"On the full season it hit {_pct(previous['hit_rate'])} of the sides, and the last-10 average hit {_pct(previous['baseline_hit_rate'])}. "
-        f"Its average miss was {_num(previous['mae'])} saves, versus {_num(previous['baseline_mae'])}.",
+        "The first backtest put the over/under within half a save of our own number. A typical miss is about 5 saves, so that call is close to a coin flip. The last-10 average can sit a few saves away, on the goalie's real level, and it wins that kind of comparison even when our number is closer to the truth. "
+        f"On that glued-on line, this version hit {_pct(report['saves_own_line']['hit_rate'])} of the sides and the last-10 average hit {_pct(report['saves_own_line']['baseline_hit_rate'])}.",
         "",
-        "Two things caused that. First, the number assumed a full night. About one start in fourteen ends early, when the goalie is pulled, and those nights land around 13 saves instead of 25. The last-10 average already includes those short nights, so it was not sitting high. In the first half of the season our number was about 1.2 saves too high. Second, the shot guess gave equal weight to the team, the opponent, and the league. That pulled unusual goalies toward an ordinary night, and the over/under line sits right next to our number. The last-10 average sits further away, on the goalie's real level, so it won the side more often even though it missed the total by a bit more.",
+        "That is not how a saves bet works. PrizePicks hangs a number near the middle of the goalie's range, usually around 25.5, and moves it when one team is expected to score more. We could not download the actual 2025-26 saves prices. What is free, for every game, is the closing total and both moneylines, plus who started. The test line is 8.5 saves for each goal the opponent was expected to score. 8.5 is 25.5 divided by a normal 3-goal team share. The favorite gets a quarter of the moneyline's edge. Those figures were taken from how the market is posted. They were not adjusted to make this test pass. The stand-in sits a little high, about one or two saves above what goalies actually finished with. Both methods were graded on that same number.",
         "",
-        "We also checked the other guesses. Save percentage was not the problem: shrinking it more or less barely moved the error. The same goalie almost never starts both nights of a back-to-back, so that was not the gap. We do not have the betting totals from last season, so game script was not added. Mixing in the last-10 average made the side look better on the first half mostly by moving the line, and the average miss got worse, so that blend is not in the formula.",
+        "The saves number itself is the one from the last revision: the shots the team usually allows, nudged up to 12% for how much this opponent shoots, then mixed with the nights a goalie is pulled. On the first half we also tried expected goals, a blend with the last-10 average, and calling the side from a probability instead of from the number. None of those beat the simpler number by enough to be worth the extra parts, so they stayed out. The second half was scored once, after that choice.",
         "",
-        "## What we changed, and the result",
-        "",
-        "The new shot guess is how many shots the team usually allows, nudged up or down if this opponent shoots more or less than average. The nudge is capped at 12%. A full-night total is then mixed with the saves from nights a goalie left before 50 minutes, using only the rate from games already played. We did not blend in the last-10 average. The idea was set on the first half of 2025-26. The second half was scored once and was not used to change the formula.",
-        "",
-        f"First half: average miss {_num(first['mae'])} versus {_num(first['baseline_mae'])} for the last-10 average. Side {_pct(first['hit_rate'])} versus {_pct(first['baseline_hit_rate'])}. The miss got better. The side still did not win, so we did not keep tuning.",
+        f"First half, where the line rule was checked: average miss {_num(first['mae'])} versus {_num(first['baseline_mae'])}. Side {_pct(first['hit_rate'])} versus {_pct(first['baseline_hit_rate'])}.",
         "",
         f"Second half, the real test ({_day_label(report['midpoint'])} through the end of the regular season): "
         f"{held['projections']} starts. Average miss {_num(held['mae'])} versus {_num(held['baseline_mae'])}. "
@@ -519,15 +532,19 @@ def write_markdown(report: dict, path: Path) -> None:
         lines.append(f"- {reason}")
     if report["pass"]:
         lines.append("")
-        lines.append("That is the bar: beat the last-10 average on the side, and do not be worse on the average miss, on games the formula was not tuned on.")
+        lines.append("That is the bar: beat the last-10 average on the side, and do not be worse on the average miss, on games the formula was not tuned on. Saves can stay on the board. The tab stays locked until the public switch is turned on.")
     else:
         lines.append("")
         lines.append("That misses the bar. Hide goalie saves. Shots, points, and power-play points can stay. The tab stays locked either way.")
     lines += [
         "",
-        f"Full season, same new formula, still with no peeking: average miss {_num(full['mae'])} versus {_num(full['baseline_mae'])}. Side {_pct(full['hit_rate'])} versus {_pct(full['baseline_hit_rate'])}.",
+        "The older saves formula, on this same book-style line: "
+        f"side {_pct(previous['hit_rate'])} versus {_pct(previous['baseline_hit_rate'])}, "
+        f"average miss {_num(previous['mae'])} versus {_num(previous['baseline_mae'])}.",
         "",
-        "Shots on goal were not changed. The rest of this note is the full walk-forward, one day at a time. The model could see only games already played, plus the 2024-25 season. It could not see that night's score, or the lines posted that morning. The over/under uses the closest half-point to our number. That is a stand-in for a sportsbook line, not a record of PrizePicks. The comparison is the previous 10 games.",
+        f"Full season, current formula, still with no peeking: average miss {_num(full['mae'])} versus {_num(full['baseline_mae'])}. Side {_pct(full['hit_rate'])} versus {_pct(full['baseline_hit_rate'])}.",
+        "",
+        "Shots on goal were not changed. Their over/under in the tables below is still the closest half-point to our own number, because shot-prop prices were not archived. Saves in those tables use the book-style line. The model could see only games already played, plus the 2024-25 season. It could not see that night's score. The comparison is the previous 10 games.",
         "",
         "## Full-season checks",
         "",

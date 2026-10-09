@@ -2,6 +2,7 @@
 import math
 import unittest
 
+from nhl.closers import posted_half, saves_line
 from nhl.model import (
     adjust_pp_seconds,
     cg_score,
@@ -35,6 +36,12 @@ class ModelTests(unittest.TestCase):
             games, season="20262027", group="F", league={}, opponent_sa60=30,
             league_sa60=30, home=True,
         ))
+
+    def test_a_pickem_six_goal_game_posts_25_5_saves(self):
+        self.assertEqual(saves_line(6, 0.5), 25.5)
+        self.assertEqual(posted_half(25.5), 25.5)
+        self.assertEqual(posted_half(25.0), 25.5)
+        self.assertGreater(saves_line(6, 0.7), saves_line(6, 0.3))
 
     def test_saves_mix_in_early_exits_and_need_three_starts(self):
         games = [{"sa": 30, "ga": 3, "xga": 2.8, "toi": 3600, "saves": 27}] * 2
