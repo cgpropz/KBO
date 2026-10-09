@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import PlayerOddsTable from '../PlayerOddsTable'
 import { rowsFromBookPrices, wnbaOddsRows } from '../playerOdds'
+import {
+  formatMinutes,
+  hitRateForGames,
+  minutesBounds,
+  passesChartFilters,
+  recordedMinutes,
+  resolveMinutesRange,
+} from './chartFilters'
+import MinutesRangeSlider from './components/MinutesRangeSlider'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 
 const PROP_PRIORITY = [
@@ -147,7 +156,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   const [selectedStat, setSelectedStat] = useState(null)
   const [selectedRange, setSelectedRange] = useState('l10')
   const [dvpThreshold, setDvpThreshold] = useState(null)
-  const [minsThreshold, setMinsThreshold] = useState(null)
+  const [minsRange, setMinsRange] = useState(null)
   const [usageThreshold, setUsageThreshold] = useState(null)
   const [openFilter, setOpenFilter] = useState(null)
 
@@ -201,13 +210,24 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
     return () => { active = false }
   }, [])
 
+  // A new player gets a fresh minutes range. The logged minutes differ by player,
+  // so a range saved for someone else would hide the wrong games.
+  const [seededPlayer, setSeededPlayer] = useState(playerName)
+  if (playerName !== seededPlayer) {
+    setSeededPlayer(playerName)
+    setDvpThreshold(null)
+    setMinsRange(null)
+    setUsageThreshold(null)
+    setOpenFilter(null)
+  }
+
   // Chart filters reset to "All" whenever the selected prop changes.
   const [seededStat, setSeededStat] = useState(null)
   if (currentProp && currentProp.stat !== seededStat) {
     setSeededStat(currentProp.stat)
     setSelectedRange('l10')
     setDvpThreshold(null)
-    setMinsThreshold(null)
+    setMinsRange(null)
     setUsageThreshold(null)
     setOpenFilter(null)
   }
@@ -218,9 +238,22 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
     return <div className="wnba-notice">No active PrizePicks lines for {playerName}.</div>
   }
 
-  const games = player.recentGames || []
+  const games = (player.recentGames || []).map(game => ({
+    ...game,
+    defRank: defRankForGame(currentProp.stat, game.opponent, player.position, dvpByPosition),
+  }))
   const getValue = PROP_GAME_VALUE[currentProp.stat]
   const line = currentProp.standardLine ?? currentProp.line
+  const minuteBounds = minutesBounds(games)
+  const minutesSelection = resolveMinutesRange(minuteBounds, minsRange)
+  const filterMinutes = Boolean(minuteBounds)
+  const gamePassesFilters = game => passesChartFilters(game, {
+    filterMinutes,
+    minutesLow: minutesSelection?.low,
+    minutesHigh: minutesSelection?.high,
+    dvpThreshold,
+    usageThreshold,
+  })
   const oddsRows = oddsRecords
     ? wnbaOddsRows(oddsRecords, player.name, currentProp.stat, line)
     : rowsFromBookPrices(currentProp.bookPrices, line)
@@ -242,13 +275,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
     }
   }
 
-  const hitRateFor = range => {
-    if (!getValue || line == null) return { pct: null, games: 0 }
-    const values = rangeGames(range).map(getValue).filter(v => v != null)
-    if (!values.length) return { pct: null, games: 0 }
-    const hits = values.filter(v => v > line).length
-    return { pct: Math.round((hits / values.length) * 100), games: values.length }
-  }
+  const hitRateFor = range => hitRateForGames(rangeGames(range).filter(gamePassesFilters), getValue, line)
 
   const rangeOptions = [
     { id: '2026', label: '2026' },
@@ -261,25 +288,18 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   ].map(opt => ({ ...opt, ...hitRateFor(opt.id) }))
   const currentRange = rangeOptions.find(r => r.id === selectedRange)
 
-  const gamesWithMeta = rangeGames(selectedRange).map(g => ({
-    ...g,
-    value: getValue ? getValue(g) : null,
-    defRank: defRankForGame(currentProp.stat, g.opponent, player.position, dvpByPosition),
-  }))
-
-  const validMins = gamesWithMeta.map(g => g.min).filter(v => v != null)
-  const validUsage = gamesWithMeta.map(g => g.usagePct).filter(v => v != null)
+  const selectedWindow = rangeGames(selectedRange)
+  const matchingWindow = selectedWindow.filter(gamePassesFilters)
+  const validUsage = selectedWindow.map(g => g.usagePct).filter(v => v != null && Number.isFinite(Number(v)))
   const defaultDvpThreshold = currentProp.effectiveDvpFactor ?? Math.round(dvpMax / 2)
-  const defaultMinsThreshold = validMins.length ? Math.round(average(validMins) * 10) / 10 : 0
   const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
+  const missingMinutes = selectedWindow.filter(game => recordedMinutes(game) == null).length
 
   // Oldest -> newest so the chart reads left to right.
-  const filteredGames = [...gamesWithMeta].filter(g => {
-    const passDvp = dvpThreshold == null || (g.defRank != null && g.defRank <= dvpThreshold)
-    const passMins = minsThreshold == null || (g.min != null && g.min >= minsThreshold)
-    const passUsage = usageThreshold == null || (g.usagePct != null && g.usagePct >= usageThreshold)
-    return passDvp && passMins && passUsage
-  }).reverse()
+  const filteredGames = [...matchingWindow].reverse().map(game => ({
+    ...game,
+    value: getValue ? getValue(game) : null,
+  }))
 
   const maxValue = Math.max(line || 0, ...filteredGames.map(g => g.value ?? 0), 1)
   const linePct = line != null ? Math.min(100, (line / maxValue) * 100) : 0
@@ -293,7 +313,14 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   const usageAvg = average(games.slice(0, 10).map(g => g.usagePct))
 
   const toggleFilter = id => setOpenFilter(current => (current === id ? null : id))
-  const clearFilters = () => { setDvpThreshold(null); setMinsThreshold(null); setUsageThreshold(null); setOpenFilter(null) }
+  const clearFilters = () => { setDvpThreshold(null); setMinsRange(null); setUsageThreshold(null); setOpenFilter(null) }
+  const minutesLow = minutesSelection?.low
+  const minutesHigh = minutesSelection?.high
+  const minutesNarrowed = Boolean(minutesSelection && !minutesSelection.full)
+  const setMinutesRange = (low, high) => {
+    if (!minuteBounds || (low <= minuteBounds.min && high >= minuteBounds.max)) setMinsRange(null)
+    else setMinsRange({ low, high })
+  }
 
   return (
     <div className="wnba-propboard">
@@ -324,8 +351,8 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
         <div className="wnba-player-summary">
           <div className="wnba-player-hitrate">
             <small>HIT RATE</small>
-            <strong className={currentRange?.pct != null && currentRange.pct >= 50 ? 'over' : 'under'}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
-            <span>{currentRange?.games ? `(${Math.round((currentRange.pct / 100) * currentRange.games)}/${currentRange.games})` : ''}</span>
+            <strong className={currentRange?.pct == null ? '' : currentRange.pct >= 50 ? 'over' : 'under'}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
+            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games})` : ''}</span>
           </div>
           <div><small>LINE</small><strong>{formatValue(line)}</strong></div>
           <div>
@@ -374,15 +401,6 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             </ChartFilterChip>
           )}
           <ChartFilterChip
-            label="Exp Minutes"
-            valueLabel={minsThreshold == null ? 'All' : `${minsThreshold}`}
-            open={openFilter === 'mins'}
-            onToggle={() => toggleFilter('mins')}
-          >
-            <input type="range" min={0} max={40} step={0.5} value={minsThreshold ?? defaultMinsThreshold} onChange={event => setMinsThreshold(Number(event.target.value))} />
-            <small>Show games with minutes played &ge; {minsThreshold ?? defaultMinsThreshold}</small>
-          </ChartFilterChip>
-          <ChartFilterChip
             label="Usage %"
             valueLabel={usageThreshold == null ? 'All' : `${usageThreshold}`}
             open={openFilter === 'usage'}
@@ -394,13 +412,52 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
           <button className="wnba-chart-filter-more" title="More filters coming soon" disabled>More</button>
         </div>
 
+        <div className={`wnba-minutes-filter${minutesNarrowed ? ' is-narrowed' : ''}`}>
+          <div className="wnba-minutes-filter-head">
+            <span>Minutes played</span>
+            {minuteBounds ? (
+              <b aria-live="polite">
+                {formatMinutes(minutesLow)}–{formatMinutes(minutesHigh)} min · {matchingWindow.length} of {selectedWindow.length} {currentRange?.label || ''} games
+              </b>
+            ) : (
+              <b>No minutes in this log</b>
+            )}
+          </div>
+          {minuteBounds && minuteBounds.max > minuteBounds.min ? (
+            <>
+              <MinutesRangeSlider
+                min={minuteBounds.min}
+                max={minuteBounds.max}
+                low={minutesLow}
+                high={minutesHigh}
+                onChange={setMinutesRange}
+              />
+              <div className="wnba-minutes-scale">
+                <span>{formatMinutes(minuteBounds.min)}</span>
+                <span>{formatMinutes(minuteBounds.max)}</span>
+              </div>
+            </>
+          ) : minuteBounds ? (
+            <p className="wnba-minutes-note">Every logged game is {formatMinutes(minuteBounds.min)} minutes, so the range stays put.</p>
+          ) : (
+            <p className="wnba-minutes-note">Minutes are not in this game log, so the chart still shows every game.</p>
+          )}
+          {missingMinutes > 0 && (
+            <p className="wnba-minutes-missing">
+              {missingMinutes === 1
+                ? '1 game has no minutes recorded, so it is left off the chart and out of the hit rates.'
+                : `${missingMinutes} games have no minutes recorded, so they are left off the chart and out of the hit rates.`}
+            </p>
+          )}
+        </div>
+
         <div className="wnba-player-chart">
           {line != null && <div className="wnba-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(line)}</span></div>}
           <div className="wnba-player-bars">
             {filteredGames.map((g, index) => {
               const hit = line != null && g.value != null && g.value > line
               return (
-                <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`} title={g.postseason ? `Playoffs · ${fmtDate(g.date)}` : undefined}>
+                <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`} title={[recordedMinutes(g) == null ? 'No minutes recorded' : `${formatMinutes(recordedMinutes(g))} min`, fmtDate(g.date), g.postseason ? 'Playoffs' : null].filter(Boolean).join(' · ')}>
                   <div className={`wnba-player-bar ${hit ? 'hit' : 'miss'}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
