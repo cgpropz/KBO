@@ -34,7 +34,10 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 # Tables that may not exist yet in every environment (created by a later
 # migration). A missing table is reported and skipped instead of failing the
 # whole publish.
-OPTIONAL_TABLES = {"nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds"}
+OPTIONAL_TABLES = {
+    "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
+    "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
+}
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
 # is an idempotent upsert of the single `id = 1` row, so re-sending the same
@@ -283,6 +286,11 @@ TABLES = {
     "nba/projections_standard.json": "nba_projections_standard",
     "nba/projections_demon.json": "nba_projections_demon",
     "nba/projections_goblin.json": "nba_projections_goblin",
+    # Published only when PUBLISH_ONLY_PREFIX starts with nhl/. A full publish
+    # leaves these alone so a missing local snapshot cannot fail the other sports.
+    "nhl/projections.json": "nhl_projections",
+    "nhl/lineups.json": "nhl_lineups",
+    "nhl/sharp_odds.json": "nhl_sharp_odds",
 }
 
 # Lines-only boards. A missing file or a zero-line file must not replace a
@@ -315,6 +323,8 @@ def tables_for_prefix(only_prefix: str) -> dict:
     selected = {}
     for filename, table in TABLES.items():
         if filename.startswith("nba/") and not only_prefix.startswith("nba/"):
+            continue
+        if filename.startswith("nhl/") and not only_prefix.startswith("nhl/"):
             continue
         if only_prefix and not filename.startswith(only_prefix):
             continue
@@ -369,7 +379,11 @@ def main():
     for filename, table in tables.items():
         # NFL snapshots and the WNBA Unabated match file live at the repo root.
         # The other WNBA snapshots are written under public/data before publish.
-        repo_root_file = filename.startswith("nfl/") or filename == "wnba/wnba_pp_line_matched_odds.json"
+        repo_root_file = (
+            filename.startswith("nfl/")
+            or filename.startswith("nhl/")
+            or filename == "wnba/wnba_pp_line_matched_odds.json"
+        )
         file_path = os.path.join(BASE, filename) if repo_root_file else os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(file_path):

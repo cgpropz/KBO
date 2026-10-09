@@ -2,8 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import {
   DATASETS,
   NBA_PUBLIC_FLAG,
+  NHL_PUBLIC_FLAG,
   isNbaDataset,
+  isNhlDataset,
   nbaAccessDecision,
+  nhlAccessDecision,
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
@@ -339,6 +342,122 @@ export async function nbaSectionOpen(req, client) {
   }) === 'full';
 }
 
+const NHL_FLAG_CACHE_KEY = `app_flags:${NHL_PUBLIC_FLAG}`;
+
+export async function readNhlPublicFlag(client) {
+  const hit = cache.get(NHL_FLAG_CACHE_KEY);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
+  const { data, error } = await client
+    .from('app_flags')
+    .select('value')
+    .eq('key', NHL_PUBLIC_FLAG)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const value = data?.value === true;
+  cache.set(NHL_FLAG_CACHE_KEY, { at: Date.now(), value });
+  return value;
+}
+
+async function handleNhlRequest(req, res, client, ds) {
+  let caller;
+  try {
+    caller = await withTimeout(
+      resolveNbaCaller(client, req.headers?.authorization),
+      timeouts.tierLookupMs,
+      'NHL access lookup timed out'
+    );
+  } catch {
+    return forbid(res);
+  }
+  if (caller.emailResolved !== true) return forbid(res);
+
+  let nhlPublic = false;
+  let flagResolved = false;
+  try {
+    nhlPublic = await withTimeout(
+      readNhlPublicFlag(client),
+      timeouts.tierLookupMs,
+      'NHL flag lookup timed out'
+    );
+    flagResolved = true;
+  } catch {
+    flagResolved = false;
+  }
+
+  const decision = nhlAccessDecision({
+    emailResolved: caller.emailResolved,
+    email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
+    flagResolved,
+    nhlPublic,
+  });
+  if (decision === 'deny') return forbid(res);
+
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  if (!spec || spec.sport !== 'nhl') {
+    return res.status(400).json({ error: 'Unknown dataset' });
+  }
+
+  let row;
+  try {
+    row = await readSnapshot(client, spec.table);
+  } catch (err) {
+    console.error(`[api/data] ${ds} read failed:`, err.message);
+    if (err?.code === 'UPSTREAM_TIMEOUT') {
+      return res.status(503).json({
+        error: 'Dataset temporarily unavailable',
+        code: 'upstream_timeout',
+        message: 'Upstream data store timed out. Please refresh in a moment.',
+      });
+    }
+    return res.status(502).json({ error: 'Dataset unavailable' });
+  }
+  if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
+
+  const shaped = decision === 'full'
+    ? { data: row.data, preview: false, lockedCount: 0 }
+    : shapeForTier(ds, row.data, 'free');
+  return res.status(200).json({
+    data: shaped.data,
+    updatedAt: row.updated_at || null,
+    preview: shaped.preview,
+    lockedCount: shaped.lockedCount,
+    tier: caller.tier,
+    access: sportAccess(caller.tier),
+  });
+}
+
+export async function nhlSectionOpen(req, client) {
+  let caller;
+  try {
+    caller = await withTimeout(
+      resolveNbaCaller(client, req.headers?.authorization),
+      timeouts.tierLookupMs,
+      'NHL access lookup timed out'
+    );
+  } catch {
+    return false;
+  }
+  if (caller.emailResolved !== true) return false;
+  let nhlPublic = false;
+  let flagResolved = false;
+  try {
+    nhlPublic = await withTimeout(readNhlPublicFlag(client), timeouts.tierLookupMs, 'NHL flag lookup timed out');
+    flagResolved = true;
+  } catch {
+    flagResolved = false;
+  }
+  return nhlAccessDecision({
+    emailResolved: caller.emailResolved,
+    email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
+    flagResolved,
+    nhlPublic,
+  }) === 'full';
+}
+
 // Resolve the caller's tier from a Supabase access token. Anonymous or invalid
 // tokens are treated as 'free' (they still receive the public preview).
 export async function resolveTier(client, authorization) {
@@ -376,6 +495,9 @@ export async function handleDataRequest(req, res, client) {
   const ds = String(req.query?.ds || '');
   if (isNbaDataset(ds)) {
     return handleNbaRequest(req, res, client || getClient(), ds);
+  }
+  if (isNhlDataset(ds)) {
+    return handleNhlRequest(req, res, client || getClient(), ds);
   }
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) return res.status(400).json({ error: 'Unknown dataset' });

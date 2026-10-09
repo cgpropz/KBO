@@ -1,0 +1,438 @@
+{
+  "season": "2025-26 regular season",
+  "test_season_id": "20252026",
+  "prior_season": "2024-25 regular season, used only as history",
+  "dates": 167,
+  "skater_games": 47212,
+  "goalie_starts": 2702,
+  "peeking": "none \u2014 each projection uses only games before that date",
+  "lineups": "not used \u2014 minutes are the player's own prior average, because pregame lines were not saved",
+  "lines": "nearest .5 number to the projection, not a stored PrizePicks line",
+  "baseline": "average of the player's previous 10 games (fewer only when that is all they have), minimum 3 prior games",
+  "pass": false,
+  "reasons": [
+    "Shots On Goal average error 1.0087 beat the recent average 1.0556.",
+    "Shots On Goal side hit rate 0.5889 beat the recent average 0.5234.",
+    "Shots On Goal calibration gap 0.0183 is inside 8%.",
+    "Goalie Saves average error 5.611 beat the recent average 5.7443.",
+    "Goalie Saves side hit rate 0.511 did not beat the recent average 0.5457.",
+    "Goalie Saves calibration gap 0.0595 is inside 8%."
+  ],
+  "props": {
+    "Shots On Goal": {
+      "projections": 46749,
+      "mae": 1.0087,
+      "baseline_mae": 1.0556,
+      "hit_rate": 0.5889,
+      "baseline_hit_rate": 0.5234,
+      "decisions": 46431,
+      "lines": {
+        "0.5": {
+          "n": 11083,
+          "hit_rate": 0.5525,
+          "baseline_hit_rate": 0.5
+        },
+        "1.5": {
+          "n": 27220,
+          "hit_rate": 0.6082,
+          "baseline_hit_rate": 0.5376
+        },
+        "2.5": {
+          "n": 7432,
+          "hit_rate": 0.5758,
+          "baseline_hit_rate": 0.5132
+        },
+        "3.5": {
+          "n": 689,
+          "hit_rate": 0.5559,
+          "baseline_hit_rate": 0.4557
+        },
+        "4.5": {
+          "n": 7,
+          "hit_rate": 0.5714,
+          "baseline_hit_rate": 0.2857
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 17564,
+          "predicted": 0.3346,
+          "actual": 0.3545,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 11956,
+          "predicted": 0.4496,
+          "actual": 0.47,
+          "gap": 0.0204
+        },
+        "0.50-0.60": {
+          "n": 14119,
+          "predicted": 0.5499,
+          "actual": 0.567,
+          "gap": 0.0171
+        },
+        "0.60-0.70": {
+          "n": 3110,
+          "predicted": 0.6153,
+          "actual": 0.6087,
+          "gap": 0.0066
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0183,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 20590,
+          "predicted": 0.334,
+          "actual": 0.3651,
+          "gap": 0.0311
+        },
+        "0.40-0.50": {
+          "n": 14730,
+          "predicted": 0.4509,
+          "actual": 0.5121,
+          "gap": 0.0612
+        },
+        "0.50-0.60": {
+          "n": 11429,
+          "predicted": 0.5395,
+          "actual": 0.5849,
+          "gap": 0.0454
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0441,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60"
+        ]
+      }
+    },
+    "Goalie Saves": {
+      "projections": 2653,
+      "mae": 5.611,
+      "baseline_mae": 5.7443,
+      "hit_rate": 0.511,
+      "baseline_hit_rate": 0.5457,
+      "decisions": 2626,
+      "lines": {
+        "22.5": {
+          "n": 2,
+          "hit_rate": 0.5,
+          "baseline_hit_rate": 0.5
+        },
+        "23.5": {
+          "n": 98,
+          "hit_rate": 0.3163,
+          "baseline_hit_rate": 0.6429
+        },
+        "24.5": {
+          "n": 731,
+          "hit_rate": 0.487,
+          "baseline_hit_rate": 0.5882
+        },
+        "25.5": {
+          "n": 1182,
+          "hit_rate": 0.5355,
+          "baseline_hit_rate": 0.5313
+        },
+        "26.5": {
+          "n": 533,
+          "hit_rate": 0.5272,
+          "baseline_hit_rate": 0.5197
+        },
+        "27.5": {
+          "n": 79,
+          "hit_rate": 0.5063,
+          "baseline_hit_rate": 0.4177
+        },
+        "28.5": {
+          "n": 1,
+          "hit_rate": 0.0,
+          "baseline_hit_rate": 1.0
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.40-0.50": {
+          "n": 1757,
+          "predicted": 0.4734,
+          "actual": 0.3995,
+          "gap": 0.0738
+        },
+        "0.50-0.60": {
+          "n": 896,
+          "predicted": 0.513,
+          "actual": 0.4353,
+          "gap": 0.0777
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0751,
+        "bins_used": [
+          "0.40-0.50",
+          "0.50-0.60"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.40-0.50": {
+          "n": 2653,
+          "predicted": 0.4711,
+          "actual": 0.4116,
+          "gap": 0.0595
+        },
+        "0.50-0.60": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0595,
+        "bins_used": [
+          "0.40-0.50"
+        ]
+      }
+    },
+    "Points": {
+      "projections": 46749,
+      "mae": 0.537,
+      "baseline_mae": 0.5286,
+      "hit_rate": 0.6727,
+      "baseline_hit_rate": 0.5943,
+      "decisions": 46092,
+      "lines": {
+        "0.5": {
+          "n": 44539,
+          "hit_rate": 0.674,
+          "baseline_hit_rate": 0.5957
+        },
+        "1.5": {
+          "n": 1553,
+          "hit_rate": 0.6375,
+          "baseline_hit_rate": 0.5557
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 33102,
+          "predicted": 0.2816,
+          "actual": 0.2617,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 7699,
+          "predicted": 0.4482,
+          "actual": 0.4692,
+          "gap": 0.021
+        },
+        "0.50-0.60": {
+          "n": 4989,
+          "predicted": 0.5453,
+          "actual": 0.5797,
+          "gap": 0.0344
+        },
+        "0.60-0.70": {
+          "n": 959,
+          "predicted": 0.6139,
+          "actual": 0.6475,
+          "gap": 0.0336
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0219,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 33102,
+          "predicted": 0.2816,
+          "actual": 0.2617,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 7699,
+          "predicted": 0.4482,
+          "actual": 0.4692,
+          "gap": 0.021
+        },
+        "0.50-0.60": {
+          "n": 4989,
+          "predicted": 0.5453,
+          "actual": 0.5797,
+          "gap": 0.0344
+        },
+        "0.60-0.70": {
+          "n": 959,
+          "predicted": 0.6139,
+          "actual": 0.6475,
+          "gap": 0.0336
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0219,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      }
+    },
+    "Power Play Points": {
+      "projections": 46749,
+      "mae": 0.1501,
+      "baseline_mae": 0.1444,
+      "hit_rate": 0.9179,
+      "baseline_hit_rate": 0.8985,
+      "decisions": 46718,
+      "lines": {
+        "0.5": {
+          "n": 46718,
+          "hit_rate": 0.9179,
+          "baseline_hit_rate": 0.8985
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 46663,
+          "predicted": 0.0848,
+          "actual": 0.0808,
+          "gap": 0.004
+        },
+        "0.40-0.50": {
+          "n": 86,
+          "predicted": 0.42,
+          "actual": 0.2791,
+          "gap": 0.1409
+        },
+        "0.50-0.60": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.004,
+        "bins_used": [
+          "0.00-0.40"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 46663,
+          "predicted": 0.0848,
+          "actual": 0.0808,
+          "gap": 0.004
+        },
+        "0.40-0.50": {
+          "n": 86,
+          "predicted": 0.42,
+          "actual": 0.2791,
+          "gap": 0.1409
+        },
+        "0.50-0.60": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.004,
+        "bins_used": [
+          "0.00-0.40"
+        ]
+      }
+    }
+  }
+}

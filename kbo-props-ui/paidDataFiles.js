@@ -16,4 +16,4 @@ export const PAID_DATA_FILES = [
 ]
 
 // Whole directories under public/data that are paid.
-export const PAID_DATA_DIRS = ['wnba', 'nfl', 'nba']
+export const PAID_DATA_DIRS = ['wnba', 'nfl', 'nba', 'nhl']

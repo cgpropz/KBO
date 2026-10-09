@@ -28,7 +28,7 @@ from ml.common.util import ML_ROOT, REPO_ROOT, GitRepo  # noqa: E402
 from pipeline.memory import cutoff  # noqa: E402  (read-only import; stdlib-only module)
 
 SHADOW_SCHEMA = 1
-SPORTS = ("kbo", "wnba", "nfl")
+SPORTS = ("kbo", "wnba", "nfl", "nhl")
 MEMORY_ROOT = REPO_ROOT / "memory"
 PARAMS_DIR = ML_ROOT / "params"
 SHADOW_FILE = "shadow.json"
@@ -50,6 +50,9 @@ THRESHOLDS = {
     "kbo": {"unit": "days", "min_periods": 30, "min_props": 1000},
     "wnba": {"unit": "days", "min_periods": 20, "min_props": 1500},
     "nfl": {"unit": "weeks", "min_periods": 6, "min_props": 1500},
+    # Daily like WNBA. No tuned NHL fit exists yet, so the shadow carries the
+    # current projection until ml/params/nhl has a candidate.
+    "nhl": {"unit": "days", "min_periods": 20, "min_props": 1000},
 }
 
 
@@ -210,6 +213,8 @@ def earliest_start(sport: str, d: date) -> datetime:
         return cutoff.kbo_first_pitch(d)[0]
     if sport == "wnba":
         return cutoff.et_datetime(d, cutoff.WNBA_FALLBACK_TIP_ET)
+    if sport == "nhl":
+        return cutoff.et_datetime(d, cutoff.NHL_FALLBACK_PUCK_ET)
     return cutoff.et_datetime(d, cutoff.NFL_FALLBACK_KICKOFF_ET)
 
 

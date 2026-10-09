@@ -17,6 +17,8 @@ WNBA  Rotowire lineups (kbo-props-ui/public/data/wnba/lineups.json, "7:00 PM ET"
 NFL   nflverse schedule gameday + gametime (ET) from nfl/lineups.json.
       Fallback: 09:30 AM ET on the gameday (earliest possible kickoff,
       international games).
+NHL   Official startTimeUTC from the NHL schedule, stored on the lineup file.
+      Fallback: 12:00 PM ET (earliest regular puck drop, afternoon games).
 
 Independently of the clock, a prop is also treated as started when the
 player's own game log already has a row for the slate date (the game is over).
@@ -48,12 +50,15 @@ KBO_FALLBACK_FIRST_PITCH_KST = {
 }
 WNBA_FALLBACK_TIP_ET = time(12, 0)
 NFL_FALLBACK_KICKOFF_ET = time(9, 30)
+NHL_FALLBACK_PUCK_ET = time(12, 0)
 
 SOURCE_KBO_FALLBACK = "fallback_kbo_weekday_earliest"
 SOURCE_WNBA_LINEUPS = "rotowire_lineups"
 SOURCE_WNBA_FALLBACK = "fallback_wnba_noon_et"
 SOURCE_NFL_SCHEDULE = "nflverse_schedule"
 SOURCE_NFL_FALLBACK = "fallback_nfl_0930_et"
+SOURCE_NHL_SCHEDULE = "nhl_schedule"
+SOURCE_NHL_FALLBACK = "fallback_nhl_noon_et"
 
 
 def utc_now() -> datetime:
@@ -147,6 +152,20 @@ def nfl_kickoff(gameday: date, gametime: str | None) -> tuple[datetime, str]:
     if clock is not None:
         return et_datetime(gameday, clock), SOURCE_NFL_SCHEDULE
     return et_datetime(gameday, NFL_FALLBACK_KICKOFF_ET), SOURCE_NFL_FALLBACK
+
+
+def nhl_puck_drop(gameday: date, start_time_utc: str | None) -> tuple[datetime, str]:
+    """Real NHL start when the schedule saved one. Otherwise noon ET."""
+    if start_time_utc:
+        try:
+            moment = datetime.fromisoformat(str(start_time_utc).replace("Z", "+00:00"))
+        except ValueError:
+            moment = None
+        if moment is not None:
+            if moment.tzinfo is None:
+                moment = moment.replace(tzinfo=timezone.utc)
+            return moment.astimezone(timezone.utc), SOURCE_NHL_SCHEDULE
+    return et_datetime(gameday, NHL_FALLBACK_PUCK_ET), SOURCE_NHL_FALLBACK
 
 
 def has_started(start: datetime, now: datetime | None = None) -> bool:

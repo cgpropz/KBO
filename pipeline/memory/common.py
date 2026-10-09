@@ -17,11 +17,12 @@ PUBLIC_DATA = REPO_ROOT / "kbo-props-ui" / "public" / "data"
 KST = timezone(timedelta(hours=9))
 ET = timezone(timedelta(hours=-4))  # EDT approximation for labels; prefer ZoneInfo when available
 
-SPORTS = ("kbo", "wnba", "nfl")
+SPORTS = ("kbo", "wnba", "nfl", "nhl")
 TIMEZONE_BASIS = {
     "kbo": "KST",
     "wnba": "ET",
     "nfl": "ET-gameday",
+    "nhl": "ET",
 }
 
 RESULT_OVER = "OVER"
