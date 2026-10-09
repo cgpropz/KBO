@@ -23,6 +23,7 @@ from nhl.model import (
     PROP_SAVES,
     PROP_SOG,
     cg_score,
+    early_exit_summary,
     hit_rate,
     position_group,
     project_points,
@@ -372,9 +373,10 @@ def _stat_key(prop: str) -> str:
     return {PROP_SOG: "sog", PROP_POINTS: "points", PROP_PPP: "ppp", PROP_SAVES: "saves"}[prop]
 
 
-def _project_row(card, history, league, opp_rates, team_rates, home, pp_role):
+def _project_row(card, history, league, opp_rates, team_rates, home, pp_role, goalie_history=None):
     group = card["position"] if card["position"] in {"F", "D", "G"} else position_group(card["position"])
     if card["prop"] == PROP_SAVES:
+        exit_rate, exit_saves = early_exit_summary(goalie_history or history)
         return project_saves(
             [row for row in history if row.get("sa", 0) >= 8] or history,
             team_sa_per_game=team_rates.get("sa_per_game"),
@@ -382,6 +384,8 @@ def _project_row(card, history, league, opp_rates, team_rates, home, pp_role):
             league_sa_per_game=league.get("sa_per_game"),
             league_ga_per_shot=league.get("ga_per_shot"),
             home=home,
+            early_exit_rate=exit_rate,
+            early_exit_saves=exit_saves,
         )
     if card["prop"] == PROP_SOG:
         return project_shots(
@@ -541,7 +545,10 @@ def build(root: Path, out_dir: Path) -> int:
                 opponent = game["away"] if home else game["home"]
                 history = _history_for(by_goalie if card["prop"] == PROP_SAVES else by_skater, card["player"], card["team"])
                 role = _pp_role(card["player"], lines.get(card["team"])) if card["prop"] in {PROP_SOG, PROP_PPP} else None
-                projection = _project_row(card, history, league, rates.get(opponent) or {}, rates.get(card["team"]) or {}, home, role)
+                projection = _project_row(
+                    card, history, league, rates.get(opponent) or {}, rates.get(card["team"]) or {},
+                    home, role, goalie_rows if card["prop"] == PROP_SAVES else None,
+                )
                 if projection is None:
                     continue
                 goalie = goalies.get(card["team"]) if card["prop"] == PROP_SAVES else None

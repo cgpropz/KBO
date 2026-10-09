@@ -1,7 +1,9 @@
 """NHL prop projections shared by the backtest and the live board.
 
-The formulas are fixed before the 2025-26 walk-forward. They are not refit
-to make that test pass.
+Shots, points, and power-play points were fixed before the 2025-26
+walk-forward. Saves were revised after that test lost the over/under,
+using only the first half of the season to choose the change. The second
+half was scored once and was not used to pick the formula.
 
 Shots and saves are the full model (minutes by strength, shrunk rates,
 opponent shot environment, a small home/away term). Points and power-play
@@ -37,6 +39,10 @@ PRIOR_PP_SECONDS = 80 * 60
 PRIOR_POINT_GAMES = 20
 # Goalie goals-saved-above-expected: pretend they already have this many average games.
 PRIOR_GOALIE_GAMES = 30
+# A starter who finishes is on the ice for about 58 minutes. Under 50 minutes
+# means he left the game. Those nights are part of the prop, so the projection
+# mixes them in at the rate seen before that date.
+EARLY_EXIT_SECONDS = 50 * 60
 # This season replaces last season only after this many games.
 SEASON_HANDOFF_GAMES = 12
 RECENT_GAMES = 5
@@ -243,6 +249,25 @@ def project_power_play_points(
     return round(max(0.0, expected), 2)
 
 
+def early_exit(game: dict) -> bool:
+    """True when the goalie left before a normal night. Ice time is in seconds."""
+    try:
+        toi = float(game.get("toi") or 0)
+    except (TypeError, ValueError):
+        return False
+    return toi < EARLY_EXIT_SECONDS
+
+
+def early_exit_summary(games: Sequence[dict]) -> tuple[float | None, float | None]:
+    """Share of starts that ended early, and the average saves on those nights."""
+    played = [game for game in games if float(game.get("sa") or 0) >= 8]
+    exits = [game for game in played if early_exit(game)]
+    if not played or not exits:
+        return None, None
+    saves = sum(float(game.get("saves") or 0) for game in exits)
+    return len(exits) / len(played), saves / len(exits)
+
+
 def project_saves(
     games: Sequence[dict],
     *,
@@ -251,13 +276,30 @@ def project_saves(
     league_sa_per_game: float | None,
     league_ga_per_shot: float | None,
     home: bool | None,
+    early_exit_rate: float | None = None,
+    early_exit_saves: float | None = None,
 ) -> float | None:
+    """Expected saves for a starter.
+
+    Shot volume is the team's shots allowed, moved up or down by how much this
+    opponent shoots relative to the league. That factor is capped at 12%, same
+    as the skater shot model. Save skill is goals saved above expected, shrunk
+    hard toward average. A full-night total is then mixed with the saves a
+    goalie actually records when he is pulled, using only the early-exit rate
+    from games already played.
+    """
     if len(games) < MIN_PRIOR_GAMES:
         return None
-    rates = [value for value in (team_sa_per_game, opponent_sf_per_game, league_sa_per_game) if value and value > 0]
-    if not rates:
-        return None
-    expected_shots = sum(rates) / len(rates)
+    team = team_sa_per_game if team_sa_per_game and team_sa_per_game > 0 else None
+    opponent = opponent_sf_per_game if opponent_sf_per_game and opponent_sf_per_game > 0 else None
+    league = league_sa_per_game if league_sa_per_game and league_sa_per_game > 0 else None
+    if team and opponent and league:
+        expected_shots = team * opponent_factor(opponent, league)
+    else:
+        rates = [value for value in (team, opponent, league) if value]
+        if not rates:
+            return None
+        expected_shots = sum(rates) / len(rates)
     # Home goalies face the visitor, who shoots a bit less.
     if home is True:
         expected_shots *= AWAY_SHOT_FACTOR
@@ -271,7 +313,11 @@ def project_saves(
         PRIOR_GOALIE_GAMES,
     )
     expected_goals = max(0.3, expected_shots * ga_rate - gsax)
-    return round(max(0.0, expected_shots - expected_goals), 2)
+    expected = max(0.0, expected_shots - expected_goals)
+    if early_exit_rate and early_exit_saves is not None:
+        rate = clamp(float(early_exit_rate), 0.0, 0.35)
+        expected = (1.0 - rate) * expected + rate * max(0.0, float(early_exit_saves))
+    return round(max(0.0, expected), 2)
 
 
 def recent_average(values: Sequence[float], window: int = CHART_GAMES) -> float | None:

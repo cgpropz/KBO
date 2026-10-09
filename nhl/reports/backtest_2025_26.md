@@ -1,25 +1,42 @@
 # 2025-26 NHL prop backtest
 
-Verdict for an October 13 public launch: **DOES NOT PASS.**
+Goalie saves, on the half of the season we did not use to build the formula: **DOES NOT PASS.**
 
-Shots on goal passed. Goalie saves did not, so the NHL tab stays locked and should not open to members on October 13. The formulas were not changed after this test.
+The NHL tab stays locked. This is a draft, and nothing here turns the public switch on.
 
-In plain terms: we replayed all of last season, one day at a time. Each morning the model could see only games that had already been played, plus the season before that. It could not see that night's score. It also could not see the lines or power-play units posted that morning, because those were not saved. The over/under check uses the closest half-point to our number, such as 2.5 shots. That is a stand-in for a sportsbook line, not a record of what PrizePicks posted. The comparison is the player's own average from the previous 10 games.
+## Why the first saves model lost the over/under
 
-Shots on goal did what we asked. The average miss was 1.01 shots, a bit better than 1.06 for the recent average. It picked the right side 58.9% of the time, versus 52.3% for that average. When it said an over was likely, it happened about that often (the gap was under 2 points, and the limit was 8).
+The first version was a little closer to the real total than 'use his last 10 games,' but it picked the right side less often. On the full season it hit 51.1% of the sides, and the last-10 average hit 54.6%. Its average miss was 5.61 saves, versus 5.74.
 
-Goalie saves were a little closer to the real total (miss of 5.61 saves versus 5.74), and the chances stayed inside the honesty limit. They failed the side test: the model picked the right side 51.1% of the time, and the recent average picked it 54.6% of the time. That one miss is why the launch does not pass.
+Two things caused that. First, the number assumed a full night. About one start in fourteen ends early, when the goalie is pulled, and those nights land around 13 saves instead of 25. The last-10 average already includes those short nights, so it was not sitting high. In the first half of the season our number was about 1.2 saves too high. Second, the shot guess gave equal weight to the team, the opponent, and the league. That pulled unusual goalies toward an ordinary night, and the over/under line sits right next to our number. The last-10 average sits further away, on the goalie's real level, so it won the side more often even though it missed the total by a bit more.
 
-Points and power-play points were not required to pass. Points were a hair worse on average miss than the last-10 average (0.54 versus 0.53) but picked the side more often (67% versus 59%). Power-play points are rare, so almost every stand-in line was 0.5 and both methods mostly said under.
+We also checked the other guesses. Save percentage was not the problem: shrinking it more or less barely moved the error. The same goalie almost never starts both nights of a back-to-back, so that was not the gap. We do not have the betting totals from last season, so game script was not added. Mixing in the last-10 average made the side look better on the first half mostly by moving the line, and the average miss got worse, so that blend is not in the formula.
 
-## What this means
+## What we changed, and the result
+
+The new shot guess is how many shots the team usually allows, nudged up or down if this opponent shoots more or less than average. The nudge is capped at 12%. A full-night total is then mixed with the saves from nights a goalie left before 50 minutes, using only the rate from games already played. We did not blend in the last-10 average. The idea was set on the first half of 2025-26. The second half was scored once and was not used to change the formula.
+
+First half: average miss 5.43 versus 5.77 for the last-10 average. Side 51.6% versus 52.0%. The miss got better. The side still did not win, so we did not keep tuning.
+
+Second half, the real test (January 3, 2026 through the end of the regular season): 1362 starts. Average miss 5.41 versus 5.72. Side 52.4% versus 53.8% on 1350 decisions.
+
+- Average miss 5.4063 was not worse than the recent average 5.7222.
+- Side hit rate 0.5237 did not beat the recent average 0.5378.
+
+That misses the bar. Hide goalie saves. Shots, points, and power-play points can stay. The tab stays locked either way.
+
+Full season, same new formula, still with no peeking: average miss 5.42 versus 5.74. Side 52.0% versus 52.9%.
+
+Shots on goal were not changed. The rest of this note is the full walk-forward, one day at a time. The model could see only games already played, plus the 2024-25 season. It could not see that night's score, or the lines posted that morning. The over/under uses the closest half-point to our number. That is a stand-in for a sportsbook line, not a record of PrizePicks. The comparison is the previous 10 games.
+
+## Full-season checks
 
 - Shots On Goal average error 1.0087 beat the recent average 1.0556.
 - Shots On Goal side hit rate 0.5889 beat the recent average 0.5234.
 - Shots On Goal calibration gap 0.0183 is inside 8%.
-- Goalie Saves average error 5.611 beat the recent average 5.7443.
-- Goalie Saves side hit rate 0.511 did not beat the recent average 0.5457.
-- Goalie Saves calibration gap 0.0595 is inside 8%.
+- Goalie Saves average error 5.4185 beat the recent average 5.7443.
+- Goalie Saves side hit rate 0.5198 did not beat the recent average 0.529.
+- Goalie Saves calibration gap 0.0096 is inside 8%.
 
 Shots and saves are the two props that had to beat that simple average, and their chances had to be honest (when the model says 60%, it should happen about 60% of the time, within 8 points). Points and power-play points are shown because the board includes them. They were not required to pass.
 
@@ -51,29 +68,36 @@ Weighted calibration gap, bands with at least 200 props: Poisson 0.0183, negativ
 
 ### Goalie Saves
 
-2653 projections. Average miss 5.611 versus 5.7443 for the recent average. Side hit rate 51.1% versus 54.6% on 2626 decisions.
+2653 projections. Average miss 5.4185 versus 5.7443 for the recent average. Side hit rate 52.0% versus 52.9% on 2624 decisions.
 
 | Line | Props | Our hit rate | Recent-average hit rate |
 | --- | --- | --- | --- |
-| 22.5 | 2 | 50.0% | 50.0% |
-| 23.5 | 98 | 31.6% | 64.3% |
-| 24.5 | 731 | 48.7% | 58.8% |
-| 25.5 | 1182 | 53.5% | 53.1% |
-| 26.5 | 533 | 52.7% | 52.0% |
-| 27.5 | 79 | 50.6% | 41.8% |
-| 28.5 | 1 | 0.0% | 100.0% |
+| 18.5 | 1 | 100.0% | 100.0% |
+| 19.5 | 10 | 30.0% | 40.0% |
+| 20.5 | 54 | 42.6% | 51.8% |
+| 21.5 | 184 | 53.8% | 52.7% |
+| 22.5 | 333 | 51.3% | 53.4% |
+| 23.5 | 503 | 52.5% | 52.1% |
+| 24.5 | 502 | 53.6% | 54.4% |
+| 25.5 | 436 | 50.9% | 48.6% |
+| 26.5 | 309 | 48.5% | 53.1% |
+| 27.5 | 166 | 56.6% | 57.8% |
+| 28.5 | 75 | 56.0% | 58.7% |
+| 29.5 | 34 | 52.9% | 52.9% |
+| 30.5 | 16 | 43.8% | 62.5% |
+| 31.5 | 1 | 100.0% | 100.0% |
 
 Poisson calibration (predicted chance versus how often the over actually hit):
 
 | Chance band | Props | Predicted | Actual | Gap |
 | --- | --- | --- | --- | --- |
 | 0.00-0.40 | 0 | n/a | n/a | n/a |
-| 0.40-0.50 | 1757 | 47.3% | 40.0% | 7.4% |
-| 0.50-0.60 | 896 | 51.3% | 43.5% | 7.8% |
+| 0.40-0.50 | 1767 | 47.3% | 44.6% | 2.7% |
+| 0.50-0.60 | 886 | 51.3% | 49.0% | 2.3% |
 | 0.60-0.70 | 0 | n/a | n/a | n/a |
 | 0.70-1.01 | 0 | n/a | n/a | n/a |
 
-Weighted calibration gap, bands with at least 200 props: Poisson 0.0751, negative binomial 0.0595.
+Weighted calibration gap, bands with at least 200 props: Poisson 0.0258, negative binomial 0.0096.
 
 ### Points
 

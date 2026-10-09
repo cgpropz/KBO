@@ -5,7 +5,9 @@ import unittest
 from nhl.model import (
     adjust_pp_seconds,
     cg_score,
+    early_exit,
     poisson_ge,
+    project_saves,
     project_shots,
     rank_score,
 )
@@ -33,6 +35,38 @@ class ModelTests(unittest.TestCase):
             games, season="20262027", group="F", league={}, opponent_sa60=30,
             league_sa60=30, home=True,
         ))
+
+    def test_saves_mix_in_early_exits_and_need_three_starts(self):
+        games = [{"sa": 30, "ga": 3, "xga": 2.8, "toi": 3600, "saves": 27}] * 2
+        self.assertIsNone(project_saves(
+            games, team_sa_per_game=30, opponent_sf_per_game=30,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=None,
+        ))
+        games = games + [{"sa": 30, "ga": 3, "xga": 2.8, "toi": 3600, "saves": 27}]
+        full = project_saves(
+            games, team_sa_per_game=30, opponent_sf_per_game=30,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=None,
+        )
+        mixed = project_saves(
+            games, team_sa_per_game=30, opponent_sf_per_game=30,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=None,
+            early_exit_rate=0.1, early_exit_saves=12,
+        )
+        self.assertLess(mixed, full)
+        self.assertTrue(early_exit({"toi": 2000}))
+        self.assertFalse(early_exit({"toi": 3500}))
+
+    def test_a_hot_opponent_cannot_double_the_save_total(self):
+        games = [{"sa": 30, "ga": 3, "xga": 2.8, "toi": 3600, "saves": 27}] * 3
+        normal = project_saves(
+            games, team_sa_per_game=30, opponent_sf_per_game=30,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=None,
+        )
+        hot = project_saves(
+            games, team_sa_per_game=30, opponent_sf_per_game=60,
+            league_sa_per_game=30, league_ga_per_shot=0.1, home=None,
+        )
+        self.assertLess(hot, normal * 1.2)
 
     def test_power_play_role_edits_minutes(self):
         self.assertEqual(adjust_pp_seconds(60, None), 60)
