@@ -18,9 +18,9 @@ class BatterHandContextTests(unittest.TestCase):
         self.assertEqual(batter["vs_lhp"]["avg"], 0.399)
         self.assertEqual(batter["vs_lhp"]["ab"], 173)
         self.assertEqual(batter["vs_lhp"]["tb"], 86)
-        self.assertEqual(batter["vs_rhp"]["avg"], 0.323)
-        self.assertEqual(batter["vs_rhp"]["ab"], 393)
-        self.assertEqual(batter["vs_rhp"]["tb"], 184)
+        self.assertEqual(batter["vs_rhp"]["avg"], 0.327)
+        self.assertEqual(batter["vs_rhp"]["ab"], 397)
+        self.assertEqual(batter["vs_rhp"]["tb"], 188)
 
     def test_switch_hitters_stay_switch(self):
         context = hands.build_batter_hand_context(generated_at="test")
