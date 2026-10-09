@@ -1,0 +1,55 @@
+name: Refresh NHL PrizePicks Board
+
+# Schedule runs only on the default branch, and the job also refuses any
+# other ref. A pull request cannot publish NHL snapshots.
+
+on:
+  schedule:
+    - cron: "19,49 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  refresh-nhl:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install requests
+
+      - name: Download MoneyPuck game logs
+        run: python nhl/fetch_history.py
+
+      - name: Build the NHL board and lineups
+        run: python -m nhl.build_board --root /tmp/moneypuck
+
+      - name: Match PrizePicks lines to Unabated
+        continue-on-error: true
+        run: python -m nhl.sharp_odds
+
+      - name: Publish protected NHL snapshot
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nhl/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Freeze NHL slate into memory/
+        if: success()
+        continue-on-error: true
+        run: python pipeline/memory/freeze_slate.py --sport nhl

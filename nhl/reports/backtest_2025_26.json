@@ -1,0 +1,1111 @@
+{
+  "season": "2025-26 regular season",
+  "test_season_id": "20252026",
+  "prior_season": "2024-25 regular season, used only as history",
+  "dates": 167,
+  "midpoint": "20260103",
+  "skater_games": 47212,
+  "goalie_starts": 2702,
+  "peeking": "none \u2014 each projection uses only games before that date",
+  "lineups": "not used \u2014 minutes are the player's own prior average, because pregame lines were not saved",
+  "lines": "Shots, points, and power-play points use the nearest .5 to the projection. Goalie saves use a closing-total proxy, not a stored PrizePicks line.",
+  "baseline": "average of the player's previous 10 games (fewer only when that is all they have), minimum 3 prior games",
+  "saves_change": "Chosen on the first half of 2025-26 only. The second half was scored once. Shot volume is team shots allowed times the opponent's shot rate, capped at 12% from average. A full-night total is mixed with the saves on nights the goalie left before 50 minutes, using the rate from games already played.",
+  "pass": true,
+  "full_season_pass": true,
+  "reasons": [
+    "Shots On Goal average error 1.0087 beat the recent average 1.0556.",
+    "Shots On Goal side hit rate 0.5889 beat the recent average 0.5234.",
+    "Shots On Goal calibration gap 0.0183 is inside 8%.",
+    "Goalie Saves average error 5.2278 beat the recent average 5.6017.",
+    "Goalie Saves side hit rate 0.6012 beat the recent average 0.5838.",
+    "Goalie Saves calibration gap 0.0133 is inside 8%."
+  ],
+  "saves_held_out_reasons": [
+    "Average miss 5.1523 was not worse than the recent average 5.5261.",
+    "Side hit rate 0.6112 beat the recent average 0.5966."
+  ],
+  "saves_first_half": {
+    "projections": 1238,
+    "mae": 5.3073,
+    "baseline_mae": 5.6812,
+    "hit_rate": 0.5906,
+    "baseline_hit_rate": 0.5704,
+    "decisions": 1236,
+    "lines": {
+      "18.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      },
+      "19.5": {
+        "n": 3,
+        "hit_rate": 0.6667,
+        "baseline_hit_rate": 0.6667
+      },
+      "20.5": {
+        "n": 2,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      },
+      "21.5": {
+        "n": 20,
+        "hit_rate": 0.45,
+        "baseline_hit_rate": 0.65
+      },
+      "22.5": {
+        "n": 128,
+        "hit_rate": 0.5469,
+        "baseline_hit_rate": 0.6016
+      },
+      "23.5": {
+        "n": 180,
+        "hit_rate": 0.6167,
+        "baseline_hit_rate": 0.5389
+      },
+      "24.5": {
+        "n": 238,
+        "hit_rate": 0.584,
+        "baseline_hit_rate": 0.5378
+      },
+      "25.5": {
+        "n": 182,
+        "hit_rate": 0.6374,
+        "baseline_hit_rate": 0.5769
+      },
+      "26.5": {
+        "n": 207,
+        "hit_rate": 0.5507,
+        "baseline_hit_rate": 0.5556
+      },
+      "27.5": {
+        "n": 127,
+        "hit_rate": 0.5669,
+        "baseline_hit_rate": 0.5354
+      },
+      "28.5": {
+        "n": 79,
+        "hit_rate": 0.5696,
+        "baseline_hit_rate": 0.6329
+      },
+      "29.5": {
+        "n": 51,
+        "hit_rate": 0.7451,
+        "baseline_hit_rate": 0.7059
+      },
+      "30.5": {
+        "n": 13,
+        "hit_rate": 0.5385,
+        "baseline_hit_rate": 0.5385
+      },
+      "31.5": {
+        "n": 4,
+        "hit_rate": 0.75,
+        "baseline_hit_rate": 0.75
+      },
+      "33.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      }
+    },
+    "poisson_calibration": {
+      "0.00-0.40": {
+        "n": 554,
+        "predicted": 0.2967,
+        "actual": 0.3394,
+        "gap": 0.0426
+      },
+      "0.40-0.50": {
+        "n": 289,
+        "predicted": 0.4487,
+        "actual": 0.4567,
+        "gap": 0.0081
+      },
+      "0.50-0.60": {
+        "n": 229,
+        "predicted": 0.5478,
+        "actual": 0.4847,
+        "gap": 0.0631
+      },
+      "0.60-0.70": {
+        "n": 126,
+        "predicted": 0.6436,
+        "actual": 0.6032,
+        "gap": 0.0404
+      },
+      "0.70-1.01": {
+        "n": 40,
+        "predicted": 0.754,
+        "actual": 0.625,
+        "gap": 0.129
+      },
+      "weighted_gap": 0.0377,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50",
+        "0.50-0.60"
+      ]
+    },
+    "negative_binomial_calibration": {
+      "0.00-0.40": {
+        "n": 509,
+        "predicted": 0.3281,
+        "actual": 0.3477,
+        "gap": 0.0196
+      },
+      "0.40-0.50": {
+        "n": 396,
+        "predicted": 0.4474,
+        "actual": 0.4343,
+        "gap": 0.0131
+      },
+      "0.50-0.60": {
+        "n": 261,
+        "predicted": 0.5407,
+        "actual": 0.5402,
+        "gap": 0.0005
+      },
+      "0.60-0.70": {
+        "n": 63,
+        "predicted": 0.6307,
+        "actual": 0.5556,
+        "gap": 0.0751
+      },
+      "0.70-1.01": {
+        "n": 9,
+        "predicted": 0.7209,
+        "actual": 0.7778,
+        "gap": 0.0569
+      },
+      "weighted_gap": 0.0131,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50",
+        "0.50-0.60"
+      ]
+    }
+  },
+  "saves_held_out": {
+    "projections": 1302,
+    "mae": 5.1523,
+    "baseline_mae": 5.5261,
+    "hit_rate": 0.6112,
+    "baseline_hit_rate": 0.5966,
+    "decisions": 1299,
+    "lines": {
+      "20.5": {
+        "n": 2,
+        "hit_rate": 0.5,
+        "baseline_hit_rate": 1.0
+      },
+      "21.5": {
+        "n": 14,
+        "hit_rate": 0.3571,
+        "baseline_hit_rate": 0.5714
+      },
+      "22.5": {
+        "n": 79,
+        "hit_rate": 0.5063,
+        "baseline_hit_rate": 0.5063
+      },
+      "23.5": {
+        "n": 124,
+        "hit_rate": 0.5806,
+        "baseline_hit_rate": 0.621
+      },
+      "24.5": {
+        "n": 209,
+        "hit_rate": 0.6029,
+        "baseline_hit_rate": 0.5837
+      },
+      "25.5": {
+        "n": 204,
+        "hit_rate": 0.6275,
+        "baseline_hit_rate": 0.5931
+      },
+      "26.5": {
+        "n": 240,
+        "hit_rate": 0.6083,
+        "baseline_hit_rate": 0.5625
+      },
+      "27.5": {
+        "n": 193,
+        "hit_rate": 0.6632,
+        "baseline_hit_rate": 0.6269
+      },
+      "28.5": {
+        "n": 128,
+        "hit_rate": 0.6328,
+        "baseline_hit_rate": 0.6562
+      },
+      "29.5": {
+        "n": 72,
+        "hit_rate": 0.6667,
+        "baseline_hit_rate": 0.6389
+      },
+      "30.5": {
+        "n": 24,
+        "hit_rate": 0.5,
+        "baseline_hit_rate": 0.5
+      },
+      "31.5": {
+        "n": 10,
+        "hit_rate": 0.7,
+        "baseline_hit_rate": 0.7
+      }
+    },
+    "poisson_calibration": {
+      "0.00-0.40": {
+        "n": 765,
+        "predicted": 0.2726,
+        "actual": 0.315,
+        "gap": 0.0424
+      },
+      "0.40-0.50": {
+        "n": 261,
+        "predicted": 0.4447,
+        "actual": 0.4521,
+        "gap": 0.0074
+      },
+      "0.50-0.60": {
+        "n": 183,
+        "predicted": 0.5415,
+        "actual": 0.4645,
+        "gap": 0.077
+      },
+      "0.60-0.70": {
+        "n": 79,
+        "predicted": 0.643,
+        "actual": 0.5443,
+        "gap": 0.0987
+      },
+      "0.70-1.01": {
+        "n": 14,
+        "predicted": 0.7599,
+        "actual": 0.5714,
+        "gap": 0.1885
+      },
+      "weighted_gap": 0.0335,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50"
+      ]
+    },
+    "negative_binomial_calibration": {
+      "0.00-0.40": {
+        "n": 719,
+        "predicted": 0.3103,
+        "actual": 0.3143,
+        "gap": 0.004
+      },
+      "0.40-0.50": {
+        "n": 380,
+        "predicted": 0.4466,
+        "actual": 0.4395,
+        "gap": 0.0071
+      },
+      "0.50-0.60": {
+        "n": 173,
+        "predicted": 0.541,
+        "actual": 0.474,
+        "gap": 0.067
+      },
+      "0.60-0.70": {
+        "n": 27,
+        "predicted": 0.6265,
+        "actual": 0.6667,
+        "gap": 0.0402
+      },
+      "0.70-1.01": {
+        "n": 3,
+        "predicted": 0.7522,
+        "actual": 0.6667,
+        "gap": 0.0855
+      },
+      "weighted_gap": 0.0051,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50"
+      ]
+    }
+  },
+  "saves_previous": {
+    "projections": 2540,
+    "mae": 5.4019,
+    "baseline_mae": 5.6017,
+    "hit_rate": 0.5722,
+    "baseline_hit_rate": 0.5837,
+    "decisions": 2534,
+    "lines": {
+      "18.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      },
+      "19.5": {
+        "n": 3,
+        "hit_rate": 0.6667,
+        "baseline_hit_rate": 0.6667
+      },
+      "20.5": {
+        "n": 4,
+        "hit_rate": 0.5,
+        "baseline_hit_rate": 1.0
+      },
+      "21.5": {
+        "n": 35,
+        "hit_rate": 0.5429,
+        "baseline_hit_rate": 0.6286
+      },
+      "22.5": {
+        "n": 207,
+        "hit_rate": 0.4831,
+        "baseline_hit_rate": 0.5652
+      },
+      "23.5": {
+        "n": 304,
+        "hit_rate": 0.4967,
+        "baseline_hit_rate": 0.5724
+      },
+      "24.5": {
+        "n": 445,
+        "hit_rate": 0.5034,
+        "baseline_hit_rate": 0.5596
+      },
+      "25.5": {
+        "n": 384,
+        "hit_rate": 0.6094,
+        "baseline_hit_rate": 0.5833
+      },
+      "26.5": {
+        "n": 448,
+        "hit_rate": 0.5982,
+        "baseline_hit_rate": 0.558
+      },
+      "27.5": {
+        "n": 320,
+        "hit_rate": 0.6344,
+        "baseline_hit_rate": 0.5906
+      },
+      "28.5": {
+        "n": 208,
+        "hit_rate": 0.6346,
+        "baseline_hit_rate": 0.649
+      },
+      "29.5": {
+        "n": 123,
+        "hit_rate": 0.6829,
+        "baseline_hit_rate": 0.6667
+      },
+      "30.5": {
+        "n": 37,
+        "hit_rate": 0.5135,
+        "baseline_hit_rate": 0.5135
+      },
+      "31.5": {
+        "n": 14,
+        "hit_rate": 0.7143,
+        "baseline_hit_rate": 0.7143
+      },
+      "33.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      }
+    },
+    "poisson_calibration": {
+      "0.00-0.40": {
+        "n": 871,
+        "predicted": 0.3126,
+        "actual": 0.3375,
+        "gap": 0.0249
+      },
+      "0.40-0.50": {
+        "n": 646,
+        "predicted": 0.4488,
+        "actual": 0.3731,
+        "gap": 0.0757
+      },
+      "0.50-0.60": {
+        "n": 537,
+        "predicted": 0.5483,
+        "actual": 0.4488,
+        "gap": 0.0996
+      },
+      "0.60-0.70": {
+        "n": 381,
+        "predicted": 0.6468,
+        "actual": 0.5092,
+        "gap": 0.1376
+      },
+      "0.70-1.01": {
+        "n": 105,
+        "predicted": 0.7392,
+        "actual": 0.5429,
+        "gap": 0.1963
+      },
+      "weighted_gap": 0.0725,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50",
+        "0.50-0.60",
+        "0.60-0.70"
+      ]
+    },
+    "negative_binomial_calibration": {
+      "0.00-0.40": {
+        "n": 785,
+        "predicted": 0.3429,
+        "actual": 0.3325,
+        "gap": 0.0104
+      },
+      "0.40-0.50": {
+        "n": 898,
+        "predicted": 0.4494,
+        "actual": 0.3831,
+        "gap": 0.0663
+      },
+      "0.50-0.60": {
+        "n": 646,
+        "predicted": 0.5462,
+        "actual": 0.4752,
+        "gap": 0.071
+      },
+      "0.60-0.70": {
+        "n": 202,
+        "predicted": 0.6294,
+        "actual": 0.5347,
+        "gap": 0.0947
+      },
+      "0.70-1.01": {
+        "n": 9,
+        "predicted": 0.7436,
+        "actual": 0.7778,
+        "gap": 0.0342
+      },
+      "weighted_gap": 0.0524,
+      "bins_used": [
+        "0.00-0.40",
+        "0.40-0.50",
+        "0.50-0.60",
+        "0.60-0.70"
+      ]
+    }
+  },
+  "saves_own_line": {
+    "projections": 2540,
+    "mae": 5.2278,
+    "baseline_mae": 5.6017,
+    "hit_rate": 0.5189,
+    "baseline_hit_rate": 0.5241,
+    "decisions": 2511,
+    "lines": {
+      "18.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      },
+      "19.5": {
+        "n": 10,
+        "hit_rate": 0.3,
+        "baseline_hit_rate": 0.4
+      },
+      "20.5": {
+        "n": 53,
+        "hit_rate": 0.434,
+        "baseline_hit_rate": 0.5283
+      },
+      "21.5": {
+        "n": 175,
+        "hit_rate": 0.5371,
+        "baseline_hit_rate": 0.5257
+      },
+      "22.5": {
+        "n": 318,
+        "hit_rate": 0.5252,
+        "baseline_hit_rate": 0.5314
+      },
+      "23.5": {
+        "n": 479,
+        "hit_rate": 0.5177,
+        "baseline_hit_rate": 0.5157
+      },
+      "24.5": {
+        "n": 483,
+        "hit_rate": 0.5362,
+        "baseline_hit_rate": 0.5383
+      },
+      "25.5": {
+        "n": 416,
+        "hit_rate": 0.4976,
+        "baseline_hit_rate": 0.4832
+      },
+      "26.5": {
+        "n": 294,
+        "hit_rate": 0.4898,
+        "baseline_hit_rate": 0.5238
+      },
+      "27.5": {
+        "n": 163,
+        "hit_rate": 0.5644,
+        "baseline_hit_rate": 0.5706
+      },
+      "28.5": {
+        "n": 71,
+        "hit_rate": 0.5634,
+        "baseline_hit_rate": 0.5775
+      },
+      "29.5": {
+        "n": 31,
+        "hit_rate": 0.5484,
+        "baseline_hit_rate": 0.4839
+      },
+      "30.5": {
+        "n": 16,
+        "hit_rate": 0.4375,
+        "baseline_hit_rate": 0.625
+      },
+      "31.5": {
+        "n": 1,
+        "hit_rate": 1.0,
+        "baseline_hit_rate": 1.0
+      }
+    },
+    "poisson_calibration": {
+      "0.00-0.40": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "0.40-0.50": {
+        "n": 1688,
+        "predicted": 0.4729,
+        "actual": 0.4645,
+        "gap": 0.0085
+      },
+      "0.50-0.60": {
+        "n": 852,
+        "predicted": 0.5131,
+        "actual": 0.5047,
+        "gap": 0.0084
+      },
+      "0.60-0.70": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "0.70-1.01": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "weighted_gap": 0.0084,
+      "bins_used": [
+        "0.40-0.50",
+        "0.50-0.60"
+      ]
+    },
+    "negative_binomial_calibration": {
+      "0.00-0.40": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "0.40-0.50": {
+        "n": 2536,
+        "predicted": 0.4709,
+        "actual": 0.4787,
+        "gap": 0.0078
+      },
+      "0.50-0.60": {
+        "n": 4,
+        "predicted": 0.5006,
+        "actual": 0.0,
+        "gap": 0.5006
+      },
+      "0.60-0.70": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "0.70-1.01": {
+        "n": 0,
+        "predicted": null,
+        "actual": null,
+        "gap": null
+      },
+      "weighted_gap": 0.0078,
+      "bins_used": [
+        "0.40-0.50"
+      ]
+    }
+  },
+  "saves_line": "Closest half-point to 8.5 saves per expected opponent goal. Expected goals come from the closing total, with the moneyline favorite given a quarter of the edge. 8.5 is the published typical saves line of 25.5 divided by a 3-goal team total. It was not fit to the results.",
+  "props": {
+    "Shots On Goal": {
+      "projections": 46749,
+      "mae": 1.0087,
+      "baseline_mae": 1.0556,
+      "hit_rate": 0.5889,
+      "baseline_hit_rate": 0.5234,
+      "decisions": 46431,
+      "lines": {
+        "0.5": {
+          "n": 11083,
+          "hit_rate": 0.5525,
+          "baseline_hit_rate": 0.5
+        },
+        "1.5": {
+          "n": 27220,
+          "hit_rate": 0.6082,
+          "baseline_hit_rate": 0.5376
+        },
+        "2.5": {
+          "n": 7432,
+          "hit_rate": 0.5758,
+          "baseline_hit_rate": 0.5132
+        },
+        "3.5": {
+          "n": 689,
+          "hit_rate": 0.5559,
+          "baseline_hit_rate": 0.4557
+        },
+        "4.5": {
+          "n": 7,
+          "hit_rate": 0.5714,
+          "baseline_hit_rate": 0.2857
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 17564,
+          "predicted": 0.3346,
+          "actual": 0.3545,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 11956,
+          "predicted": 0.4496,
+          "actual": 0.47,
+          "gap": 0.0204
+        },
+        "0.50-0.60": {
+          "n": 14119,
+          "predicted": 0.5499,
+          "actual": 0.567,
+          "gap": 0.0171
+        },
+        "0.60-0.70": {
+          "n": 3110,
+          "predicted": 0.6153,
+          "actual": 0.6087,
+          "gap": 0.0066
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0183,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 20590,
+          "predicted": 0.334,
+          "actual": 0.3651,
+          "gap": 0.0311
+        },
+        "0.40-0.50": {
+          "n": 14730,
+          "predicted": 0.4509,
+          "actual": 0.5121,
+          "gap": 0.0612
+        },
+        "0.50-0.60": {
+          "n": 11429,
+          "predicted": 0.5395,
+          "actual": 0.5849,
+          "gap": 0.0454
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0441,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60"
+        ]
+      }
+    },
+    "Goalie Saves": {
+      "projections": 2540,
+      "mae": 5.2278,
+      "baseline_mae": 5.6017,
+      "hit_rate": 0.6012,
+      "baseline_hit_rate": 0.5838,
+      "decisions": 2535,
+      "lines": {
+        "18.5": {
+          "n": 1,
+          "hit_rate": 1.0,
+          "baseline_hit_rate": 1.0
+        },
+        "19.5": {
+          "n": 3,
+          "hit_rate": 0.6667,
+          "baseline_hit_rate": 0.6667
+        },
+        "20.5": {
+          "n": 4,
+          "hit_rate": 0.75,
+          "baseline_hit_rate": 1.0
+        },
+        "21.5": {
+          "n": 34,
+          "hit_rate": 0.4118,
+          "baseline_hit_rate": 0.6176
+        },
+        "22.5": {
+          "n": 207,
+          "hit_rate": 0.5314,
+          "baseline_hit_rate": 0.5652
+        },
+        "23.5": {
+          "n": 304,
+          "hit_rate": 0.602,
+          "baseline_hit_rate": 0.5724
+        },
+        "24.5": {
+          "n": 447,
+          "hit_rate": 0.5928,
+          "baseline_hit_rate": 0.5593
+        },
+        "25.5": {
+          "n": 386,
+          "hit_rate": 0.6321,
+          "baseline_hit_rate": 0.5855
+        },
+        "26.5": {
+          "n": 447,
+          "hit_rate": 0.5817,
+          "baseline_hit_rate": 0.5593
+        },
+        "27.5": {
+          "n": 320,
+          "hit_rate": 0.625,
+          "baseline_hit_rate": 0.5906
+        },
+        "28.5": {
+          "n": 207,
+          "hit_rate": 0.6087,
+          "baseline_hit_rate": 0.6473
+        },
+        "29.5": {
+          "n": 123,
+          "hit_rate": 0.6992,
+          "baseline_hit_rate": 0.6667
+        },
+        "30.5": {
+          "n": 37,
+          "hit_rate": 0.5135,
+          "baseline_hit_rate": 0.5135
+        },
+        "31.5": {
+          "n": 14,
+          "hit_rate": 0.7143,
+          "baseline_hit_rate": 0.7143
+        },
+        "33.5": {
+          "n": 1,
+          "hit_rate": 1.0,
+          "baseline_hit_rate": 1.0
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 1319,
+          "predicted": 0.2827,
+          "actual": 0.3252,
+          "gap": 0.0425
+        },
+        "0.40-0.50": {
+          "n": 550,
+          "predicted": 0.4468,
+          "actual": 0.4545,
+          "gap": 0.0078
+        },
+        "0.50-0.60": {
+          "n": 412,
+          "predicted": 0.545,
+          "actual": 0.4757,
+          "gap": 0.0692
+        },
+        "0.60-0.70": {
+          "n": 205,
+          "predicted": 0.6433,
+          "actual": 0.5805,
+          "gap": 0.0629
+        },
+        "0.70-1.01": {
+          "n": 54,
+          "predicted": 0.7555,
+          "actual": 0.6111,
+          "gap": 0.1444
+        },
+        "weighted_gap": 0.0409,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 1228,
+          "predicted": 0.3177,
+          "actual": 0.3282,
+          "gap": 0.0105
+        },
+        "0.40-0.50": {
+          "n": 776,
+          "predicted": 0.447,
+          "actual": 0.4369,
+          "gap": 0.0102
+        },
+        "0.50-0.60": {
+          "n": 434,
+          "predicted": 0.5408,
+          "actual": 0.5138,
+          "gap": 0.027
+        },
+        "0.60-0.70": {
+          "n": 90,
+          "predicted": 0.6294,
+          "actual": 0.5889,
+          "gap": 0.0405
+        },
+        "0.70-1.01": {
+          "n": 12,
+          "predicted": 0.7287,
+          "actual": 0.75,
+          "gap": 0.0213
+        },
+        "weighted_gap": 0.0133,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60"
+        ]
+      }
+    },
+    "Points": {
+      "projections": 46749,
+      "mae": 0.537,
+      "baseline_mae": 0.5286,
+      "hit_rate": 0.6727,
+      "baseline_hit_rate": 0.5943,
+      "decisions": 46092,
+      "lines": {
+        "0.5": {
+          "n": 44539,
+          "hit_rate": 0.674,
+          "baseline_hit_rate": 0.5957
+        },
+        "1.5": {
+          "n": 1553,
+          "hit_rate": 0.6375,
+          "baseline_hit_rate": 0.5557
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 33102,
+          "predicted": 0.2816,
+          "actual": 0.2617,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 7699,
+          "predicted": 0.4482,
+          "actual": 0.4692,
+          "gap": 0.021
+        },
+        "0.50-0.60": {
+          "n": 4989,
+          "predicted": 0.5453,
+          "actual": 0.5797,
+          "gap": 0.0344
+        },
+        "0.60-0.70": {
+          "n": 959,
+          "predicted": 0.6139,
+          "actual": 0.6475,
+          "gap": 0.0336
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0219,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 33102,
+          "predicted": 0.2816,
+          "actual": 0.2617,
+          "gap": 0.0199
+        },
+        "0.40-0.50": {
+          "n": 7699,
+          "predicted": 0.4482,
+          "actual": 0.4692,
+          "gap": 0.021
+        },
+        "0.50-0.60": {
+          "n": 4989,
+          "predicted": 0.5453,
+          "actual": 0.5797,
+          "gap": 0.0344
+        },
+        "0.60-0.70": {
+          "n": 959,
+          "predicted": 0.6139,
+          "actual": 0.6475,
+          "gap": 0.0336
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.0219,
+        "bins_used": [
+          "0.00-0.40",
+          "0.40-0.50",
+          "0.50-0.60",
+          "0.60-0.70"
+        ]
+      }
+    },
+    "Power Play Points": {
+      "projections": 46749,
+      "mae": 0.1501,
+      "baseline_mae": 0.1444,
+      "hit_rate": 0.9179,
+      "baseline_hit_rate": 0.8985,
+      "decisions": 46718,
+      "lines": {
+        "0.5": {
+          "n": 46718,
+          "hit_rate": 0.9179,
+          "baseline_hit_rate": 0.8985
+        }
+      },
+      "poisson_calibration": {
+        "0.00-0.40": {
+          "n": 46663,
+          "predicted": 0.0848,
+          "actual": 0.0808,
+          "gap": 0.004
+        },
+        "0.40-0.50": {
+          "n": 86,
+          "predicted": 0.42,
+          "actual": 0.2791,
+          "gap": 0.1409
+        },
+        "0.50-0.60": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.004,
+        "bins_used": [
+          "0.00-0.40"
+        ]
+      },
+      "negative_binomial_calibration": {
+        "0.00-0.40": {
+          "n": 46663,
+          "predicted": 0.0848,
+          "actual": 0.0808,
+          "gap": 0.004
+        },
+        "0.40-0.50": {
+          "n": 86,
+          "predicted": 0.42,
+          "actual": 0.2791,
+          "gap": 0.1409
+        },
+        "0.50-0.60": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.60-0.70": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "0.70-1.01": {
+          "n": 0,
+          "predicted": null,
+          "actual": null,
+          "gap": null
+        },
+        "weighted_gap": 0.004,
+        "bins_used": [
+          "0.00-0.40"
+        ]
+      }
+    }
+  }
+}

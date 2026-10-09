@@ -30,9 +30,25 @@ export function canSeeNba(user) {
   return email === NBA_OWNER_EMAIL;
 }
 
-// Landing cards. NBA opens only when the access check says full.
-export function landingSportOpens(sportId, nbaOpen) {
+// NHL uses the same owner email and the same public-flag rule as NBA.
+export const NHL_OWNER_EMAIL = NBA_OWNER_EMAIL;
+
+export function canSeeNhl(user) {
+  return canSeeNba(user);
+}
+
+// Local screenshots only. Production builds set DEV to false, so this cannot
+// open the live tab.
+export function nhlDevBypass(isDev, search) {
+  if (!isDev) return false;
+  const params = new URLSearchParams(typeof search === 'string' ? search : '');
+  return params.get('nhl') === '1';
+}
+
+// Landing cards. NBA and NHL open only when their access check says full.
+export function landingSportOpens(sportId, nbaOpen, nhlOpen) {
   if (sportId === 'nba') return nbaOpen === true;
+  if (sportId === 'nhl') return nhlOpen === true;
   return sportId === 'kbo' || sportId === 'wnba' || sportId === 'nfl';
 }
 

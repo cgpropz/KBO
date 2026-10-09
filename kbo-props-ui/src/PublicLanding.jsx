@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { NBA_CARD, SPORTS } from './sportsMeta';
+import { NBA_CARD, NHL_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
+import { useNhlOpen } from './useNhlOpen';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
@@ -68,6 +69,7 @@ const FAQS = [
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const { open: nbaOpen } = useNbaOpen();
+  const { open: nhlOpen } = useNhlOpen();
   const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
   const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
@@ -175,12 +177,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <h2>One subscription. Every sport.</h2>
           </div>
           <div className="pl-sports-grid">
-            {[...SPORTS, NBA_CARD].map((s) => (
+            {[...SPORTS, NBA_CARD, NHL_CARD].map((s) => (
               <LandingSportCard
                 key={s.id}
                 variant="public"
                 sport={s}
                 nbaOpen={nbaOpen}
+                nhlOpen={nhlOpen}
                 onOpen={(id) => (onOpenBoard ? onOpenBoard(id) : onGetStarted())}
               />
             ))}

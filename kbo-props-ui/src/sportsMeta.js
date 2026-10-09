@@ -55,3 +55,17 @@ export const NBA_CARD = {
   portrait: '/sport-cards/nba-card.webp',
   portraitAlt: 'Illustrated basketball player in a dark jersey',
 };
+
+// Shown beside SPORTS, locked the same way as NBA. Not a league logo.
+export const NHL_CARD = {
+  id: 'nhl',
+  emoji: '🏒',
+  name: 'NHL',
+  full: 'Pro Hockey',
+  tagline: 'Shots, saves, points, and power-play points from the PrizePicks board.',
+  accent: '#7dd3fc',
+  glow: 'rgba(125, 211, 252, 0.35)',
+  features: ['Shots and saves model', 'Points and power-play points', 'Lines and starting goalies'],
+  portrait: '/sport-cards/nhl-card.svg',
+  portraitAlt: 'Illustrated hockey player in a dark helmet',
+};

@@ -7,7 +7,9 @@ import CgpropzLanding from './CgpropzLanding'
 import WnbaApp from './wnba/WnbaApp'
 import NflApp from './nfl/NflApp'
 import NbaApp from './nba/NbaApp'
+import NhlApp from './nhl/NhlApp'
 import { useNbaOpen } from './useNbaOpen'
+import { useNhlOpen } from './useNhlOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import './FreeFunnel.css'
 import './App.css'
@@ -17,6 +19,7 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 function App() {
   const { user, loading } = useAuth();
   const nba = useNbaOpen();
+  const nhl = useNhlOpen();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('hub');
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -56,7 +59,7 @@ function App() {
   // Stored cg_sport=nba stays put until the access check finishes, so a later
   // public flag does not wipe All-Access. Until then the NBA shell is not
   // mounted. Adjusted during render (not in an effect) once the check is closed.
-  if (sport === 'nba' && !nba.ready) {
+  if ((sport === 'nba' && !nba.ready) || (sport === 'nhl' && !nhl.ready)) {
     return (
       <div style={{
         display: 'flex',
@@ -75,7 +78,10 @@ function App() {
   if (sport === 'nba' && !nba.open) {
     setSport('kbo');
   }
-  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? 'kbo' : sport;
+  if (sport === 'nhl' && !nhl.open) {
+    setSport('kbo');
+  }
+  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nhl' && nhl.open ? 'nhl' : (sport === 'nba' || sport === 'nhl') ? 'kbo' : sport;
 
   const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
   const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };
@@ -137,6 +143,15 @@ function App() {
   } else if (visibleSport === 'nba') {
     sportApp = (
       <NbaApp
+        sport={visibleSport}
+        setSport={setSport}
+        onNavigateHome={() => setView('hub')}
+        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
+      />
+    );
+  } else if (visibleSport === 'nhl') {
+    sportApp = (
+      <NhlApp
         sport={visibleSport}
         setSport={setSport}
         onNavigateHome={() => setView('hub')}

@@ -258,9 +258,34 @@ class NflProjector:
         return linear(cal, proj), "replayed(nflverse<gameday)"
 
 
+class NhlProjector:
+    """Carry the current NHL number until a tuned fit exists.
+
+    score_prop does not call project() when the stat has no candidate params.
+    If a candidate is added later and marked is_current, this applies that
+    file's calibration to the frozen projection and does not refit the formula.
+    """
+
+    def __init__(self, hist: History, params: dict[str, dict]):
+        self.hist, self.params = hist, params
+
+    def project(self, stat: str, prop: dict, d: date, sha: str) -> tuple[float | None, str]:
+        p = self.params.get(stat) or {}
+        formula = p.get("formula") or {}
+        if formula.get("is_current", True):
+            raw = calibration_input(prop)
+            ok, why = current_projection_valid("nhl", prop)
+            if ok and raw is not None:
+                return linear(p.get("linear_calibration"), float(raw)), "current_x_calibration"
+            return None, why or "no_projection_or_line"
+        return None, "nhl_tuned_fit_not_wired"
+
+
 def make_projector(sport: str, hist: History, params: dict[str, dict], nfl_values: NflValues | None = None):
     if sport == "kbo":
         return KboProjector(hist, params)
     if sport == "wnba":
         return WnbaProjector(hist, params)
+    if sport == "nhl":
+        return NhlProjector(hist, params)
     return NflProjector(hist, params, nfl_values)

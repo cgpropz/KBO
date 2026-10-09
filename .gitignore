@@ -48,6 +48,11 @@ nfl/lineups.json
 nfl/sharp_odds.json
 nfl/game_markets.json
 
+# NHL snapshots are generated in CI and published to protected Supabase.
+nhl/projections.json
+nhl/lineups.json
+nhl/sharp_odds.json
+
 # Props memory archive is committed under memory/ (do not ignore).
 
 # Paid snapshot data. These files are pipeline working state only: they are
@@ -65,6 +70,7 @@ kbo-props-ui/public/data/graded_props_history.json
 kbo-props-ui/public/data/wnba/
 kbo-props-ui/public/data/nfl/
 kbo-props-ui/public/data/nba/
+kbo-props-ui/public/data/nhl/
 
 # Vercel CLI local build output (.vercel/output contains build-time copies of
 # source and data). Only the project link file stays tracked so CI deploys keep

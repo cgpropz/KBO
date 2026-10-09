@@ -1,0 +1,31 @@
+.nhl-probable, .nhl-confirmed {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font: 800 9px monospace;
+  letter-spacing: .04em;
+  vertical-align: 1px;
+}
+.nhl-probable { color: #2c2100; background: #f1c85b; }
+.nhl-confirmed { color: #06210f; background: #7fff68; }
+.nhl-odds {
+  margin-left: 6px;
+  color: #9ad7ff;
+  font: 800 9px monospace;
+  letter-spacing: .04em;
+}
+.nhl-note {
+  margin: 0 0 14px;
+  color: #78918a;
+  font: 12px/1.45 monospace;
+}
+.nhl-unit {
+  margin: 8px 0 2px;
+  color: #54e0bf;
+  font: 800 9px monospace;
+  letter-spacing: .08em;
+}
+@media (max-width: 900px) {
+  .nhl-root .nfl-lineups-grid { grid-template-columns: 1fr; }
+}

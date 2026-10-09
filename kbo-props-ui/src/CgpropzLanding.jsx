@@ -1,8 +1,9 @@
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
-import { NBA_CARD, SPORTS } from './sportsMeta';
+import { NBA_CARD, NHL_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
+import { useNhlOpen } from './useNhlOpen';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
@@ -22,6 +23,7 @@ import './CgpropzLanding.css';
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
   const { open: nbaOpen } = useNbaOpen();
+  const { open: nhlOpen } = useNhlOpen();
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
@@ -68,12 +70,13 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         </section>
 
         <section className="cg-sports">
-          {[...SPORTS, NBA_CARD].map((s) => (
+          {[...SPORTS, NBA_CARD, NHL_CARD].map((s) => (
             <LandingSportCard
               key={s.id}
               variant="hub"
               sport={s}
               nbaOpen={nbaOpen}
+              nhlOpen={nhlOpen}
               onOpen={onEnterSport}
             />
           ))}

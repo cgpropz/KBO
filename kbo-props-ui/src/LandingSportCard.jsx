@@ -10,12 +10,12 @@ function LockIcon() {
   );
 }
 
-export default function LandingSportCard({ variant, sport, nbaOpen, onOpen }) {
+export default function LandingSportCard({ variant, sport, nbaOpen, nhlOpen, onOpen }) {
   const prefix = variant === 'hub' ? 'cg' : 'pl';
   const Heading = variant === 'hub' ? 'h2' : 'h3';
-  const locked = sport.id === 'nba' && nbaOpen !== true;
+  const locked = (sport.id === 'nba' && nbaOpen !== true) || (sport.id === 'nhl' && nhlOpen !== true);
   const open = () => {
-    if (!landingSportOpens(sport.id, nbaOpen)) return;
+    if (!landingSportOpens(sport.id, nbaOpen, nhlOpen)) return;
     onOpen(sport.id);
   };
 
@@ -28,6 +28,7 @@ export default function LandingSportCard({ variant, sport, nbaOpen, onOpen }) {
       aria-label={locked ? `${sport.name}, coming soon, locked` : undefined}
       data-sport={sport.id}
       data-nba-locked={sport.id === 'nba' ? String(locked) : undefined}
+      data-nhl-locked={sport.id === 'nhl' ? String(locked) : undefined}
       onClick={open}
     >
       <div className={`${prefix}-sport-art`}>

@@ -790,9 +790,71 @@ def consolidate_aliased_nfl_props(*, alias: str = "JAC") -> dict:
     }
 
 
+def freeze_nhl(
+    slate_date: date | None = None,
+    dry_run: bool = False,
+    *,
+    now: datetime | None = None,
+    ignore_cutoff: bool = False,
+) -> dict:
+    """Freeze nhl/projections.json. Missing file skips the night instead of failing other sports."""
+    now = _now(now)
+    commit = source_commit()
+    projections_path = REPO_ROOT / "nhl" / "projections.json"
+    projections = load_json(projections_path, default=None)
+    if not projections:
+        return {"sport": "nhl", "skipped": "no projections", "path": str(projections_path)}
+    by_date: dict[date, list[dict]] = defaultdict(list)
+    skipped_started: dict[date, int] = defaultdict(int)
+    for row in projections:
+        gameday = parse_date(row.get("gameday") or row.get("date")) or slate_date or today_et()
+        if slate_date and gameday != slate_date:
+            continue
+        start, start_source = cutoff.nhl_puck_drop(gameday, row.get("start_time") or row.get("startTimeUTC"))
+        if not ignore_cutoff and cutoff.has_started(start, now):
+            skipped_started[gameday] += 1
+            continue
+        projection = row.get("projection")
+        line = row.get("line")
+        entry = {
+            "player": row.get("player"),
+            "team": row.get("team"),
+            "opponent": row.get("opponent"),
+            "position": row.get("position"),
+            "stat": row.get("prop"),
+            "line": line,
+            "odds_type": row.get("oddsType") or "standard",
+            "recommendation": "OVER" if (projection or 0) >= (line or 0) else "UNDER",
+            "projection": projection,
+            "projection_source": "nhl/build_board.py" if projection is not None else None,
+            "edge": _edge(projection, line),
+            "rating": row.get("seasonHitRate"),
+            "game_date_iso": format_iso(gameday),
+            "games_played": row.get("gamesPlayed"),
+            "dvp_rank": row.get("dvpRank"),
+            "goalie_status": row.get("goalieStatus"),
+            "rank_eligible": row.get("rankEligible", True),
+        }
+        if ignore_cutoff:
+            entry["cutoff_ignored"] = True
+        _formula_fields(entry, row)
+        by_date[gameday].append(_stamp(entry, start, start_source, now, commit))
+    summaries = []
+    for d, props in sorted(by_date.items()):
+        if dry_run:
+            summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "dry_run": True})
+            continue
+        path = write_slate("nhl", d, props, source="nhl/projections.json")
+        summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)})
+    out = {"sport": "nhl", "dates": len(summaries), "results": summaries}
+    if skipped_started:
+        out["skipped_started"] = {format_mmddyyyy(d): n for d, n in sorted(skipped_started.items())}
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Freeze/merge live prop boards into memory/")
-    parser.add_argument("--sport", choices=("kbo", "wnba", "nfl", "all"), required=True)
+    parser.add_argument("--sport", choices=("kbo", "wnba", "nfl", "nhl", "all"), required=True)
     parser.add_argument("--date", help="Optional slate date mm/dd/YYYY or YYYY-MM-DD")
     parser.add_argument("--dry-run", action="store_true", help="Parse boards without writing")
     parser.add_argument(
@@ -803,7 +865,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-nfl-history", action="store_true", help="Skip memory/nfl/.../history.jsonl")
     args = parser.parse_args(argv)
 
-    targets = ["kbo", "wnba", "nfl"] if args.sport == "all" else [args.sport]
+    targets = ["kbo", "wnba", "nfl", "nhl"] if args.sport == "all" else [args.sport]
     out = []
     fatal = None
     for sport in targets:
@@ -814,7 +876,7 @@ def main(argv: list[str] | None = None) -> int:
             elif sport == "wnba":
                 forced = parse_cli_date(args.date, today_et()) if args.date else None
                 out.append(freeze_wnba(forced, dry_run=args.dry_run, ignore_cutoff=args.ignore_cutoff))
-            else:
+            elif sport == "nfl":
                 forced = parse_cli_date(args.date, today_et()) if args.date else None
                 out.append(
                     freeze_nfl(
@@ -824,6 +886,9 @@ def main(argv: list[str] | None = None) -> int:
                         write_history=not args.no_nfl_history,
                     )
                 )
+            else:
+                forced = parse_cli_date(args.date, today_et()) if args.date else None
+                out.append(freeze_nhl(forced, dry_run=args.dry_run, ignore_cutoff=args.ignore_cutoff))
         except SystemExit as exc:
             out.append({"sport": sport, "error": str(exc)})
             if args.sport != "all":
