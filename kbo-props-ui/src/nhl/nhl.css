@@ -1,3 +1,146 @@
+/* Arena chrome. Green still means over or a good mark. Red still means under. */
+.nhl-root .nfl-logo,
+.nhl-root .nfl-board-header h1,
+.nhl-root .nfl-hero h1,
+.nhl-root .nfl-lineups-header h1,
+.nhl-root .nfl-player-title h1 {
+  color: #f4f8ff;
+  text-shadow: 0 2px 16px rgba(4, 8, 18, 0.75);
+}
+
+.nhl-root .nfl-board-header p,
+.nhl-root .nfl-hero p,
+.nhl-root .nfl-lineups-header > p,
+.nhl-root .nfl-matchup-card > p,
+.nhl-root .nfl-lines-table th,
+.nhl-root .nhl-unit,
+.nhl-root .nfl-rank,
+.nhl-root .nfl-card-player p b,
+.nhl-root .nfl-lineup-player > em,
+.nhl-root .nfl-injury-column > b {
+  color: #8ecfff;
+}
+
+.nhl-root .nfl-nav-links button.active,
+.nhl-root .nfl-player-link:hover,
+.nhl-root .nfl-player-back:hover {
+  color: #8ecfff;
+}
+
+.nhl-root .nfl-pro-badge {
+  border-color: #ff8c42;
+  color: #ffb07a;
+}
+
+.nhl-root .nfl-lines-tabs,
+.nhl-root .nfl-player-header,
+.nhl-root .nfl-player-tabs {
+  border-bottom-color: rgba(140, 186, 220, 0.22);
+}
+
+.nhl-root .nfl-lines-tabs button,
+.nhl-root .nfl-player-tabs button,
+.nhl-root .nfl-position-tabs button,
+.nhl-root .nfl-filters-btn,
+.nhl-root .nfl-filter-chip-row button {
+  border-color: #1c3a52;
+  color: #9eb4c8;
+  background: #0b1424;
+}
+
+.nhl-root .nfl-lines-tabs button:hover,
+.nhl-root .nfl-player-tabs button:hover,
+.nhl-root .nfl-position-tabs button:hover {
+  color: #f4f8ff;
+  border-color: #3d6e96;
+}
+
+.nhl-root .nfl-lines-tabs button.active,
+.nhl-root .nfl-player-tabs button.active,
+.nhl-root .nfl-position-tabs button.active,
+.nhl-root .nfl-filters button.active {
+  color: #071018;
+  background: #8ecfff;
+  border-color: #8ecfff;
+}
+
+.nhl-root .nfl-edge-controls input,
+.nhl-root .nfl-edge-controls select,
+.nhl-root .nfl-filters input,
+.nhl-root .nfl-player-search input {
+  border-color: #1c3a52;
+  color: #e7eef8;
+  background: #0b1424;
+}
+
+.nhl-root .nfl-edge-card,
+.nhl-root .nfl-matchup-card,
+.nhl-root .nfl-top-card {
+  border-color: rgba(120, 168, 204, 0.32);
+  border-top: 2px solid rgba(255, 140, 66, 0.72);
+  background: rgba(8, 14, 28, 0.93);
+}
+
+.nhl-root .nfl-card-prop,
+.nhl-root .nfl-prop {
+  color: #d7ecff;
+  border-color: rgba(28, 52, 78, 0.9);
+}
+
+.nhl-root .nfl-lines-avatar,
+.nhl-root .nfl-card-avatar,
+.nfl-root.nhl-root .nfl-avatar {
+  background: #16324a;
+  color: #d7ecff;
+}
+
+.nhl-root .nhl-note,
+.nhl-root .nfl-lines-tag,
+.nhl-root .nfl-card-player p,
+.nhl-root .nfl-lines-table td {
+  color: #b7c9d8;
+}
+
+.nhl-root .nhl-player-sheet .nfl-history-bars {
+  gap: 6px;
+  height: 72px;
+  margin-top: 8px;
+  padding: 14px 12px 8px;
+  border: 1px solid rgba(120, 168, 204, 0.3);
+  border-radius: 8px;
+}
+
+.nhl-root .nhl-player-sheet .nfl-history-bars span {
+  color: #f4f8ff;
+  font: 800 11px monospace;
+}
+
+.nhl-root .nfl-lines-page .over,
+.nhl-root .nfl-edge-card .over,
+.nhl-root .nfl-player-page .over,
+.nhl-root .over {
+  color: #7fff68;
+}
+
+.nhl-root .nfl-lines-page .under,
+.nhl-root .nfl-edge-card .under,
+.nhl-root .nfl-player-page .under,
+.nhl-root .under {
+  color: #ff7b79;
+}
+
+.nhl-root .nfl-lines-chart span.hit,
+.nhl-root .nfl-history-bars span.hit,
+.nhl-root .nfl-player-bar.hit {
+  background: #7fff68;
+}
+
+.nhl-root .nfl-lines-chart span.miss,
+.nhl-root .nfl-history-bars span.miss,
+.nhl-root .nfl-player-bar.miss {
+  background: #ff7b79;
+}
+
 .nhl-probable, .nhl-confirmed {
   display: inline-block;
   margin-left: 6px;

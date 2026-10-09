@@ -18,7 +18,7 @@ function PlayerSheet({ item, onBack }) {
   if (!item) return null
   const recent = Array.isArray(item.recent) ? item.recent : []
   return (
-    <section>
+    <section className="nhl-player-sheet">
       <button className="nfl-player-link" onClick={onBack}>Back</button>
       <div className="nfl-board-header">
         <div>
