@@ -21,6 +21,15 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/discord-auth", "destination": "/api/discord/auth" },
+    { "source": "/api/discord-callback", "destination": "/api/discord/callback" },
+    { "source": "/api/discord-checkout", "destination": "/api/discord/checkout" },
+    { "source": "/api/discord-disconnect", "destination": "/api/discord/disconnect" },
+    { "source": "/api/discord-backfill", "destination": "/api/discord/backfill" },
+    { "source": "/api/nba-access", "destination": "/api/league-access/nba" },
+    { "source": "/api/nhl-access", "destination": "/api/league-access/nhl" },
+    { "source": "/api/checkout-session", "destination": "/api/checkout/session" },
+    { "source": "/api/weekly-checkout", "destination": "/api/checkout/weekly" },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"

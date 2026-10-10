@@ -1,7 +1,7 @@
 // Discord-only Checkout Sessions. No network, no credentials.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { handleDiscordCheckoutRequest } from '../api/discord-checkout.js'
+import { handleDiscordCheckoutRequest } from '../api/_discordCheckout.js'
 
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_test_discord'
 const PRICE = 'price_discordWeeklyTest'

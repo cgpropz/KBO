@@ -2,7 +2,7 @@
 // No network, no credentials. Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { handleWeeklyCheckoutRequest } from '../api/weekly-checkout.js'
+import { handleWeeklyCheckoutRequest } from '../api/_weeklyCheckout.js'
 import { WEEKLY_PRICE_ID, XWEEK_PROMOTION_CODE_ID } from '../src/pricingTiers.js'
 
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_live_weeklyxweek'
