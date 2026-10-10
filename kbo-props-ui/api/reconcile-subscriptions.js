@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { mergeTier, tierForPrice } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -12,16 +13,6 @@ const supabase = createClient(
   cleanEnv(process.env.VITE_SUPABASE_URL),
   cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
 );
-
-function inferTierFromAmount(unitAmount) {
-  if ((unitAmount || 0) >= 4000) return 'season';
-  return 'monthly';
-}
-
-function bestTier(a, b) {
-  const rank = { free: 0, monthly: 1, season: 2 };
-  return (rank[b] || 0) > (rank[a] || 0) ? b : a;
-}
 
 // Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}` when the CRON_SECRET
 // env var is set on the project (https://vercel.com/docs/cron-jobs/manage-cron-jobs).
@@ -84,10 +75,15 @@ async function collectActiveSubscriberTiers() {
       const normalized = email.trim().toLowerCase();
       if (!normalized) continue;
 
+      // Grant from the live price id (weekly all-access → combined). Amount
+      // buckets mislabeled the $9.99 weekly price as monthly and could
+      // overwrite a narrower legacy tier. Emails are lowercased so a
+      // mixed-case Checkout address still matches the Supabase account.
       const price = sub.items?.data?.[0]?.price;
-      const tier = inferTierFromAmount(price?.unit_amount || 0);
+      const priceId = typeof price === 'string' ? price : price?.id;
+      const tier = tierForPrice(priceId);
       const prev = byEmail.get(normalized) || 'free';
-      byEmail.set(normalized, bestTier(prev, tier));
+      byEmail.set(normalized, mergeTier(prev, tier));
     }
 
     if (!page.has_more || page.data.length === 0) break;
@@ -111,20 +107,21 @@ async function setTierByEmail(email, tier) {
     .limit(1);
 
   const current = rows?.[0]?.tier || 'free';
-  if (current === 'season' || current === 'monthly') {
+  const next = mergeTier(current, tier);
+  if (next === current) {
     return { status: 'already_paid', email };
   }
 
   const { error: upsertError } = await supabase
     .from('user_profiles')
-    .upsert({ id: userId, tier }, { onConflict: 'id' });
+    .upsert({ id: userId, tier: next }, { onConflict: 'id' });
 
   if (upsertError) {
     console.error('[reconcile] failed upsert for', email, upsertError);
     return { status: 'error', email, error: upsertError.message };
   }
 
-  return { status: 'patched', email, tier };
+  return { status: 'patched', email, tier: next };
 }
 
 export default async function handler(req, res) {

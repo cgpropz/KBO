@@ -59,15 +59,57 @@ export function tierFromSports(sports, hasAny) {
   return 'free';
 }
 
+// Stripe Customer.list({ email }) is an exact, case-sensitive filter. Checkout
+// stores the address the buyer typed (`KLAW1193@icloud.com`), while Supabase
+// login emails are lowercase, so a list-only lookup returns nobody and a paid
+// subscriber stays on the free tier. Customer Search matches email regardless
+// of case. Search can lag a new customer by about a minute, so list is tried
+// first for both casings.
+function escapeSearchValue(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+export async function customersForEmail(stripe, email) {
+  const raw = (email || '').trim();
+  const key = raw.toLowerCase();
+  if (!key.includes('@')) return [];
+
+  const byId = new Map();
+  const consider = (rows) => {
+    for (const row of rows || []) {
+      const rowEmail = (row?.email || '').trim().toLowerCase();
+      if (row?.id && rowEmail === key) byId.set(row.id, row);
+    }
+  };
+
+  if (typeof stripe.customers?.list === 'function') {
+    for (const query of new Set([raw, key])) {
+      const page = await stripe.customers.list({ email: query, limit: 10 });
+      consider(page?.data);
+    }
+  }
+
+  if (byId.size === 0 && typeof stripe.customers?.search === 'function') {
+    const found = await stripe.customers.search({
+      query: `email:"${escapeSearchValue(key)}"`,
+      limit: 10,
+    });
+    consider(found?.data);
+  }
+
+  return [...byId.values()];
+}
+
 // Authoritative recompute of a user's tier from their live Stripe state:
 // active/trialing subscriptions + any one-time lifetime charge. Returns
 // 'free' | 'kbo' | 'wnba' | 'combined'. Used on cancellation and self-heal.
+// Email matching is case-insensitive (see customersForEmail).
 export async function computeStripeTier(stripe, email) {
   const sports = new Set();
   let hasAny = false;
 
-  const customers = await stripe.customers.list({ email, limit: 10 });
-  for (const c of customers.data) {
+  const customers = await customersForEmail(stripe, email);
+  for (const c of customers) {
     const subs = await stripe.subscriptions.list({ customer: c.id, status: 'all', limit: 20 });
     for (const s of subs.data) {
       if (s.status !== 'active' && s.status !== 'trialing') continue;

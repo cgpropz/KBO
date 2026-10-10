@@ -159,7 +159,7 @@ test('a returning customer whose XWEEK code is rejected still gets a payable wee
   const promoError = new Error('This promotion code cannot be redeemed because the associated customer has prior transactions.')
   let n = 0
   const stripe = {
-    customers: { async list() { return { data: [{ id: 'cus_existing' }] } } },
+    customers: { async list() { return { data: [{ id: 'cus_existing', email: 'buyer@example.com' }] } } },
     checkout: { sessions: { async create(params) {
       calls.push(structuredClone(params))
       n += 1
