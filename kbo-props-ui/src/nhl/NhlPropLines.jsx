@@ -90,6 +90,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
       <td><MiniChart recent={recent} line={Number(item.line)} /></td>
       <td className={isOver ? 'over' : 'under'}>{score.toFixed(1)}</td>
       <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
+      <td className={item.priorSeasonHitRate == null ? '' : item.priorSeasonHitRate >= 50 ? 'over' : 'under'}>{item.priorSeasonHitRate == null ? '—' : `${item.priorSeasonHitRate}%`}</td>
       <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>
         {item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}
         {item.h2hIncludesPriorSeason ? <small className="nhl-odds">last yr</small> : null}
@@ -102,7 +103,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
     </tr>
     {open && (
       <tr className="nfl-sharp-strip-row">
-        <td colSpan={7}>
+        <td colSpan={8}>
           <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
         </td>
       </tr>
@@ -174,7 +175,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
           <table className="nfl-lines-table">
             <thead>
               <tr>
-                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON}</th><th>H2H</th><th>DVP</th><th>Matchup</th>
+                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON}</th><th>2025-26</th><th>H2H</th><th>DVP</th><th>Matchup</th>
               </tr>
             </thead>
             <tbody>

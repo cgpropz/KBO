@@ -479,15 +479,32 @@ def _pp_role(name: str, lineup: dict | None) -> str | None:
     return "none"
 
 
+def _rate(rows: list[dict], key: str, line: float):
+    rate, count = hit_rate([float(row[key]) for row in rows], line)
+    return rate, count
+
+
+def _log_rows(history: list[dict]) -> list[dict]:
+    """Every game this season and last season, so the 2025-26 chart matches that rate."""
+    current = [row for row in history if row.get("season") == CURRENT_SEASON]
+    prior = [row for row in history if row.get("season") == PRIOR_SEASON]
+    return prior + current
+
+
 def _chart(history: list[dict], key: str, line: float, opponent: str) -> dict:
     recent_rows = history[-10:]
     recent = [float(row[key]) for row in recent_rows]
-    l10, l10_n = hit_rate(recent, line)
-    l5, l5_n = hit_rate([float(row[key]) for row in history[-5:]], line)
+    l5, l5_n = _rate(history[-5:], key, line)
+    l10, l10_n = _rate(recent_rows, key, line)
+    l20, l20_n = _rate(history[-20:], key, line)
+    l30, l30_n = _rate(history[-30:], key, line)
     season_rows = [row for row in history if row.get("season") == CURRENT_SEASON]
-    season_rate, season_n = hit_rate([float(row[key]) for row in season_rows], line)
+    prior_rows = [row for row in history if row.get("season") == PRIOR_SEASON]
+    season_rate, season_n = _rate(season_rows, key, line)
+    prior_rate, prior_n = _rate(prior_rows, key, line)
     h2h_rows = [row for row in history if team_abbr(row.get("opp")) == opponent]
-    h2h_rate, h2h_n = hit_rate([float(row[key]) for row in h2h_rows], line)
+    h2h_rate, h2h_n = _rate(h2h_rows, key, line)
+    log_rows = _log_rows(history)
     prior_in_chart = any(row.get("season") != CURRENT_SEASON for row in recent_rows)
     prior_in_h2h = any(row.get("season") != CURRENT_SEASON for row in h2h_rows)
     return {
@@ -495,14 +512,27 @@ def _chart(history: list[dict], key: str, line: float, opponent: str) -> dict:
         "gameDates": [_short_date(row["date"]) for row in recent_rows],
         "chartSeasons": [_season_label(row.get("season")) for row in recent_rows],
         "chartIncludesPriorSeason": prior_in_chart,
+        "log": [float(row[key]) for row in log_rows],
+        "logDates": [_short_date(row["date"]) for row in log_rows],
+        "logSeasons": [_season_label(row.get("season")) for row in log_rows],
+        "logOpponents": [team_abbr(row.get("opp")) for row in log_rows],
+        "logTeams": [team_abbr(row.get("team")) for row in log_rows],
+        "latestGame": _short_date(history[-1]["date"]) if history else None,
         "hitRate": l10,
         "gamesPlayed": len(history),
         "hitRateL5": l5,
         "gamesL5": l5_n,
         "gamesL10": l10_n,
+        "hitRateL20": l20,
+        "gamesL20": l20_n,
+        "hitRateL30": l30,
+        "gamesL30": l30_n,
         "seasonHitRate": season_rate if season_n else None,
         "seasonGames": season_n,
         "seasonLabel": SEASON_LABEL,
+        "priorSeasonHitRate": prior_rate if prior_n else None,
+        "priorSeasonGames": prior_n,
+        "priorSeasonLabel": "2025-26",
         "h2hHitRate": h2h_rate if h2h_n else None,
         "h2hGames": h2h_n,
         "h2hIncludesPriorSeason": prior_in_h2h,
