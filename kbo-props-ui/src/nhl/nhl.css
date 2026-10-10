@@ -101,13 +101,48 @@
   color: #b7c9d8;
 }
 
+.nhl-root .nhl-player-sheet .nfl-player-range-strip {
+  margin: 8px 0 12px;
+}
+.nhl-root .nhl-player-sheet .nfl-player-range-strip button {
+  border-color: #1c3a52;
+  background: #0b1424;
+  color: #9eb4c8;
+}
+.nhl-root .nhl-player-sheet .nfl-player-range-strip button small {
+  display: block;
+  margin-top: 3px;
+  color: #6e8496;
+  font: 9px monospace;
+}
+.nhl-root .nhl-player-sheet .nfl-player-range-strip button.active {
+  border-color: #8ecfff;
+  background: #16324a;
+}
+.nhl-root .nhl-player-sheet .nfl-player-range-strip button.active span {
+  color: #f4f8ff;
+}
+.nhl-root .nhl-player-sheet .nhl-chart-scroll {
+  overflow-x: auto;
+}
+.nhl-root .nhl-player-sheet .nhl-chart-scroll .nfl-history-dates span {
+  min-width: 28px;
+}
 .nhl-root .nhl-player-sheet .nfl-history-bars {
   gap: 6px;
-  height: 72px;
+  height: 128px;
+  align-items: end;
   margin-top: 8px;
   padding: 14px 12px 8px;
   border: 1px solid rgba(120, 168, 204, 0.3);
   border-radius: 8px;
+}
+.nhl-root .nhl-player-sheet .nhl-hit-chart span {
+  min-width: 28px;
+}
+.nhl-root .nhl-player-sheet .nfl-history-dates {
+  color: #9eb4c8;
+  font-size: 9px;
 }
 
 .nhl-root .nhl-player-sheet .nfl-history-bars span {

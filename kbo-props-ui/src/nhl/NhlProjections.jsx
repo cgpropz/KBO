@@ -43,6 +43,7 @@ function Card({ item, onSelectPlayer }) {
       </div>
       <div className="nfl-card-meta">
         <div><small>2026-27</small><strong>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</strong></div>
+        <div><small>2025-26</small><strong>{item.priorSeasonHitRate == null ? '—' : `${item.priorSeasonHitRate}%`}</strong></div>
         <div><small>L10</small><strong>{item.hitRate == null ? '—' : `${item.hitRate}%`}</strong></div>
         <div><small>H2H</small><strong>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</strong></div>
       </div>

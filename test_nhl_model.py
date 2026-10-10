@@ -3,7 +3,7 @@ import math
 import unittest
 from pathlib import Path
 
-from nhl.build_board import _history_for, _index_players, _line_label, build_lineups
+from nhl.build_board import _chart, _history_for, _index_players, _line_label, build_lineups
 from nhl.closers import posted_half, saves_line
 from nhl.model import (
     adjust_pp_seconds,
@@ -176,6 +176,60 @@ class ModelTests(unittest.TestCase):
         stevenson = [player for player in shown if player["name"] == "Clay Stevenson"]
         self.assertEqual(len(stevenson), 1)
         self.assertEqual(stevenson[0]["status"], "CONFIRMED")
+
+    def test_hit_rate_windows_include_last_night_and_the_old_team(self):
+        history = []
+        for index in range(4):
+            history.append({
+                "season": "20252026",
+                "date": f"2026013{index}",
+                "team": "WSH",
+                "opp": "PHI",
+                "saves": 27,
+            })
+        history.append({
+            "season": "20262027",
+            "date": "20261009",
+            "team": "WPG",
+            "opp": "ANA",
+            "saves": 12,
+        })
+        chart = _chart(history, "saves", 24.5, "ANA")
+        self.assertEqual(chart["latestGame"], "10/09")
+        self.assertEqual(chart["gameDates"][-1], "10/09")
+        self.assertEqual(chart["logDates"][-1], "10/09")
+        self.assertEqual(chart["logTeams"], ["WSH", "WSH", "WSH", "WSH", "WPG"])
+        self.assertEqual(chart["seasonGames"], 1)
+        self.assertEqual(chart["priorSeasonGames"], 4)
+        self.assertEqual(chart["gamesL10"], 5)
+        self.assertEqual(chart["gamesL30"], 5)
+        self.assertEqual(chart["h2hGames"], 1)
+        self.assertIsNotNone(chart["hitRateL20"])
+        self.assertIsNotNone(chart["priorSeasonHitRate"])
+
+    def test_player_chart_keeps_every_prior_season_game(self):
+        history = []
+        for index in range(40):
+            history.append({
+                "season": "20252026",
+                "date": f"2025{(index // 28) + 1:02d}{(index % 28) + 1:02d}",
+                "team": "DET",
+                "opp": "BOS",
+                "sog": 1,
+            })
+        history.append({
+            "season": "20262027",
+            "date": "20261009",
+            "team": "DET",
+            "opp": "MTL",
+            "sog": 3,
+        })
+        chart = _chart(history, "sog", 2.5, "MTL")
+        self.assertEqual(len(chart["log"]), 41)
+        self.assertEqual(chart["priorSeasonGames"], 40)
+        self.assertEqual(chart["seasonGames"], 1)
+        self.assertEqual(chart["logDates"][-1], "10/09")
+        self.assertEqual(chart["gamesL30"], 30)
 
     def test_refresh_workflow_requeues_itself_on_main(self):
         text = (Path(__file__).resolve().parent / ".github/workflows/nhl-refresh.yml").read_text(encoding="utf-8")
