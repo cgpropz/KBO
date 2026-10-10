@@ -348,6 +348,9 @@ export const DATASETS = {
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
   nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewObjectList('records', nhlSharpScore) },
+  nhl_dvp_f: { table: 'nhl_dvp_f', sport: 'nhl', free: previewObjectList('teams', () => 0) },
+  nhl_dvp_d: { table: 'nhl_dvp_d', sport: 'nhl', free: previewObjectList('teams', () => 0) },
+  nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
 };
 
 // Decide what the caller receives for one dataset snapshot.

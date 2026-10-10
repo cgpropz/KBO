@@ -52,6 +52,9 @@ jobs:
       - name: Download MoneyPuck game logs
         run: python nhl/fetch_history.py
 
+      - name: Build NHL defense vs position
+        run: python -m nhl.build_dvp --root /tmp/moneypuck
+
       - name: Build the NHL board and lineups
         run: python -m nhl.build_board --root /tmp/moneypuck
 

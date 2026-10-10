@@ -37,6 +37,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 OPTIONAL_TABLES = {
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
+    "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
 }
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
@@ -291,6 +292,9 @@ TABLES = {
     "nhl/projections.json": "nhl_projections",
     "nhl/lineups.json": "nhl_lineups",
     "nhl/sharp_odds.json": "nhl_sharp_odds",
+    "nhl/dvp_f.json": "nhl_dvp_f",
+    "nhl/dvp_d.json": "nhl_dvp_d",
+    "nhl/dvp_g.json": "nhl_dvp_g",
 }
 
 # Lines-only boards. A missing file or a zero-line file must not replace a

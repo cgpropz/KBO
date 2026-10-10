@@ -20,6 +20,19 @@ export async function fetchNhlLineups() {
   }
 }
 
+export async function fetchNhlDvp(ds, staticPath) {
+  const snapshot = await fetchApiDataset(ds, { devStaticPath: staticPath })
+  const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+    ? snapshot.data
+    : null
+  return {
+    payload,
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+  }
+}
+
 export async function fetchNhlSharpOdds() {
   const snapshot = await fetchApiDataset('nhl_sharp_odds', { devStaticPath: 'nhl/sharp_odds.json' })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)

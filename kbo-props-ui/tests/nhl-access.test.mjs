@@ -104,6 +104,15 @@ function mockClient({ flag = false } = {}) {
               error: null,
             })
           }
+          if (table === 'nhl_dvp_f') {
+            return Promise.resolve({
+              data: {
+                data: { position: 'F', windows: { blend: { stats: { sog: { teams: [{ team: 'TOR', rank: 32 }] } } } } },
+                updated_at: '2026-10-10T00:00:00Z',
+              },
+              error: null,
+            })
+          }
           return Promise.resolve({ data: null, error: null })
         },
       }
@@ -162,4 +171,45 @@ test('the admin can read NHL data and a paid member cannot, even if the flag is 
   const loggedOut = mockRes()
   await handleNhlAccessRequest({ method: 'GET', headers: {} }, loggedOut, client)
   assert.deepEqual(loggedOut.body, { open: false })
+})
+
+test('NHL defense vs position is admin only', async () => {
+  const client = mockClient()
+  const res = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-owner' } },
+    res,
+    client,
+  )
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, false)
+  assert.equal(res.body.data.windows.blend.stats.sog.teams[0].team, 'TOR')
+  assert.equal(res.body.data.windows.blend.stats.sog.teams[0].rank, 32)
+
+  for (const token of ['tok-fan', 'tok-member', 'tok-nope']) {
+    const denied = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: `Bearer ${token}` } },
+      denied,
+      client,
+    )
+    assert.equal(denied.statusCode, 403, token)
+    assert.equal(denied.body.data, undefined)
+  }
+
+  const anon = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_dvp_d' }, headers: {} },
+    anon,
+    client,
+  )
+  assert.equal(anon.statusCode, 403)
+
+  const missing = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_dvp_g' }, headers: { authorization: 'Bearer tok-owner' } },
+    missing,
+    client,
+  )
+  assert.equal(missing.statusCode, 404)
 })
