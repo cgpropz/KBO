@@ -1,0 +1,81 @@
+.nfl-lines-row.is-open,
+.wnba-lines-row.is-open { background: #0c1c19; }
+.nfl-lines-row:not(.locked),
+.wnba-lines-row:not(.locked) { cursor: pointer; }
+.nfl-lines-info .nfl-player-link,
+.wnba-lines-info .wnba-player-link { cursor: pointer; }
+
+.nfl-odds-toggle {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #1a3c36;
+  border-radius: 999px;
+  background: #0b1c19;
+  cursor: pointer;
+}
+.nfl-odds-toggle:focus-visible { outline: 1px solid #7fff68; outline-offset: 2px; }
+.nfl-odds-toggle:disabled { opacity: .45; cursor: default; }
+.nfl-odds-chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #7fff68;
+  border-bottom: 2px solid #7fff68;
+  transform: rotate(45deg);
+  transition: transform .12s;
+}
+.nfl-odds-chevron.open { transform: rotate(-135deg); }
+
+.nfl-board-odds { padding: 4px 14px 2px; }
+.nfl-board-odds .nfl-sharp-baseline {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 0 10px;
+  padding: 3px;
+  border: 1px solid #1a3c36;
+  border-radius: 999px;
+  background: #0a1615;
+}
+.nfl-board-odds .nfl-sharp-baseline button {
+  border: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: #8ba39c;
+  background: transparent;
+  font: 800 11px monospace;
+  cursor: pointer;
+}
+.nfl-board-odds .nfl-sharp-baseline button.active { color: #06100f; background: #7fff68; }
+
+.wnba-lines-table .nfl-sharp-strip-row td,
+.nfl-lines-table .nfl-sharp-strip-row td {
+  padding: 0;
+  background: #071311;
+  white-space: normal;
+}
+
+.nfl-sharp-strip { padding: 12px 14px 14px; }
+.nfl-sharp-strip-title { margin: 0 0 10px; color: #7fff68; font: 800 12px monospace; }
+.nfl-sharp-strip-note { margin: 8px 0 0; color: #78918a; font: 10px monospace; line-height: 1.45; }
+.nfl-sharp-books { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.nfl-sharp-book-cell { flex: 0 0 auto; min-width: 108px; padding: 8px 10px 8px; border: 1px solid #1a3c36; border-radius: 6px; background: #0b1c19; text-align: center; }
+.nfl-sharp-book-cell.is-best { border-color: #e8f4e6; box-shadow: inset 0 0 0 1px #e8f4e6; }
+.nfl-sharp-book-name { color: #8ba39c; font: 10px monospace; }
+.nfl-sharp-book-logo { display: block; height: 58px; width: auto; margin: 0 auto 6px; object-fit: contain; }
+.nfl-sharp-side-main, .nfl-sharp-side-alt { display: flex; align-items: baseline; justify-content: center; gap: 5px; }
+.nfl-sharp-side-main { margin-top: 4px; }
+.nfl-sharp-side-main b { font: 800 15px monospace; }
+.nfl-sharp-side-main small, .nfl-sharp-side-alt small { padding: 1px 4px; border-radius: 999px; font: 800 9px monospace; letter-spacing: .04em; }
+.nfl-sharp-side-main[data-tone="worse"] b, .nfl-sharp-side-alt[data-tone="worse"] b { color: #7fff68; }
+.nfl-sharp-side-main[data-tone="better"] b, .nfl-sharp-side-alt[data-tone="better"] b { color: #ff5c57; }
+.nfl-sharp-side-main[data-tone="even"] b, .nfl-sharp-side-alt[data-tone="even"] b { color: #b7cac3; }
+.nfl-sharp-side-main[data-tone="worse"] small, .nfl-sharp-side-alt[data-tone="worse"] small { color: #06210f; background: #7fff68; }
+.nfl-sharp-side-main[data-tone="better"] small, .nfl-sharp-side-alt[data-tone="better"] small { color: #2a0908; background: #ff5c57; }
+.nfl-sharp-side-alt { margin-top: 5px; }
+.nfl-sharp-side-alt b { font: 800 11px monospace; }
+.nfl-sharp-side-label { color: #78918a; font: 9px monospace; }

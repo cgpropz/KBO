@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
-import { fetchNhlProjections } from './nhlData'
+import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
+import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { teamLogoUrl } from './nhlTeams'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
@@ -63,18 +64,19 @@ export function sortBoard(rows, sortBy) {
   })
 }
 
-function PropRow({ item, onSelectPlayer }) {
+function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const score = rowScore(item)
   const isOver = Number(item.projection) >= Number(item.line)
   const grade = dvpGrade(item.dvpRank)
   const logo = teamLogoUrl(item.opponent)
   return (
-    <tr className="nfl-lines-row">
+    <>
+    <tr className={`nfl-lines-row${open ? ' is-open' : ''}`} onClick={onToggle}>
       <td className="nfl-lines-player">
         <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
         <div className="nfl-lines-info">
-          <button className="nfl-player-link" onClick={() => onSelectPlayer(item)}>{item.player}</button>
+          <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
           {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
           {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
           <span className="nfl-lines-tag">{item.team}, {item.position}</span>
@@ -83,6 +85,7 @@ function PropRow({ item, onSelectPlayer }) {
             {item.oddsType && item.oddsType !== 'standard' && <span className="nhl-odds">{item.oddsType.toUpperCase()}</span>}
           </div>
         </div>
+        <OddsChevron open={open} player={item.player} onToggle={onToggle} />
       </td>
       <td><MiniChart recent={recent} line={Number(item.line)} /></td>
       <td className={isOver ? 'over' : 'under'}>{score.toFixed(1)}</td>
@@ -97,6 +100,14 @@ function PropRow({ item, onSelectPlayer }) {
         <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
       </td>
     </tr>
+    {open && (
+      <tr className="nfl-sharp-strip-row">
+        <td colSpan={7}>
+          <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+        </td>
+      </tr>
+    )}
+    </>
   )
 }
 
@@ -107,6 +118,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [tab, setTab] = useState('All Props')
   const [sortBy, setSortBy] = useState('CG Score')
   const [lockedCount, setLockedCount] = useState(0)
+  const [openId, setOpenId] = useState(null)
+  const { index: oddsIndex, oddsState } = useBoardOdds(
+    () => fetchNhlSharpOdds().then(({ records, preview }) => ({ records, preview })),
+  )
 
   useEffect(() => {
     let active = true
@@ -163,7 +178,22 @@ export default function NhlPropLines({ onSelectPlayer }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((item) => <PropRow key={item.id || `${item.player}-${item.prop}`} item={item} onSelectPlayer={onSelectPlayer} />)}
+              {rows.map((item) => {
+                const id = item.id || `${item.player}-${item.prop}-${item.line}`
+                const matched = boardOddsFor(oddsIndex, item)
+                return (
+                  <PropRow
+                    key={id}
+                    item={item}
+                    onSelectPlayer={onSelectPlayer}
+                    open={openId === id}
+                    onToggle={() => setOpenId((current) => current === id ? null : id)}
+                    odds={matched.odds}
+                    seen={matched.seen}
+                    oddsState={oddsState}
+                  />
+                )
+              })}
             </tbody>
           </table>
         </div>
