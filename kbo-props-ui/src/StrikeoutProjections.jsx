@@ -3,6 +3,8 @@ import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
 import RecentGameLogChart from './RecentGameLogChart';
+import { RatingExplanation } from './RatingExplanation';
+import { boardFormulaLine } from './propExplanation.js';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -484,13 +486,9 @@ function StrikeoutProjections({ onNavigate }) {
             .sort((a, b) => b[1] - a[1])
             .map(([team, rate]) => ({ label: team, value: rate.toFixed(2), color: TEAMS[team] || '#999' }));
 
-  const formulaText = selectedProp === 'Hits Allowed'
-    ? '(H/IP x IP/G) x Opp H/IP ÷ Lg Avg H/IP, adjusted by WHIP and form'
-    : selectedProp === 'Pitching Outs'
-      ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
-      : selectedProp === 'all'
-        ? 'Filter by prop type to view the active pitcher model formula'
-        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by recent strikeout form';
+  const formulaText = selectedProp === 'all'
+    ? 'Open a row to see why that rating was given.'
+    : boardFormulaLine('kbo', selectedProp);
 
   const hasCurrentPitcherMarkets = data.market_status !== 'no_current_pitcher_markets';
 
@@ -638,7 +636,7 @@ function StrikeoutProjections({ onNavigate }) {
 
         {/* Projection table */}
         <div className="so-table-toolbar">
-          <div><strong>{projections.length}</strong> projections <span>Click a row for matchup detail</span></div>
+          <div><strong>{projections.length}</strong> projections <span>Click a row, or Why, to read why it is rated this way</span></div>
           {activeFilterCount > 0 && <span className="so-active-filters">{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>}
         </div>
         {!hasCurrentPitcherMarkets && (
@@ -744,7 +742,18 @@ function StrikeoutProjections({ onNavigate }) {
                     {p.hit_rate_full != null ? `${Math.round(p.hit_rate_full)}%` : '—'}
                   </td>
                   <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
-                    {p.rating != null ? p.rating.toFixed(1) : ''}
+                    {p.rating != null ? (
+                      <button
+                        type="button"
+                        className="rating-why-link"
+                        aria-expanded={isExpanded}
+                        aria-label={`Why this rating is ${p.rating.toFixed(1)}`}
+                        onClick={(e) => { e.stopPropagation(); setExpandedRow(isExpanded ? null : i); }}
+                      >
+                        <span>{p.rating.toFixed(1)}</span>
+                        <small>Why</small>
+                      </button>
+                    ) : ''}
                   </td>
                   <td className={`col-num mono ${p.cg_projection == null ? 'cell-na' : ''}`} style={{ color: getCgProjectionColor(p.cg_projection), fontWeight: 800 }}>
                     {p.cg_projection != null ? p.cg_projection : '—'}
@@ -765,8 +774,9 @@ function StrikeoutProjections({ onNavigate }) {
                 </tr>
                 {isExpanded && (
                   <tr className="so-detail-row">
-                    <td colSpan="14">
-                      <div className="so-detail-panel">
+                    <td colSpan="15">
+                      <div className={`so-detail-panel${detail ? '' : ' is-why-only'}`}>
+                        <RatingExplanation row={{ ...p, sport: 'kbo', scoreLabel: 'rating' }} />
                         {detail ? (
                           <>
                             {/* Pitcher profile stats */}
@@ -906,9 +916,7 @@ function StrikeoutProjections({ onNavigate }) {
                               )}
                             </div>
                           </>
-                        ) : (
-                          <p className="so-detail-empty">No matchup data available for this pitcher today.</p>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

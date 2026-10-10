@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflProjections } from './nflData'
+import { RatingWhyButton } from '../RatingExplanation'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -52,6 +53,22 @@ function ProjectionCard({ item, onSelectPlayer }) {
         })}
       </div>
       <div className="nfl-history-dates">{gameDates.map((date, index) => <span key={`${item.id}-date-${index}`}>{date}</span>)}</div>
+      <RatingWhyButton
+        row={{
+          sport: 'nfl',
+          prop: item.prop,
+          name: item.player,
+          projection: item.projection,
+          line: item.line,
+          rating: item.score,
+          scoreLabel: 'score',
+          hit_rate_l5: item.hitRateL5,
+          hit_rate_full: item.hitRate,
+          fullHitLabel: 'last-10 hit rate',
+          formula_applied: item.formula_applied,
+          formula_mode: item.formula_mode,
+        }}
+      />
     </article>
   )
 }
@@ -101,7 +118,7 @@ export default function NflProjections({ onSelectPlayer }) {
         <label><span>MATCHUP</span><select value={matchup} onChange={(event) => setMatchup(event.target.value)}>{matchups.map((item) => <option key={item}>{item}</option>)}</select></label>
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>
-      <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
+      <div className="nfl-board-meta"><span><i /> SCORE = PROJECTION / LINE × 50</span><span>Open Why this score for the game windows behind a projection</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
       {!error && loaded && !projections.length && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
