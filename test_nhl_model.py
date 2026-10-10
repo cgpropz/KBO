@@ -239,6 +239,25 @@ class ModelTests(unittest.TestCase):
         self.assertIn("gh workflow run nhl-refresh.yml --ref main", text)
         self.assertIn("NHL_REFRESH_WAIT_SECONDS", text)
         self.assertIn("github.ref == 'refs/heads/main'", text)
+        self.assertIn("cancel-in-progress: false", text)
+        freeze_at = text.index("freeze_slate.py --sport nhl")
+        publish_at = text.index('bash pipeline/memory/commit_memory.sh "chore: nhl memory slate freeze"')
+        wait_at = text.index("NHL_REFRESH_WAIT_SECONDS")
+        self.assertLess(freeze_at, publish_at)
+        self.assertLess(publish_at, wait_at)
+
+    def test_memory_grade_and_shadow_read_the_frozen_slate(self):
+        root = Path(__file__).resolve().parent
+        grade = (root / ".github/workflows/nhl-memory.yml").read_text(encoding="utf-8")
+        self.assertIn('cron: "41 14 * * *"', grade)
+        self.assertIn("python pipeline/memory/grade_nhl_day.py", grade)
+        self.assertIn('bash pipeline/memory/commit_memory.sh "chore: nhl memory grade"', grade)
+        self.assertIn("github.ref == 'refs/heads/main'", grade)
+        shadow = (root / ".github/workflows/ml-shadow.yml").read_text(encoding="utf-8")
+        self.assertIn('sports="wnba nfl nhl"', shadow)
+        self.assertIn('sports="nfl nhl"', shadow)
+        self.assertIn("python3 -m ml.shadow.score --sport", shadow)
+        self.assertIn("python3 -m ml.shadow.grade --sport", shadow)
 
     def test_unabated_labels_do_not_leak_hidden_props(self):
         self.assertEqual(prop_from_label("Shots on Goal", 86), "Shots On Goal")

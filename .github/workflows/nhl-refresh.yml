@@ -71,6 +71,17 @@ jobs:
         continue-on-error: true
         run: python pipeline/memory/freeze_slate.py --sport nhl
 
+      # Same publisher as KBO, WNBA, and NFL. It commits only memory/ from a
+      # clean worktree of origin/main and retries a rejected push, so this
+      # 25-minute chain can overlap the daily grade job without dropping the
+      # slate. The commit happens before the wait below. A memory/ push does
+      # not match this workflow's path filter, so it does not start another run.
+      - name: Publish memory/nhl slate freeze
+        if: success()
+        continue-on-error: true
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: nhl memory slate freeze"
+
       # Holds this runner until the next board is due, then starts it. The
       # cron above only restarts the chain if this handoff dies.
       - name: Queue the next NHL board
