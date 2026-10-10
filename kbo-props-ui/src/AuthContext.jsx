@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 
-const AuthContext = createContext({ user: null, tier: 'free', loading: true, signOut: () => {}, refreshTier: () => {} });
+const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
+const AuthContext = createContext({
+  user: null,
+  tier: 'free',
+  loading: true,
+  signOut: () => {},
+  refreshTier: () => {},
+  discord: EMPTY_DISCORD,
+  refreshDiscord: () => {},
+});
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -10,8 +19,39 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [tier, setTier] = useState('free');
+  const [discord, setDiscord] = useState(EMPTY_DISCORD);
   const [loading, setLoading] = useState(true);
   const userRef = useRef(null);
+  const lastPaidDiscordSync = useRef(0);
+
+  const fetchDiscord = useCallback(async (userId) => {
+    if (!supabase || !userId) return;
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('discord_user_id, discord_username, discord_only')
+      .eq('id', userId)
+      .limit(1);
+    if (error) return;
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    setDiscord({
+      userId: row?.discord_user_id || null,
+      username: row?.discord_username || null,
+      discordOnly: row?.discord_only === true,
+    });
+  }, []);
+
+  const postSync = useCallback(async () => {
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return null;
+    const resp = await fetch('/api/sync-subscription', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return null;
+    return resp.json();
+  }, []);
 
   const fetchTier = useCallback(async (userId) => {
     if (!supabase || !userId) return;
@@ -23,39 +63,46 @@ export function AuthProvider({ children }) {
 
     const dbTier = Array.isArray(rows) && rows.length > 0 ? rows[0]?.tier : null;
 
-    // If they already have a paid tier, we're done
-    if (dbTier && dbTier !== 'free') {
+    // Paid site tiers are not recomputed on the client. Still retry the
+    // Discord role sync (throttled) so a failed webhook update can land.
+    // Discord-only is not a site tier: the server may upgrade it to All-Access.
+    if (dbTier && dbTier !== 'free' && dbTier !== 'discord') {
       setTier(dbTier);
+      await fetchDiscord(userId);
+      if (Date.now() - lastPaidDiscordSync.current > 60_000) {
+        lastPaidDiscordSync.current = Date.now();
+        try { await postSync(); } catch { /* Discord retry must not block the app */ }
+        await fetchDiscord(userId);
+      }
       return;
     }
 
-    // No paid tier in DB — ask the server to check Stripe and self-heal
+    // No site tier in the DB — ask the server to check Stripe and self-heal.
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        const resp = await fetch('/api/sync-subscription', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (resp.ok) {
-          const { tier: syncedTier } = await resp.json();
-          setTier(syncedTier || 'free');
-          return;
-        }
+      const body = await postSync();
+      if (body) {
+        setTier(body.tier || 'free');
+        await fetchDiscord(userId);
+        return;
       }
-    } catch (_) {
+    } catch {
       // Sync failed (e.g. local dev with no API) — fall through to free
     }
 
     setTier(dbTier || 'free');
-  }, []);
+    await fetchDiscord(userId);
+  }, [fetchDiscord, postSync]);
 
   // Public method: force a tier re-check (e.g. after payment)
   const refreshTier = useCallback(() => {
     const uid = userRef.current?.id;
     if (uid) return fetchTier(uid);
   }, [fetchTier]);
+
+  const refreshDiscord = useCallback(() => {
+    const uid = userRef.current?.id;
+    if (uid) return fetchDiscord(uid);
+  }, [fetchDiscord]);
 
   useEffect(() => {
     if (!supabase) {
@@ -102,10 +149,11 @@ export function AuthProvider({ children }) {
     setUser(null);
     userRef.current = null;
     setTier('free');
+    setDiscord(EMPTY_DISCORD);
   }
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier }}>
+    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier, discord, refreshDiscord }}>
       {children}
     </AuthContext.Provider>
   );

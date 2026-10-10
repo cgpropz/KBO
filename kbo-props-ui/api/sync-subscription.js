@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { computeStripeTier } from './_stripeTier.js';
+import { computeStripeAccess } from './_stripeTier.js';
+import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -47,25 +48,50 @@ export default async function handler(req, res) {
     .limit(1);
 
   const currentTier = rows?.[0]?.tier;
-  if (currentTier && currentTier !== 'free') {
+  // Paid site tiers are not recomputed here (same as before). Discord role
+  // sync still runs so a failed webhook role update is retried on login.
+  // Discord-only falls through: an All-Access purchase can upgrade it, and a
+  // lapsed Discord-only plan can return to free.
+  if (currentTier && currentTier !== 'free' && currentTier !== 'discord') {
+    await safeDiscordSync(supabase, user.id);
     return res.status(200).json({ tier: currentTier, synced: false });
   }
 
   // Look up the user's live Stripe entitlement across all active/trialing
   // subscriptions + any one-time lifetime purchase, mapped to a per-sport tier.
-  let tier = 'free';
+  // Discord-only subscriptions resolve to 'discord' and do not grant site access.
+  let access = { tier: 'free', discordOnly: false };
   try {
-    tier = await computeStripeTier(stripe, user.email);
+    access = await computeStripeAccess(stripe, user.email);
   } catch (err) {
     console.error('[sync-subscription] Stripe lookup failed:', err.message);
+    if (currentTier === 'discord') {
+      await safeDiscordSync(supabase, user.id);
+      return res.status(200).json({ tier: 'discord', synced: false });
+    }
     return res.status(500).json({ error: 'Stripe lookup failed' });
   }
 
-  if (!tier || tier === 'free') {
+  const tier = access.tier || 'free';
+  if (tier === 'free') {
+    if (currentTier === 'discord') {
+      const { error: clearError } = await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, tier: 'free' }, { onConflict: 'id' });
+      if (clearError) {
+        console.error('[sync-subscription] clear discord tier failed:', clearError);
+        return res.status(500).json({ error: 'DB write failed' });
+      }
+      await setDiscordOnlyFlag(supabase, user.id, false);
+      await safeDiscordSync(supabase, user.id);
+      return res.status(200).json({ tier: 'free', synced: true });
+    }
+    await safeDiscordSync(supabase, user.id);
     return res.status(200).json({ tier: 'free', synced: false });
   }
 
-  // Grant access
+  // Grant access. The tier upsert stays separate from discord_only so a
+  // missing column cannot block the site grant.
   const { error: upsertError } = await supabase
     .from('user_profiles')
     .upsert({ id: user.id, tier }, { onConflict: 'id' });
@@ -75,6 +101,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'DB write failed' });
   }
 
+  await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
+  await safeDiscordSync(supabase, user.id);
   console.log(`[sync-subscription] granted ${tier} to ${user.email}`);
   return res.status(200).json({ tier, synced: true });
 }

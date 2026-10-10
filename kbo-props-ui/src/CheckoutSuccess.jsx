@@ -1,13 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { cleanCheckoutParams, readCheckoutReturn, trackPurchaseOnce } from './tracking';
+import DiscordInviteLink from './DiscordInviteLink';
+import DiscordAccount from './DiscordAccount';
 import './FreeFunnel.css';
 
 const PLAN_LABELS = {
   weekly: 'Weekly All-Access',
   monthly: 'Monthly All-Access',
   lifetime: 'Lifetime All-Access',
+  discord_weekly: 'Discord Only · Weekly',
+  discord_monthly: 'Discord Only · Monthly',
 };
+
+function isDiscordPlan(plan) {
+  return plan === 'discord_weekly' || plan === 'discord_monthly';
+}
 
 async function lookupSession(sessionId) {
   const res = await fetch(`/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`, { cache: 'no-store' });
@@ -69,7 +77,8 @@ export default function CheckoutSuccess({ onSignUp, onLogin }) {
   if (!checkout || status === 'idle' || status === 'closed') return null;
 
   const close = () => setStatus('closed');
-  const planLabel = PLAN_LABELS[details?.plan] || 'All-Access';
+  const discordPlan = isDiscordPlan(details?.plan);
+  const planLabel = PLAN_LABELS[details?.plan] || (discordPlan ? 'Discord Only' : 'All-Access');
   const price = details?.amount ? `$${Number(details.amount).toFixed(2)}` : null;
 
   return (
@@ -91,20 +100,31 @@ export default function CheckoutSuccess({ onSignUp, onLogin }) {
               <p className="ff-modal-plan">Thanks for your purchase.</p>
             )}
             {user ? (
-              <>
-                <p>Your plan is unlocking now: KBO, WNBA and NFL boards, projections and tools.</p>
-                <button className="ff-btn ff-btn-primary ff-btn-block" onClick={close}>Start browsing</button>
-              </>
+              discordPlan ? (
+                <>
+                  <p>Your Discord Only membership is active. Connect Discord to get the props role. This plan does not unlock the site boards — upgrade to All-Access for those.</p>
+                  <DiscordAccount compact />
+                </>
+              ) : (
+                <>
+                  <p>Your plan is unlocking now: KBO, WNBA and NFL boards, projections and tools. Connect Discord to get the site subscriber role.</p>
+                  <DiscordAccount compact />
+                  <button className="ff-btn ff-btn-primary ff-btn-block" onClick={close}>Start browsing</button>
+                </>
+              )
             ) : (
               <>
                 <p>
                   One last step: <strong>create your account (or log in) with the same email you used at checkout</strong>.
-                  Your plan unlocks automatically.
+                  {discordPlan
+                    ? ' Then connect Discord to get the props role. Discord Only does not unlock the site boards.'
+                    : ' Your plan unlocks automatically.'}
                 </p>
                 <button className="ff-btn ff-btn-primary ff-btn-block" onClick={() => { close(); onSignUp?.(); }}>Create my account</button>
                 <button className="ff-btn ff-btn-ghost ff-btn-block" onClick={() => { close(); onLogin?.(); }}>I already have an account: log in</button>
               </>
             )}
+            <DiscordInviteLink className="discord-invite ff-btn ff-btn-ghost ff-btn-block" />
             {status === 'unverified' && (
               <p className="ff-modal-note">
                 We couldn't confirm the payment details yet. If your access hasn't unlocked in a few minutes, log in with your checkout email.

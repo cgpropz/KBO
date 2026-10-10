@@ -8,6 +8,8 @@ import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
 import Results from './Results';
+import DiscordInviteLink from './DiscordInviteLink';
+import DiscordAccount from './DiscordAccount';
 import './CgpropzLanding.css';
 
 /*
@@ -27,6 +29,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl;
   const isAllAccess = access.kbo && access.wnba && access.nfl;
+  const isDiscordOnly = tier === 'discord';
 
   return (
     <div className="cg-landing">
@@ -51,7 +54,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
       <main className="cg-main">
         <section className="cg-hero">
           <div className="cg-hero-badge">
-            {isAllAccess ? '✓ ALL ACCESS ACTIVE' : isPaid ? '✓ MEMBER ACCESS ACTIVE' : 'HAND-CRAFTED PROPS'}
+            {isAllAccess ? '✓ ALL ACCESS ACTIVE' : isPaid ? '✓ MEMBER ACCESS ACTIVE' : isDiscordOnly ? '✓ DISCORD MEMBER' : 'HAND-CRAFTED PROPS'}
           </div>
           <h1 className="cg-hero-title">
             One edge. <span className="cg-hero-grad">Every sport.</span>
@@ -68,6 +71,8 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
           </div>
           <TrustStrip align="center" />
         </section>
+
+        {user && <DiscordAccount />}
 
         <section className="cg-sports">
           {[...SPORTS, NBA_CARD, NHL_CARD].map((s) => (
@@ -101,6 +106,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
 
       <footer className="cg-footer">
         <span>© {new Date().getFullYear()} cgpropz</span>
+        <DiscordInviteLink />
         <span className="cg-footer-note">For entertainment purposes only. Bet responsibly.</span>
       </footer>
     </div>

@@ -9,6 +9,8 @@ import Testimonials from './Testimonials';
 import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl } from './tracking';
+import DiscordInviteLink from './DiscordInviteLink';
+import DiscordOnlyPlans from './DiscordOnlyPlans';
 import './PublicLanding.css';
 
 /*
@@ -55,11 +57,15 @@ const FAQS = [
   },
   {
     q: 'Does one subscription cover every sport?',
-    a: 'Yes — every plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. There are no more single-sport plans.',
+    a: 'Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. Discord Only is separate: props in Discord, not the site boards.',
   },
   {
     q: 'Can I cancel anytime?',
     a: 'Yes. Weekly and Monthly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel.',
+  },
+  {
+    q: 'What is Discord Only?',
+    a: 'A cheaper plan that posts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the site boards. All-Access includes the full site and the site-subscriber Discord role.',
   },
   {
     q: 'How often is the data updated?',
@@ -233,6 +239,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
               <button type="button" onClick={onGetStarted}>Start free</button>
             </p>
           </div>
+          <DiscordOnlyPlans variant="public" />
         </section>
 
         <Testimonials />
@@ -259,6 +266,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
 
       <footer className="pl-footer">
         <span>© {new Date().getFullYear()} cgpropz</span>
+        <DiscordInviteLink />
         <span className="pl-footer-note">For entertainment purposes only. Bet responsibly.</span>
       </footer>
     </div>

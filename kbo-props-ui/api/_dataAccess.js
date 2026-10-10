@@ -11,7 +11,8 @@
 export const FREE_ROW_LIMIT = 3;
 
 // Tiers that unlock every sport (grandfathered all-access + combined plan).
-// Must stay in sync with src/entitlements.js.
+// Must stay in sync with src/entitlements.js. The 'discord' tier is absent on
+// purpose: Discord-only membership does not unlock any site dataset.
 const ALL_ACCESS_TIERS = new Set([
   'owner', 'pro', 'monthly', 'weekly', 'season', 'all', 'combined',
 ]);

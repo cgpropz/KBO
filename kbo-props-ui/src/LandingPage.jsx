@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
+import DiscordInviteLink from './DiscordInviteLink';
 import './LandingPage.css';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { fetchDataSnapshot } from './dataUrl';
@@ -625,6 +626,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
       {/* Footer */}
       <footer className="lp-footer">
         <p>KBO Props &middot; Data sourced from KBO &amp; PrizePicks &middot; Projections updated daily</p>
+        <DiscordInviteLink />
       </footer>
     </div>
   );

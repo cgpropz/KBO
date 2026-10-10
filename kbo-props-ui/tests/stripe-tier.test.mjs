@@ -3,11 +3,18 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  DISCORD_MONTHLY_PRICE_ID,
+  DISCORD_ONLY_PRODUCT_ID,
+  DISCORD_WEEKLY_PRICE_ID,
   LIFETIME_AMOUNT,
+  computeStripeAccess,
   computeStripeTier,
   customersForEmail,
+  isDiscordPrice,
   mergeTier,
+  resolvePurchaseTier,
   tierForPrice,
+  tierForStripePrice,
 } from '../api/_stripeTier.js'
 
 const WEEKLY = 'price_1TtFErPwL0k9PEMvIrEJajK1'
@@ -18,11 +25,18 @@ function customer(id, email) {
   return { id, email }
 }
 
-function sub(priceId, status = 'active') {
-  return { id: `sub_${priceId}_${status}`, status, items: { data: [{ price: { id: priceId } }] } }
+function sub(priceId, status = 'active', metadata) {
+  return { id: `sub_${priceId}_${status}`, status, metadata, items: { data: [{ price: { id: priceId } }] } }
 }
 
-function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {}, chargesByCustomer = {} } = {}) {
+const DISCORD_WEEKLY = 'price_discord_weekly_test'
+const DISCORD_MONTHLY = 'price_discord_monthly_test'
+const DISCORD_ENV = {
+  STRIPE_PRICE_DISCORD_WEEKLY: DISCORD_WEEKLY,
+  STRIPE_PRICE_DISCORD_MONTHLY: DISCORD_MONTHLY,
+}
+
+function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {}, chargesByCustomer = {}, invoicesById = {}, pricesById = {} } = {}) {
   const calls = []
   return {
     calls,
@@ -46,6 +60,19 @@ function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {},
       async list({ customer }) {
         calls.push({ op: 'charges', customer })
         return { data: chargesByCustomer[customer] || [] }
+      },
+    },
+    invoices: {
+      async retrieve(id) {
+        calls.push({ op: 'invoice', id })
+        return invoicesById[id] || { lines: { data: [] } }
+      },
+    },
+    prices: {
+      async retrieve(id) {
+        calls.push({ op: 'price', id })
+        if (!pricesById[id]) throw new Error('missing price')
+        return pricesById[id]
       },
     },
   }
@@ -175,6 +202,172 @@ test('canceled subscriptions do not grant access', async () => {
     subsByCustomer: { cus_old: [sub(WEEKLY, 'canceled'), sub(WEEKLY, 'past_due')] },
   })
   assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'free')
+})
+
+test('discord-only prices never grant site access and cannot capture a known price', () => {
+  assert.equal(tierForPrice(DISCORD_WEEKLY, DISCORD_ENV), 'discord')
+  assert.equal(tierForPrice(DISCORD_MONTHLY, DISCORD_ENV), 'discord')
+  assert.equal(tierForPrice('price_brand_new'), 'combined')
+  assert.equal(isDiscordPrice(WEEKLY, { STRIPE_PRICE_DISCORD_WEEKLY: WEEKLY }), false)
+  assert.equal(tierForPrice(WEEKLY, { STRIPE_PRICE_DISCORD_WEEKLY: WEEKLY }), 'combined')
+  assert.equal(tierForPrice(LEGACY_KBO, { STRIPE_PRICE_DISCORD_MONTHLY: LEGACY_KBO }), 'kbo')
+  assert.equal(resolvePurchaseTier({ priceId: 'price_missing', metadata: { cg_plan: 'discord_weekly' } }), 'discord')
+  assert.equal(resolvePurchaseTier({ priceId: WEEKLY, metadata: { cg_plan: 'discord_monthly' } }), 'discord')
+  assert.equal(resolvePurchaseTier({ priceId: WEEKLY, metadata: { cg_plan: 'weekly' } }), 'combined')
+  assert.equal(mergeTier('free', 'discord'), 'discord')
+  assert.equal(mergeTier('discord', 'discord'), 'discord')
+  assert.equal(mergeTier('discord', 'combined'), 'combined')
+  assert.equal(mergeTier('discord', 'kbo'), 'kbo')
+  assert.equal(mergeTier('combined', 'discord'), 'combined')
+  assert.equal(mergeTier('kbo', 'discord'), 'kbo')
+  assert.equal(mergeTier('monthly', 'discord'), 'monthly')
+  assert.equal(mergeTier('owner', 'discord'), 'owner')
+})
+
+test('a discord-only subscription does not unlock the site', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
+    subsByCustomer: { cus_d: [sub(DISCORD_WEEKLY)] },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', DISCORD_ENV)
+  assert.deepEqual(access, { tier: 'discord', discordOnly: true })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com', DISCORD_ENV), 'discord')
+})
+
+test('discord-only plus all-access keeps site access and the discord flag', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_both', 'fan@example.com')] },
+    subsByCustomer: { cus_both: [sub(DISCORD_WEEKLY), sub(MONTHLY)] },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', DISCORD_ENV)
+  assert.equal(access.tier, 'combined')
+  assert.equal(access.discordOnly, true)
+})
+
+test('a discord subscription tagged only in metadata does not grant site access', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_meta', 'fan@example.com')] },
+    subsByCustomer: { cus_meta: [sub('price_not_in_env', 'active', { cg_plan: 'discord_weekly' })] },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', {})
+  assert.deepEqual(access, { tier: 'discord', discordOnly: true })
+})
+
+test('a canceled discord subscription does not keep the discord tier', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_old', 'fan@example.com')] },
+    subsByCustomer: { cus_old: [sub(DISCORD_WEEKLY, 'canceled')] },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', DISCORD_ENV)
+  assert.deepEqual(access, { tier: 'free', discordOnly: false })
+})
+
+test('lifetime still grants combined, including next to a discord subscription', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    subsByCustomer: { cus_life: [sub(DISCORD_MONTHLY)] },
+    chargesByCustomer: { cus_life: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT }] },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', DISCORD_ENV)
+  assert.equal(access.tier, 'combined')
+  assert.equal(access.discordOnly, true)
+})
+
+test('a $99.99 discord charge is not treated as lifetime', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_discord', metadata: { cg_plan: 'discord_monthly' } }],
+    },
+    invoicesById: {
+      in_discord: { lines: { data: [{ price: { id: DISCORD_MONTHLY } }] } },
+    },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', DISCORD_ENV)
+  assert.equal(access.tier, 'free')
+  assert.equal(access.discordOnly, false)
+
+  const byInvoice = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_discord' }],
+    },
+    invoicesById: {
+      in_discord: { lines: { data: [{ price: { id: DISCORD_WEEKLY } }] } },
+    },
+  })
+  assert.equal((await computeStripeAccess(byInvoice, 'fan@example.com', DISCORD_ENV)).tier, 'free')
+})
+
+test('live discord price ids and product metadata never grant site access', async () => {
+  assert.equal(tierForPrice(DISCORD_WEEKLY_PRICE_ID, {}), 'discord')
+  assert.equal(tierForPrice(DISCORD_MONTHLY_PRICE_ID, {}), 'discord')
+  assert.equal(isDiscordPrice(DISCORD_WEEKLY_PRICE_ID, {}), true)
+  assert.equal(resolvePurchaseTier({
+    priceId: 'price_other',
+    price: { id: 'price_other', product: DISCORD_ONLY_PRODUCT_ID },
+  }), 'discord')
+  assert.equal(resolvePurchaseTier({
+    price: { id: 'price_other', product: { id: 'prod_other', metadata: { tier: 'discord_only' } } },
+  }), 'discord')
+  assert.equal(resolvePurchaseTier({ priceId: WEEKLY, metadata: { tier: 'discord_only' } }), 'discord')
+  assert.equal(resolvePurchaseTier({ priceId: WEEKLY }), 'combined')
+
+  const byProduct = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_p', 'fan@example.com')] },
+    subsByCustomer: {
+      cus_p: [{
+        id: 'sub_prod',
+        status: 'active',
+        items: { data: [{ price: { id: 'price_unknown_discord', product: DISCORD_ONLY_PRODUCT_ID } }] },
+      }],
+    },
+  })
+  assert.deepEqual(await computeStripeAccess(byProduct, 'fan@example.com', {}), { tier: 'discord', discordOnly: true })
+  assert.equal(byProduct.calls.some((c) => c.op === 'price'), false)
+
+  const byMetadata = mockStripe({
+    pricesById: {
+      price_meta_only: {
+        id: 'price_meta_only',
+        product: { id: 'prod_other', metadata: { tier: 'discord_only' } },
+      },
+    },
+  })
+  assert.equal(await tierForStripePrice(byMetadata, { id: 'price_meta_only' }), 'discord')
+  assert.equal(byMetadata.calls.some((c) => c.op === 'price' && c.id === 'price_meta_only'), true)
+
+  const site = mockStripe()
+  assert.equal(await tierForStripePrice(site, { id: WEEKLY, product: 'prod_all_access' }), 'combined')
+  assert.equal(site.calls.some((c) => c.op === 'price'), false)
+})
+
+test('a $99.99 charge on the discord product is not lifetime', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_prod' }],
+    },
+    invoicesById: {
+      in_prod: { lines: { data: [{ price: { id: 'price_unknown', product: DISCORD_ONLY_PRODUCT_ID } }] } },
+    },
+  })
+  const access = await computeStripeAccess(stripe, 'fan@example.com', {})
+  assert.equal(access.tier, 'free')
+  assert.equal(access.discordOnly, false)
+})
+
+test('a $99.99 charge on the lifetime price still grants combined', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_life' }],
+    },
+    invoicesById: {
+      in_life: { lines: { data: [{ price: { id: 'price_1THZjaPwL0k9PEMvARtuGG1F' } }] } },
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com', DISCORD_ENV), 'combined')
 })
 
 test('quotes in an email are escaped in the search query', async () => {
