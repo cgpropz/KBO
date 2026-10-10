@@ -11,7 +11,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:api": "node --test \"tests/**/*.test.mjs\""
+    "test:api": "node --test \"tests/**/*.test.mjs\"",
+    "discord:backfill": "node scripts/discord-backfill.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",

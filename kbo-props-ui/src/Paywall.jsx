@@ -17,6 +17,7 @@ export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
   const { tier } = useAuth();
   const access = sportAccess(tier);
   const isPaid = sport === 'wnba' ? access.wnba : sport === 'nfl' ? access.nfl : access.kbo;
+  const discordOnly = tier === 'discord';
 
   if (isPaid) return children;
 
@@ -33,8 +34,9 @@ export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
           <div className="pw-icon">🔒</div>
           <h2 className="pw-title">{sportLabel} Pro Feature</h2>
           <p className="pw-desc">
-            Unlock full {sportLabel} projections, player prop cards, and every advanced tool.
-            Grab any All-Access plan (Weekly, Monthly, or Lifetime) to access this board.
+            {discordOnly
+              ? `Your Discord Only plan posts props in Discord. It does not include this ${sportLabel} board. Upgrade to All-Access for the full site.`
+              : `Unlock full ${sportLabel} projections, player prop cards, and every advanced tool. Grab any All-Access plan (Weekly, Monthly, or Lifetime) to access this board.`}
           </p>
           <button className="pw-cta" onClick={() => onNavigate('pricing')}>
             View Plans

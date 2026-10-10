@@ -133,6 +133,24 @@ export function prefetchWeeklyCheckoutUrl(options = {}) {
   return inflightWeekly.get(key);
 }
 
+// Discord-only Checkout Session. The server picks the price from env; the
+// client only sends weekly or monthly. No Payment Link fallback: there isn't
+// one until those prices exist.
+export async function requestDiscordCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetchImpl('/api/discord-checkout', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ ...(utm || {}), plan }),
+  });
+  if (!res.ok) throw new Error('discord checkout failed');
+  const data = await res.json();
+  const url = String(data?.url || '');
+  if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
+  return url;
+}
+
 // URL the weekly button can open immediately. Prefers the Checkout Session.
 // If that isn't ready, the weekly Payment Link (no promo param) still charges
 // the same plan.

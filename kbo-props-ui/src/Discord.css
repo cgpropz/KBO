@@ -1,0 +1,93 @@
+.discord-invite {
+  color: #4ade80;
+  font-weight: 700;
+  text-decoration: none;
+}
+.discord-invite:hover { text-decoration: underline; }
+
+.discord-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.discord-account-compact {
+  margin: 14px 0 0;
+  padding: 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+}
+.discord-account h3 {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 15px;
+}
+.discord-account p {
+  margin: 0;
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.discord-account-msg { margin-top: 6px !important; color: #d4d4d8 !important; }
+.discord-account-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.discord-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #e4e4e7;
+  font-family: inherit;
+}
+.discord-btn:disabled { opacity: 0.6; cursor: wait; }
+.discord-btn-primary {
+  background: #5865f2;
+  border-color: #5865f2;
+  color: #fff;
+}
+.discord-btn-primary:hover:not(:disabled) { background: #4752c4; }
+
+.discord-plans { margin: 8px auto 36px; max-width: 880px; }
+.discord-plans-public { margin-top: 28px; }
+.discord-plans-copy { text-align: center; margin-bottom: 16px; }
+.discord-plans-copy h2 { margin: 0 0 8px; color: #fff; font-size: 22px; }
+.discord-plans-copy p { margin: 0 auto; max-width: 520px; color: #a1a1aa; font-size: 14px; line-height: 1.5; }
+.discord-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.discord-plan-card {
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  background: rgba(88, 101, 242, 0.08);
+  border: 1px solid rgba(88, 101, 242, 0.35);
+  text-align: left;
+}
+.discord-plan-card h3 { margin: 0 0 6px; color: #fff; font-size: 16px; }
+.discord-plan-price { margin: 0 0 12px; color: #fff; font-size: 28px; font-weight: 900; }
+.discord-plan-price span { margin-left: 4px; color: #a1a1aa; font-size: 14px; font-weight: 600; }
+.discord-plan-card ul { margin: 0 0 10px; padding: 0; list-style: none; }
+.discord-plan-card li { position: relative; padding-left: 18px; margin: 6px 0; color: #d4d4d8; font-size: 13px; }
+.discord-plan-card li::before { content: '✓'; position: absolute; left: 0; color: #4ade80; font-weight: 900; }
+.discord-plan-limited { margin: 0 0 14px; color: #a1a1aa; font-size: 12px; }
+.discord-plan-cta { width: 100%; box-sizing: border-box; }
+.discord-plan-error { margin: 12px 0 0; color: #f87171; font-size: 13px; text-align: center; }
+
+@media (max-width: 700px) {
+  .discord-plan-grid { grid-template-columns: 1fr; }
+  .discord-account { align-items: stretch; }
+}

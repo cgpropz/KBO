@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { tierForPrice, mergeTier, computeStripeTier } from './_stripeTier.js';
+import { mergeTier, computeStripeAccess, metadataSignalsDiscord, tierForStripePrice, TIER_BY_PRICE } from './_stripeTier.js';
 import { reportPurchaseToX } from './_xConversions.js';
+import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -57,6 +58,10 @@ async function setTierById(userId, incoming) {
     .upsert({ id: userId, tier }, { onConflict: 'id' });
   if (error) console.error(`[webhook] upsert by ID failed for ${userId}:`, error);
   else console.log(`[webhook] ${userId}: ${current} + ${incoming} → ${tier}`);
+  // Discord-only sets the flag and never clears a site tier (mergeTier).
+  // A Discord API failure is logged inside safeDiscordSync and does not throw.
+  if (!error && incoming === 'discord') await setDiscordOnlyFlag(supabase, userId, true);
+  if (!error) await safeDiscordSync(supabase, userId);
 }
 
 // Look up Supabase user by email, then grant (merge) their tier.
@@ -77,12 +82,52 @@ async function clearTierByCustomer(customerId) {
   if (!email) return;
   const user = await findUserByEmail(email);
   if (!user) return;
-  const tier = await computeStripeTier(stripe, email);
+  const access = await computeStripeAccess(stripe, email);
   const { error } = await supabase
     .from('user_profiles')
-    .upsert({ id: user.id, tier }, { onConflict: 'id' });
+    .upsert({ id: user.id, tier: access.tier }, { onConflict: 'id' });
   if (error) console.error(`[webhook] recompute failed for ${email}:`, error);
-  else console.log(`[webhook] recomputed ${email} → ${tier} (subscription change)`);
+  else console.log(`[webhook] recomputed ${email} → ${access.tier} (subscription change)`);
+  if (!error) {
+    await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
+    await safeDiscordSync(supabase, user.id);
+  }
+}
+
+function discordMetadata(metas) {
+  return (metas || []).find((metadata) => metadataSignalsDiscord(metadata)) || null;
+}
+
+// Unknown prices fall back to full access. Before that fallback, classify the
+// price (live Discord Only ids, product id, and product metadata
+// tier=discord_only) and, if it is still unknown, the subscription itself so
+// a Discord-only renewal cannot be granted the site. Known All-Access and
+// legacy price ids skip the extra calls.
+async function tierForInvoice(obj) {
+  const line = obj.lines?.data?.[0];
+  const rawPrice = line?.price;
+  const priceId = rawPrice?.id || (typeof rawPrice === 'string' ? rawPrice : null);
+  const metas = [
+    obj.metadata,
+    obj.subscription_details?.metadata,
+    obj.parent?.subscription_details?.metadata,
+    line?.metadata,
+  ];
+  let tier = await tierForStripePrice(stripe, rawPrice || priceId, { metadata: discordMetadata(metas) });
+  const knownSitePrice = Boolean(priceId && TIER_BY_PRICE[priceId]);
+  if (tier !== 'discord' && !knownSitePrice && obj.subscription) {
+    try {
+      const subscriptionId = typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id;
+      const sub = await stripe.subscriptions.retrieve(subscriptionId);
+      const subPrice = sub.items?.data?.[0]?.price;
+      tier = await tierForStripePrice(stripe, subPrice || rawPrice || priceId, {
+        metadata: discordMetadata([sub.metadata, ...metas]),
+      });
+    } catch (err) {
+      console.error('[webhook] could not confirm invoice plan:', err.message);
+    }
+  }
+  return tier;
 }
 
 // Read the raw body from the request stream (Vercel serverless doesn't
@@ -131,24 +176,24 @@ export default async function handler(req, res) {
     // checkout.session.completed does NOT include line_items by default, so
     // resolve the real price from the subscription (or fetch line items for
     // one-time purchases) before mapping to a sport-specific tier.
-    let priceId = obj.line_items?.data?.[0]?.price?.id;
-    if (!priceId && obj.subscription) {
+    let price = obj.line_items?.data?.[0]?.price || null;
+    if (!price && obj.subscription) {
       try {
         const sub = await stripe.subscriptions.retrieve(obj.subscription);
-        priceId = sub.items?.data?.[0]?.price?.id;
+        price = sub.items?.data?.[0]?.price || null;
       } catch (err) {
         console.error('[webhook] could not retrieve subscription for price:', err.message);
       }
     }
-    if (!priceId) {
+    if (!price) {
       try {
         const li = await stripe.checkout.sessions.listLineItems(obj.id, { limit: 1 });
-        priceId = li.data?.[0]?.price?.id;
+        price = li.data?.[0]?.price || null;
       } catch (err) {
         console.error('[webhook] could not list checkout line items:', err.message);
       }
     }
-    const tier = tierForPrice(priceId);
+    const tier = await tierForStripePrice(stripe, price, { metadata: obj.metadata });
 
     if (userId) {
       await setTierById(userId, tier);
@@ -168,8 +213,8 @@ export default async function handler(req, res) {
   // Fires when any subscription is created (catches cases where checkout event
   // was missed or user subscribed via a direct Stripe link without being logged in).
   else if (event.type === 'customer.subscription.created') {
-    const priceId = obj.items?.data?.[0]?.price?.id;
-    const tier    = tierForPrice(priceId);
+    const rawPrice = obj.items?.data?.[0]?.price;
+    const tier = await tierForStripePrice(stripe, rawPrice, { metadata: obj.metadata });
     const customer = await stripe.customers.retrieve(obj.customer);
     if (customer.email) await setTierByEmail(customer.email, tier);
   }
@@ -179,9 +224,7 @@ export default async function handler(req, res) {
   // even if previous events failed.
   else if (event.type === 'invoice.payment_succeeded') {
     if (obj.billing_reason === 'subscription_create' || obj.billing_reason === 'subscription_cycle') {
-      const line  = obj.lines?.data?.[0];
-      const priceId = line?.price?.id;
-      const tier    = tierForPrice(priceId);
+      const tier = await tierForInvoice(obj);
       const customer = await stripe.customers.retrieve(obj.customer);
       if (customer.email) await setTierByEmail(customer.email, tier);
     }

@@ -77,6 +77,14 @@ test('maps every current plan amount to its plan and value', async () => {
   }
 })
 
+test('a discord checkout stamped at the lifetime amount is not reported as lifetime', async () => {
+  const res = await call(VALID_ID, mockStripe({
+    [VALID_ID]: session({ amount_total: 9999, metadata: { cg_plan: 'discord_monthly' } }),
+  }))
+  assert.equal(res.body.plan, 'discord_monthly')
+  assert.equal(res.body.amount, 99.99)
+})
+
 test('a stamped weekly plan stays weekly when tax moves the total off $4.99', async () => {
   const res = await call(VALID_ID, mockStripe({
     [VALID_ID]: session({ amount_total: 539, metadata: { cg_plan: 'weekly' } }),

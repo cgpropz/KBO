@@ -3,7 +3,9 @@
 // user_profiles. There are no client-side overrides: owner/staff accounts get
 // tier 'owner' in the database. New per-sport plans use 'kbo' | 'wnba' |
 // 'combined'. Legacy/grandfathered all-access tiers ('monthly', 'season',
-// 'weekly', 'pro', 'owner', 'all') unlock every sport.
+// 'weekly', 'pro', 'owner', 'all') unlock every sport. 'discord' is the
+// Discord-only membership: it is not in ALL_ACCESS_TIERS and unlocks nothing
+// on the site.
 //
 // NOTE: this only controls UI chrome. Paid data itself is gated server-side in
 // api/data.js (see api/_dataAccess.js, which must stay in sync with this file).

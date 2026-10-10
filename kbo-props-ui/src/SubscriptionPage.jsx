@@ -3,6 +3,8 @@ import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl } from './tracking';
+import DiscordAccount from './DiscordAccount';
+import DiscordOnlyPlans from './DiscordOnlyPlans';
 import './SubscriptionPage.css';
 import './FreeFunnel.css';
 
@@ -10,12 +12,12 @@ import './FreeFunnel.css';
 const TIER_LABELS = {
   combined: 'All Access', all: 'All Access', monthly: 'All Access', season: 'All Access',
   weekly: 'All Access', pro: 'All Access', owner: 'All Access',
-  kbo: 'KBO', wnba: 'WNBA',
+  kbo: 'KBO', wnba: 'WNBA', discord: 'Discord Only',
 };
 
 // Tiers that represent an active, cancellable subscription (excludes one-time
 // lifetime and free). Grandfathered all-access tiers remain cancellable.
-const CANCELLABLE_TIERS = new Set(['combined', 'kbo', 'wnba', 'monthly', 'season', 'weekly', 'pro', 'all']);
+const CANCELLABLE_TIERS = new Set(['combined', 'kbo', 'wnba', 'monthly', 'season', 'weekly', 'pro', 'all', 'discord']);
 
 function SubscriptionPage() {
   const [selectedTier, setSelectedTier] = useState(null);
@@ -131,15 +133,18 @@ function SubscriptionPage() {
           Unlock <span className="sub-highlight">All Access</span>
         </h1>
         <p className="sub-subtitle">
-          Every plan is All-Access — ⚾ KBO, 🏀 WNBA, and 🏈 NFL, full projections, hit rates,
-          prop cards, and edge boards included. Just pick the billing cadence that fits you.
+          All-Access plans cover ⚾ KBO, 🏀 WNBA, and 🏈 NFL — full projections, hit rates,
+          prop cards, and edge boards. Pick the billing cadence that fits you. Discord Only
+          is a separate, cheaper option and does not unlock the site.
         </p>
       </div>
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀🏈</span>
-        <span>Every plan unlocks <strong>all three sports</strong> — choose weekly, monthly, or lifetime billing.</span>
+        <span>Every All-Access plan unlocks <strong>all three sports</strong> — choose weekly, monthly, or lifetime billing.</span>
       </div>
+
+      {user && <DiscordAccount />}
 
       {noLinksConfigured && (
         <div className="sub-setup-notice">
@@ -197,6 +202,8 @@ function SubscriptionPage() {
         ))}
       </div>
 
+      <DiscordOnlyPlans variant="page" user={user} onCheckoutStart={() => setAwaitingPayment(true)} />
+
       {!user && (
         <p className="ff-checkout-note" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 1.5rem' }}>
           No account yet? You can check out now. Afterwards, sign up (or log in) with the
@@ -221,7 +228,9 @@ function SubscriptionPage() {
             <div>
               <strong style={{ color: '#4ade80' }}>You have {TIER_LABELS[tier] || tier} access!</strong>
               <p style={{ color: '#a1a1aa' }}>{
-                (TIER_LABELS[tier] === 'All Access')
+                tier === 'discord'
+                  ? 'Props are posted in Discord. Upgrade to All-Access for the full site boards.'
+                  : (TIER_LABELS[tier] === 'All Access')
                   ? 'All features are unlocked across ⚾ KBO and 🏀 WNBA. Enjoy the full toolkit.'
                   : `Your ${TIER_LABELS[tier] || tier} tools are fully unlocked. Add All Access anytime to include the other sport.`
               }</p>
@@ -287,11 +296,15 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="Does one subscription cover both sports?"
-            a="Yes — every plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. There are no more single-sport plans."
+            a="Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
           />
           <FaqItem
             q="Can I cancel anytime?"
             a="Yes. Weekly and Monthly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel."
+          />
+          <FaqItem
+            q="What is Discord Only?"
+            a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, or NFL boards on the site. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
           />
           <FaqItem
             q="How often is the data updated?"

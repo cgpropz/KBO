@@ -92,3 +92,44 @@ export const TIERS = [
     link: null,
   },
 ];
+
+export const DISCORD_ONLY_NOTE = 'Props in Discord only. Upgrade to All-Access for the full site.';
+
+// Display strings. VITE_DISCORD_WEEKLY_PRICE / VITE_DISCORD_MONTHLY_PRICE
+// override the copy. The charged amount is still the Stripe price on the
+// server. Defaults match the live Discord Only prices ($5.99/week, $19.99/month).
+export function discordDisplayPrice(raw) {
+  const value = String(raw || '').trim();
+  if (!/^\$?\d{1,4}(\.\d{2})?$/.test(value)) return '';
+  return value.startsWith('$') ? value : `$${value}`;
+}
+
+const DISCORD_WEEKLY_DISPLAY = '$5.99';
+const DISCORD_MONTHLY_DISPLAY = '$19.99';
+
+export function discordPlanCards(env = {}) {
+  const weekly = discordDisplayPrice(env.VITE_DISCORD_WEEKLY_PRICE) || DISCORD_WEEKLY_DISPLAY;
+  const monthly = discordDisplayPrice(env.VITE_DISCORD_MONTHLY_PRICE) || DISCORD_MONTHLY_DISPLAY;
+  return [
+    {
+      id: 'discord_weekly',
+      plan: 'weekly',
+      cadence: 'Weekly',
+      price: weekly,
+      period: '/ week',
+      cta: 'Get Discord Weekly',
+      features: ['Props posted in the CGPropz Discord', 'Discord props role while subscribed'],
+      limited: 'Full site boards, projections, and tools',
+    },
+    {
+      id: 'discord_monthly',
+      plan: 'monthly',
+      cadence: 'Monthly',
+      price: monthly,
+      period: '/ month',
+      cta: 'Get Discord Monthly',
+      features: ['Props posted in the CGPropz Discord', 'Discord props role while subscribed', 'Save vs. paying weekly'],
+      limited: 'Full site boards, projections, and tools',
+    },
+  ];
+}

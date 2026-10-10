@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './AuthContext'
+import { hasAnyPaidAccess } from './entitlements'
 import Paywall from './Paywall'
 import SportSwitcher from './SportSwitcher'
 import KboPropBoard from './KboPropBoard'
@@ -36,7 +37,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
   const [view, setView] = useState(NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board')
   const [previousView, setPreviousView] = useState('board')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const isPaid = tier && tier !== 'free'
+  const isPaid = hasAnyPaidAccess(tier)
 
   const openPlayer = (name) => {
     setPreviousView(view)

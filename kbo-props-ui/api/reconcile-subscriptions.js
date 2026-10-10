@@ -1,7 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { mergeTier, tierForPrice } from './_stripeTier.js';
+import { mergeTier, tierForStripePrice } from './_stripeTier.js';
+import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -57,13 +58,12 @@ async function findUserByEmail(email) {
   return null;
 }
 
-async function collectActiveSubscriberTiers() {
-  const byEmail = new Map();
+async function walkSubscriptions(status, { byEmail, discordEmails, recordSite }) {
   let startingAfter;
 
   while (true) {
     const page = await stripe.subscriptions.list({
-      status: 'active',
+      status,
       limit: 100,
       starting_after: startingAfter,
       expand: ['data.customer', 'data.items.data.price'],
@@ -79,9 +79,20 @@ async function collectActiveSubscriberTiers() {
       // buckets mislabeled the $9.99 weekly price as monthly and could
       // overwrite a narrower legacy tier. Emails are lowercased so a
       // mixed-case Checkout address still matches the Supabase account.
+      // Discord-only prices are recorded separately and are not merged into
+      // the site tier, so they cannot grant All-Access.
       const price = sub.items?.data?.[0]?.price;
       const priceId = typeof price === 'string' ? price : price?.id;
-      const tier = tierForPrice(priceId);
+      // Product metadata and the live Discord Only product id are checked
+      // here. The list expand stops at the price object (Stripe rejects a
+      // fifth expand level), so an unknown price is retrieved once.
+      const classified = await tierForStripePrice(stripe, price || priceId, { metadata: sub.metadata });
+      if (classified === 'discord') {
+        discordEmails.add(normalized);
+        continue;
+      }
+      if (!recordSite) continue;
+      const tier = classified;
       const prev = byEmail.get(normalized) || 'free';
       byEmail.set(normalized, mergeTier(prev, tier));
     }
@@ -89,8 +100,106 @@ async function collectActiveSubscriberTiers() {
     if (!page.has_more || page.data.length === 0) break;
     startingAfter = page.data[page.data.length - 1].id;
   }
+}
 
-  return byEmail;
+async function collectActiveSubscriberTiers() {
+  const byEmail = new Map();
+  const discordEmails = new Set();
+  // Site tiers stay active-only, matching the previous reconcile. Trialing
+  // is scanned only so a Discord-only trial still receives its role.
+  await walkSubscriptions('active', { byEmail, discordEmails, recordSite: true });
+  await walkSubscriptions('trialing', { byEmail, discordEmails, recordSite: false });
+  return { byEmail, discordEmails };
+}
+
+async function emailForUserId(userId) {
+  try {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    if (error || !data?.user?.email) return null;
+    return data.user.email.trim().toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+// Mark active Discord-only subscribers and drop the flag when that
+// subscription is gone. Site tiers are not downgraded here — cancellation of
+// All-Access / KBO / Lifetime still happens in the webhook recompute.
+async function reconcileDiscordFlags(discordEmails) {
+  const summary = { flagged: 0, cleared: 0, lapsedDiscordTier: 0 };
+  for (const email of discordEmails) {
+    const user = await findUserByEmail(email);
+    if (!user?.id) continue;
+    const { data: rows, error } = await supabase
+      .from('user_profiles')
+      .select('tier')
+      .eq('id', user.id)
+      .limit(1);
+    if (error) continue;
+    const current = rows?.[0]?.tier || 'free';
+    const next = mergeTier(current, 'discord');
+    if (next !== current) {
+      const { error: upsertError } = await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, tier: next }, { onConflict: 'id' });
+      if (upsertError) continue;
+    }
+    if (await setDiscordOnlyFlag(supabase, user.id, true)) summary.flagged += 1;
+  }
+
+  const candidates = [];
+  const pageSize = 200;
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id, tier, discord_only')
+      .or('discord_only.eq.true,tier.eq.discord')
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const rows = data || [];
+    candidates.push(...rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  for (const row of candidates) {
+    const email = await emailForUserId(row.id);
+    if (!email || discordEmails.has(email)) continue;
+    if (row.tier === 'discord') {
+      const { error: clearError } = await supabase
+        .from('user_profiles')
+        .upsert({ id: row.id, tier: 'free' }, { onConflict: 'id' });
+      if (!clearError) summary.lapsedDiscordTier += 1;
+    }
+    if (row.discord_only === true && await setDiscordOnlyFlag(supabase, row.id, false)) {
+      summary.cleared += 1;
+    }
+  }
+  return summary;
+}
+
+async function syncConnectedDiscordRoles() {
+  const summary = { connected: 0, synced: 0, failed: 0 };
+  const pageSize = 200;
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .not('discord_user_id', 'is', null)
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const rows = data || [];
+    for (const row of rows) {
+      summary.connected += 1;
+      const result = await safeDiscordSync(supabase, row.id);
+      if (result?.ok) summary.synced += 1;
+      else if (!result?.skipped) summary.failed += 1;
+    }
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return summary;
 }
 
 async function setTierByEmail(email, tier) {
@@ -135,7 +244,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const activeByEmail = await collectActiveSubscriberTiers();
+    const { byEmail: activeByEmail, discordEmails } = await collectActiveSubscriberTiers();
     const results = {
       activeSubscribers: activeByEmail.size,
       alreadyPaid: 0,
@@ -152,9 +261,19 @@ export default async function handler(req, res) {
       if (r.status === 'error') results.errors += 1;
     }
 
+    let discord = null;
+    try {
+      const flags = await reconcileDiscordFlags(discordEmails);
+      const roles = await syncConnectedDiscordRoles();
+      discord = { ...flags, ...roles };
+    } catch (err) {
+      console.error('[reconcile] discord pass failed:', err?.message || err);
+      discord = { error: true };
+    }
+
     // Counts only: customer emails are never returned or logged in the summary.
-    console.log('[reconcile] summary', results);
-    return res.status(200).json({ ok: true, ...results });
+    console.log('[reconcile] summary', results, discord);
+    return res.status(200).json({ ok: true, ...results, discord });
   } catch (err) {
     console.error('[reconcile] fatal', err);
     return res.status(500).json({ error: 'Reconciliation failed' });
