@@ -15,7 +15,7 @@ import {
   landingSportOpens,
   sportAccess as clientAccess,
 } from '../src/entitlements.js'
-import { handleNbaAccessRequest } from '../api/nba-access.js'
+import { handleNbaAccessRequest } from '../api/_nbaAccess.js'
 
 const SPORT_ACCESS = {
   undefined: { kbo: false, wnba: false, nfl: false },

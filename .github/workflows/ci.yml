@@ -43,6 +43,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: kbo-props-ui/package-lock.json
       - run: npm ci --no-audit --no-fund
+      - name: Vercel Hobby function limit
+        run: node scripts/check-function-limit.mjs
       - name: API unit tests
         run: npm run test:api
       - name: Production build

@@ -286,7 +286,7 @@ export async function computeStripeTier(stripe, email, env = process.env) {
 }
 
 // Current plans keyed by charged amount (cents). Used for analytics/purchase
-// tracking only (never for entitlement): api/checkout-session.js and the X
+// tracking only (never for entitlement): api/_checkoutSession.js and the X
 // Conversions API report in api/stripe-webhook.js.
 export const PLAN_BY_AMOUNT = {
   499: 'weekly',   // Weekly All-Access with XWEEK ($5 off once) → $4.99 first week

@@ -27,7 +27,7 @@ async function lookupSession(sessionId) {
 /*
  * Checkout-success screen. Stripe Payment Links redirect paying customers to
  * /?checkout=success&session_id={CHECKOUT_SESSION_ID}. We verify the session
- * server-side (api/checkout-session.js returns amount/currency/plan only), fire
+ * server-side (/api/checkout-session returns amount/currency/plan only), fire
  * the X purchase event once with conversion_id = session id, clean the URL and
  * welcome the customer, prompting log-in/sign-up if they are not signed in.
  */

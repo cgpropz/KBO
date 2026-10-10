@@ -2,7 +2,7 @@
 // No network, no credentials. Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { handleCheckoutSessionRequest } from '../api/checkout-session.js'
+import { handleCheckoutSessionRequest } from '../api/_checkoutSession.js'
 import { planForAmount } from '../api/_stripeTier.js'
 
 const VALID_ID = 'cs_live_a1B2c3D4e5F6g7H8i9J0'

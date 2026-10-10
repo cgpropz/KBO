@@ -15,7 +15,7 @@ import {
   verifyOAuthState,
 } from '../api/_discord.js'
 import { handleDiscordCallback, handleDiscordDisconnect } from '../api/_discordSync.js'
-import { handleDiscordBackfill } from '../api/discord-backfill.js'
+import { handleDiscordBackfill } from '../api/_discordBackfill.js'
 import { discordDisplayPrice, discordPlanCards } from '../src/pricingTiers.js'
 import { DISCORD_INVITE_URL, discordInviteFromEnv, discordInviteUrl } from '../src/discordInvite.js'
 

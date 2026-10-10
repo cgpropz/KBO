@@ -7,7 +7,7 @@ import {
   sportAccess as serverAccess,
 } from '../api/_dataAccess.js'
 import { handleDataRequest, _clearCache } from '../api/data.js'
-import { handleNhlAccessRequest } from '../api/nhl-access.js'
+import { handleNhlAccessRequest } from '../api/_nhlAccess.js'
 import { landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
 
 beforeEach(() => _clearCache())
