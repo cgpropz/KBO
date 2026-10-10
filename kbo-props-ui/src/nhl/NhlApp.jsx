@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import SportSwitcher from '../SportSwitcher'
 import '../nfl/nfl.css'
+import NhlDvp from './NhlDvp'
 import NhlLineups from './NhlLineups'
 import NhlProjections from './NhlProjections'
 import NhlPropLines from './NhlPropLines'
@@ -12,6 +13,7 @@ const NAV = [
   { id: 'projections', label: 'Board' },
   { id: 'sharp', label: 'PP Odds' },
   { id: 'lineups', label: 'Lineups' },
+  { id: 'dvp', label: 'DvP' },
 ]
 
 const RANGES = [
@@ -123,6 +125,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
   else if (view === 'projections') content = <NhlProjections onSelectPlayer={openPlayer} />
   else if (view === 'sharp') content = <NhlSharpOdds onSelectPlayer={openPlayer} />
   else if (view === 'lineups') content = <NhlLineups />
+  else if (view === 'dvp') content = <NhlDvp />
 
   return (
     <div className="nfl-root nhl-root">
@@ -131,7 +134,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="nfl-nav-links">
           {NAV.map((item) => (
-            <button key={item.id} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
+            <button key={item.id} data-testid={`nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
           ))}
         </div>
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NHL</button>

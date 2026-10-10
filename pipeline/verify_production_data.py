@@ -66,6 +66,9 @@ MUST_NOT_BE_PUBLIC = [
 	"/data/nhl/projections.json",
 	"/data/nhl/lineups.json",
 	"/data/nhl/sharp_odds.json",
+	"/data/nhl/dvp_f.json",
+	"/data/nhl/dvp_d.json",
+	"/data/nhl/dvp_g.json",
 ]
 
 CORE_CORRELATED = [
