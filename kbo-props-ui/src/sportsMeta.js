@@ -66,6 +66,7 @@ export const NHL_CARD = {
   accent: '#7dd3fc',
   glow: 'rgba(125, 211, 252, 0.35)',
   features: ['Shots and saves model', 'Points and power-play points', 'Lines and starting goalies'],
-  portrait: '/sport-cards/nhl-card.svg',
+  // Original illustration of a fictional player. Not a real athlete and not a league logo.
+  portrait: '/sport-cards/nhl-card.webp',
   portraitAlt: 'Illustrated hockey player in a dark helmet',
 };
