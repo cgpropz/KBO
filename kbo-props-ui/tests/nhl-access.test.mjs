@@ -1,4 +1,4 @@
-// NHL follows the NBA gate. sportAccess stays { kbo, wnba, nfl }.
+// NHL is the admin email only. sportAccess stays { kbo, wnba, nfl }.
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import {
@@ -27,19 +27,24 @@ test('the dev screenshot query cannot open a production build', () => {
   assert.equal(nhlDevBypass(true, ''), false)
 })
 
-test('nhl access fails closed the same way NBA does', () => {
+test('only the admin email can see NHL, paid members included', () => {
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: 'cgpropz@gmail.com', tierResolved: false, tier: 'free', flagResolved: false, nhlPublic: false,
+    emailResolved: true, email: 'cgpropz@gmail.com',
   }), 'full')
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: 'fan@example.com', tierResolved: true, tier: 'combined', flagResolved: true, nhlPublic: false,
+    emailResolved: true, email: '  CGPropz@gmail.com ',
+  }), 'full')
+  for (const tier of ['free', 'kbo', 'wnba', 'combined', 'owner', 'pro', 'monthly', 'weekly', 'season', 'all']) {
+    assert.equal(nhlAccessDecision({
+      emailResolved: true, email: 'fan@example.com', tierResolved: true, tier, flagResolved: true, nhlPublic: true,
+    }), 'deny', tier)
+  }
+  assert.equal(nhlAccessDecision({
+    emailResolved: false, email: 'cgpropz@gmail.com', tierResolved: true, tier: 'owner', flagResolved: true, nhlPublic: true,
   }), 'deny')
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: 'fan@example.com', tierResolved: true, tier: 'combined', flagResolved: true, nhlPublic: true,
-  }), 'full')
-  assert.equal(nhlAccessDecision({
-    emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nhlPublic: true,
-  }), 'preview')
+    emailResolved: true, email: null, tierResolved: true, tier: 'owner', flagResolved: true, nhlPublic: true,
+  }), 'deny')
 })
 
 test('an unconfirmed goalie is not one of the free top rows', () => {
@@ -67,10 +72,11 @@ function mockRes() {
 
 function mockClient({ flag = false } = {}) {
   const users = {
-    'tok-owner': { id: 'u-owner', email: 'cgpropz@gmail.com' },
+    'tok-owner': { id: 'u-owner', email: 'CGPropz@gmail.com' },
     'tok-fan': { id: 'u-fan', email: 'fan@example.com' },
+    'tok-member': { id: 'u-member', email: 'member@example.com' },
   }
-  const profiles = { 'u-owner': 'free', 'u-fan': 'combined' }
+  const profiles = { 'u-owner': 'free', 'u-fan': 'combined', 'u-member': 'owner' }
   return {
     auth: {
       getUser(token) {
@@ -106,26 +112,54 @@ function mockClient({ flag = false } = {}) {
   }
 }
 
-test('the owner can read NHL while the public flag is off', async () => {
+test('the admin can read NHL data and a paid member cannot, even if the flag is on', async () => {
+  const client = mockClient({ flag: true })
   const res = mockRes()
   await handleDataRequest(
     { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
     res,
-    mockClient({ flag: false }),
+    client,
   )
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.preview, false)
   assert.equal(res.body.data[0].player, 'Mikko Rantanen')
 
-  const fan = mockRes()
-  await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-fan' } },
-    fan,
-    mockClient({ flag: false }),
-  )
-  assert.equal(fan.statusCode, 403)
+  for (const token of ['tok-fan', 'tok-member', 'tok-nope']) {
+    const denied = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${token}` } },
+      denied,
+      client,
+    )
+    assert.equal(denied.statusCode, 403, token)
+    assert.equal(denied.body.data, undefined)
+  }
 
-  const open = mockRes()
-  await handleNhlAccessRequest({ method: 'GET', headers: {} }, open, mockClient({ flag: true }))
-  assert.deepEqual(open.body, { open: false })
+  const anon = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_lineups' }, headers: {} },
+    anon,
+    client,
+  )
+  assert.equal(anon.statusCode, 403)
+
+  const adminOpen = mockRes()
+  await handleNhlAccessRequest(
+    { method: 'GET', headers: { authorization: 'Bearer tok-owner' } },
+    adminOpen,
+    client,
+  )
+  assert.deepEqual(adminOpen.body, { open: true })
+
+  const memberOpen = mockRes()
+  await handleNhlAccessRequest(
+    { method: 'GET', headers: { authorization: 'Bearer tok-member' } },
+    memberOpen,
+    client,
+  )
+  assert.deepEqual(memberOpen.body, { open: false })
+
+  const loggedOut = mockRes()
+  await handleNhlAccessRequest({ method: 'GET', headers: {} }, loggedOut, client)
+  assert.deepEqual(loggedOut.body, { open: false })
 })

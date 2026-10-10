@@ -2,14 +2,30 @@ name: Refresh NHL PrizePicks Board
 
 # Schedule runs only on the default branch, and the job also refuses any
 # other ref. A pull request cannot publish NHL snapshots.
+#
+# The :19/:49 cron is a backup, not the clock. GitHub skips the first ticks
+# of a new workflow and drops most every-30-minute schedules (the NFL board
+# cron was landing every 3-6 hours). The file is on the default branch at
+# .github/workflows/nhl-refresh.yml and the manual run proved the YAML. A
+# finished run on main waits, then queues the next one, same as the NFL
+# Unabated job. The push below starts that chain when this file lands.
 
 on:
   schedule:
     - cron: "19,49 * * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "nhl/**"
+      - ".github/workflows/nhl-refresh.yml"
+      - "kbo-props-ui/src/nhl/**"
+      - "pipeline/memory/grade_nhl_day.py"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: nhl-refresh-pipeline
@@ -19,6 +35,7 @@ jobs:
   refresh-nhl:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,3 +70,16 @@ jobs:
         if: success()
         continue-on-error: true
         run: python pipeline/memory/freeze_slate.py --sport nhl
+
+      # Holds this runner until the next board is due, then starts it. The
+      # cron above only restarts the chain if this handoff dies.
+      - name: Queue the next NHL board
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NHL_REFRESH_WAIT_SECONDS: "1500"
+        run: |
+          echo "Next NHL board in ${NHL_REFRESH_WAIT_SECONDS}s"
+          sleep "${NHL_REFRESH_WAIT_SECONDS}"
+          gh workflow run nhl-refresh.yml --ref main

@@ -7,11 +7,20 @@ const UNIT_LABEL = {
   D1: 'Pair 1', D2: 'Pair 2', D3: 'Pair 3',
   PP1: 'Power play 1', PP2: 'Power play 2',
   PK1: 'Penalty kill 1', PK2: 'Penalty kill 2',
+  F: 'Forwards', D: 'Defense',
   G: 'Goalies',
 }
 
-function TeamColumn({ team, players }) {
+function lineTagClass(label) {
+  if (label === 'PROJECTED') return 'nhl-projected'
+  if (String(label || '').startsWith('LAST GAME')) return 'nhl-last-game'
+  if (label === 'NOT POSTED') return 'nhl-unposted'
+  return ''
+}
+
+function TeamColumn({ team, players, label }) {
   const logo = teamLogoUrl(team)
+  const tagClass = lineTagClass(label)
   let last = ''
   return (
     <div className="nfl-lineup-team">
@@ -19,6 +28,7 @@ function TeamColumn({ team, players }) {
         {logo && <img src={logo} alt="" width="28" height="28" />}
         <b>{team}</b>
         <span>{TEAM_NAMES[team] || team}</span>
+        {tagClass && <b className={tagClass}>{label}</b>}
       </header>
       {players.map((player, index) => {
         const unit = player.position === 'G' ? 'Goalie' : (UNIT_LABEL[player.position] || player.position)
@@ -47,9 +57,9 @@ function Matchup({ matchup }) {
     <article className="nfl-matchup-card">
       <p>{matchup.weekday ? matchup.weekday.slice(0, 3).toUpperCase() : ''} {matchup.gametime || 'TIME TBD'}</p>
       <div className="nfl-matchup-teams">
-        <TeamColumn team={matchup.awayTeam} players={matchup.lineups?.[matchup.awayTeam] || []} />
+        <TeamColumn team={matchup.awayTeam} players={matchup.lineups?.[matchup.awayTeam] || []} label={matchup.lineLabels?.[matchup.awayTeam]} />
         <span className="nfl-at">@</span>
-        <TeamColumn team={matchup.homeTeam} players={matchup.lineups?.[matchup.homeTeam] || []} />
+        <TeamColumn team={matchup.homeTeam} players={matchup.lineups?.[matchup.homeTeam] || []} label={matchup.lineLabels?.[matchup.homeTeam]} />
       </div>
     </article>
   )
@@ -79,7 +89,7 @@ export default function NhlLineups() {
       <header className="nfl-lineups-header">
         <p>NHL / GAME DAY</p>
         <h1>Lines and Goalies</h1>
-        <span>Confirmed starters can be ranked. Probable starters stay on the page and off the top of the prop list. Regular season only.</span>
+        <span>Goalie tags come from Daily Faceoff. Skater lines are projected. If that page has no skaters, the list is the last game they actually played. A team with nothing posted stays empty.</span>
       </header>
       {error && <div className="nfl-notice">Unable to load lineups: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading lines and starting goalies.</div>}

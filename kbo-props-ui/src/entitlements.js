@@ -30,12 +30,9 @@ export function canSeeNba(user) {
   return email === NBA_OWNER_EMAIL;
 }
 
-// NHL uses the same owner email and the same public-flag rule as NBA.
-export const NHL_OWNER_EMAIL = NBA_OWNER_EMAIL;
-
-export function canSeeNhl(user) {
-  return canSeeNba(user);
-}
+// NHL is not decided here. The hub asks GET /api/nhl-access, which checks the
+// Supabase session against the admin allowlist. A matching email in the
+// browser is not enough, and a paid tier is not enough.
 
 // Local screenshots only. Production builds set DEV to false, so this cannot
 // open the live tab.

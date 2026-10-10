@@ -1,6 +1,7 @@
 /*
  * Night stadium photos, one per section.
- * NFL uses stadium-bg.webp. KBO uses kbo-stadium-bg.webp. WNBA is unchanged.
+ * NFL uses stadium-bg.webp. KBO uses kbo-stadium-bg.webp. NHL uses
+ * nhl-arena-bg.webp. WNBA is unchanged.
  * The picture stays fixed while that section scrolls. Boards sit on a dark wash
  * that opens at the edges so the photo shows through. Tables and cards sit on a
  * solid dark panel so text stays readable. Heat-map and grade colors are inline
@@ -359,6 +360,59 @@
 .kbo-app-root .so-table-toolbar strong,
 .kbo-app-root .bp-table-toolbar strong {
   color: #e8f4e6;
+}
+
+/* NHL arena. Higher specificity than .nfl-root so the football photo
+   and the flat fill do not cover this section. */
+.nhl-root.nfl-root {
+  background-color: #070b14;
+  background-image:
+    linear-gradient(180deg, rgba(5, 10, 22, 0.58) 0%, rgba(5, 10, 22, 0.34) 38%, rgba(4, 8, 18, 0.52) 100%),
+    url('/nhl-arena-bg.webp');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #e7eef8;
+}
+
+.nhl-root .nfl-nav {
+  background: rgba(6, 12, 24, 0.62);
+  border-bottom-color: rgba(140, 186, 220, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.nhl-root .nfl-lines-table-wrap,
+.nhl-root .nfl-table-wrap,
+.nhl-root .nfl-edge-controls {
+  background: rgba(7, 13, 26, 0.94);
+  border-color: rgba(120, 168, 204, 0.32);
+}
+
+.nhl-root .nfl-lines-page .nfl-lines-table-wrap {
+  background: rgba(7, 12, 24, 0.95);
+  border-color: rgba(28, 58, 88, 0.95);
+}
+
+.nhl-root .nfl-lines-page .nfl-lines-table th,
+.nhl-root .nfl-lines-page .nfl-lines-table td {
+  background: rgba(7, 12, 24, 0.96);
+  border-bottom-color: rgba(28, 52, 78, 0.9);
+}
+
+.nhl-root .nfl-lines-page .nfl-lines-row:hover td,
+.nhl-root .nfl-lines-row:hover {
+  background: rgba(16, 34, 56, 0.98);
+}
+
+.nhl-root .nfl-top-card,
+.nhl-root .nfl-matchup-card,
+.nhl-root .nfl-edge-card,
+.nhl-root .nfl-notice,
+.nhl-root .nfl-player-summary,
+.nhl-root .nhl-player-sheet .nfl-history-bars {
+  background-color: rgba(8, 14, 28, 0.93);
+  border-color: rgba(120, 168, 204, 0.3);
 }
 
 @media (max-width: 760px) {

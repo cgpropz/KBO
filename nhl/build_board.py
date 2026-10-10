@@ -11,7 +11,8 @@ import argparse
 import json
 import re
 import urllib.request
-from collections import defaultdict
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -40,6 +41,45 @@ SCHEDULE_URL = "https://api-web.nhle.com/v1/schedule/now"
 PRIZEPICKS_URL = "https://partner-api.prizepicks.com/projections?league_id=8&per_page=1000"
 GOALIES_URL = "https://www.dailyfaceoff.com/starting-goalies/"
 LINES_URL = "https://www.dailyfaceoff.com/teams/{slug}/line-combinations/"
+SCHEDULE_SEASON_URL = "https://api-web.nhle.com/v1/club-schedule-season/{team}/{season}"
+BOXSCORE_URL = "https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
+ROSTER_URL = "https://api-web.nhle.com/v1/roster/{team}/current"
+# Daily Faceoff team pages. A slug is only the address of that page. Players
+# still have to come from the page or from an NHL boxscore.
+FACEOFF_SLUGS = {
+    "ANA": "anaheim-ducks",
+    "BOS": "boston-bruins",
+    "BUF": "buffalo-sabres",
+    "CGY": "calgary-flames",
+    "CAR": "carolina-hurricanes",
+    "CHI": "chicago-blackhawks",
+    "COL": "colorado-avalanche",
+    "CBJ": "columbus-blue-jackets",
+    "DAL": "dallas-stars",
+    "DET": "detroit-red-wings",
+    "EDM": "edmonton-oilers",
+    "FLA": "florida-panthers",
+    "LAK": "los-angeles-kings",
+    "MIN": "minnesota-wild",
+    "MTL": "montreal-canadiens",
+    "NSH": "nashville-predators",
+    "NJD": "new-jersey-devils",
+    "NYI": "new-york-islanders",
+    "NYR": "new-york-rangers",
+    "OTT": "ottawa-senators",
+    "PHI": "philadelphia-flyers",
+    "PIT": "pittsburgh-penguins",
+    "SJS": "san-jose-sharks",
+    "SEA": "seattle-kraken",
+    "STL": "st-louis-blues",
+    "TBL": "tampa-bay-lightning",
+    "TOR": "toronto-maple-leafs",
+    "UTA": "utah-mammoth",
+    "VAN": "vancouver-canucks",
+    "VGK": "vegas-golden-knights",
+    "WSH": "washington-capitals",
+    "WPG": "winnipeg-jets",
+}
 CURRENT_SEASON = "20262027"
 PRIOR_SEASON = "20252026"
 SEASON_LABEL = "2026-27"
@@ -226,27 +266,133 @@ def fetch_goalies():
     return by_team, slugs
 
 
-def fetch_lines(slugs: dict[str, str]) -> dict[str, dict]:
-    out = {}
-    for team, slug in slugs.items():
-        try:
-            payload = _next_data(LINES_URL.format(slug=slug))
-            combos = ((payload.get("props") or {}).get("pageProps") or {}).get("combinations") or {}
-        except Exception as exc:  # noqa: BLE001 - one team must not wipe the night
-            print(f"lines skip {team}: {exc}")
+def _one_team_lines(team_slug: tuple[str, str]):
+    team, slug = team_slug
+    try:
+        payload = _next_data(LINES_URL.format(slug=slug))
+        combos = ((payload.get("props") or {}).get("pageProps") or {}).get("combinations") or {}
+    except Exception as exc:  # noqa: BLE001 - one team must not wipe the night
+        print(f"lines skip {team}: {exc}")
+        return team, None
+    players = []
+    for player in combos.get("players") or []:
+        name = str(player.get("name") or "").strip()
+        if not name:
             continue
-        players = []
-        for player in combos.get("players") or []:
-            players.append({
-                "name": player.get("name") or "",
-                "position": position_group(player.get("positionIdentifier") or player.get("positionName")),
-                "group": player.get("groupIdentifier") or "",
-                "category": player.get("categoryIdentifier") or "",
-                "injury": player.get("injuryStatus") or ("GTD" if player.get("gameTimeDecision") else None),
-            })
-        if players:
-            out[team] = {"players": players, "slug": slug}
+        players.append({
+            "name": name,
+            "position": position_group(player.get("positionIdentifier") or player.get("positionName")),
+            "group": player.get("groupIdentifier") or "",
+            "category": player.get("categoryIdentifier") or "",
+            "injury": player.get("injuryStatus") or ("GTD" if player.get("gameTimeDecision") else None),
+        })
+    if not _has_skaters({"players": players}):
+        return team, None
+    return team, {
+        "players": players,
+        "slug": slug,
+        "source": "projected",
+        "sourceName": combos.get("sourceName") or "",
+        "updatedAt": combos.get("updatedAt") or "",
+    }
+
+
+def fetch_lines(slugs: dict[str, str]) -> dict[str, dict]:
+    """Daily Faceoff line pages. Those pages are a projection, not a confirmed lineup."""
+    out = {}
+    if not slugs:
+        return out
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        for team, info in pool.map(_one_team_lines, slugs.items()):
+            if info:
+                out[team] = info
     return out
+
+
+def _has_skaters(info: dict | None) -> bool:
+    for player in (info or {}).get("players") or []:
+        group = str(player.get("group") or "")
+        if group and group != "g" and player.get("category") != "oi":
+            return True
+    return False
+
+
+def _person_name(value) -> str:
+    if isinstance(value, dict):
+        return str(value.get("default") or "").strip()
+    return str(value or "").strip()
+
+
+def _roster_names(roster: dict) -> dict:
+    names = {}
+    for group in ("forwards", "defensemen", "goalies"):
+        for player in roster.get(group) or []:
+            first = _person_name(player.get("firstName"))
+            last = _person_name(player.get("lastName"))
+            full = " ".join(part for part in (first, last) if part)
+            if player.get("id") and full:
+                names[player["id"]] = full
+    return names
+
+
+def fetch_last_game_skaters(team: str) -> dict | None:
+    """Skaters who actually played this team's last regular-season game.
+
+    The boxscore has no line combinations, so these rows are not labeled as
+    line 1 or a power-play unit. A miss returns nothing.
+    """
+    abbr = team_abbr(team)
+    if not abbr:
+        return None
+    try:
+        schedule = _json(SCHEDULE_SEASON_URL.format(team=abbr, season=CURRENT_SEASON))
+    except Exception as exc:  # noqa: BLE001
+        print(f"last-game schedule skip {abbr}: {exc}")
+        return None
+    finals = [
+        game for game in (schedule.get("games") or [])
+        if game.get("gameType") == 2 and str(game.get("gameState") or "") in FINAL_STATES and game.get("id")
+    ]
+    if not finals:
+        return None
+    last = finals[-1]
+    try:
+        box = _json(BOXSCORE_URL.format(game_id=last["id"]))
+        roster = _json(ROSTER_URL.format(team=abbr))
+    except Exception as exc:  # noqa: BLE001
+        print(f"last-game skip {abbr}: {exc}")
+        return None
+    names = _roster_names(roster)
+    side = None
+    for key in ("homeTeam", "awayTeam"):
+        club = box.get(key) or {}
+        if team_abbr(club.get("abbrev")) == abbr:
+            side = (box.get("playerByGameStats") or {}).get(key) or {}
+            break
+    if not side:
+        return None
+    players = []
+    for bucket, group in (("forwards", "f"), ("defense", "d"), ("goalies", "g")):
+        for player in side.get(bucket) or []:
+            name = names.get(player.get("playerId")) or _person_name(player.get("name"))
+            if not name:
+                continue
+            players.append({
+                "name": name,
+                "position": position_group(player.get("position") or group),
+                "group": group,
+                "category": "last_game",
+                "injury": None,
+            })
+    if not _has_skaters({"players": players}):
+        return None
+    played = str(last.get("gameDate") or "")
+    return {
+        "players": players,
+        "source": "last_game",
+        "gameId": last.get("id"),
+        "gameDate": played,
+    }
 
 
 def _league(skaters, goalies, team_games) -> dict:
@@ -271,16 +417,27 @@ def _index_players(rows: list[dict]) -> dict[str, list[dict]]:
 
 
 def _history_for(by_name, name: str, team: str) -> list[dict]:
+    """One player's games, including the teams he left.
+
+    A trade or a claim used to keep only the current team, so a goalie with
+    one game on the new team lost the starts that make a projection. The
+    current team still chooses which person a shared name belongs to.
+    """
     rows = by_name.get(_name_key(name)) or []
     if not rows:
         return []
-    same = [row for row in rows if team_abbr(row.get("team")) == team]
-    chosen = same or rows
-    # One person. If the name hits two ids, keep the id with the newest game.
     by_id = defaultdict(list)
-    for row in chosen:
+    for row in rows:
         by_id[row["player_id"]].append(row)
-    best = max(by_id.values(), key=lambda games: games[-1]["date"])
+    team_key = team_abbr(team)
+
+    def rank(games: list[dict]):
+        on_team = any(team_abbr(game.get("team")) == team_key for game in games)
+        newest = max(str(game.get("date") or "") for game in games)
+        return (on_team, newest)
+
+    best = list(max(by_id.values(), key=rank))
+    best.sort(key=lambda game: (str(game.get("date") or ""), game.get("game_id") or 0))
     return best
 
 
@@ -413,19 +570,35 @@ def _dvp(prop: str, opponent: str, ranks: dict) -> int | None:
     return ranks["points"].get(opponent)
 
 
+def _line_label(info: dict | None) -> str:
+    source = (info or {}).get("source")
+    if source == "projected" and _has_skaters(info):
+        return "PROJECTED"
+    if source == "last_game" and _has_skaters(info):
+        played = str((info or {}).get("gameDate") or "")
+        if len(played) >= 10:
+            return f"LAST GAME {played[5:7]}/{played[8:10]}"
+        return "LAST GAME"
+    return "NOT POSTED"
+
+
 def build_lineups(games, goalies, lines) -> list[dict]:
     cards = []
-    order = ("f1", "f2", "f3", "f4", "d1", "d2", "d3", "pp1", "pp2", "pk1", "pk2", "g")
+    order = ("f1", "f2", "f3", "f4", "d1", "d2", "d3", "pp1", "pp2", "pk1", "pk2", "f", "d", "g")
     for game in games:
         lineups = {}
         injuries = {}
+        line_labels = {}
         for team in (game["away"], game["home"]):
-            roster = (lines.get(team) or {}).get("players") or []
+            info = lines.get(team) or {}
+            roster = info.get("players") or []
             shown = []
             hurt = []
             for group in order:
                 for player in roster:
                     if player.get("group") != group or player.get("category") == "oi":
+                        continue
+                    if not player.get("name"):
                         continue
                     shown.append({
                         "name": player["name"],
@@ -436,15 +609,25 @@ def build_lineups(games, goalies, lines) -> list[dict]:
                     if player.get("injury"):
                         hurt.append({"name": player["name"], "position": group.upper(), "status": player["injury"], "detail": ""})
             starter = goalies.get(team)
-            if starter:
-                shown.insert(0, {
-                    "name": starter["name"],
-                    "position": "G",
-                    "unit": "goalie",
-                    "status": "CONFIRMED" if starter["confirmed"] else "PROBABLE",
-                })
+            if starter and starter.get("name"):
+                status = "CONFIRMED" if starter["confirmed"] else "PROBABLE"
+                starter_key = _name_key(starter["name"])
+                already = next((
+                    player for player in shown
+                    if player.get("position") == "G" and _name_key(player.get("name")) == starter_key
+                ), None)
+                if already:
+                    already["status"] = status
+                else:
+                    shown.insert(0, {
+                        "name": starter["name"],
+                        "position": "G",
+                        "unit": "goalie",
+                        "status": status,
+                    })
             lineups[team] = shown
             injuries[team] = hurt
+            line_labels[team] = _line_label(info)
         start = game.get("start") or ""
         cards.append({
             "date": game["date"],
@@ -462,6 +645,7 @@ def build_lineups(games, goalies, lines) -> list[dict]:
                 game["home"]: goalies.get(game["home"]),
             },
             "lineups": lineups,
+            "lineLabels": line_labels,
             "injuries": injuries,
         })
     return cards
@@ -515,9 +699,22 @@ def build(root: Path, out_dir: Path) -> int:
     except Exception as exc:  # noqa: BLE001
         print(f"goalie page failed, goalies stay off the ranked list: {exc}")
         goalies, slugs = {}, {}
-    # Only pull lines for teams that play. A miss skips that team.
-    wanted = {team: slug for team, slug in slugs.items() if team in slate_teams}
+    # Every team on tonight and tomorrow, not only the clubs on today's goalie page.
+    # The goalie page slug wins when Daily Faceoff renames a team path.
+    wanted = {team: FACEOFF_SLUGS[team] for team in slate_teams if team in FACEOFF_SLUGS}
+    for team, slug in slugs.items():
+        if team in slate_teams and slug:
+            wanted[team] = slug
     lines = fetch_lines(wanted) if wanted else {}
+    for team in sorted(slate_teams):
+        if _has_skaters(lines.get(team)):
+            continue
+        fallback = fetch_last_game_skaters(team)
+        if fallback:
+            print(f"lines {team}: no projected skaters, last game {fallback.get('gameDate')}")
+            lines[team] = fallback
+        else:
+            print(f"lines {team}: no skaters posted")
 
     projections_ready = cards is not None
     projections = []
@@ -593,10 +790,13 @@ def build(root: Path, out_dir: Path) -> int:
     # Lineups can publish with an empty goalie page. They cannot publish if the schedule failed
     # (we already returned). An empty game list is a real off night.
     _write_if_ready(out_dir / "lineups.json", lineups, True)
+    labels = Counter(label for card in lineups for label in (card.get("lineLabels") or {}).values())
     print(json.dumps({
         "games": len(games),
         "props": len(projections),
+        "saves": sum(1 for row in projections if row.get("prop") == PROP_SAVES),
         "lineups": len(lineups),
+        "line_labels": dict(labels),
         "props_kept": list(LAUNCH_PROPS),
     }))
     return 0

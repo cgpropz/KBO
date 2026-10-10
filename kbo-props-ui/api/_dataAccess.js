@@ -67,27 +67,22 @@ export function isNhlDataset(ds) {
 }
 
 /**
- * Same rule as nbaAccessDecision, with the nhl_public flag.
- * 'full' | 'preview' | 'deny'. The owner email is always full.
- * Everyone else is denied until nhl_public is true, and then only
- * all-access tiers are full. sportAccess() stays { kbo, wnba, nfl }.
+ * NHL is admin-only. 'full' or 'deny'.
+ *
+ * The email comes from Supabase auth.getUser on the caller's access token,
+ * the same allowlist as the NBA owner account. A paid tier, including
+ * 'owner', does not qualify. nhl_public does not open the tab. A missing
+ * or failed auth check denies everyone, including a caller who claims the
+ * admin address without a resolved session.
  */
 export function nhlAccessDecision({
   emailResolved,
   email,
-  tierResolved,
-  tier,
-  flagResolved,
-  nhlPublic,
 }) {
-  return nbaAccessDecision({
-    emailResolved,
-    email,
-    tierResolved,
-    tier,
-    flagResolved,
-    nbaPublic: nhlPublic,
-  });
+  if (emailResolved !== true) return 'deny';
+  const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (normalized === NHL_OWNER_EMAIL) return 'full';
+  return 'deny';
 }
 
 export function nbaAllowed(email, tier, nbaPublic) {
@@ -348,7 +343,7 @@ export const DATASETS = {
   nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewWnbaProjections },
   nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewWnbaProjections },
   nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewWnbaProjections },
-  // NHL. Denied unless the caller is full access. Preview is only after nhl_public.
+  // NHL. The /api/data gate returns these only for the admin email.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
   nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewObjectList('records', nhlSharpScore) },
