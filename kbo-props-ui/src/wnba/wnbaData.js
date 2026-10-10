@@ -1,4 +1,5 @@
 import { fetchApiDataset } from '../apiData'
+import { normalizeWnbaLineups } from '../lineups/normalizeWnbaLineups'
 
 /*
  * WNBA snapshot loader. Every dataset is served by the server-gated
@@ -28,4 +29,14 @@ export async function fetchWnbaSnapshot(path) {
 export async function fetchWnbaData(path) {
   const snapshot = await fetchWnbaSnapshot(path)
   return snapshot.data
+}
+
+export async function fetchWnbaLineups() {
+  const snapshot = await fetchWnbaSnapshot('wnba/lineups.json')
+  return {
+    matchups: normalizeWnbaLineups(snapshot.data),
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+  }
 }

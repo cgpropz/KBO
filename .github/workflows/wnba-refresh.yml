@@ -105,6 +105,12 @@ jobs:
         env:
           BACKEND_URL: http://localhost:5050
 
+      # The export above still writes the older RotoWire list. Rebuild it into
+      # the same matchup shape the NFL board uses (schedule, odds, injuries,
+      # headshots, and that expected lineup) before anything is published.
+      - name: Build WNBA starting lineups
+        run: python wnba/build_lineups.py
+
       - name: Verify exported prop gamelogs are current
         run: python wnba/verify_snapshot_gamelogs.py
 

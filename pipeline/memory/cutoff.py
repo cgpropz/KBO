@@ -10,10 +10,11 @@ KBO   No start time is persisted by the pipeline today (daily_pitchers2.py scrap
       postseason) start at 14:00 at the earliest, so the fallback never lets a
       started game through; the cost is losing late line moves on weekend days
       that actually start at 17:00/18:00.
-WNBA  Rotowire lineups (kbo-props-ui/public/data/wnba/lineups.json, "7:00 PM ET")
-      matched by team, used only for today's ET date because that file carries
-      no date. Fallback: 12:00 PM ET on the prop's gameDate (earliest regular
-      WNBA tip window).
+WNBA  Lineups snapshot (kbo-props-ui/public/data/wnba/lineups.json). Older files
+      store a Rotowire clock ("7:00 PM ET") with no date. Newer files also store
+      the ESPN tip as gametime ("19:30") plus awayTeam/homeTeam. Either clock is
+      used only for today's ET date. Fallback: 12:00 PM ET on the prop's
+      gameDate (earliest regular WNBA tip window).
 NFL   nflverse schedule gameday + gametime (ET) from nfl/lineups.json.
       Fallback: 09:30 AM ET on the gameday (earliest possible kickoff,
       international games).
@@ -114,6 +115,7 @@ WNBA_TEAM_ALIASES = {
     "NY": "NYL",
     "GS": "GSV",
     "CONN": "CON",
+    "POR": "PDX",
 }
 
 
@@ -123,18 +125,28 @@ def wnba_team(abbr: str | None) -> str:
 
 
 def wnba_team_tip_times(lineups: Iterable[dict] | None) -> dict[str, time]:
-    """team abbr -> tip time from Rotowire lineups (no date in that file)."""
+    """team abbr -> tip time from the WNBA lineups snapshot.
+
+    Accepts the older Rotowire shape (gameTime + visitor/home) and the schedule
+    shape the board renders (gametime + awayTeam/homeTeam).
+    """
     out: dict[str, time] = {}
     for game in lineups or []:
-        clock = parse_clock(game.get("gameTime"))
+        if not isinstance(game, dict):
+            continue
+        clock = parse_clock(game.get("gameTime")) or parse_clock(game.get("gametime"))
         if clock is None:
             continue
+        teams: list[str] = []
         for side in ("visitor", "home"):
             team = game.get(side) or {}
-            for key in ("abbr", "rawAbbr"):
-                abbr = wnba_team(team.get(key))
-                if abbr:
-                    out.setdefault(abbr, clock)
+            if isinstance(team, dict):
+                teams.extend(str(team.get(key) or "") for key in ("abbr", "rawAbbr"))
+        teams.extend(str(game.get(key) or "") for key in ("awayTeam", "homeTeam"))
+        for abbr in teams:
+            canonical = wnba_team(abbr)
+            if canonical:
+                out.setdefault(canonical, clock)
     return out
 
 
