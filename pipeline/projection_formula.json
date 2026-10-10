@@ -1,5 +1,10 @@
 {
-  "mode": "tuned",
-  "since": "2026-09-30",
-  "comment": "Live site boards. \"tuned\" publishes the Phase 2 candidate formulas in ml/params (the same fits shadow has been scoring). \"current\" restores the pre-promotion formulas. Env CG_PROJECTION_FORMULA=current|tuned overrides this file for one run. After changing mode, rerun the sport refresh workflows listed in docs/live_formulas.md."
+  "mode": "current",
+  "sports": {
+    "kbo": "tuned",
+    "wnba": "current",
+    "nfl": "current"
+  },
+  "since": "2026-10-03",
+  "comment": "Per-sport live boards. KBO publishes the Phase 2 candidate formulas in ml/params (the same fits shadow scores). WNBA and NFL stay on the previous formulas. \"mode\" is the fallback when a sport is not listed. Env CG_PROJECTION_FORMULA=current|tuned overrides every sport for one run. Shadow still scores both formulas for every sport. After changing a sport, rerun that sport's refresh listed in docs/live_formulas.md."
 }
