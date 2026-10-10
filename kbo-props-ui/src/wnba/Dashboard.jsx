@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
+import { wnbaRecordsAsSharp } from '../boardOdds'
+import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -183,35 +185,45 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, oddsState, seen }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.isOver
   const grade = dvpGrade(item.dvpRank)
 
   return (
-    <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
-      <td className="wnba-lines-player">
-        <div className="wnba-lines-avatar">
-          {item.imageUrl
-            ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
-            : initials(item.player)}
-        </div>
-        <div className="wnba-lines-info">
-          <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
-          <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
-          <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
-        </div>
-      </td>
-      <td><MiniChart recent={recent} line={item.line} /></td>
-      <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
-      <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
-      <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
-      <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-      <td className="wnba-lines-matchup">
-        <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
-        <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
-      </td>
-    </tr>
+    <>
+      <tr className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`} ref={open ? undefined : rowRef} onClick={locked ? undefined : onToggle}>
+        <td className="wnba-lines-player">
+          <div className="wnba-lines-avatar">
+            {item.imageUrl
+              ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+              : initials(item.player)}
+          </div>
+          <div className="wnba-lines-info">
+            <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
+            <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+            <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+          </div>
+          <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
+        </td>
+        <td><MiniChart recent={recent} line={item.line} /></td>
+        <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
+        <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
+        <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
+        <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
+        <td className="wnba-lines-matchup">
+          <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+          <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        </td>
+      </tr>
+      {open && !locked && (
+        <tr className="nfl-sharp-strip-row" ref={rowRef}>
+          <td colSpan={7}>
+            <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -386,8 +398,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [openId, setOpenId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const { index: oddsIndex, oddsState } = useBoardOdds(() => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json').then((snapshot) => {
+    const payload = snapshot?.data
+    const records = Array.isArray(payload?.records) ? payload.records : []
+    return { records: wnbaRecordsAsSharp(records), preview: !!snapshot?.preview }
+  }))
 
   const { tier } = useAuth()
   // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
@@ -586,7 +604,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [hasLockedRows, rows])
+  }, [hasLockedRows, rows, openId])
 
   return (
     <div className="fade-in">
@@ -618,15 +636,23 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((item, index) => (
-                    <PropRow
-                      key={item.id}
-                      item={item}
-                      onSelectPlayer={goPlayer}
-                      locked={!isPaid && index >= FREE_ROW_LIMIT}
-                      rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-                    />
-                  ))}
+                  {rows.map((item, index) => {
+                    const matched = boardOddsFor(oddsIndex, item)
+                    return (
+                      <PropRow
+                        key={item.id}
+                        item={item}
+                        onSelectPlayer={goPlayer}
+                        locked={!isPaid && index >= FREE_ROW_LIMIT}
+                        rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                        open={openId === item.id}
+                        onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                        odds={matched.odds}
+                        seen={matched.seen}
+                        oddsState={oddsState}
+                      />
+                    )
+                  })}
                   {Array.from({ length: placeholderCount }, (_, index) => (
                     <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
                       <td colSpan={7}><span className="wnba-placeholder-bar" /></td>

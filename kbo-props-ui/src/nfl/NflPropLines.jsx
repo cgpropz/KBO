@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fetchNflProjections } from './nflData'
+import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
+import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 
 const FREE_ROW_LIMIT = 3
 
@@ -84,31 +85,46 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, oddsState, seen }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.projection >= item.line
   const grade = dvpGrade(item.dvpRank)
+  const stripId = `nfl-board-odds-${String(item.id).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
 
   return (
-    <tr className={`nfl-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
-      <td className="nfl-lines-player">
-        <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
-        <div className="nfl-lines-info">
-          <button className="nfl-player-link" onClick={() => !locked && onSelectPlayer(item.player, item.prop)}>{item.player}</button>
-          <span className="nfl-lines-tag">{item.team}, {item.position}</span>
-          <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
-        </div>
-      </td>
-      <td><MiniChart recent={recent} line={item.line} /></td>
-      <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
-      <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
-      <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
-      <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
-      <td className="nfl-lines-matchup">
-        <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
-        <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
-      </td>
-    </tr>
+    <>
+      <tr
+        className={`nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+        ref={open ? undefined : rowRef}
+        onClick={locked ? undefined : onToggle}
+      >
+        <td className="nfl-lines-player">
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-info">
+            <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
+            <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+            <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+          </div>
+          <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
+        </td>
+        <td><MiniChart recent={recent} line={item.line} /></td>
+        <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
+        <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
+        <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
+        <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
+        <td className="nfl-lines-matchup">
+          <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
+          <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        </td>
+      </tr>
+      {open && !locked && (
+        <tr className="nfl-sharp-strip-row" id={stripId} ref={rowRef}>
+          <td colSpan={7}>
+            <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -218,8 +234,12 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [openId, setOpenId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const { index: oddsIndex, oddsState } = useBoardOdds(
+    () => fetchNflSharpOdds().then(({ records, preview }) => ({ records, preview })),
+  )
 
   const { tier } = useAuth()
   // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
@@ -290,7 +310,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [hasLockedRows, rows])
+  }, [hasLockedRows, rows, openId])
 
   return (
     <section className="nfl-lines-page">
@@ -319,15 +339,23 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((item, index) => (
-                <PropRow
-                  key={item.id}
-                  item={item}
-                  onSelectPlayer={onSelectPlayer}
-                  locked={!isPaid && index >= FREE_ROW_LIMIT}
-                  rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-                />
-              ))}
+              {rows.map((item, index) => {
+                const matched = boardOddsFor(oddsIndex, item)
+                return (
+                  <PropRow
+                    key={item.id}
+                    item={item}
+                    onSelectPlayer={onSelectPlayer}
+                    locked={!isPaid && index >= FREE_ROW_LIMIT}
+                    rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                    open={openId === item.id}
+                    onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                    odds={matched.odds}
+                    seen={matched.seen}
+                    oddsState={oddsState}
+                  />
+                )
+              })}
               {Array.from({ length: placeholderCount }, (_, index) => (
                 <tr key={`locked-${index}`} className="nfl-lines-row locked nfl-placeholder-row" aria-hidden="true">
                   <td colSpan={7}><span className="nfl-placeholder-bar" /></td>
