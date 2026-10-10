@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { customersForEmail } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -36,37 +37,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Find Stripe customer by email
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    if (!customers.data.length) {
+    // Case-insensitive: Checkout may have stored KLAW1193@icloud.com while
+    // this account's email is lowercase.
+    const customers = await customersForEmail(stripe, email);
+    if (!customers.length) {
       return res.status(404).json({ error: 'No Stripe subscription found for this account' });
     }
 
-    const customer = customers.data[0];
-
-    // Find active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'active',
-      limit: 10,
-    });
-
-    if (!subscriptions.data.length) {
-      // Also check trialing
-      const trialing = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: 'trialing',
-        limit: 10,
-      });
-      if (!trialing.data.length) {
-        return res.status(404).json({ error: 'No active subscription found' });
+    const subscriptions = new Map();
+    for (const customer of customers) {
+      for (const status of ['active', 'trialing']) {
+        const page = await stripe.subscriptions.list({
+          customer: customer.id,
+          status,
+          limit: 10,
+        });
+        for (const sub of page.data || []) subscriptions.set(sub.id, sub);
       }
-      subscriptions.data.push(...trialing.data);
+    }
+
+    if (!subscriptions.size) {
+      return res.status(404).json({ error: 'No active subscription found' });
     }
 
     // Cancel at period end (user keeps access until billing period ends)
     const results = [];
-    for (const sub of subscriptions.data) {
+    for (const sub of subscriptions.values()) {
       const updated = await stripe.subscriptions.update(sub.id, {
         cancel_at_period_end: true,
       });

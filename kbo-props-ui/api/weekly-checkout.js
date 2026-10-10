@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { WEEKLY_PRICE_ID, XWEEK_PROMOTION_CODE_ID } from '../src/pricingTiers.js';
+import { customersForEmail } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -45,10 +46,9 @@ function isPromoRejected(err) {
 }
 
 async function stripeCustomerId(client, email) {
-  if (typeof client.customers?.list !== 'function') return null;
   try {
-    const listed = await client.customers.list({ email, limit: 1 });
-    const id = listed?.data?.[0]?.id;
+    const matches = await customersForEmail(client, email);
+    const id = matches[0]?.id;
     return id ? String(id) : null;
   } catch {
     return null;

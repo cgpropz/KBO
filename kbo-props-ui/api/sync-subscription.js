@@ -20,7 +20,10 @@ const supabase = createClient(
  * Verifies the user's Supabase JWT, looks up their email in Stripe, and grants
  * the correct tier if they have an active subscription.
  *
- * Returns: { tier: 'monthly' | 'season' | 'free', synced: boolean }
+ * Returns: { tier, synced: boolean }
+ *
+ * Stripe customer lookup is case-insensitive. A logged-out Checkout Session
+ * stores the email the buyer typed; Supabase accounts are lowercase.
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
