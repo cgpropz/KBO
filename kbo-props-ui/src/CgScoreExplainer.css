@@ -1,0 +1,115 @@
+.cg-score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  line-height: 1.1;
+}
+
+.cg-score-why {
+  margin: 0;
+  padding: 6px 0;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: #7fff68;
+  font: 700 11px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  text-align: right;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cg-score-why:focus-visible {
+  outline: 2px solid #7fff68;
+  outline-offset: 2px;
+}
+
+.cg-score-note {
+  margin: 0;
+  padding: 12px 14px;
+  color: #d5e4de;
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cg-score-note p {
+  margin: 0 0 6px;
+}
+
+.cg-score-note strong {
+  color: #fff;
+}
+
+.cg-score-note-disclaimer {
+  color: #8aa399;
+  font-size: 12px;
+}
+
+table.hit-rate-board > tbody > tr.cg-score-note-row > td {
+  padding: 0;
+  background: #071311;
+  white-space: normal;
+}
+
+.cg-score-open {
+  margin-top: 12px;
+}
+
+.ff-pick-why {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ff-pick-why-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: #8f939b;
+  font-size: 12px;
+}
+
+.ff-pick-why-head b {
+  color: #fff;
+  font-size: 15px;
+  margin-right: 3px;
+}
+
+.ff-pick-why .cg-score-note {
+  padding: 10px 0 0;
+}
+
+@media (max-width: 760px) {
+  .cg-score-cell {
+    align-items: flex-end;
+  }
+
+  .cg-score-why {
+    max-width: 92px;
+    white-space: normal;
+  }
+
+  table.hit-rate-board > tbody > tr:has(.cg-score-cell) > td:has(> .kbo-player-cell),
+  table.hit-rate-board > tbody > tr:has(.cg-score-cell) > td:has(> .nfl-lines-player),
+  table.hit-rate-board > tbody > tr:has(.cg-score-cell) > td:has(> .wnba-lines-player) {
+    padding-right: 112px;
+  }
+
+  table.hit-rate-board > tbody > tr.cg-score-note-row {
+    position: static;
+    padding: 0;
+  }
+
+  table.hit-rate-board > tbody > tr.cg-score-note-row > td {
+    display: block;
+    padding: 0;
+  }
+}

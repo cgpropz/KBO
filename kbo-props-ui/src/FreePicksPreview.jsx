@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
 import { lineMatchesStat } from './cgScore';
+import { scoreFor } from './kboBoardScore';
+import { buildCgScoreExplainer } from './cgScoreExplainer';
+import { WhyThisScore } from './CgScoreExplainer';
+import { wnbaLoggedValues } from './hitRateStrip';
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import { freeTop3SectionState } from './freePreviewCopy';
@@ -39,6 +43,15 @@ function kboRows(data) {
       hitRate: prop.hit_rate_l10,
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
       score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line, prop.stat)),
+      note: {
+        player: card.name,
+        projection: prop.projection,
+        line: prop.line,
+        stat: prop.stat,
+        score: scoreFor(prop),
+        recentValues: prop.recent_values,
+        newestFirst: true,
+      },
     });
   }));
   return rows;
@@ -54,6 +67,14 @@ function nflRows(data) {
     hitRate: row.hitRate,
     tag: null,
     score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
+    note: {
+      player: row.player,
+      projection: row.projection,
+      line: row.line,
+      stat: row.prop ?? row.stat,
+      score: nflCgScore(row.projection, row.line, row.prop ?? row.stat),
+      recentValues: row.recent,
+    },
   }));
 }
 
@@ -70,6 +91,15 @@ function wnbaRows(data) {
       hitRate: null,
       tag: null,
       score: wnbaCgScore(prop.projection, prop) ?? -Infinity,
+      note: {
+        player: player.name,
+        projection: prop.projection,
+        line,
+        stat: prop.stat,
+        score: wnbaCgScore(prop.projection, prop),
+        recentValues: wnbaLoggedValues(player.recentGames, prop.stat),
+        newestFirst: true,
+      },
     });
   }));
   return rows;
@@ -175,6 +205,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
             <ol className="ff-pick-list">
               {state.rows.map((row, i) => {
                 const over = num(row.projection) >= num(row.line);
+                const note = buildCgScoreExplainer(row.note);
                 return (
                   <li key={`${row.player}-${row.stat}-${row.line}-${i}`} className="ff-pick">
                     <span className="ff-pick-rank">{i + 1}</span>
@@ -189,8 +220,10 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                     </div>
                     <div className="ff-pick-stats">
                       <span><b>{fmt(row.projection)}</b> proj</span>
+                      {note && <span><b>{note.score}</b> CG Score</span>}
                       {Number.isFinite(num(row.hitRate)) && <span><b>{fmt(row.hitRate, 0)}%</b> L10</span>}
                     </div>
+                    {note && <WhyThisScore className="ff-pick-why" note={note} />}
                   </li>
                 );
               })}

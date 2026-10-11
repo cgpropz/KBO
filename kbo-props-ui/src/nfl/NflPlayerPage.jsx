@@ -9,6 +9,8 @@ import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreNote } from '../CgScoreExplainer'
 import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
@@ -408,6 +410,16 @@ export default function NflPlayerPage({ player, prop, onBack }) {
             {date}
           </span>
         ))}
+      </div>
+      <div className="cg-score-open">
+        <CgScoreNote note={buildCgScoreExplainer({
+          player,
+          projection: currentRow.projection,
+          line: currentRow.line,
+          stat: currentRow.prop,
+          score: currentRow.score,
+          recentValues: currentRow.recent,
+        })} />
       </div>
       <AltLinesRow slider={slider} />
       <PlayerOddsTable key={currentRow.prop} propLabel={currentRow.prop} rows={oddsRows} status={oddsStatus} />

@@ -3,6 +3,9 @@ import { AltLinesRow, LinePlot } from '../LineSlider'
 import { useChartLine } from '../useChartLine'
 import { overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
+import { cgScore } from '../cgScore'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreNote } from '../CgScoreExplainer'
 import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 
@@ -449,6 +452,16 @@ export default function NhlPlayerPage({ item, onBack }) {
         ) : (
           <p className="nhl-chart-empty">No games in this window.</p>
         )}
+        <div className="cg-score-open">
+          <CgScoreNote note={buildCgScoreExplainer({
+            player: item.player,
+            projection: item.projection,
+            line: item.line,
+            stat: item.prop,
+            score: cgScore(item.projection, item.line, item.prop),
+            recentValues: item.recent,
+          })} />
+        </div>
         <AltLinesRow slider={slider} />
       </div>
 

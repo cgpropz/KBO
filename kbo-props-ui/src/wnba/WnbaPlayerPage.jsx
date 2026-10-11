@@ -14,6 +14,9 @@ import {
 } from './chartFilters'
 import MinutesRangeSlider from './components/MinutesRangeSlider'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
+import { wnbaCgScore } from './wnbaScore'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreNote } from '../CgScoreExplainer'
 
 const PROP_PRIORITY = [
   'Points', 'Rebounds', 'Assists', '3-PT Made', 'Pts+Rebs+Asts', 'Pts+Rebs', 'Pts+Asts', 'Rebs+Asts',
@@ -506,6 +509,17 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
               {g.postseason && <em className="wnba-player-date-po" title="Playoff game">PO</em>}
             </span>
           ))}
+        </div>
+        <div className="cg-score-open">
+          <CgScoreNote note={buildCgScoreExplainer({
+            player: player.name,
+            projection: currentProp.projection,
+            line,
+            stat: currentProp.stat,
+            score: wnbaCgScore(currentProp.projection, currentProp),
+            recentValues: (player.recentGames || []).slice(0, 10).map((game) => PROP_GAME_VALUE[currentProp.stat]?.(game)),
+            newestFirst: true,
+          })} />
         </div>
         <AltLinesRow slider={slider} />
         <PlayerOddsTable key={currentProp.stat} propLabel={currentProp.stat} rows={oddsRows} status={oddsStatus} />
