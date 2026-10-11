@@ -173,9 +173,10 @@
 .nfl-market-tile.is-over { background: rgba(34, 197, 94, 0.16); }
 .nfl-market-tile.is-under { background: rgba(248, 113, 113, 0.16); }
 .nfl-market-tile small { display: block; color: #a1a1aa; font: 700 10px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .04em; white-space: normal; overflow: visible; }
-.nfl-market-tile strong { display: block; margin-top: 6px; font: 700 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.nfl-market-tile strong { display: block; margin-top: 6px; font: 700 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
 .nfl-market-tile strong.is-book { color: #a1a1aa; }
 .nfl-market-tile strong.is-ours { color: #fff; }
+.nfl-market-tile em { display: block; margin-top: 8px; color: #71717a; font: 600 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-style: normal; }
 .nfl-market-foot { margin: 12px 0 0; color: #a1a1aa; font: 500 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .nfl-market-share { margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.08); padding: 7px 12px; border-radius: 999px; color: #e8f4e6; background: transparent; font: 700 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; cursor: pointer; }
 .nfl-market-share:hover:not(:disabled) { border-color: #22c55e; color: #22c55e; }

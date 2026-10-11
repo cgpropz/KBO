@@ -7,7 +7,6 @@ import {
   cardView,
   edgeRank,
   finite,
-  scoreText,
 } from './gameCardModel'
 
 const SORT_OPTIONS = ['Kickoff', 'Edge', 'Spread edge', 'Total edge']
@@ -27,11 +26,11 @@ function TeamMark({ team }) {
   )
 }
 
-function NumberTile({ label, value, tone, book }) {
+function NumberTile({ label, value, tone, book, missing }) {
   return (
     <div className={`nfl-market-tile${tone ? ` is-${tone}` : ''}`}>
       <small>{label}</small>
-      <strong className={book ? 'is-book' : 'is-ours'}>{value}</strong>
+      {missing ? <em>No line posted</em> : <strong className={book ? 'is-book' : 'is-ours'}>{value}</strong>}
     </div>
   )
 }
@@ -66,11 +65,10 @@ function GameCard({ game }) {
           </span>
         </div>
         <div className="nfl-market-ours">
-          <small>OUR NUMBER</small>
-          {view.scores && (
+          <small>CG NUMBER</small>
+          {view.scoreLine && (
             <div>
-              <b>{scoreText(view.scores.away)}</b>
-              <b>{scoreText(view.scores.home)}</b>
+              <b>{view.scoreLine}</b>
             </div>
           )}
         </div>
@@ -95,10 +93,10 @@ function GameCard({ game }) {
         </div>
       )}
       <div className="nfl-market-grid">
-        <NumberTile label="BOOK SPREAD" value={view.spreadBook} book />
-        <NumberTile label="OUR SPREAD" value={view.spreadOurs} tone={view.spreadTone} />
-        <NumberTile label="BOOK TOTAL" value={view.totalBook} book />
-        <NumberTile label="OUR TOTAL" value={view.totalOurs} tone={view.totalTone} />
+        <NumberTile label="BOOK SPREAD" value={view.spreadBook} book missing={view.spreadBookMissing} />
+        <NumberTile label="CG SPREAD" value={view.spreadOurs} tone={view.spreadTone} />
+        <NumberTile label="BOOK TOTAL" value={view.totalBook} book missing={view.totalBookMissing} />
+        <NumberTile label="CG TOTAL" value={view.totalOurs} tone={view.totalTone} />
       </div>
       <p className="nfl-market-foot">{view.footer}</p>
       <button type="button" className="nfl-market-share" onClick={share} disabled={sharing}>
@@ -257,7 +255,7 @@ export default function NflGameMarkets() {
           <button type="button" className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. OUR NUMBER is each team's projected score. The total is those two scores added together.</p>}
+      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. CG NUMBER is each team's projected score. The total is those two scores added together.</p>}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {!error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}

@@ -1,5 +1,5 @@
 import { teamColor, teamLogoUrl } from './nflTeams'
-import { GAME_CARD_PROBS_ENABLED, cardView, scoreText } from './gameCardModel'
+import { GAME_CARD_PROBS_ENABLED, cardView } from './gameCardModel'
 
 const WIDTH = 1080
 const HEIGHT = 1350
@@ -60,7 +60,7 @@ function fillSplitBar(ctx, x, y, w, h, awayPct, leadAway) {
   ctx.restore()
 }
 
-function drawTile(ctx, x, y, w, h, label, value, tone, book) {
+function drawTile(ctx, x, y, w, h, label, value, tone, book, missing) {
   ctx.fillStyle = tone === 'over' ? 'rgba(34,197,94,0.16)' : tone === 'under' ? 'rgba(248,113,113,0.16)' : 'rgba(255,255,255,0.03)'
   roundedRect(ctx, x, y, w, h, 28)
   ctx.fill()
@@ -72,9 +72,16 @@ function drawTile(ctx, x, y, w, h, label, value, tone, book) {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.fillText(label, x + 28, y + 26)
-  ctx.fillStyle = book ? GREY : WHITE
-  ctx.font = '700 64px ui-monospace, monospace'
-  ctx.fillText(value, x + 28, y + 78)
+  const text = missing ? 'No line posted' : String(value)
+  let size = missing ? 32 : 64
+  ctx.font = `700 ${size}px ui-monospace, monospace`
+  const maxW = w - 56
+  while (size > 22 && ctx.measureText(text).width > maxW) {
+    size -= 2
+    ctx.font = `700 ${size}px ui-monospace, monospace`
+  }
+  ctx.fillStyle = missing ? '#71717a' : book ? GREY : WHITE
+  ctx.fillText(text, x + 28, y + (missing ? 108 : 92))
 }
 
 export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENABLED) {
@@ -137,11 +144,11 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
   ctx.textAlign = 'center'
   ctx.fillStyle = GREY
   ctx.font = '700 22px ui-monospace, monospace'
-  ctx.fillText('OUR NUMBER', WIDTH / 2, rowY + 18)
-  if (view.scores) {
+  ctx.fillText('CG NUMBER', WIDTH / 2, rowY + 18)
+  if (view.scoreLine) {
     ctx.fillStyle = WHITE
     ctx.font = '700 54px ui-monospace, monospace'
-    ctx.fillText(`${scoreText(view.scores.away)}   ${scoreText(view.scores.home)}`, WIDTH / 2, rowY + 58)
+    ctx.fillText(view.scoreLine, WIDTH / 2, rowY + 58)
   }
 
   let cursor = rowY + mark + 36
@@ -164,10 +171,10 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
   const tileW = (cardW - 96 - gap) / 2
   const tileH = 250
   const gridX = cardX + 48
-  drawTile(ctx, gridX, cursor, tileW, tileH, 'BOOK SPREAD', view.spreadBook, '', true)
-  drawTile(ctx, gridX + tileW + gap, cursor, tileW, tileH, 'OUR SPREAD', view.spreadOurs, view.spreadTone, false)
-  drawTile(ctx, gridX, cursor + tileH + gap, tileW, tileH, 'BOOK TOTAL', view.totalBook, '', true)
-  drawTile(ctx, gridX + tileW + gap, cursor + tileH + gap, tileW, tileH, 'OUR TOTAL', view.totalOurs, view.totalTone, false)
+  drawTile(ctx, gridX, cursor, tileW, tileH, 'BOOK SPREAD', view.spreadBook, '', true, view.spreadBookMissing)
+  drawTile(ctx, gridX + tileW + gap, cursor, tileW, tileH, 'CG SPREAD', view.spreadOurs, view.spreadTone, false, false)
+  drawTile(ctx, gridX, cursor + tileH + gap, tileW, tileH, 'BOOK TOTAL', view.totalBook, '', true, view.totalBookMissing)
+  drawTile(ctx, gridX + tileW + gap, cursor + tileH + gap, tileW, tileH, 'CG TOTAL', view.totalOurs, view.totalTone, false, false)
 
   ctx.fillStyle = GREY
   ctx.font = '500 26px ui-monospace, monospace'

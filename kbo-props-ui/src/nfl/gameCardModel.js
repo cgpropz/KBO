@@ -9,7 +9,11 @@
  * Win probability, the bar, the word "edge", "Lean …", the green/red
  * tile tint, and play / no play stay behind GAME_CARD_PROBS_ENABLED.
  * It defaults off. With the flag off the two numbers sit side by side
- * in neutral styling and the footer is "Our number vs the book".
+ * in neutral styling and the footer is "CG number vs the book".
+ *
+ * Book line and model projection share one sign: the away spread.
+ * Negative means the away team is favored. Each tile names the
+ * favored team and shows that team's negative number.
  */
 
 export const GAME_CARD_PROBS_ENABLED = false
@@ -44,11 +48,49 @@ export function kickoffLabel(game) {
   return `${day} ${hour % 12 || 12}:${minute || '00'} ${meridiem} ET`.trim()
 }
 
-export function statusPill(game) {
+const LIVE_STATES = new Set(['live', 'in progress', 'in_progress', 'inprogress', 'status_in_progress'])
+const FINAL_STATES = new Set(['final', 'post', 'status_final', 'completed', 'complete', 'closed'])
+
+function tzOffsetMs(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+  const map = {}
+  for (const part of parts) map[part.type] = part.value
+  const asUtc = Date.UTC(+map.year, +map.month - 1, +map.day, +map.hour % 24, +map.minute, +map.second)
+  return asUtc - date.getTime()
+}
+
+export function kickoffInstant(game) {
+  const day = String(game?.gameday || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null
+  const [hourText, minuteText = '0'] = String(game?.gametime || '').split(':')
+  const hour = Number(hourText)
+  const minute = Number(minuteText || '0')
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null
+  const utcGuess = Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10), hour, minute, 0)
+  const offset = tzOffsetMs(new Date(utcGuess), 'America/New_York')
+  let instant = utcGuess - offset
+  const offset2 = tzOffsetMs(new Date(instant), 'America/New_York')
+  if (offset2 !== offset) instant = utcGuess - offset2
+  return new Date(instant)
+}
+
+export function statusPill(game, now = new Date()) {
   const raw = game?.status ?? game?.gameStatus ?? game?.state ?? ''
   const text = String(raw).trim().toLowerCase().replace(/\s+/g, ' ')
-  if (['live', 'in progress', 'in_progress', 'inprogress', 'status_in_progress'].includes(text)) return 'LIVE'
-  if (['final', 'post', 'status_final'].includes(text)) return 'FINAL'
+  if (LIVE_STATES.has(text) || game?.live === true) return 'LIVE'
+  if (FINAL_STATES.has(text) || game?.final === true || game?.completed === true) return 'FINAL'
+  const kickoff = kickoffInstant(game)
+  const clock = now instanceof Date ? now : new Date(now)
+  if (kickoff && Number.isFinite(clock.getTime()) && clock.getTime() >= kickoff.getTime()) return 'LIVE'
   return kickoffLabel(game)
 }
 
@@ -56,6 +98,21 @@ export function scoreText(value) {
   const number = finite(value)
   if (number == null) return '—'
   return String(Math.round(number))
+}
+
+export function scoreLine(scores) {
+  if (!scores) return null
+  return `${scoreText(scores.away)} – ${scoreText(scores.home)}`
+}
+
+export function formatSpread(game, value) {
+  const number = finite(value)
+  if (number == null) return null
+  if (number === 0) return 'PK'
+  const awayFavored = number < 0
+  const team = awayFavored ? game?.awayTeam : game?.homeTeam
+  const shown = awayFavored ? number : -number
+  return team ? `${team} ${formatPoints(shown, true)}` : formatPoints(shown, true)
 }
 
 export function projectedScores(game) {
@@ -114,10 +171,10 @@ export function leanDetail(game) {
 }
 
 export function footerLine(game, probsEnabled) {
-  if (!probsEnabled) return 'Our number vs the book'
+  if (!probsEnabled) return 'CG number vs the book'
   const play = isPlay(game) ? 'play' : 'no play'
   const lean = leanDetail(game)
-  if (!lean) return `Our number vs the book · ${play}`
+  if (!lean) return `CG number vs the book · ${play}`
   return `${lean.label} · edge ${formatEdge(lean.edge)} · ${play}`
 }
 
@@ -128,19 +185,22 @@ export function winSplit(game) {
   return { awayPct: 100 - homePct, homePct }
 }
 
-export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED) {
+export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED, now = new Date()) {
   const scores = projectedScores(game)
   return {
     away: game?.awayTeam || '',
     home: game?.homeTeam || '',
-    status: statusPill(game),
+    status: statusPill(game, now),
     scores,
+    scoreLine: scoreLine(scores),
     wins: probsEnabled ? winSplit(game) : null,
-    spreadBook: formatPoints(game?.spread?.line, true),
-    spreadOurs: formatPoints(game?.spread?.projection, true),
+    spreadBook: formatSpread(game, game?.spread?.line) ?? '—',
+    spreadOurs: formatSpread(game, game?.spread?.projection) ?? '—',
+    spreadBookMissing: finite(game?.spread?.line) == null,
     spreadTone: probsEnabled ? tileTone(game?.spread?.projection, game?.spread?.line) : '',
     totalBook: formatPoints(game?.total?.line),
     totalOurs: formatPoints(game?.total?.projection),
+    totalBookMissing: finite(game?.total?.line) == null,
     totalTone: probsEnabled ? tileTone(game?.total?.projection, game?.total?.line) : '',
     footer: footerLine(game, probsEnabled),
   }

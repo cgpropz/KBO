@@ -5,7 +5,9 @@ import {
   PLAY_EDGE_POINTS,
   cardView,
   footerLine,
+  formatSpread,
   isPlay,
+  statusPill,
   tileTone,
   winSplit,
 } from '../src/nfl/gameCardModel.js'
@@ -29,9 +31,12 @@ test('tint, play wording, and win probability stay behind the default-off flag',
   assert.equal(view.wins, null)
   assert.equal(view.spreadTone, '')
   assert.equal(view.totalTone, '')
-  assert.equal(view.footer, 'Our number vs the book')
-  assert.equal(view.spreadBook, '-3.5')
-  assert.equal(view.spreadOurs, '-6.0')
+  assert.equal(view.footer, 'CG number vs the book')
+  assert.equal(view.scoreLine, '24 – 21')
+  assert.equal(view.spreadBook, 'BUF -3.5')
+  assert.equal(view.spreadOurs, 'BUF -6.0')
+  assert.equal(view.spreadBookMissing, false)
+  assert.equal(view.totalBookMissing, false)
   assert.equal(footerLine(game, false).includes('play'), false)
   assert.equal(footerLine(game, false).includes('edge'), false)
   assert.equal(footerLine(game, false).includes('Lean'), false)
@@ -53,8 +58,8 @@ test('a difference under one point is no play and does not tint', () => {
   }
   assert.equal(isPlay(quiet), false)
   assert.equal(tileTone(-3, -2.5), '')
-  assert.equal(footerLine(quiet, false), 'Our number vs the book')
-  assert.equal(footerLine(quiet, true), 'Our number vs the book · no play')
+  assert.equal(footerLine(quiet, false), 'CG number vs the book')
+  assert.equal(footerLine(quiet, true), 'CG number vs the book · no play')
   assert.equal(cardView(game).spreadTone, '')
   assert.equal(cardView(game, true).spreadTone, 'under')
 })
@@ -71,6 +76,34 @@ test('missing scores and a missing win probability stay hidden', () => {
   const game = { awayTeam: 'SEA', homeTeam: 'SF', spread: {}, total: {} }
   const blank = cardView(game, true)
   assert.equal(blank.scores, null)
+  assert.equal(blank.scoreLine, null)
   assert.equal(blank.wins, null)
+  assert.equal(blank.spreadBookMissing, true)
+  assert.equal(blank.totalBookMissing, true)
   assert.equal(isPlay(game), false)
+})
+
+test('book and model spreads share the away sign and name the favorite', () => {
+  const matchup = { awayTeam: 'BAL', homeTeam: 'ATL' }
+  assert.equal(formatSpread(matchup, 3), 'ATL -3.0')
+  assert.equal(formatSpread(matchup, -1), 'BAL -1.0')
+  assert.equal(formatSpread(matchup, 0), 'PK')
+  assert.equal(formatSpread(matchup, null), null)
+  const view = cardView({
+    ...matchup,
+    spread: { line: 3, projection: -1 },
+    total: { projection: 43 },
+  })
+  assert.equal(view.spreadBook, 'ATL -3.0')
+  assert.equal(view.spreadOurs, 'BAL -1.0')
+  assert.equal(view.totalBookMissing, true)
+  assert.equal(view.totalOurs, '43.0')
+})
+
+test('a started game reads LIVE and a later kickoff keeps its time', () => {
+  const now = new Date('2026-10-11T22:20:00Z')
+  assert.equal(statusPill({ gameday: '2026-10-11', weekday: 'Sunday', gametime: '13:00' }, now), 'LIVE')
+  assert.equal(statusPill({ gameday: '2026-10-12', weekday: 'Monday', gametime: '20:15' }, now), 'MON 8:15 PM ET')
+  assert.equal(statusPill({ gameday: '2026-10-11', weekday: 'Sunday', gametime: '13:00', status: 'final' }, now), 'FINAL')
+  assert.equal(statusPill({ weekday: 'Sunday', gametime: '16:25' }, now), 'SUN 4:25 PM ET')
 })
