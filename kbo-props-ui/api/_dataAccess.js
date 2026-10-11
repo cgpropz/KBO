@@ -13,6 +13,17 @@ import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 
 export const FREE_ROW_LIMIT = 3;
 
+// Free NFL picks. Set this to true to restore the free top rows on
+// nfl_projections, nfl_sharp_odds, and nfl_game_markets. Paid NFL access
+// does not read this flag.
+export const NFL_FREE_PREVIEW_ENABLED = false;
+
+const NFL_FREE_PREVIEW_DATASETS = new Set([
+  'nfl_projections',
+  'nfl_sharp_odds',
+  'nfl_game_markets',
+]);
+
 // Tiers that unlock every sport (grandfathered all-access + combined plan).
 // Must stay in sync with src/entitlements.js. The 'discord' tier is absent on
 // purpose: Discord-only membership does not unlock any site dataset.
@@ -387,6 +398,26 @@ export const DATASETS = {
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
 };
 
+function countList(payload, key) {
+  if (key) {
+    const rows = payload && typeof payload === 'object' ? payload[key] : null;
+    return Array.isArray(rows) ? rows.length : 0;
+  }
+  return Array.isArray(payload) ? payload.length : 0;
+}
+
+// Same snapshot shape the board already renders, with the pick rows removed.
+// lockedCount stays positive so the page shows the paywall instead of an error
+// or an empty-board message.
+function hiddenNflPreview(ds, payload) {
+  if (ds === 'nfl_projections') {
+    return { data: [], lockedCount: countList(payload) };
+  }
+  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
+}
+
 // Decide what the caller receives for one dataset snapshot.
 export function shapeForTier(ds, payload, tier) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
@@ -394,6 +425,10 @@ export function shapeForTier(ds, payload, tier) {
   const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
+  }
+  if (!NFL_FREE_PREVIEW_ENABLED && NFL_FREE_PREVIEW_DATASETS.has(ds)) {
+    const hidden = hiddenNflPreview(ds, payload);
+    return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
   }
   const { data, lockedCount } = spec.free(payload);
   return { data, preview: true, lockedCount };

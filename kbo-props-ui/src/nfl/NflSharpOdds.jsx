@@ -370,9 +370,9 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
       {showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
-      {!error && loaded && !records.length && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
+      {!error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
       {!error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">Free preview: showing the top {records.length} by PP Edge. {lockedCount} more are locked.</div>}
+      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} lines are locked. Upgrade to see the full board.`}</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table nfl-sharp-table">

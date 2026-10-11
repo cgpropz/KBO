@@ -348,7 +348,15 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       </div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL prop lines.</div>}
-      {!error && loaded && !projections.length && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
+      {!error && loaded && !projections.length && !isPaid && lockedCount > 0 && (
+        <div className="nfl-lines-lock-card">
+          <div className="nfl-lines-lock-icon">🔒</div>
+          <h3>Unlock the Full Board</h3>
+          <p>{lockedCount} lines are locked. Upgrade to see every prop line.</p>
+          <button onClick={onNavigatePricing}>View Plans</button>
+        </div>
+      )}
+      {!error && loaded && !projections.length && (isPaid || lockedCount <= 0) && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap" ref={tableWrapRef}>
