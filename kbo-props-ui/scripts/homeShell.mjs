@@ -14,9 +14,26 @@ const NAV = [
   ['/guides/cg-score', 'CG Score'],
 ];
 
+const PRERENDER_CSS = `
+    body:has(.seo-prerender) {
+      margin: 0;
+      background: #050506;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.55;
+    }
+    .seo-prerender { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .seo-prerender a { color: #4ade80; font-weight: 700; text-decoration: none; }
+    .seo-prerender header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .seo-prerender nav { display: flex; flex-wrap: wrap; gap: 14px; }
+    .seo-prerender h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
+    .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
+`;
+
 export function homeRootInner() {
   const links = NAV.map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
-  return `<header>
+  return `<div class="seo-prerender">
+    <header>
       <a href="${pageUrl('/')}">cgpropz</a>
       <nav aria-label="Primary">
         ${links}
@@ -29,7 +46,8 @@ export function homeRootInner() {
     <footer>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
-    </footer>`;
+    </footer>
+    </div>`;
 }
 
 export function homeJsonLd() {
@@ -43,6 +61,12 @@ export function patchIndexHtml(html) {
     next = next.replace(/<!--seo-root-->[\s\S]*?<!--\/seo-root-->/, root);
   } else {
     next = next.replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">\n${root}\n    </div>`);
+  }
+  const style = `<!--seo-style-->\n    <style>${PRERENDER_CSS}    </style>\n    <!--/seo-style-->`;
+  if (next.includes('<!--seo-style-->')) {
+    next = next.replace(/<!--seo-style-->[\s\S]*?<!--\/seo-style-->/, style);
+  } else {
+    next = next.replace('</head>', `  ${style}\n  </head>`);
   }
   const json = `<!--seo-jsonld-->\n    ${homeJsonLd()}\n    <!--/seo-jsonld-->`;
   if (next.includes('<!--seo-jsonld-->')) {

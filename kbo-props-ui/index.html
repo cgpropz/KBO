@@ -38,11 +38,29 @@
     <!--seo-jsonld-->
     <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"WebSite","@id":"https://www.cgpropz.com/#website","name":"CGPropz","url":"https://www.cgpropz.com/","publisher":{"@id":"https://www.cgpropz.com/#organization"}}]}</script>
     <!--/seo-jsonld-->
+    <!--seo-style-->
+    <style>
+    body:has(.seo-prerender) {
+      margin: 0;
+      background: #050506;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.55;
+    }
+    .seo-prerender { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .seo-prerender a { color: #4ade80; font-weight: 700; text-decoration: none; }
+    .seo-prerender header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .seo-prerender nav { display: flex; flex-wrap: wrap; gap: 14px; }
+    .seo-prerender h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
+    .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
+    </style>
+    <!--/seo-style-->
   </head>
   <body>
     <div id="root">
 <!--seo-root-->
-<header>
+<div class="seo-prerender">
+    <header>
       <a href="https://www.cgpropz.com/">cgpropz</a>
       <nav aria-label="Primary">
         <a href="https://www.cgpropz.com/kbo-player-props">KBO player props</a>
@@ -62,6 +80,7 @@
       <p>21+ only. Gambling problem? Call 1-800-GAMBLER.</p>
       <p>CGPropz is not affiliated with PrizePicks or Underdog. For entertainment only.</p>
     </footer>
+    </div>
 <!--/seo-root-->
     </div>
     <script type="module" src="/src/main.jsx"></script>
