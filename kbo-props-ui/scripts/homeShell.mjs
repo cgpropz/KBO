@@ -12,8 +12,7 @@ const NAV = [
   ['/nhl-player-props', 'NHL player props'],
   ['/pricing', 'Pricing'],
   ['/policies', 'Plans & Policies'],
-  ['/guides/start-here', 'Start Here'],
-  ['/guides/cg-score', 'How CG Score works'],
+  ['/guides/cg-score', 'CG Score'],
 ];
 
 const PRERENDER_CSS = `
@@ -52,7 +51,7 @@ export function homeRootInner() {
       </section>
     </main>
     <footer>
-      <p><a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
+      <p><a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
     </footer>

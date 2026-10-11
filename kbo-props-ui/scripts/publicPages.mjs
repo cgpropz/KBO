@@ -7,7 +7,6 @@ import { DISCORD_INVITE_URL } from '../src/discordInvite.js';
 import { landingFaqs } from '../src/landingFaq.js';
 import { discordPlanCards, TIERS } from '../src/pricingTiers.js';
 import { AFFILIATION_LINE, AGE_LINE } from '../src/responsibleGambling.js';
-import { appBoardPath } from '../src/appSport.js';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
 import {
   assertNoCurlyPlaceholders,
@@ -109,7 +108,7 @@ function renderSport(id, path) {
       ${locked}
       ${boardLinks(path)}
       <div class="actions">
-        <a class="btn btn-primary" href="${pageUrl(appBoardPath(id))}">Open the ${escapeHtml(sport.name)} board</a>
+        <a class="btn btn-primary" href="${pageUrl(path)}">Open the ${escapeHtml(sport.name)} board</a>
         <a class="btn btn-ghost" href="${pageUrl('/pricing')}">See pricing</a>
       </div>
       <h2>How the ${escapeHtml(sport.name)} board works</h2>

@@ -38,10 +38,6 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         <div className="cg-wordmark">
           cg<span className="cg-wordmark-accent">propz</span>
         </div>
-        <nav className="cg-guide-nav" aria-label="Guides">
-          <a href="/guides/start-here">Start Here</a>
-          <a href="/guides/cg-score">How CG Score works</a>
-        </nav>
         <div className="cg-header-actions">
           <button className="cg-link-btn" onClick={() => onNavigate('pricing')}>
             {isPaid ? 'Manage Plan' : 'Pricing'}

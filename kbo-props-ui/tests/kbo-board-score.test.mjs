@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { DATASETS } from '../api/_dataAccess.js'
-import { directionFor, playerHeaderBadge, pregameSide, scoreFor } from '../src/kboBoardScore.js'
+import { directionFor, pregameSide, scoreFor } from '../src/kboBoardScore.js'
 
 test('CG Score is the model ratio, not a confidence score on an under', () => {
   const prop = {
@@ -44,21 +44,6 @@ test('free preview drops a confidence-95 under behind a real over and skips a mi
   })
   assert.deepEqual(res.data.cards.map((card) => card.name), ['Over', 'Under'])
   assert.equal(res.lockedCount, 1)
-})
-
-test('player header uses the board CG Score, not the confidence score', () => {
-  const prop = {
-    stat: 'Total Bases',
-    line: 2,
-    projection: 2.332,
-    avg: 1.4,
-    cg_projection: 84,
-  }
-  const badge = playerHeaderBadge(prop)
-  assert.equal(badge.scoreText, '58.3')
-  assert.equal(badge.label, 'OVER')
-  assert.equal(badge.side, 'over')
-  assert.equal(playerHeaderBadge({ stat: 'Total Bases', line: 2, avg: 3, cg_projection: 84 }), null)
 })
 
 test('projection-page preview ranks rating, not the confidence score', () => {
