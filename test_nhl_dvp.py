@@ -1,7 +1,9 @@
 """NHL defense vs position. No network."""
 import csv
+import io
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 
 from nhl.build_dvp import (
@@ -9,11 +11,13 @@ from nhl.build_dvp import (
     build_snapshot,
     build_snapshots,
     goalie_shot_games,
+    main as build_dvp_main,
     rank_teams,
     sample_label,
     skater_team_games,
     window_summary,
 )
+from nhl.fetch_history import download_jobs
 from nhl.history import SKATER_FIELDS, load_skaters
 from nhl.teams import TEAM_NAMES
 
@@ -197,13 +201,109 @@ class WiringTests(unittest.TestCase):
         for name in ("project_shots", "project_points", "project_saves", "project_power_play_points"):
             self.assertNotIn(name, source)
 
-    def test_refresh_builds_dvp_after_moneypuck_and_before_publish(self):
+    def test_dvp_cannot_block_the_board_publish_or_slate_freeze(self):
         text = Path(".github/workflows/nhl-refresh.yml").read_text(encoding="utf-8")
-        fetch_at = text.index("python nhl/fetch_history.py")
+        board_at = text.index("python -m nhl.build_board")
         dvp_at = text.index("python -m nhl.build_dvp")
         publish_at = text.index("python publish_supabase.py")
-        self.assertLess(fetch_at, dvp_at)
+        freeze_at = text.index("freeze_slate.py --sport nhl")
+        self.assertLess(board_at, dvp_at)
         self.assertLess(dvp_at, publish_at)
+        self.assertLess(publish_at, freeze_at)
+        step = text[text.rindex("- name: Build NHL defense vs position"):dvp_at]
+        self.assertIn("continue-on-error: true", step)
+
+    def test_download_lands_where_the_reader_looks(self):
+        jobs = download_jobs(["TOR.csv"], "/tmp/moneypuck")
+        relative = {Path(dest).relative_to("/tmp/moneypuck").as_posix() for _, dest in jobs}
+        self.assertEqual(relative, {
+            "2025/skaters/TOR.csv",
+            "2025/goalies/TOR.csv",
+            "2026/skaters/TOR.csv",
+            "2026/goalies/TOR.csv",
+        })
+
+    def test_rate_limit_is_retried_and_a_missing_file_is_not(self):
+        import nhl.fetch_history as fetch
+
+        calls = {"n": 0}
+
+        def limited(url):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise urllib.error.HTTPError(url, 429, "slow", None, io.BytesIO(b""))
+            return b"playerId,name\n1,A\n"
+
+        original = fetch._read
+        fetch._read = limited
+        try:
+            body = fetch._download("https://moneypuck.example/TOR.csv", sleep=lambda _delay: None)
+        finally:
+            fetch._read = original
+        self.assertEqual(body, b"playerId,name\n1,A\n")
+        self.assertEqual(calls["n"], 3)
+
+        calls["n"] = 0
+
+        def missing(url):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(url, 404, "gone", None, io.BytesIO(b""))
+
+        fetch._read = missing
+        try:
+            body = fetch._download("https://moneypuck.example/TOR.csv", sleep=lambda _delay: None)
+        finally:
+            fetch._read = original
+        self.assertIsNone(body)
+        self.assertEqual(calls["n"], 1)
+
+    def test_skater_only_download_still_builds_and_a_short_one_keeps_the_last_file(self):
+        # GitHub was saving about 32 files: the 2025 skater CSVs, and none of the
+        # goalie CSVs. That used to exit 1 and skip the board.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "moneypuck"
+            folder = root / "2025" / "skaters"
+            folder.mkdir(parents=True)
+            teams = sorted(TEAM_NAMES)
+            for index, team in enumerate(teams):
+                opp = teams[(index + 1) % len(teams)]
+                path = folder / f"{team}.csv"
+                with path.open("w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=list(SKATER_FIELDS))
+                    writer.writeheader()
+                    writer.writerow({
+                        "playerId": str(index),
+                        "name": "Skater",
+                        "gameId": f"202502{index:04d}",
+                        "playerTeam": team,
+                        "opposingTeam": opp,
+                        "home_or_away": "HOME",
+                        "gameDate": "20260401",
+                        "position": "C",
+                        "situation": "all",
+                        "icetime": "600",
+                        "I_F_shotsOnGoal": str(index + 1),
+                        "I_F_goals": "0",
+                        "I_F_primaryAssists": "0",
+                        "I_F_secondaryAssists": "0",
+                        "I_F_points": "1",
+                        "I_F_xGoals": "0.2",
+                    })
+            snapshots = build_snapshots(root)
+            goalies = snapshots["dvp_g.json"]["windows"]["blend"]["stats"]["shots"]["teams"]
+            self.assertEqual(len(goalies), 32)
+            by_team = {row["team"]: row["value"] for row in goalies}
+            self.assertEqual(by_team["BOS"], 2.0)
+
+            out = Path(tmp) / "out"
+            out.mkdir()
+            kept = out / "dvp_f.json"
+            kept.write_text('{"kept": true}\n')
+            (folder / f"{teams[0]}.csv").unlink()
+            code = build_dvp_main(["--root", str(root), "--out", str(out)])
+            self.assertEqual(code, 0)
+            self.assertEqual(kept.read_text(), '{"kept": true}\n')
+            self.assertFalse((out / "dvp_g.json").exists())
 
     def test_publish_registers_optional_dvp_tables(self):
         text = Path("publish_supabase.py").read_text(encoding="utf-8")
