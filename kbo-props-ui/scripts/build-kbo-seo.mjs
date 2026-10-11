@@ -4,12 +4,12 @@
 // full-board results are rendered in. When this directory is built alone,
 // an existing KBO page is left in place so a later build cannot blank it.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { patchIndexHtml } from './homeShell.mjs';
 import { buildResultDays, discoverSummaryFiles, renderKboPage, renderSitemap, sitemapEntries } from './kboSeoPage.mjs';
-import { listGuides } from './markdownGuide.mjs';
+import { assertNoCurlyPlaceholders, listGuides } from './markdownGuide.mjs';
 import { renderGuidePages, renderNotFoundPage, renderPricingPage, renderSportPages } from './publicPages.mjs';
 import { renderRobots } from './seoShared.mjs';
 
@@ -71,6 +71,17 @@ export function writeSeoSite({
     kboLastmod: kbo.kboLastmod,
     guides: recorded,
   })));
+  const htmlFiles = existsSync(indexPath) ? [indexPath] : [];
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir, { withFileTypes: true })) {
+      const target = join(dir, name.name);
+      if (name.isDirectory()) walk(target);
+      else if (name.name.endsWith('.html')) htmlFiles.push(target);
+    }
+  };
+  walk(publicDir);
+  for (const file of htmlFiles) assertNoCurlyPlaceholders(readFileSync(file, 'utf8'), file);
   return { ...kbo, guides: guides.map((guide) => guide.path) };
 }
 

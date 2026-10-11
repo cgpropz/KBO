@@ -1,9 +1,20 @@
 // Marketing HTML for /pricing and the sport hubs. No paid board rows.
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { landingFaqs } from '../src/landingFaq.js';
 import { discordPlanCards, TIERS } from '../src/pricingTiers.js';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
-import { listGuides } from './markdownGuide.mjs';
+import {
+  assertNoCurlyPlaceholders,
+  demoteHeadings,
+  hideUnresolved,
+  listGuides,
+  PAGE_IMAGES,
+  renderMarkdown,
+  stripGuideSource,
+} from './markdownGuide.mjs';
 import {
   breadcrumbNode,
   escapeHtml,
@@ -66,12 +77,23 @@ function sportFaqs(id) {
   ];
 }
 
+function wnbaFinalsSection() {
+  const file = join(dirname(fileURLToPath(import.meta.url)), '../content/wnba-finals-player-props-2026.md');
+  const { body, faqPage } = stripGuideSource(readFileSync(file, 'utf8'));
+  const published = demoteHeadings(hideUnresolved(body));
+  assertNoCurlyPlaceholders(published, '/wnba-player-props finals section');
+  return { html: renderMarkdown(published), faqPage };
+}
+
 function renderSport(id, path) {
   const sport = sportById(id);
+  const finals = id === 'wnba' ? wnbaFinalsSection() : null;
   const title = `${sport.name} player props | CGPropz`;
   const description = id === 'nba'
     ? 'NBA player props on CGPropz. The in-app NBA card is locked and marked coming soon. This page does not list prop rows.'
-    : `${sport.name} player props on CGPropz: what the ${sport.full.toLowerCase()} board covers, how to read CG Score, and where pricing lives. No prop rows on this page.`;
+    : id === 'wnba'
+      ? 'WNBA player props on CGPropz, including the 2026 Finals hub for Valkyries vs Dream. No prop rows on this page.'
+      : `${sport.name} player props on CGPropz: what the ${sport.full.toLowerCase()} board covers, how to read CG Score, and where pricing lives. No prop rows on this page.`;
   const faqs = sportFaqs(id);
   const features = sport.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
   const locked = id === 'nba'
@@ -92,8 +114,12 @@ function renderSport(id, path) {
       <ul>${features}</ul>
       <h2>What CG Score means</h2>
       <p>${escapeHtml(SCORE_FAQ.a)} Read <a href="${pageUrl('/guides/cg-score')}">how CG Score works</a> for the full explanation, including what the score does not tell you.</p>
+      ${finals ? finals.html : ''}
       ${renderFaqSection(faqs)}
     `;
+  const faq = faqNode(faqs);
+  if (finals?.faqPage?.mainEntity) faq.mainEntity.push(...finals.faqPage.mainEntity);
+  const image = PAGE_IMAGES[path];
   return renderDocument({
     title,
     description,
@@ -104,8 +130,10 @@ function renderSport(id, path) {
         { name: 'Home', url: pageUrl('/') },
         { name: `${sport.name} player props`, url: pageUrl(path) },
       ]),
-      faqNode(faqs),
+      faq,
     ],
+    image: image ? pageUrl(image.src) : undefined,
+    imageAlt: image?.alt,
   });
 }
 

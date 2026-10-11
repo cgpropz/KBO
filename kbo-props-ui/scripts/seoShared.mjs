@@ -156,6 +156,8 @@ const PAGE_CSS = `
     summary { cursor: pointer; font-weight: 700; }
     blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #22c55e; background: #0c1210; }
     ol, ul { padding-left: 1.3em; }
+    figure { margin: 18px 0 22px; }
+    img { max-width: 100%; height: auto; border-radius: 12px; background: #0c1210; }
     .rg, .site-footer {
       margin-top: 28px;
       padding: 14px 16px;
@@ -179,10 +181,14 @@ export function renderDocument({
   schemas = [],
   robots = '',
   ogType = 'website',
+  image,
+  imageAlt = '',
 }) {
   const url = pageUrl(path);
   const graph = [organizationNode(), ...schemas];
   const robotsMeta = robots ? `\n  <meta name="robots" content="${escapeHtml(robots)}" />` : '';
+  const imageUrl = image || `${SITE}/og-image.jpg`;
+  const imageAltMeta = imageAlt ? `\n  <meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />` : '';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -197,11 +203,11 @@ export function renderDocument({
   <meta property="og:url" content="${url}" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:image" content="${SITE}/og-image.jpg" />
+  <meta property="og:image" content="${escapeHtml(imageUrl)}" />${imageAltMeta}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <meta name="twitter:image" content="${SITE}/og-image.jpg" />
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   ${jsonLdScript(graph)}
   <style>${PAGE_CSS}

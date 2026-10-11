@@ -1,6 +1,7 @@
 // Turns content/guides/*.md into static /guides/<slug> pages.
-// Author notes in HTML comments are dropped. The article body is rendered
-// as written: placeholders such as {{CONFIRM WITH BOARD QA}} stay.
+// Author notes in HTML comments are dropped. {{URL PENDING GIT BOT}} markers
+// are removed because the real links are already in the copy. Rows, tables,
+// and sentences that are still unresolved are omitted so no {{ }} reaches HTML.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -67,7 +68,7 @@ export function inlineMarkdown(raw) {
 }
 
 function isBlockStart(line) {
-  return /^(#{1,6}\s|```|>|[-*] |\d+\. |\|)/.test(line) || line.trim() === '---';
+  return /^(#{1,6}\s|```|>|[-*] |\d+\. |\||!\[)/.test(line) || line.trim() === '---';
 }
 
 function renderTable(rows) {
@@ -91,6 +92,12 @@ export function renderMarkdown(src) {
     if (line.startsWith('```')) {
       i += 1;
       while (i < lines.length && !lines[i].startsWith('```')) i += 1;
+      i += 1;
+      continue;
+    }
+    const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
+    if (image) {
+      out.push(`<figure><img src="${escapeHtml(image[2].trim())}" alt="${escapeHtml(image[1])}" /></figure>`);
       i += 1;
       continue;
     }
@@ -189,6 +196,131 @@ function pushAndClose(faqs, current) {
   return null;
 }
 
+export function extractFaqPage(text) {
+  const match = String(text).match(/\*\*JSON-LD \(FAQPage\)\*\*\s*```json\s*([\s\S]*?)```/);
+  if (!match) return null;
+  const parsed = JSON.parse(match[1]);
+  if (parsed['@type'] !== 'FAQPage' || !Array.isArray(parsed.mainEntity)) {
+    throw new Error('Guide JSON-LD block is not an FAQPage');
+  }
+  const node = { ...parsed };
+  delete node['@context'];
+  return node;
+}
+
+export function assertNoCurlyPlaceholders(text, label) {
+  const at = String(text).indexOf('{{');
+  if (at === -1) return;
+  const sample = String(text).slice(Math.max(0, at - 30), at + 90).replace(/\s+/g, ' ');
+  throw new Error(`Unresolved placeholder in ${label}: ${sample}`);
+}
+
+function dropUnresolvedSentences(line) {
+  const prefixMatch = line.match(/^(\s*(?:>\s*)?(?:[-*] |\d+\. )?)/);
+  const prefix = prefixMatch ? prefixMatch[1] : '';
+  const rest = line.slice(prefix.length);
+  const kept = rest.split(/(?<=[.!?])\s+/).filter((part) => part.trim() && !part.includes('{{'));
+  if (!kept.length) return '';
+  return `${prefix}${kept.join(' ')}`.replace(/[ \t]{2,}/g, ' ').trimEnd();
+}
+
+function dropEmptySections(markdown) {
+  const lines = String(markdown).split('\n');
+  const drop = new Set();
+  const levelOf = (line) => {
+    const match = line.match(/^(#{1,6})\s/);
+    return match ? match[1].length : 0;
+  };
+  for (let i = 0; i < lines.length; i += 1) {
+    const level = levelOf(lines[i]);
+    if (!level) continue;
+    let meaningful = false;
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const next = levelOf(lines[j]);
+      if (next && next <= level) break;
+      if (lines[j].trim()) meaningful = true;
+    }
+    if (!meaningful) drop.add(i);
+  }
+  return lines.filter((_, index) => !drop.has(index)).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// Unpublished slots stay in the source file and never reach the page.
+// A table row or sentence that still contains {{ }} is removed. A table
+// with only its header left is removed, and so is a heading with no body.
+export function hideUnresolved(markdown) {
+  const text = String(markdown)
+    .replace(/\{\{URL PENDING GIT BOT\}\}/g, '')
+    .replace(/[ \t]+([.,;:!?])/g, '$1');
+  const lines = text.split('\n');
+  const kept = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].includes('{{FROM BOARD QA LEDGER}}') || lines[i].includes('{{CONFIRM SCHEDULE}}') || lines[i].includes('{{CONFIRM PRICING}}')) {
+      i += 1;
+      continue;
+    }
+    if (lines[i].trim().startsWith('|')) {
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        rows.push(lines[i]);
+        i += 1;
+      }
+      const filtered = rows.filter((row) => !row.includes('{{'));
+      const bodyRows = filtered.filter((row) => !/^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/.test(row));
+      if (bodyRows.length >= 2) kept.push(...filtered);
+      continue;
+    }
+    const line = lines[i];
+    i += 1;
+    if (/Placeholder rule/i.test(line)) continue;
+    if (!line.includes('{{')) {
+      kept.push(line);
+      continue;
+    }
+    const next = dropUnresolvedSentences(line);
+    if (next.trim()) kept.push(next);
+  }
+  return dropEmptySections(kept.join('\n'));
+}
+
+const BODY_IMAGES = {
+  '/guides/start-here': {
+    anchor: '**Example only. The player and every number below are made up to show the layout. This is not a real prop.**',
+    image: '![Annotated example of a CGPropz board row for a made-up points prop. Labels point to the player, line, projection, CG Score, hit rates, and defense versus position.](/images/start-here-board-row.png)',
+  },
+  '/guides/cg-score': {
+    anchor: '> **CG Score = (projection ÷ line) × 50**',
+    image: '![CG Score diagram: 50 means the projection equals the line. Above 50 the projection is over the line, and below 50 it is under the line.](/images/how-cg-score-diagram.png)',
+  },
+};
+
+export const PAGE_IMAGES = {
+  '/guides/start-here': {
+    src: '/images/start-here-featured.png',
+    alt: 'Start Here: how to read a CGPropz player prop, from the line and projection to CG Score and hit rate.',
+  },
+  '/guides/cg-score': {
+    src: '/images/how-cg-score-works-featured.png',
+    alt: 'How CG Score works: 50 means the projection equals the line.',
+  },
+  '/wnba-player-props': {
+    src: '/images/wnba-finals-featured.png',
+    alt: 'Valkyries vs Dream WNBA Finals player props on CGPropz',
+  },
+};
+
+function insertGuideImages(path, body) {
+  const spec = BODY_IMAGES[path];
+  if (!spec) return body;
+  if (!body.includes(spec.anchor)) throw new Error(`Could not place the body image for ${path}`);
+  return body.replace(spec.anchor, `${spec.anchor}\n\n${spec.image}`);
+}
+
+export function demoteHeadings(markdown) {
+  return String(markdown).replace(/^(#{1,6}) /gm, (_, hashes) => `${'#'.repeat(Math.min(6, hashes.length + 1))} `);
+}
+
 export function stripGuideSource(markdown) {
   let text = String(markdown).replace(/\r\n/g, '\n');
   text = text.replace(/<!--[\s\S]*?-->/g, '').trim();
@@ -200,8 +332,9 @@ export function stripGuideSource(markdown) {
       text = text.slice(end + 4).trim();
     }
   }
+  const faqPage = extractFaqPage(text);
   text = text.replace(/\*\*JSON-LD \(FAQPage\)\*\*\s*```json[\s\S]*?```/g, '').trim();
-  return { meta, body: text };
+  return { meta, body: text, faqPage };
 }
 
 // The published URL is always /guides/<slug>. Frontmatter `canonical` may
@@ -215,9 +348,11 @@ export function canonicalGuidePath(meta, fallbackSlug) {
 }
 
 export function guideFromMarkdown(markdown, fallbackSlug) {
-  const { meta, body } = stripGuideSource(markdown);
+  const { meta, body, faqPage } = stripGuideSource(markdown);
   const path = canonicalGuidePath(meta, fallbackSlug);
-  const faqs = extractFaqs(body);
+  const publishedBody = insertGuideImages(path, hideUnresolved(body));
+  assertNoCurlyPlaceholders(publishedBody, path || fallbackSlug || 'guide');
+  const faqs = extractFaqs(publishedBody);
   const h1 = (body.match(/^#\s+(.+)$/m) || [])[1]?.trim() || 'Guide';
   const title = meta.title_tag || `${h1} | CGPropz`;
   const description = meta.meta_description || '';
@@ -233,11 +368,11 @@ export function guideFromMarkdown(markdown, fallbackSlug) {
     datePublished,
     dateModified,
     lastmod: dateOnly(meta.date_modified || meta.date_published),
-    html: renderGuideHtml({ title, description, path, body, faqs, h1, datePublished, dateModified }),
+    html: renderGuideHtml({ title, description, path, body: publishedBody, faqs, faqPage, h1, datePublished, dateModified }),
   };
 }
 
-function renderGuideHtml({ title, description, path, body, faqs, h1, datePublished, dateModified }) {
+function renderGuideHtml({ title, description, path, body, faqs, faqPage, h1, datePublished, dateModified }) {
   const schemas = [
     breadcrumbNode([
       { name: 'Home', url: pageUrl('/') },
@@ -251,15 +386,21 @@ function renderGuideHtml({ title, description, path, body, faqs, h1, datePublish
       dateModified,
     }),
   ];
-  if (faqs.length) schemas.push(faqNode(faqs));
-  return renderDocument({
+  if (faqPage) schemas.push(faqPage);
+  else if (faqs.length) schemas.push(faqNode(faqs));
+  const image = PAGE_IMAGES[path];
+  const html = renderDocument({
     title,
     description,
     path,
     bodyHtml: renderMarkdown(body),
     schemas,
     ogType: 'article',
+    image: image ? pageUrl(image.src) : undefined,
+    imageAlt: image?.alt,
   });
+  assertNoCurlyPlaceholders(html, path || 'guide html');
+  return html;
 }
 
 export function listGuides(dir = GUIDES_DIR) {

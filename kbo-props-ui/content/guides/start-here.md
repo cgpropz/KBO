@@ -1,7 +1,7 @@
 <!--
 DRAFT, NOT FOR PUBLISH. Requested by COO bot; Code Green approval required; Git bot publishes.
 No stats on this page. The board-row example uses made-up numbers and is labeled as such.
-CG Score per-sport formulas: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (confirmed vs site JS 2026-10-11). NBA not covered: {{CONFIRM WITH BOARD QA}}.
+CG Score per-sport formulas: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (re-verified vs site JS index-B876gw9W.js, 2026-10-11 2:25 PM ET). NBA not covered: {{CONFIRM WITH BOARD QA}}.
 File path for Git bot: content/guides/start-here.md, served at /guides/start-here, with /start-here redirect.
 PrizePicks descriptions are paraphrased from PrizePicks' own pages (see SOURCES). No payout multipliers are included on purpose.
 -->
@@ -72,19 +72,24 @@ CG Score shows **how far the CGPropz projection sits from the line**. The core m
 
 > **CG Score = (projection ÷ line) × 50**
 
-- **50:** projection equals the line.
+- **50:** projection equals the line. That always holds on NHL; on WNBA and NFL it holds when the line is at or above the stat's minimum. KBO may show a stored score on a different basis.
 - **Above 50:** projection is over the line. Further above means a bigger gap.
 - **Below 50:** projection is under the line. Further below means a bigger gap.
 
 How it varies by sport:
 - **NHL:** projection ÷ line × 50.
-- **WNBA:** projection ÷ the standard line × 50 (the posted line if no standard line is listed).
-- **NFL:** projection ÷ the larger of the line or a minimum line for that prop type, × 50. Yardage lines of 0.5 or lower aren't scored.
+- **WNBA:** projection ÷ the larger of the prop's own line or a minimum line for that stat, × 50. Minimums keep very low lines from producing extreme scores (points, for example, uses 4.5).
+- **NFL:** projection ÷ the larger of the line or a minimum line for that prop type, × 50.
+- **All sports:** yardage lines of 0.5 or lower aren't scored.
 - **KBO:** the stored KBO score when one exists, otherwise projection (or season average) ÷ line × 50. {{CONFIRM WITH BOARD QA: what KBO's stored score measures and its scale}}
 - **NBA:** {{CONFIRM WITH BOARD QA}}
 
+On WNBA and NFL, when a line is below its minimum, a score of 50 means the projection equals the minimum, not the line. Full minimum lists are in the [CG Score guide](/guides/cg-score) {{URL PENDING GIT BOT}}.
+
+**About the free top 3:** on NHL and WNBA it's the top three props on the full board by CG Score. KBO's free top 3 is chosen on the server and does not follow the site formula. NFL has no free top 3 right now.
+
 The board treats a prop as an over when the projection is at or above the line.
-<!-- CG Score per-sport formula source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (section 'CG Score', site JS /assets/index-CJEfA546.js, confirmed 2026-10-11 by Board QA Bot) -->
+<!-- CG Score per-sport formula source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (section 'CG Score', site JS /assets/index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET after PR #112) -->
 
 **What it doesn't mean:** CG Score is not a win probability, and a higher score does not mean a prop is more likely to hit. It tells you where the model and the line disagree most. Your job is to find out why. A very small line can also make a modest projection look like a huge score, so double-check extreme values.
 
@@ -122,7 +127,7 @@ Key points from PrizePicks' own pages:
 - **You can mix them.** A lineup can combine goblins, demons and standard projections.
 - **Promotions may not apply.** Some promotions exclude goblins and demons. Check each promotion's terms.
 
-How this connects to CGPropz: the board compares the projection with the line it lists. A goblin or demon line is a different number from the standard line, so recalculate the gap against the line you're actually picking. On the WNBA board, CG Score is calculated against the standard line when one is listed. {{CONFIRM WITH BOARD QA: whether boards list goblin/demon lines or standard lines only}}
+How this connects to CGPropz: the board compares the projection with the line it lists. A goblin or demon line is a different number from the standard line, so recalculate the gap against the line you're actually picking. The NHL and WNBA boards show demon and goblin lines alongside standard lines, each scored against its own line. NFL and KBO: {{CONFIRM WITH BOARD QA}}.
 
 ## PrizePicks Power Play vs Flex Play
 
@@ -151,7 +156,7 @@ The free top 3 on the homepage shows three props a day in each sport with a free
 
 - **All-Access:** CGPropz's paid plan with every sport's full board.
 - **Board:** the list of today's props for a sport, with projections, scores and hit rates.
-- **CG Score:** how far the CGPropz projection sits from the line. Core method: projection ÷ line × 50, with per-sport adjustments (see above). On most boards, 50 means they're equal.
+- **CG Score:** how far the CGPropz projection sits from the line. Core method: projection ÷ line × 50, with per-sport adjustments (see above). 50 means they're equal on NHL, and on WNBA and NFL when the line is at or above the stat's minimum. KBO may show a stored score on a different basis.
 - **Demon:** on PrizePicks, a harder projection (red icon) with a higher potential payout.
 - **DNP:** "did not play." Picks on players who don't play are handled under each app's rules.
 - **DVP (defense vs. position):** how an opponent has defended a given position, used as matchup context.
@@ -256,7 +261,7 @@ SOURCES / NOTES (accessed Sun Oct 11, 2026)
   https://www.prizepicks.com/playbook-article/2-pick-flex-plays-on-prizepicks-hit-one-pick-get-paid
 - PAYOUT MULTIPLIERS DELIBERATELY OMITTED: PrizePicks' own "Potential Outcomes" help page lists two different 6-pick Power values in different sections (37.5x vs 25x). Figures are not stable enough to publish; link to PrizePicks instead.
 - Rithmm Starter Guide (https://www.rithmm.com/post/rithmm-starter-guide): viewed once via search snippet for STRUCTURE ONLY (sport tour, quick links, props, tracking). No text copied.
-- CG Score per sport + side rule: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (confirmed vs site JS 2026-10-11). NBA not in README. KBO free top 3 chosen server-side (unknown); NFL no free top 3.
+- CG Score per sport + side rule: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (re-verified vs site JS index-B876gw9W.js, 2026-10-11 2:25 PM ET). NBA not in README. NHL/WNBA free top 3 = top 3 of full board (verified); KBO free top 3 chosen server-side, not the site formula (verified); NFL no free top 3. Demon/goblin lines on NHL and WNBA boards verified by Board QA (Oct 11, 2:27 PM ET); NFL/KBO unconfirmed.
 - Links per Git bot rules (Oct 11): /#free-top-3 (homepage section, pending); highest hit rate = sport boards sorted by L10 pill; no /free-top-3 or /highest-hit-rate-today pages.
   Caution against "higher score hits more" informed by /workspace/shared/lab/cg_score_check/results.md (no numbers used).
 - Board-row example: all values invented for illustration; 21.0/18.5*50 = 56.8 (arithmetic check).

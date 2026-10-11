@@ -89,6 +89,17 @@ export function resolveRequest(pathname, { files, config }) {
   return { status: 404, file: files.has('/404.html') ? '/404.html' : null };
 }
 
+function contentType(file) {
+  if (file.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (file.endsWith('.xml')) return 'application/xml; charset=utf-8';
+  if (file.endsWith('.txt')) return 'text/plain; charset=utf-8';
+  if (file.endsWith('.png')) return 'image/png';
+  if (file.endsWith('.jpg') || file.endsWith('.jpeg')) return 'image/jpeg';
+  if (file.endsWith('.svg')) return 'image/svg+xml';
+  if (file.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
+
 function readSiteFile(uiRoot, urlPath) {
   if (urlPath === '/index.html') return readFileSync(join(uiRoot, 'index.html'));
   return readFileSync(join(uiRoot, 'public', urlPath.slice(1)));
@@ -110,13 +121,7 @@ export function startStaticServer(uiRoot, config) {
       return;
     }
     const body = readSiteFile(uiRoot, result.file);
-    const type = result.file.endsWith('.html')
-      ? 'text/html; charset=utf-8'
-      : result.file.endsWith('.xml')
-        ? 'application/xml; charset=utf-8'
-        : result.file.endsWith('.txt')
-          ? 'text/plain; charset=utf-8'
-          : 'application/octet-stream';
+    const type = contentType(result.file);
     res.writeHead(result.status, { 'Content-Type': type });
     res.end(body);
   });

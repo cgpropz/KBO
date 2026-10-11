@@ -56,6 +56,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       assert.match(html, new RegExp(`<title>${escapeRegExp(title)}</title>`), path)
       assert.match(html, new RegExp(`<h1>${escapeRegExp(h1)}</h1>`), path)
       assert.equal(count(html, '<h1'), 1, path)
+      assert.equal(html.includes('{{'), false, path)
       assert.match(html, /21\+ only\. Gambling problem\? Call 1-800-GAMBLER\./, path)
       assert.match(html, /CGPropz is not affiliated with PrizePicks or Underdog\. For entertainment only\./, path)
       assert.match(html, /"@type":"Organization"/, path)
@@ -100,7 +101,12 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.match(guide, /<h2>FAQ<\/h2>/)
     assert.match(guide, /<h3>What is CG Score\?<\/h3>/)
     assert.match(guide, /projection ÷ line/)
-    assert.match(guide, /\{\{CONFIRM WITH BOARD QA\}\}/)
+    assert.equal(guide.includes('{{'), false)
+    assert.equal(guide.includes('<td>NBA</td>'), false)
+    assert.match(guide, /src="\/images\/how-cg-score-diagram.png"/)
+    assert.match(guide, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/how-cg-score-works-featured.png"/)
+    assert.match(guide, /name="twitter:image" content="https:\/\/www\.cgpropz\.com\/images\/how-cg-score-works-featured.png"/)
+    assert.match(guide, /Pass yards/)
     assert.equal(guide.includes('URL PENDING'), false)
     assert.equal(guide.includes('GRAPHIC DESIGNER'), false)
     assert.equal(guide.includes('53.6'), false)
@@ -115,7 +121,11 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.match(startHere, /"@type":"Article"/)
     assert.match(startHere, /"@type":"BreadcrumbList"/)
     assert.match(startHere, /"@type":"FAQPage"/)
-    assert.match(startHere, /\{\{CONFIRM WITH BOARD QA/)
+    assert.equal(startHere.includes('{{'), false)
+    assert.match(startHere, /src="\/images\/start-here-board-row.png"/)
+    assert.match(startHere, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/start-here-featured.png"/)
+    assert.match(startHere, /stored KBO score/)
+    assert.equal(startHere.includes('<strong>NBA:</strong>'), false)
     assert.equal(startHere.includes('URL PENDING'), false)
     const startSource = readFileSync(join(uiRoot, 'content/guides/start-here.md'), 'utf8')
     const startMeta = stripGuideSource(startSource).meta
@@ -128,6 +138,32 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     }
     const broken = await brokenInternalLinks(startHere, server.url, home)
     assert.deepEqual(broken, [])
+
+    const wnba = await (await fetch(`${server.url}/wnba-player-props`)).text()
+    assert.equal(count(wnba, '<h1'), 1)
+    assert.match(wnba, /<h2>WNBA Finals Player Props: Valkyries vs Dream<\/h2>/)
+    assert.match(wnba, /Saturday, Oct 17/)
+    assert.match(wnba, /When do the 2026 WNBA Finals start/)
+    assert.match(wnba, /Game 1 is Saturday, Oct 17, at 3:30 PM ET at Chase Center/)
+    assert.equal(wnba.includes('{{'), false)
+    assert.equal(wnba.includes('FROM BOARD QA'), false)
+    assert.equal(wnba.includes('wnba-finals-player-props-2026'), false)
+    assert.match(wnba, /rel="canonical" href="https:\/\/www\.cgpropz\.com\/wnba-player-props"/)
+    assert.match(wnba, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/wnba-finals-featured.png"/)
+    assert.match(wnba, /name="twitter:image" content="https:\/\/www\.cgpropz\.com\/images\/wnba-finals-featured.png"/)
+    assert.match(wnba, /does not include paid board rows/)
+
+    for (const image of [
+      '/images/start-here-featured.png',
+      '/images/start-here-board-row.png',
+      '/images/how-cg-score-works-featured.png',
+      '/images/how-cg-score-diagram.png',
+      '/images/wnba-finals-featured.png',
+    ]) {
+      const response = await fetch(server.url + image)
+      assert.equal(response.status, 200, image)
+      assert.match(response.headers.get('content-type') || '', /^image\//, image)
+    }
 
     const nfl = await (await fetch(`${server.url}/nfl-player-props`)).text()
     assert.match(nfl, /"@type":"FAQPage"/)
