@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
+import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import FoundersOffer from './FoundersOffer';
@@ -327,7 +328,7 @@ function SubscriptionPage() {
         <div className="sub-faq-grid">
           <FaqItem
             q="What's included in the free tier?"
-            a="You get the landing page, today's KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA, NFL, and NHL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport."
+            a={freeTierFaqAnswer()}
           />
           <FaqItem
             q="Does one subscription cover every sport?"
