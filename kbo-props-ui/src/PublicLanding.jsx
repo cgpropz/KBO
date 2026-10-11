@@ -94,7 +94,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   // Logged-out checkout: Stripe collects the email; access is matched to it
   // when the buyer signs up with the same email (webhook + sync-subscription).
   // Monthly and yearly stay on their Payment Links. Lifetime and Founders
-  // open a Checkout Session so the Founders cap and deadline are enforced.
+  // open a Checkout Session. A closed Founders offer is refused; the card
+  // shows Sold out or Ended instead of starting Lifetime checkout.
   const checkout = async (tier) => {
     if (tier?.checkout === 'session' || tier?.id === 'lifetime') {
       try {
@@ -110,7 +111,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
     try {
       const result = await requestOfferCheckoutUrl({ plan: 'founders' });
       window.location.assign(result.url);
-    } catch { /* offer stays visible until the server says it is closed */ }
+    } catch (err) {
+      if (err?.reason === 'sold_out' || err?.reason === 'expired') throw err;
+    }
   };
 
   return (

@@ -23,10 +23,14 @@ export const LEGACY_LIFETIME_PAYMENT_LINK = 'https://buy.stripe.com/dRmeVfd8r3E2
 export const YEARLY_PAYMENT_LINK = 'https://buy.stripe.com/9B63cxb0jdeCcDw1eM5Ne0a';
 
 export const FOUNDERS_CAP = 25;
-export const FOUNDERS_DEADLINE_LABEL = 'Oct 18, 2026, 11:59 PM ET';
+// Shown on the card. The countdown instant is midnight at the start of 19 Oct
+// ET (the same moment as the end of 18 Oct), so the words say 11:59 PM.
+export const FOUNDERS_DEADLINE_LABEL = 'Ends Oct 18 at 11:59 PM ET';
+// Narrow pricing cards (the subscription grid) use the shorter phrase.
+export const FOUNDERS_DEADLINE_SHORT = 'through Oct 18';
 
 // 19 Oct 2026 00:00 America/New_York. October 2026 is still EDT (UTC-4);
-// DST in 2026 ends on 1 Nov.
+// DST in 2026 ends on 1 Nov. That is one second after 18 Oct 2026 23:59:59 ET.
 export const FOUNDERS_DEADLINE_MS = Date.parse('2026-10-19T04:00:00.000Z');
 
 // Historical $99.99 lifetime charges before this instant are not Founders spots.
@@ -80,6 +84,36 @@ export function formatFoundersCountdown(parts) {
   return `${parts.days}d ${pad(parts.hours)}h ${pad(parts.minutes)}m ${pad(parts.seconds)}s`;
 }
 
+export function foundersDeadlineText(compact = false) {
+  return compact ? FOUNDERS_DEADLINE_SHORT : FOUNDERS_DEADLINE_LABEL;
+}
+
+// Replaces the buy button once the offer is closed.
+export function foundersClosedLabel(reason) {
+  if (reason === 'sold_out') return 'Sold out';
+  if (reason === 'expired') return 'Ended';
+  return null;
+}
+
+export function foundersCardCopy({
+  spotsLeft = 0,
+  cap = FOUNDERS_CAP,
+  soldKnown = false,
+  reason = null,
+  compact = false,
+} = {}) {
+  const spots = soldKnown
+    ? `${spotsLeft} of ${cap} spots left`
+    : `Limited to ${cap} buyers`;
+  const deadline = foundersDeadlineText(compact);
+  const closedLabel = foundersClosedLabel(reason);
+  return {
+    meta: compact ? `${spots}, ${deadline}` : `${spots}. ${deadline}`,
+    closedLabel,
+    showBuy: !closedLabel,
+  };
+}
+
 function linePriceId(line) {
   const price = line?.price;
   if (typeof price === 'string') return price;
@@ -114,5 +148,36 @@ export function isFoundersSession(session, {
   if (legacyLinkId && link === legacyLinkId) return false;
   if (!priceId || !sessionPriceIds(session).includes(priceId)) return false;
   if (!session.created || session.created < countStartSec) return false;
+  return true;
+}
+
+export function chargePriceIds(charge) {
+  const ids = new Set();
+  const add = (id) => { if (id) ids.add(id); };
+  const invoice = charge?.invoice;
+  const lines = invoice && typeof invoice === 'object' ? invoice.lines?.data || [] : [];
+  for (const line of lines) add(linePriceId(line));
+  for (const line of charge?.lines?.data || []) add(linePriceId(line));
+  const price = charge?.price;
+  if (typeof price === 'string') add(price);
+  else add(price?.id);
+  return [...ids];
+}
+
+// A paid charge counts toward the same 25-spot cap when it is this offer.
+// Historical $99.99 lifetime charges (same price id, before the window, or
+// tagged cg_plan=lifetime) do not.
+export function isFoundersCharge(charge, {
+  priceId,
+  countStartSec = FOUNDERS_COUNT_START_SEC,
+} = {}) {
+  if (!charge?.id) return false;
+  if (charge.paid === false || charge.refunded) return false;
+  if (charge.status && charge.status !== 'succeeded') return false;
+  if (charge.metadata?.cg_plan === 'lifetime') return false;
+  if (charge.metadata?.cg_plan === 'founders') return true;
+  if (!priceId || !chargePriceIds(charge).includes(priceId)) return false;
+  const created = Number(charge.created) || 0;
+  if (!created || created < countStartSec) return false;
   return true;
 }
