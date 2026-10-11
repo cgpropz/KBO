@@ -30,9 +30,23 @@
 .ff-btn-small { padding: 7px 14px; font-size: 12px; }
 
 /* ── Landing: today's free picks ─────────────────────────────────────────── */
+#free-top-3 {
+  scroll-margin-top: 84px;
+}
 .ff-picks {
   margin: 0 auto clamp(48px, 8vw, 88px);
   max-width: 880px;
+}
+.ff-picks-anchor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .ff-picks-head {
   display: flex;

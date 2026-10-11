@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
-import { freeTierFaqAnswer } from './freePreviewCopy';
+import { landingFaqs } from './landingFaq';
+import { ResponsibleGamblingCopy } from './SiteFooter';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
@@ -52,28 +53,7 @@ const TOOLS = [
   },
 ];
 
-const FAQS = [
-  {
-    q: 'What\'s included in the free tier?',
-    a: freeTierFaqAnswer(),
-  },
-  {
-    q: 'Does one subscription cover every sport?',
-    a: 'Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial.',
-  },
-  {
-    q: 'What is Discord Only?',
-    a: 'A cheaper plan that posts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the site boards. All-Access includes the full site and the site-subscriber Discord role.',
-  },
-  {
-    q: 'How often is the data updated?',
-    a: 'KBO projections and props refresh multiple times daily before games. WNBA, NFL, and NHL projections, edge, and lineups refresh on their own schedule ahead of tip-off, kickoff, and puck drop, so you always have the latest numbers.',
-  },
-];
+const FAQS = landingFaqs();
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const { open: nbaOpen } = useNbaOpen();
@@ -128,9 +108,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
         <nav className="pl-nav">
           <a href="#free-picks">Free Picks</a>
           <a href="#sports">Sports</a>
-          <a href="#features">Features</a>
-          <a href="#results">Results</a>
-          <a href="#pricing">Pricing</a>
+          <a href="/kbo-player-props">KBO</a>
+          <a href="/nfl-player-props">NFL</a>
+          <a href="/wnba-player-props">WNBA</a>
+          <a href="/nba-player-props">NBA</a>
+          <a href="/nhl-player-props">NHL</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/guides/cg-score">CG Score</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div className="pl-header-actions">
@@ -285,7 +269,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
       <footer className="pl-footer">
         <span>© {new Date().getFullYear()} cgpropz</span>
         <DiscordInviteLink />
-        <span className="pl-footer-note">For entertainment purposes only. Bet responsibly.</span>
+        <div className="site-footer">
+          <ResponsibleGamblingCopy />
+        </div>
       </footer>
     </div>
   );

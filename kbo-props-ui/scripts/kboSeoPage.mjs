@@ -4,8 +4,20 @@
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  breadcrumbNode,
+  faqNode,
+  pageUrl,
+  PUBLISHED_ON,
+  renderDocument,
+  renderFaqSection,
+  renderSitemap as renderSitemapXml,
+  SITE,
+  SPORT_PATHS,
+} from './seoShared.mjs';
+import { listGuides } from './markdownGuide.mjs';
 
-export const SITE = 'https://www.cgpropz.com';
+export { SITE };
 export const PAGE_PATH = '/kbo-player-props';
 export const PAGE_URL = `${SITE}${PAGE_PATH}`;
 
@@ -163,106 +175,79 @@ function propTable(day) {
   </details>`;
 }
 
+const KBO_FAQS = [
+  {
+    q: 'What is a full-board result?',
+    a: 'Every prop the model graded that day, including hits, misses, pushes, and DNPs. It is the whole graded board for that date, not a short list of winners.',
+  },
+  {
+    q: 'What time zone are these dates?',
+    a: 'The dates are the calendar dates stored with each KBO slate. Those are Korea game dates, not US Eastern Time.',
+  },
+  {
+    q: 'Where is pricing?',
+    a: 'All-Access plans are on the pricing page.',
+  },
+  {
+    q: 'What does CG Score mean?',
+    a: 'It compares the projection with the posted line. The guide explains the stated method. A higher score is not a probability and is not a claim that the prop hits more often.',
+  },
+  {
+    q: 'Is CGPropz affiliated with PrizePicks or Underdog?',
+    a: 'No. CGPropz is not affiliated with PrizePicks or Underdog.',
+  },
+];
+
 export function renderKboPage(days) {
   const recorded = days.filter((day) => !day.missing).length;
   const missing = days.filter((day) => day.missing).length;
   const range = days.length
     ? `${formatDayLabel(days[0].iso)} through ${formatDayLabel(days[days.length - 1].iso)}`
     : 'the dates currently in the archive';
+  const title = 'KBO player props and full-board results | CGPropz';
+  const description = 'KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs.';
 
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KBO player props and full-board results | CGPropz</title>
-  <meta name="description" content="KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs." />
-  <link rel="canonical" href="${PAGE_URL}" />
-  <meta name="theme-color" content="#050506" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="CGPropz" />
-  <meta property="og:url" content="${PAGE_URL}" />
-  <meta property="og:title" content="KBO player props and full-board results | CGPropz" />
-  <meta property="og:description" content="Recent KBO player-prop results from the CGPropz model: every graded prop, with hits, misses, pushes, and DNPs." />
-  <meta property="og:image" content="${SITE}/og-image.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="KBO player props and full-board results | CGPropz" />
-  <meta name="twitter:description" content="Recent KBO player-prop results from the CGPropz model: every graded prop, with hits, misses, pushes, and DNPs." />
-  <meta name="twitter:image" content="${SITE}/og-image.jpg" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #050506;
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.55;
-    }
-    a { color: #4ade80; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
-    .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
-    .wordmark span { color: #4ade80; }
-    nav { display: flex; gap: 16px; font-size: 14px; font-weight: 700; }
-    h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
-    h2 { margin: 36px 0 10px; font-size: 22px; }
-    .lede, .note { color: #a1a1aa; }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; }
-    .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
-    .btn-primary { background: #22c55e; color: #04140a; }
-    .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
-    thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
-    .missing-day td { color: #fbbf24; }
-    details { margin: 10px 0 18px; }
-    summary { cursor: pointer; font-weight: 700; }
-    .rg {
-      margin-top: 28px;
-      padding: 14px 16px;
-      border: 1px solid #27272a;
-      border-radius: 12px;
-      color: #a1a1aa;
-      font-size: 14px;
-    }
-    footer { margin-top: 28px; color: #71717a; font-size: 13px; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <a class="wordmark" href="${SITE}/">cg<span>propz</span></a>
-      <nav>
-        <a href="${SITE}/">App</a>
-        <a href="${SITE}/#pricing">Pricing</a>
-      </nav>
-    </header>
-    <main>
+  const bodyHtml = `
       <p class="lede">Korea Baseball Organization · player props</p>
       <h1>KBO player props, with the full board.</h1>
       <p>
         CGPropz tracks KBO player props for Korea Baseball Organization games: batter lines such as
         hits, runs, and RBIs, and pitcher lines such as strikeouts. Each prop sits next to a model
-        number built from recent form, the matchup, and the posted line. The live board is on
-        <a href="${SITE}/">cgpropz.com</a>. All-Access plans that include KBO are listed on
-        <a href="${SITE}/#pricing">pricing</a>.
+        number built from recent form, the matchup, and the posted line. The public write-up is the
+        <a href="${PAGE_URL}">KBO board</a>. All-Access plans that include KBO are listed on
+        <a href="${pageUrl('/pricing')}">pricing</a>.
       </p>
       <p>
         The table below is the recent <strong>full-board results</strong> archive. A full-board result
         is every prop the model graded that day, including hits, misses, pushes, and DNPs.
         It is the whole graded board for that date. A day with no summary file is still listed.
+        These are graded results, not the live paid board.
       </p>
       <div class="actions">
-        <a class="btn btn-primary" href="${SITE}/">Open the KBO board</a>
-        <a class="btn btn-ghost" href="${SITE}/#pricing">See pricing</a>
+        <a class="btn btn-primary" href="${PAGE_URL}">Open the KBO board</a>
+        <a class="btn btn-ghost" href="${pageUrl('/pricing')}">See pricing</a>
       </div>
+
+      <h2>How the KBO board works</h2>
+      <p>
+        The live KBO board in the app lines a model number up with the posted prop. The free preview
+        shows the top 3 lines. The rest of that live board is All-Access, and those rows are not
+        printed here. Graded results for days already in the archive are listed below, including misses.
+      </p>
+
+      <h2>What CG Score means</h2>
+      <p>
+        CG Score compares the CGPropz projection with the posted line. The method stated on the site
+        is projection divided by the line, multiplied by 50. A score of 50 means the projection equals
+        the line. The score is not a probability, and a higher score is not a claim that the prop hits
+        more often. <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> is the full guide.
+      </p>
 
       <h2>Recent full-board results</h2>
       <p class="note">
         ${recorded} day${recorded === 1 ? '' : 's'} with a summary and ${missing} day${missing === 1 ? '' : 's'} with no summary,
-        from ${escapeHtml(range)}. Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
+        from ${escapeHtml(range)}. Dates in this table are the calendar dates stored with each KBO slate (Korea game dates), not US Eastern Time.
+        Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
       </p>
       <table>
         <thead>
@@ -286,27 +271,48 @@ export function renderKboPage(days) {
       </p>
       ${days.map(propTable).join('\n')}
 
+      ${renderFaqSection(KBO_FAQS)}
+
       <p class="rg">
         Gambling involves risk. These full-board results are a record of past grades only. Future results can differ.
         If you bet, only risk money you can afford to lose. If gambling is a problem, call 1-800-GAMBLER.
       </p>
-    </main>
-    <footer>CGPropz · KBO player props · <a href="${PAGE_URL}">${PAGE_URL}</a></footer>
-  </div>
-</body>
-</html>
-`;
+    `;
+
+  return renderDocument({
+    title,
+    description,
+    path: PAGE_PATH,
+    bodyHtml,
+    schemas: [
+      breadcrumbNode([
+        { name: 'Home', url: pageUrl('/') },
+        { name: 'KBO player props', url: PAGE_URL },
+      ]),
+      faqNode(KBO_FAQS),
+    ],
+  });
 }
 
-export function renderSitemap() {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${SITE}/</loc>
-  </url>
-  <url>
-    <loc>${PAGE_URL}</loc>
-  </url>
-</urlset>
-`;
+export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides() } = {}) {
+  const lastmod = (value) => (value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : PUBLISHED_ON);
+  const pages = [
+    { loc: pageUrl('/'), lastmod: PUBLISHED_ON },
+    { loc: pageUrl('/pricing'), lastmod: PUBLISHED_ON },
+    ...SPORT_PATHS.map((sport) => ({
+      loc: pageUrl(sport.path),
+      lastmod: sport.path === PAGE_PATH ? lastmod(kboLastmod) : PUBLISHED_ON,
+    })),
+    ...guides.map((guide) => ({ loc: pageUrl(guide.path), lastmod: guide.lastmod || PUBLISHED_ON })),
+  ];
+  const seen = new Set();
+  return pages.filter((page) => {
+    if (seen.has(page.loc)) return false;
+    seen.add(page.loc);
+    return true;
+  });
+}
+
+export function renderSitemap(entries) {
+  return renderSitemapXml(entries || sitemapEntries());
 }
