@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
-import { DATASETS, FREE_ROW_LIMIT } from '../api/_dataAccess.js'
+import { DATASETS, FREE_ROW_LIMIT, NFL_FREE_PREVIEW_ENABLED } from '../api/_dataAccess.js'
 
 const NOW = '2026-09-25T12:00:00Z'
 
@@ -157,11 +157,51 @@ test('single-sport KBO tier does not unlock WNBA or NFL', async () => {
   assert.equal(w.body.preview, true)
   const n = await call('nfl_projections', 'tok-kbo')
   assert.equal(n.body.preview, true)
-  assert.equal(n.body.data.length, 3)
-  assert.equal(n.body.lockedCount, 12)
+  if (NFL_FREE_PREVIEW_ENABLED) {
+    assert.equal(n.body.data.length, 3)
+    assert.equal(n.body.lockedCount, 12)
+  } else {
+    assert.deepEqual(n.body.data, [])
+    assert.equal(n.body.lockedCount, 15)
+  }
   const o = await call('nfl_projections', 'tok-owner')
   assert.equal(o.body.preview, false)
   assert.equal(o.body.data.length, 15)
+})
+
+test('NFL free preview is off while NFL_FREE_PREVIEW_ENABLED is false', async () => {
+  assert.equal(NFL_FREE_PREVIEW_ENABLED, false)
+  for (const token of [undefined, 'tok-free', 'tok-kbo']) {
+    const props = await call('nfl_projections', token)
+    assert.equal(props.statusCode, 200)
+    assert.equal(props.body.preview, true)
+    assert.deepEqual(props.body.data, [])
+    assert.equal(props.body.lockedCount, 15)
+    const odds = await call('nfl_sharp_odds', token)
+    assert.equal(odds.statusCode, 200)
+    assert.equal(odds.body.preview, true)
+    assert.deepEqual(odds.body.data.records, [])
+    assert.equal(odds.body.data.message, 'matched')
+    assert.equal(odds.body.lockedCount, 8)
+    const markets = await call('nfl_game_markets', token)
+    assert.equal(markets.statusCode, 200)
+    assert.equal(markets.body.preview, true)
+    assert.deepEqual(markets.body.data.games, [])
+    assert.equal(markets.body.data.provider, 'unabated')
+    assert.equal(markets.body.lockedCount, 6)
+  }
+  const lineups = await call('nfl_lineups')
+  assert.equal(lineups.body.preview, true)
+  assert.equal(lineups.body.data.length, 3)
+  const wnba = await call('wnba_projections_standard')
+  assert.equal(wnba.body.data.flatMap((player) => player.ppAllProps).length, 3)
+  const paid = await call('nfl_projections', 'tok-owner')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.length, 15)
+  const paidOdds = await call('nfl_sharp_odds', 'tok-owner')
+  assert.equal(paidOdds.body.data.records.length, 8)
+  const paidMarkets = await call('nfl_game_markets', 'tok-owner')
+  assert.equal(paidMarkets.body.data.games.length, 6)
 })
 
 test('WNBA preview keeps top 3 prop lines across players', async () => {
@@ -214,8 +254,13 @@ test('NFL sharp odds preview keeps the best EV rows and the snapshot message', a
   assert.equal(res.body.data.status, 'ok')
   assert.equal(res.body.data.message, 'matched')
   assert.equal(res.body.data.provider, 'unabated')
-  assert.deepEqual(res.body.data.records.map((row) => row.ev_pct), [7, 6, 5])
-  assert.equal(res.body.lockedCount, 5)
+  if (NFL_FREE_PREVIEW_ENABLED) {
+    assert.deepEqual(res.body.data.records.map((row) => row.ev_pct), [7, 6, 5])
+    assert.equal(res.body.lockedCount, 5)
+  } else {
+    assert.deepEqual(res.body.data.records, [])
+    assert.equal(res.body.lockedCount, 8)
+  }
   const paid = await call('nfl_sharp_odds', 'tok-owner')
   assert.equal(paid.body.preview, false)
   assert.equal(paid.body.data.records.length, 8)
@@ -237,10 +282,15 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
   }
   try {
     const res = await call('nfl_sharp_odds')
-    // Rows with pp_edge_flex sort on that number, so HighEdge (edge 6, EV -4)
-    // beats LowEdge (edge 0.2, EV 9). A legacy row with only ev_pct still sorts on EV.
-    assert.deepEqual(res.body.data.records.map((row) => row.player), ['Legacy', 'HighEdge', 'Mid'])
-    assert.equal(res.body.lockedCount, 1)
+    if (NFL_FREE_PREVIEW_ENABLED) {
+      // Rows with pp_edge_flex sort on that number, so HighEdge (edge 6, EV -4)
+      // beats LowEdge (edge 0.2, EV 9). A legacy row with only ev_pct still sorts on EV.
+      assert.deepEqual(res.body.data.records.map((row) => row.player), ['Legacy', 'HighEdge', 'Mid'])
+      assert.equal(res.body.lockedCount, 1)
+    } else {
+      assert.deepEqual(res.body.data.records, [])
+      assert.equal(res.body.lockedCount, 4)
+    }
   } finally {
     TABLES.nfl_sharp_odds = original
   }
@@ -252,8 +302,13 @@ test('NFL game markets preview keeps the biggest edges and the model label', asy
   assert.equal(res.body.preview, true)
   assert.equal(res.body.data.provider, 'unabated')
   assert.equal(res.body.data.model.proven, false)
-  assert.deepEqual(res.body.data.games.map((game) => game.spread.edge), [5, 4, 3])
-  assert.equal(res.body.lockedCount, 3)
+  if (NFL_FREE_PREVIEW_ENABLED) {
+    assert.deepEqual(res.body.data.games.map((game) => game.spread.edge), [5, 4, 3])
+    assert.equal(res.body.lockedCount, 3)
+  } else {
+    assert.deepEqual(res.body.data.games, [])
+    assert.equal(res.body.lockedCount, 6)
+  }
   const paid = await call('nfl_game_markets', 'tok-owner')
   assert.equal(paid.body.preview, false)
   assert.equal(paid.body.data.games.length, 6)

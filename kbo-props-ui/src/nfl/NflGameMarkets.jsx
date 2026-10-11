@@ -206,15 +206,17 @@ export default function NflGameMarkets() {
   const [payload, setPayload] = useState(null)
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [lockedCount, setLockedCount] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
   useEffect(() => {
     let active = true
     fetchNflGameMarkets()
-      .then(({ payload: next }) => {
+      .then(({ payload: next, preview, lockedCount: locked }) => {
         if (!active) return
         setPayload(next)
+        setLockedCount(preview ? locked : 0)
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
@@ -270,7 +272,8 @@ export default function NflGameMarkets() {
       {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Each team shows its own spread. The higher score is the winner.</p>}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
-      {!error && loaded && !games.length && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}
+      {!error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}
+      {!error && loaded && !games.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}
       {!error && loaded && !!games.length && !rows.length && <div className="nfl-notice">No games match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-game-board">
