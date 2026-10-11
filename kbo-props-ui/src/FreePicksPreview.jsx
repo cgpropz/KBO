@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
-import { cgScore, lineMatchesStat } from './cgScore';
+import { lineMatchesStat } from './cgScore';
+import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import './FreeFunnel.css';
 
@@ -58,7 +59,7 @@ function nflRows(data) {
 function wnbaRows(data) {
   const rows = [];
   (Array.isArray(data) ? data : []).forEach((player) => (player?.ppAllProps || []).forEach((prop) => {
-    const line = prop.standardLine ?? prop.line;
+    const line = prop.line;
     rows.push({
       player: player.name,
       matchup: [player.team, prop.opponent || prop.versus].filter(Boolean).join(' vs '),
@@ -67,7 +68,7 @@ function wnbaRows(data) {
       projection: prop.projection,
       hitRate: null,
       tag: null,
-      score: cgScore(prop.projection, line, prop.stat) ?? -Infinity,
+      score: wnbaCgScore(prop.projection, prop) ?? -Infinity,
     });
   }));
   return rows;

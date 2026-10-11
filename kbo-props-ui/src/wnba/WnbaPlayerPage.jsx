@@ -267,7 +267,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
       defRank: defRankForGame(currentProp.stat, game.opponent, player.position, dvpByPosition),
     }))
     const getValue = PROP_GAME_VALUE[currentProp.stat]
-    const posted = currentProp.standardLine ?? currentProp.line
+    const posted = currentProp.line ?? currentProp.standardLine
     const opponent = currentProp.opponent
     const bounds = minutesBounds(games)
     const minutesSelection = resolveMinutesRange(bounds, minsRange)
@@ -317,7 +317,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
 
   const games = chartInput.games
   const getValue = PROP_GAME_VALUE[currentProp.stat]
-  const line = currentProp.standardLine ?? currentProp.line
+  const line = currentProp.line ?? currentProp.standardLine
   const { minuteBounds, minutesSelection, selectedWindow, filteredGames, missingMinutes } = chartInput
   const oddsRows = oddsRecords
     ? wnbaOddsRows(oddsRecords, player.name, currentProp.stat, line)
