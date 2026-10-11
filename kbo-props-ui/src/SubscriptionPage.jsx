@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
-import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
 import './SubscriptionPage.css';
@@ -76,7 +77,37 @@ function SubscriptionPage() {
     return () => { cancelled = true; };
   }, [user]);
 
+  const [offerBusy, setOfferBusy] = useState(false);
+  const openOfferCheckout = async (plan) => {
+    if (offerBusy) return;
+    setOfferBusy(true);
+    try {
+      let token = '';
+      if (user) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          token = session?.access_token || '';
+        } catch { /* guest checkout still works */ }
+      }
+      const result = await requestOfferCheckoutUrl(token ? { plan, token } : { plan });
+      if (!user) {
+        window.location.assign(result.url);
+        return;
+      }
+      window.open(result.url, '_blank', 'noopener');
+      setAwaitingPayment(true);
+    } catch {
+      /* leave the buttons usable */
+    } finally {
+      setOfferBusy(false);
+    }
+  };
+
   const handleSubscribe = (plan) => {
+    if (plan.checkout === 'session') {
+      openOfferCheckout('lifetime');
+      return;
+    }
     if (!plan.link) return;
     // Logged in: pass Supabase user ID + prefill email so the webhook links the
     // payment instantly. Logged out: Stripe collects the email and access is
@@ -141,7 +172,7 @@ function SubscriptionPage() {
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀🏈</span>
-        <span>Every All-Access plan unlocks <strong>all three sports</strong> — choose weekly, monthly, or lifetime billing.</span>
+        <span>Every All-Access plan unlocks <strong>KBO, WNBA, NFL, and NHL</strong> — weekly, monthly, yearly, or lifetime.</span>
       </div>
 
       {user && <DiscordAccount />}
@@ -188,13 +219,17 @@ function SubscriptionPage() {
               ))}
             </div>
 
+            {tier.id === 'lifetime' && (
+              <FoundersOffer busy={offerBusy} onClaim={() => openOfferCheckout('founders')} />
+            )}
+
             <button
               className={`sub-cta sub-cta-${tier.ctaStyle}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleSubscribe(tier);
               }}
-              disabled={tier.id === 'free' || (!tier.link && tier.id !== 'free')}
+              disabled={tier.id === 'free' || (!tier.link && tier.checkout !== 'session')}
             >
               {tier.id === 'free' && !user ? 'Free with an account' : tier.cta}
             </button>
@@ -296,11 +331,11 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="Does one subscription cover every sport?"
-            a="Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
+            a="Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
           />
           <FaqItem
             q="Can I cancel anytime?"
-            a="Yes. Weekly and Monthly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel."
+            a="Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial."
           />
           <FaqItem
             q="What is Discord Only?"

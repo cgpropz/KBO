@@ -85,6 +85,22 @@ test('a discord checkout stamped at the lifetime amount is not reported as lifet
   assert.equal(res.body.amount, 99.99)
 })
 
+test('taxed yearly and lifetime sessions map by price id and stamped plan', async () => {
+  const yearly = await call(VALID_ID, mockStripe({
+    [VALID_ID]: session({
+      amount_total: 16049,
+      line_items: { data: [{ price: { id: 'price_1UPJ7DPwL0k9PEMv2Z9Ca8B5' } }] },
+    }),
+  }))
+  assert.equal(yearly.body.plan, 'yearly')
+  assert.equal(yearly.body.amount, 160.49)
+
+  const founders = await call(VALID_ID, mockStripe({
+    [VALID_ID]: session({ amount_total: 10724, metadata: { cg_plan: 'founders' } }),
+  }))
+  assert.equal(founders.body.plan, 'founders')
+})
+
 test('a stamped weekly plan stays weekly when tax moves the total off $4.99', async () => {
   const res = await call(VALID_ID, mockStripe({
     [VALID_ID]: session({ amount_total: 539, metadata: { cg_plan: 'weekly' } }),

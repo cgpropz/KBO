@@ -193,6 +193,8 @@ export default async function handler(req, res) {
         console.error('[webhook] could not list checkout line items:', err.message);
       }
     }
+    // Lifetime ($249.99 and Founders $99.99) and Yearly ($149.99) resolve here
+    // by price id / product id, including taxed totals that are not the list price.
     const tier = await tierForStripePrice(stripe, price, { metadata: obj.metadata });
 
     if (userId) {
@@ -206,7 +208,10 @@ export default async function handler(req, res) {
     // Server-side X purchase conversion (same Event ID + conversion_id = session
     // id as the browser pixel, so X de-duplicates). No-op unless the X_* env
     // vars are set; never throws, so it cannot fail the webhook.
-    await reportPurchaseToX(obj, { conversionTime: (event.created || 0) * 1000 || undefined });
+    const reported = price && !obj.line_items
+      ? { ...obj, line_items: { data: [{ price }] } }
+      : obj;
+    await reportPurchaseToX(reported, { conversionTime: (event.created || 0) * 1000 || undefined });
   }
 
   // ── customer.subscription.created ──────────────────────────────────────
