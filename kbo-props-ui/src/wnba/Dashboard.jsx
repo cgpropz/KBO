@@ -455,8 +455,9 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
 
-  // Flatten every prop into a scored row (score = projection / this row's line × 50).
-  // standardLine is not the denominator. See wnbaCgScore.
+  // Flatten every prop into a scored row.
+  // Score = projection / max(this row's line, per-stat floor) × 50.
+  // The line on the row is the PrizePicks line. See wnbaCgScore.
   const allRows = useMemo(() => {
     if (!projections) return []
     const rows = []

@@ -1,4 +1,4 @@
-import { lineMatchesStat } from '../src/cgScore.js';
+import { cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
@@ -151,15 +151,26 @@ function kboProjectionScore(row) {
   return Number.isFinite(edge) ? edge : -Infinity;
 }
 
-// WNBA board: score = projection / this row's line × 50.
-// standardLine is not the denominator. Demon and goblin rows keep their own line.
-function wnbaPropScore(player, prop) {
+// Shared player-prop preview score. `scoreFn` is the board's CG Score.
+function boardPropScore(player, prop, scoreFn) {
   const projection = prop?.projection ?? player?.propProjectionByStat?.[prop?.stat];
-  const score = wnbaCgScore(projection, prop);
+  const score = scoreFn(projection, prop);
   if (score == null) return -Infinity;
   const line = num(prop?.line);
   if (!Number.isFinite(num(projection)) || !(line > 0)) return -Infinity;
   return score;
+}
+
+// WNBA: projection / max(this row's line, per-stat floor) × 50.
+// standardLine is not the denominator. The stored line is not rewritten.
+function wnbaPropScore(player, prop) {
+  return boardPropScore(player, prop, wnbaCgScore);
+}
+
+// NBA uses the same preview shape and still divides by the pick's own line.
+// WNBA floors do not apply.
+function nbaPropScore(player, prop) {
+  return boardPropScore(player, prop, (projection, row) => cgScore(projection, row?.line, row?.stat ?? row?.prop));
 }
 
 // NFL Prop Lines: projection / max(line, per-stat floor) × 50.
@@ -272,8 +283,8 @@ function previewPrizepicks(payload) {
   };
 }
 
-// WNBA projections_*: [{ ...player, ppAllProps: [...] }] → best props, regrouped.
-function previewWnbaProjections(payload) {
+// projections_*: [{ ...player, ppAllProps: [...] }] → best props, regrouped.
+function previewPlayerProps(payload, scoreFn) {
   const players = Array.isArray(payload) ? payload : [];
   const flat = [];
   players.forEach((player, playerIndex) => {
@@ -284,7 +295,7 @@ function previewWnbaProjections(payload) {
     const kept = players.slice(0, FREE_ROW_LIMIT);
     return { data: kept, lockedCount: Math.max(0, players.length - kept.length) };
   }
-  const kept = topN(flat, ({ playerIndex, prop }) => wnbaPropScore(players[playerIndex], prop));
+  const kept = topN(flat, ({ playerIndex, prop }) => scoreFn(players[playerIndex], prop));
   const byPlayer = new Map();
   kept.forEach(({ item }) => {
     if (!byPlayer.has(item.playerIndex)) byPlayer.set(item.playerIndex, []);
@@ -305,6 +316,14 @@ function previewWnbaProjections(payload) {
     return out;
   });
   return { data, lockedCount: Math.max(0, flat.length - kept.length) };
+}
+
+function previewWnbaProjections(payload) {
+  return previewPlayerProps(payload, wnbaPropScore);
+}
+
+function previewNbaProjections(payload) {
+  return previewPlayerProps(payload, nbaPropScore);
 }
 
 // matchup_data: the slate itself (teams, venue, weather, probable pitchers'
@@ -391,9 +410,9 @@ export const DATASETS = {
   nba_dvp_sf: { table: 'nba_dvp_sf', sport: 'nba', free: previewObjectList('teams', () => 0) },
   nba_dvp_pf: { table: 'nba_dvp_pf', sport: 'nba', free: previewObjectList('teams', () => 0) },
   nba_dvp_c: { table: 'nba_dvp_c', sport: 'nba', free: previewObjectList('teams', () => 0) },
-  nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewWnbaProjections },
-  nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewWnbaProjections },
-  nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewWnbaProjections },
+  nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewNbaProjections },
+  nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewNbaProjections },
+  nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewNbaProjections },
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
