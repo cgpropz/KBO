@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from nhl.history import load_goalies, load_skaters, team_shot_games
-from nhl.profile import profile_splits, usage_role
+from nhl.profile import attach_baseline, build_baselines, profile_splits, usage_role
 from nhl.model import (
     LAUNCH_PROPS,
     PROP_PPP,
@@ -769,6 +769,7 @@ def build(root: Path, out_dir: Path) -> int:
         else:
             team_rows = list(team_shot_games(goalie_rows).values())
             league = _league(skaters, [row for row in goalie_rows if row["sa"] >= 8], team_rows)
+            baselines = build_baselines(skaters, goalie_rows, CURRENT_SEASON, PRIOR_SEASON)
             by_skater = _index_players(skaters)
             by_goalie = _index_players(goalie_rows)
             by_team = defaultdict(list)
@@ -826,7 +827,10 @@ def build(root: Path, out_dir: Path) -> int:
                     "homeTeam": game["home"],
                     "ppRole": role,
                     "usage": None if is_goalie else _usage(card["player"], lines.get(card["team"])),
-                    "profile": profile_splits(history, CURRENT_SEASON, "G" if is_goalie else "S"),
+                    "profile": attach_baseline(
+                        profile_splits(history, CURRENT_SEASON, "G" if is_goalie else "S"),
+                        baselines.get("G" if is_goalie else card["position"]),
+                    ),
                 })
             projections.sort(key=lambda row: (row["rankEligible"] is False, -(row["score"] or 0), row["player"], row["prop"]))
 

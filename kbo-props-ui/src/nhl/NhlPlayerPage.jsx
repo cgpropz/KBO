@@ -48,6 +48,17 @@ const SPLITS = [
   { id: 'season', label: 'Season' },
 ]
 
+// Same flip as the pipeline: fewer missed shots and fewer blocked attempts rank higher.
+const LOWER_IS_BETTER = new Set(['missed', 'blockedAttempts'])
+
+const SCALE = [
+  { color: '#22c55e', label: '80+' },
+  { color: '#4ade80', label: '60–79' },
+  { color: '#d4d4d8', label: '40–59' },
+  { color: '#fca5a5', label: '20–39' },
+  { color: '#f87171', label: '<20' },
+]
+
 function chartWindow(item, range) {
   const values = Array.isArray(item.log) && item.log.length ? item.log : (Array.isArray(item.recent) ? item.recent : [])
   const dates = Array.isArray(item.logDates) && item.logDates.length ? item.logDates : (Array.isArray(item.gameDates) ? item.gameDates : [])
@@ -119,10 +130,21 @@ function formatStat(format, value) {
   if (format === 'signed') {
     const number = Number(value)
     if (!Number.isFinite(number)) return '—'
+    if (Math.abs(number) < 0.005) return '0.00'
     const text = number.toFixed(2)
     return number > 0 ? `+${text}` : text
   }
   return formatRate(value)
+}
+
+function percentileColor(pct) {
+  const value = Number(pct)
+  if (!Number.isFinite(value)) return null
+  if (value >= 80) return '#22c55e'
+  if (value >= 60) return '#4ade80'
+  if (value >= 40) return '#d4d4d8'
+  if (value >= 20) return '#fca5a5'
+  return '#f87171'
 }
 
 function ordinal(rank) {
@@ -251,11 +273,12 @@ function PlayerHeadshot({ playerId, imageUrl, name, team }) {
   )
 }
 
-function RoleChip({ label, value, color }) {
+function RoleChip({ label, value, detail, color }) {
   return (
     <div className="nhl-role">
       <span>{label}</span>
       <b style={color ? { color } : undefined}>{value || '—'}</b>
+      {detail ? <small className="nhl-role-detail" style={color ? { color } : undefined}>{detail}</small> : null}
     </div>
   )
 }
@@ -409,13 +432,27 @@ export default function NhlPlayerPage({ item, onBack }) {
           )}
           <RoleChip
             label={position === 'G' ? 'Opp shots' : item.prop === 'Shots On Goal' ? 'Opp shot DvP' : 'Opp points DvP'}
-            value={dvpLabel}
+            value={position === 'G' ? (dvpValue == null ? null : formatRate(dvpValue)) : dvpLabel}
+            detail={position === 'G' && dvpRank != null ? ordinal(dvpRank) : null}
             color={dvpColor(dvpRank)}
           />
           <RoleChip label="L10 DvP" value={l10Dvp?.rank == null ? null : ordinal(l10Dvp.rank)} color={dvpColor(l10Dvp?.rank)} />
         </div>
         {linesUnposted && (
           <p className="nhl-profile-note">Tonight&apos;s lines are not posted, so the line and power-play unit are blank.</p>
+        )}
+        {profile?.baseline?.label && (
+          <div className="nhl-scale">
+            <span>vs {profile.baseline.label} {profile.baseline.position} avg</span>
+            <span className="nhl-scale-key">
+              {SCALE.map((bucket) => (
+                <span key={bucket.label}><i style={{ background: bucket.color }} />{bucket.label}</span>
+              ))}
+            </span>
+          </div>
+        )}
+        {profile?.baseline && keys.some((key) => LOWER_IS_BETTER.has(key)) && (
+          <p className="nhl-scale-note">Missed shots and blocked attempts are flipped, so fewer ranks higher.</p>
         )}
         <div className="nhl-profile-scroll">
           <table className="nhl-profile-table">
@@ -444,10 +481,25 @@ export default function NhlPlayerPage({ item, onBack }) {
                     </th>
                     {SPLITS.map((split) => {
                       const value = profile?.[split.id]?.[key]
-                      const signed = meta.format === 'signed' && value != null && Number(value) !== 0
+                      const compare = profile?.compare?.[split.id]?.[key]
+                      const color = percentileColor(compare?.pct)
+                      const title = compare?.pct == null ? undefined : `${ordinal(compare.pct)} percentile`
                       return (
-                        <td key={split.id} className={signed ? (Number(value) > 0 ? 'nhl-good' : 'nhl-bad') : undefined}>
-                          {formatStat(meta.format, value)}
+                        <td key={split.id}>
+                          <span className="nhl-stat" title={title}>
+                            <b className="nhl-stat-value" style={color ? { color } : undefined}>{formatStat(meta.format, value)}</b>
+                            {compare?.pct != null && (
+                              <span className="nhl-pct-track" aria-hidden="true">
+                                <span className="nhl-pct-fill" style={{ width: `${compare.pct}%`, background: color }} />
+                                {compare.avgPct != null && (
+                                  <span className="nhl-pct-tick" style={{ left: `${compare.avgPct}%` }} />
+                                )}
+                              </span>
+                            )}
+                            {compare?.avg != null && (
+                              <small className="nhl-lg-avg">Lg avg {formatStat(meta.format, compare.avg)}</small>
+                            )}
+                          </span>
                         </td>
                       )
                     })}

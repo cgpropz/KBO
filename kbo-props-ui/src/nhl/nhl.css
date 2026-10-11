@@ -404,6 +404,80 @@
 .nhl-role b {
   color: #f4f4f5;
   font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.nhl-role-detail {
+  color: #a1a1aa;
+  font: 600 11px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.nhl-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 8px;
+  color: #8f939b;
+  font: 600 11px Inter, system-ui, sans-serif;
+}
+.nhl-scale-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nhl-scale-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.nhl-scale-key i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.nhl-scale-note {
+  margin: 0 0 10px;
+  color: #8f939b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.nhl-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.nhl-stat-value {
+  font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+}
+.nhl-pct-track {
+  position: relative;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.nhl-pct-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+.nhl-pct-tick {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 7px;
+  background: #f4f4f5;
+  transform: translateX(-1px);
+}
+.nhl-lg-avg {
+  color: #8f939b;
+  font: 500 10px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
 }
 .nhl-profile-scroll { overflow-x: auto; }
 .nhl-profile-table {
@@ -415,6 +489,7 @@
   padding: 8px 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   text-align: right;
+  vertical-align: top;
 }
 .nhl-profile-table thead th {
   color: #a1a1aa;
@@ -467,6 +542,8 @@
   .nhl-chart-plot { --nhl-bar: 36px; --nhl-gap: 6px; }
   .nhl-player-sub { font-size: 13px; }
   .nhl-profile-table td { font-size: 12px; }
+  .nhl-stat-value { font-size: 12px; }
+  .nhl-pct-track { width: 56px; }
   .nhl-avatar,
   .nhl-avatar-wrap { width: 64px; height: 64px; }
 }

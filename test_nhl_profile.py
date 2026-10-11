@@ -6,7 +6,14 @@ from pathlib import Path
 
 from nhl.history import SKATER_FIELDS, load_skaters
 from nhl.model import project_shots
-from nhl.profile import goalie_window, profile_splits, skater_window, usage_role
+from nhl.profile import (
+    attach_baseline,
+    build_position_baseline,
+    goalie_window,
+    profile_splits,
+    skater_window,
+    usage_role,
+)
 
 
 def _skater(date, season, **extra):
@@ -92,6 +99,60 @@ class ProfileTests(unittest.TestCase):
         )
         self.assertEqual(before, after)
         self.assertIsNotNone(before)
+
+    def test_position_average_uses_ten_game_players_and_last_season_until_this_one_is_full(self):
+        def player(pid, season, games, sog, missed=1):
+            return [
+                _skater(f"{season[:4]}{index:04d}", season, player_id=pid, pos="F", sog=sog, missed=missed, toi=3600, pp_toi=0)
+                for index in range(games)
+            ]
+
+        prior = []
+        for index in range(10):
+            prior.extend(player(f"p{index}", "20252026", 10, sog=2))
+        prior.extend(player("short", "20252026", 9, sog=20))
+        current = []
+        for index in range(3):
+            current.extend(player(f"c{index}", "20262027", 10, sog=9))
+        baseline = build_position_baseline(prior + current, "F", "20262027", "20252026")
+        self.assertEqual(baseline["season"], "20252026")
+        self.assertEqual(baseline["label"], "2025-26")
+        self.assertEqual(baseline["qualified"], 10)
+        self.assertEqual(baseline["windows"]["season"]["sog60"]["avg"], 2)
+        self.assertEqual(len(baseline["windows"]["season"]["sog60"]["values"]), 10)
+
+        ready = []
+        for index in range(10):
+            ready.extend(player(f"n{index}", "20262027", 10, sog=4))
+        switched = build_position_baseline(prior + ready, "F", "20262027", "20252026")
+        self.assertEqual(switched["season"], "20262027")
+        self.assertEqual(switched["qualified"], 10)
+
+    def test_percentile_flips_missed_shots_and_stays_neutral_when_everyone_matches(self):
+        rows = []
+        for index, missed in enumerate(range(11)):
+            rows.extend([
+                _skater(f"2025{index:02d}{game:02d}", "20252026", player_id=f"m{index}", pos="F", missed=missed, toi=3600, sog=1)
+                for game in range(10)
+            ])
+        baseline = build_position_baseline(rows, "F", "20262027", "20252026")
+        low = attach_baseline(
+            profile_splits([row for row in rows if row["player_id"] == "m0"], "20252026", "S"),
+            baseline,
+        )
+        high = attach_baseline(
+            profile_splits([row for row in rows if row["player_id"] == "m10"], "20252026", "S"),
+            baseline,
+        )
+        self.assertGreaterEqual(low["compare"]["season"]["missed"]["pct"], 80)
+        self.assertLess(high["compare"]["season"]["missed"]["pct"], 20)
+        self.assertGreaterEqual(high["compare"]["season"]["sog60"]["pct"], 40)
+        self.assertLessEqual(high["compare"]["season"]["sog60"]["pct"], 59)
+        self.assertNotIn("values", low["baseline"])
+        tied = [2.0] * 12
+        from nhl.profile import _percentile
+        self.assertEqual(_percentile(2.0, tied, False), 50)
+        self.assertEqual(_percentile(2.0, tied, True), 50)
 
     def test_line_and_power_play_unit_come_from_the_projected_sheet(self):
         matches = [
