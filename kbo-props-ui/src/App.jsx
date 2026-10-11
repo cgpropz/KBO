@@ -9,7 +9,6 @@ import NflApp from './nfl/NflApp'
 import NbaApp from './nba/NbaApp'
 import NhlApp from './nhl/NhlApp'
 import { useNbaOpen } from './useNbaOpen'
-import { useNhlOpen } from './useNhlOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import './FreeFunnel.css'
 import './App.css'
@@ -19,7 +18,6 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 function App() {
   const { user, loading } = useAuth();
   const nba = useNbaOpen();
-  const nhl = useNhlOpen();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('hub');
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -59,7 +57,9 @@ function App() {
   // Stored cg_sport=nba stays put until the access check finishes, so a later
   // public flag does not wipe All-Access. Until then the NBA shell is not
   // mounted. Adjusted during render (not in an effect) once the check is closed.
-  if ((sport === 'nba' && !nba.ready) || (sport === 'nhl' && !nhl.ready)) {
+  // NHL is a live sport: logged-out and free visitors enter it and hit the
+  // same paywall as KBO, WNBA, and NFL.
+  if (sport === 'nba' && !nba.ready) {
     return (
       <div style={{
         display: 'flex',
@@ -78,10 +78,7 @@ function App() {
   if (sport === 'nba' && !nba.open) {
     setSport('kbo');
   }
-  if (sport === 'nhl' && !nhl.open) {
-    setSport('kbo');
-  }
-  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nhl' && nhl.open ? 'nhl' : (sport === 'nba' || sport === 'nhl') ? 'kbo' : sport;
+  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? 'kbo' : sport;
 
   const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
   const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };

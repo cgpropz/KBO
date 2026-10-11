@@ -342,7 +342,7 @@ export async function nbaSectionOpen(req, client) {
 }
 
 async function handleNhlRequest(req, res, client, ds) {
-  let caller;
+  let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   try {
     caller = await withTimeout(
       resolveNbaCaller(client, req.headers?.authorization),
@@ -350,15 +350,17 @@ async function handleNhlRequest(req, res, client, ds) {
       'NHL access lookup timed out'
     );
   } catch {
-    return forbid(res);
+    // A lookup blip must not open the board. Fall through to the free preview.
+    caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   }
-  // The email on this object came from Supabase auth.getUser. A paid tier
-  // and the nhl_public flag are not consulted.
+  // Same entitlement as KBO/WNBA/NFL, plus the admin email. Anything short of
+  // 'full' is the public preview, not a 403.
   const decision = nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
   });
-  if (decision !== 'full') return forbid(res);
 
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
@@ -381,13 +383,16 @@ async function handleNhlRequest(req, res, client, ds) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
+  const shaped = decision === 'full'
+    ? { data: row.data, preview: false, lockedCount: 0 }
+    : shapeForTier(ds, row.data, 'free');
   return res.status(200).json({
-    data: row.data,
+    data: shaped.data,
     updatedAt: row.updated_at || null,
-    preview: false,
-    lockedCount: 0,
-    tier: caller.tier,
-    access: sportAccess(caller.tier),
+    preview: shaped.preview,
+    lockedCount: shaped.lockedCount,
+    tier: caller.tierResolved === true ? caller.tier : 'free',
+    access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
   });
 }
 
@@ -405,6 +410,8 @@ export async function nhlSectionOpen(req, client) {
   return nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
   }) === 'full';
 }
 

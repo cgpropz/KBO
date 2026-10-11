@@ -11,17 +11,21 @@ const TEASER_IMAGE = {
   kbo: '/landing-screenshots/kbo-projections.png',
   wnba: '/landing-screenshots/wnba-edge-board.png',
   nfl: '/landing-screenshots/nfl-player-detail.png',
+  nhl: '/sport-cards/nhl-card.webp',
 };
 
-export default function Paywall({ children, onNavigate, sport = 'kbo' }) {
+const SPORT_LABEL = { wnba: 'WNBA', nfl: 'NFL', nhl: 'NHL', kbo: 'KBO' };
+
+export default function Paywall({ children, onNavigate, sport = 'kbo', unlocked = false }) {
   const { tier } = useAuth();
   const access = sportAccess(tier);
-  const isPaid = sport === 'wnba' ? access.wnba : sport === 'nfl' ? access.nfl : access.kbo;
+  const entitled = sport === 'wnba' ? access.wnba : sport === 'nfl' ? access.nfl : sport === 'nhl' ? access.nhl : access.kbo;
+  const isPaid = unlocked === true || entitled;
   const discordOnly = tier === 'discord';
 
   if (isPaid) return children;
 
-  const sportLabel = sport === 'wnba' ? 'WNBA' : sport === 'nfl' ? 'NFL' : 'KBO';
+  const sportLabel = SPORT_LABEL[sport] || 'KBO';
   const teaser = TEASER_IMAGE[sport] || TEASER_IMAGE.kbo;
 
   return (

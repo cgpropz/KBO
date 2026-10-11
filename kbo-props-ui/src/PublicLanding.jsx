@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { NBA_CARD, NHL_CARD, SPORTS } from './sportsMeta';
+import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
-import { useNhlOpen } from './useNhlOpen';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
@@ -19,8 +18,9 @@ import './PublicLanding.css';
  * Props:
  *   onGetStarted() → reveal AuthPage in 'signup' mode
  *   onLogin()      → reveal AuthPage in 'login' mode
- *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl') in free preview mode.
+ *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl' | 'nhl') in free preview mode.
  *   The NBA card is visible but locked for logged-out visitors and does not open.
+ *   NHL is live: logged-out visitors open it and see the same paywall as the other sports.
  */
 
 const TOOLS = [
@@ -28,7 +28,7 @@ const TOOLS = [
     id: 'projections',
     kicker: 'PROJECTIONS',
     title: 'Model projections for every board.',
-    text: 'Data-driven projections built from recent form, matchups, and historical trends — refreshed automatically across KBO, WNBA, and NFL.',
+    text: 'Data-driven projections built from recent form, matchups, and historical trends — refreshed automatically across KBO, WNBA, NFL, and NHL.',
     image: '/landing-screenshots/kbo-projections.png',
     alt: 'KBO batter projection table with matchup and hit-rate context',
   },
@@ -53,11 +53,11 @@ const TOOLS = [
 const FAQS = [
   {
     q: 'What\'s included in the free tier?',
-    a: 'You get the landing page, today\'s KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA & NFL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport.',
+    a: 'You get the landing page, today\'s KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA, NFL, and NHL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport.',
   },
   {
     q: 'Does one subscription cover every sport?',
-    a: 'Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. Discord Only is separate: props in Discord, not the site boards.',
+    a: 'Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
   },
   {
     q: 'Can I cancel anytime?',
@@ -69,13 +69,12 @@ const FAQS = [
   },
   {
     q: 'How often is the data updated?',
-    a: 'KBO projections and props refresh multiple times daily before games. WNBA and NFL projections, edge, and lineups refresh on their own schedule ahead of tip-off/kickoff, so you always have the latest numbers.',
+    a: 'KBO projections and props refresh multiple times daily before games. WNBA, NFL, and NHL projections, edge, and lineups refresh on their own schedule ahead of tip-off, kickoff, and puck drop, so you always have the latest numbers.',
   },
 ];
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const { open: nbaOpen } = useNbaOpen();
-  const { open: nhlOpen } = useNhlOpen();
   const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
   const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
@@ -130,10 +129,10 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             </h1>
             <p className="pl-hero-sub">
               Data-driven projections, hit rates, and prop analysis across KBO baseball,
-              WNBA basketball, and NFL football — all under one login, one subscription.
+              WNBA basketball, NFL football, and NHL hockey — all under one login, one subscription.
             </p>
             <div className="pl-sport-icons" aria-hidden="true">
-              <span>⚾</span><span>🏀</span><span>🏈</span>
+              <span>⚾</span><span>🏀</span><span>🏈</span><span>🏒</span>
             </div>
             <div className="pl-hero-cta">
               <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
@@ -183,13 +182,12 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <h2>One subscription. Every sport.</h2>
           </div>
           <div className="pl-sports-grid">
-            {[...SPORTS, NBA_CARD, NHL_CARD].map((s) => (
+            {[...SPORTS, NBA_CARD].map((s) => (
               <LandingSportCard
                 key={s.id}
                 variant="public"
                 sport={s}
                 nbaOpen={nbaOpen}
-                nhlOpen={nhlOpen}
                 onOpen={(id) => (onOpenBoard ? onOpenBoard(id) : onGetStarted())}
               />
             ))}

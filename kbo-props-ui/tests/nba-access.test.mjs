@@ -1,4 +1,4 @@
-// NBA gate. KBO/WNBA/NFL sportAccess() must stay { kbo, wnba, nfl }.
+// NBA gate. sportAccess() is { kbo, wnba, nfl, nhl } and still has no nba key.
 // Run with the rest of the API tests: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
@@ -18,21 +18,21 @@ import {
 import { handleNbaAccessRequest } from '../api/_nbaAccess.js'
 
 const SPORT_ACCESS = {
-  undefined: { kbo: false, wnba: false, nfl: false },
-  null: { kbo: false, wnba: false, nfl: false },
-  '': { kbo: false, wnba: false, nfl: false },
-  free: { kbo: false, wnba: false, nfl: false },
-  kbo: { kbo: true, wnba: false, nfl: false },
-  wnba: { kbo: false, wnba: true, nfl: false },
-  owner: { kbo: true, wnba: true, nfl: true },
-  pro: { kbo: true, wnba: true, nfl: true },
-  monthly: { kbo: true, wnba: true, nfl: true },
-  weekly: { kbo: true, wnba: true, nfl: true },
-  season: { kbo: true, wnba: true, nfl: true },
-  all: { kbo: true, wnba: true, nfl: true },
-  combined: { kbo: true, wnba: true, nfl: true },
+  undefined: { kbo: false, wnba: false, nfl: false, nhl: false },
+  null: { kbo: false, wnba: false, nfl: false, nhl: false },
+  '': { kbo: false, wnba: false, nfl: false, nhl: false },
+  free: { kbo: false, wnba: false, nfl: false, nhl: false },
+  kbo: { kbo: true, wnba: false, nfl: false, nhl: false },
+  wnba: { kbo: false, wnba: true, nfl: false, nhl: false },
+  owner: { kbo: true, wnba: true, nfl: true, nhl: true },
+  pro: { kbo: true, wnba: true, nfl: true, nhl: true },
+  monthly: { kbo: true, wnba: true, nfl: true, nhl: true },
+  weekly: { kbo: true, wnba: true, nfl: true, nhl: true },
+  season: { kbo: true, wnba: true, nfl: true, nhl: true },
+  all: { kbo: true, wnba: true, nfl: true, nhl: true },
+  combined: { kbo: true, wnba: true, nfl: true, nhl: true },
   // Lifetime purchases are stored as tier 'combined', not the string 'lifetime'.
-  lifetime: { kbo: false, wnba: false, nfl: false },
+  lifetime: { kbo: false, wnba: false, nfl: false, nhl: false },
 }
 
 beforeEach(() => _clearCache())
@@ -44,8 +44,8 @@ test('KBO, WNBA, and NFL access is unchanged on the client and the server', () =
     const key = tier === undefined ? 'undefined' : tier === null ? 'null' : tier
     assert.deepEqual(serverAccess(tier), SPORT_ACCESS[key], `server ${key}`)
     assert.deepEqual(clientAccess(tier), SPORT_ACCESS[key], `client ${key}`)
-    assert.deepEqual(Object.keys(serverAccess(tier)), ['kbo', 'wnba', 'nfl'])
-    assert.deepEqual(Object.keys(clientAccess(tier)), ['kbo', 'wnba', 'nfl'])
+    assert.deepEqual(Object.keys(serverAccess(tier)), ['kbo', 'wnba', 'nfl', 'nhl'])
+    assert.deepEqual(Object.keys(clientAccess(tier)), ['kbo', 'wnba', 'nfl', 'nhl'])
   }
 })
 
@@ -436,6 +436,6 @@ test('non-NBA datasets still preview when the token is invalid', async () => {
   )
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.preview, true)
-  assert.deepEqual(Object.keys(res.body.access), ['kbo', 'wnba', 'nfl'])
-  assert.deepEqual(res.body.access, { kbo: false, wnba: false, nfl: false })
+  assert.deepEqual(Object.keys(res.body.access), ['kbo', 'wnba', 'nfl', 'nhl'])
+  assert.deepEqual(res.body.access, { kbo: false, wnba: false, nfl: false, nhl: false })
 })

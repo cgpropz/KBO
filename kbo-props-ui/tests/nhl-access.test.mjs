@@ -1,4 +1,4 @@
-// NHL is the admin email only. sportAccess stays { kbo, wnba, nfl }.
+// NHL follows the same All-Access entitlement as KBO, WNBA, and NFL.
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import {
@@ -8,16 +8,29 @@ import {
 } from '../api/_dataAccess.js'
 import { handleDataRequest, _clearCache } from '../api/data.js'
 import { handleNhlAccessRequest } from '../api/_nhlAccess.js'
-import { landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
+import {
+  DISCORD_MONTHLY_PRICE_ID,
+  DISCORD_WEEKLY_PRICE_ID,
+  TIER_BY_PRICE,
+  tierForPrice,
+} from '../api/_stripeTier.js'
+import { devTierOverride, landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
+
+const ALL_ACCESS_PRICE_IDS = {
+  'price_1TtFErPwL0k9PEMvIrEJajK1': 'weekly',
+  'price_1TtFFePwL0k9PEMvPJUUwuTr': 'monthly',
+  'price_1THZjaPwL0k9PEMvARtuGG1F': 'lifetime',
+}
 
 beforeEach(() => _clearCache())
 
-test('NHL does not change KBO, WNBA, or NFL access keys', () => {
-  assert.deepEqual(Object.keys(serverAccess('owner')), ['kbo', 'wnba', 'nfl'])
-  assert.deepEqual(Object.keys(clientAccess('free')), ['kbo', 'wnba', 'nfl'])
+test('NHL is live for every visitor, and All-Access includes it beside NFL', () => {
+  assert.deepEqual(Object.keys(serverAccess('owner')), ['kbo', 'wnba', 'nfl', 'nhl'])
+  assert.deepEqual(Object.keys(clientAccess('free')), ['kbo', 'wnba', 'nfl', 'nhl'])
+  assert.equal(serverAccess('combined').nhl, clientAccess('combined').nhl)
   assert.equal(landingSportOpens('kbo', false), true)
-  assert.equal(landingSportOpens('nhl', true), false)
-  assert.equal(landingSportOpens('nhl', true, true), true)
+  assert.equal(landingSportOpens('nhl', false, false), true)
+  assert.equal(landingSportOpens('nba', false, true), false)
   assert.equal(landingSportOpens('nba', true, false), true)
 })
 
@@ -25,26 +38,54 @@ test('the dev screenshot query cannot open a production build', () => {
   assert.equal(nhlDevBypass(false, '?nhl=1'), false)
   assert.equal(nhlDevBypass(true, '?nhl=1'), true)
   assert.equal(nhlDevBypass(true, ''), false)
+  assert.equal(devTierOverride(false, '?previewTier=combined'), null)
+  assert.equal(devTierOverride(true, '?previewTier=combined'), 'combined')
+  assert.equal(devTierOverride(true, '?previewTier=discord'), 'discord')
+  assert.equal(devTierOverride(true, '?previewTier=nope'), null)
 })
 
-test('only the admin email can see NHL, paid members included', () => {
+test('All-Access tiers and the admin email get full NHL; Discord and free get a preview', () => {
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: 'cgpropz@gmail.com',
+    emailResolved: true, email: 'cgpropz@gmail.com', tierResolved: true, tier: 'free',
   }), 'full')
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: '  CGPropz@gmail.com ',
+    emailResolved: true, email: '  CGPropz@gmail.com ', tierResolved: false, tier: 'free',
   }), 'full')
-  for (const tier of ['free', 'kbo', 'wnba', 'combined', 'owner', 'pro', 'monthly', 'weekly', 'season', 'all']) {
+  for (const tier of ['combined', 'owner', 'pro', 'monthly', 'weekly', 'season', 'all']) {
     assert.equal(nhlAccessDecision({
-      emailResolved: true, email: 'fan@example.com', tierResolved: true, tier, flagResolved: true, nhlPublic: true,
-    }), 'deny', tier)
+      emailResolved: true, email: 'fan@example.com', tierResolved: true, tier,
+    }), 'full', tier)
+    assert.equal(serverAccess(tier).nhl, true, tier)
+    assert.equal(clientAccess(tier).nhl, true, tier)
+  }
+  for (const tier of ['free', 'discord', 'kbo', 'wnba', 'lifetime']) {
+    assert.equal(nhlAccessDecision({
+      emailResolved: true, email: 'fan@example.com', tierResolved: true, tier,
+    }), 'preview', tier)
+    assert.equal(serverAccess(tier).nhl, false, tier)
   }
   assert.equal(nhlAccessDecision({
-    emailResolved: false, email: 'cgpropz@gmail.com', tierResolved: true, tier: 'owner', flagResolved: true, nhlPublic: true,
-  }), 'deny')
+    emailResolved: false, email: 'cgpropz@gmail.com', tierResolved: true, tier: 'owner',
+  }), 'preview')
   assert.equal(nhlAccessDecision({
-    emailResolved: true, email: null, tierResolved: true, tier: 'owner', flagResolved: true, nhlPublic: true,
-  }), 'deny')
+    emailResolved: true, email: 'fan@example.com', tierResolved: false, tier: 'combined',
+  }), 'preview')
+  assert.equal(nhlAccessDecision({
+    emailResolved: true, email: null, tierResolved: true, tier: 'free',
+  }), 'preview')
+})
+
+test('live All-Access price ids include NHL and Discord Only prices do not', () => {
+  for (const [priceId, label] of Object.entries(ALL_ACCESS_PRICE_IDS)) {
+    assert.equal(TIER_BY_PRICE[priceId], 'combined', label)
+    assert.equal(serverAccess(tierForPrice(priceId)).nhl, true, label)
+  }
+  assert.equal(tierForPrice(DISCORD_WEEKLY_PRICE_ID), 'discord')
+  assert.equal(tierForPrice(DISCORD_MONTHLY_PRICE_ID), 'discord')
+  assert.equal(serverAccess(tierForPrice(DISCORD_WEEKLY_PRICE_ID)).nhl, false)
+  assert.equal(serverAccess(tierForPrice(DISCORD_MONTHLY_PRICE_ID)).nhl, false)
+  assert.equal(serverAccess(tierForPrice('price_1THCokPwL0k9PEMvcWwT7F2c')).nhl, false)
+  assert.equal(serverAccess(tierForPrice('price_1TtFEPPwL0k9PEMvc8kcK6Ut')).nhl, false)
 })
 
 test('an unconfirmed goalie is not one of the free top rows', () => {
@@ -70,13 +111,32 @@ function mockRes() {
   }
 }
 
+const PROJECTION_ROWS = [
+  { player: 'Mikko Rantanen', projection: 3.2, line: 2.5, rankEligible: true },
+  { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true },
+  { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true },
+  { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true },
+]
+
 function mockClient({ flag = false } = {}) {
   const users = {
     'tok-owner': { id: 'u-owner', email: 'CGPropz@gmail.com' },
     'tok-fan': { id: 'u-fan', email: 'fan@example.com' },
     'tok-member': { id: 'u-member', email: 'member@example.com' },
+    'tok-weekly': { id: 'u-weekly', email: 'weekly@example.com' },
+    'tok-monthly': { id: 'u-monthly', email: 'monthly@example.com' },
+    'tok-discord': { id: 'u-discord', email: 'discord@example.com' },
+    'tok-kbo': { id: 'u-kbo', email: 'kbo@example.com' },
   }
-  const profiles = { 'u-owner': 'free', 'u-fan': 'combined', 'u-member': 'owner' }
+  const profiles = {
+    'u-owner': 'free',
+    'u-fan': 'combined',
+    'u-member': 'owner',
+    'u-weekly': 'weekly',
+    'u-monthly': 'monthly',
+    'u-discord': 'discord',
+    'u-kbo': 'kbo',
+  }
   return {
     auth: {
       getUser(token) {
@@ -98,9 +158,9 @@ function mockClient({ flag = false } = {}) {
           if (table === 'app_flags') {
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
-          if (table === 'nhl_projections') {
+          if (table === 'nhl_projections' || table === 'nhl_lineups') {
             return Promise.resolve({
-              data: { data: [{ player: 'Mikko Rantanen', projection: 3.2, line: 2.5, rankEligible: true }], updated_at: '2026-10-09T00:00:00Z' },
+              data: { data: PROJECTION_ROWS, updated_at: '2026-10-09T00:00:00Z' },
               error: null,
             })
           }
@@ -121,27 +181,34 @@ function mockClient({ flag = false } = {}) {
   }
 }
 
-test('the admin can read NHL data and a paid member cannot, even if the flag is on', async () => {
+test('All-Access and the admin read full NHL data; Discord, legacy, and logged-out get the preview', async () => {
   const client = mockClient({ flag: true })
-  const res = mockRes()
-  await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
-    res,
-    client,
-  )
-  assert.equal(res.statusCode, 200)
-  assert.equal(res.body.preview, false)
-  assert.equal(res.body.data[0].player, 'Mikko Rantanen')
-
-  for (const token of ['tok-fan', 'tok-member', 'tok-nope']) {
-    const denied = mockRes()
+  for (const token of ['tok-owner', 'tok-fan', 'tok-member', 'tok-weekly', 'tok-monthly']) {
+    const res = mockRes()
     await handleDataRequest(
       { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${token}` } },
-      denied,
+      res,
       client,
     )
-    assert.equal(denied.statusCode, 403, token)
-    assert.equal(denied.body.data, undefined)
+    assert.equal(res.statusCode, 200, token)
+    assert.equal(res.body.preview, false, token)
+    assert.equal(res.body.lockedCount, 0, token)
+    assert.equal(res.body.data.length, 4, token)
+    assert.equal(res.body.access.nhl, token === 'tok-owner' ? false : true, token)
+  }
+
+  for (const token of ['tok-discord', 'tok-kbo', 'tok-nope']) {
+    const preview = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${token}` } },
+      preview,
+      client,
+    )
+    assert.equal(preview.statusCode, 200, token)
+    assert.equal(preview.body.preview, true, token)
+    assert.equal(preview.body.data.length, 3, token)
+    assert.equal(preview.body.lockedCount, 1, token)
+    assert.equal(preview.body.access.nhl, false, token)
   }
 
   const anon = mockRes()
@@ -150,34 +217,40 @@ test('the admin can read NHL data and a paid member cannot, even if the flag is 
     anon,
     client,
   )
-  assert.equal(anon.statusCode, 403)
+  assert.equal(anon.statusCode, 200)
+  assert.equal(anon.body.preview, true)
+  assert.equal(anon.body.data.length, 3)
 
-  const adminOpen = mockRes()
-  await handleNhlAccessRequest(
-    { method: 'GET', headers: { authorization: 'Bearer tok-owner' } },
-    adminOpen,
-    client,
-  )
-  assert.deepEqual(adminOpen.body, { open: true })
+  for (const token of ['tok-owner', 'tok-fan', 'tok-weekly', 'tok-monthly']) {
+    const open = mockRes()
+    await handleNhlAccessRequest(
+      { method: 'GET', headers: { authorization: `Bearer ${token}` } },
+      open,
+      client,
+    )
+    assert.deepEqual(open.body, { open: true }, token)
+  }
 
-  const memberOpen = mockRes()
-  await handleNhlAccessRequest(
-    { method: 'GET', headers: { authorization: 'Bearer tok-member' } },
-    memberOpen,
-    client,
-  )
-  assert.deepEqual(memberOpen.body, { open: false })
+  for (const token of ['tok-discord', 'tok-kbo']) {
+    const closed = mockRes()
+    await handleNhlAccessRequest(
+      { method: 'GET', headers: { authorization: `Bearer ${token}` } },
+      closed,
+      client,
+    )
+    assert.deepEqual(closed.body, { open: false }, token)
+  }
 
   const loggedOut = mockRes()
   await handleNhlAccessRequest({ method: 'GET', headers: {} }, loggedOut, client)
   assert.deepEqual(loggedOut.body, { open: false })
 })
 
-test('NHL defense vs position is admin only', async () => {
+test('NHL defense vs position follows the same All-Access gate', async () => {
   const client = mockClient()
   const res = mockRes()
   await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-owner' } },
+    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-fan' } },
     res,
     client,
   )
@@ -186,16 +259,15 @@ test('NHL defense vs position is admin only', async () => {
   assert.equal(res.body.data.windows.blend.stats.sog.teams[0].team, 'TOR')
   assert.equal(res.body.data.windows.blend.stats.sog.teams[0].rank, 32)
 
-  for (const token of ['tok-fan', 'tok-member', 'tok-nope']) {
-    const denied = mockRes()
-    await handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: `Bearer ${token}` } },
-      denied,
-      client,
-    )
-    assert.equal(denied.statusCode, 403, token)
-    assert.equal(denied.body.data, undefined)
-  }
+  const discord = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-discord' } },
+    discord,
+    client,
+  )
+  assert.equal(discord.statusCode, 200)
+  assert.equal(discord.body.preview, true)
+  assert.equal(discord.body.data.windows.blend.stats.sog.teams[0].team, 'TOR')
 
   const anon = mockRes()
   await handleDataRequest(
@@ -203,7 +275,7 @@ test('NHL defense vs position is admin only', async () => {
     anon,
     client,
   )
-  assert.equal(anon.statusCode, 403)
+  assert.equal(anon.statusCode, 404)
 
   const missing = mockRes()
   await handleDataRequest(

@@ -3,10 +3,11 @@ import { useAuth } from './AuthContext';
 import { nhlDevBypass } from './entitlements';
 import { supabase } from './supabaseClient';
 
-// The browser does not decide. Every signed-in account, including the admin
-// email, asks /api/nhl-access and stays closed until that says open. That
-// endpoint reads the email from the Supabase session. Logged-out visitors
-// stay closed and do not call it.
+// The browser does not decide full access. Every signed-in account asks
+// /api/nhl-access, which uses the same All-Access entitlement as KBO, WNBA,
+// and NFL, plus the admin email. Logged-out visitors stay closed and do not
+// call it. The NHL tab itself stays visible; this flag only lifts the paywall
+// for the admin when their stored tier is not already All-Access.
 // A dev server with ?nhl=1 opens the tab for screenshots. Production builds
 // compile DEV to false, so that query cannot open the live site.
 const listeners = new Set();
