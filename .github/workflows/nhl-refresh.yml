@@ -80,7 +80,8 @@ jobs:
       - name: Publish public board status
         if: always()
         continue-on-error: true
-        run: bash pipeline/commit_status.sh "chore: nhl board status"
+        run: |
+          bash pipeline/commit_status.sh "chore: nhl board status"
 
       - name: Freeze NHL slate into memory/
         if: success()

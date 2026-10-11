@@ -162,7 +162,8 @@ jobs:
       - name: Publish public board status
         if: always()
         continue-on-error: true
-        run: bash pipeline/commit_status.sh "chore: wnba board status"
+        run: |
+          bash pipeline/commit_status.sh "chore: wnba board status"
 
       # The former "Commit refreshed WNBA projection snapshots" step pushed the
       # paid prop-line boards to the public repo. They now live only in Supabase
