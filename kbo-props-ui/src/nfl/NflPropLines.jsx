@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
+import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
 import { useAuth } from '../AuthContext'
@@ -244,6 +245,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [openId, setOpenId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState } = useBoardOdds(
     () => fetchNflSharpOdds().then(({ records, preview }) => ({ records, preview })),
   )
@@ -258,7 +260,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setLockedCount(preview ? locked : 0); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview ? locked : 0); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
@@ -340,7 +342,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         ))}
       </div>
       <div className="nfl-board-header">
-        <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1></div>
+        <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>

@@ -77,6 +77,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      - name: Publish public board status
+        if: always()
+        continue-on-error: true
+        run: bash pipeline/commit_status.sh "chore: nhl board status"
+
       - name: Freeze NHL slate into memory/
         if: success()
         continue-on-error: true

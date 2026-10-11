@@ -6,7 +6,7 @@ import { teamLogoUrl } from './nhlTeams'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
-import { formatBoardUpdated } from './formatBoardUpdated'
+import BoardStatus from '../BoardStatus'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -153,9 +153,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
         ))}
       </div>
       <div className="nfl-board-header">
-        <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1></div>
+        <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
-          {formatBoardUpdated(updatedAt) && <span>Last updated {formatBoardUpdated(updatedAt)}</span>}
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
           <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
             <option>CG Score</option>

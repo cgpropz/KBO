@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
+import BoardStatus from '../BoardStatus'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
 import { wnbaRecordsAsSharp } from '../boardOdds'
@@ -407,6 +408,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [openId, setOpenId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState } = useBoardOdds(() => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json').then((snapshot) => {
     const payload = snapshot?.data
     const records = Array.isArray(payload?.records) ? payload.records : []
@@ -436,6 +438,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         ])
         if (cancelled) return
         setLockedCount(pr?.preview ? pr.lockedCount : 0)
+        setUpdatedAt(pr?.updatedAt || null)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
       } catch (err) {
@@ -625,7 +628,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             ))}
           </div>
           <div className="wnba-board-header">
-            <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1></div>
+            <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="wnba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>

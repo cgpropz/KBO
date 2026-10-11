@@ -1,4 +1,5 @@
 import { fetchApiDataset } from './apiData';
+import { publishedAtFromPayload } from './boardFreshness';
 
 /*
  * KBO data loader.
@@ -35,9 +36,10 @@ export const dataUrl = (path) =>
 async function fetchStaticSnapshot(path) {
   const response = await fetch(dataUrl(path), { cache: 'no-store' });
   if (!response.ok) throw new Error(`Failed to load ${path}`);
+  const data = await response.json();
   return {
-    data: await response.json(),
-    updatedAt: response.headers.get('last-modified') || null,
+    data,
+    updatedAt: publishedAtFromPayload(data) || response.headers.get('last-modified') || null,
     source: 'static',
     preview: false,
     lockedCount: 0,

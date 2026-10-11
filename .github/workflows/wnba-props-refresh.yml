@@ -11,7 +11,8 @@ name: Refresh WNBA PrizePicks Lines (30 min)
 # It deliberately does NOT:
 #   • regenerate gamelogs / boxscores (read live from the committed CSVs),
 #   • re-export or publish players / teams / lineups / edge / dvp snapshots,
-#   • commit anything to the repo.
+#   • commit paid snapshots. The only commit is kbo-props-ui/public/status.json
+#     (clocks and prop counts, never the rows).
 #
 # It DOES rebuild the local DvP CSV tables from the committed boxscores before
 # export verification so SOURCE_THROUGH stays aligned with the latest games.
@@ -157,6 +158,11 @@ jobs:
           PUBLISH_ONLY_PREFIX: "wnba/projections"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Publish public board status
+        if: always()
+        continue-on-error: true
+        run: bash pipeline/commit_status.sh "chore: wnba board status"
 
       # The former "Commit refreshed WNBA projection snapshots" step pushed the
       # paid prop-line boards to the public repo. They now live only in Supabase
