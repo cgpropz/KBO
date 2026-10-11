@@ -3,18 +3,26 @@ import assert from 'node:assert/strict'
 import { NFL_LINE_FLOORS, nflCgScore } from '../src/nfl/nflLineFloors.js'
 import { DATASETS, gameAlreadyStarted } from '../api/_dataAccess.js'
 
-test('a line under the stat floor is scored against the floor', () => {
-  assert.equal(NFL_LINE_FLOORS['Receiving Yards'], 5.5)
-  assert.equal(NFL_LINE_FLOORS['Rush Yards'], 5.5)
+test('receiving and rushing yards use the Middle cap, and other floors stay put', () => {
+  assert.equal(NFL_LINE_FLOORS['Receiving Yards'], 15.5)
+  assert.equal(NFL_LINE_FLOORS['Rush Yards'], 18.5)
   assert.equal(NFL_LINE_FLOORS['Receptions'], 1.5)
-  assert.equal(nflCgScore(23.7, 2.5, 'Receiving Yards'), (23.7 / 5.5) * 50)
-  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), (9.7 / 5.5) * 50)
+  assert.equal(NFL_LINE_FLOORS['Pass Yards'], 186.5)
+  assert.equal(NFL_LINE_FLOORS['Rush+Rec Yds'], 30.5)
+  assert.equal(nflCgScore(23.7, 2.5, 'Receiving Yards'), (23.7 / 15.5) * 50)
+  assert.equal(nflCgScore(18.9, 7.5, 'Receiving Yards'), (18.9 / 15.5) * 50)
+  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), (9.7 / 18.5) * 50)
+  assert.equal(nflCgScore(17.6, 8.5, 'Rush Yards'), (17.6 / 18.5) * 50)
   assert.equal(nflCgScore(1.5, 0.5, 'Receptions'), 50)
 })
 
 test('a line above the floor keeps projection / line, and a 0.5 yardage line does not score', () => {
   assert.equal(nflCgScore(70, 64.5, 'Receiving Yards'), (70 / 64.5) * 50)
-  assert.equal(nflCgScore(26, 5.5, 'Receiving Yards'), (26 / 5.5) * 50)
+  assert.equal(nflCgScore(28.4, 17.5, 'Receiving Yards'), (28.4 / 17.5) * 50)
+  assert.equal(nflCgScore(27.9, 15.5, 'Receiving Yards'), (27.9 / 15.5) * 50)
+  assert.equal(nflCgScore(54.7, 41.5, 'Rush Yards'), (54.7 / 41.5) * 50)
+  assert.equal(nflCgScore(25, 18.5, 'Rush Yards'), (25 / 18.5) * 50)
+  assert.equal(nflCgScore(26, 5.5, 'Receiving Yards'), (26 / 15.5) * 50)
   assert.equal(nflCgScore(3, 2.5, 'Shots On Goal'), (3 / 2.5) * 50)
   assert.equal(nflCgScore(10.7, 0.5, 'Receiving Yards'), null)
   assert.equal(nflCgScore(9.8, 0.5, 'Rush Yards'), null)
@@ -55,9 +63,41 @@ test('the free preview skips a game whose start_time has already passed', () => 
     { player: 'Sterling Shepard', prop: 'Receiving Yards', projection: 15.1, line: 5.5, start_time: upcoming },
   ])
   assert.deepEqual(res.data.map((row) => [row.player, row.prop]), [
-    ['Theo Johnson', 'Receiving Yards'],
     ['Calvin Ridley', 'Receiving Yards'],
-    ['Raheim Sanders', 'Rush Yards'],
+    ['Theo Johnson', 'Receiving Yards'],
+    ['Sterling Shepard', 'Receiving Yards'],
   ])
+  assert.equal(res.data[2].line, 5.5)
   assert.equal(res.lockedCount, 1)
+})
+
+test('the free preview keeps one prop per player, the highest score', () => {
+  const preview = DATASETS.nfl_projections.free
+  const res = preview([
+    { player: 'Konata Mumpfield', prop: 'Receiving Yards', projection: 40, line: 20 },
+    { player: 'Konata Mumpfield', prop: 'Receptions', projection: 6, line: 4 },
+    { player: 'Brock Purdy', prop: 'Pass TDs', projection: 2, line: 1.5 },
+    { player: 'Rashod Bateman', prop: 'Rec Targets', projection: 4, line: 3.5 },
+    { player: 'Tyler Higbee', prop: 'Rush Attempts', projection: 10, line: 10 },
+    { player: 'Konata Mumpfield', prop: 'Receiving Yards', projection: 10.7, line: 0.5 },
+  ])
+  // Yards at 20 score 100 and beat his receptions at 75. The 0.5 yardage line
+  // does not score, so it is not his best prop and is not eligible.
+  assert.deepEqual(res.data.map((row) => [row.player, row.prop, row.line]), [
+    ['Konata Mumpfield', 'Receiving Yards', 20],
+    ['Brock Purdy', 'Pass TDs', 1.5],
+    ['Rashod Bateman', 'Rec Targets', 3.5],
+  ])
+  assert.equal(res.lockedCount, 2)
+})
+
+test('a tie keeps the earlier prop for that player', () => {
+  const preview = DATASETS.nfl_projections.free
+  const res = preview([
+    { player: 'Same Score', prop: 'Receptions', projection: 3, line: 3, id: 'first' },
+    { player: 'Same Score', prop: 'Rec Targets', projection: 4, line: 4, id: 'second' },
+    { player: 'Other', prop: 'Pass TDs', projection: 1, line: 2 },
+  ])
+  assert.equal(res.data[0].id, 'first')
+  assert.equal(res.data.filter((row) => row.player === 'Same Score').length, 1)
 })
