@@ -274,6 +274,7 @@ def push_snapshots_to_supabase(skip_flags):
     if prizepicks_payload is not None:
         _record_kbo_board_status(prizepicks_payload, published_at)
 
+    publish_optional_snapshot(client, "correlations_kbo.json", "correlations_kbo")
     return errors
 
 
@@ -285,6 +286,33 @@ def _record_kbo_board_status(payload, published_at):
         print("  ✓ public/status.json (kbo)")
     except Exception as exc:
         print(f"  ! status.json: {exc}")
+
+
+def build_kbo_correlations():
+    """Pair today's KBO lines. A failure must not fail the refresh."""
+    script = os.path.join(BASE, "pipeline", "build_correlations.py")
+    try:
+        result = subprocess.run([PYTHON, script, "--sport", "kbo"], cwd=BASE)
+    except Exception as exc:
+        print(f"⚠ KBO correlations failed — continuing ({exc})")
+        return
+    if result.returncode != 0:
+        print("⚠ KBO correlations failed — continuing")
+
+
+def publish_optional_snapshot(client, filename, table):
+    """Upload one paid file. Missing file or a missing table is not an error."""
+    file_path = os.path.join(PUBLIC_DATA, filename)
+    if not os.path.exists(file_path):
+        print(f"  ! {filename} not found; skipping optional snapshot")
+        return
+    try:
+        with open(file_path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        client.table(table).upsert({"id": 1, "data": payload}).execute()
+        print(f"  ✓ {table} updated")
+    except Exception as exc:
+        print(f"  ! {table} skipped: {exc}")
 
 
 def _read_json(path):
@@ -491,6 +519,7 @@ def main():
 
         failed.extend(summarize_gamelogs())
         failed.extend(validate_ui_snapshots())
+        build_kbo_correlations()
 
         gate_errors = evaluate_publish_gate(failed)
         if gate_errors:

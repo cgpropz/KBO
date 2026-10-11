@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { hasAnyPaidAccess } from './entitlements'
 import Paywall from './Paywall'
@@ -8,7 +8,6 @@ import StrikeoutProjections from './StrikeoutProjections'
 import BatterProjections from './BatterProjections'
 import PitcherRankings from './PitcherRankings'
 import PropTracker from './PropTracker'
-import SlipOptimizer from './SlipOptimizer'
 import MatchupDeepDive from './MatchupDeepDive'
 import SubscriptionPage from './SubscriptionPage'
 import TutorialPage from './TutorialPage'
@@ -26,6 +25,8 @@ const NAV_ITEMS = [
   { id: 'matchups', label: 'Matchups' },
 ]
 if (import.meta.env.DEV) NAV_ITEMS.push({ id: 'tutorial', label: 'Tutorial' })
+
+const SlipOptimizer = lazy(() => import('./SlipOptimizer'))
 
 /* Views that require a paid subscription (mirrors the pre-redesign App.jsx gate).
    'board' is excluded: it self-gates with a top-3-free / rest-locked preview,
@@ -51,7 +52,11 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
       case 'batters':     return <BatterProjections />
       case 'rankings':    return <PitcherRankings />
       case 'tracker':     return <PropTracker />
-      case 'optimizer':   return <SlipOptimizer onNavigate={setView} />
+      case 'optimizer':   return (
+        <Suspense fallback={<p style={{ color: '#888', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+          <SlipOptimizer sport="kbo" onNavigate={setView} />
+        </Suspense>
+      )
       case 'matchups':    return <MatchupDeepDive />
       case 'pricing':     return <SubscriptionPage />
       case 'tutorial':    return <TutorialPage onNavigate={setView} />
@@ -69,7 +74,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="kbo-app-nav-links">
           {NAV_ITEMS.map((item) => (
-            <button key={item.id} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
+            <button key={item.id} data-testid={item.id === 'optimizer' ? 'kbo-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
               {item.label}
             </button>
           ))}

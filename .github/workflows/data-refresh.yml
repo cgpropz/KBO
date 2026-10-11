@@ -111,6 +111,18 @@ jobs:
         continue-on-error: true
         run: bash pipeline/commit_status.sh "chore: kbo board status"
 
+      - name: Build KBO prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport kbo
+
+      - name: Publish KBO prop correlations
+        continue-on-error: true
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: correlations_kbo.json
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+
       # The former "Build and deploy odds-only update to Vercel" step existed only
       # to ship refreshed static JSON. Paid data now reaches the site through
       # Supabase + /api/data (published by refresh_odds.py above), so no deploy

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
@@ -14,7 +14,10 @@ const NAV_ITEMS = [
   { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
   { id: 'lineups', label: 'Lineups' },
+  { id: 'slip', label: 'Slip Builder' },
 ]
+
+const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
 const NAV_IDS = new Set(NAV_ITEMS.map((item) => item.id))
 
@@ -88,6 +91,13 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
     )
   } else if (view === 'players') content = <NbaPlayers initialName={playerName} />
   else if (view === 'projections') content = <NbaEdge />
+  else if (view === 'slip') {
+    content = (
+      <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+        <SlipOptimizer sport="nba" />
+      </Suspense>
+    )
+  }
   else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.lineups)} />
 
   return (
@@ -100,6 +110,7 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
             <button
               key={item.id}
               className={`btn-ghost${view === item.id ? ' active' : ''}`}
+              data-testid={item.id === 'slip' ? 'nba-slip-nav' : undefined}
               onClick={() => openView(item.id)}
             >
               {item.label}

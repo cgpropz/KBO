@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import './wnba.css'
 import Projections from './Projections'
@@ -17,10 +17,13 @@ const NAV_ITEMS = [
   { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
   { id: 'lineups', label: 'Lineups' },
+  { id: 'slip', label: 'Slip Builder' },
 ]
 
+const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
+
 // Paid WNBA views (mirrors KBO's PAID_VIEWS). Dashboard/Players/Teams stay free.
-const WNBA_PAID_VIEWS = new Set(['projections', 'lineups'])
+const WNBA_PAID_VIEWS = new Set(['projections', 'lineups', 'slip'])
 
 function ComingSoon({ label }) {
   return (
@@ -57,6 +60,11 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
       case 'players':     return <PlayerMap onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
       case 'teams':       return <Teams onSelectTeam={handleSelectTeam} />
       case 'lineups':     return <Lineups />
+      case 'slip':        return (
+        <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+          <SlipOptimizer sport="wnba" />
+        </Suspense>
+      )
       case 'playerDetail': return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
       default:            return <ComingSoon label="WNBA" />
     }
@@ -75,6 +83,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
             <button
               key={item.id}
               className={`btn-ghost${view === item.id ? ' active' : ''}`}
+              data-testid={item.id === 'slip' ? 'wnba-slip-nav' : undefined}
               onClick={() => setView(item.id)}
             >
               {item.label}

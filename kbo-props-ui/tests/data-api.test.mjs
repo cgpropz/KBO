@@ -4,7 +4,14 @@
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
-import { DATASETS, FREE_ROW_LIMIT, NFL_FREE_PREVIEW_ENABLED } from '../api/_dataAccess.js'
+import {
+  DATASETS,
+  FREE_ROW_LIMIT,
+  NFL_FREE_PREVIEW_ENABLED,
+  isNbaDataset,
+  isNhlDataset,
+  shapeForTier,
+} from '../api/_dataAccess.js'
 
 const NOW = '2026-09-25T12:00:00Z'
 
@@ -68,6 +75,18 @@ const TABLES = {
       total: { edge: i - 1 },
       moneyline: { edge: 0.5 },
     })),
+  },
+  correlations_kbo: {
+    sport: 'kbo', minShared: 15,
+    pairs: [{ player: 'A', stat: 'Strikeouts', partner: 'B', partnerStat: 'Hits+Runs+RBIs', agreement: 0.72, n: 18 }],
+  },
+  correlations_wnba: {
+    sport: 'wnba', minShared: 8,
+    pairs: [{ player: 'W', stat: 'Points', partner: 'X', partnerStat: 'Rebounds', agreement: 0.25, n: 10 }],
+  },
+  correlations_nfl: {
+    sport: 'nfl', minShared: 8,
+    pairs: [{ player: 'Q', stat: 'Pass Yards', partner: 'R', partnerStat: 'Receiving Yards', agreement: 0.81, n: 9 }],
   },
   nfl_sharp_odds: {
     generated_at: NOW,
@@ -331,6 +350,42 @@ test('NFL game markets preview keeps the biggest edges and the model label', asy
   const paid = await call('nfl_game_markets', 'tok-owner')
   assert.equal(paid.body.preview, false)
   assert.equal(paid.body.data.games.length, 6)
+})
+
+test('correlation files hide pair rates from free callers and from the wrong sport tier', async () => {
+  const free = await call('correlations_kbo')
+  assert.equal(free.statusCode, 200)
+  assert.equal(free.body.preview, true)
+  assert.deepEqual(free.body.data.pairs, [])
+  assert.equal(free.body.lockedCount, 1)
+
+  const kbo = await call('correlations_kbo', 'tok-kbo')
+  assert.equal(kbo.body.preview, false)
+  assert.equal(kbo.body.data.pairs[0].agreement, 0.72)
+
+  const wrongSport = await call('correlations_nfl', 'tok-kbo')
+  assert.equal(wrongSport.body.preview, true)
+  assert.deepEqual(wrongSport.body.data.pairs, [])
+  assert.equal(wrongSport.body.lockedCount, 1)
+
+  const owner = await call('correlations_nfl', 'tok-owner')
+  assert.equal(owner.body.preview, false)
+  assert.equal(owner.body.data.pairs.length, 1)
+
+  assert.equal(isNbaDataset('nba_correlations'), true)
+  assert.equal(isNbaDataset('correlations_kbo'), false)
+  assert.equal(isNhlDataset('nhl_correlations'), true)
+  const nbaDoc = { pairs: [{ player: 'A', stat: 'Points', partner: 'B', partnerStat: 'Rebounds', agreement: 0.7, n: 16 }] }
+  const nbaOwner = shapeForTier('nba_correlations', nbaDoc, 'owner')
+  assert.equal(nbaOwner.preview, true)
+  assert.deepEqual(nbaOwner.data.pairs, [])
+  const nhlOwner = shapeForTier('nhl_correlations', nbaDoc, 'owner')
+  assert.equal(nhlOwner.preview, false)
+  assert.equal(nhlOwner.data.pairs.length, 1)
+  const nhlFree = shapeForTier('nhl_correlations', nbaDoc, 'free')
+  assert.equal(nhlFree.preview, true)
+  assert.deepEqual(nhlFree.data.pairs, [])
+  assert.equal(nhlFree.lockedCount, 1)
 })
 
 test('unpublished table returns 404', async () => {
