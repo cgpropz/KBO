@@ -1,4 +1,6 @@
 """NFL game-market projections. Offline: no Unabated or Odds API calls."""
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -239,6 +241,98 @@ class PostedLineTests(unittest.TestCase):
         self.assertIsNotNone(game["moneyline"]["projection"])
         self.assertAlmostEqual(game["spread"]["edge"], round(game["spread"]["line"] - game["spread"]["projection"], 1))
         self.assertAlmostEqual(game["total"]["edge"], round(game["total"]["projection"] - game["total"]["line"], 1))
+
+
+def _push_globs(path):
+    """Positive and negative path filters under the first on.push.paths list."""
+    globs = []
+    in_push = False
+    in_paths = False
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if line.startswith("on:"):
+            in_push = False
+            in_paths = False
+        if line.startswith("  push:"):
+            in_push = True
+            continue
+        if in_push and line.startswith("    paths:"):
+            in_paths = True
+            continue
+        if not in_paths:
+            continue
+        if line.startswith("      - "):
+            globs.append(line.split("- ", 1)[1].strip().strip("'\""))
+            continue
+        if line.strip() == "" or line.startswith("      #"):
+            continue
+        break
+    return globs
+
+
+class GameMarketArchiveTests(unittest.TestCase):
+    def _snapshot(self, generated_at, spread_line, label):
+        return {
+            "generated_at": generated_at,
+            "provider": "unabated",
+            "status": "ok",
+            "message": label,
+            "week": 5,
+            "games": [{
+                "id": "2026-10-11-BAL-ATL",
+                "gameday": "2026-10-11",
+                "gametime": "20:20",
+                "awayTeam": "BAL",
+                "homeTeam": "ATL",
+                "awayScore": 24,
+                "homeScore": 23,
+                "spread": {"line": spread_line, "projection": -1, "edge": 4.0, "book": "Circa"},
+                "total": {"line": 43.5, "projection": 47, "edge": 3.5, "book": "Circa"},
+                "moneyline": {"line": -165, "projection": 113, "edge": -14.2, "book": "Circa"},
+            }],
+        }
+
+    def test_daily_board_is_replaced_and_line_captures_stay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = self._snapshot("2026-10-11T16:00:00Z", 3.0, "first")
+            second = self._snapshot("2026-10-11T23:00:00Z", None, "second")
+            for key in ("spread", "total", "moneyline"):
+                second["games"][0][key]["line"] = None
+            markets.archive_game_markets(first, root)
+            markets.archive_game_markets(second, root)
+            daily = json.loads((root / "2026-10-11.json").read_text(encoding="utf-8"))
+            self.assertEqual(daily, second)
+            early = json.loads((root / "lines" / "2026-10-11T160000Z.json").read_text(encoding="utf-8"))
+            late = json.loads((root / "lines" / "2026-10-11T230000Z.json").read_text(encoding="utf-8"))
+            self.assertEqual(early["games"][0]["spread"], {"line": 3.0, "book": "Circa"})
+            self.assertNotIn("projection", early["games"][0]["spread"])
+            self.assertNotIn("edge", early["games"][0]["spread"])
+            self.assertEqual(early["games"][0]["captured_at"], "2026-10-11T16:00:00Z")
+            # 8:20 PM ET in October is 00:20 UTC the next day.
+            self.assertEqual(early["games"][0]["kickoff_at"], "2026-10-12T00:20:00Z")
+            after = self._snapshot("2026-10-12T01:00:00Z", 9.0, "after kickoff")
+            markets.archive_game_markets(after, root)
+            captures = [
+                json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted((root / "lines").glob("*.json"))
+            ]
+            close = markets.closing_line_before_kickoff(captures, "2026-10-11-BAL-ATL", "2026-10-12T00:20:00Z")
+            self.assertEqual(close["captured_at"], "2026-10-11T16:00:00Z")
+            self.assertEqual(close["spread"]["line"], 3.0)
+            self.assertIsNone(late["games"][0]["spread"]["line"])
+
+    def test_memory_archive_commit_does_not_redeploy(self):
+        deploy = _push_globs(".github/workflows/deploy.yml")
+        refresh = _push_globs(".github/workflows/nfl-refresh.yml")
+        self.assertTrue(deploy)
+        self.assertTrue(any(item == "nfl/**" for item in refresh))
+        for item in deploy + refresh:
+            self.assertFalse(item.startswith("memory"), item)
+        workflow = Path(".github/workflows/nfl-refresh.yml").read_text(encoding="utf-8")
+        build_at = workflow.index("python nfl/game_markets.py")
+        archive_at = workflow.index('commit_memory.sh "chore: nfl game market archive"')
+        self.assertLess(build_at, archive_at)
+        self.assertIn("git add -- memory/", Path("pipeline/memory/commit_memory.sh").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

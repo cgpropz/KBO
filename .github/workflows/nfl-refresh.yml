@@ -65,10 +65,21 @@ jobs:
         run: python nfl/sharp_odds.py
 
       # Full-game spread, total, and moneyline. Unabated only. A failure here
-      # must not block the PrizePicks board publish below.
+      # must not block the PrizePicks board publish below. The script also
+      # writes memory/nfl/game_markets/ (the published board for the day, and
+      # one Unabated line capture per run).
       - name: Build NFL game-market projections
         continue-on-error: true
         run: python nfl/game_markets.py
+
+      # commit_memory.sh pushes only memory/ with the checkout GITHUB_TOKEN.
+      # That token does not start another workflow run. deploy.yml's push
+      # paths do not include memory/**, so this commit cannot redeploy.
+      - name: Publish NFL game-market memory archive
+        if: always()
+        continue-on-error: true
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: nfl game market archive"
 
       - name: Publish protected NFL snapshot
         run: python publish_supabase.py

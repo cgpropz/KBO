@@ -20,6 +20,7 @@ import sys
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent
@@ -37,6 +38,10 @@ from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES  # noqa: E402
 
 OUTPUT_PATH = ROOT / "game_markets.json"
 DEV_COPY_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "nfl" / "game_markets.json"
+# Dated copy of the published board, plus one Unabated line capture per run.
+# memory/** is committed by commit_memory.sh and is not a deploy.yml path.
+GAME_MARKET_MEMORY = REPO_ROOT / "memory" / "nfl" / "game_markets"
+EASTERN = ZoneInfo("America/New_York")
 # nflverse dropped uncompressed games.csv on 2026-10-06. pandas reads this gzip URL.
 GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
 UNABATED_ODDS_URL = "https://content.unabated.com/markets/v2/league/1/odds.json"
@@ -728,6 +733,102 @@ def fetch_unabated(url=UNABATED_ODDS_URL, timeout=120):
     return response.json()
 
 
+def kickoff_utc(gameday, gametime):
+    """nflverse gameday + gametime are Eastern. None when the clock is missing."""
+    if not gameday or not gametime:
+        return None
+    parts = str(gametime).split(":")
+    if len(parts) < 2:
+        return None
+    try:
+        day = date.fromisoformat(str(gameday))
+        hour = int(parts[0])
+        minute = int(parts[1])
+        local = datetime(day.year, day.month, day.day, hour, minute, tzinfo=EASTERN)
+    except (TypeError, ValueError):
+        return None
+    return local.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _posted_side(market):
+    market = market or {}
+    return {"line": market.get("line"), "book": market.get("book")}
+
+
+def line_capture(game, captured_at):
+    """Unabated spread, total, and moneyline for one game. Not the model."""
+    return {
+        "id": game.get("id"),
+        "gameday": game.get("gameday") or "",
+        "gametime": game.get("gametime") or "",
+        "kickoff_at": kickoff_utc(game.get("gameday"), game.get("gametime")),
+        "awayTeam": game.get("awayTeam"),
+        "homeTeam": game.get("homeTeam"),
+        "captured_at": captured_at,
+        "spread": _posted_side(game.get("spread")),
+        "total": _posted_side(game.get("total")),
+        "moneyline": _posted_side(game.get("moneyline")),
+    }
+
+
+def _has_posted_number(game):
+    for key in ("spread", "total", "moneyline"):
+        if (game.get(key) or {}).get("line") is not None:
+            return True
+    return False
+
+
+def closing_line_before_kickoff(captures, game_id, kickoff_at):
+    """Latest Unabated capture strictly before kickoff that posted a number.
+
+    `captures` are the per-run line documents. A later capture with no number
+    does not erase the previous one.
+    """
+    if not game_id or not kickoff_at:
+        return None
+    chosen = None
+    for doc in captures or []:
+        captured = doc.get("captured_at") or ""
+        if not captured or captured >= kickoff_at:
+            continue
+        for game in doc.get("games") or []:
+            if game.get("id") != game_id or not _has_posted_number(game):
+                continue
+            if chosen is None or captured > (chosen.get("captured_at") or ""):
+                chosen = game
+    return chosen
+
+
+def archive_game_markets(snapshot, memory_dir=GAME_MARKET_MEMORY, now=None):
+    """Write the published board and a per-run Unabated line capture.
+
+    `memory_dir/YYYY-MM-DD.json` is the published snapshot. A later run on the
+    same UTC day replaces it. `memory_dir/lines/<captured_at>.json` is one file
+    per run, so the last capture before kickoff is still there.
+    """
+    captured_at = snapshot.get("generated_at")
+    if not captured_at:
+        moment = now or datetime.now(timezone.utc)
+        captured_at = moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    day = str(captured_at)[:10]
+    memory_dir = Path(memory_dir)
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    daily_path = memory_dir / f"{day}.json"
+    daily_path.write_text(json.dumps(snapshot, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    lines_dir = memory_dir / "lines"
+    lines_dir.mkdir(parents=True, exist_ok=True)
+    lines_name = str(captured_at).replace(":", "") + ".json"
+    lines_path = lines_dir / lines_name
+    lines = {
+        "captured_at": captured_at,
+        "week": snapshot.get("week"),
+        "status": snapshot.get("status"),
+        "games": [line_capture(game, captured_at) for game in (snapshot.get("games") or [])],
+    }
+    lines_path.write_text(json.dumps(lines, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    return {"daily": daily_path, "lines": lines_path, "captured_at": captured_at}
+
+
 def write_snapshot(snapshot, output_path=OUTPUT_PATH, dev_copy_path=DEV_COPY_PATH):
     text = json.dumps(snapshot, indent=2, allow_nan=False) + "\n"
     output_path.write_text(text, encoding="utf-8")
@@ -760,10 +861,12 @@ def main():
             lines_status = "lines_unavailable"
     snapshot = build_snapshot(schedule, schedule, payload, today=args.today, lines_status=lines_status)
     write_snapshot(snapshot, output_path=args.output)
+    archived = archive_game_markets(snapshot)
     print(
         f"Wrote {len(snapshot['games'])} NFL game markets "
         f"(week {snapshot['week']}, status {snapshot['status']}). {snapshot['message']}"
     )
+    print(f"Archived game markets to {archived['daily']} and {archived['lines']}.")
 
 
 if __name__ == "__main__":
