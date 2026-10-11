@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-12",
   "timezone_basis": "KST",
   "schema_version": 2,
-  "frozen_at": "2026-10-11T18:16:39.730346+00:00",
+  "frozen_at": "2026-10-11T19:09:37.510576+00:00",
   "source": "kbo-props-ui/public/data/prizepicks_props.json",
-  "source_commit": "e885d792475e",
+  "source_commit": "d2b4a990f031",
   "props": [
     {
       "projection": 1.75,
@@ -19,7 +19,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 1.5,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "OVER",
       "projection_source": "prizepicks_props.json",
       "rating": 58.3,
       "games_used": 93,
@@ -37,7 +37,7 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 59.9,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 70.0,
@@ -50,8 +50,9 @@
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 84
     },
     {
       "projection": 4.35,
@@ -64,7 +65,7 @@
       "stat": "Pitcher Strikeouts",
       "line": 4.5,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "strikeout_projections.json",
       "rating": 48.3,
       "games_used": 30,
@@ -79,7 +80,7 @@
         "league_avg_so_per_g": 7.671,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.128708+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.367628+00:00",
       "hit_rate_all": 46.9,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 20.0,
@@ -92,8 +93,9 @@
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 69
     },
     {
       "projection": 2.37,
@@ -106,7 +108,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 2.5,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "prizepicks_props.json",
       "rating": 47.4,
       "games_used": 139,
@@ -124,7 +126,7 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 39.8,
       "hit_rate_l5": 80.0,
       "hit_rate_l10": 80.0,
@@ -137,8 +139,9 @@
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 54
     },
     {
       "projection": 1.45,
@@ -151,7 +154,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 1.5,
       "odds_type": "demon",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "prizepicks_props.json",
       "rating": 48.3,
       "games_used": 133,
@@ -169,21 +172,22 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 54.7,
       "hit_rate_l5": 40.0,
       "hit_rate_l10": 30.0,
       "hit_rate_l20": 40.0,
       "baseline_projection": 1.44,
-      "baseline_recommendation": "PUSH",
+      "baseline_recommendation": "UNDER",
       "formula_mode": "tuned",
       "formula_applied": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 58
     },
     {
       "projection": 5.86,
@@ -196,7 +200,7 @@
       "stat": "Pitcher Strikeouts",
       "line": 6.0,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "strikeout_projections.json",
       "rating": 48.8,
       "games_used": 31,
@@ -211,21 +215,22 @@
         "league_avg_so_per_g": 7.671,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.128708+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.367628+00:00",
       "hit_rate_all": 31.5,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 40.0,
       "hit_rate_l20": 35.0,
       "baseline_projection": 6.09,
-      "baseline_recommendation": "PUSH",
+      "baseline_recommendation": "OVER",
       "formula_mode": "tuned",
       "formula_applied": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 55
     },
     {
       "projection": 1.97,
@@ -238,7 +243,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 2.0,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "prizepicks_props.json",
       "rating": 49.2,
       "games_used": 143,
@@ -256,7 +261,7 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 45.3,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 30.0,
@@ -269,8 +274,9 @@
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 60
     },
     {
       "projection": 1.46,
@@ -283,7 +289,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 1.5,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "UNDER",
       "projection_source": "prizepicks_props.json",
       "rating": 48.7,
       "games_used": 105,
@@ -301,21 +307,22 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 48.6,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 10.0,
       "hit_rate_l20": 25.0,
       "baseline_projection": 1.41,
-      "baseline_recommendation": "PUSH",
+      "baseline_recommendation": "UNDER",
       "formula_mode": "tuned",
       "formula_applied": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 62
     },
     {
       "projection": 2.77,
@@ -328,7 +335,7 @@
       "stat": "Hits+Runs+RBIs",
       "line": 2.5,
       "odds_type": "standard",
-      "recommendation": "PUSH",
+      "recommendation": "OVER",
       "projection_source": "prizepicks_props.json",
       "rating": 55.4,
       "games_used": 141,
@@ -346,7 +353,7 @@
         "venue": "Daegu",
         "home_team": "Samsung"
       },
-      "projections_generated_at": "2026-10-11T18:15:04.655251+00:00",
+      "projections_generated_at": "2026-10-11T19:09:16.849031+00:00",
       "hit_rate_all": 48.2,
       "hit_rate_l5": 80.0,
       "hit_rate_l10": 80.0,
@@ -359,8 +366,9 @@
       "start_time_utc": "2026-10-12T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-11T11:21:38+00:00",
-      "last_pregame_frozen_at": "2026-10-11T18:16:39+00:00",
-      "source_commit": "e885d792475e"
+      "last_pregame_frozen_at": "2026-10-11T19:09:37+00:00",
+      "source_commit": "d2b4a990f031",
+      "cg_projection": 77
     }
   ]
 }
