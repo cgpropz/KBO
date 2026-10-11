@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { BOOT_LINES, BOOT_SLOW_MS, bootIsSlow } from '../src/bootPhase.js'
+import { BOOT_LINES, BOOT_SLOW_MS, bootIsSlow, bootShowsLoader } from '../src/bootPhase.js'
 import { parseCachedSession, supabaseStorageKey } from '../src/supabaseClient.js'
 
 test('the compact loader waits until about 1.5s', () => {
@@ -9,6 +9,9 @@ test('the compact loader waits until about 1.5s', () => {
   assert.equal(bootIsSlow(1499), false)
   assert.equal(bootIsSlow(1500), true)
   assert.equal(bootIsSlow(Number.NaN), false)
+  assert.equal(bootShowsLoader(1500), true)
+  assert.equal(bootShowsLoader(1500, { inset: true }), false)
+  assert.equal(bootShowsLoader(200, { inset: false }), false)
 })
 
 test('the inline loader and the stylesheet share copy, color, and reduced motion', () => {

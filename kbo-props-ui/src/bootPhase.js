@@ -13,6 +13,12 @@ export function bootIsSlow(elapsed, limit = BOOT_SLOW_MS) {
   return Number(elapsed) >= limit
 }
 
+// The compact loader is only the full-page wait. An inset fallback sits under
+// a shell that is already on screen, so it stays on skeleton rows.
+export function bootShowsLoader(elapsed, { inset = false } = {}) {
+  return !inset && bootIsSlow(elapsed)
+}
+
 export function bootElapsed() {
   if (typeof performance === 'undefined') return 0
   const origin = typeof window !== 'undefined' && typeof window.__cgBoot === 'number'

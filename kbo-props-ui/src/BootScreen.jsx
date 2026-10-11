@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BOOT_LINES, BOOT_SLOW_MS, bootElapsed, bootIsSlow } from './bootPhase.js'
+import { BOOT_LINES, BOOT_SLOW_MS, bootElapsed, bootShowsLoader } from './bootPhase.js'
 import './bootScreen.css'
 
 function PickSkeleton() {
@@ -51,13 +51,13 @@ function LoaderStage() {
 }
 
 export default function BootScreen({ inset = false }) {
-  const [slow, setSlow] = useState(() => bootIsSlow())
+  const [slow, setSlow] = useState(() => bootShowsLoader(bootElapsed(), { inset }))
   useEffect(() => {
-    if (slow) return undefined
+    if (inset || slow) return undefined
     const wait = Math.max(0, BOOT_SLOW_MS - bootElapsed())
     const timer = setTimeout(() => setSlow(true), wait)
     return () => clearTimeout(timer)
-  }, [slow])
+  }, [inset, slow])
 
   return (
     <div
