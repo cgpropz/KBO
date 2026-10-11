@@ -4,6 +4,8 @@ import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
+import HitRateStrip from '../HitRateStrip'
+import { wnbaHitPills } from '../hitRateStrip'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -179,7 +181,7 @@ function MiniChart({ recent, line }) {
   return (
     <div className="wnba-lines-chart" aria-hidden="true">
       {recent.map((value, index) => (
-        <span key={index} className={value >= line ? 'hit' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
+        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
       ))}
     </div>
   )
@@ -193,32 +195,35 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
   return (
     <>
       <tr className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`} ref={open ? undefined : rowRef} onClick={locked ? undefined : onToggle}>
-        <td className="wnba-lines-player">
-          <div className="wnba-lines-avatar">
-            {item.imageUrl
-              ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
-              : initials(item.player)}
+        <td>
+          <div className="wnba-lines-player">
+            <div className="wnba-lines-avatar">
+              {item.imageUrl
+                ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+                : initials(item.player)}
+            </div>
+            <div className="wnba-lines-info">
+              <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
+              <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+            </div>
+            <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
-          <div className="wnba-lines-info">
-            <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
-            <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
-            <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
-          </div>
-          <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
         </td>
-        <td><MiniChart recent={recent} line={item.line} /></td>
-        <td className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
-        <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
-        <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
-        <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-        <td className="wnba-lines-matchup">
-          <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
-          <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
+        <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
+        <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
+        <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
+        <td>
+          <div className="wnba-lines-matchup">
+            <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+            <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+          </div>
         </td>
       </tr>
       {open && !locked && (
         <tr className="nfl-sharp-strip-row" ref={rowRef}>
-          <td colSpan={7}>
+          <td colSpan={6}>
             <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
           </td>
         </tr>
@@ -488,6 +493,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           gamesPlayed: l10Obj ? l10Obj.total : 0,
           seasonHitRate: seasonObj ? Math.round(seasonObj.pct) : null,
           h2hHitRate: h2hObj ? Math.round(h2hObj.pct) : null,
+          hitPills: wnbaHitPills({ games: recentGames, stat: prop.stat, line, opponent: prop.opponent ?? null }),
           dvpRank: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           // Preserved for the insight panels below.
           _player: player,
@@ -629,10 +635,10 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
             <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
-              <table className="wnba-lines-table">
+              <table className="wnba-lines-table hit-rate-board">
                 <thead>
                   <tr>
-                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON_LABEL}</th><th>H2H</th><th>DVP</th><th>Matchup</th>
+                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -655,7 +661,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                   })}
                   {Array.from({ length: placeholderCount }, (_, index) => (
                     <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
-                      <td colSpan={7}><span className="wnba-placeholder-bar" /></td>
+                      <td colSpan={6}><span className="wnba-placeholder-bar" /></td>
                     </tr>
                   ))}
                 </tbody>

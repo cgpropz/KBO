@@ -75,7 +75,7 @@ export default function L10HitRateChart({ games = [], stat, line }) {
         dateLabel: formatDate(game.date),
         matchup: game.matchup || 'Unknown matchup',
         y: value,
-        color: result === 'hit' ? '#7efc6a' : result === 'push' ? '#9ca3af' : '#ef4444',
+        color: result === 'hit' ? '#7efc6a' : result === 'push' ? '#3f3f46' : '#ef4444',
         result,
         hit,
       }
@@ -90,15 +90,17 @@ export default function L10HitRateChart({ games = [], stat, line }) {
     )
   }
 
-  const hitCount = chartGames.reduce((sum, point) => sum + (point.hit ? 1 : 0), 0)
-  const hitRate = Math.round((hitCount / chartGames.length) * 100)
+  const decidedPoints = chartGames.filter(point => point.result !== 'push')
+  const hitCount = decidedPoints.reduce((sum, point) => sum + (point.hit ? 1 : 0), 0)
+  const hitRate = decidedPoints.length ? Math.round((hitCount / decidedPoints.length) * 100) : null
   const xAxisLabelStep = Math.ceil(chartGames.length / 10)
   const hitRateSummaries = hitRateWindows.map(({ label, count }) => {
     const windowGames = count == null ? eligibleGames : eligibleGames.slice(0, count)
-    const hits = windowGames.filter(({ value }) => value > numericLine).length
-    const rate = windowGames.length ? Math.round((hits / windowGames.length) * 100) : null
+    const decided = windowGames.filter(({ value }) => value !== numericLine)
+    const hits = decided.filter(({ value }) => value > numericLine).length
+    const rate = decided.length ? Math.round((hits / decided.length) * 100) : null
 
-    return { label, hits, total: windowGames.length, rate }
+    return { label, hits, total: decided.length, rate }
   })
 
   const options = {
@@ -171,7 +173,7 @@ export default function L10HitRateChart({ games = [], stat, line }) {
             <div style="color:#d7fbe0;font-weight:700;margin-bottom:3px">${point.matchup}</div>
             <div style="color:#e6f3ce">Actual: <strong>${point.y.toFixed(1)}</strong></div>
             <div style="color:#8fdcff">Line: <strong>${numericLine}</strong></div>
-            <div style="color:${point.result === 'hit' ? '#7efc6a' : point.result === 'push' ? '#9ca3af' : '#fda4af'};font-weight:700;margin-top:4px">${point.result === 'hit' ? 'Hit' : point.result === 'push' ? 'Push' : 'Miss'}</div>
+            <div style="color:${point.result === 'hit' ? '#7efc6a' : point.result === 'push' ? '#a1a1aa' : '#fda4af'};font-weight:700;margin-top:4px">${point.result === 'hit' ? 'Hit' : point.result === 'push' ? 'Push' : 'Miss'}</div>
           </div>
         `
       },
@@ -201,7 +203,7 @@ export default function L10HitRateChart({ games = [], stat, line }) {
       <div className="edge-hit-chart-header">
         <div>
           <p className="edge-hit-chart-kicker">{activeWindow.label} Hit Rate</p>
-          <p className="edge-hit-chart-rate">{hitCount}/{chartGames.length} <span>{hitRate}%</span></p>
+          <p className="edge-hit-chart-rate">{hitCount}/{decidedPoints.length} <span>{hitRate == null ? '—' : `${hitRate}%`}</span></p>
         </div>
         <p className="edge-hit-chart-subtext">Vs standard PP line</p>
       </div>

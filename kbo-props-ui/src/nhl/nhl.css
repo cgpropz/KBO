@@ -318,7 +318,8 @@
 }
 .nhl-chart-bar.is-hit { background: #22c55e; }
 .nhl-chart-bar.is-miss { background: #f87171; }
-.nhl-chart-bar.is-push,
+.nhl-chart-bar.is-push { background: #3f3f46; }
+.nhl-chart-bar.is-push b { color: #a1a1aa; }
 .nhl-chart-bar.is-plain { background: #a1a1aa; }
 .nhl-chart-bar b {
   position: absolute;
@@ -572,6 +573,17 @@
 .nhl-root .nfl-history-bars span.miss,
 .nhl-root .nfl-player-bar.miss {
   background: #ff7b79;
+}
+
+.nhl-root .nfl-lines-chart span.push,
+.nhl-root .nfl-history-bars span.push,
+.nhl-root .nfl-player-bar.push {
+  background: #3f3f46;
+}
+
+.nhl-root .nfl-player-bar.push i,
+.nhl-root .nfl-history-bars span.push i {
+  color: #a1a1aa;
 }
 
 .nhl-probable, .nhl-confirmed, .nhl-projected, .nhl-last-game, .nhl-unposted {

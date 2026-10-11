@@ -2,6 +2,8 @@
 // (src/wnba/Dashboard.jsx): same score, hit-rate, and grade rules, with NBA's
 // five positions and a 30-team defense rank.
 
+import { windowPills } from '../hitRateStrip.js'
+
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 export const NBA_TEAM_COUNT = 30
 export const PROP_TABS = ['All Props', 'Points', 'Rebounds', 'Assists', '3-PT Made', 'Steals', 'Blocks', 'Turnovers', 'Fantasy Score', 'Pts+Rebs+Asts']
@@ -150,7 +152,7 @@ export function computeRate(games, label, line) {
   let counted = 0
   games.forEach((game) => {
     const value = statValue(game, label)
-    if (value == null) return
+    if (value == null || value === numericLine) return
     counted += 1
     if (value > numericLine) hits += 1
   })
@@ -161,11 +163,10 @@ export function computeRate(games, label, line) {
 function rateFromSeries(values, line) {
   const numericLine = num(line)
   if (!values?.length || numericLine == null) return null
-  let hits = 0
-  values.forEach((value) => {
-    if (value > numericLine) hits += 1
-  })
-  return { hits, total: values.length, pct: (hits / values.length) * 100 }
+  const decided = values.filter((value) => value !== numericLine)
+  if (!decided.length) return null
+  const hits = decided.filter((value) => value > numericLine).length
+  return { hits, total: decided.length, pct: (hits / decided.length) * 100 }
 }
 
 // Newest-first series saved with the hit rate. Empty when the snapshot is
@@ -183,6 +184,34 @@ export function computeH2H(games, label, line, opponent) {
   if (!target) return null
   const matched = (games || []).filter((game) => opponentFromMatchup(game?.matchup) === target)
   return computeRate(matched, label, line)
+}
+
+function pillFromRate(id, label, result, count = null) {
+  if (!result?.total) return null
+  return { id, label, rate: Math.round(result.pct), games: result.total, count }
+}
+
+function fixedLogPill(games, label, line, size, id, pillLabel) {
+  const slice = (games || []).slice(0, size)
+  if (slice.length < size) return null
+  return pillFromRate(id, pillLabel, computeRate(slice, label, line))
+}
+
+// Board strip. Full windows only: the NBA chart does not label a short sample.
+// When the box score is missing a stat, the chart falls back to the saved
+// newest-first L10 series, which can fill L5 and L10 and nothing else.
+export function nbaHitPills(games, stat, line, opponent, series = null) {
+  const supported = logsSupport(games, stat) ? games : []
+  if (supported.length) {
+    return [
+      fixedLogPill(supported, stat, line, 5, 'l5', 'L5'),
+      fixedLogPill(supported, stat, line, 10, 'l10', 'L10'),
+      fixedLogPill(supported, stat, line, 20, 'l20', 'L20'),
+      pillFromRate('h2h', 'H2H', computeH2H(supported, stat, line, opponent)),
+      pillFromRate('season', 'Season', computeRate(supported, stat, line)),
+    ].filter(Boolean)
+  }
+  return windowPills(series, line)
 }
 
 export function dvpGrade(rank, teamCount = NBA_TEAM_COUNT) {
@@ -303,6 +332,7 @@ export function buildPropRows(projections, players) {
         gamesPlayed,
         seasonHitRate: seasonObj ? Math.round(seasonObj.pct) : storedSeason,
         h2hHitRate: h2hObj ? Math.round(h2hObj.pct) : null,
+        hitPills: nbaHitPills(recentGames, prop.stat, line, prop.opponent ?? null, storedL10Values(prop)),
         dvpRank: num(prop.effectiveDvpRank),
         _player: { name: player.name, team, image: imageUrl },
         _hit: l10Obj,

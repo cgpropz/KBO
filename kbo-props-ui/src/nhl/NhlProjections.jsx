@@ -53,7 +53,7 @@ function Card({ item, onSelectPlayer }) {
       </div>
       <div className="nfl-history-bars">
         {recent.map((value, index) => (
-          <span className={value > item.line ? 'hit' : 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`}>
+          <span className={value > item.line ? 'hit' : value === item.line ? 'push' : 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`}>
             <i>{formatValue(value)} · {dates[index] || ''} {seasons[index] === '2025-26' ? 'last season' : ''}</i>
           </span>
         ))}

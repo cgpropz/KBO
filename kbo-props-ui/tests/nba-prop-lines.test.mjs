@@ -29,6 +29,14 @@ test('opponent comes from the side after vs or @', () => {
   assert.equal(opponentFromMatchup('LAL vs SAC'), 'SAC')
 })
 
+test('NBA hit rate leaves a push out of the sample', () => {
+  const games = [game(25), game(30), game(10)]
+  const rated = computeH2H(games, 'Points', 25, 'BOS')
+  assert.equal(rated.hits, 1)
+  assert.equal(rated.total, 2)
+  assert.equal(rated.pct, 50)
+})
+
 test('head to head does not treat SA as part of SAC', () => {
   const games = [
     game(20, { matchup: 'LAL vs. SAC' }),

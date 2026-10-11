@@ -1,0 +1,124 @@
+.hit-rate-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hit-rate-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 7px 5px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  line-height: 1.1;
+}
+
+.hit-rate-pill-k {
+  font: 800 9.5px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+}
+
+.hit-rate-pill-v {
+  font: 800 14px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.hit-rate-pill-n {
+  margin-top: 1px;
+  font: 700 8px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.hit-rate-pill.is-thin .hit-rate-pill-k,
+.hit-rate-pill.is-thin .hit-rate-pill-v,
+.hit-rate-pill.is-thin .hit-rate-pill-n {
+  opacity: 1;
+}
+
+.hit-rate-col {
+  white-space: normal;
+}
+
+table.hit-rate-board > thead > tr > th,
+table.hit-rate-board > tbody > tr > td {
+  vertical-align: middle;
+}
+
+@media (max-width: 760px) {
+  table.hit-rate-board.kbo-lines-table,
+  table.hit-rate-board.nfl-lines-table,
+  table.hit-rate-board.wnba-lines-table {
+    min-width: 0;
+  }
+
+  table.hit-rate-board thead {
+    display: none;
+  }
+
+  table.hit-rate-board > tbody > tr {
+    display: block;
+    position: relative;
+    padding: 10px 12px 12px;
+  }
+
+  table.hit-rate-board > tbody > tr > td {
+    display: block;
+    width: auto;
+    padding: 3px 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  table.hit-rate-board > tbody > tr > td:has(> .kbo-player-cell),
+  table.hit-rate-board > tbody > tr > td:has(> .nfl-lines-player),
+  table.hit-rate-board > tbody > tr > td:has(> .wnba-lines-player) {
+    display: flex;
+    padding-right: 72px;
+  }
+
+  table.hit-rate-board > tbody > tr > td.hit-rate-chart,
+  table.hit-rate-board > tbody > tr > td.hit-rate-extra {
+    display: none;
+  }
+
+  table.hit-rate-board > tbody > tr > td.hit-rate-score {
+    position: absolute;
+    top: 14px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    font-weight: 800;
+  }
+
+  table.hit-rate-board .hit-rate-strip {
+    margin-top: 8px;
+  }
+
+  table.hit-rate-board .hit-rate-pill {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  table.hit-rate-board > tbody > tr.nfl-sharp-strip-row,
+  table.hit-rate-board > tbody > tr.kbo-placeholder-row,
+  table.hit-rate-board > tbody > tr.wnba-placeholder-row,
+  table.hit-rate-board > tbody > tr.nfl-placeholder-row {
+    position: static;
+    padding: 0;
+  }
+
+  table.hit-rate-board > tbody > tr.nfl-sharp-strip-row > td,
+  table.hit-rate-board > tbody > tr.kbo-placeholder-row > td,
+  table.hit-rate-board > tbody > tr.wnba-placeholder-row > td,
+  table.hit-rate-board > tbody > tr.nfl-placeholder-row > td {
+    display: block;
+    padding: 0;
+  }
+}

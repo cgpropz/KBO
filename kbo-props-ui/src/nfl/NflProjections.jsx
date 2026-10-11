@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { lineResult, overHitRate } from '../hitRateStrip'
 import { fetchNflProjections } from './nflData'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
@@ -32,6 +33,8 @@ function ProjectionCard({ item, onSelectPlayer }) {
   const gameDates = Array.isArray(item.gameDates) ? item.gameDates : []
   const maxValue = Math.max(item.line, ...recent, 1)
   const isOver = item.projection >= item.line
+  const l10 = overHitRate(recent.slice(-10), item.line)
+  const shown = overHitRate(recent, item.line)
 
   return (
     <article className="nfl-edge-card">
@@ -42,13 +45,12 @@ function ProjectionCard({ item, onSelectPlayer }) {
       </div>
       <div className="nfl-card-prop">{item.prop}</div>
       <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
-      <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{formatValue(item.seasonAverage)}</strong></div><div><small>HIT RATE</small><strong>{item.hitRate}%</strong></div><div><small>GAMES</small><strong>{item.gamesPlayed}</strong></div></div>
-      <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{item.hitRate}% OVER LINE</span></div>
+      <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{formatValue(item.seasonAverage)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
+      <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
       <div className="nfl-history-bars" aria-label={`Last ${recent.length} games for ${item.player}`}>
         {recent.map((value, index) => {
-          const hit = value >= item.line
           const date = gameDates[index] || 'Game log'
-          return <span className={hit ? 'hit' : 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`} tabIndex={0}><i>{formatValue(value)} · {date}</i></span>
+          return <span className={lineResult(value, item.line) || 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`} tabIndex={0}><i>{formatValue(value)} · {date}</i></span>
         })}
       </div>
       <div className="nfl-history-dates">{gameDates.map((date, index) => <span key={`${item.id}-date-${index}`}>{date}</span>)}</div>
