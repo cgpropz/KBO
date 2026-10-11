@@ -1,5 +1,6 @@
 import { lineMatchesStat } from '../src/cgScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
+import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
@@ -150,11 +151,15 @@ function kboProjectionScore(row) {
   return Number.isFinite(edge) ? edge : -Infinity;
 }
 
-// WNBA Dashboard: score = projection / line × 50
+// WNBA board: score = projection / this row's line × 50.
+// standardLine is not the denominator. Demon and goblin rows keep their own line.
 function wnbaPropScore(player, prop) {
-  const line = prop?.standardLine ?? prop?.line;
   const projection = prop?.projection ?? player?.propProjectionByStat?.[prop?.stat];
-  return ratioScore(projection, line, prop?.stat);
+  const score = wnbaCgScore(projection, prop);
+  if (score == null) return -Infinity;
+  const line = num(prop?.line);
+  if (!Number.isFinite(num(projection)) || !(line > 0)) return -Infinity;
+  return score;
 }
 
 // NFL Prop Lines: projection / max(line, per-stat floor) × 50.

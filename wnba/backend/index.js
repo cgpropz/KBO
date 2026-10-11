@@ -1017,7 +1017,7 @@ app.get('/api/projections/v2', async (req, res) => {
         Object.keys(PP_STAT_MAP).map(label => [label, effectiveDvpRank(label, opponentRankMap) ?? DVP_RANK_NEUTRAL])
       );
       const rateForLabel = label => {
-        const line = standardLineForStat(label);
+        const line = playerProps.find(prop => prop?.stat === label)?.line ?? null;
         const proj = projectionByStatLabel(label, bundle);
         if (!line || line === 0 || proj == null) return null;
         return parseFloat(((proj / line) * 50).toFixed(1));

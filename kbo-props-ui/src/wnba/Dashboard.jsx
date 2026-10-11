@@ -6,7 +6,7 @@ import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { wnbaHitPills } from '../hitRateStrip'
-import { cgScore } from '../cgScore'
+import { wnbaCgScore } from './wnbaScore'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -455,18 +455,18 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
 
-  // Flatten every prop into a scored row (score = projection / line × 50), mirroring the Projections page.
+  // Flatten every prop into a scored row (score = projection / this row's line × 50).
+  // standardLine is not the denominator. See wnbaCgScore.
   const allRows = useMemo(() => {
     if (!projections) return []
     const rows = []
     projections.forEach(player => {
       const props = (player.ppAllProps || []).filter(prop => !EXCLUDED_PROP_LABELS.has(prop?.stat))
       props.forEach(prop => {
-        const rawLine = Number(prop.line)
-        const line = prop.standardLine ?? rawLine
+        const line = Number(prop.line)
         const projectionFn = PROP_PROJECTION[prop.stat]
         const projection = prop.projection ?? (projectionFn ? projectionFn(player) : null)
-        const score = cgScore(projection, line, prop.stat)
+        const score = wnbaCgScore(projection, prop)
         if (projection == null || !Number.isFinite(line) || line <= 0 || score == null) return
 
         const recentGames = player.recentGames || []
@@ -500,7 +500,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           // Preserved for the insight panels below.
           _player: player,
           _hit: l10Obj,
-          _edgePct: ((projection - rawLine) / rawLine) * 100,
+          _edgePct: ((projection - line) / line) * 100,
         })
       })
     })
