@@ -67,7 +67,7 @@ export function inlineMarkdown(raw) {
 }
 
 function isBlockStart(line) {
-  return /^(#{1,6}\s|```|>|[-*] |\|)/.test(line) || line.trim() === '---';
+  return /^(#{1,6}\s|```|>|[-*] |\d+\. |\|)/.test(line) || line.trim() === '---';
 }
 
 function renderTable(rows) {
@@ -126,6 +126,15 @@ export function renderMarkdown(src) {
         i += 1;
       }
       out.push(`<ul>\n${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('\n')}\n</ul>`);
+      continue;
+    }
+    if (/^\d+\. /.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\. /, ''));
+        i += 1;
+      }
+      out.push(`<ol>\n${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('\n')}\n</ol>`);
       continue;
     }
     const question = line.match(/^\*\*(.+)\*\*\s*$/);
@@ -195,9 +204,19 @@ export function stripGuideSource(markdown) {
   return { meta, body: text };
 }
 
+// The published URL is always /guides/<slug>. Frontmatter `canonical` may
+// name a redirect alias (start-here.md says /start-here) and is ignored.
+export function canonicalGuidePath(meta, fallbackSlug) {
+  const fromFile = String(fallbackSlug || '').trim().split(/[?#]/)[0];
+  if (fromFile.startsWith('/guides/')) return fromFile;
+  const fromSlug = String(meta.slug || '').trim().split(/[?#]/)[0];
+  if (fromSlug.startsWith('/guides/')) return fromSlug;
+  return fromFile || fromSlug;
+}
+
 export function guideFromMarkdown(markdown, fallbackSlug) {
   const { meta, body } = stripGuideSource(markdown);
-  const path = (meta.slug || fallbackSlug || '').trim();
+  const path = canonicalGuidePath(meta, fallbackSlug);
   const faqs = extractFaqs(body);
   const h1 = (body.match(/^#\s+(.+)$/m) || [])[1]?.trim() || 'Guide';
   const title = meta.title_tag || `${h1} | CGPropz`;

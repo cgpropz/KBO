@@ -27,6 +27,8 @@ const PRERENDER_CSS = `
     .seo-prerender header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
     .seo-prerender nav { display: flex; flex-wrap: wrap; gap: 14px; }
     .seo-prerender h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
+    .seo-prerender h2 { font-size: 22px; margin: 28px 0 8px; }
+    #free-top-3 { scroll-margin-top: 24px; }
     .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
 `;
 
@@ -42,6 +44,10 @@ export function homeRootInner() {
     <main>
       <h1>One edge. Every sport.</h1>
       <p>Data-driven projections, hit rates, and prop analysis across KBO baseball, WNBA basketball, NFL football, and NHL hockey — all under one login, one subscription.</p>
+      <section id="free-top-3">
+        <h2>Today's free top 3</h2>
+        <p>Three free props from today's board. The NFL free preview is off right now.</p>
+      </section>
     </main>
     <footer>
       <p>${escapeHtml(AGE_LINE)}</p>

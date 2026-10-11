@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { writeSeoSite } from '../scripts/build-kbo-seo.mjs'
-import { listGuides } from '../scripts/markdownGuide.mjs'
+import { canonicalGuidePath, listGuides, stripGuideSource } from '../scripts/markdownGuide.mjs'
 import { resolveRequest } from '../scripts/staticRouter.mjs'
 import { startStaticServer } from '../scripts/staticRouter.mjs'
 
@@ -21,6 +21,7 @@ const PUBLIC_PAGES = [
   ['/nba-player-props', 'NBA player props | CGPropz', 'NBA player props'],
   ['/nhl-player-props', 'NHL player props | CGPropz', 'NHL player props'],
   ['/guides/cg-score', 'How CG Score Works: Projection vs Line | CGPropz', 'How CG Score Works'],
+  ['/guides/start-here', 'Start Here: How to Read Player Props | CGPropz', 'Start Here: How to Read Player Props on CGPropz'],
 ]
 
 test('unknown paths 404 and paid static URLs are not rewritten to the homepage', () => {
@@ -78,6 +79,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       ['/plans', '/pricing'],
       ['/board', '/kbo-player-props'],
       ['/app', '/'],
+      ['/start-here', '/guides/start-here'],
     ]) {
       const response = await fetch(server.url + source, { redirect: 'manual' })
       assert.equal(response.status, 301, source)
@@ -86,6 +88,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
 
     const home = await (await fetch(server.url + '/')).text()
     assert.equal(home.includes('Loading KBO Player Props'), false)
+    assert.match(home, /id="free-top-3"/)
     for (const path of ['/pricing', '/kbo-player-props', '/nfl-player-props', '/wnba-player-props', '/nba-player-props', '/nhl-player-props', '/guides/cg-score']) {
       assert.match(home, new RegExp(`href="https://www\\.cgpropz\\.com${path}"`))
     }
@@ -104,6 +107,27 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.equal(/weakly predictive/i.test(guide), false)
     assert.match(guide, /href="https:\/\/www\.cgpropz\.com\/pricing"/)
     assert.match(guide, /href="https:\/\/www\.cgpropz\.com\/nfl-player-props"/)
+    assert.match(guide, /rel="canonical" href="https:\/\/www\.cgpropz\.com\/guides\/cg-score"/)
+
+    const startHere = await (await fetch(`${server.url}/guides/start-here`)).text()
+    assert.match(startHere, /rel="canonical" href="https:\/\/www\.cgpropz\.com\/guides\/start-here"/)
+    assert.equal(startHere.includes('https://www.cgpropz.com/start-here'), false)
+    assert.match(startHere, /"@type":"Article"/)
+    assert.match(startHere, /"@type":"BreadcrumbList"/)
+    assert.match(startHere, /"@type":"FAQPage"/)
+    assert.match(startHere, /\{\{CONFIRM WITH BOARD QA/)
+    assert.equal(startHere.includes('URL PENDING'), false)
+    const startSource = readFileSync(join(uiRoot, 'content/guides/start-here.md'), 'utf8')
+    const startMeta = stripGuideSource(startSource).meta
+    assert.equal(startMeta.canonical, 'https://www.cgpropz.com/start-here')
+    assert.equal(canonicalGuidePath(startMeta, '/guides/start-here'), '/guides/start-here')
+    for (const page of listGuides()) {
+      assert.match(page.html, new RegExp(`rel="canonical" href="https://www\\.cgpropz\\.com${escapeRegExp(page.path)}"`))
+      assert.equal(page.path.startsWith('/guides/'), true)
+      assert.equal(page.html.includes('rel="canonical" href="https://www.cgpropz.com/start-here"'), false)
+    }
+    const broken = await brokenInternalLinks(startHere, server.url, home)
+    assert.deepEqual(broken, [])
 
     const nfl = await (await fetch(`${server.url}/nfl-player-props`)).text()
     assert.match(nfl, /"@type":"FAQPage"/)
@@ -117,6 +141,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       const loc = path === '/' ? 'https://www.cgpropz.com/' : `https://www.cgpropz.com${path}`
       assert.match(sitemap, new RegExp(`<loc>${escapeRegExp(loc)}</loc>\\s*<lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod>`))
     }
+    assert.equal(/<loc>https:\/\/www\.cgpropz\.com\/start-here<\/loc>/.test(sitemap), false)
     assert.equal(sitemap.includes('/not-a-real'), false)
     assert.equal(sitemap.includes('404.html'), false)
     for (const guide of listGuides()) {
@@ -134,16 +159,50 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
   const builtHome = readFileSync(join(uiRoot, 'dist/index.html'), 'utf8')
   assert.match(builtHome, /<title>CGPropz: Free PrizePicks prop picks daily<\/title>/)
   assert.match(builtHome, /<h1>One edge\. Every sport\.<\/h1>/)
+  assert.match(builtHome, /id="free-top-3"/)
   assert.equal(builtHome.includes('Loading KBO Player Props'), false)
   const builtPricing = readFileSync(join(uiRoot, 'dist/pricing.html'), 'utf8')
   assert.match(builtPricing, /<title>All-Access pricing \| CGPropz<\/title>/)
   assert.match(builtPricing, /<h1>All-Access pricing<\/h1>/)
   const builtGuide = readFileSync(join(uiRoot, 'dist/guides/cg-score.html'), 'utf8')
   assert.match(builtGuide, /<h1>How CG Score Works<\/h1>/)
+  const builtStart = readFileSync(join(uiRoot, 'dist/guides/start-here.html'), 'utf8')
+  assert.match(builtStart, /<h1>Start Here: How to Read Player Props on CGPropz<\/h1>/)
+  assert.match(builtStart, /rel="canonical" href="https:\/\/www\.cgpropz\.com\/guides\/start-here"/)
   const builtMissing = readFileSync(join(uiRoot, 'dist/404.html'), 'utf8')
   assert.match(builtMissing, /<h1>Page not found<\/h1>/)
   assert.equal(existsSync(join(uiRoot, 'dist/data/prizepicks_props.json')), false)
 })
+
+async function brokenInternalLinks(html, origin, homeHtml) {
+  const pages = new Map([['/', homeHtml]])
+  const broken = []
+  const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])
+  for (const href of hrefs) {
+    let url
+    try {
+      url = new URL(href, 'https://www.cgpropz.com')
+    } catch {
+      broken.push(`${href} -> invalid URL`)
+      continue
+    }
+    if (url.hostname !== 'www.cgpropz.com') continue
+    let body = pages.get(url.pathname)
+    if (!body) {
+      const response = await fetch(origin + url.pathname, { redirect: 'manual' })
+      if (response.status !== 200) {
+        broken.push(`${href} -> ${response.status}`)
+        continue
+      }
+      body = await response.text()
+      pages.set(url.pathname, body)
+    }
+    if (url.hash && !body.includes(`id="${url.hash.slice(1)}"`)) {
+      broken.push(`${href} -> missing ${url.hash}`)
+    }
+  }
+  return broken
+}
 
 function count(html, token) {
   return html.split(token).length - 1

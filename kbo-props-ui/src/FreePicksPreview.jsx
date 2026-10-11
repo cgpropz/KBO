@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
 import { cgScore, lineMatchesStat } from './cgScore';
 import { nflCgScore } from './nfl/nflLineFloors';
+import { freeTop3SectionState } from './freePreviewCopy';
 import './FreeFunnel.css';
 
 /*
@@ -115,18 +116,31 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
   }, []);
 
   const available = BOARDS.filter((b) => boards[b.id]?.status === 'ready');
-  const settled = BOARDS.every((b) => boards[b.id] && boards[b.id].status !== 'loading');
-  if (settled && !available.length) return null; // nothing live to show
+  const { settled, showingRows, anchorId } = freeTop3SectionState(boards);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash !== 'free-top-3' && hash !== 'free-picks') return;
+    document.getElementById(hash)?.scrollIntoView({ block: 'start' });
+  }, [settled, showingRows, available.length]);
+
+  if (!showingRows) {
+    return (
+      <section id={anchorId} aria-label="Today's free top 3">
+        <h2 id="free-picks" className="ff-picks-anchor">Today's free top 3</h2>
+      </section>
+    );
+  }
 
   const activeBoard = available.find((b) => b.id === selected) || available[0] || null;
   const state = activeBoard ? boards[activeBoard.id] : null;
 
   return (
-    <section className="ff-picks" id="free-picks" aria-labelledby="ff-picks-title">
+    <section className="ff-picks" id={anchorId} aria-labelledby="free-picks">
       <div className="ff-picks-head">
         <div>
           <span className="ff-kicker"><span className="ff-live-dot" aria-hidden="true" /> Today's free picks</span>
-          <h2 id="ff-picks-title">Top 3 plays on the board right now</h2>
+          <h2 id="free-picks">Top 3 plays on the board right now</h2>
           <p>Straight from the CGPropz model. No account needed.</p>
         </div>
         {available.length > 1 && (
