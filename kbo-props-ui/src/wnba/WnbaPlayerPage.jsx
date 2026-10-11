@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import PlayerOddsTable from '../PlayerOddsTable'
-import { lineResult } from '../hitRateStrip'
+import { AltLinesRow, LinePlot } from '../LineSlider'
+import { useChartLine } from '../useChartLine'
+import { lineResult, overHitRate } from '../hitRateStrip'
+import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { rowsFromBookPrices, wnbaOddsRows } from '../playerOdds'
 import {
   formatMinutes,
-  hitRateForGames,
   minutesBounds,
   passesChartFilters,
   recordedMinutes,
@@ -137,6 +139,29 @@ function dvpColor(rank, max) {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+const WNBA_RANGES = [
+  { id: '2026', label: '2026' },
+  { id: '2025', label: '2025' },
+  { id: 'h2h', label: 'H2H' },
+  { id: 'l5', label: 'L5' },
+  { id: 'l10', label: 'L10' },
+  { id: 'l20', label: 'L20' },
+  { id: 'l30', label: 'L30' },
+]
+
+function wnbaRangeRows(games, range, opponent) {
+  switch (range) {
+    case 'l5': return games.slice(0, 5)
+    case 'l10': return games.slice(0, 10)
+    case 'l20': return games.slice(0, 20)
+    case 'l30': return games.slice(0, 30)
+    case '2026': return games.filter((game) => String(game.date).endsWith('2026'))
+    case '2025': return games.filter((game) => String(game.date).endsWith('2025'))
+    case 'h2h': return opponent ? games.filter((game) => game.opponent === opponent) : []
+    default: return games
+  }
+}
+
 function ChartFilterChip({ label, valueLabel, valueColor, open, onToggle, children }) {
   return (
     <div className={`wnba-chart-filter-chip${open ? ' open' : ''}`}>
@@ -233,28 +258,67 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
     setOpenFilter(null)
   }
 
+  const chartInput = useMemo(() => {
+    if (!player || !currentProp) {
+      return { posted: null, values: [], filteredGames: [], windows: [], offered: null, games: [], minuteBounds: null, minutesSelection: null, selectedWindow: [], missingMinutes: 0 }
+    }
+    const games = (player.recentGames || []).map((game) => ({
+      ...game,
+      defRank: defRankForGame(currentProp.stat, game.opponent, player.position, dvpByPosition),
+    }))
+    const getValue = PROP_GAME_VALUE[currentProp.stat]
+    const posted = currentProp.standardLine ?? currentProp.line
+    const opponent = currentProp.opponent
+    const bounds = minutesBounds(games)
+    const minutesSelection = resolveMinutesRange(bounds, minsRange)
+    const passes = (game) => passesChartFilters(game, {
+      filterMinutes: Boolean(bounds),
+      minutesLow: minutesSelection?.low,
+      minutesHigh: minutesSelection?.high,
+      dvpThreshold,
+      usageThreshold,
+    })
+    const windows = WNBA_RANGES.map((option) => ({
+      ...option,
+      rows: wnbaRangeRows(games, option.id, opponent).filter(passes).map((game) => ({
+        ...game,
+        value: getValue ? getValue(game) : null,
+      })),
+    }))
+    const selected = windows.find((option) => option.id === selectedRange)
+    const filteredGames = [...(selected?.rows || [])].reverse()
+    const selectedWindow = wnbaRangeRows(games, selectedRange, opponent)
+    return {
+      posted,
+      values: filteredGames.map((game) => game.value),
+      filteredGames,
+      windows,
+      offered: offeredLinesForStat(player.ppAllProps, currentProp.stat),
+      games,
+      minuteBounds: bounds,
+      minutesSelection,
+      selectedWindow,
+      missingMinutes: selectedWindow.filter((game) => recordedMinutes(game) == null).length,
+    }
+  }, [player, currentProp, selectedRange, minsRange, dvpThreshold, usageThreshold, dvpByPosition])
+
+  const slider = useChartLine({
+    postedLine: chartInput.posted,
+    values: chartInput.values,
+    offeredLines: chartInput.offered,
+    resetKey: `${player?.name || ''}|${currentProp?.stat || ''}`,
+  })
+
   if (error) return <div className="wnba-notice">Unable to load player data: {error}</div>
   if (!players.length) return <div className="wnba-notice">Loading player data for {playerName}.</div>
   if (!player || !propRows.length || !currentProp) {
     return <div className="wnba-notice">No active PrizePicks lines for {playerName}.</div>
   }
 
-  const games = (player.recentGames || []).map(game => ({
-    ...game,
-    defRank: defRankForGame(currentProp.stat, game.opponent, player.position, dvpByPosition),
-  }))
+  const games = chartInput.games
   const getValue = PROP_GAME_VALUE[currentProp.stat]
   const line = currentProp.standardLine ?? currentProp.line
-  const minuteBounds = minutesBounds(games)
-  const minutesSelection = resolveMinutesRange(minuteBounds, minsRange)
-  const filterMinutes = Boolean(minuteBounds)
-  const gamePassesFilters = game => passesChartFilters(game, {
-    filterMinutes,
-    minutesLow: minutesSelection?.low,
-    minutesHigh: minutesSelection?.high,
-    dvpThreshold,
-    usageThreshold,
-  })
+  const { minuteBounds, minutesSelection, selectedWindow, filteredGames, missingMinutes } = chartInput
   const oddsRows = oddsRecords
     ? wnbaOddsRows(oddsRecords, player.name, currentProp.stat, line)
     : rowsFromBookPrices(currentProp.bookPrices, line)
@@ -262,48 +326,17 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   const opponentToday = currentProp.opponent
   const dvpMax = dvpByPosition[`${player.position}__max`] || 15
   const hasDvpData = !!dvpByPosition[player.position]
-
-  const rangeGames = range => {
-    switch (range) {
-      case 'l5': return games.slice(0, 5)
-      case 'l10': return games.slice(0, 10)
-      case 'l20': return games.slice(0, 20)
-      case 'l30': return games.slice(0, 30)
-      case '2026': return games.filter(g => String(g.date).endsWith('2026'))
-      case '2025': return games.filter(g => String(g.date).endsWith('2025'))
-      case 'h2h': return opponentToday ? games.filter(g => g.opponent === opponentToday) : []
-      default: return games
-    }
-  }
-
-  const hitRateFor = range => hitRateForGames(rangeGames(range).filter(gamePassesFilters), getValue, line)
-
-  const rangeOptions = [
-    { id: '2026', label: '2026' },
-    { id: '2025', label: '2025' },
-    { id: 'h2h', label: 'H2H' },
-    { id: 'l5', label: 'L5' },
-    { id: 'l10', label: 'L10' },
-    { id: 'l20', label: 'L20' },
-    { id: 'l30', label: 'L30' },
-  ].map(opt => ({ ...opt, ...hitRateFor(opt.id) }))
-  const currentRange = rangeOptions.find(r => r.id === selectedRange)
-
-  const selectedWindow = rangeGames(selectedRange)
-  const matchingWindow = selectedWindow.filter(gamePassesFilters)
-  const validUsage = selectedWindow.map(g => g.usagePct).filter(v => v != null && Number.isFinite(Number(v)))
+  const rangeOptions = chartInput.windows.map((option) => {
+    const rated = slider.line == null ? null : overHitRate(option.rows.map((game) => game.value), slider.line)
+    return { ...option, pct: rated?.rate ?? null, hits: rated?.hits ?? 0, games: rated?.games ?? 0 }
+  })
+  const currentRange = rangeOptions.find((option) => option.id === selectedRange)
+  const validUsage = selectedWindow.map((game) => game.usagePct).filter((value) => value != null && Number.isFinite(Number(value)))
   const defaultDvpThreshold = currentProp.effectiveDvpFactor ?? Math.round(dvpMax / 2)
   const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
-  const missingMinutes = selectedWindow.filter(game => recordedMinutes(game) == null).length
-
-  // Oldest -> newest so the chart reads left to right.
-  const filteredGames = [...matchingWindow].reverse().map(game => ({
-    ...game,
-    value: getValue ? getValue(game) : null,
-  }))
-
-  const maxValue = Math.max(line || 0, ...filteredGames.map(g => g.value ?? 0), 1)
-  const linePct = line != null ? Math.min(100, (line / maxValue) * 100) : 0
+  const scaleMax = Math.max(slider.max || 0, 1)
+  const chartLine = slider.line ?? line
+  const hitColor = rateTextColor(currentRange?.pct, currentRange?.games)
   const isOver = currentProp.projection != null && line != null && currentProp.projection >= line
   const modelDelta = currentProp.projection != null && line != null ? currentProp.projection - line : null
 
@@ -350,10 +383,10 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
         </div>
 
         <div className="wnba-player-summary">
-          <div className="wnba-player-hitrate">
+          <div className="wnba-player-hitrate" aria-live="polite">
             <small>HIT RATE</small>
-            <strong className={currentRange?.pct == null ? '' : currentRange.pct >= 50 ? 'over' : 'under'}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
-            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games})` : ''}</span>
+            <strong style={hitColor ? { color: hitColor } : undefined}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
+            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games}${slider.moved ? ` over ${formatLineValue(slider.line)}` : ''})` : ''}</span>
           </div>
           <div><small>LINE</small><strong>{formatValue(line)}</strong></div>
           <div>
@@ -381,7 +414,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
               onClick={() => setSelectedRange(option.id)}
             >
               <span>{option.label}</span>
-              <b className={option.pct == null ? '' : option.pct >= 50 ? 'over' : 'under'}>{option.pct == null ? '—' : `${option.pct}%`}</b>
+              <b style={option.pct == null ? undefined : { color: rateTextColor(option.pct, option.games) || undefined }}>{option.pct == null ? '—' : `${option.pct}%`}</b>
             </button>
           ))}
         </div>
@@ -418,7 +451,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             <span>Minutes played</span>
             {minuteBounds ? (
               <b aria-live="polite">
-                {formatMinutes(minutesLow)}–{formatMinutes(minutesHigh)} min · {matchingWindow.length} of {selectedWindow.length} {currentRange?.label || ''} games
+                {formatMinutes(minutesLow)}–{formatMinutes(minutesHigh)} min · {filteredGames.length} of {selectedWindow.length} {currentRange?.label || ''} games
               </b>
             ) : (
               <b>No minutes in this log</b>
@@ -452,20 +485,19 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
           )}
         </div>
 
-        <div className="wnba-player-chart">
-          {line != null && <div className="wnba-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(line)}</span></div>}
+        <LinePlot className="wnba-player-chart" slider={slider} lineClassName="wnba-player-chart-line">
           <div className="wnba-player-bars">
             {filteredGames.map((g, index) => {
-              const kind = lineResult(g.value, line) || 'miss'
+              const kind = lineResult(g.value, chartLine) || 'miss'
               return (
                 <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`} title={[recordedMinutes(g) == null ? 'No minutes recorded' : `${formatMinutes(recordedMinutes(g))} min`, fmtDate(g.date), g.postseason ? 'Playoffs' : null].filter(Boolean).join(' · ')}>
-                  <div className={`wnba-player-bar ${kind}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
+                  <div className={`wnba-player-bar ${kind}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / scaleMax) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
             })}
           </div>
           {!filteredGames.length && <div className="wnba-notice wnba-player-chart-empty">No games match these filters.</div>}
-        </div>
+        </LinePlot>
         <div className="wnba-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
@@ -475,6 +507,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        <AltLinesRow slider={slider} />
         <PlayerOddsTable key={currentProp.stat} propLabel={currentProp.stat} rows={oddsRows} status={oddsStatus} />
       </section>
     </div>

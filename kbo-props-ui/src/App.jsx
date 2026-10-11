@@ -17,6 +17,7 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 
 function App() {
   const { user, loading } = useAuth();
+  const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
   const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState('hub');
@@ -36,6 +37,26 @@ function App() {
   useEffect(() => {
     setTimeout(() => setShowUI(true), 100);
   }, []);
+
+  useEffect(() => {
+    if (!previewNode) {
+      document.documentElement.style.removeProperty('--ff-preview-offset');
+      return undefined;
+    }
+    const apply = () => {
+      const height = Math.ceil(previewNode.getBoundingClientRect().height);
+      if (height > 0) document.documentElement.style.setProperty('--ff-preview-offset', `${height}px`);
+    };
+    apply();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(apply);
+    observer?.observe(previewNode);
+    window.addEventListener('resize', apply);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', apply);
+      document.documentElement.style.removeProperty('--ff-preview-offset');
+    };
+  }, [previewNode]);
 
   if (loading || !showUI) {
     return (
@@ -120,7 +141,7 @@ function App() {
   /* Logged-out visitors can browse the boards in preview mode (the server
      only sends them the top 3 lines per board + a locked count). */
   const previewBar = !user && (
-    <div className="ff-preview-bar" role="note">
+    <div className="ff-preview-bar" role="note" ref={setPreviewNode}>
       <span>👀 Free preview: you're seeing the top 3 lines on each board.</span>
       <button className="ff-btn ff-btn-primary ff-btn-small" onClick={openSignUp}>Sign up free</button>
       <button className="ff-btn ff-btn-ghost ff-btn-small" onClick={openLogin}>Log in</button>

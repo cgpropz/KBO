@@ -140,6 +140,146 @@
   text-transform: lowercase;
 }
 
+.nba-player-chart-card {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.nba-player-chart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.nba-player-chart-head strong {
+  display: block;
+  color: #f4f4f5;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.nba-player-chart-head span,
+.nba-player-chart-empty {
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.nba-player-props,
+.nba-player-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.nba-player-props button,
+.nba-player-ranges button {
+  border: 1px solid #222;
+  border-radius: 999px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  font: inherit;
+}
+
+.nba-player-props button {
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
+.nba-player-ranges button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+  min-height: 44px;
+  padding: 6px 8px;
+}
+
+.nba-player-props button.active,
+.nba-player-ranges button.active {
+  border-color: #4ade80;
+  color: #f4f4f5;
+}
+
+.nba-player-ranges b {
+  font-size: 13px;
+}
+
+.nba-player-chart {
+  position: relative;
+  height: 220px;
+  margin-bottom: 8px;
+}
+
+.nba-player-chart-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top: 1.5px dashed #e4a743;
+}
+
+.nba-player-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+
+.nba-player-bar-col {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  min-width: 0;
+  height: 100%;
+}
+
+.nba-player-bar {
+  position: relative;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+}
+
+.nba-player-bar.hit { background: #22c55e; }
+.nba-player-bar.miss { background: #f87171; }
+.nba-player-bar.push { background: #3f3f46; }
+
+.nba-player-bar i {
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  color: #d4d4d8;
+  font: 700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-style: normal;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.nba-player-bar.push i { color: #a1a1aa; }
+
+.nba-player-dates {
+  display: flex;
+  gap: 4px;
+}
+
+.nba-player-dates span {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  color: #71717a;
+  font-size: 9px;
+  text-align: center;
+}
+
+.nba-player-dates b {
+  color: #a1a1aa;
+  font-size: 10px;
+}
+
 @media (max-width: 720px) {
   .nba-root .nba-dvp-grid {
     grid-template-columns: 1fr;

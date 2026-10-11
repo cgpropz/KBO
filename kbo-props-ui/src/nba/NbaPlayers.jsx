@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NBA_DVP_POSITIONS } from './positions'
 import { fetchNbaData } from './nbaData'
+import NbaPlayerChart from './NbaPlayerChart'
 
 const FILTERS = ['All', ...NBA_DVP_POSITIONS.map((position) => position.id), 'Unset']
 
@@ -12,8 +13,18 @@ function positionColor(position) {
   return NBA_DVP_POSITIONS.find((slot) => slot.id === position)?.color || '#9ca3af'
 }
 
+function projectionFor(board, player) {
+  if (!player || !Array.isArray(board)) return null
+  const id = player.athleteId == null ? '' : String(player.athleteId)
+  const name = String(player.name || '').trim().toLowerCase()
+  return board.find((row) => id && String(row.athleteId ?? row.playerId ?? '') === id)
+    || board.find((row) => String(row.name || row.player || '').trim().toLowerCase() === name)
+    || null
+}
+
 export default function NbaPlayers({ initialName = '' }) {
   const [players, setPlayers] = useState(null)
+  const [board, setBoard] = useState([])
   const appliedName = useRef('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -26,8 +37,14 @@ export default function NbaPlayers({ initialName = '' }) {
     let cancelled = false
     ;(async () => {
       try {
-        const rows = await fetchNbaData('nba/players.json')
-        if (!cancelled) setPlayers(Array.isArray(rows) ? rows : [])
+        const [rows, lines] = await Promise.all([
+          fetchNbaData('nba/players.json'),
+          fetchNbaData('nba/projections_standard.json').catch(() => []),
+        ])
+        if (!cancelled) {
+          setPlayers(Array.isArray(rows) ? rows : [])
+          setBoard(Array.isArray(lines) ? lines : [])
+        }
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -82,6 +99,7 @@ export default function NbaPlayers({ initialName = '' }) {
             {selected.gp ? `${selected.gp} GP · ${statText(selected.pts)} PTS · ${statText(selected.reb)} REB · ${statText(selected.ast)} AST` : 'No 2025-26 games yet.'}
           </p>
         </div>
+        <NbaPlayerChart player={selected} projection={projectionFor(board, selected)} />
         {logs.length === 0 ? (
           <p style={{ color: '#6b7280' }}>No 2025-26 game log.</p>
         ) : (
