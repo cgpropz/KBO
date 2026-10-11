@@ -99,7 +99,8 @@ jobs:
       - name: Publish public board status
         if: always()
         continue-on-error: true
-        run: bash pipeline/commit_status.sh "chore: nba board status"
+        run: |
+          bash pipeline/commit_status.sh "chore: nba board status"
 
       - name: Commit non-paid NBA artifacts
         run: |

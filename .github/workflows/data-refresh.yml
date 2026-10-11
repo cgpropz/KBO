@@ -109,7 +109,8 @@ jobs:
       - name: Publish public board status
         if: success()
         continue-on-error: true
-        run: bash pipeline/commit_status.sh "chore: kbo board status"
+        run: |
+          bash pipeline/commit_status.sh "chore: kbo board status"
 
       - name: Build KBO prop correlations
         continue-on-error: true
