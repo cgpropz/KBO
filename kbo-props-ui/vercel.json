@@ -30,6 +30,8 @@
     { "source": "/api/nhl-access", "destination": "/api/league-access/nhl" },
     { "source": "/api/checkout-session", "destination": "/api/checkout/session" },
     { "source": "/api/weekly-checkout", "destination": "/api/checkout/weekly" },
+    { "source": "/kbo-player-props", "destination": "/kbo-player-props.html" },
+    { "source": "/kbo-player-props/", "destination": "/kbo-player-props.html" },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
