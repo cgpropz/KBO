@@ -1,124 +1,110 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflGameMarkets } from './nflData'
-import { teamLogoUrl } from './nflTeams'
+import { teamColor, teamLogoUrl } from './nflTeams'
+import { downloadGameCardPng } from './gameCardShare'
+import {
+  GAME_CARD_PROBS_ENABLED,
+  cardView,
+  edgeRank,
+  finite,
+  scoreText,
+} from './gameCardModel'
 
-const SORT_OPTIONS = ['Kickoff', 'Spread edge', 'Total edge']
+const SORT_OPTIONS = ['Kickoff', 'Edge', 'Spread edge', 'Total edge']
 const SIDE_OPTIONS = ['All', 'Spread +', 'Total +']
 const DEFAULT_FILTERS = { sortBy: 'Kickoff', side: 'All', edgeMin: '', edgeMax: '', team: '', day: 'All' }
 
-function finite(value) {
-  if (value == null || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-function formatPoints(value, signed = false) {
-  const number = finite(value)
-  if (number == null) return '—'
-  const text = number.toFixed(1)
-  if (!signed) return text
-  return number > 0 ? `+${text}` : text
-}
-
-function formatEdge(value, percent = false) {
-  const number = finite(value)
-  if (number == null) return '—'
-  const text = `${number > 0 ? '+' : ''}${number.toFixed(1)}`
-  return percent ? `${text}%` : text
-}
-
-function edgeTone(value) {
-  const number = finite(value)
-  if (number == null || number === 0) return ''
-  return number > 0 ? 'over' : 'under'
-}
-
-function kickoffLabel(game) {
-  const [hourText, minute] = String(game.gametime || '').split(':')
-  const hour = Number(hourText)
-  if (!Number.isFinite(hour)) return game.weekday || 'Kickoff TBD'
-  const meridiem = hour >= 12 ? 'PM' : 'AM'
-  const day = game.weekday ? game.weekday.slice(0, 3).toUpperCase() : ''
-  return `${day} ${hour % 12 || 12}:${minute || '00'} ${meridiem} ET`.trim()
-}
-
-function TeamLogo({ team }) {
+function TeamMark({ team }) {
   const url = teamLogoUrl(team)
-  return url ? <img src={url} alt="" /> : <i aria-hidden="true" />
-}
-
-function scoreText(value) {
-  const number = finite(value)
-  if (number == null) return '—'
-  return String(Math.round(number))
-}
-
-function oppositeLine(line) {
-  const number = finite(line)
-  if (number == null) return null
-  return -number
-}
-
-function scoreResult(awayScore, homeScore, side) {
-  const away = finite(awayScore)
-  const home = finite(homeScore)
-  if (away == null || home == null || away === home) return null
-  const higher = side === 'away' ? away > home : home > away
-  return higher ? 'Winner' : 'Loser'
-}
-
-function TeamSide({ team, name, score, result }) {
+  const [failed, setFailed] = useState(false)
+  if (url && !failed) {
+    return <img src={url} alt="" width={40} height={40} onError={() => setFailed(true)} />
+  }
   return (
-    <div className="nfl-game-side">
-      <div className="nfl-game-team">
-        <TeamLogo team={team} />
-        <span className="nfl-game-team-copy">
-          <span className="nfl-game-team-name">{name || team}</span>
-          <b className="nfl-game-score">{scoreText(score)}</b>
-        </span>
-      </div>
-      <span className={`nfl-game-result${result === 'Winner' ? ' over' : ''}${result === 'Loser' ? ' under' : ''}`}>{result || ''}</span>
-    </div>
+    <span className="nfl-market-fallback" style={{ background: teamColor(team) }} aria-hidden="true">
+      {team || '—'}
+    </span>
   )
 }
 
-function SpreadSide({ line, projection }) {
+function NumberTile({ label, value, tone, book }) {
   return (
-    <div className="nfl-game-side-lines">
-      <div><small>Line</small><strong>{formatPoints(line, true)}</strong></div>
-      <div><small>Proj</small><strong>{formatPoints(projection, true)}</strong></div>
+    <div className={`nfl-market-tile${tone ? ` is-${tone}` : ''}`}>
+      <small>{label}</small>
+      <strong className={book ? 'is-book' : 'is-ours'}>{value}</strong>
     </div>
   )
 }
 
 function GameCard({ game }) {
-  const awayLine = game.spread?.line
-  const awayProj = finite(game.awayScore) != null && finite(game.homeScore) != null ? game.homeScore - game.awayScore : game.spread?.projection
-  const homeProj = finite(awayProj) == null ? null : -awayProj
+  const view = cardView(game, GAME_CARD_PROBS_ENABLED)
+  const [sharing, setSharing] = useState(false)
+  const [shareError, setShareError] = useState('')
+  const share = async () => {
+    setShareError('')
+    setSharing(true)
+    try {
+      await downloadGameCardPng(game, GAME_CARD_PROBS_ENABLED)
+    } catch (error) {
+      setShareError(error?.message || 'Could not export this card')
+    } finally {
+      setSharing(false)
+    }
+  }
+  const leadAway = view.wins ? view.wins.awayPct >= view.wins.homePct : false
   return (
-    <article className="nfl-game-card">
-      <p>{kickoffLabel(game)}</p>
-      <div className="nfl-game-sides">
-        <TeamSide team={game.awayTeam} name={game.awayName} score={game.awayScore} result={scoreResult(game.awayScore, game.homeScore, 'away')} />
-        <TeamSide team={game.homeTeam} name={game.homeName} score={game.homeScore} result={scoreResult(game.awayScore, game.homeScore, 'home')} />
-        <b>Spread</b>
-        <b className="nfl-game-spread-spacer" />
-        <SpreadSide line={awayLine} projection={awayProj} />
-        <SpreadSide line={oppositeLine(awayLine)} projection={homeProj} />
+    <article className="nfl-market-card">
+      <div className="nfl-market-top">
+        <span className="nfl-market-pill">{view.status}</span>
       </div>
-      <div className="nfl-game-spread-edge">
-        <small>edge</small>
-        <strong className={edgeTone(game.spread?.edge)}>{formatEdge(game.spread?.edge)}</strong>
-      </div>
-      <div className="nfl-game-market">
-        <b>Total</b>
-        <div><small>Line</small><strong>{formatPoints(game.total?.line)}</strong></div>
-        <div>
-          <small>Proj</small>
-          <strong>{formatPoints(game.total?.projection)}</strong>
+      <div className="nfl-market-matchup">
+        <div className="nfl-market-club">
+          <TeamMark team={view.away} />
+          <span>
+            <b>{view.away}</b>
+            <small>away</small>
+          </span>
         </div>
-        <div><small>edge</small><strong className={edgeTone(game.total?.edge)}>{formatEdge(game.total?.edge)}</strong></div>
+        <div className="nfl-market-ours">
+          <small>OUR NUMBER</small>
+          {view.scores && (
+            <div>
+              <b>{scoreText(view.scores.away)}</b>
+              <b>{scoreText(view.scores.home)}</b>
+            </div>
+          )}
+        </div>
+        <div className="nfl-market-club is-home">
+          <span>
+            <b>{view.home}</b>
+            <small>home</small>
+          </span>
+          <TeamMark team={view.home} />
+        </div>
       </div>
+      {view.wins && (
+        <div className="nfl-market-prob">
+          <div className="nfl-market-prob-bar" aria-hidden="true">
+            <span className={leadAway ? 'is-lead' : 'is-trail'} style={{ width: `${view.wins.awayPct}%` }} />
+            <span className={leadAway ? 'is-trail' : 'is-lead'} style={{ width: `${view.wins.homePct}%` }} />
+          </div>
+          <div className="nfl-market-prob-labels">
+            <span>{view.wins.awayPct}% win</span>
+            <span>{view.wins.homePct}% win</span>
+          </div>
+        </div>
+      )}
+      <div className="nfl-market-grid">
+        <NumberTile label="BOOK SPREAD" value={view.spreadBook} book />
+        <NumberTile label="OUR SPREAD" value={view.spreadOurs} tone={view.spreadTone} />
+        <NumberTile label="BOOK TOTAL" value={view.totalBook} book />
+        <NumberTile label="OUR TOTAL" value={view.totalOurs} tone={view.totalTone} />
+      </div>
+      <p className="nfl-market-foot">{view.footer}</p>
+      <button type="button" className="nfl-market-share" onClick={share} disabled={sharing}>
+        {sharing ? 'Sharing…' : 'Share'}
+      </button>
+      {shareError && <p className="nfl-market-share-error">{shareError}</p>}
     </article>
   )
 }
@@ -150,6 +136,7 @@ function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
 function relevantEdge(game, filters) {
   if (filters.side === 'Spread +' || filters.sortBy === 'Spread edge') return finite(game.spread?.edge)
   if (filters.side === 'Total +' || filters.sortBy === 'Total edge') return finite(game.total?.edge)
+  if (filters.sortBy === 'Edge') return edgeRank(game)
   const edges = [game.spread?.edge, game.total?.edge].map(finite).filter((value) => value != null)
   return edges.length ? Math.max(...edges) : null
 }
@@ -164,11 +151,11 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days
       <div className="nfl-filters-panel" onClick={(event) => event.stopPropagation()}>
         <div className="nfl-filters-head">
           <h2>Filters</h2>
-          <button className="nfl-filters-close" onClick={onClose}>Close <span>&times;</span></button>
+          <button type="button" className="nfl-filters-close" onClick={onClose}>Close <span>&times;</span></button>
         </div>
         <div className="nfl-filters-side">
           {SIDE_OPTIONS.map((option) => (
-            <button key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
+            <button type="button" key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
           ))}
         </div>
         <FilterRow id="sort" label="Sort By" value={filters.sortBy} expandedRow={expandedRow} onToggle={toggleRow}>
@@ -179,7 +166,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days
         <FilterRow id="day" label="Day" value={filters.day} expandedRow={expandedRow} onToggle={toggleRow}>
           <div className="nfl-filter-chip-row">
             {days.map((option) => (
-              <button key={option} className={filters.day === option ? 'active' : ''} onClick={() => updateFilter('day', option)}>{option}</button>
+              <button type="button" key={option} className={filters.day === option ? 'active' : ''} onClick={() => updateFilter('day', option)}>{option}</button>
             ))}
           </div>
         </FilterRow>
@@ -194,8 +181,8 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days
           </div>
         </FilterRow>
         <div className="nfl-filters-footer">
-          <button className="nfl-filters-reset" onClick={resetFilters}>Reset</button>
-          <button className="nfl-filters-apply" onClick={onClose}>Show {resultCount} games</button>
+          <button type="button" className="nfl-filters-reset" onClick={resetFilters}>Reset</button>
+          <button type="button" className="nfl-filters-apply" onClick={onClose}>Show {resultCount} games</button>
         </div>
       </div>
     </div>
@@ -247,6 +234,7 @@ export default function NflGameMarkets() {
       return true
     })
     const rank = {
+      Edge: (game) => edgeRank(game) ?? -Infinity,
       'Spread edge': (game) => finite(game.spread?.edge) ?? -Infinity,
       'Total edge': (game) => finite(game.total?.edge) ?? -Infinity,
     }[filters.sortBy]
@@ -266,10 +254,10 @@ export default function NflGameMarkets() {
         </div>
         <div className="nfl-lines-header-actions">
           <span>{loaded ? `${rows.length} game${rows.length === 1 ? '' : 's'}` : 'Loading'}{week ? ` · Week ${week}` : ''}</span>
-          <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
+          <button type="button" className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Each team shows its own spread. The higher score is the winner.</p>}
+      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. OUR NUMBER is each team's projected score. The total is those two scores added together.</p>}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {!error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}
@@ -280,6 +268,7 @@ export default function NflGameMarkets() {
           {rows.map((game) => <GameCard key={game.id || `${game.awayTeam}-${game.homeTeam}`} game={game} />)}
         </div>
       )}
+      <p className="nfl-market-disclaimer">21+ · Play responsibly · Entertainment only</p>
       <FiltersPanel
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
