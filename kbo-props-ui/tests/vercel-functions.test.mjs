@@ -42,14 +42,13 @@ test('serverless function files stay within the Vercel Hobby limit', () => {
   assert.equal(files.some((file) => file.endsWith('weekly-checkout.js')), false)
 })
 
-test('public api urls rewrite before the SPA catch-all and keep their query string', () => {
+test('public api urls are not swallowed by an SPA catch-all and keep their query string', () => {
   const config = JSON.parse(readFileSync(join(uiRoot, 'vercel.json'), 'utf8'))
   const rewrites = config.rewrites
   const generic = rewrites.findIndex((rule) => rule.source === '/api/(.*)')
-  const spa = rewrites.findIndex((rule) => rule.destination === '/index.html')
   assert.ok(generic > 0)
-  assert.ok(spa > generic)
-  assert.match(rewrites[spa].source, /\(\?!api\//)
+  assert.equal(rewrites.some((rule) => rule.destination === '/index.html'), false)
+  assert.equal(rewrites.some((rule) => rule.source === '/((?!api/|data/).*)'), false)
   for (const [source, destination] of PUBLIC_ROUTES) {
     const index = rewrites.findIndex((rule) => rule.source === source)
     assert.ok(index >= 0, source)

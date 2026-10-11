@@ -10,6 +10,7 @@ import NbaApp from './nba/NbaApp'
 import NhlApp from './nhl/NhlApp'
 import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
+import SiteFooter from './SiteFooter'
 import './FreeFunnel.css'
 import './App.css'
 
@@ -60,18 +61,21 @@ function App() {
 
   if (loading || !showUI) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: 'linear-gradient(135deg, #04140a, #22c55e)',
-        color: 'white',
-        fontSize: '24px',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        Loading cgpropz…
-      </div>
+      <>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          background: 'linear-gradient(135deg, #04140a, #22c55e)',
+          color: 'white',
+          fontSize: '24px',
+          fontFamily: 'Arial, sans-serif'
+        }}>
+          Loading cgpropz…
+        </div>
+        <SiteFooter />
+      </>
     );
   }
 
@@ -82,18 +86,21 @@ function App() {
   // same paywall as KBO, WNBA, and NFL.
   if (sport === 'nba' && !nba.ready) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #04140a, #22c55e)',
-        color: 'white',
-        fontSize: '24px',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        Loading cgpropz…
-      </div>
+      <>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          background: 'linear-gradient(135deg, #04140a, #22c55e)',
+          color: 'white',
+          fontSize: '24px',
+          fontFamily: 'Arial, sans-serif'
+        }}>
+          Loading cgpropz…
+        </div>
+        <SiteFooter />
+      </>
     );
   }
   if (sport === 'nba' && !nba.open) {
@@ -112,6 +119,7 @@ function App() {
     return (
       <>
         <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />
+        <SiteFooter />
         {checkoutSuccess}
       </>
     );
@@ -201,6 +209,7 @@ function App() {
     <>
       {previewBar}
       {sportApp}
+      <SiteFooter />
       {checkoutSuccess}
     </>
   );
