@@ -90,7 +90,7 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
   const cardX = 48
   const cardY = 48
   const cardW = WIDTH - 96
-  const cardH = 1100
+  const cardH = HEIGHT - 96
   roundedRect(ctx, cardX, cardY, cardW, cardH, 40)
   ctx.fillStyle = INK
   ctx.fill()
@@ -160,9 +160,9 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
     cursor += 80
   }
 
-  const gap = 18
+  const gap = 22
   const tileW = (cardW - 96 - gap) / 2
-  const tileH = 180
+  const tileH = 250
   const gridX = cardX + 48
   drawTile(ctx, gridX, cursor, tileW, tileH, 'BOOK SPREAD', view.spreadBook, '', true)
   drawTile(ctx, gridX + tileW + gap, cursor, tileW, tileH, 'OUR SPREAD', view.spreadOurs, view.spreadTone, false)
@@ -175,16 +175,24 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
   ctx.textBaseline = 'top'
   ctx.fillText(view.footer, cardX + 48, cursor + tileH * 2 + gap + 36)
 
+  const brandY = cardY + cardH - 132
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(cardX + 48, brandY - 36)
+  ctx.lineTo(cardX + cardW - 48, brandY - 36)
+  ctx.stroke()
   ctx.fillStyle = WHITE
   ctx.font = '700 32px ui-monospace, monospace'
   ctx.textAlign = 'center'
-  ctx.fillText('@Cgpropz', WIDTH / 2, 1224)
+  ctx.textBaseline = 'top'
+  ctx.fillText('@Cgpropz', WIDTH / 2, brandY)
   ctx.fillStyle = GREEN
   ctx.font = '700 28px ui-monospace, monospace'
-  ctx.fillText('cgpropz.com', WIDTH / 2, 1270)
+  ctx.fillText('cgpropz.com', WIDTH / 2, brandY + 46)
   ctx.fillStyle = GREY
   ctx.font = '500 22px ui-monospace, monospace'
-  ctx.fillText('21+ · Play responsibly · Entertainment only', WIDTH / 2, 1314)
+  ctx.fillText('21+ · Play responsibly · Entertainment only', WIDTH / 2, brandY + 92)
   return canvas
 }
 
