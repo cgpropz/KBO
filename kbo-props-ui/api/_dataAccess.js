@@ -174,10 +174,39 @@ function nbaPropScore(player, prop) {
 }
 
 // NFL Prop Lines: projection / max(line, per-stat floor) × 50.
+// Receiving and rushing yards use the Middle floors (15.5 and 18.5).
 // A yardage line at or below 0.5 still does not score.
 function nflScore(row) {
   const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
   return score == null ? -Infinity : score;
+}
+
+function nflPlayerKey(row, index) {
+  const name = String(row?.player ?? '').trim().toLowerCase();
+  return name || `\0${index}`;
+}
+
+// Free NFL board: each player's highest-scoring eligible prop, then the top 3
+// distinct players. Started games and unmatched yardage lines are not eligible.
+function previewNflProjections(payload) {
+  const rows = (Array.isArray(payload) ? payload : []).filter((row) => (
+    lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
+  ));
+  const bestByPlayer = new Map();
+  rows.forEach((item, index) => {
+    const score = nflScore(item);
+    const key = nflPlayerKey(item, index);
+    const current = bestByPlayer.get(key);
+    if (!current || score > current.score || (score === current.score && index < current.index)) {
+      bestByPlayer.set(key, { item, index, score });
+    }
+  });
+  const kept = [...bestByPlayer.values()]
+    .filter((row) => Number.isFinite(row.score))
+    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .slice(0, FREE_ROW_LIMIT)
+    .map(({ item }) => item);
+  return { data: kept, lockedCount: Math.max(0, rows.length - kept.length) };
 }
 
 // Kickoff has arrived. `now` is the server clock at the moment the preview
@@ -394,9 +423,7 @@ export const DATASETS = {
     table: 'nfl_projections',
     sport: 'nfl',
     // The NFL board's free top 3 is this list. There is no second ranker.
-    free: previewList(nflScore, (row) => (
-      lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
-    )),
+    free: previewNflProjections,
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },

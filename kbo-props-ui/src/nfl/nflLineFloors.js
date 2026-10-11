@@ -1,16 +1,19 @@
 import { lineMatchesStat } from '../cgScore.js'
 
-// Denominator floors for the NFL CG Score.
-//
-// Each value is the 10th percentile of standard PrizePicks lines on the stored
-// NFL slates in memory/nfl (through 2026-10-12), then rounded to the nearest
-// 0.5. The percentile is the linear rank on (n - 1) * 0.10. Every one of these
-// already landed on a 0.5 boundary, so rounding did not move it.
+// Denominator floors for the NFL CG Score. One floor per stat.
 //
 // Score = projection / max(line, floor) × 50. The line and the projection
 // shown on the row stay the PrizePicks numbers. A yardage line at or below
 // 0.5 is still not a score (that card is an any-yards floor). A stat that is
 // not in this map still divides by its own line.
+//
+// Receiving Yards and Rush Yards use the approved Middle score cap: 15.5 and
+// 18.5. Those replace the earlier 10th-percentile floors (both 5.5) for those
+// two stats. There is no second cap on top of the percentile. Every other
+// stat keeps its 10th-percentile floor from the stored NFL slates in
+// memory/nfl through 2026-10-12, rounded to the nearest 0.5. The percentile
+// is the linear rank on (n - 1) * 0.10, and each of those already landed on
+// a 0.5 boundary.
 
 export const NFL_LINE_FLOORS = {
   'Pass Attempts': 28.5,
@@ -19,10 +22,10 @@ export const NFL_LINE_FLOORS = {
   'Pass Yards': 186.5,
   'Pass+Rush Yds': 210.5,
   'Rec Targets': 2,
-  'Receiving Yards': 5.5,
+  'Receiving Yards': 15.5,
   'Receptions': 1.5,
   'Rush Attempts': 2.5,
-  'Rush Yards': 5.5,
+  'Rush Yards': 18.5,
   'Rush+Rec Yds': 30.5,
 }
 
