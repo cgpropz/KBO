@@ -7,6 +7,8 @@ import { sportAccess } from '../entitlements'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
+import { lineMatchesStat } from '../cgScore'
+import { nflCgScore } from './nflLineFloors'
 
 const FREE_ROW_LIMIT = 3
 
@@ -270,7 +272,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   }, [projections])
 
   const rows = useMemo(() => {
-    const withScore = projections.map((item) => {
+    const withScore = projections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
       const pills = nflHitPills(item)
       const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
       return {
@@ -280,7 +282,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         gamesPlayed: byId.l10?.games ?? 0,
         seasonHitRate: byId.season?.rate ?? null,
         h2hHitRate: byId.h2h?.rate ?? null,
-        score: item.line ? (item.projection / item.line) * 50 : 0,
+        score: nflCgScore(item.projection, item.line, item.prop) ?? 0,
         isOver: item.projection >= item.line,
       }
     })
@@ -346,7 +348,15 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       </div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL prop lines.</div>}
-      {!error && loaded && !projections.length && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
+      {!error && loaded && !projections.length && !isPaid && lockedCount > 0 && (
+        <div className="nfl-lines-lock-card">
+          <div className="nfl-lines-lock-icon">🔒</div>
+          <h3>Unlock the Full Board</h3>
+          <p>{lockedCount} lines are locked. Upgrade to see every prop line.</p>
+          <button onClick={onNavigatePricing}>View Plans</button>
+        </div>
+      )}
+      {!error && loaded && !projections.length && (isPaid || lockedCount <= 0) && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap" ref={tableWrapRef}>

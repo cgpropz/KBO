@@ -1,3 +1,6 @@
+import { lineMatchesStat } from '../src/cgScore.js';
+import { nflCgScore } from '../src/nfl/nflLineFloors.js';
+
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
 // Imported by api/data.js. Kept free of Supabase/network code so the free-vs-
@@ -9,6 +12,17 @@
 // this module decides how much of the snapshot the caller may see.
 
 export const FREE_ROW_LIMIT = 3;
+
+// Free NFL picks. Set this to true to restore the free top rows on
+// nfl_projections, nfl_sharp_odds, and nfl_game_markets. Paid NFL access
+// does not read this flag.
+export const NFL_FREE_PREVIEW_ENABLED = false;
+
+const NFL_FREE_PREVIEW_DATASETS = new Set([
+  'nfl_projections',
+  'nfl_sharp_odds',
+  'nfl_game_markets',
+]);
 
 // Tiers that unlock every sport (grandfathered all-access + combined plan).
 // Must stay in sync with src/entitlements.js. The 'discord' tier is absent on
@@ -110,7 +124,8 @@ function num(value) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-function ratioScore(projection, line) {
+function ratioScore(projection, line, stat) {
+  if (!lineMatchesStat(stat, line)) return -Infinity;
   const p = num(projection);
   const l = num(line);
   return Number.isFinite(p) && l > 0 ? (p / l) * 50 : -Infinity;
@@ -118,13 +133,17 @@ function ratioScore(projection, line) {
 
 // KboPropBoard.scoreFor
 function kboPropScore(prop) {
+  const stat = prop?.stat;
+  if (!lineMatchesStat(stat, prop?.line)) return -Infinity;
   const score = num(prop?.cg_projection ?? prop?.rating);
   if (Number.isFinite(score)) return score;
-  return ratioScore(prop?.avg ?? prop?.projection, prop?.line);
+  return ratioScore(prop?.avg ?? prop?.projection, prop?.line, stat);
 }
 
 // StrikeoutProjections / BatterProjections rows
 function kboProjectionScore(row) {
+  const stat = row?.prop ?? row?.stat;
+  if (!lineMatchesStat(stat, row?.line)) return -Infinity;
   const score = num(row?.cg_projection ?? row?.rating);
   if (Number.isFinite(score)) return score;
   const edge = num(row?.edge);
@@ -135,18 +154,32 @@ function kboProjectionScore(row) {
 function wnbaPropScore(player, prop) {
   const line = prop?.standardLine ?? prop?.line;
   const projection = prop?.projection ?? player?.propProjectionByStat?.[prop?.stat];
-  return ratioScore(projection, line);
+  return ratioScore(projection, line, prop?.stat);
 }
 
-// NFL Prop Lines: score = projection / line × 50
+// NFL Prop Lines: projection / max(line, per-stat floor) × 50.
+// A yardage line at or below 0.5 still does not score.
 function nflScore(row) {
-  return ratioScore(row?.projection, row?.line);
+  const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  return score == null ? -Infinity : score;
+}
+
+// Kickoff has arrived. `now` is the server clock at the moment the preview
+// is built, which is the /api/data request. A missing or unparseable
+// start_time stays eligible: there is no kickoff that has passed.
+export function gameAlreadyStarted(row, now = new Date()) {
+  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc;
+  if (raw == null || String(raw).trim() === '') return false;
+  const kick = Date.parse(String(raw));
+  const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now));
+  if (!Number.isFinite(kick) || !Number.isFinite(nowMs)) return false;
+  return kick <= nowMs;
 }
 
 // Unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
   if (row?.rankEligible === false) return -Infinity;
-  return ratioScore(row?.projection, row?.line);
+  return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
 }
 
 function nhlSharpScore(row) {
@@ -181,6 +214,7 @@ function wnbaSharpScore(row) {
 function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
   return items
     .map((item, index) => ({ item, index, score: scoreFn(item) }))
+    .filter((row) => Number.isFinite(row.score))
     .sort((a, b) => (b.score - a.score) || (a.index - b.index))
     .slice(0, n);
 }
@@ -189,9 +223,9 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
 // Every builder keeps the original payload shape so the existing UI code can
 // render the preview without special cases.
 
-function previewList(scoreFn) {
+function previewList(scoreFn, keep) {
   return (payload) => {
-    const rows = Array.isArray(payload) ? payload : [];
+    const rows = (Array.isArray(payload) ? payload : []).filter((row) => (keep ? keep(row) : true));
     const kept = topN(rows, scoreFn).map(({ item }) => item);
     return { data: kept, lockedCount: Math.max(0, rows.length - kept.length) };
   };
@@ -332,7 +366,14 @@ export const DATASETS = {
   wnba_dvp_center: { table: 'wnba_dvp_center', sport: 'wnba', free: FULL },
   wnba_sharp_odds: { table: 'wnba_sharp_odds', sport: 'wnba', free: previewObjectList('records', wnbaSharpScore) },
   // NFL
-  nfl_projections: { table: 'nfl_projections', sport: 'nfl', free: previewList(nflScore) },
+  nfl_projections: {
+    table: 'nfl_projections',
+    sport: 'nfl',
+    // The NFL board's free top 3 is this list. There is no second ranker.
+    free: previewList(nflScore, (row) => (
+      lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
+    )),
+  },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },
@@ -357,6 +398,26 @@ export const DATASETS = {
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
 };
 
+function countList(payload, key) {
+  if (key) {
+    const rows = payload && typeof payload === 'object' ? payload[key] : null;
+    return Array.isArray(rows) ? rows.length : 0;
+  }
+  return Array.isArray(payload) ? payload.length : 0;
+}
+
+// Same snapshot shape the board already renders, with the pick rows removed.
+// lockedCount stays positive so the page shows the paywall instead of an error
+// or an empty-board message.
+function hiddenNflPreview(ds, payload) {
+  if (ds === 'nfl_projections') {
+    return { data: [], lockedCount: countList(payload) };
+  }
+  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
+}
+
 // Decide what the caller receives for one dataset snapshot.
 export function shapeForTier(ds, payload, tier) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
@@ -364,6 +425,10 @@ export function shapeForTier(ds, payload, tier) {
   const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
+  }
+  if (!NFL_FREE_PREVIEW_ENABLED && NFL_FREE_PREVIEW_DATASETS.has(ds)) {
+    const hidden = hiddenNflPreview(ds, payload);
+    return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
   }
   const { data, lockedCount } = spec.free(payload);
   return { data, preview: true, lockedCount };

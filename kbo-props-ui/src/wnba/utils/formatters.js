@@ -1,3 +1,5 @@
+import { isYardageStat } from '../../cgScore.js'
+
 export const fmt1 = v => (typeof v === 'number' ? v.toFixed(1) : parseFloat(v || 0).toFixed(1))
 export const fmt2 = v => (typeof v === 'number' ? v.toFixed(2) : parseFloat(v || 0).toFixed(2))
 export const fmtInt = v => Math.round(parseFloat(v || 0))
@@ -62,8 +64,10 @@ export function teamColor(abbr) {
 }
 
 // ── PrizePicks Rating helpers ─────────────────────────────────────────────────
-// Formula: (projection / ppLine) * 50  →  50 = exactly on the line
-export function calcRating(proj, line) {
+// Formula: (projection / ppLine) * 50  →  50 = exactly on the line.
+// Yardage at 0.5 is an any-yards floor and is not a score.
+export function calcRating(proj, line, stat) {
+  if (isYardageStat(stat) && Number(line) <= 0.5) return null
   if (!line || line === 0 || proj == null) return null
   return parseFloat(((proj / line) * 50).toFixed(1))
 }

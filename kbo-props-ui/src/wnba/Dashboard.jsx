@@ -6,6 +6,7 @@ import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { wnbaHitPills } from '../hitRateStrip'
+import { cgScore } from '../cgScore'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -465,7 +466,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         const line = prop.standardLine ?? rawLine
         const projectionFn = PROP_PROJECTION[prop.stat]
         const projection = prop.projection ?? (projectionFn ? projectionFn(player) : null)
-        if (projection == null || !Number.isFinite(line) || line <= 0) return
+        const score = cgScore(projection, line, prop.stat)
+        if (projection == null || !Number.isFinite(line) || line <= 0 || score == null) return
 
         const recentGames = player.recentGames || []
         const getter = GAME_STAT_VALUE[prop.stat]
@@ -486,7 +488,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           prop: prop.stat,
           line,
           projection,
-          score: (projection / line) * 50,
+          score,
           isOver: projection >= line,
           recent,
           hitRate: l10Obj ? Math.round(l10Obj.pct) : 0,

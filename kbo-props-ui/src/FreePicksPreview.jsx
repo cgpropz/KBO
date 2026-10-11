@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
+import { cgScore, lineMatchesStat } from './cgScore';
+import { nflCgScore } from './nfl/nflLineFloors';
 import './FreeFunnel.css';
 
 /*
@@ -17,7 +19,10 @@ const fmt = (v, digits = 1) => {
   if (!Number.isFinite(n)) return '-';
   return Number.isInteger(n) ? String(n) : n.toFixed(digits);
 };
-const ratio = (projection, line) => (num(line) > 0 && Number.isFinite(num(projection)) ? (num(projection) / num(line)) * 50 : -Infinity);
+const ratio = (projection, line, stat) => {
+  if (!lineMatchesStat(stat, line)) return -Infinity;
+  return num(line) > 0 && Number.isFinite(num(projection)) ? (num(projection) / num(line)) * 50 : -Infinity;
+};
 
 function kboRows(data) {
   const rows = [];
@@ -31,7 +36,7 @@ function kboRows(data) {
       projection: prop.projection ?? prop.avg,
       hitRate: prop.hit_rate_l10,
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
-      score: Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line),
+      score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line, prop.stat)),
     });
   }));
   return rows;
@@ -46,7 +51,7 @@ function nflRows(data) {
     projection: row.projection,
     hitRate: row.hitRate,
     tag: null,
-    score: ratio(row.projection, row.line),
+    score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
   }));
 }
 
@@ -62,7 +67,7 @@ function wnbaRows(data) {
       projection: prop.projection,
       hitRate: null,
       tag: null,
-      score: ratio(prop.projection, line),
+      score: cgScore(prop.projection, line, prop.stat) ?? -Infinity,
     });
   }));
   return rows;
@@ -97,7 +102,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
         .then((snap) => {
           if (!active) return;
           const rows = board.toRows(snap.data)
-            .filter((r) => r.player && r.stat)
+            .filter((r) => r.player && r.stat && Number.isFinite(r.score) && r.score !== -Infinity)
             .sort((a, b) => b.score - a.score)
             .slice(0, 3);
           setBoards((prev) => ({ ...prev, [board.id]: { status: rows.length ? 'ready' : 'empty', rows, lockedCount: snap.lockedCount || 0, updatedAt: snap.updatedAt } }));

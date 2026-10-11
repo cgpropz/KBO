@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
+import { lineMatchesStat } from '../cgScore'
+import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
@@ -86,7 +88,8 @@ export default function NflProjections({ onSelectPlayer }) {
   const props = useMemo(() => ['All props', ...new Set(projections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [projections])
   const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
   const rows = useMemo(() => projections
-    .map((item) => ({ ...item, score: item.line ? (item.projection / item.line) * 50 : 0 }))
+    .filter((item) => lineMatchesStat(item.prop, item.line))
+    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0 }))
     .filter((item) => position === 'ALL' || item.position === position)
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
@@ -106,9 +109,9 @@ export default function NflProjections({ onSelectPlayer }) {
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
-      {!error && loaded && !projections.length && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
+      {!error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
-      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">Free preview: showing the top {projections.length} edge{projections.length === 1 ? '' : 's'}. {lockedCount} more are locked. Upgrade to see every edge.</div>}
+      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} lines are locked. Upgrade to see every edge.`}</div>}
       <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>
     </section>
   )

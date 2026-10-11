@@ -349,6 +349,11 @@ SUPPORTED_PROPS = {
     'Receiving Yards', 'Receptions', 'Rec Targets',
 }
 BOARD_ODDS_TYPES = {'standard', 'demon', 'goblin'}
+# Yardage markets only. A counting stat (Receptions, Rush Attempts, Pass TDs)
+# can legitimately be 0.5. These cannot.
+YARDAGE_PROPS = {
+    'Pass Yards', 'Rush Yards', 'Receiving Yards', 'Pass+Rush Yds', 'Rush+Rec Yds',
+}
 
 
 def full_game_opponent(description):
@@ -372,21 +377,41 @@ def _trending_count(value):
         return None
 
 
+def line_matches_stat(prop, line):
+    """False when a yardage stat is paired with PrizePicks' 0.5 floor.
+
+    The partner API labels that card odds_type "standard" and stat_type
+    "Receiving Yards" / "Rush Yards" (not a TD, and not goblin or promo).
+    It is an any-yards card. The priced ladder (4.5, 9.5, 19.5, …) is a
+    demon alt, not a replacement for the standard line, so it is not promoted.
+    """
+    try:
+        value = float(line)
+    except (TypeError, ValueError):
+        return False
+    if prop in YARDAGE_PROPS and value <= 0.5:
+        return False
+    return True
+
+
 def choose_published_line(candidates):
     """One full-game card per player and prop.
 
-    The standard line is the card when PrizePicks posted one. Pass TDs is the
-    market the Players board still shows when a quarterback has no standard
-    line: the primary demon (lowest demon line that has a pick count), which
-    is the 1.5 card for Jones, Mariota, Bagent, and Geno. Higher demon alts
-    and goblin alts stay off. Other props do not get that fallback.
+    The standard line is the card when PrizePicks posted one. A 0.5 yardage
+    standard is not that card: it does not match the stat, and the demon
+    ladder is not substituted for it. Pass TDs is the market the Players
+    board still shows when a quarterback has no standard line: the primary
+    demon (lowest demon line that has a pick count), which is the 1.5 card
+    for Jones, Mariota, Bagent, and Geno. Higher demon alts and goblin alts
+    stay off. Other props do not get that fallback.
     """
-    standards = [row for row in candidates if row['odds_type'] == 'standard']
+    matched = [row for row in candidates if line_matches_stat(row['prop'], row['line'])]
+    standards = [row for row in matched if row['odds_type'] == 'standard']
     if standards:
         return max(standards, key=lambda row: (row['trending'] or 0, -row['line']))
-    if not candidates or candidates[0]['prop'] != 'Pass TDs':
+    if not matched or matched[0]['prop'] != 'Pass TDs':
         return None
-    demons = [row for row in candidates if row['odds_type'] == 'demon']
+    demons = [row for row in matched if row['odds_type'] == 'demon']
     featured = [row for row in demons if row['trending'] is not None]
     pool = featured or demons
     if not pool:

@@ -3,6 +3,7 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import './PlayerPropsUI.css';
 import { fetchDataSnapshot } from './dataUrl';
+import { cgScore } from './cgScore';
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Lotte: '#ff6666',
@@ -89,8 +90,8 @@ const PlayerPropsUI = () => {
     }
     items.sort((a, b) => {
       if (sortBy === 'hit_rate') {
-        const scoreA = a.prop.line > 0 ? (a.prop.avg / a.prop.line) * 50 : 0;
-        const scoreB = b.prop.line > 0 ? (b.prop.avg / b.prop.line) * 50 : 0;
+        const scoreA = cgScore(a.prop.avg, a.prop.line, a.prop.stat) ?? -Infinity;
+        const scoreB = cgScore(b.prop.avg, b.prop.line, b.prop.stat) ?? -Infinity;
         return scoreB - scoreA;
       }
       if (sortBy === 'edge') return ((b.prop.avg || 0) - b.prop.line) - ((a.prop.avg || 0) - a.prop.line);
@@ -181,7 +182,7 @@ function PropCard({ card, photoUrl, matchup }) {
   const edge = (prop.avg || 0) - prop.line;
   let rec = prop.recommendation || (edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH');
   if (isPromo && rec === 'UNDER') rec = 'PUSH';
-  const score = prop.line > 0 ? (prop.avg / prop.line) * 50 : 0;
+  const score = cgScore(prop.avg, prop.line, prop.stat);
   const [imageFailed, setImageFailed] = useState(false);
   const [chartPeriod, setChartPeriod] = useState(null);
   const [flipped, setFlipped] = useState(false);
@@ -283,7 +284,7 @@ function PropCard({ card, photoUrl, matchup }) {
             </div>
             <div className="pc-stat-box">
               <div className="pc-stat-label">SCORE</div>
-              <div className="pc-stat-value" data-level={hitLevel(score)}>{score.toFixed(1)}</div>
+              <div className="pc-stat-value" data-level={hitLevel(score)}>{score == null ? '—' : score.toFixed(1)}</div>
             </div>
             <div className="pc-stat-box">
               <div className="pc-stat-label">EDGE</div>

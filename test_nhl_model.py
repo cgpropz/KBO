@@ -21,6 +21,10 @@ class ModelTests(unittest.TestCase):
     def test_cg_score_matches_the_other_tabs(self):
         self.assertEqual(cg_score(3, 2.5), 60.0)
         self.assertIsNone(cg_score(3, 0))
+        self.assertIsNone(cg_score(10.7, 0.5, "Receiving Yards"))
+        self.assertIsNone(cg_score(9.8, 0.5, "Rush Yards"))
+        self.assertEqual(cg_score(1.5, 0.5, "Receptions"), 150.0)
+        self.assertEqual(cg_score(9.7, 1.5, "Rush Yards"), 323.3)
 
     def test_unconfirmed_goalie_sorts_under_every_skater(self):
         goalie = rank_score(30, 20, rank_eligible=False)
