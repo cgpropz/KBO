@@ -26,7 +26,7 @@ def main(argv=None) -> int:
     parser.add_argument("--dir", type=Path, default=None, help="WNBA snapshot directory")
     args = parser.parse_args(argv)
     summary = apply_wnba_files(args.dir)
-    summary["mode"] = formula_mode()
+    summary["mode"] = formula_mode("wnba")
     print(json.dumps(summary, indent=2))
     return 0
 

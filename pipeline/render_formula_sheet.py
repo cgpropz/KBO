@@ -14,6 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pipeline.live_formula import CONFIG_PATH, file_mode, load_params  # noqa: E402
 
+SPORTS = ("kbo", "wnba", "nfl")
+
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
 KNOB_PLAIN = {
@@ -184,11 +186,15 @@ def resolved_numbers(sport: str, knobs: dict) -> list[str]:
 
 
 def section(sport: str, params: dict) -> dict:
-    live = params.get("recommendation") == "candidate"
+    # A candidate is live only when that sport's switch publishes tuned numbers.
+    # Shadow still scores every candidate, including sports left on current.
+    candidate = params.get("recommendation") == "candidate"
+    live = candidate and file_mode(sport) == "tuned"
     knobs = (params.get("formula") or {}).get("knobs") or {}
     return {
         "sport": sport,
         "stat": params["stat"],
+        "candidate": candidate,
         "live": live,
         "file": params.get("_file"),
         "plain": STAT_PLAIN.get((sport, params["stat"]), params["stat"]),
@@ -203,26 +209,29 @@ def section(sport: str, params: dict) -> dict:
 
 def all_sections() -> list[dict]:
     rows = []
-    for sport in ("kbo", "wnba", "nfl"):
+    for sport in SPORTS:
         for params in load_params(sport).values():
             rows.append(section(sport, params))
     rows.sort(key=lambda row: (row["sport"], not row["live"], row["stat"]))
     return rows
 
 
+def mode_label() -> str:
+    return ", ".join(f"{sport} **{file_mode(sport)}**" for sport in SPORTS)
+
+
 REVERT = """## How to roll back
 
-The live site is on the tuned formulas because `pipeline/projection_formula.json` says `"mode": "tuned"`.
+KBO publishes the tuned formulas because `pipeline/projection_formula.json` sets `sports.kbo` to `tuned`. WNBA and NFL stay on the previous formulas (`sports.wnba` and `sports.nfl` are `current`). The top-level `mode` is only the fallback when a sport is not listed.
 
-To put the previous formulas back:
+To put KBO back on the previous formulas:
 
-1. Change that file's `mode` from `tuned` to `current` (or run one job with `CG_PROJECTION_FORMULA=current`).
-2. Rerun the refresh that publishes each sport:
-   - KBO: **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
-   - WNBA: **Refresh WNBA Data** (`.github/workflows/wnba-refresh.yml`) and **Refresh WNBA PrizePicks Lines (30 min)** (`.github/workflows/wnba-props-refresh.yml`). Both export snapshots and then run `pipeline/apply_live_formula.py`. Supabase updates without a Vercel redeploy. Start either with `workflow_dispatch` if you do not want to wait for the schedule.
-   - NFL: **Refresh NFL PrizePicks Board** (`.github/workflows/nfl-refresh.yml`). It runs `python nfl/build_projection_data.py`, which reads the same switch. Start it with `workflow_dispatch` or wait for the next scheduled run.
+1. Set `sports.kbo` to `current`. One KBO job can instead set `CG_PROJECTION_FORMULA=current`. That env value overrides every sport for that one run, so do not set it on a WNBA or NFL refresh unless those sports should move too.
+2. Rerun **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
 
-Shadow keeps scoring both formulas either way. While mode is `tuned`, the site number is the tuned fit and `baseline_projection` on each row is the previous formula.
+WNBA and NFL publish the previous formula. Run **Refresh WNBA Data** or **Refresh WNBA PrizePicks Lines (30 min)** and **Refresh NFL PrizePicks Board** once after this change so boards generated while every sport was `tuned` are rewritten. Later, if either sport is set to `tuned`, rerun that same refresh.
+
+Shadow keeps scoring both formulas either way. While a sport is `tuned`, that sport's site number is the tuned fit and `baseline_projection` on each row is the previous formula.
 """
 
 
@@ -230,25 +239,41 @@ def markdown(rows: list[dict]) -> str:
     lines = [
         "# Live projection formulas",
         "",
-        f"Config file: `pipeline/projection_formula.json` (mode **{file_mode()}**).",
+        f"Config file: `pipeline/projection_formula.json` ({mode_label()}).",
         "",
-        "The site publishes a tuned formula only when that stat's file in `ml/params` says `recommendation: candidate`. Those are the fits shadow mode has been comparing with the previous formula. Every other stat stays on the previous formula.",
+        "A sport publishes a tuned formula only when its switch is `tuned` and that stat's file in `ml/params` says `recommendation: candidate`. Those are the fits shadow mode has been comparing with the previous formula. Every other stat, and every sport left on `current`, stays on the previous formula. Shadow still scores the candidates that are not published.",
         "",
         "Numbers below are copied from those params files. They are not re-fit here.",
         "",
         REVERT.strip(),
         "",
     ]
-    for sport in ("kbo", "wnba", "nfl"):
+    for sport in SPORTS:
         sport_rows = [row for row in rows if row["sport"] == sport]
         lines.append(f"## {sport.upper()}")
         lines.append("")
         live = [row for row in sport_rows if row["live"]]
-        held = [row for row in sport_rows if not row["live"]]
-        lines.append(f"Live on the tuned formula: {len(live)}. Still on the previous formula: {len(held)}.")
+        shadow_only = [row for row in sport_rows if row.get("candidate") and not row["live"]]
+        held = [row for row in sport_rows if not row.get("candidate")]
+        lines.append(
+            f"Live on the tuned formula: {len(live)}. "
+            f"Shadow candidates published as the previous formula: {len(shadow_only)}. "
+            f"Not adopted, previous formula: {len(held)}."
+        )
         lines.append("")
         for row in live:
             lines.extend(_md_stat(row))
+        if shadow_only:
+            lines.append("### Tuned in shadow, previous formula on the site")
+            lines.append("")
+            lines.append(
+                f"{sport.upper()} is `{file_mode(sport)}`, so these candidates are not published. "
+                "Shadow still scores them against the previous formula."
+            )
+            lines.append("")
+            for row in shadow_only:
+                lines.append(f"- **{row['stat']}** (`{row['file']}`). {row['plain']}")
+            lines.append("")
         if held:
             lines.append("### Left on the previous formula")
             lines.append("")
@@ -314,18 +339,22 @@ def html_doc(rows: list[dict]) -> str:
 <body>
 <main>
 <h1>Live projection formulas</h1>
-<p class="src">Mode in <code>pipeline/projection_formula.json</code>: <strong>""" + html.escape(file_mode()) + """</strong>. Coefficients are the committed Phase 2 params, not new fits.</p>
+<p class="src">Modes in <code>pipeline/projection_formula.json</code>: <strong>""" + html.escape(mode_label().replace("**", "")) + """</strong>. Coefficients are the committed Phase 2 params, not new fits.</p>
 <div class="note">
-<p><strong>What is live.</strong> A stat is on the tuned formula only when its params file says <code>candidate</code>. That is the fit shadow has been scoring. Everything else stays on the previous formula.</p>
-<p><strong>Roll back.</strong> Set <code>mode</code> to <code>current</code>, then rerun <strong>Refresh Data &amp; Deploy to Vercel</strong> for KBO (<code>deploy.yml</code>), <strong>Refresh WNBA Data</strong> or <strong>Refresh WNBA PrizePicks Lines (30 min)</strong> for WNBA, and <strong>Refresh NFL PrizePicks Board</strong> for NFL. One run can also set <code>CG_PROJECTION_FORMULA=current</code> without editing the file.</p>
+<p><strong>What is live.</strong> A stat is on the tuned formula only when that sport's switch is <code>tuned</code> and its params file says <code>candidate</code>. That is the fit shadow has been scoring. WNBA and NFL stay on the previous formula. Shadow still scores their candidates.</p>
+<p><strong>Roll back KBO.</strong> Set <code>sports.kbo</code> to <code>current</code>, then rerun <strong>Refresh Data &amp; Deploy to Vercel</strong> (<code>deploy.yml</code>). One KBO run can also set <code>CG_PROJECTION_FORMULA=current</code>. That env value overrides every sport for that one run.</p>
 </div>
 """]
     for sport in ("kbo", "wnba", "nfl"):
         sport_rows = [row for row in rows if row["sport"] == sport]
         parts.append(f"<h2>{sport.upper()}</h2>")
         for row in sport_rows:
-            badge = "live · tuned" if row["live"] else "previous formula"
-            klass = "badge" if row["live"] else "badge held"
+            if row["live"]:
+                badge, klass = "live · tuned", "badge"
+            elif row.get("candidate"):
+                badge, klass = "previous formula · shadow only", "badge held"
+            else:
+                badge, klass = "previous formula", "badge held"
             parts.append("<article class=\"card\">")
             parts.append(f"<h3>{html.escape(row['stat'])} <span class=\"{klass}\">{badge}</span></h3>")
             parts.append(f"<p>{html.escape(row['plain'])}</p>")
@@ -354,7 +383,7 @@ def main() -> int:
     (DOCS / "live_formulas.md").write_text(markdown(rows), encoding="utf-8")
     (DOCS / "live_formulas.html").write_text(html_doc(rows), encoding="utf-8")
     live = sum(1 for row in rows if row["live"])
-    print(f"Wrote docs/live_formulas.md and docs/live_formulas.html ({live} live stats, mode {file_mode()}, config {CONFIG_PATH.name})")
+    print(f"Wrote docs/live_formulas.md and docs/live_formulas.html ({live} live stats, {mode_label()}, config {CONFIG_PATH.name})")
     return 0
 
 

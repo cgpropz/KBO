@@ -1,16 +1,20 @@
 """Publish Phase 2 tuned formulas on the live boards, with a one-file rollback.
 
-The switch is pipeline/projection_formula.json (`mode`: "tuned" or "current").
-`CG_PROJECTION_FORMULA` overrides that file for a single process.
+The switch is pipeline/projection_formula.json. Each sport has its own mode
+(`sports.kbo`, `sports.wnba`, `sports.nfl`: "tuned" or "current"). `mode` is
+only the fallback when a sport is missing. `CG_PROJECTION_FORMULA` overrides
+every sport for a single process.
 
-Only stats whose ml/params file says recommendation == "candidate" change.
-Those are the fits shadow mode has been scoring. Stats marked keep_current
-stay on the previous formula, even if a search left unused knobs in the file.
+Only stats whose ml/params file says recommendation == "candidate" change,
+and only for a sport whose mode is "tuned". Those are the fits shadow mode
+has been scoring. Stats marked keep_current stay on the previous formula,
+even if a search left unused knobs in the file.
 
 When a row is switched, the previous number is kept as baseline_projection
 and the previous pick as baseline_recommendation. The site reads projection.
 Shadow keeps grading baseline (old formula) against the tuned fit, so the
-running comparison does not collapse into tuned-vs-tuned.
+running comparison does not collapse into tuned-vs-tuned. Shadow still
+computes both formulas for every sport, including sports that publish current.
 """
 from __future__ import annotations
 
@@ -61,27 +65,41 @@ WNBA_RATING_KEY = {
 }
 
 
-def formula_mode() -> str:
-    """tuned or current. Env wins over the committed config."""
-    env = os.environ.get("CG_PROJECTION_FORMULA", "").strip().lower()
-    if env in ("tuned", "current"):
+def _config() -> dict:
+    try:
+        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _mode_value(mode) -> str | None:
+    text = str(mode or "").strip().lower()
+    return text if text in ("tuned", "current") else None
+
+
+def _mode_from_config(data: dict, sport: str | None) -> str:
+    """Sport entry wins. Missing sports use the top-level fallback, then current."""
+    if sport:
+        sports = data.get("sports")
+        if isinstance(sports, dict):
+            chosen = _mode_value(sports.get(str(sport).strip().lower()))
+            if chosen:
+                return chosen
+    return _mode_value(data.get("mode")) or "current"
+
+
+def formula_mode(sport: str | None = None) -> str:
+    """tuned or current for one sport. Env wins over the committed config for every sport."""
+    env = _mode_value(os.environ.get("CG_PROJECTION_FORMULA", ""))
+    if env:
         return env
-    try:
-        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return "current"
-    mode = str(data.get("mode") or "").strip().lower()
-    return mode if mode in ("tuned", "current") else "current"
+    return _mode_from_config(_config(), sport)
 
 
-def file_mode() -> str:
+def file_mode(sport: str | None = None) -> str:
     """Mode written in the config file, ignoring the env override."""
-    try:
-        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return "current"
-    mode = str(data.get("mode") or "").strip().lower()
-    return mode if mode in ("tuned", "current") else "current"
+    return _mode_from_config(_config(), sport)
 
 
 def linear(cal: dict | None, value: float) -> float:
@@ -109,7 +127,7 @@ def load_params(sport: str) -> dict[str, dict]:
 
 def candidate_params(sport: str, stat: str) -> dict | None:
     """Params to publish, or None when this stat stays on the previous formula."""
-    if formula_mode() != "tuned":
+    if formula_mode(sport) != "tuned":
         return None
     params = load_params(sport).get(stat)
     if not params or params.get("recommendation") != "candidate":
@@ -136,7 +154,7 @@ def attach_kbo_formula(row: dict, tuned: float | None, threshold: float, factors
     """
     row["baseline_projection"] = row.get("projection")
     row["baseline_recommendation"] = row.get("recommendation")
-    row["formula_mode"] = formula_mode()
+    row["formula_mode"] = formula_mode("kbo")
     row["formula_applied"] = tuned is not None
     if tuned is None:
         return row
@@ -394,7 +412,7 @@ def _apply_wnba_number(row: dict, stat: str, games: list[dict], dvp: dict) -> bo
     Idempotent: a second pass keeps the stored baseline and recomputes tuned
     from the game log, so it does not calibrate an already-tuned number.
     """
-    mode = formula_mode()
+    mode = formula_mode("wnba")
     if mode != "tuned":
         if row.get("formula_applied") and row.get("baseline_projection") is not None:
             row["projection"] = row["baseline_projection"]
@@ -438,17 +456,17 @@ def apply_wnba_players(players: list[dict], logs: dict[str, list[dict]] | None =
         name = str(player.get("name") or "").strip().lower()
         games = logs.get(name, [])
         dvp = player.get("dvpFactors") or {}
-        player["formula_mode"] = formula_mode()
+        player["formula_mode"] = formula_mode("wnba")
         by_stat = player.get("propProjectionByStat")
         if isinstance(by_stat, dict) and "baselinePropProjectionByStat" not in player:
             player["baselinePropProjectionByStat"] = dict(by_stat)
-        if formula_mode() != "tuned" and isinstance(player.get("baselinePropProjectionByStat"), dict) and isinstance(by_stat, dict):
+        if formula_mode("wnba") != "tuned" and isinstance(player.get("baselinePropProjectionByStat"), dict) and isinstance(by_stat, dict):
             by_stat.update(player["baselinePropProjectionByStat"])
             for stat, value in player["baselinePropProjectionByStat"].items():
                 headline = WNBA_HEADLINE.get(stat)
                 if headline:
                     player[headline] = value
-        elif isinstance(by_stat, dict) and formula_mode() == "tuned":
+        elif isinstance(by_stat, dict) and formula_mode("wnba") == "tuned":
             for stat in list(by_stat):
                 tuned = tune_wnba(stat, games, dvp)
                 if tuned is None:
@@ -489,7 +507,7 @@ def apply_wnba_files(directory: Path | None = None) -> dict:
     """Rewrite the exported WNBA snapshots the site publishes."""
     directory = Path(directory or WNBA_DIR)
     logs = _wnba_logs()
-    summary = {"mode": formula_mode(), "files": {}, "switched": 0}
+    summary = {"mode": formula_mode("wnba"), "sport": "wnba", "files": {}, "switched": 0}
     standard_players: list[dict] = []
     for kind in ("standard", "demon", "goblin"):
         path = directory / f"projections_{kind}.json"
