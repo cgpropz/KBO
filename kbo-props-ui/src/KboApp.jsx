@@ -3,17 +3,20 @@ import { useAuth } from './AuthContext'
 import { hasAnyPaidAccess } from './entitlements'
 import Paywall from './Paywall'
 import SportSwitcher from './SportSwitcher'
-import KboPropBoard from './KboPropBoard'
-import StrikeoutProjections from './StrikeoutProjections'
-import BatterProjections from './BatterProjections'
-import PitcherRankings from './PitcherRankings'
-import PropTracker from './PropTracker'
-import MatchupDeepDive from './MatchupDeepDive'
-import SubscriptionPage from './SubscriptionPage'
-import TutorialPage from './TutorialPage'
-import KboPlayerPage from './KboPlayerPage'
 import PlayerSearch from './PlayerSearch'
+import RouteFallback from './RouteFallback'
+import { GuideNavLinks } from './GuideLinks'
 import './KboPropBoard.css'
+
+const KboPropBoard = lazy(() => import('./KboPropBoard'))
+const StrikeoutProjections = lazy(() => import('./StrikeoutProjections'))
+const BatterProjections = lazy(() => import('./BatterProjections'))
+const PitcherRankings = lazy(() => import('./PitcherRankings'))
+const PropTracker = lazy(() => import('./PropTracker'))
+const MatchupDeepDive = lazy(() => import('./MatchupDeepDive'))
+const SubscriptionPage = lazy(() => import('./SubscriptionPage'))
+const TutorialPage = lazy(() => import('./TutorialPage'))
+const KboPlayerPage = lazy(() => import('./KboPlayerPage'))
 
 const NAV_ITEMS = [
   { id: 'board', label: 'PrizePicks Board' },
@@ -78,6 +81,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
               {item.label}
             </button>
           ))}
+          <GuideNavLinks />
         </div>
         <PlayerSearch onSelect={openPlayer} />
         <button className="kbo-app-pro-badge" onClick={() => setView('pricing')}>{isPaid ? 'MANAGE' : 'UPGRADE'}</button>
@@ -85,7 +89,9 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
       </nav>
       {/* keyed on tier so data views refetch (full vs. preview) when the tier changes */}
       <main className="kbo-app-content" key={tier || 'free'}>
-        {needsPaywall ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall> : content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {needsPaywall ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall> : content}
+        </Suspense>
       </main>
     </div>
   )

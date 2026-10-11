@@ -4,14 +4,17 @@ import Paywall from '../Paywall'
 import { sportAccess } from '../entitlements'
 import SportSwitcher from '../SportSwitcher'
 import { useNhlOpen } from '../useNhlOpen'
+import RouteFallback from '../RouteFallback'
+import { GuideNavLinks } from '../GuideLinks'
 import '../nfl/nfl.css'
-import NhlDvp from './NhlDvp'
-import NhlLineups from './NhlLineups'
-import NhlPlayerPage from './NhlPlayerPage'
-import NhlProjections from './NhlProjections'
-import NhlPropLines from './NhlPropLines'
-import NhlSharpOdds from './NhlSharpOdds'
 import './nhl.css'
+
+const NhlDvp = lazy(() => import('./NhlDvp'))
+const NhlLineups = lazy(() => import('./NhlLineups'))
+const NhlPlayerPage = lazy(() => import('./NhlPlayerPage'))
+const NhlProjections = lazy(() => import('./NhlProjections'))
+const NhlPropLines = lazy(() => import('./NhlPropLines'))
+const NhlSharpOdds = lazy(() => import('./NhlSharpOdds'))
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -59,13 +62,16 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
           {NAV.map((item) => (
             <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
           ))}
+          <GuideNavLinks />
         </div>
-        <button className="nfl-pro-badge" onClick={onNavigatePricing}>NHL</button>
+        <button className="nfl-pro-badge" onClick={onNavigatePricing}>{unlocked ? 'MANAGE' : 'UPGRADE'}</button>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
-        {view === 'dashboard' ? content : (
-          <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
-        )}
+        <Suspense fallback={<RouteFallback inset />}>
+          {view === 'dashboard' ? content : (
+            <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
+          )}
+        </Suspense>
       </main>
     </div>
   )
