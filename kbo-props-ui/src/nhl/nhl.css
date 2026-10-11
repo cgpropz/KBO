@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
 /* Arena chrome. Green still means over or a good mark. Red still means under. */
 .nhl-root .nfl-logo,
 .nhl-root .nfl-board-header h1,
@@ -101,53 +103,449 @@
   color: #b7c9d8;
 }
 
-.nhl-root .nhl-player-sheet .nfl-player-range-strip {
-  margin: 8px 0 12px;
+.nhl-player-sheet {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #f4f4f5;
+  font-family: Inter, system-ui, sans-serif;
 }
-.nhl-root .nhl-player-sheet .nfl-player-range-strip button {
-  border-color: #1c3a52;
-  background: #0b1424;
-  color: #9eb4c8;
+.nhl-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 14px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #e4e4e7;
+  background: #080c0a;
+  font: 700 13px Inter, system-ui, sans-serif;
+  cursor: pointer;
 }
-.nhl-root .nhl-player-sheet .nfl-player-range-strip button small {
+.nhl-back:hover { color: #4ade80; border-color: rgba(74, 222, 128, 0.5); }
+.nhl-player-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.nhl-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+}
+.nhl-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border: 2px solid rgba(74, 222, 128, 0.5);
+  border-radius: 50%;
+  color: #f4f4f5;
+  background: #080c0a;
+  font: 800 18px Inter, system-ui, sans-serif;
+}
+.nhl-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+}
+.nhl-avatar-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+  border: 2px solid #050506;
+  border-radius: 50%;
+  background: #080c0a;
+  object-fit: contain;
+}
+.nhl-player-id { min-width: 0; }
+.nhl-player-id h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(26px, 6vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+  text-shadow: 0 2px 16px rgba(4, 8, 18, 0.75);
+}
+.nhl-player-id h1 span {
+  padding: 3px 8px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  color: #4ade80;
+  background: #080c0a;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-shadow: none;
+}
+.nhl-player-sub {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: #e4e4e7;
+  background: #080c0a;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.nhl-player-sub b {
+  color: #f4f4f5;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+}
+.nhl-no-line {
+  color: #a1a1aa;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+}
+.nhl-player-sheet .nfl-player-range-strip {
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+.nhl-player-sheet .nfl-player-range-strip button,
+.nhl-player-sheet .nfl-player-range-strip button:not(.active) {
+  flex: 1 1 84px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: #a1a1aa;
+  background-color: #080c0a;
+  font-family: Inter, system-ui, sans-serif;
+}
+.nhl-player-sheet .nfl-player-range-strip button small {
   display: block;
   margin-top: 3px;
-  color: #6e8496;
-  font: 9px monospace;
+  color: #8f939b;
+  font: 600 10px 'JetBrains Mono', ui-monospace, monospace;
 }
-.nhl-root .nhl-player-sheet .nfl-player-range-strip button.active {
-  border-color: #8ecfff;
-  background: #16324a;
+.nhl-player-sheet .nfl-player-range-strip button b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
 }
-.nhl-root .nhl-player-sheet .nfl-player-range-strip button.active span {
-  color: #f4f8ff;
+.nhl-player-sheet .nfl-player-range-strip button.active {
+  border-color: rgba(74, 222, 128, 0.5);
+  background-color: #080c0a;
+  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.35);
 }
-.nhl-root .nhl-player-sheet .nhl-chart-scroll {
-  overflow-x: auto;
+.nhl-player-sheet .nfl-player-range-strip button.active span { color: #f4f4f5; }
+.nhl-player-sheet .nhl-good { color: #4ade80; }
+.nhl-player-sheet .nhl-bad { color: #f87171; }
+.nhl-player-sheet .nfl-player-range-strip button b.nhl-good { color: #4ade80; }
+.nhl-player-sheet .nfl-player-range-strip button b.nhl-bad { color: #f87171; }
+.nhl-chart-card,
+.nhl-profile {
+  padding: 16px;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 20px;
+  background: #080c0a;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
 }
-.nhl-root .nhl-player-sheet .nhl-chart-scroll .nfl-history-dates span {
-  min-width: 28px;
+.nhl-chart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 700;
 }
-.nhl-root .nhl-player-sheet .nfl-history-bars {
-  gap: 6px;
-  height: 128px;
-  align-items: end;
+.nhl-chart-head b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+}
+.nhl-chart-head b.nhl-no-line {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+}
+.nhl-chart-scroll { overflow-x: auto; }
+.nhl-chart-plot {
+  --nhl-bar: 40px;
+  --nhl-gap: 8px;
+  width: max-content;
+}
+.nhl-chart-stage {
+  position: relative;
+  height: 156px;
+  margin-top: 16px;
+}
+.nhl-chart-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top: 1.5px dashed #f4f4f5;
+  pointer-events: none;
+}
+.nhl-chart-line span {
+  position: absolute;
+  left: 0;
+  bottom: 3px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  color: #f4f4f5;
+  background: #050506;
+  font: 700 11px 'JetBrains Mono', ui-monospace, monospace;
+}
+.nhl-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--nhl-gap);
+  height: 100%;
+}
+.nhl-chart-col {
+  display: flex;
+  flex: 0 0 var(--nhl-bar);
+  align-items: flex-end;
+  width: var(--nhl-bar);
+  height: 100%;
+}
+.nhl-chart-bar {
+  position: relative;
+  width: 100%;
+  min-height: 4px;
+  border-radius: 6px 6px 2px 2px;
+}
+.nhl-chart-bar.is-hit { background: #22c55e; }
+.nhl-chart-bar.is-miss { background: #f87171; }
+.nhl-chart-bar.is-push,
+.nhl-chart-bar.is-plain { background: #a1a1aa; }
+.nhl-chart-bar b {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  color: #04140a;
+  font: 700 12px 'JetBrains Mono', ui-monospace, monospace;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+.nhl-chart-bar.is-short b {
+  top: auto;
+  bottom: calc(100% + 4px);
+  color: #f4f4f5;
+}
+.nhl-chart-dates {
+  display: flex;
+  gap: var(--nhl-gap);
+  width: max-content;
   margin-top: 8px;
-  padding: 14px 12px 8px;
-  border: 1px solid rgba(120, 168, 204, 0.3);
-  border-radius: 8px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: #050506;
 }
-.nhl-root .nhl-player-sheet .nhl-hit-chart span {
-  min-width: 28px;
+.nhl-chart-dates span {
+  flex: 0 0 var(--nhl-bar);
+  width: var(--nhl-bar);
+  color: #e4e4e7;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
 }
-.nhl-root .nhl-player-sheet .nfl-history-dates {
-  color: #9eb4c8;
-  font-size: 9px;
+.nhl-chart-dates small {
+  display: block;
+  color: #d4d4d8;
+  font-size: 10px;
+  font-weight: 700;
 }
-
-.nhl-root .nhl-player-sheet .nfl-history-bars span {
-  color: #f4f8ff;
-  font: 800 11px monospace;
+.nhl-chart-empty {
+  margin: 8px 0 0;
+  color: #d4d4d8;
+  font-size: 13px;
+}
+.nhl-profile { margin-top: 16px; }
+.nhl-profile h2 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.nhl-profile-note {
+  margin: 0 0 12px;
+  color: #d4d4d8;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.nhl-role-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nhl-role {
+  display: flex;
+  flex: 1 1 92px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 92px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #050506;
+}
+.nhl-role span {
+  color: #a1a1aa;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nhl-role b {
+  color: #f4f4f5;
+  font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.nhl-role-detail {
+  color: #a1a1aa;
+  font: 600 11px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.nhl-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 8px;
+  color: #8f939b;
+  font: 600 11px Inter, system-ui, sans-serif;
+}
+.nhl-scale-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nhl-scale-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.nhl-scale-key i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.nhl-scale-note {
+  margin: 0 0 10px;
+  color: #8f939b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.nhl-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.nhl-stat-value {
+  font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+}
+.nhl-pct-track {
+  position: relative;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.nhl-pct-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+.nhl-pct-tick {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 7px;
+  background: #f4f4f5;
+  transform: translateX(-1px);
+}
+.nhl-lg-avg {
+  color: #8f939b;
+  font: 500 10px 'JetBrains Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.nhl-profile-scroll { overflow-x: auto; }
+.nhl-profile-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.nhl-profile-table th,
+.nhl-profile-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: right;
+  vertical-align: top;
+}
+.nhl-profile-table thead th {
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nhl-profile-table thead small {
+  display: block;
+  color: #8f939b;
+  font: 600 10px 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.nhl-profile-table tbody th {
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.nhl-profile-table tbody th small {
+  display: block;
+  color: #8f939b;
+  font-size: 10px;
+  font-weight: 500;
+}
+.nhl-profile-table td {
+  color: #f4f4f5;
+  font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (min-width: 421px) {
+  .nhl-chart-card { max-width: 520px; }
+  .nhl-chart-plot {
+    width: max-content;
+    min-width: 100%;
+  }
+  .nhl-chart-bars,
+  .nhl-chart-dates { width: 100%; }
+  .nhl-chart-col,
+  .nhl-chart-dates span {
+    flex: 1 1 0;
+    width: auto;
+    min-width: var(--nhl-bar);
+  }
+}
+@media (max-width: 420px) {
+  .nhl-chart-card,
+  .nhl-profile { padding: 14px 12px; }
+  .nhl-chart-plot { --nhl-bar: 36px; --nhl-gap: 6px; }
+  .nhl-player-sub { font-size: 13px; }
+  .nhl-profile-table td { font-size: 12px; }
+  .nhl-stat-value { font-size: 12px; }
+  .nhl-pct-track { width: 56px; }
+  .nhl-avatar,
+  .nhl-avatar-wrap { width: 64px; height: 64px; }
 }
 
 .nhl-root .nfl-lines-page .over,

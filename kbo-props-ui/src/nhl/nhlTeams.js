@@ -19,3 +19,11 @@ export function teamLogoUrl(team) {
   const slug = ESPN[String(team || '').toUpperCase()]
   return slug ? `https://a.espncdn.com/i/teamlogos/nhl/500/${slug}.png` : null
 }
+
+// Public NHL headshot, keyed only by player id. A missing id returns the
+// league silhouette, and the page falls back to initials if the request fails.
+export function nhlHeadshotUrl(playerId) {
+  const id = String(playerId ?? '').trim()
+  if (!/^\d{5,10}$/.test(id)) return null
+  return `https://assets.nhle.com/mugs/nhl/latest/${id}.png`
+}
