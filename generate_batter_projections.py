@@ -26,6 +26,7 @@ import unicodedata
 from datetime import datetime, timezone
 from difflib import get_close_matches
 
+from pipeline.live_formula import kbo_side, unprojected_fields
 from pipeline.snapshot_consistency import opponent_for_line
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -1132,10 +1133,7 @@ def build_hrr_projections():
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Hits+Runs+RBIs",
                 "odds_type": pp_val.get("odds_type", "standard"),
-                "projection": round(line, 2) if line is not None else None,
-                "edge": 0.0 if line is not None else None,
-                "rating": 50.0 if line is not None else None,
-                "recommendation": "PUSH" if line is not None else "NO LINE",
+                **unprojected_fields(),
                 "avg_per_g": None,
                 "opp_factor": 1.0,
                 "park_factor": 1.0,
@@ -1187,10 +1185,7 @@ def build_hrr_projections():
         pf = park_factors.get(home, {}).get("pf_r", 1.0)
         proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
-        rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
-        # Demon/goblin props are over-only on PrizePicks
-        if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
-            rec = "PUSH"
+        rec = kbo_side(edge, 0.3, pp_val.get("odds_type", "standard"))
         rating = round((proj / line) * 50, 1) if line else None
 
         projections.append({
@@ -1273,10 +1268,7 @@ def build_tb_projections():
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Total Bases",
                 "odds_type": pp_val.get("odds_type", "standard"),
-                "projection": round(line, 2) if line is not None else None,
-                "edge": 0.0 if line is not None else None,
-                "rating": 50.0 if line is not None else None,
-                "recommendation": "PUSH" if line is not None else "NO LINE",
+                **unprojected_fields(),
                 "avg_per_g": None,
                 "opp_factor": 1.0,
                 "park_factor": 1.0,
@@ -1332,10 +1324,7 @@ def build_tb_projections():
         pf = park_factors.get(home, {}).get("pf_hr", 1.0)
         proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
-        rec = "OVER" if edge > 0.3 else "UNDER" if edge < -0.3 else "PUSH"
-        # Demon/goblin props are over-only on PrizePicks
-        if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
-            rec = "PUSH"
+        rec = kbo_side(edge, 0.3, pp_val.get("odds_type", "standard"))
         rating = round((proj / line) * 50, 1) if line else None
 
         projections.append({
@@ -1486,10 +1475,7 @@ def build_fantasy_projections():
                 "name": pp_name, "team": team, "opponent": opp,
                 "line": line, "pp_name": pp_name, "prop": "Fantasy Score",
                 "odds_type": pp_val.get("odds_type", "standard"),
-                "projection": round(line, 2) if line is not None else 0.0,
-                "edge": 0.0 if line is not None else None,
-                "rating": 50.0 if line is not None else None,
-                "recommendation": "PUSH" if line is not None else "NO LINE",
+                **unprojected_fields(),
                 "avg_per_g": None,
                 "opp_factor": 1.0,
                 "park_factor": 1.0,
@@ -1594,12 +1580,7 @@ def build_fantasy_projections():
 
         proj = sum(adjusted_components[k] * score_weights[k] for k in score_weights)
         edge = (proj - line) if line is not None else None
-        if edge is None:
-            rec = "NO LINE"
-        else:
-            rec = "OVER" if edge > 0.5 else "UNDER" if edge < -0.5 else "PUSH"
-            if pp_val.get("odds_type", "standard") in ("demon", "goblin") and rec == "UNDER":
-                rec = "PUSH"
+        rec = kbo_side(edge, 0.5, pp_val.get("odds_type", "standard"))
         rating = round((proj / line) * 50, 1) if line else None
 
         projections.append({

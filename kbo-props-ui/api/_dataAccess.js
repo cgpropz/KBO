@@ -1,4 +1,5 @@
 import { lineMatchesStat } from '../src/cgScore.js';
+import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
@@ -131,23 +132,21 @@ function ratioScore(projection, line, stat) {
   return Number.isFinite(p) && l > 0 ? (p / l) * 50 : -Infinity;
 }
 
-// KboPropBoard.scoreFor
+// KboPropBoard.scoreFor. Confidence (`cg_projection`) and the season mean
+// (`avg`) are not the CG Score.
 function kboPropScore(prop) {
-  const stat = prop?.stat;
-  if (!lineMatchesStat(stat, prop?.line)) return -Infinity;
-  const score = num(prop?.cg_projection ?? prop?.rating);
-  if (Number.isFinite(score)) return score;
-  return ratioScore(prop?.avg ?? prop?.projection, prop?.line, stat);
+  const score = kboBoardScore(prop);
+  return score == null ? -Infinity : score;
 }
 
-// StrikeoutProjections / BatterProjections rows
+// StrikeoutProjections / BatterProjections rows. `rating` is already
+// (projection / line) * 50. The confidence score is not a rank key.
 function kboProjectionScore(row) {
   const stat = row?.prop ?? row?.stat;
   if (!lineMatchesStat(stat, row?.line)) return -Infinity;
-  const score = num(row?.cg_projection ?? row?.rating);
-  if (Number.isFinite(score)) return score;
-  const edge = num(row?.edge);
-  return Number.isFinite(edge) ? edge : -Infinity;
+  const rating = num(row?.rating);
+  if (Number.isFinite(rating)) return rating;
+  return ratioScore(row?.projection, row?.line, stat);
 }
 
 // WNBA Dashboard: score = projection / line × 50
