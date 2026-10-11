@@ -170,6 +170,7 @@
 }
 
 /* ── Logged-out preview bar (above the sport apps) ───────────────────────── */
+:root { --ff-preview-offset: 48px; }
 .ff-preview-bar {
   position: sticky;
   top: 0;
@@ -188,6 +189,22 @@
 }
 .ff-preview-bar .ff-btn-primary { background: #fff; color: #14532d; box-shadow: none; }
 .ff-preview-bar .ff-btn-ghost { color: #f0fdf4; border-color: rgba(255, 255, 255, 0.5); }
+
+/* Keep the sport nav stuck under the banner so a scroll cannot slide the
+   green bar over the links. Logged-in sessions have no banner sibling, so
+   this offset does not apply. */
+.ff-preview-bar ~ .kbo-app-root .kbo-app-nav,
+.ff-preview-bar ~ .nfl-root .nfl-nav,
+.ff-preview-bar ~ .wnba-root .wnba-nav {
+  position: sticky;
+  top: var(--ff-preview-offset, 48px);
+  z-index: 30;
+  background: rgba(5, 8, 12, 0.96);
+  backdrop-filter: blur(12px);
+}
+.ff-preview-bar ~ .wnba-root .wnba-nav {
+  background: rgba(8, 8, 8, 0.96);
+}
 
 /* ── Checkout success modal ──────────────────────────────────────────────── */
 .ff-modal-backdrop {

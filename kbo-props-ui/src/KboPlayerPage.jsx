@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import BatterSplits from './BatterSplits'
 import PitcherMatchup from './PitcherMatchup'
 import PlayerOddsTable from './PlayerOddsTable'
+import { AltLinesRow, LinePlot } from './LineSlider'
+import { useChartLine } from './useChartLine'
 import { batterProfile, battingHandPhrase, projectionRow, resolveBattingHand } from './batterSplits'
 import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 import { lineResult, overHitRate } from './hitRateStrip'
+import { formatLineValue, offeredLinesForStat, rateTextColor } from './lineSlider'
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -83,6 +86,31 @@ function average(values) {
 
 function sum(values) {
   return (values || []).filter(v => v != null && Number.isFinite(v)).reduce((total, v) => total + v, 0)
+}
+
+const KBO_RANGES = [
+  { id: '2026', label: '2026' },
+  { id: '2025', label: '2025' },
+  { id: 'h2h', label: 'H2H' },
+  { id: 'l5', label: 'L5' },
+  { id: 'l10', label: 'L10' },
+  { id: 'l20', label: 'L20' },
+  { id: 'l30', label: 'L30' },
+]
+
+function kboWindowRows(games, range, opponent, getValue) {
+  let rows
+  switch (range) {
+    case 'l5': rows = games.slice(0, 5); break
+    case 'l10': rows = games.slice(0, 10); break
+    case 'l20': rows = games.slice(0, 20); break
+    case 'l30': rows = games.slice(0, 30); break
+    case '2026': rows = games.filter((game) => String(game.season) === '2026'); break
+    case '2025': rows = games.filter((game) => String(game.season) === '2025'); break
+    case 'h2h': rows = opponent ? games.filter((game) => game.opp === opponent) : []; break
+    default: rows = games
+  }
+  return rows.map((game) => ({ ...game, value: getValue ? getValue(game) : null }))
 }
 
 function ChartFilterChip({ label, valueLabel, open, onToggle, children }) {
@@ -184,6 +212,46 @@ export default function KboPlayerPage({ playerName, onBack }) {
     setOpenFilter(null)
   }
 
+  const chartInput = useMemo(() => {
+    if (!player || !currentProp) {
+      return { posted: null, values: [], filteredGames: [], windows: [], offered: null, validWorkload: [], workloadLabel: 'Min AB', pitcher: false }
+    }
+    const games = player.games || []
+    const getValue = PROP_GAME_VALUE[currentProp.stat]
+    const opponent = player.opponent
+    const pitcher = player.type === 'pitcher'
+    const workloadKey = pitcher ? 'ip' : 'ab'
+    const windows = KBO_RANGES.map((option) => {
+      const rows = kboWindowRows(games, option.id, opponent, getValue)
+      const filtered = rows.filter((game) => (
+        workloadThreshold == null || (game[workloadKey] != null && game[workloadKey] >= workloadThreshold)
+      ))
+      return { ...option, rows: filtered }
+    })
+    const selected = windows.find((option) => option.id === selectedRange)
+    const filteredGames = [...(selected?.rows || [])].reverse()
+    const validWorkload = kboWindowRows(games, selectedRange, opponent, getValue)
+      .map((game) => game[workloadKey])
+      .filter((value) => value != null)
+    return {
+      posted: currentProp.line,
+      values: filteredGames.map((game) => game.value),
+      filteredGames,
+      windows,
+      offered: offeredLinesForStat(player.props, currentProp.stat),
+      validWorkload,
+      workloadLabel: pitcher ? 'Min IP' : 'Min AB',
+      pitcher,
+    }
+  }, [player, currentProp, selectedRange, workloadThreshold])
+
+  const slider = useChartLine({
+    postedLine: chartInput.posted,
+    values: chartInput.values,
+    offeredLines: chartInput.offered,
+    resetKey: `${player?.name || ''}|${currentProp?.stat || ''}`,
+  })
+
   if (error) return <div className="kbo-notice">Unable to load player data: {error}</div>
   if (!cards.length) return <div className="kbo-notice">Loading player data for {playerName}.</div>
   if (!player || !propRows.length || !currentProp) {
@@ -196,53 +264,17 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const opponentToday = player.opponent
   const currentSeason = games[0]?.season != null ? String(games[0].season) : null
 
-  const rangeGames = range => {
-    switch (range) {
-      case 'l5': return games.slice(0, 5)
-      case 'l10': return games.slice(0, 10)
-      case 'l20': return games.slice(0, 20)
-      case 'l30': return games.slice(0, 30)
-      case '2026': return games.filter(g => String(g.season) === '2026')
-      case '2025': return games.filter(g => String(g.season) === '2025')
-      case 'h2h': return opponentToday ? games.filter(g => g.opp === opponentToday) : []
-      default: return games
-    }
-  }
-
-  const hitRateFor = range => {
-    if (!getValue || line == null) return { pct: null, hits: 0, games: 0 }
-    const values = rangeGames(range).map(getValue).filter(v => v != null)
-    const rated = overHitRate(values, line)
-    if (!rated) return { pct: null, hits: 0, games: 0 }
-    return { pct: rated.rate, hits: rated.hits, games: rated.games }
-  }
-
-  const rangeOptions = [
-    { id: '2026', label: '2026' },
-    { id: '2025', label: '2025' },
-    { id: 'h2h', label: 'H2H' },
-    { id: 'l5', label: 'L5' },
-    { id: 'l10', label: 'L10' },
-    { id: 'l20', label: 'L20' },
-    { id: 'l30', label: 'L30' },
-  ].map(opt => ({ ...opt, ...hitRateFor(opt.id) }))
-  const currentRange = rangeOptions.find(r => r.id === selectedRange)
-
-  // Reliability filter: batters key off at-bats that game, pitchers off innings pitched.
-  const workloadKey = isPitcher ? 'ip' : 'ab'
-  const workloadLabel = isPitcher ? 'Min IP' : 'Min AB'
-  const gamesWithMeta = rangeGames(selectedRange).map(g => ({ ...g, value: getValue ? getValue(g) : null }))
-  const validWorkload = gamesWithMeta.map(g => g[workloadKey]).filter(v => v != null)
+  const rangeOptions = chartInput.windows.map((option) => {
+    const rated = slider.line == null ? null : overHitRate(option.rows.map((game) => game.value), slider.line)
+    return { ...option, pct: rated?.rate ?? null, hits: rated?.hits ?? 0, games: rated?.games ?? 0 }
+  })
+  const currentRange = rangeOptions.find((option) => option.id === selectedRange)
+  const { filteredGames, validWorkload, workloadLabel } = chartInput
   const defaultWorkloadThreshold = validWorkload.length ? Math.round(average(validWorkload) * 10) / 10 : 0
   const workloadMax = Math.max(1, Math.ceil(Math.max(...validWorkload, isPitcher ? 9 : 5)))
-
-  // Oldest -> newest so the chart reads left to right.
-  const filteredGames = [...gamesWithMeta].filter(g => (
-    workloadThreshold == null || (g[workloadKey] != null && g[workloadKey] >= workloadThreshold)
-  )).reverse()
-
-  const maxValue = Math.max(line || 0, ...filteredGames.map(g => g.value ?? 0), 1)
-  const linePct = line != null ? Math.min(100, (line / maxValue) * 100) : 0
+  const scaleMax = Math.max(slider.max || 0, 1)
+  const chartLine = slider.line ?? line
+  const hitColor = rateTextColor(currentRange?.pct, currentRange?.games)
   const model = currentProp.projection ?? currentProp.avg ?? null
   const isOver = model != null && line != null && model >= line
   const modelDelta = model != null && line != null ? model - line : null
@@ -302,10 +334,10 @@ export default function KboPlayerPage({ playerName, onBack }) {
         </div>
 
         <div className="kbo-player-summary">
-          <div className="kbo-player-hitrate">
+          <div className="kbo-player-hitrate" aria-live="polite">
             <small>HIT RATE</small>
-            <strong className={currentRange?.pct != null && currentRange.pct >= 50 ? 'over' : 'under'}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
-            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games})` : ''}</span>
+            <strong style={hitColor ? { color: hitColor } : undefined}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
+            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games}${slider.moved ? ` over ${formatLineValue(slider.line)}` : ''})` : ''}</span>
           </div>
           <div><small>LINE</small><strong>{formatValue(line)}</strong></div>
           <div>
@@ -336,7 +368,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
               onClick={() => setSelectedRange(option.id)}
             >
               <span>{option.label}</span>
-              <b className={option.pct == null ? '' : option.pct >= 50 ? 'over' : 'under'}>{option.pct == null ? '—' : `${option.pct}%`}</b>
+              <b style={option.pct == null ? undefined : { color: rateTextColor(option.pct, option.games) || undefined }}>{option.pct == null ? '—' : `${option.pct}%`}</b>
             </button>
           ))}
         </div>
@@ -369,20 +401,19 @@ export default function KboPlayerPage({ playerName, onBack }) {
           </ChartFilterChip>
         </div>
 
-        <div className="kbo-player-chart">
-          {line != null && <div className="kbo-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(line)}</span></div>}
+        <LinePlot className="kbo-player-chart" slider={slider} lineClassName="kbo-player-chart-line">
           <div className="kbo-player-bars">
             {filteredGames.map((g, index) => {
-              const kind = lineResult(g.value, line) || 'miss'
+              const kind = lineResult(g.value, chartLine) || 'miss'
               return (
                 <div className="kbo-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`}>
-                  <div className={`kbo-player-bar ${kind}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
+                  <div className={`kbo-player-bar ${kind}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / scaleMax) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
             })}
           </div>
           {!filteredGames.length && <div className="kbo-notice kbo-player-chart-empty">No games match these filters.</div>}
-        </div>
+        </LinePlot>
         <div className="kbo-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
@@ -392,6 +423,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        <AltLinesRow slider={slider} />
         {!isPitcher && (
           <PitcherMatchup
             batterTeam={player.team}

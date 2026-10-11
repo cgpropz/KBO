@@ -1,14 +1,42 @@
 import { useEffect, useMemo, useState } from 'react'
 import PlayerOddsTable from '../PlayerOddsTable'
+import { AltLinesRow, LinePlot } from '../LineSlider'
+import { useChartLine } from '../useChartLine'
 import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
+import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
-import { gameMatchesTeammates, hitRateForValues, teammateFilterLabel } from './teammateFilters'
+import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
+
+const NFL_RANGES = [
+  { id: 'season', labelKey: 'season' },
+  { id: 'priorSeason', labelKey: 'prior' },
+  { id: 'h2h', label: 'H2H' },
+  { id: 'l5', label: 'L5' },
+  { id: 'l10', label: 'L10' },
+  { id: 'l20', label: 'L20' },
+  { id: 'l30', label: 'L30' },
+]
+
+function nflIndices(row, rangeId, recentLength) {
+  const gameSeasons = Array.isArray(row.gameSeasons) ? row.gameSeasons : []
+  const gameOpponents = Array.isArray(row.gameOpponents) ? row.gameOpponents : []
+  const currentSeason = nflCurrentSeason(row) ?? new Date().getFullYear()
+  if (rangeId === 'season') return gameSeasons.map((season, index) => (Number(season) === currentSeason ? index : -1)).filter((index) => index !== -1)
+  if (rangeId === 'priorSeason') return gameSeasons.map((season, index) => (Number(season) === currentSeason - 1 ? index : -1)).filter((index) => index !== -1)
+  if (rangeId === 'h2h') {
+    const opponent = String(row.opponent ?? '').trim().toUpperCase()
+    return gameOpponents.map((team, index) => (String(team ?? '').trim().toUpperCase() === opponent ? index : -1)).filter((index) => index !== -1)
+  }
+  const count = rangeId === 'l5' ? 5 : rangeId === 'l20' ? 20 : rangeId === 'l30' ? 30 : 10
+  const size = Math.min(count, recentLength)
+  return Array.from({ length: size }, (_, index) => recentLength - size + index)
+}
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
@@ -148,6 +176,48 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     setOpenFilter(null)
   }
 
+  const chartInput = useMemo(() => {
+    if (!currentRow) {
+      return { posted: null, values: [], chartIndices: [], chartValues: [], chartDates: [], chartOpponents: [], windows: [], baseCount: 0, offered: null }
+    }
+    const recent = Array.isArray(currentRow.recent) ? currentRow.recent : []
+    const gameDates = Array.isArray(currentRow.gameDates) ? currentRow.gameDates : []
+    const gameOpponents = Array.isArray(currentRow.gameOpponents) ? currentRow.gameOpponents : []
+    const recentDvpRanks = Array.isArray(currentRow.recentDvpRanks) ? currentRow.recentDvpRanks : []
+    const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
+    const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
+    const teammateOn = Array.isArray(currentRow.teammateOn) ? currentRow.teammateOn : []
+    const passes = (index) => {
+      const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
+      const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
+      const passesUsage = usageThreshold == null || (recentUsage[index] != null && recentUsage[index] >= usageThreshold)
+      return passesDvp && passesSnap && passesUsage && gameMatchesTeammates(teammateOn[index], teammateModes)
+    }
+    const windows = NFL_RANGES.map((option) => {
+      const base = nflIndices(currentRow, option.id, recent.length)
+      return { id: option.id, values: base.filter(passes).map((index) => recent[index]), baseCount: base.length }
+    })
+    const chartIndices = nflIndices(currentRow, selectedRange, recent.length).filter(passes)
+    return {
+      posted: currentRow.line,
+      values: chartIndices.map((index) => recent[index]),
+      chartIndices,
+      chartValues: chartIndices.map((index) => recent[index]),
+      chartDates: chartIndices.map((index) => gameDates[index]),
+      chartOpponents: chartIndices.map((index) => gameOpponents[index]),
+      windows,
+      baseCount: nflIndices(currentRow, selectedRange, recent.length).length,
+      offered: offeredLinesForStat([{ prop: currentRow.prop, line: currentRow.line, altLines: currentRow.altLines || currentRow.alt_lines }], currentRow.prop),
+    }
+  }, [currentRow, selectedRange, dvpThreshold, snapThreshold, usageThreshold, teammateModes])
+
+  const slider = useChartLine({
+    postedLine: chartInput.posted,
+    values: chartInput.values,
+    offeredLines: chartInput.offered,
+    resetKey: currentRow?.id || '',
+  })
+
   if (error) return <div className="nfl-notice">Unable to load player data: {error}</div>
   if (!loaded) return <div className="nfl-notice">Loading player data for {player}.</div>
   if (!playerRows.length) {
@@ -159,15 +229,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     )
   }
 
-  const recent = Array.isArray(currentRow.recent) ? currentRow.recent : []
-  const gameDates = Array.isArray(currentRow.gameDates) ? currentRow.gameDates : []
-  const gameOpponents = Array.isArray(currentRow.gameOpponents) ? currentRow.gameOpponents : []
-  const gameSeasons = Array.isArray(currentRow.gameSeasons) ? currentRow.gameSeasons : []
-  const recentDvpRanks = Array.isArray(currentRow.recentDvpRanks) ? currentRow.recentDvpRanks : []
   const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
   const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
   const teammates = (Array.isArray(currentRow.teammates) ? currentRow.teammates : []).filter((item) => item && item.id && item.name)
-  const teammateOn = Array.isArray(currentRow.teammateOn) ? currentRow.teammateOn : []
   const usageLabel = currentRow.usageLabel || 'Usage'
   const validSnaps = recentSnapPercents.filter((value) => value != null)
   const validUsage = recentUsage.filter((value) => value != null)
@@ -177,45 +241,23 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const isOver = currentRow.projection >= currentRow.line
   const modelDelta = currentRow.projection - currentRow.line
   const currentSeason = nflCurrentSeason(currentRow) ?? new Date().getFullYear()
-  const summary = overHitRate(recent.slice(-10), currentRow.line)
-
-  const indicesFor = (rangeId) => {
-    if (rangeId === 'season') return gameSeasons.map((season, index) => (Number(season) === currentSeason ? index : -1)).filter((index) => index !== -1)
-    if (rangeId === 'priorSeason') return gameSeasons.map((season, index) => (Number(season) === currentSeason - 1 ? index : -1)).filter((index) => index !== -1)
-    if (rangeId === 'h2h') {
-      const opponent = String(currentRow.opponent ?? '').trim().toUpperCase()
-      return gameOpponents.map((team, index) => (String(team ?? '').trim().toUpperCase() === opponent ? index : -1)).filter((index) => index !== -1)
-    }
-    const count = rangeId === 'l5' ? 5 : rangeId === 'l20' ? 20 : rangeId === 'l30' ? 30 : 10
-    const size = Math.min(count, recent.length)
-    return Array.from({ length: size }, (_, i) => recent.length - size + i)
+  const rangeLabels = {
+    season: String(currentSeason),
+    priorSeason: currentRow.priorSeasonLabel ? String(currentRow.priorSeasonLabel) : '—',
+    h2h: 'H2H',
+    l5: 'L5',
+    l10: 'L10',
+    l20: 'L20',
+    l30: 'L30',
   }
-  const rangeOptions = [
-    { id: 'season', label: String(currentSeason) },
-    { id: 'priorSeason', label: currentRow.priorSeasonLabel ? String(currentRow.priorSeasonLabel) : '—' },
-    { id: 'h2h', label: 'H2H' },
-    { id: 'l5', label: 'L5' },
-    { id: 'l10', label: 'L10' },
-    { id: 'l20', label: 'L20' },
-    { id: 'l30', label: 'L30' },
-  ].map((option) => {
-    const rated = overHitRate(indicesFor(option.id).map((index) => recent[index]), currentRow.line)
-    return { ...option, hitRate: rated?.rate ?? null, games: rated?.games ?? 0 }
+  const rangeOptions = chartInput.windows.map((option) => {
+    const rated = slider.line == null ? null : overHitRate(option.values, slider.line)
+    return { ...option, label: rangeLabels[option.id] || option.id, hitRate: rated?.rate ?? null, games: rated?.games ?? 0 }
   })
-
-  const baseIndices = indicesFor(selectedRange)
-  const chartIndices = baseIndices.filter((index) => {
-    const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
-    const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
-    const passesUsage = usageThreshold == null || (recentUsage[index] != null && recentUsage[index] >= usageThreshold)
-    const passesTeammates = gameMatchesTeammates(teammateOn[index], teammateModes)
-    return passesDvp && passesSnap && passesUsage && passesTeammates
-  })
-  const chartValues = chartIndices.map((index) => recent[index])
-  const chartDates = chartIndices.map((index) => gameDates[index])
-  const chartOpponents = chartIndices.map((index) => gameOpponents[index])
-  const maxValue = Math.max(currentRow.line, ...chartValues, 1)
-  const linePct = Math.min(100, (currentRow.line / maxValue) * 100)
+  const { chartIndices, chartValues, chartDates, chartOpponents, baseCount } = chartInput
+  const scaleMax = Math.max(slider.max || 0, 1)
+  const chartLine = slider.line ?? currentRow.line
+  const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
 
   const toggleFilter = (id) => setOpenFilter((current) => (current === id ? null : id))
   const clearFilters = () => { setDvpThreshold(null); setSnapThreshold(null); setUsageThreshold(null); setTeammateModes({}); setOpenFilter(null) }
@@ -228,11 +270,11 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     })
   }
   const filterLabel = teammateFilterLabel(teammates, teammateModes)
-  const chartHit = hitRateForValues(chartValues, currentRow.line)
   const rangeLabel = rangeOptions.find((option) => option.id === selectedRange)?.label || 'Games'
   const filtersActive = Boolean(filterLabel) || dvpThreshold != null || snapThreshold != null || usageThreshold != null
-  const sampleShrunk = chartValues.length !== baseIndices.length
+  const sampleShrunk = chartValues.length !== baseCount
   const smallSample = filtersActive && chartHit.games > 0 && chartHit.games < 5
+  const hitColor = rateTextColor(chartHit.rate, chartHit.games)
 
   return (
     <section className="nfl-player-page">
@@ -256,7 +298,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       </div>
 
       <div className="nfl-player-summary">
-        <div className="nfl-player-hitrate"><small>HIT RATE</small><strong className={summary?.rate == null ? '' : summary.rate >= 50 ? 'over' : 'under'}>{summary?.rate == null ? '—' : `${summary.rate}%`}</strong><span>{summary ? `(${summary.hits}/${summary.games})` : ''}</span></div>
+        <div className="nfl-player-hitrate" aria-live="polite"><small>HIT RATE</small><strong style={hitColor ? { color: hitColor } : undefined}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong><span>{chartHit.games ? `(${chartHit.hits}/${chartHit.games}${slider.moved ? ` over ${formatLineValue(slider.line)}` : ''})` : ''}</span></div>
         <div><small>LINE</small><strong>{formatValue(currentRow.line)}</strong></div>
         <div><small>MODEL</small><strong>{formatValue(currentRow.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></div>
         <div><small>SEASON AVG</small><strong>{formatValue(currentRow.seasonAverage)}</strong></div>
@@ -276,7 +318,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
             onClick={() => setSelectedRange(option.id)}
           >
             <span>{option.label}</span>
-            <b className={option.hitRate == null ? '' : option.hitRate >= 50 ? 'over' : 'under'}>{option.hitRate == null ? '—' : `${option.hitRate}%`}</b>
+            <b style={option.hitRate == null ? undefined : { color: rateTextColor(option.hitRate, option.games) || undefined }}>{option.hitRate == null ? '—' : `${option.hitRate}%`}</b>
           </button>
         ))}
       </div>
@@ -336,20 +378,19 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
       <div className="nfl-chart-sample" aria-live="polite">
         <span>{rangeLabel}{filterLabel ? ` · ${filterLabel}` : ''}</span>
-        <strong className={chartHit.rate == null ? '' : chartHit.rate >= 50 ? 'over' : 'under'}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong>
+        <strong style={hitColor ? { color: hitColor } : undefined}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong>
         <span>{chartHit.games === 0 ? '0 games' : `${chartHit.hits} of ${chartHit.games} hit`}</span>
-        {sampleShrunk && <span>{chartHit.games} of {baseIndices.length} games</span>}
+        {sampleShrunk && <span>{chartValues.length} of {baseCount} games</span>}
         {smallSample && <em>Small sample</em>}
       </div>
 
-      <div className="nfl-player-chart">
-        <div className="nfl-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(currentRow.line)}</span></div>
+      <LinePlot className="nfl-player-chart" slider={slider} lineClassName="nfl-player-chart-line">
         <div className="nfl-player-bars">
           {chartValues.map((value, index) => {
-            const kind = lineResult(value, currentRow.line) || 'miss'
+            const kind = lineResult(value, chartLine) || 'miss'
             return (
               <div className="nfl-player-bar-col" key={`${currentRow.id}-${chartIndices[index]}`}>
-                <div className={`nfl-player-bar ${kind}`} style={{ height: `${Math.max(4, (value / maxValue) * 100)}%` }}><i>{formatValue(value)}</i></div>
+                <div className={`nfl-player-bar ${kind}`} style={{ height: `${Math.max(4, ((value ?? 0) / scaleMax) * 100)}%` }}><i>{formatValue(value)}</i></div>
               </div>
             )
           })}
@@ -359,7 +400,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
             {filterLabel ? 'No games match. Weeks without snap counts are left out.' : 'No games match these filters.'}
           </div>
         )}
-      </div>
+      </LinePlot>
       <div className="nfl-player-dates">
         {chartDates.map((date, index) => (
           <span key={`${currentRow.id}-date-${chartIndices[index]}`}>
@@ -368,6 +409,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           </span>
         ))}
       </div>
+      <AltLinesRow slider={slider} />
       <PlayerOddsTable key={currentRow.prop} propLabel={currentRow.prop} rows={oddsRows} status={oddsStatus} />
     </section>
   )

@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { AltLinesRow, LinePlot } from '../LineSlider'
+import { useChartLine } from '../useChartLine'
+import { overHitRate } from '../hitRateStrip'
+import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 
@@ -298,11 +302,45 @@ export default function NhlPlayerPage({ item, onBack }) {
     return () => { active = false }
   }, [position])
 
+  const chartInput = useMemo(() => {
+    if (!item) return { posted: null, bars: [], values: [], windows: [], offered: null }
+    const windows = RANGES.map((option) => {
+      const windowBars = chartWindow(item, option.id)
+      return {
+        id: option.id,
+        bars: windowBars,
+        values: windowBars.map((bar) => finiteNumber(bar.value)).filter((value) => value != null),
+      }
+    })
+    const selectedWindow = windows.find((option) => option.id === range) || windows[4]
+    const posted = finiteNumber(item.line ?? item.pp_line)
+    return {
+      posted,
+      bars: selectedWindow.bars,
+      values: selectedWindow.values,
+      windows,
+      offered: offeredLinesForStat(
+        [{ prop: item.prop, stat: item.prop, line: posted, altLines: item.altLines || item.alt_lines || item.alternateLines }],
+        item.prop,
+      ),
+    }
+  }, [item, range])
+
+  const slider = useChartLine({
+    postedLine: chartInput.posted,
+    values: chartInput.values,
+    offeredLines: chartInput.offered,
+    resetKey: `${item?.playerId || item?.player || ''}|${item?.prop || ''}`,
+  })
+
   if (!item) return null
 
-  const line = finiteNumber(item.line ?? item.pp_line)
-  const bars = chartWindow(item, range)
-  const maxValue = Math.max(line || 0, ...bars.map((bar) => Number(bar.value) || 0), 1)
+  const line = chartInput.posted
+  const bars = chartInput.bars
+  const scaleMax = Math.max(slider.max || 0, 1)
+  const chartLine = slider.line
+  const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
+  const hitColor = rateTextColor(chartHit.rate, chartHit.games)
   const selected = RANGES.find((option) => option.id === range) || RANGES[4]
   const includesPrior = bars.some((bar) => bar.season === '2025-26')
   const profile = item.profile && typeof item.profile === 'object' ? item.profile : null
@@ -354,14 +392,14 @@ export default function NhlPlayerPage({ item, onBack }) {
       </p>
       <div className="nfl-player-range-strip">
         {RANGES.map((option) => {
-          const rate = item[option.rate]
-          const games = item[option.games]
-          const tone = rate == null ? '' : rate >= 50 ? ' nhl-good' : ' nhl-bad'
+          const window = chartInput.windows.find((entry) => entry.id === option.id)
+          const rated = chartLine == null ? null : overHitRate(window?.values || [], chartLine)
+          const tone = rateTextColor(rated?.rate, rated?.games)
           return (
             <button key={option.id} type="button" className={range === option.id ? 'active' : ''} onClick={() => setRange(option.id)}>
               <span>{option.label}</span>
-              {line != null && <b className={tone.trim()}>{rate == null ? '—' : `${rate}%`}</b>}
-              <small>{games ? `${games} gm` : '—'}</small>
+              {line != null && <b style={tone ? { color: tone } : undefined}>{rated?.rate == null ? '—' : `${rated.rate}%`}</b>}
+              <small>{rated ? `${rated.games} gm` : '—'}</small>
             </button>
           )
         })}
@@ -372,24 +410,19 @@ export default function NhlPlayerPage({ item, onBack }) {
           {line == null ? (
             <b className="nhl-no-line">{noLineCopy(item.prop)}</b>
           ) : (
-            <b className={item[selected.rate] == null ? '' : item[selected.rate] >= 50 ? 'nhl-good' : 'nhl-bad'}>
-              {item[selected.rate] == null ? '—' : `${item[selected.rate]}% over`}
+            <b style={hitColor ? { color: hitColor } : undefined}>
+              {chartHit.rate == null ? '—' : `${chartHit.rate}% over${slider.moved ? ` ${formatLineValue(chartLine)}` : ''}`}
             </b>
           )}
         </div>
         {bars.length ? (
           <div className="nhl-chart-scroll">
             <div className="nhl-chart-plot">
-              <div className="nhl-chart-stage">
-                {line != null && (
-                  <div className="nhl-chart-line" style={{ bottom: `${Math.min(100, (line / maxValue) * 100)}%` }}>
-                    <span>{formatCount(line)}</span>
-                  </div>
-                )}
+              <LinePlot className="nhl-chart-stage" slider={slider} lineClassName="nhl-chart-line">
                 <div className="nhl-chart-bars">
                   {bars.map((bar, index) => {
-                    const kind = barKind(bar.value, line)
-                    const height = Math.max(4, (Number(bar.value) / maxValue) * 100)
+                    const kind = barKind(bar.value, chartLine)
+                    const height = Math.max(4, ((Number(bar.value) || 0) / scaleMax) * 100)
                     const title = [bar.date, bar.opponent && `vs ${bar.opponent}`, bar.team && bar.team !== item.team ? `with ${bar.team}` : '']
                       .filter(Boolean)
                       .join(' · ')
@@ -402,7 +435,7 @@ export default function NhlPlayerPage({ item, onBack }) {
                     )
                   })}
                 </div>
-              </div>
+              </LinePlot>
               <div className="nhl-chart-dates">
                 {bars.map((bar, index) => (
                   <span key={`${bar.date}-d-${index}`}>
@@ -416,6 +449,7 @@ export default function NhlPlayerPage({ item, onBack }) {
         ) : (
           <p className="nhl-chart-empty">No games in this window.</p>
         )}
+        <AltLinesRow slider={slider} />
       </div>
 
       <section className="nhl-profile" aria-label={profileTitle(position, item.prop)}>
