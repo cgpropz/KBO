@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
-import { fetchData } from './dataUrl';
+import { fetchData, fetchDataSnapshot } from './dataUrl';
+import BoardStatus from './BoardStatus';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
@@ -73,6 +74,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [opponentStatsData, setOpponentStatsData] = useState(null);
   const [prizepicksData, setPrizepicksData] = useState(null);
   const [photos, setPhotos] = useState({});
+  const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
@@ -117,15 +119,16 @@ function StrikeoutProjections({ onNavigate }) {
 
     const load = async () => {
       try {
-        const [kData, mData, oppData, ppData, photoData] = await Promise.all([
-          fetchData('strikeout_projections.json'),
+        const [kSnap, mData, oppData, ppData, photoData] = await Promise.all([
+          fetchDataSnapshot('strikeout_projections.json'),
           fetchData('matchup_data.json').catch(() => null),
           fetchData('team_opponent_stats_2026.json').catch(() => null),
           fetchData('prizepicks_props.json').catch(() => null),
           fetchData('player_photos.json').catch(() => ({})),
         ]);
         if (cancelled) return;
-        setData(kData);
+        setData(kSnap?.data || null);
+        setUpdatedAt(kSnap?.updatedAt || null);
         setMatchupData(mData);
         setOpponentStatsData(oppData);
         setPrizepicksData(ppData);
@@ -576,7 +579,7 @@ function StrikeoutProjections({ onNavigate }) {
             <h1 className="so-title">Pitcher Projections</h1>
             <p className="so-description">Compare live lines with opponent context and recent pitcher performance.</p>
           </div>
-          <div className="so-live-status"><span aria-hidden="true" />Live pitcher board</div>
+          <BoardStatus sport="kbo" updatedAt={updatedAt} />
         </div>
         <div className="so-filter-shell">
           <div className="so-filter-groups">

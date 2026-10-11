@@ -9,6 +9,15 @@
   ],
   "headers": [
     {
+      "source": "/status.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    },
+    {
       "source": "/data/(.*)",
       "headers": [
         {
@@ -49,6 +58,7 @@
     { "source": "/nba-player-props", "destination": "/nba-player-props.html" },
     { "source": "/nhl-player-props", "destination": "/nhl-player-props.html" },
     { "source": "/pricing", "destination": "/pricing.html" },
+    { "source": "/policies", "destination": "/policies.html" },
     { "source": "/guides/cg-score", "destination": "/guides/cg-score.html" },
     { "source": "/guides/start-here", "destination": "/guides/start-here.html" },
     {

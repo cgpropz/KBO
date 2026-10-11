@@ -1,3 +1,4 @@
+import { publishedAtFromPayload } from './boardFreshness';
 import { supabase } from './supabaseClient';
 
 /*
@@ -30,9 +31,10 @@ async function accessToken() {
 async function fetchDevStatic(staticPath) {
   const res = await fetch(`${import.meta.env.BASE_URL}data/${staticPath}?v=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load ${staticPath}`);
+  const data = await res.json();
   return {
-    data: await res.json(),
-    updatedAt: res.headers.get('last-modified') || null,
+    data,
+    updatedAt: publishedAtFromPayload(data) || res.headers.get('last-modified') || null,
     source: 'dev_static',
     preview: false,
     lockedCount: 0,
@@ -70,7 +72,7 @@ export async function fetchApiDataset(ds, { devStaticPath } = {}) {
     const body = await res.json();
     return {
       data: body.data,
-      updatedAt: body.updatedAt || null,
+      updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
       source: 'api',
       preview: !!body.preview,
       lockedCount: Number(body.lockedCount) || 0,

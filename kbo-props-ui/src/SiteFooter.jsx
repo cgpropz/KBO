@@ -4,6 +4,7 @@ import './SiteFooter.css';
 export function ResponsibleGamblingCopy() {
   return (
     <>
+      <p className="site-footer-links"><a href="/policies">Plans & Policies</a></p>
       <p>{AGE_LINE}</p>
       <p>{AFFILIATION_LINE}</p>
     </>

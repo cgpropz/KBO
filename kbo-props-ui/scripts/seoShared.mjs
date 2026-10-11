@@ -119,6 +119,7 @@ export function renderHeader() {
 
 export function renderFooter() {
   return `<footer class="site-footer">
+      <p><a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
     </footer>`;

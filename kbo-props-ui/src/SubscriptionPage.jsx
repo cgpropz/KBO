@@ -240,6 +240,10 @@ function SubscriptionPage() {
 
       <DiscordOnlyPlans variant="page" user={user} onCheckoutStart={() => setAwaitingPayment(true)} />
 
+      <p className="ff-checkout-note" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 1.5rem' }}>
+        <a href="/policies">Plans & Policies</a> covers refunds, how to cancel, and price changes.
+      </p>
+
       {!user && (
         <p className="ff-checkout-note" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 1.5rem' }}>
           No account yet? You can check out now. Afterwards, sign up (or log in) with the

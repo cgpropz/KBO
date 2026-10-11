@@ -299,6 +299,7 @@ export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides(
   const pages = [
     { loc: pageUrl('/'), lastmod: PUBLISHED_ON },
     { loc: pageUrl('/pricing'), lastmod: PUBLISHED_ON },
+    { loc: pageUrl('/policies'), lastmod: PUBLISHED_ON },
     ...SPORT_PATHS.map((sport) => ({
       loc: pageUrl(sport.path),
       lastmod: sport.path === PAGE_PATH ? lastmod(kboLastmod) : PUBLISHED_ON,

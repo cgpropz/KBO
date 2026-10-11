@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { shapeForTier } from '../api/_dataAccess.js'
 import { WNBA_LINE_FLOORS, wnbaCgScore } from '../src/wnba/wnbaScore.js'
 import { nflCgScore } from '../src/nfl/nflLineFloors.js'
-import { formatBoardUpdated } from '../src/nhl/formatBoardUpdated.js'
+import { boardStatusLine, formatBoardClock } from '../src/boardFreshness.js'
 
 test('a WNBA alt row is scored on max(own line, stat floor), not the standard line', () => {
   const three = { stat: '3-PT Made', line: 0.5, standardLine: 2.5 }
@@ -49,7 +49,12 @@ test('the NFL per-stat line floor still applies, and a 0.5 yardage line still do
 })
 
 test('the NHL board stamp is the publish time in Eastern Time', () => {
-  assert.equal(formatBoardUpdated('2026-10-09T23:13:02.940249+00:00'), 'Fri 10/9 7:13 PM ET')
-  assert.equal(formatBoardUpdated('2026-10-11T14:21:33+00:00'), 'Sun 10/11 10:21 AM ET')
-  assert.equal(formatBoardUpdated(''), '')
+  assert.equal(formatBoardClock('2026-10-09T23:13:02.940249+00:00'), '7:13 PM ET')
+  assert.equal(formatBoardClock('2026-10-11T14:21:33+00:00'), '10:21 AM ET')
+  assert.equal(formatBoardClock(''), '')
+  const now = new Date('2026-10-11T15:00:00Z')
+  assert.equal(
+    boardStatusLine({ updatedAt: '2026-10-11T14:21:33+00:00', sport: 'nhl', now }),
+    'Board updated 10:21 AM ET',
+  )
 })

@@ -621,6 +621,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
       {/* Footer */}
       <footer className="lp-footer">
         <p>KBO Props &middot; Data sourced from KBO &amp; PrizePicks &middot; Projections updated daily</p>
+        <p><a href="/policies">Plans & Policies</a></p>
         <DiscordInviteLink />
       </footer>
     </div>

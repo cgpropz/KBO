@@ -3,6 +3,7 @@ import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
+import BoardStatus from '../BoardStatus'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -70,13 +71,15 @@ export default function NflProjections({ onSelectPlayer }) {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(null)
 
   useEffect(() => {
     let active = true
     fetchNflProjections()
-      .then(({ projections: next, preview, lockedCount: locked }) => {
+      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => {
         if (!active) return
         setProjections(next)
+        setUpdatedAt(publishedAt || null)
         setLockedCount(preview ? locked : 0)
         setLoaded(true)
       })
@@ -98,7 +101,7 @@ export default function NflProjections({ onSelectPlayer }) {
 
   return (
     <section className="nfl-edge-board">
-      <div className="nfl-board-header"><div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1></div><span>{rows.length} edges</span></div>
+      <div className="nfl-board-header"><div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div><span>{rows.length} edges</span></div>
       <section className="nfl-edge-controls" aria-label="NFL projection filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
         <label><span>SORT</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option>Best score</option><option>Best hit rate</option></select></label>

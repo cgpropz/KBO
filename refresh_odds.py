@@ -113,6 +113,16 @@ def _publish_snapshot(client, filename, table, dry_run=False):
         return False
 
 
+def _record_kbo_board_status(payload, published_at):
+    """Rewrite public/status.json for the KBO board. Never includes prop rows."""
+    try:
+        from pipeline.board_status import apply_published, record_from_payload
+        apply_published({"kbo": record_from_payload("kbo", payload, published_at)})
+        print("  ✓ public/status.json (kbo)")
+    except Exception as exc:
+        print(f"  ! status.json: {exc}")
+
+
 def _load_public_json(filename):
     path = os.path.join(PUBLIC_DATA, filename)
     try:
@@ -206,8 +216,14 @@ def publish_to_supabase(skip=False, dry_run=False):
 
         print(f"📡 Publishing odds cohort {published_at} ({len(targets)} snapshots)")
         ok = True
+        prizepicks_published = False
         for filename, table in targets:
-            ok = _publish_snapshot(client, filename, table, dry_run=dry_run) and ok
+            published = _publish_snapshot(client, filename, table, dry_run=dry_run)
+            ok = published and ok
+            if filename == "prizepicks_props.json" and published:
+                prizepicks_published = True
+        if prizepicks_published and not dry_run:
+            _record_kbo_board_status(_load_public_json("prizepicks_props.json"), published_at)
         return ok
     
     except Exception as exc:

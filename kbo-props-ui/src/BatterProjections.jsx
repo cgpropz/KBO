@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
+import BoardStatus from './BoardStatus';
+import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
@@ -105,7 +107,7 @@ function BatterProjections() {
         setPrizepicksData(ppSnap?.data || null);
         setPhotos(photoSnap?.data || {});
         setMatchupData(matchupSnap?.data || null);
-        setLastUpdated(batterSnap?.updatedAt || batterSnap?.data?.generated_at || new Date().toISOString());
+        setLastUpdated(batterSnap?.updatedAt || publishedAtFromPayload(batterSnap?.data) || null);
         setError(null);
         setLoading(false);
       })
@@ -687,10 +689,7 @@ function BatterProjections() {
             <h1 className="bp-title">Batter Projections</h1>
             <p className="bp-description">Compare live lines with matchup-aware projections and recent performance.</p>
           </div>
-          <div className="bp-update-status">
-            <span className="bp-live-dot" aria-hidden="true" />
-            <span>{lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleString()}` : 'Live board'}</span>
-          </div>
+          <BoardStatus sport="kbo" updatedAt={lastUpdated} />
         </div>
         <div className="bp-filter-shell">
           <div className="bp-filter-groups">
