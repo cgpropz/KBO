@@ -3,10 +3,13 @@ import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
 import SportSwitcher from '../SportSwitcher'
-import NbaPlayers from './NbaPlayers'
-import NbaTeams from './NbaTeams'
-import NbaEdge from './NbaEdge'
-import NbaDashboard from './NbaDashboard'
+import RouteFallback from '../RouteFallback'
+import { GuideNavLinks } from '../GuideLinks'
+
+const NbaPlayers = lazy(() => import('./NbaPlayers'))
+const NbaTeams = lazy(() => import('./NbaTeams'))
+const NbaEdge = lazy(() => import('./NbaEdge'))
+const NbaDashboard = lazy(() => import('./NbaDashboard'))
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
@@ -116,6 +119,7 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
               {item.label}
             </button>
           ))}
+          <GuideNavLinks />
         </div>
         <div className="wnba-player-search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -131,7 +135,9 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
         </div>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        {content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {content}
+        </Suspense>
       </div>
     </div>
   )

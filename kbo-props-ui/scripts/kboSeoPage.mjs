@@ -16,6 +16,7 @@ import {
   SPORT_PATHS,
 } from './seoShared.mjs';
 import { listGuides } from './markdownGuide.mjs';
+import { appBoardPath } from '../src/appSport.js';
 
 export { SITE };
 export const PAGE_PATH = '/kbo-player-props';
@@ -224,7 +225,7 @@ export function renderKboPage(days) {
         These are graded results, not the live paid board.
       </p>
       <div class="actions">
-        <a class="btn btn-primary" href="${PAGE_URL}">Open the KBO board</a>
+        <a class="btn btn-primary" href="${pageUrl(appBoardPath('kbo'))}">Open the KBO board</a>
         <a class="btn btn-ghost" href="${pageUrl('/pricing')}">See pricing</a>
       </div>
 

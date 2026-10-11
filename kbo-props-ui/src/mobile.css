@@ -6,7 +6,7 @@
 @media (max-width: 860px) {
   /* Marketing header: keep section links reachable instead of dropping them. */
   .pl-header { flex-wrap: wrap; row-gap: 8px; }
-  .pl-nav {
+  .pl-landing .pl-header .pl-nav {
     display: flex;
     order: 3;
     flex: 1 0 100%;
@@ -83,9 +83,9 @@
     font-size: 13px;
   }
 
-  .kbo-app-nav-links,
-  .nfl-nav-links,
-  .wnba-root .wnba-nav-links {
+  .kbo-app-root .kbo-app-nav .kbo-app-nav-links,
+  .nfl-root .nfl-nav .nfl-nav-links,
+  .wnba-root .wnba-nav .wnba-nav-links {
     display: flex;
     order: 3;
     flex: 1 0 100%;
@@ -98,12 +98,15 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
-  .kbo-app-nav-links::-webkit-scrollbar,
-  .nfl-nav-links::-webkit-scrollbar,
-  .wnba-root .wnba-nav-links::-webkit-scrollbar { display: none; }
-  .kbo-app-nav-links button,
-  .nfl-nav-links button,
-  .wnba-root .wnba-nav-links button {
+  .kbo-app-root .kbo-app-nav .kbo-app-nav-links::-webkit-scrollbar,
+  .nfl-root .nfl-nav .nfl-nav-links::-webkit-scrollbar,
+  .wnba-root .wnba-nav .wnba-nav-links::-webkit-scrollbar { display: none; }
+  .kbo-app-root .kbo-app-nav .kbo-app-nav-links button,
+  .nfl-root .nfl-nav .nfl-nav-links button,
+  .wnba-root .wnba-nav .wnba-nav-links button,
+  .kbo-app-root .kbo-app-nav .kbo-app-nav-links a,
+  .nfl-root .nfl-nav .nfl-nav-links a,
+  .wnba-root .wnba-nav .wnba-nav-links a {
     flex: 0 0 auto;
     white-space: nowrap;
     min-height: 40px;

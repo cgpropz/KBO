@@ -1,11 +1,34 @@
 .board-status {
   margin: 8px 0 0;
   color: #8ea39c;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: 12px;
   font-weight: 650;
+  font-style: normal;
   letter-spacing: 0.01em;
+  line-height: 1.4;
+  text-transform: none;
 }
 
-.board-status.is-stale {
+.kbo-app-root .kbo-board-header p.board-status,
+.wnba-root .wnba-board-header p.board-status,
+.nfl-root .nfl-board-header p.board-status,
+.nhl-root .nfl-board-header p.board-status {
+  margin: 8px 0 0;
+  color: #8ea39c;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  font-style: normal;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.board-status.is-stale,
+.kbo-app-root .kbo-board-header p.board-status.is-stale,
+.wnba-root .wnba-board-header p.board-status.is-stale,
+.nfl-root .nfl-board-header p.board-status.is-stale,
+.nhl-root .nfl-board-header p.board-status.is-stale {
   color: #c4b07a;
 }
