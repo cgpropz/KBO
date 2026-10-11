@@ -269,7 +269,12 @@ export default function NflGameMarkets() {
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Each team shows its own spread. The higher score is the winner.</p>}
+      {(payload?.model?.summary || modelLabel) && (
+        <p className="nfl-game-note">
+          {payload?.model?.summary || modelLabel}
+          {' '}Posted lines are Unabated only. The number by each team is that team's projected score. The total projection is those two scores added together. Each team shows its own spread. The higher score is the winner.
+        </p>
+      )}
       {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {!error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}

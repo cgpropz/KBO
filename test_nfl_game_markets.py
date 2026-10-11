@@ -95,8 +95,90 @@ class RatingTests(unittest.TestCase):
 
     def test_model_is_labeled_unproven(self):
         self.assertFalse(markets.MODEL["proven"])
+        self.assertEqual(markets.MODEL["id"], "ppd_pace_v1")
         self.assertIn("Not proven", markets.MODEL["label"])
         self.assertIn("closing line", markets.MODEL["summary"].lower())
+        self.assertNotIn("65 percent", markets.MODEL["summary"].lower())
+
+    def test_faster_pace_raises_the_total(self):
+        state = markets._new_state()
+        for team in ("FAST1", "FAST2", "SLOW1", "SLOW2"):
+            state["n"][team] = 12
+        state["off_sec"]["FAST1"] = -30
+        state["off_sec"]["FAST2"] = -30
+        state["off_sec"]["SLOW1"] = 30
+        state["off_sec"]["SLOW2"] = 30
+        fast_away, fast_home = markets.project_scores(state, "FAST1", "FAST2", 7, 7)
+        slow_away, slow_home = markets.project_scores(state, "SLOW1", "SLOW2", 7, 7)
+        self.assertGreater(fast_away + fast_home, slow_away + slow_home)
+
+    def test_pass_matchup_moves_the_score(self):
+        state = markets._new_state()
+        for team in ("PASS", "NEUTRAL", "BADPASS"):
+            state["n"][team] = 20
+        state["off_prate"]["PASS"] = 0.12
+        state["def_pass"]["BADPASS"] = 0.25
+        base_away, _base_home = markets.project_scores(state, "PASS", "NEUTRAL", 7, 7)
+        matched_away, _matched_home = markets.project_scores(state, "PASS", "BADPASS", 7, 7)
+        self.assertGreater(matched_away, base_away)
+
+    def test_past_closing_lines_do_not_change_the_score(self):
+        history = []
+        for index in range(4):
+            history.append({
+                "season": 2026, "game_type": "REG", "week": index + 1,
+                "gameday": f"2026-09-0{index + 6}", "gametime": "13:00",
+                "away_team": "DAL", "home_team": "NYG",
+                "away_score": 21.0, "home_score": 17.0,
+                "spread_line": -3.0, "total_line": 44.0,
+                "away_rest": 7, "home_rest": 7,
+            })
+            history.append({
+                "season": 2026, "game_type": "REG", "week": index + 1,
+                "gameday": f"2026-09-0{index + 6}", "gametime": "16:00",
+                "away_team": "ARI", "home_team": "HOU",
+                "away_score": 17.0, "home_score": 24.0,
+                "spread_line": 3.0, "total_line": 41.0,
+                "away_rest": 7, "home_rest": 7,
+            })
+        before = markets.project_matchup(history, "DAL", "HOU", "2026-10-04", 13.5, 7, 7)
+        for game in history:
+            game["spread_line"] = 40.0
+            game["total_line"] = 70.0
+        after = markets.project_matchup(history, "DAL", "HOU", "2026-10-04", 13.5, 7, 7)
+        self.assertEqual(after["away_score"], before["away_score"])
+        self.assertEqual(after["home_score"], before["home_score"])
+
+    def test_home_field_is_learned_not_a_flat_three(self):
+        from nfl.ppd_model import PARAMS, home_adjustments, observe_adjustments
+
+        high = markets._new_state()
+        low = markets._new_state()
+        for _ in range(80):
+            observe_adjustments(high, 3.0, 0.0)
+            observe_adjustments(low, 0.2, 0.0)
+        high_hfa, _rest = home_adjustments(high, PARAMS)
+        low_hfa, _rest = home_adjustments(low, PARAMS)
+        self.assertGreater(high_hfa, low_hfa)
+        self.assertNotAlmostEqual(high_hfa, 3.0)
+        self.assertLess(high_hfa, 3.0)
+
+    def test_kneel_only_series_is_not_a_drive(self):
+        import pandas as pd
+
+        from nfl.drive_table import aggregate_plays, parse_top
+
+        self.assertEqual(parse_top("2:05"), 125)
+        frame = pd.DataFrame([
+            {"game_id": "g", "season_type": "REG", "posteam": "DAL", "fixed_drive": 1, "drive_time_of_possession": "0:40", "play_type": "qb_kneel", "epa": 0.0},
+            {"game_id": "g", "season_type": "REG", "posteam": "DAL", "fixed_drive": 2, "drive_time_of_possession": "2:30", "play_type": "pass", "epa": 0.5},
+            {"game_id": "g", "season_type": "REG", "posteam": "DAL", "fixed_drive": 2, "drive_time_of_possession": "2:30", "play_type": "run", "epa": -0.1},
+        ])
+        table = aggregate_plays(frame)
+        self.assertEqual(len(table), 1)
+        self.assertEqual(int(table.iloc[0].drives), 1)
+        self.assertEqual(int(table.iloc[0].pass_n), 1)
+        self.assertEqual(int(table.iloc[0].rush_n), 1)
 
 
 class MarketMathTests(unittest.TestCase):

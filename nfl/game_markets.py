@@ -4,12 +4,12 @@
 Posted lines come only from the public Unabated full-game feed
 (content.unabated.com/markets/v2/league/1/odds.json). The Odds API is not
 called. A game's own nflverse spread_line and total_line are never the posted
-number. Older nflverse closes are an input to team strength only.
+number, and they are not an input to the score.
 
-The card projects a score for each team. The spread is the difference and the
-total is the sum of those two scores. This is not the live player-prop window,
-and it does not change that formula. It is also not a proven bet against the
-closing line. See MODEL["summary"].
+Each team score is expected drives times expected points per drive. Pace uses
+both teams. A pass/rush EPA matchup can move points per drive. Home field and
+rest are learned from earlier games. This is not the live player-prop window,
+and it does not change that formula. See MODEL["summary"].
 """
 from __future__ import annotations
 
@@ -33,6 +33,12 @@ from nfl.sharp_odds import (  # noqa: E402
     book_key,
 )
 from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES  # noqa: E402
+from nfl.drive_table import attach_drives, cache_is_stale, load_drive_index  # noqa: E402
+from nfl.ppd_model import PARAMS as PPD_PARAMS  # noqa: E402
+from nfl.ppd_model import home_adjustments  # noqa: E402
+from nfl.ppd_model import new_state as _new_state  # noqa: E402
+from nfl.ppd_model import project_scores  # noqa: E402
+from nfl.ppd_model import replay as _ppd_replay  # noqa: E402
 
 
 OUTPUT_PATH = ROOT / "game_markets.json"
@@ -53,42 +59,22 @@ POSTED_BOOK_ORDER = ("pinnacle", "circa", "bookmaker", "betonlineag", "betonline
 FALLBACK_MARGIN_SIGMA = 13.5
 MIN_SIGMA_GAMES = 32
 
-# Locked on 2023–2024 regular-season MAE, then checked on 2025–2026.
-# Learning rate on the points residual, blend of that rating with the same
-# rating built from past closing implied scores, games of shrinkage toward
-# the league, and points of margin per extra day of rest.
-ALPHA = 0.08
-MARKET_WEIGHT = 0.35
-SHRINK_GAMES = 6
-REST_POINTS = 0.15
-MIN_TEAM_GAMES = 3
-LEAGUE_START = 22.0
-HFA_START = 1.5
-HFA_ALPHA = 0.02
-
+# Numbers are filled from the 2024–2026 walk-forward after the 2023 lock.
+# See apply_backtest_copy() and nfl/backtest_game_markets.py.
 MODEL = {
-    "id": "opponent_adjusted_market_scores",
+    "id": "ppd_pace_v1",
     "proven": False,
-    "label": "Opponent-adjusted scores. Not proven to beat the closing line",
+    "label": "Drives times points per drive. Not proven to beat the closing line",
     "summary": (
-        "Each team gets a projected score. The spread is the home score minus "
-        "the away score, and the total is the two scores added together. "
-        "A team's score is the league scoring rate, plus that team's "
-        "opponent-adjusted offense, plus the opponent's opponent-adjusted "
-        "defense, plus home field and rest. The offense and defense ratings "
-        "learn from each past game's points and, separately, from the points "
-        "implied by that game's closing spread and total. The card uses "
-        "65 percent of the score rating and 35 percent of the closing-line "
-        "rating. Today's Unabated line is not an input, so the projection can "
-        "disagree with the book. Ratings shrink toward the league until a "
-        "team has a few games. "
-        "On 321 regular-season games in 2025–2026 this was 10.34 points off "
-        "the final margin and 10.93 points off the final total. The plain "
-        "recent-points blend on the same games was 10.36 and 11.34. The "
-        "closing line was better than both, at 9.81 and 10.51. Taking every "
-        "side the model liked by at least a point against that close, at "
-        "-110, won 51.2 percent of 254 spread bets and still lost 2.3 percent. "
-        "This is not a proven closing-line formula. Posted lines stay Unabated-only."
+        "Each score is expected drives times points per drive. Pace uses both "
+        "teams, and a pass-versus-rush matchup can move that rate. Home field "
+        "and rest are fit from earlier games, lately about 2.0 points at home "
+        "and about 0.4 points of margin per extra day of rest, not a flat 3. "
+        "On 607 regular-season games from 2024 through 2026 this missed the "
+        "margin by 10.46 points and the total by 10.43. The previous model "
+        "missed by 10.26 and 10.47, so this was closer on the total and farther "
+        "on the margin. The closing line missed by 9.64 and 10.11. Not proven "
+        "to beat the closing line."
     ),
 }
 
@@ -113,57 +99,6 @@ def canonical_team(value):
     return GAME_TEAM_ALIASES.get(text, text)
 
 
-def _new_state():
-    return {
-        "off_s": {}, "def_s": {}, "n": {},
-        "off_m": {}, "def_m": {}, "nm": {},
-        "league": LEAGUE_START,
-        "hfa": HFA_START,
-    }
-
-
-def _get(store, team):
-    return store.get(team, 0.0)
-
-
-def _shrunk(store, counts, team):
-    games = counts.get(team, 0)
-    return _get(store, team) * games / (games + SHRINK_GAMES)
-
-
-def _rated_points(state, away, home):
-    """Opponent-adjusted points before the market blend and rest."""
-    league = state["league"]
-    hfa = state["hfa"]
-
-    def pair(offense, defense, counts):
-        away_points = league + _shrunk(offense, counts, away) + _shrunk(defense, counts, home) - hfa / 2.0
-        home_points = league + _shrunk(offense, counts, home) + _shrunk(defense, counts, away) + hfa / 2.0
-        return away_points, home_points
-
-    return pair(state["off_s"], state["def_s"], state["n"])
-
-
-def project_scores(state, away, home, rest_away, rest_home):
-    """Projected points for each team. None until both teams have 3 prior games."""
-    if state["n"].get(away, 0) < MIN_TEAM_GAMES or state["n"].get(home, 0) < MIN_TEAM_GAMES:
-        return None, None
-    away_points, home_points = _rated_points(state, away, home)
-    if state["nm"].get(away, 0) >= MIN_TEAM_GAMES and state["nm"].get(home, 0) >= MIN_TEAM_GAMES:
-        market_away, market_home = _rated_points(
-            {"off_s": state["off_m"], "def_s": state["def_m"], "n": state["nm"], "league": state["league"], "hfa": state["hfa"]},
-            away,
-            home,
-        )
-        away_points = (1.0 - MARKET_WEIGHT) * away_points + MARKET_WEIGHT * market_away
-        home_points = (1.0 - MARKET_WEIGHT) * home_points + MARKET_WEIGHT * market_home
-    if rest_away is not None and rest_home is not None:
-        bump = max(-4.0, min(4.0, float(rest_home) - float(rest_away))) * REST_POINTS
-        home_points += bump / 2.0
-        away_points -= bump / 2.0
-    return away_points, home_points
-
-
 def whole_points(value):
     """Round half up so the two scores on the card add to the total."""
     if value is None:
@@ -171,77 +106,13 @@ def whole_points(value):
     return int(math.floor(float(value) + 0.5))
 
 
-def _update_ratings(state, game):
-    away = game["away_team"]
-    home = game["home_team"]
-    away_score = game.get("away_score")
-    home_score = game.get("home_score")
-    if away_score is None or home_score is None:
-        return
-    league = state["league"]
-    hfa = state["hfa"]
-    expected_away = league + _get(state["off_s"], away) + _get(state["def_s"], home) - hfa / 2.0
-    expected_home = league + _get(state["off_s"], home) + _get(state["def_s"], away) + hfa / 2.0
-    error_away = away_score - expected_away
-    error_home = home_score - expected_home
-    state["off_s"][away] = (1.0 - ALPHA) * _get(state["off_s"], away) + ALPHA * error_away
-    state["def_s"][home] = (1.0 - ALPHA) * _get(state["def_s"], home) + ALPHA * error_away
-    state["off_s"][home] = (1.0 - ALPHA) * _get(state["off_s"], home) + ALPHA * error_home
-    state["def_s"][away] = (1.0 - ALPHA) * _get(state["def_s"], away) + ALPHA * error_home
-    state["n"][away] = state["n"].get(away, 0) + 1
-    state["n"][home] = state["n"].get(home, 0) + 1
-    state["league"] = (1.0 - ALPHA * 0.25) * league + (ALPHA * 0.25) * ((home_score + away_score) / 2.0)
-    state["hfa"] = (1.0 - HFA_ALPHA) * hfa + HFA_ALPHA * (home_score - away_score)
-    spread_line = game.get("spread_line")
-    total_line = game.get("total_line")
-    if spread_line is None or total_line is None:
-        return
-    implied_away = (total_line - spread_line) / 2.0
-    implied_home = (total_line + spread_line) / 2.0
-    league = state["league"]
-    hfa = state["hfa"]
-    expected_away = league + _get(state["off_m"], away) + _get(state["def_m"], home) - hfa / 2.0
-    expected_home = league + _get(state["off_m"], home) + _get(state["def_m"], away) + hfa / 2.0
-    error_away = implied_away - expected_away
-    error_home = implied_home - expected_home
-    state["off_m"][away] = (1.0 - ALPHA) * _get(state["off_m"], away) + ALPHA * error_away
-    state["def_m"][home] = (1.0 - ALPHA) * _get(state["def_m"], home) + ALPHA * error_away
-    state["off_m"][home] = (1.0 - ALPHA) * _get(state["off_m"], home) + ALPHA * error_home
-    state["def_m"][away] = (1.0 - ALPHA) * _get(state["def_m"], away) + ALPHA * error_home
-    state["nm"][away] = state["nm"].get(away, 0) + 1
-    state["nm"][home] = state["nm"].get(home, 0) + 1
-
-
-def prior_games(history, before_date):
-    """Completed regular-season games strictly before `before_date`, oldest first."""
-    rows = [
-        game for game in history
-        if game.get("game_type") == "REG"
-        and game.get("season") in RATING_SEASONS
-        and game.get("gameday")
-        and game["gameday"] < before_date
-        and game.get("away_score") is not None
-        and game.get("home_score") is not None
-        and game.get("away_team")
-        and game.get("home_team")
-    ]
-    rows.sort(key=lambda game: (game["gameday"], game.get("gametime") or "", game.get("away_team") or ""))
-    return rows
-
-
 def replay(history, before_date):
-    """Ratings from games before `before_date`, plus margin residuals of those projections."""
-    state = _new_state()
-    residuals = []
-    for game in prior_games(history, before_date):
-        away_points, home_points = project_scores(
-            state, game["away_team"], game["home_team"], game.get("away_rest"), game.get("home_rest"),
-        )
-        if away_points is not None:
-            actual_margin = game["home_score"] - game["away_score"]
-            residuals.append(actual_margin - (home_points - away_points))
-        _update_ratings(state, game)
-    return state, residuals
+    """Ratings from regular-season games before `before_date`, plus margin residuals."""
+    earlier = [
+        game for game in history
+        if game.get("season") in RATING_SEASONS or game.get("season") is None
+    ]
+    return _ppd_replay(earlier, before_date)
 
 
 def residual_sigma(residuals):
@@ -628,12 +499,32 @@ def build_games(schedule, history, markets, today=None):
                 "modelProbability": home_prob,
             },
         })
-    return games, week, sigma, sigma_source
+    return games, week, sigma, sigma_source, _state
+
+
+def public_model(state):
+    """Disclaimer with the locked backtest and the home-field fit used on this slate."""
+    hfa, rest = home_adjustments(state or _new_state(), PPD_PARAMS)
+    model = dict(MODEL)
+    model["homeField"] = round(hfa, 2)
+    model["restPointsPerDay"] = round(rest, 2)
+    model["summary"] = (
+        "Each score is expected drives times points per drive. Pace uses both "
+        "teams, and a pass-versus-rush matchup can move that rate. Home field "
+        f"and rest are fit from earlier games, lately about {hfa:.1f} points at home "
+        f"and about {rest:.1f} points of margin per extra day of rest, not a flat 3. "
+        "On 607 regular-season games from 2024 through 2026 this missed the "
+        "margin by 10.46 points and the total by 10.43. The previous model "
+        "missed by 10.26 and 10.47, so this was closer on the total and farther "
+        "on the margin. The closing line missed by 9.64 and 10.11. Not proven "
+        "to beat the closing line."
+    )
+    return model
 
 
 def build_snapshot(schedule, history, payload, today=None, lines_status="ok"):
     markets = index_unabated(payload or {})
-    games, week, sigma, sigma_source = build_games(schedule, history, markets, today=today)
+    games, week, sigma, sigma_source, state = build_games(schedule, history, markets, today=today)
     matched = sum(1 for game in games if game["spread"]["line"] is not None or game["total"]["line"] is not None or game["moneyline"]["line"] is not None)
     if not games:
         status = "no_games"
@@ -652,7 +543,7 @@ def build_snapshot(schedule, history, payload, today=None, lines_status="ok"):
         "provider": "unabated",
         "status": status,
         "message": message,
-        "model": MODEL,
+        "model": public_model(state),
         "margin_sigma": round(float(sigma), 2),
         "margin_sigma_source": sigma_source,
         "week": week,
@@ -695,6 +586,7 @@ def frame_to_games(frame):
             "gameday": _text(record.get("gameday")),
             "weekday": _text(record.get("weekday")),
             "gametime": _text(record.get("gametime")),
+            "game_id": _text(record.get("game_id")),
             "away_team": canonical_team(record.get("away_team")),
             "home_team": canonical_team(record.get("home_team")),
             "away_score": _score(record.get("away_score")),
@@ -748,6 +640,13 @@ def main():
         schedule = frame_to_games(pd.read_csv(args.games_csv, low_memory=False))
     else:
         schedule = load_schedule()
+    refresh = [CURRENT_SEASON] if cache_is_stale(CURRENT_SEASON) else []
+    try:
+        index = load_drive_index(RATING_SEASONS, refresh_seasons=refresh, canonical=canonical_team)
+        attached = attach_drives(schedule, index)
+        print(f"Drive rows attached for {attached} games.")
+    except Exception as exc:
+        print(f"Drive table unavailable, points per drive fall back to score only: {exc}")
     lines_status = "ok"
     if args.odds_json:
         payload = json.loads(args.odds_json.read_text(encoding="utf-8"))
