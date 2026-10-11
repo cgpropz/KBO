@@ -49,7 +49,7 @@ from snapshot_consistency import (  # noqa: E402
     ODDS_FETCH_STEP,
     generated_timestamp,
     publish_gate_errors,
-    strikeout_pair_mismatches,
+    quarantine_lone_pitcher_mismatch,
     with_published_at,
 )
 
@@ -320,12 +320,23 @@ def collect_generated_times():
     return times, payloads
 
 
+def _write_json(path, payload):
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+
+
 def evaluate_publish_gate(failed):
     times, payloads = collect_generated_times()
-    mismatches = strikeout_pair_mismatches(
-        payloads.get("strikeout_projections"),
+    strikeout = payloads.get("strikeout_projections")
+    cleaned, warning, mismatches = quarantine_lone_pitcher_mismatch(
+        strikeout,
         payloads.get("matchup_data"),
     )
+    if warning and isinstance(cleaned, dict):
+        print(f"⚠ {warning}")
+        _write_json(os.path.join(PUBLIC_DATA, "strikeout_projections.json"), cleaned)
+        payloads["strikeout_projections"] = cleaned
     return publish_gate_errors(
         failed=list(failed),
         has_last_good_lines=last_good_odds_available(),

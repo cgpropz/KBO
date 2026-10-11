@@ -941,6 +941,108 @@ def select_no_market_starters(starters, matchup_starters):
     return matchup_starters
 
 
+def dedupe_starters(starters):
+    """One starter per name and game. Markets are expanded later, not here."""
+    seen = set()
+    unique = []
+    for starter in starters or []:
+        if not isinstance(starter, dict):
+            continue
+        key = (
+            normalize_name(starter.get("name") or "").lower(),
+            canonical_team(starter.get("team")),
+            canonical_team(starter.get("opponent")),
+        )
+        if not key[1] or not key[2] or key in seen:
+            continue
+        seen.add(key)
+        unique.append(starter)
+    return unique
+
+
+def align_starters_with_prizepicks(starters, pp_starter_rows):
+    """Keep the schedule's games, then PrizePicks lines that fit those games.
+
+    player_names.csv is the slate (KBO game center, advanced to the next day
+    once today's games are final). PrizePicks can rename the starter for a
+    pair that is actually on that slate, and can add a game for teams the
+    schedule does not list. It cannot move a team onto a different opponent.
+    A cached board often still has a finished game (Adam Oller, Kia vs Lotte)
+    after the schedule has moved that team (Kia vs LG).
+
+    When at least one schedule game is on the PrizePicks board, keep those
+    overlapping games plus any PrizePicks game whose teams are not on the
+    schedule at all. If a cached line tries to move a scheduled team onto a
+    different opponent, drop that line and keep the schedule starter instead
+    (Kia stays vs LG, not vs Lotte).
+    """
+    if not pp_starter_rows:
+        return dedupe_starters(starters)
+
+    def pair_of(starter):
+        return (
+            canonical_team((starter or {}).get("team")),
+            canonical_team((starter or {}).get("opponent")),
+        )
+
+    schedule = [starter for starter in (starters or []) if pair_of(starter)[0] and pair_of(starter)[1]]
+    schedule_pairs = {pair_of(starter) for starter in schedule}
+    schedule_teams = {team for teams in schedule_pairs for team in teams}
+    matched = [starter for starter in schedule if pair_of(starter) in pp_starter_rows]
+    # Teams a cached PrizePicks line tried to move onto a different opponent.
+    # Their schedule starter stays, with the schedule's opponent.
+    reassigned_teams = set()
+
+    def extras(blocked_teams, blocked_pairs):
+        rows = []
+        for key, row in pp_starter_rows.items():
+            team = canonical_team(key[0] if isinstance(key, tuple) else "")
+            opponent = canonical_team(key[1] if isinstance(key, tuple) and len(key) > 1 else "")
+            if not team or not opponent:
+                continue
+            if (team, opponent) in blocked_pairs:
+                continue
+            if team in blocked_teams or opponent in blocked_teams:
+                reassigned_teams.add(team)
+                reassigned_teams.add(opponent)
+                name = (row or {}).get("name") or "unknown"
+                print(
+                    f"⚠ Ignoring stale PrizePicks starter {name} ({team} vs {opponent}); "
+                    "that team is already on the schedule against someone else"
+                )
+                continue
+            rows.append(row)
+        return rows
+
+    if matched:
+        chosen = list(matched) + extras(schedule_teams, {pair_of(starter) for starter in matched})
+        already = {pair_of(starter) for starter in chosen}
+        for starter in schedule:
+            team, opponent = pair_of(starter)
+            if (team, opponent) in already:
+                continue
+            if team in reassigned_teams or opponent in reassigned_teams:
+                chosen.append(starter)
+                already.add((team, opponent))
+    else:
+        # No PrizePicks game matches the schedule. Keep the schedule and only
+        # add lines for teams it does not already include.
+        chosen = list(schedule) + extras(schedule_teams, schedule_pairs)
+
+    aligned = []
+    for starter in chosen:
+        if not isinstance(starter, dict):
+            continue
+        pp_row = pp_starter_rows.get(pair_of(starter))
+        pp_name = (pp_row or {}).get("name")
+        if pp_name and normalize_name(starter.get("name", "")).lower() != normalize_name(pp_name).lower():
+            # Same game: PrizePicks is usually the confirmed starter.
+            starter = dict(starter)
+            starter["name"] = pp_name
+        aligned.append(starter)
+    return dedupe_starters(aligned)
+
+
 def main():
     pp_strikeouts = load_pp_lines("Pitcher Strikeouts")
     pp_hits_allowed = load_pp_lines("Hits Allowed")
@@ -1035,43 +1137,7 @@ def main():
         pass
 
     if pp_matchups:
-        matched_starters = [s for s in starters if (s.get("team"), s.get("opponent")) in pp_matchups]
-        # Include pp_starter_rows for any matchups NOT covered by player_names.csv starters
-        covered_matchups = {(s.get("team"), s.get("opponent")) for s in starters}
-        # Teams already on today's slate — don't add stale PP entries for these teams
-        covered_teams = {t for (t, o) in covered_matchups} | {o for (t, o) in covered_matchups}
-        extra_starters = [
-            v for (team, opp), v in pp_starter_rows.items()
-            if (team, opp) not in covered_matchups
-            and team not in covered_teams
-            and opp not in covered_teams
-        ]
-        if matched_starters:
-            # player_names.csv covers some PP matchups; add any extras PP has beyond that
-            # Only include PP entries for entirely new teams (not teams already on today's slate)
-            covered_matched = {(s.get("team"), s.get("opponent")) for s in matched_starters}
-            matched_teams = {t for (t, o) in covered_matched} | {o for (t, o) in covered_matched}
-            extra_pp = [
-                v for (team, opp), v in pp_starter_rows.items()
-                if (team, opp) not in covered_matched
-                and team not in matched_teams
-                and opp not in matched_teams
-            ]
-            starters = matched_starters + extra_pp
-        else:
-            # player_names.csv has a different slate (e.g. next day); include all:
-            # player_names.csv starters (for batter opp_pitcher lookups) + pp_starter_rows
-            starters = list(starters) + extra_starters
-
-        # Trust PrizePicks' confirmed starter name over our own probable-starter
-        # guess when they disagree for the same matchup — PP is typically updated
-        # closer to game time with the actual confirmed starter, while our own
-        # scrape (player_names.csv / GameCenter probable starters) can be stale.
-        for s in starters:
-            pp_row = pp_starter_rows.get((s.get("team"), s.get("opponent")))
-            if pp_row and pp_row.get("name"):
-                if normalize_name(s.get("name", "")).lower() != normalize_name(pp_row["name"]).lower():
-                    s["name"] = pp_row["name"]
+        starters = align_starters_with_prizepicks(starters, pp_starter_rows)
 
     games_by_name, norm_map, parts_map = load_pitcher_games()
 

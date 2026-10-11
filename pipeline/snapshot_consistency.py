@@ -124,12 +124,27 @@ def canonical_team(value: Any) -> str:
     return TEAM_ALIASES.get(text, TEAM_ALIASES.get(text.upper(), text))
 
 
-def strikeout_pair_mismatches(strikeout_data: Any, matchup_data: Any) -> list[str]:
-    """Team pairs in strikeout projections that the matchup slate does not have.
+def opponent_for_line(scheduled: Any, pp_opponent: Any) -> str | None:
+    """Opponent to use for one PrizePicks line.
 
-    Mirrors the local verifier. An empty projection list is not a pair mismatch
-    (the caller reports that separately). An empty matchup slate does not invent
-    mismatches either; there is no slate to compare against.
+    The schedule is the slate of games. A cached PrizePicks opponent from a
+    finished game must not replace it: Kia vs Lotte is not Kia vs LG. None
+    means the line contradicts the schedule and the caller should skip it.
+    An empty string means neither source named an opponent.
+    """
+    scheduled_team = canonical_team(scheduled)
+    pp_team = canonical_team(pp_opponent)
+    if scheduled_team and pp_team and scheduled_team != pp_team:
+        return None
+    return scheduled_team or pp_team or ""
+
+
+def strikeout_pair_mismatch_rows(strikeout_data: Any, matchup_data: Any) -> list[tuple[int, str]]:
+    """Projection rows whose team pair is not on the matchup slate.
+
+    An empty projection list is not a pair mismatch (the caller reports that
+    separately). An empty matchup slate does not invent mismatches either;
+    there is no slate to compare against.
     """
     if not isinstance(strikeout_data, dict):
         return []
@@ -152,21 +167,85 @@ def strikeout_pair_mismatches(strikeout_data: Any, matchup_data: Any) -> list[st
         opponents_by_team.setdefault(away, set()).add(home)
         opponents_by_team.setdefault(home, set()).add(away)
 
-    mismatches = []
-    for row in projections:
+    mismatches: list[tuple[int, str]] = []
+    for index, row in enumerate(projections):
         if not isinstance(row, dict):
             continue
         team = canonical_team(row.get("team"))
         opponent = canonical_team(row.get("opponent"))
         if not team or not opponent:
-            mismatches.append(f"{row.get('name', '<unknown>')} ({team or '?'} vs {opponent or '?'})")
+            mismatches.append((index, f"{row.get('name', '<unknown>')} ({team or '?'} vs {opponent or '?'})"))
             continue
         if matchup_pairs and (team, opponent) not in matchup_pairs:
             allowed = sorted(opponents_by_team.get(team, set()))
-            mismatches.append(
-                f"{row.get('name', '<unknown>')} ({team} vs {opponent}; expected one of {allowed or ['<none>']})"
-            )
+            mismatches.append((
+                index,
+                f"{row.get('name', '<unknown>')} ({team} vs {opponent}; expected one of {allowed or ['<none>']})",
+            ))
     return mismatches
+
+
+def strikeout_pair_mismatches(strikeout_data: Any, matchup_data: Any) -> list[str]:
+    """Team pairs in strikeout projections that the matchup slate does not have."""
+    return [label for _, label in strikeout_pair_mismatch_rows(strikeout_data, matchup_data)]
+
+
+def quarantine_lone_pitcher_mismatch(
+    strikeout_data: Any,
+    matchup_data: Any,
+) -> tuple[Any, str | None, list[str]]:
+    """Drop one pitcher's bad rows instead of failing the whole deploy.
+
+    Each starter is written once per pitcher market (strikeouts, hits allowed,
+    pitching outs), so one wrong opponent shows up as several identical pair
+    errors. That is still one pitcher. Drop those rows and let the rest of the
+    slate publish. Two or more different pitchers still fail closed: the slate
+    itself is wrong, and dropping them would hide that.
+    """
+    rows = strikeout_pair_mismatch_rows(strikeout_data, matchup_data)
+    if not rows or not isinstance(strikeout_data, dict):
+        return strikeout_data, None, []
+
+    projections = strikeout_data.get("projections") or []
+    by_pitcher: dict[str, list[tuple[int, str]]] = {}
+    for index, label in rows:
+        row = projections[index] if index < len(projections) else {}
+        name = str((row or {}).get("name") or "<unknown>").strip() or "<unknown>"
+        team = canonical_team((row or {}).get("team")) or "?"
+        by_pitcher.setdefault(f"{name}|{team}", []).append((index, label))
+
+    if len(by_pitcher) > 1:
+        return strikeout_data, None, [label for _, label in rows]
+
+    _key, grouped = next(iter(by_pitcher.items()))
+    drop = {index for index, _ in grouped}
+    cleaned = dict(strikeout_data)
+    cleaned["projections"] = [
+        row for index, row in enumerate(projections)
+        if index not in drop
+    ]
+    sample = grouped[0][1]
+    name = sample.split(" (", 1)[0]
+    markets = []
+    for index, _label in grouped:
+        prop = str((projections[index] or {}).get("prop") or "").strip()
+        if prop and prop not in markets:
+            markets.append(prop)
+    market_note = ""
+    if len(grouped) > 1:
+        listed = ", ".join(markets) if markets else "one row per market"
+        market_note = (
+            f" The same pitcher is listed {len(grouped)} times ({listed}), "
+            "once per pitcher market, not as three different games."
+        )
+    warning = (
+        f"dropped {len(grouped)} strikeout row(s) for {name}; "
+        f"that pitcher is the only matchup disagreement ({sample})."
+        f"{market_note} Continuing so one bad pitcher does not block the deploy."
+    )
+    if not cleaned["projections"]:
+        cleaned["market_status"] = "no_current_pitcher_markets"
+    return cleaned, warning, []
 
 
 def publish_gate_errors(

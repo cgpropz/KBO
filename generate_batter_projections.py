@@ -26,6 +26,8 @@ import unicodedata
 from datetime import datetime, timezone
 from difflib import get_close_matches
 
+from pipeline.snapshot_consistency import opponent_for_line
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 BATTER_HAND_MAP_PATH = os.path.join(BASE, "Batters-Data", "kbo_batter_handedness_map.json")
 PP_BATTER_NAME_MAP_PATH = os.path.join(BASE, "Batters-Data", "prizepicks_batter_name_map.json")
@@ -1014,13 +1016,14 @@ def resolve_team(pp_team_raw):
     return text
 
 
-# PrizePicks is closer to game time than the cached probable-starter file. Use
-# its team/opponent pair for projection context whenever the two sources drift.
-for pp_entry in [*pp_hrr.values(), *pp_tb.values(), *pp_fs.values()]:
-    pp_team = resolve_team(pp_entry.get("team"))
-    pp_opp = resolve_team(pp_entry.get("versus"))
-    if pp_team and pp_opp:
-        team_opponent[pp_team] = pp_opp
+def line_opponent(team, pp_versus):
+    """Schedule opponent, unless this PrizePicks line is for a different game.
+
+    A cached board can still say Kia vs Lotte after that game is final and the
+    schedule has moved Kia to LG. Those lines are skipped (None) instead of
+    rewriting the slate.
+    """
+    return opponent_for_line(team_opponent.get(team), resolve_team(pp_versus))
 
 
 def apply_batter_formula(row, games=None, factors=None, opponent=None):
@@ -1046,12 +1049,15 @@ def build_hrr_projections():
     for pp_key, pp_val in pp_hrr.items():
         pp_name = pp_val["pp_name"]
         team = resolve_team(pp_val["team"])
-        opp = team_opponent.get(team)
+        opp = line_opponent(team, pp_val.get("versus", ""))
+        if opp is None:
+            print(
+                f"  skipping {pp_name}: PrizePicks opponent {pp_val.get('versus')} "
+                f"is not {team}'s scheduled game ({team_opponent.get(team)})"
+            )
+            continue
         if not opp:
-            # Fallback: use PrizePicks Versus field
-            opp = resolve_team(pp_val.get("versus", ""))
-        if not opp:
-            opp = pp_val.get("versus", "") or "Unknown"
+            opp = "Unknown"
 
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
@@ -1238,11 +1244,15 @@ def build_tb_projections():
     for pp_key, pp_val in pp_tb.items():
         pp_name = pp_val["pp_name"]
         team = resolve_team(pp_val["team"])
-        opp = team_opponent.get(team)
+        opp = line_opponent(team, pp_val.get("versus", ""))
+        if opp is None:
+            print(
+                f"  skipping {pp_name}: PrizePicks opponent {pp_val.get('versus')} "
+                f"is not {team}'s scheduled game ({team_opponent.get(team)})"
+            )
+            continue
         if not opp:
-            opp = resolve_team(pp_val.get("versus", ""))
-        if not opp:
-            opp = pp_val.get("versus", "") or "Unknown"
+            opp = "Unknown"
 
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
@@ -1424,11 +1434,15 @@ def build_fantasy_projections():
     for key, pp_val in fs_candidates.items():
         pp_name = pp_val["pp_name"]
         team = resolve_team(pp_val["team"])
-        opp = team_opponent.get(team)
+        opp = line_opponent(team, pp_val.get("versus", ""))
+        if opp is None:
+            print(
+                f"  skipping {pp_name}: PrizePicks opponent {pp_val.get('versus')} "
+                f"is not {team}'s scheduled game ({team_opponent.get(team)})"
+            )
+            continue
         if not opp:
-            opp = resolve_team(pp_val.get("versus", ""))
-        if not opp:
-            opp = pp_val.get("versus", "") or "Unknown"
+            opp = "Unknown"
 
         resolved = resolve_batter_name(pp_name)
         bs = batter_stats.get(resolved)
