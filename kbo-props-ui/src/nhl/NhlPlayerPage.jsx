@@ -203,6 +203,11 @@ function dvpLookup(payload, windowId, stat, opponent) {
   return teams.find((row) => row.team === opponent) || null
 }
 
+function noLineCopy(prop) {
+  if (prop === 'Goalie Saves') return 'No saves line posted yet'
+  return 'No line posted yet'
+}
+
 function barKind(value, line) {
   const actual = finiteNumber(value)
   const target = finiteNumber(line)
@@ -303,7 +308,7 @@ export default function NhlPlayerPage({ item, onBack }) {
 
   return (
     <section className="nhl-player-sheet">
-      <button className="nhl-back" type="button" onClick={onBack}>Back</button>
+      <button className="nhl-back" type="button" onClick={onBack}>← Back</button>
       <div className="nhl-player-head">
         <PlayerHeadshot key={`${item.playerId || item.player}-${item.team}`} playerId={item.playerId} imageUrl={item.imageUrl} name={item.player} team={item.team} />
         <div className="nhl-player-id">
@@ -314,7 +319,12 @@ export default function NhlPlayerPage({ item, onBack }) {
         </div>
       </div>
       <p className="nhl-player-sub">
-        {item.team}{item.opponent ? ` vs ${item.opponent}` : ''}. {item.prop} line <b>{formatCount(item.line ?? item.pp_line)}</b>.
+        {item.team}{item.opponent ? ` vs ${item.opponent}` : ''}.{' '}
+        {line == null ? (
+          <span className="nhl-no-line">{noLineCopy(item.prop)}.</span>
+        ) : (
+          <>{item.prop} line <b>{formatCount(line)}</b>.</>
+        )}
         {' '}Projection <b>{formatCount(item.projection)}</b>.
         {item.latestGame ? ` Latest game ${item.latestGame}.` : ''}
         {' '}2026-27 is this season only. 2025-26 is last season, including a previous team.
@@ -327,7 +337,7 @@ export default function NhlPlayerPage({ item, onBack }) {
           return (
             <button key={option.id} type="button" className={range === option.id ? 'active' : ''} onClick={() => setRange(option.id)}>
               <span>{option.label}</span>
-              <b className={tone.trim()}>{rate == null ? '—' : `${rate}%`}</b>
+              {line != null && <b className={tone.trim()}>{rate == null ? '—' : `${rate}%`}</b>}
               <small>{games ? `${games} gm` : '—'}</small>
             </button>
           )
@@ -336,9 +346,13 @@ export default function NhlPlayerPage({ item, onBack }) {
       <div className="nhl-chart-card">
         <div className="nhl-chart-head">
           <span>{selected.label}{includesPrior && range !== 'prior' && range !== 'season' ? ' · includes 2025-26' : ''}</span>
-          <b className={item[selected.rate] == null ? '' : item[selected.rate] >= 50 ? 'nhl-good' : 'nhl-bad'}>
-            {item[selected.rate] == null ? '—' : `${item[selected.rate]}% over`}
-          </b>
+          {line == null ? (
+            <b className="nhl-no-line">{noLineCopy(item.prop)}</b>
+          ) : (
+            <b className={item[selected.rate] == null ? '' : item[selected.rate] >= 50 ? 'nhl-good' : 'nhl-bad'}>
+              {item[selected.rate] == null ? '—' : `${item[selected.rate]}% over`}
+            </b>
+          )}
         </div>
         {bars.length ? (
           <div className="nhl-chart-scroll">

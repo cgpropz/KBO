@@ -110,15 +110,18 @@
   font-family: Inter, system-ui, sans-serif;
 }
 .nhl-back {
-  border: 0;
+  display: inline-flex;
+  align-items: center;
   margin: 0 0 14px;
-  padding: 0;
-  color: #d4d4d8;
-  background: transparent;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #e4e4e7;
+  background: #080c0a;
   font: 700 13px Inter, system-ui, sans-serif;
   cursor: pointer;
 }
-.nhl-back:hover { color: #4ade80; }
+.nhl-back:hover { color: #4ade80; border-color: rgba(74, 222, 128, 0.5); }
 .nhl-player-head {
   display: flex;
   align-items: center;
@@ -201,16 +204,22 @@
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-weight: 700;
 }
+.nhl-no-line {
+  color: #a1a1aa;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+}
 .nhl-player-sheet .nfl-player-range-strip {
   flex-wrap: wrap;
   margin: 0 0 14px;
 }
-.nhl-player-sheet .nfl-player-range-strip button {
+.nhl-player-sheet .nfl-player-range-strip button,
+.nhl-player-sheet .nfl-player-range-strip button:not(.active) {
   flex: 1 1 84px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   color: #a1a1aa;
-  background: #080c0a;
+  background-color: #080c0a;
   font-family: Inter, system-ui, sans-serif;
 }
 .nhl-player-sheet .nfl-player-range-strip button small {
@@ -225,7 +234,7 @@
 }
 .nhl-player-sheet .nfl-player-range-strip button.active {
   border-color: rgba(74, 222, 128, 0.5);
-  background: #080c0a;
+  background-color: #080c0a;
   box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.35);
 }
 .nhl-player-sheet .nfl-player-range-strip button.active span { color: #f4f4f5; }
@@ -253,6 +262,10 @@
 .nhl-chart-head b {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-weight: 700;
+}
+.nhl-chart-head b.nhl-no-line {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
 }
 .nhl-chart-scroll { overflow-x: auto; }
 .nhl-chart-plot {
@@ -432,6 +445,21 @@
 .nhl-profile-table td {
   color: #f4f4f5;
   font: 700 13px 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (min-width: 421px) {
+  .nhl-chart-card { max-width: 520px; }
+  .nhl-chart-plot {
+    width: max-content;
+    min-width: 100%;
+  }
+  .nhl-chart-bars,
+  .nhl-chart-dates { width: 100%; }
+  .nhl-chart-col,
+  .nhl-chart-dates span {
+    flex: 1 1 0;
+    width: auto;
+    min-width: var(--nhl-bar);
+  }
 }
 @media (max-width: 420px) {
   .nhl-chart-card,
