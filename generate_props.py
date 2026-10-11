@@ -130,6 +130,26 @@ def _parse_date(d):
         pass
     return (0, 0, 0)
 
+def find_batter_projection(b_proj, name, stat):
+    """Match a batter model row the same way the slate freeze does.
+
+    Exact name, accent-folded name, and word-order signature all count, and
+    the PrizePicks name on the row counts as well as the log name.
+    """
+    direct = b_proj.get((name, stat))
+    if direct:
+        return direct
+    normalized_name = normalize(name)
+    signature = name_signature(name)
+    for (projection_name, projection_stat), candidate in b_proj.items():
+        if projection_stat != stat or not isinstance(candidate, dict):
+            continue
+        names = [projection_name, candidate.get("pp_name") or ""]
+        if any(normalize(item) == normalized_name or name_signature(item) == signature for item in names if item):
+            return candidate
+    return {}
+
+
 def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=None):
     logs = pitcher_logs_by_name.get(name, [])
     # Sort by date descending (handles MM/DD/YYYY correctly)
@@ -239,7 +259,12 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
             "stat": stat,
             "line": line,
             "odds_type": p.get("odds_type", "standard"),
-            "avg": round(proj_val, 2) if proj_val is not None else round(avg_val, 2),
+            # Season mean stays in avg. The model number is projection, and it
+            # stays null when no model row matched — never the season mean.
+            "avg": round(avg_val, 2) if total > 0 else None,
+            "projection": round(float(proj_val), 2) if proj_val is not None else None,
+            "edge": stat_proj.get("edge"),
+            "rating": stat_proj.get("rating"),
             "over": over_count,
             "under": under_count,
             "push": push_count,
@@ -341,18 +366,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, p
         hr10 = (sum(1 for v in l10 if v > line) / len(l10) * 100) if l10 else 0
         hr20 = (sum(1 for v in l20 if v > line) / len(l20) * 100) if l20 else 0
 
-        # Get projection, allowing internal log names and PrizePicks names to differ.
-        proj = b_proj.get((name, stat), {})
-        if not proj:
-            normalized_name = normalize(name)
-            proj = next(
-                (
-                    candidate
-                    for (projection_name, projection_stat), candidate in b_proj.items()
-                    if projection_stat == stat and normalize(projection_name) == normalized_name
-                ),
-                {},
-            )
+        proj = find_batter_projection(b_proj, name, stat)
 
         card["props"].append({
             "stat": stat,

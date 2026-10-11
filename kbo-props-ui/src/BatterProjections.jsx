@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
+import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 
 const TEAMS = {
@@ -502,16 +503,7 @@ function BatterProjections() {
 
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const isPromo = oddsType === 'demon' || oddsType === 'goblin';
-    let recommendation =
-      edge == null
-        ? 'NO LINE'
-        : edge > 0
-          ? 'OVER'
-          : edge < 0
-            ? 'UNDER'
-            : 'PUSH';
-    if (isPromo && recommendation === 'UNDER') recommendation = 'PUSH';
+    const recommendation = pregameSide(Number.isFinite(projection) ? projection : null, liveLine);
 
     return {
       ...p,
@@ -958,7 +950,7 @@ function BatterProjections() {
             <div className="bp-legend-items">
               <div className="bp-legend-item"><span className="val-badge val-over">OVER</span><span>Projection &gt; Line</span></div>
               <div className="bp-legend-item"><span className="val-badge val-under">UNDER</span><span>Projection &lt; Line</span></div>
-              <div className="bp-legend-item"><span className="val-badge val-push">PUSH</span><span>Projection = Line</span></div>
+              <div className="bp-legend-item"><span className="val-badge val-push">EVEN</span><span>Projection equals the line</span></div>
             </div>
           </div>
 

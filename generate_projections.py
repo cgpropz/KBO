@@ -867,16 +867,9 @@ def resolve_pp_entry(pp_maps, display_name, resolved_name, team, opponent):
 
 
 def classify_recommendation(edge, threshold, odds_type="standard"):
-    if edge is None:
-        return "NO LINE"
-    if edge > threshold:
-        return "OVER"
-    if edge < -threshold:
-        # Demon/goblin props are over-only on PrizePicks
-        if odds_type in ("demon", "goblin"):
-            return "PUSH"
-        return "UNDER"
-    return "PUSH"
+    """Pre-game side. PUSH is reserved for a graded actual that equals the line."""
+    from pipeline.live_formula import kbo_side
+    return kbo_side(edge, threshold, odds_type)
 
 
 def finish_pitcher_row(row, stat, games, ctx, games_by_name):

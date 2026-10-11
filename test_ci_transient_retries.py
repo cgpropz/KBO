@@ -102,6 +102,34 @@ class PublishRetryTests(unittest.TestCase):
         self.assertEqual(session.calls, 2)
 
 
+class SnapshotPublishTests(unittest.TestCase):
+    def test_missing_wnba_sharp_odds_is_skipped_with_the_migration_name(self):
+        response = FakeResponse(
+            404,
+            '{"code":"PGRST205","message":"Could not find the table \'public.wnba_sharp_odds\' in the schema cache"}',
+        )
+        self.assertTrue(publish.optional_table_missing("wnba_sharp_odds", response))
+        message = publish.missing_table_message("wnba_sharp_odds")
+        self.assertIn("does not exist", message)
+        self.assertIn("sql/wnba_sharp_odds.sql", message)
+        self.assertFalse(publish.optional_table_missing("wnba_projections_standard", response))
+
+    def test_a_real_error_on_sharp_odds_is_not_treated_as_a_missing_table(self):
+        response = FakeResponse(500, '{"code":"57014"}')
+        self.assertFalse(publish.optional_table_missing("wnba_sharp_odds", response))
+
+    def test_snapshot_record_stamps_publish_time_and_drops_non_finite_numbers(self):
+        body = publish.snapshot_record(
+            1,
+            [{"player": "Stuart Skinner", "rankScore": float("-inf"), "score": 12.5}],
+            "2026-10-11T14:21:33+00:00",
+        )
+        self.assertEqual(body["updated_at"], "2026-10-11T14:21:33+00:00")
+        self.assertIsNone(body["data"][0]["rankScore"])
+        self.assertEqual(body["data"][0]["score"], 12.5)
+        json.dumps(body, allow_nan=False)
+
+
 class GameListRetryTests(unittest.TestCase):
     def _post(self, outcomes):
         session = FakeSession(outcomes)
