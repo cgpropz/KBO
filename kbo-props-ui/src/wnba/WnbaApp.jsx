@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
-  { id: 'lineups', label: 'Lineups' },
+  { id: 'lineups', label: 'Starting Lineups' },
 ]
 
 // Paid WNBA views (mirrors KBO's PAID_VIEWS). Dashboard/Players/Teams stay free.
