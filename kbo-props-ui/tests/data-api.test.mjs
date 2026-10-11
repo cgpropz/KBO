@@ -14,9 +14,27 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
     total_props: nCards * propsPerCard,
     cards: Array.from({ length: nCards }, (_, c) => ({
       name: `Player ${c}`, team: 'LG', opponent: 'KT', type: c % 2 ? 'batter' : 'pitcher',
-      props: Array.from({ length: propsPerCard }, (_, p) => ({
-        stat: `S${p}`, line: 1.5, cg_projection: c * 10 + p, hit_rate_l10: 50, recommendation: 'OVER',
-      })),
+      props: Array.from({ length: propsPerCard }, (_, p) => {
+        const confidence = c * 10 + p
+        const row = {
+          stat: `S${p}`,
+          line: 1.5,
+          // Ratio score matches the old confidence numbers so the top-3 assertion
+          // still names the same rows. Confidence itself is not the rank key.
+          projection: (confidence * 1.5) / 50,
+          cg_projection: confidence,
+          avg: 12,
+          hit_rate_l10: 50,
+          recommendation: 'OVER',
+        }
+        if (c === 0 && p === 0) {
+          row.cg_projection = 95
+          row.projection = 1.2
+          row.recommendation = 'UNDER'
+          row.avg = 8
+        }
+        return row
+      }),
     })),
   }
 }
@@ -121,7 +139,8 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
   assert.equal(res.body.lockedCount, 18 - FREE_ROW_LIMIT)
-  // best scores are kept (Player 5: cg 50,51,52)
+  // best model ratios are kept (Player 5: scores 50, 51, 52).
+  // The confidence-95 under on Player 0 is not one of them.
   const kept = res.body.data.cards.flatMap((c) => c.props.map((p) => p.cg_projection)).sort((a, b) => b - a)
   assert.deepEqual(kept, [52, 51, 50])
   assert.equal(res.body.data.generated_at, NOW)

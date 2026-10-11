@@ -24,7 +24,8 @@ CONFIG_PATH = Path(__file__).resolve().parent / "projection_formula.json"
 PARAMS_DIR = REPO_ROOT / "ml" / "params"
 WNBA_DIR = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "wnba"
 
-# Edge required before the live KBO pick leaves PUSH. Same cutoffs the generators use.
+# Kept for callers that still pass a stat-specific cutoff. Pre-game side is the
+# sign of (projection - line); these numbers are not a PUSH dead zone.
 KBO_THRESHOLDS = {
     "Strikeouts": 0.45,
     "Hits Allowed": 0.35,
@@ -117,16 +118,40 @@ def candidate_params(sport: str, stat: str) -> dict | None:
     return params
 
 
-def kbo_side(edge, threshold: float, odds_type: str | None) -> str:
+def kbo_side(edge, threshold: float | None = None, odds_type: str | None = None) -> str:
+    """Side to publish before the game.
+
+    OVER when the projection is above the line, UNDER when it is below.
+    An exact tie is EVEN. A missing edge is NO LINE. PUSH is not a pre-game
+    label; a push is the graded result when the actual stat equals the line.
+
+    `threshold` and `odds_type` stay in the signature so existing callers keep
+    working. They do not open a dead zone, and a demon or goblin line is still
+    an under when the projection is below the line.
+    """
+    _ = (threshold, odds_type)
     if edge is None:
         return "NO LINE"
-    if edge > threshold:
+    try:
+        edge_f = float(edge)
+    except (TypeError, ValueError):
+        return "NO LINE"
+    if edge_f > 0:
         return "OVER"
-    if edge < -threshold:
-        if str(odds_type or "standard") in ("demon", "goblin"):
-            return "PUSH"
+    if edge_f < 0:
         return "UNDER"
-    return "PUSH"
+    return "EVEN"
+
+
+def unprojected_fields() -> dict:
+    """No model number. Do not copy the line in and call it a push."""
+    return {
+        "projection": None,
+        "edge": None,
+        "rating": None,
+        "recommendation": "NO LINE",
+        "cg_projection": None,
+    }
 
 
 def attach_kbo_formula(row: dict, tuned: float | None, threshold: float, factors: dict | None = None) -> dict:

@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext'
 import { sportAccess } from './entitlements'
 import HitRateStrip from './HitRateStrip'
 import { kboHitPills } from './hitRateStrip'
-import { cgScore, lineMatchesStat } from './cgScore'
+import { directionFor, scoreFor } from './kboBoardScore'
 import './KboPropBoard.css'
 
 const FREE_ROW_LIMIT = 3
@@ -25,23 +25,6 @@ function value(value, digits = 1) {
   const numeric = Number(value)
   if (!Number.isFinite(numeric)) return '-'
   return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(digits)
-}
-
-function directionFor(prop) {
-  // Direction must compare the actual projected stat value against the line (same
-  // as BatterProjections/StrikeoutProjections' edge = projection - line), never the
-  // CG Score/rating, which is a 0-100 scale and not comparable to the raw line.
-  const projection = Number(prop.projection ?? prop.avg)
-  const line = Number(prop.line)
-  if (!Number.isFinite(projection) || !Number.isFinite(line)) return 'neutral'
-  return projection >= line ? 'over' : 'under'
-}
-
-function scoreFor(prop) {
-  if (!lineMatchesStat(prop.stat, prop.line)) return null
-  const score = Number(prop.cg_projection ?? prop.rating)
-  if (Number.isFinite(score)) return score
-  return cgScore(prop.avg ?? prop.projection, prop.line, prop.stat)
 }
 
 function FilterIcon() {
@@ -161,12 +144,13 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       .filter(({ card }) => filters.playerType === 'All' || card.type === (filters.playerType === 'Pitchers' ? 'pitcher' : 'batter'))
       .filter(({ direction }) => filters.direction === 'All' || direction === (filters.direction === 'Overs' ? 'over' : 'under'))
       .filter(({ prop }) => Number(prop.hit_rate_l10 ?? 0) >= filters.minL10)
-      .filter(({ score }) => score >= minimumScore)
+      .filter(({ score }) => filters.minScore === '' || (score != null && score >= minimumScore))
+    const rank = (row) => (row.score == null || !Number.isFinite(row.score) ? -Infinity : row.score)
     return visible.sort((left, right) => {
       if (filters.sortBy === 'L10 Hit Rate') return Number(right.prop.hit_rate_l10 ?? 0) - Number(left.prop.hit_rate_l10 ?? 0)
       if (filters.sortBy === 'Full Hit Rate') return Number(right.prop.hit_rate_all ?? 0) - Number(left.prop.hit_rate_all ?? 0)
       if (filters.sortBy === 'Player Name') return left.card.name.localeCompare(right.card.name)
-      return right.score - left.score
+      return rank(right) - rank(left)
     })
   }, [allRows, filters, propTab])
 
@@ -203,7 +187,8 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         {rows.map(({ card, prop, score, direction, hitPills }, index) => {
           const photo = photoLookup[String(card.name || '').toLowerCase()]
           const locked = !isPaid && index >= FREE_ROW_LIMIT
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></div></td><td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={`hit-rate-score ${direction}`}>{value(score)}</td><td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td><td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td></tr>
+          const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
+          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b></div></div></td><td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={`hit-rate-score ${direction}`}>{score == null ? '-' : value(score)}</td><td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td><td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td></tr>
         })}
         {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={5}><span className="kbo-placeholder-bar" /></td></tr>)}
       </tbody></table>

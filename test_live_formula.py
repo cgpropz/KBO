@@ -128,6 +128,25 @@ class TestRealCoefficients(unittest.TestCase):
         self.assertTrue(row["formula_applied"])
         self.assertEqual(row["formula_mode"], "tuned")
 
+    def test_small_edge_and_promo_under_are_not_a_pregame_push(self):
+        from pipeline.live_formula import kbo_side, unprojected_fields
+        self.assertEqual(kbo_side(0.1, 0.45, "standard"), "OVER")
+        self.assertEqual(kbo_side(-0.1, 0.45, "demon"), "UNDER")
+        self.assertEqual(kbo_side(0, 0.45, "goblin"), "EVEN")
+        self.assertEqual(kbo_side(None, 0.45, "standard"), "NO LINE")
+        self.assertEqual(unprojected_fields()["recommendation"], "NO LINE")
+        self.assertIsNone(unprojected_fields()["projection"])
+        row = {
+            "prop": "Hits+Runs+RBIs", "line": 2.5, "odds_type": "demon",
+            "projection": 4.8, "edge": 2.3, "recommendation": "OVER",
+            "hit_rate_l5": 60, "hit_rate_full": 55, "games_used": 20,
+        }
+        attach_kbo_formula(row, 2.49, 0.3)
+        self.assertEqual(row["baseline_recommendation"], "OVER")
+        self.assertEqual(row["projection"], 2.49)
+        self.assertEqual(row["recommendation"], "UNDER")
+        self.assertLess(row["rating"], 50)
+
 
 class TestWnbaBoard(unittest.TestCase):
     def tearDown(self):

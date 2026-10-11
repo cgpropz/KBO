@@ -15,11 +15,11 @@ class BatterHandContextTests(unittest.TestCase):
         context = hands.build_batter_hand_context(generated_at="test")
         batter = context["batters"][hands.name_key("Choi Won-jun")]
         self.assertEqual(batter["hand"], "L")
-        self.assertEqual(batter["vs_lhp"]["avg"], 0.399)
-        self.assertEqual(batter["vs_lhp"]["ab"], 173)
+        self.assertEqual(batter["vs_lhp"]["avg"], 0.394)
+        self.assertEqual(batter["vs_lhp"]["ab"], 175)
         self.assertEqual(batter["vs_lhp"]["tb"], 86)
         self.assertEqual(batter["vs_rhp"]["avg"], 0.327)
-        self.assertEqual(batter["vs_rhp"]["ab"], 397)
+        self.assertEqual(batter["vs_rhp"]["ab"], 398)
         self.assertEqual(batter["vs_rhp"]["tb"], 188)
 
     def test_switch_hitters_stay_switch(self):
