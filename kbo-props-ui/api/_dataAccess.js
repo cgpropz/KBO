@@ -1,4 +1,5 @@
 import { lineMatchesStat } from '../src/cgScore.js';
+import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
@@ -145,9 +146,23 @@ function wnbaPropScore(player, prop) {
   return ratioScore(projection, line, prop?.stat);
 }
 
-// NFL Prop Lines: score = projection / line × 50
+// NFL Prop Lines: projection / max(line, per-stat floor) × 50.
+// A yardage line at or below 0.5 still does not score.
 function nflScore(row) {
-  return ratioScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  return score == null ? -Infinity : score;
+}
+
+// Kickoff has arrived. `now` is the server clock at the moment the preview
+// is built, which is the /api/data request. A missing or unparseable
+// start_time stays eligible: there is no kickoff that has passed.
+export function gameAlreadyStarted(row, now = new Date()) {
+  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc;
+  if (raw == null || String(raw).trim() === '') return false;
+  const kick = Date.parse(String(raw));
+  const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now));
+  if (!Number.isFinite(kick) || !Number.isFinite(nowMs)) return false;
+  return kick <= nowMs;
 }
 
 // Unconfirmed goalies stay off the free top 3.
@@ -343,7 +358,10 @@ export const DATASETS = {
   nfl_projections: {
     table: 'nfl_projections',
     sport: 'nfl',
-    free: previewList(nflScore, (row) => lineMatchesStat(row?.prop ?? row?.stat, row?.line)),
+    // The NFL board's free top 3 is this list. There is no second ranker.
+    free: previewList(nflScore, (row) => (
+      lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
+    )),
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
-import { cgScore, lineMatchesStat } from '../cgScore'
+import { lineMatchesStat } from '../cgScore'
+import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
@@ -88,7 +89,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
   const rows = useMemo(() => projections
     .filter((item) => lineMatchesStat(item.prop, item.line))
-    .map((item) => ({ ...item, score: cgScore(item.projection, item.line, item.prop) ?? 0 }))
+    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0 }))
     .filter((item) => position === 'ALL' || item.position === position)
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)

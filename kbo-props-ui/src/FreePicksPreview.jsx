@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
 import { cgScore, lineMatchesStat } from './cgScore';
+import { nflCgScore } from './nfl/nflLineFloors';
 import './FreeFunnel.css';
 
 /*
@@ -50,7 +51,7 @@ function nflRows(data) {
     projection: row.projection,
     hitRate: row.hitRate,
     tag: null,
-    score: cgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
+    score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
   }));
 }
 
