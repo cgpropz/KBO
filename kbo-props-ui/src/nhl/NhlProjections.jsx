@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
+import { formatBoardUpdated } from './formatBoardUpdated'
 import { sortBoard } from './NhlPropLines'
 import { cgScore, lineMatchesStat } from '../cgScore'
 
@@ -67,13 +68,16 @@ export default function NhlProjections({ onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [tab, setTab] = useState('ALL')
   const [query, setQuery] = useState('')
 
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next }) => { if (active) { setProjections(next); setLoaded(true) } })
+      .then(({ projections: next, updatedAt: publishedAt }) => {
+        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setLoaded(true) }
+      })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
@@ -88,6 +92,7 @@ export default function NhlProjections({ onSelectPlayer }) {
     <section>
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Board</h1></div>
+        {formatBoardUpdated(updatedAt) && <span>Last updated {formatBoardUpdated(updatedAt)}</span>}
       </div>
       <p className="nhl-note">One card per player and prop. Standard lines are preferred. A demon or goblin is shown only when that is the line PrizePicks posted. Probable goalies are tagged and sorted to the bottom.</p>
       <div className="nfl-edge-controls">

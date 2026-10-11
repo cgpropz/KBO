@@ -1,4 +1,6 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "crons": [
     {
       "path": "/api/reconcile-subscriptions",
@@ -20,6 +22,17 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/nfl", "destination": "/nfl-player-props", "statusCode": 301 },
+    { "source": "/wnba", "destination": "/wnba-player-props", "statusCode": 301 },
+    { "source": "/nba", "destination": "/nba-player-props", "statusCode": 301 },
+    { "source": "/nhl", "destination": "/nhl-player-props", "statusCode": 301 },
+    { "source": "/kbo", "destination": "/kbo-player-props", "statusCode": 301 },
+    { "source": "/plans", "destination": "/pricing", "statusCode": 301 },
+    { "source": "/board", "destination": "/kbo-player-props", "statusCode": 301 },
+    { "source": "/app", "destination": "/", "statusCode": 301 },
+    { "source": "/start-here", "destination": "/guides/start-here", "statusCode": 301 }
+  ],
   "rewrites": [
     { "source": "/api/discord-auth", "destination": "/api/discord/auth" },
     { "source": "/api/discord-callback", "destination": "/api/discord/callback" },
@@ -31,14 +44,16 @@
     { "source": "/api/checkout-session", "destination": "/api/checkout/session" },
     { "source": "/api/weekly-checkout", "destination": "/api/checkout/weekly" },
     { "source": "/kbo-player-props", "destination": "/kbo-player-props.html" },
-    { "source": "/kbo-player-props/", "destination": "/kbo-player-props.html" },
+    { "source": "/nfl-player-props", "destination": "/nfl-player-props.html" },
+    { "source": "/wnba-player-props", "destination": "/wnba-player-props.html" },
+    { "source": "/nba-player-props", "destination": "/nba-player-props.html" },
+    { "source": "/nhl-player-props", "destination": "/nhl-player-props.html" },
+    { "source": "/pricing", "destination": "/pricing.html" },
+    { "source": "/guides/cg-score", "destination": "/guides/cg-score.html" },
+    { "source": "/guides/start-here", "destination": "/guides/start-here.html" },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
-    },
-    {
-      "source": "/((?!api/|data/).*)",
-      "destination": "/index.html"
     }
   ]
 }

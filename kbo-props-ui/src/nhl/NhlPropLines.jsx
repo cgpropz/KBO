@@ -6,6 +6,7 @@ import { teamLogoUrl } from './nhlTeams'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
+import { formatBoardUpdated } from './formatBoardUpdated'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -119,6 +120,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [tab, setTab] = useState('All Props')
   const [sortBy, setSortBy] = useState('CG Score')
   const [lockedCount, setLockedCount] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [openId, setOpenId] = useState(null)
   const { index: oddsIndex, oddsState } = useBoardOdds(
     () => fetchNhlSharpOdds().then(({ records, preview }) => ({ records, preview })),
@@ -127,10 +129,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, preview, lockedCount: locked }) => {
+      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt }) => {
         if (!active) return
         setProjections(next)
         setLockedCount(preview ? locked : 0)
+        setUpdatedAt(publishedAt || null)
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
@@ -152,6 +155,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1></div>
         <div className="nfl-lines-header-actions">
+          {formatBoardUpdated(updatedAt) && <span>Last updated {formatBoardUpdated(updatedAt)}</span>}
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
           <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
             <option>CG Score</option>

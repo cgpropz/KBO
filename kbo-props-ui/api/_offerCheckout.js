@@ -1,11 +1,13 @@
 // Checkout Sessions for Lifetime ($249.99) and Founders ($99.99).
 // Not a route. Wired from api/checkout/[action].js.
 //
-// Founders is not a static Payment Link: the cap and the 18 Oct 2026 ET
-// deadline are enforced here before a session is created. Past 25 paid
-// Founders sessions, or after the deadline, the handler refuses the Founders
-// price and opens the $249.99 Lifetime session instead.
-// Neither session has a free trial.
+// Founders is not a static Payment Link: the Payment Link's own 25-sale cap
+// and end date do not apply to a Checkout Session created here. The cap and
+// the 18 Oct 2026 11:59 PM ET deadline are enforced before a session is
+// created. Past 25 Founders purchases (in-site sessions, charges, and
+// Payment Link sales, one shared count), or after the deadline, the handler
+// refuses. It does not open a $249.99 Lifetime session in that case.
+// Neither Lifetime nor Founders has a free trial.
 
 import crypto from 'node:crypto';
 import Stripe from 'stripe';
@@ -135,10 +137,21 @@ async function createPaymentSession(client, { priceId, plan, buyer, body }) {
   return { url, id: session.id };
 }
 
+function foundersClosedBody(offer) {
+  if (offer.reason === 'sold_out') {
+    return { status: 409, error: 'Founders deal has sold out', reason: 'sold_out' };
+  }
+  if (offer.reason === 'expired') {
+    return { status: 409, error: 'Founders deal has ended', reason: 'expired' };
+  }
+  return { status: 503, error: 'Checkout unavailable', reason: offer.reason || 'unavailable' };
+}
+
 /**
  * POST /api/checkout/lifetime and POST /api/checkout/founders.
  * One-time payment mode. No subscription and no free trial.
- * Founders past the cap or the deadline falls back to the $249.99 price.
+ * Founders past the cap or the deadline is refused. No Checkout Session
+ * is created, and the $249.99 Lifetime price is not substituted.
  */
 export async function handleOfferCheckoutRequest(req, res, deps = {}) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -153,16 +166,17 @@ export async function handleOfferCheckoutRequest(req, res, deps = {}) {
 
   const env = deps.env || process.env;
   const now = typeof deps.now === 'number' ? deps.now : Date.now();
-  let plan = requested;
-  let fallback = false;
-  let reason = null;
+  const plan = requested;
 
   if (requested === 'founders') {
     const offer = await foundersOfferStatus(client, env, now);
     if (!offer.open) {
-      plan = 'lifetime';
-      fallback = true;
-      reason = offer.reason || 'closed';
+      const closed = foundersClosedBody(offer);
+      return res.status(closed.status).json({
+        error: closed.error,
+        reason: closed.reason,
+        open: false,
+      });
     }
   }
 
@@ -178,8 +192,8 @@ export async function handleOfferCheckoutRequest(req, res, deps = {}) {
     return res.status(200).json({
       url: session.url,
       plan,
-      fallback,
-      reason,
+      fallback: false,
+      reason: null,
     });
   } catch (err) {
     console.error(`[offer-checkout] ${plan} create failed:`, err?.message);

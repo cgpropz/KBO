@@ -9,8 +9,8 @@ import { routeParam } from '../_routeKey.js';
 export const CHECKOUT_ACTIONS = {
   session: handleCheckoutSessionRequest,
   weekly: handleWeeklyCheckoutRequest,
-  // One-time Lifetime and Founders. Founders enforces the 25-spot cap and the
-  // 18 Oct 2026 ET deadline, then falls back to the $249.99 price.
+  // One-time Lifetime and Founders. Founders refuses a session after
+  // 18 Oct 2026 11:59 PM ET or once 25 Founders purchases exist.
   lifetime: (req, res) => handleOfferCheckoutRequest(req, res, { plan: 'lifetime' }),
   founders: (req, res) => handleOfferCheckoutRequest(req, res, { plan: 'founders' }),
 };

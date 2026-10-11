@@ -15,3 +15,18 @@ export function freeTierPreviewFeature() {
     ? 'Top 3 projections — KBO, WNBA, NFL & NHL'
     : 'Top 3 projections — KBO, WNBA & NHL'
 }
+
+const FREE_TOP_3_BOARDS = ['kbo', 'nfl', 'wnba', 'nhl']
+
+// The homepage anchor stays mounted even when a board has no rows. An empty
+// NFL board (the free-preview flag withholds those rows) does not remove it.
+export function freeTop3SectionState(boards) {
+  const availableIds = FREE_TOP_3_BOARDS.filter((id) => boards[id]?.status === 'ready')
+  const settled = FREE_TOP_3_BOARDS.every((id) => boards[id] && boards[id].status !== 'loading')
+  return {
+    availableIds,
+    settled,
+    showingRows: !(settled && availableIds.length === 0),
+    anchorId: 'free-top-3',
+  }
+}

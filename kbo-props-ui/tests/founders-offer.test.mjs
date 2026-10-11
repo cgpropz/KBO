@@ -2,11 +2,16 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   FOUNDERS_CAP,
+  FOUNDERS_DEADLINE_LABEL,
   FOUNDERS_DEADLINE_MS,
+  FOUNDERS_DEADLINE_SHORT,
+  foundersCardCopy,
   foundersOfferState,
+  isFoundersCharge,
   isFoundersSession,
 } from '../src/foundersOffer.js'
 import { handleOfferCheckoutRequest } from '../api/_offerCheckout.js'
+import { countFoundersPurchases } from '../api/_foundersCount.js'
 import { activeFoundersPriceId, activeLifetimePriceId } from '../api/_stripeTier.js'
 
 const OPEN = Date.parse('2026-10-12T16:00:00.000Z')
@@ -24,6 +29,21 @@ function paid(id, extras = {}) {
     ...extras,
   }
 }
+
+test('founders deadline copy names the end of Oct 18, not Oct 19', () => {
+  assert.equal(FOUNDERS_DEADLINE_LABEL, 'Ends Oct 18 at 11:59 PM ET')
+  assert.equal(FOUNDERS_DEADLINE_SHORT, 'through Oct 18')
+  assert.equal(foundersOfferState({ now: OPEN, sold: 1 }).deadlineLabel, 'Ends Oct 18 at 11:59 PM ET')
+  assert.equal(foundersCardCopy({ spotsLeft: 12, cap: 25, soldKnown: true }).meta, '12 of 25 spots left. Ends Oct 18 at 11:59 PM ET')
+  assert.equal(foundersCardCopy({ spotsLeft: 12, cap: 25, soldKnown: true }).showBuy, true)
+  assert.equal(foundersCardCopy({ cap: 25, compact: true }).meta, 'Limited to 25 buyers, through Oct 18')
+  const soldOut = foundersCardCopy({ spotsLeft: 0, cap: 25, soldKnown: true, reason: 'sold_out' })
+  assert.equal(soldOut.closedLabel, 'Sold out')
+  assert.equal(soldOut.showBuy, false)
+  const ended = foundersCardCopy({ spotsLeft: 4, cap: 25, soldKnown: true, reason: 'expired' })
+  assert.equal(ended.closedLabel, 'Ended')
+  assert.equal(ended.showBuy, false)
+})
 
 test('founders offer closes at the end of 18 Oct 2026 ET and at 25 buyers', () => {
   assert.equal(DEADLINE, FOUNDERS_DEADLINE_MS)
@@ -70,10 +90,23 @@ function mockRes() {
   }
 }
 
-function mockStripe(sessions) {
+function mockStripe(sessions, { charges = [], invoices = {} } = {}) {
   const calls = []
   return {
     calls,
+    charges: {
+      async list() {
+        return { data: charges, has_more: false }
+      },
+      async search() {
+        return { data: charges.filter((charge) => charge.metadata?.cg_plan === 'founders'), has_more: false }
+      },
+    },
+    invoices: {
+      async retrieve(id) {
+        return invoices[id] || { id, lines: { data: [] } }
+      },
+    },
     paymentLinks: {
       async list() {
         return {
@@ -102,9 +135,9 @@ function mockStripe(sessions) {
   }
 }
 
-async function post(plan, { now, sessions = [], env = {} }) {
+async function post(plan, { now, sessions = [], charges = [], invoices = {}, env = {} }) {
   const res = mockRes()
-  const stripe = mockStripe(sessions)
+  const stripe = mockStripe(sessions, { charges, invoices })
   await handleOfferCheckoutRequest(
     { method: 'POST', headers: {}, body: { utm_source: 'x' } },
     res,
@@ -127,22 +160,114 @@ test('an open founders checkout uses the $99.99 price and has no trial', async (
   assert.equal(res.body.url.startsWith('https://checkout.stripe.com/'), true)
 })
 
-test('founders checkout at the cap or after the deadline falls back to $249.99', async () => {
+test('founders checkout in the last second of 18 Oct ET still uses the $99.99 price', async () => {
+  const { res, params } = await post('founders', { now: LAST_SECOND })
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.plan, 'founders')
+  assert.equal(params.line_items[0].price, FOUNDERS)
+})
+
+test('founders checkout at the cap or after the deadline is refused', async () => {
   const sold = Array.from({ length: 25 }, (_, i) => paid(`cs_${i}`, { metadata: { cg_plan: 'founders' } }))
   const capped = await post('founders', { now: OPEN, sessions: sold })
-  assert.equal(capped.res.statusCode, 200)
-  assert.equal(capped.res.body.plan, 'lifetime')
-  assert.equal(capped.res.body.fallback, true)
+  assert.equal(capped.res.statusCode, 409)
+  assert.equal(capped.res.body.error, 'Founders deal has sold out')
   assert.equal(capped.res.body.reason, 'sold_out')
-  assert.equal(capped.params.line_items[0].price, LIFETIME)
-  assert.equal(capped.params.line_items[0].price, activeLifetimePriceId())
-  assert.equal(capped.params.metadata.cg_plan, 'lifetime')
-  assert.equal(JSON.stringify(capped.params).includes('trial'), false)
+  assert.equal(capped.res.body.open, false)
+  assert.equal(capped.params, undefined)
 
   const expired = await post('founders', { now: DEADLINE })
-  assert.equal(expired.res.body.plan, 'lifetime')
+  assert.equal(expired.res.statusCode, 409)
+  assert.equal(expired.res.body.error, 'Founders deal has ended')
   assert.equal(expired.res.body.reason, 'expired')
-  assert.equal(expired.params.line_items[0].price, LIFETIME)
+  assert.equal(expired.res.body.open, false)
+  assert.equal(expired.params, undefined)
+})
+
+test('payment-link sales and founders charges share one 25-spot cap', async () => {
+  const created = Math.floor(OPEN / 1000)
+  assert.equal(isFoundersCharge({
+    id: 'ch_old',
+    paid: true,
+    status: 'succeeded',
+    created: Math.floor(Date.parse('2026-09-01T00:00:00Z') / 1000),
+    invoice: { lines: { data: [{ price: { id: FOUNDERS } }] } },
+  }, { priceId: FOUNDERS }), false)
+  assert.equal(isFoundersCharge({
+    id: 'ch_refunded',
+    paid: true,
+    refunded: true,
+    status: 'succeeded',
+    created,
+    metadata: { cg_plan: 'founders' },
+  }, { priceId: FOUNDERS }), false)
+
+  const sessions = [
+    paid('cs_link', { payment_link: 'plink_founders', payment_intent: 'pi_link' }),
+    paid('cs_legacy', {
+      payment_link: 'plink_legacy',
+      payment_intent: 'pi_legacy',
+      line_items: { data: [{ price: { id: FOUNDERS } }] },
+    }),
+  ]
+  const charges = [
+    {
+      id: 'ch_link',
+      paid: true,
+      status: 'succeeded',
+      created,
+      payment_intent: 'pi_link',
+      invoice: 'in_link',
+    },
+    {
+      id: 'ch_legacy',
+      paid: true,
+      status: 'succeeded',
+      created,
+      payment_intent: 'pi_legacy',
+      invoice: 'in_legacy',
+    },
+    {
+      id: 'ch_invoice',
+      paid: true,
+      status: 'succeeded',
+      created,
+      payment_intent: 'pi_invoice',
+      invoice: 'in_founders',
+    },
+    {
+      id: 'ch_tagged',
+      paid: true,
+      status: 'succeeded',
+      created,
+      payment_intent: 'pi_tagged',
+      metadata: { cg_plan: 'founders' },
+    },
+  ]
+  const invoices = {
+    in_link: { lines: { data: [{ price: { id: FOUNDERS } }] } },
+    in_legacy: { lines: { data: [{ price: { id: FOUNDERS } }] } },
+    in_founders: { lines: { data: [{ price: { id: FOUNDERS } }] } },
+  }
+  const stripe = mockStripe(sessions, { charges, invoices })
+  assert.equal(await countFoundersPurchases(stripe), 3)
+
+  const almost = Array.from({ length: 24 }, (_, i) => paid(`cs_${i}`, { metadata: { cg_plan: 'founders' } }))
+  const capped = await post('founders', {
+    now: OPEN,
+    sessions: almost,
+    charges: [{
+      id: 'ch_extra',
+      paid: true,
+      status: 'succeeded',
+      created,
+      payment_intent: 'pi_extra',
+      metadata: { cg_plan: 'founders' },
+    }],
+  })
+  assert.equal(capped.res.statusCode, 409)
+  assert.equal(capped.res.body.error, 'Founders deal has sold out')
+  assert.equal(capped.params, undefined)
 })
 
 test('lifetime checkout always uses the $249.99 price', async () => {

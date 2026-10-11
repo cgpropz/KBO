@@ -158,9 +158,9 @@ export function weeklyCheckoutHref(user, token = '') {
   return readyWeeklyCheckoutUrl(token) || buildCheckoutUrl(STRIPE_LINKS.weekly, user);
 }
 
-// Lifetime ($249.99) and Founders ($99.99) Checkout Sessions. The server picks
-// the price. Founders past the cap or the deadline returns the Lifetime URL
-// instead of the $99.99 price (plan: 'lifetime', fallback: true).
+// Lifetime ($249.99) and Founders ($99.99) Checkout Sessions. Founders past
+// the cap or the deadline is refused: the response has no URL, and reason is
+// 'sold_out' or 'expired'. Lifetime is not substituted.
 export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -170,8 +170,13 @@ export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), 
     headers,
     body: JSON.stringify(utm || {}),
   });
-  if (!res.ok) throw new Error('checkout failed');
-  const data = await res.json();
+  let data = {};
+  try { data = await res.json(); } catch { data = {}; }
+  if (!res.ok) {
+    const err = new Error(data?.error || 'checkout failed');
+    if (data?.reason) err.reason = data.reason;
+    throw err;
+  }
   const url = String(data?.url || '');
   if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
   return { url, plan: data.plan || plan, fallback: Boolean(data.fallback), reason: data.reason || null };

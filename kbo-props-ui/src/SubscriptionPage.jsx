@@ -97,8 +97,8 @@ function SubscriptionPage() {
       }
       window.open(result.url, '_blank', 'noopener');
       setAwaitingPayment(true);
-    } catch {
-      /* leave the buttons usable */
+    } catch (err) {
+      if (err?.reason === 'sold_out' || err?.reason === 'expired') throw err;
     } finally {
       setOfferBusy(false);
     }
@@ -221,7 +221,7 @@ function SubscriptionPage() {
             </div>
 
             {tier.id === 'lifetime' && (
-              <FoundersOffer busy={offerBusy} onClaim={() => openOfferCheckout('founders')} />
+              <FoundersOffer compact busy={offerBusy} onClaim={() => openOfferCheckout('founders')} />
             )}
 
             <button

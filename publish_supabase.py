@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Publish snapshot data to Supabase via REST API."""
 import json
+import math
 import os
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 import requests
 
@@ -168,13 +170,59 @@ def post_with_retry(session, url, *, attempts=None, backoff=None, sleep=time.sle
     return response
 
 
-def _upsert_snapshot_row(session, table, row_id, data, headers):
+def json_safe(value):
+    """Copy `value` into strict JSON.
+
+    Python will emit -Infinity for a sort key such as an unconfirmed goalie's
+    rankScore. PostgREST rejects that body, so the snapshot never lands and
+    updated_at never moves. Missing numbers become null.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    return value
+
+
+def snapshot_record(row_id, data, updated_at=None):
+    """One Supabase snapshot row.
+
+    updated_at is the publish time. nhl_projections has no BEFORE UPDATE
+    trigger, so the column default (insert time) would otherwise stick.
+    """
+    stamp = updated_at or datetime.now(timezone.utc).isoformat()
+    return {"id": row_id, "data": json_safe(data), "updated_at": stamp}
+
+
+def optional_table_missing(table, response):
+    """True when PostgREST says this optional snapshot table was never created."""
+    if table not in OPTIONAL_TABLES or getattr(response, "status_code", None) != 404:
+        return False
+    body = getattr(response, "text", "") or ""
+    return "PGRST205" in body or "Could not find the table" in body
+
+
+def missing_table_message(table):
+    hint = ""
+    if table == "wnba_sharp_odds":
+        hint = " Apply sql/wnba_sharp_odds.sql in the Supabase SQL editor."
+    return (
+        f"{table} table does not exist (HTTP 404). "
+        f"Skipping this snapshot so the rest of the publish can finish.{hint}"
+    )
+
+
+def _upsert_snapshot_row(session, table, row_id, data, headers, updated_at=None):
     """POST one id row. Returns an error string, or None on success."""
     response = post_with_retry(
         session,
         f"{SUPABASE_URL}/rest/v1/{table}",
         params={"on_conflict": "id"},
-        json={"id": row_id, "data": data},
+        json=snapshot_record(row_id, data, updated_at),
         headers=headers,
         timeout=120,
     )
@@ -219,7 +267,7 @@ def _delete_nba_player_tail(session, keep_ids, headers):
     return None
 
 
-def publish_nba_players(session, data, headers):
+def publish_nba_players(session, data, headers, updated_at=None):
     """Upsert nba_players in timeout-sized rows. Failure strings, empty on success.
 
     Chunk slices are written before the id=1 manifest. A failed run leaves the
@@ -227,7 +275,7 @@ def publish_nba_players(session, data, headers):
     """
     rows = nba_player_rows(data)
     if rows is None:
-        err = _upsert_snapshot_row(session, "nba_players", 1, data, headers)
+        err = _upsert_snapshot_row(session, "nba_players", 1, data, headers, updated_at)
         if err:
             return [err]
         print(f"  ✓ {'nba_players':30} updated")
@@ -235,7 +283,7 @@ def publish_nba_players(session, data, headers):
     chunks = [(row_id, chunk) for row_id, chunk in rows if row_id != 1]
     _row_id, manifest = next(row for row in rows if row[0] == 1)
     for row_id, chunk in chunks:
-        err = _upsert_snapshot_row(session, "nba_players", row_id, chunk, headers)
+        err = _upsert_snapshot_row(session, "nba_players", row_id, chunk, headers, updated_at)
         if err:
             return [err]
     # id=1 is replaced only after the slices exist. Until then readers still
@@ -243,7 +291,7 @@ def publish_nba_players(session, data, headers):
     # then drops leftover slices; a chunked publish flips the manifest, then
     # drops slices past the new count. Readers ignore rows the manifest does
     # not name.
-    err = _upsert_snapshot_row(session, "nba_players", 1, manifest, headers)
+    err = _upsert_snapshot_row(session, "nba_players", 1, manifest, headers, updated_at)
     if err:
         return [err]
     keep_ids = [1] if not chunks else [1, *[row_id for row_id, _chunk in chunks]]
@@ -419,6 +467,7 @@ def main():
 
     failures = []
     session = requests.Session()
+    published_at = datetime.now(timezone.utc).isoformat()
 
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
 
@@ -453,12 +502,12 @@ def main():
                 continue
 
             if table == "nba_players":
-                for msg in publish_nba_players(session, data, headers):
+                for msg in publish_nba_players(session, data, headers, published_at):
                     print(f"  ✗ {msg}")
                     failures.append(msg)
                 continue
 
-            payload = {"id": 1, "data": data}
+            payload = snapshot_record(1, data, published_at)
             response = post_with_retry(
                 session,
                 f"{SUPABASE_URL}/rest/v1/{table}",
@@ -472,8 +521,8 @@ def main():
                 print(f"  ✓ {table:30} updated")
             else:
                 body = response.text.strip().replace("\n", " ")
-                if table in OPTIONAL_TABLES and response.status_code == 404 and "PGRST205" in body:
-                    print(f"  ! {table} is not migrated yet; skipping snapshot")
+                if optional_table_missing(table, response):
+                    print(f"  ! {missing_table_message(table)}")
                     continue
                 msg = f"{table} HTTP {response.status_code}: {body[:200]}"
                 print(f"  ✗ {msg}")

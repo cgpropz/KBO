@@ -11,13 +11,14 @@
   <meta property="og:site_name" content="CGPropz" />
   <meta property="og:url" content="https://www.cgpropz.com/kbo-player-props" />
   <meta property="og:title" content="KBO player props and full-board results | CGPropz" />
-  <meta property="og:description" content="Recent KBO player-prop results from the CGPropz model: every graded prop, with hits, misses, pushes, and DNPs." />
+  <meta property="og:description" content="KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs." />
   <meta property="og:image" content="https://www.cgpropz.com/og-image.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="KBO player props and full-board results | CGPropz" />
-  <meta name="twitter:description" content="Recent KBO player-prop results from the CGPropz model: every graded prop, with hits, misses, pushes, and DNPs." />
+  <meta name="twitter:description" content="KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"KBO player props","item":"https://www.cgpropz.com/kbo-player-props"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a full-board result?","acceptedAnswer":{"@type":"Answer","text":"Every prop the model graded that day, including hits, misses, pushes, and DNPs. It is the whole graded board for that date, not a short list of winners."}},{"@type":"Question","name":"What time zone are these dates?","acceptedAnswer":{"@type":"Answer","text":"The dates are the calendar dates stored with each KBO slate. Those are Korea game dates, not US Eastern Time."}},{"@type":"Question","name":"Where is pricing?","acceptedAnswer":{"@type":"Answer","text":"All-Access plans are on the pricing page."}},{"@type":"Question","name":"What does CG Score mean?","acceptedAnswer":{"@type":"Answer","text":"It compares the projection with the posted line. The guide explains the stated method. A higher score is not a probability and is not a claim that the prop hits more often."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -30,24 +31,29 @@
     }
     a { color: #4ade80; }
     .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
     .wordmark span { color: #4ade80; }
-    nav { display: flex; gap: 16px; font-size: 14px; font-weight: 700; }
+    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; }
     h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     h2 { margin: 36px 0 10px; font-size: 22px; }
+    h3 { margin: 18px 0 6px; font-size: 17px; }
     .lede, .note { color: #a1a1aa; }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; }
     .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
     .btn-primary { background: #22c55e; color: #04140a; }
     .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
     thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
     .missing-day td { color: #fbbf24; }
     details { margin: 10px 0 18px; }
     summary { cursor: pointer; font-weight: 700; }
-    .rg {
+    blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #22c55e; background: #0c1210; }
+    ol, ul { padding-left: 1.3em; }
+    figure { margin: 18px 0 22px; }
+    img { max-width: 100%; height: auto; border-radius: 12px; background: #0c1210; }
+    .rg, .site-footer {
       margin-top: 28px;
       padding: 14px 16px;
       border: 1px solid #27272a;
@@ -55,42 +61,70 @@
       color: #a1a1aa;
       font-size: 14px;
     }
-    footer { margin-top: 28px; color: #71717a; font-size: 13px; }
+    .plans { display: grid; gap: 12px; }
+    .plan { padding: 14px 16px; border: 1px solid #27272a; border-radius: 12px; }
+    .plan h3 { margin-top: 0; }
+    .price { font-size: 28px; font-weight: 800; color: #fff; }
+    .price span { font-size: 14px; font-weight: 600; color: #a1a1aa; }
+
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <a class="wordmark" href="https://www.cgpropz.com/">cg<span>propz</span></a>
-      <nav>
-        <a href="https://www.cgpropz.com/">App</a>
-        <a href="https://www.cgpropz.com/#pricing">Pricing</a>
+      <nav aria-label="Primary">
+        <a href="https://www.cgpropz.com/kbo-player-props">KBO</a>
+        <a href="https://www.cgpropz.com/nfl-player-props">NFL</a>
+        <a href="https://www.cgpropz.com/wnba-player-props">WNBA</a>
+        <a href="https://www.cgpropz.com/nba-player-props">NBA</a>
+        <a href="https://www.cgpropz.com/nhl-player-props">NHL</a>
+        <a href="https://www.cgpropz.com/pricing">Pricing</a>
+        <a href="https://www.cgpropz.com/guides/cg-score">CG Score</a>
       </nav>
     </header>
     <main>
+      
       <p class="lede">Korea Baseball Organization · player props</p>
       <h1>KBO player props, with the full board.</h1>
       <p>
         CGPropz tracks KBO player props for Korea Baseball Organization games: batter lines such as
         hits, runs, and RBIs, and pitcher lines such as strikeouts. Each prop sits next to a model
-        number built from recent form, the matchup, and the posted line. The live board is on
-        <a href="https://www.cgpropz.com/">cgpropz.com</a>. All-Access plans that include KBO are listed on
-        <a href="https://www.cgpropz.com/#pricing">pricing</a>.
+        number built from recent form, the matchup, and the posted line. The public write-up is the
+        <a href="https://www.cgpropz.com/kbo-player-props">KBO board</a>. All-Access plans that include KBO are listed on
+        <a href="https://www.cgpropz.com/pricing">pricing</a>.
       </p>
       <p>
         The table below is the recent <strong>full-board results</strong> archive. A full-board result
         is every prop the model graded that day, including hits, misses, pushes, and DNPs.
         It is the whole graded board for that date. A day with no summary file is still listed.
+        These are graded results, not the live paid board.
       </p>
       <div class="actions">
-        <a class="btn btn-primary" href="https://www.cgpropz.com/">Open the KBO board</a>
-        <a class="btn btn-ghost" href="https://www.cgpropz.com/#pricing">See pricing</a>
+        <a class="btn btn-primary" href="https://www.cgpropz.com/kbo-player-props">Open the KBO board</a>
+        <a class="btn btn-ghost" href="https://www.cgpropz.com/pricing">See pricing</a>
       </div>
+
+      <h2>How the KBO board works</h2>
+      <p>
+        The live KBO board in the app lines a model number up with the posted prop. The free preview
+        shows the top 3 lines. The rest of that live board is All-Access, and those rows are not
+        printed here. Graded results for days already in the archive are listed below, including misses.
+      </p>
+
+      <h2>What CG Score means</h2>
+      <p>
+        CG Score compares the CGPropz projection with the posted line. The method stated on the site
+        is projection divided by the line, multiplied by 50. A score of 50 means the projection equals
+        the line. The score is not a probability, and a higher score is not a claim that the prop hits
+        more often. <a href="https://www.cgpropz.com/guides/cg-score">How CG Score works</a> is the full guide.
+      </p>
 
       <h2>Recent full-board results</h2>
       <p class="note">
-        14 days with a summary and 6 days with no summary,
-        from Sep 23, 2026 through Oct 12, 2026. Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
+        15 days with a summary and 5 days with no summary,
+        from Sep 23, 2026 through Oct 12, 2026. Dates in this table are the calendar dates stored with each KBO slate (Korea game dates), not US Eastern Time.
+        Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
       </p>
       <table>
         <thead>
@@ -247,9 +281,14 @@
       <td>0</td>
       <td>22</td>
     </tr>
-<tr class="missing-day">
+<tr>
       <th scope="row">Oct 11, 2026</th>
-      <td colspan="6">No full-board results for this date.</td>
+      <td>0</td>
+      <td>2</td>
+      <td>3</td>
+      <td>0</td>
+      <td>0</td>
+      <td>16</td>
     </tr>
 <tr class="missing-day">
       <th scope="row">Oct 12, 2026</th>
@@ -2579,15 +2618,55 @@
     </tr></tbody>
     </table>
   </details>
+<details open>
+    <summary>Oct 11, 2026 player rows (2)</summary>
+    <table>
+      <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
+      <tbody><tr>
+      <td>Go Seung-min</td>
+      <td>Lotte</td>
+      <td>Hits+Runs+RBIs</td>
+      <td>OVER</td>
+      <td>1.5</td>
+      <td>1</td>
+      <td>MISS</td>
+    </tr><tr>
+      <td>Victor Reyes</td>
+      <td>Lotte</td>
+      <td>Hits+Runs+RBIs</td>
+      <td>UNDER</td>
+      <td>2.5</td>
+      <td>3</td>
+      <td>MISS</td>
+    </tr></tbody>
+    </table>
+  </details>
 
 
+      <h2>FAQ</h2>
+<div class="faq">
+<h3>What is a full-board result?</h3>
+<p>Every prop the model graded that day, including hits, misses, pushes, and DNPs. It is the whole graded board for that date, not a short list of winners.</p>
+<h3>What time zone are these dates?</h3>
+<p>The dates are the calendar dates stored with each KBO slate. Those are Korea game dates, not US Eastern Time.</p>
+<h3>Where is pricing?</h3>
+<p>All-Access plans are on the pricing page.</p>
+<h3>What does CG Score mean?</h3>
+<p>It compares the projection with the posted line. The guide explains the stated method. A higher score is not a probability and is not a claim that the prop hits more often.</p>
+<h3>Is CGPropz affiliated with PrizePicks or Underdog?</h3>
+<p>No. CGPropz is not affiliated with PrizePicks or Underdog.</p>
+</div>
 
       <p class="rg">
         Gambling involves risk. These full-board results are a record of past grades only. Future results can differ.
         If you bet, only risk money you can afford to lose. If gambling is a problem, call 1-800-GAMBLER.
       </p>
+    
     </main>
-    <footer>CGPropz · KBO player props · <a href="https://www.cgpropz.com/kbo-player-props">https://www.cgpropz.com/kbo-player-props</a></footer>
+    <footer class="site-footer">
+      <p>21+ only. Gambling problem? Call 1-800-GAMBLER.</p>
+      <p>CGPropz is not affiliated with PrizePicks or Underdog. For entertainment only.</p>
+    </footer>
   </div>
 </body>
 </html>

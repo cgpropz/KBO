@@ -9,6 +9,7 @@ import TestimonialForm from './TestimonialForm';
 import Results from './Results';
 import DiscordInviteLink from './DiscordInviteLink';
 import DiscordAccount from './DiscordAccount';
+import { ResponsibleGamblingCopy } from './SiteFooter';
 import './CgpropzLanding.css';
 
 /*
@@ -104,7 +105,9 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
       <footer className="cg-footer">
         <span>© {new Date().getFullYear()} cgpropz</span>
         <DiscordInviteLink />
-        <span className="cg-footer-note">For entertainment purposes only. Bet responsibly.</span>
+        <div className="site-footer">
+          <ResponsibleGamblingCopy />
+        </div>
       </footer>
     </div>
   );

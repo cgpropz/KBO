@@ -54,7 +54,10 @@
 }
 .pl-nav {
   display: flex;
-  gap: 26px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 16px;
+  max-width: 760px;
 }
 .pl-nav a {
   color: #d4d4d8;
