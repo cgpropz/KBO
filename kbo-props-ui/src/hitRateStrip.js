@@ -62,6 +62,12 @@ const WNBA_VALUE = {
   'Triple-Double': (game) => [game.pts, game.reb, game.ast, game.stl, game.blk].filter((value) => (value ?? 0) >= 10).length >= 3 ? 1 : 0,
 }
 
+export function wnbaLoggedValues(games, stat) {
+  const getValue = WNBA_VALUE[stat]
+  if (!getValue) return []
+  return (games || []).map((game) => getValue(game))
+}
+
 function numericRate(rate) {
   if (typeof rate === 'boolean' || rate == null || rate === '') return null
   const value = Number(rate)

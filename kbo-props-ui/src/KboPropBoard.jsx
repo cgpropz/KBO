@@ -6,6 +6,8 @@ import { sportAccess } from './entitlements'
 import HitRateStrip from './HitRateStrip'
 import { kboHitPills } from './hitRateStrip'
 import { directionFor, scoreFor } from './kboBoardScore'
+import { buildCgScoreExplainer } from './cgScoreExplainer'
+import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
 import './KboPropBoard.css'
 
 const FREE_ROW_LIMIT = 3
@@ -89,6 +91,57 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
+function KboBoardRow({ card, prop, score, direction, hitPills, photo, locked, rowRef, onSelectPlayer, onExpand }) {
+  const [whyOpen, setWhyOpen] = useState(false)
+  const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
+  const scoreNote = buildCgScoreExplainer({
+    player: card.name,
+    projection: prop.projection,
+    line: prop.line,
+    stat: prop.stat,
+    score,
+    recentValues: prop.recent_values,
+    newestFirst: true,
+  })
+  return (
+    <>
+      <tr className={locked ? 'locked' : undefined} ref={whyOpen ? undefined : rowRef}>
+        <td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}>
+          <div className="kbo-player-cell">
+            <div className="kbo-avatar">{photo ? <img src={photo} alt="" /> : initials(card.name)}</div>
+            <div>
+              <strong>{card.name}</strong>
+              <small>{card.team}, {card.type}</small>
+              <b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b>
+            </div>
+          </div>
+        </td>
+        <td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td>
+        <td className={`hit-rate-score ${direction}`}>
+          <CgScoreCell
+            scoreText={score == null ? '-' : value(score)}
+            note={locked ? null : scoreNote}
+            open={whyOpen}
+            onToggle={() => {
+              setWhyOpen((current) => !current)
+              onExpand?.()
+            }}
+          />
+        </td>
+        <td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td>
+        <td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td>
+      </tr>
+      {whyOpen && !locked && scoreNote && (
+        <tr className="cg-score-note-row" ref={rowRef}>
+          <td colSpan={5}>
+            <CgScoreNote note={scoreNote} />
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
 export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [snapshot, setSnapshot] = useState(null)
   const [updatedAt, setUpdatedAt] = useState(null)
@@ -98,6 +151,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [whyRevision, setWhyRevision] = useState(0)
 
   const { tier } = useAuth()
   // The server decides what is sent (full board vs. top-3 preview); lockedCount
@@ -173,7 +227,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [hasLockedRows, rows])
+  }, [hasLockedRows, rows, whyRevision])
 
   return (
     <main className="kbo-lines-page">
@@ -187,12 +241,21 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       {error && <p className="kbo-notice">{error}</p>}
       {!error && !snapshot && <p className="kbo-notice">Loading KBO prop lines...</p>}
       {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table hit-rate-board"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></tr></thead><tbody>
-        {rows.map(({ card, prop, score, direction, hitPills }, index) => {
-          const photo = photoLookup[String(card.name || '').toLowerCase()]
-          const locked = !isPaid && index >= FREE_ROW_LIMIT
-          const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-player-cell"><div className="kbo-avatar">{photo ? <img src={photo} alt="" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b></div></div></td><td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={`hit-rate-score ${direction}`}>{score == null ? '-' : value(score)}</td><td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td><td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td></tr>
-        })}
+        {rows.map(({ card, prop, score, direction, hitPills }, index) => (
+          <KboBoardRow
+            key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
+            card={card}
+            prop={prop}
+            score={score}
+            direction={direction}
+            hitPills={hitPills}
+            photo={photoLookup[String(card.name || '').toLowerCase()]}
+            locked={!isPaid && index >= FREE_ROW_LIMIT}
+            rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+            onSelectPlayer={onSelectPlayer}
+            onExpand={() => setWhyRevision((current) => current + 1)}
+          />
+        ))}
         {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={5}><span className="kbo-placeholder-bar" /></td></tr>)}
       </tbody></table>
         {hasLockedRows && lockTop != null && (

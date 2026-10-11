@@ -10,6 +10,8 @@ import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 
 const FREE_ROW_LIMIT = 3
 
@@ -90,17 +92,25 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, oddsState, seen }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.projection >= item.line
   const grade = dvpGrade(item.dvpRank)
   const stripId = `nfl-board-odds-${String(item.id).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
+  const scoreNote = buildCgScoreExplainer({
+    player: item.player,
+    projection: item.projection,
+    line: item.line,
+    stat: item.prop,
+    score: item.score,
+    recentValues: recent,
+  })
 
   return (
     <>
       <tr
         className={`nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
-        ref={open ? undefined : rowRef}
+        ref={open || whyOpen ? undefined : rowRef}
         onClick={locked ? undefined : onToggle}
       >
         <td>
@@ -115,7 +125,14 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
           </div>
         </td>
         <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
-        <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
+        <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>
+          <CgScoreCell
+            scoreText={item.score.toFixed(1)}
+            note={locked ? null : scoreNote}
+            open={whyOpen}
+            onToggle={onWhy}
+          />
+        </td>
         <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
         <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
         <td>
@@ -125,6 +142,13 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
           </div>
         </td>
       </tr>
+      {whyOpen && !locked && scoreNote && (
+        <tr className="cg-score-note-row" ref={open ? undefined : rowRef}>
+          <td colSpan={6}>
+            <CgScoreNote note={scoreNote} />
+          </td>
+        </tr>
+      )}
       {open && !locked && (
         <tr className="nfl-sharp-strip-row" id={stripId} ref={rowRef}>
           <td colSpan={6}>
@@ -243,6 +267,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [openId, setOpenId] = useState(null)
+  const [whyId, setWhyId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
@@ -332,7 +357,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [hasLockedRows, rows, openId])
+  }, [hasLockedRows, rows, openId, whyId])
 
   return (
     <section className="nfl-lines-page">
@@ -380,6 +405,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
                     rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                     open={openId === item.id}
                     onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                    whyOpen={whyId === item.id}
+                    onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
                     odds={matched.odds}
                     seen={matched.seen}
                     oddsState={oddsState}

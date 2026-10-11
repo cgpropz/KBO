@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import {
   DEFAULT_FILTERS,
   GAMES_OPTIONS,
@@ -93,12 +95,21 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const grade = dvpGrade(item.dvpRank)
+  const scoreNote = buildCgScoreExplainer({
+    player: item.player,
+    projection: item.projection,
+    line: item.line,
+    stat: item.prop,
+    score: item.score,
+    recentValues: recent,
+  })
 
   return (
-    <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
+    <>
+    <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={whyOpen ? undefined : rowRef}>
       <td>
         <div className="wnba-lines-player">
           <div className="wnba-lines-avatar">
@@ -114,7 +125,14 @@ function PropRow({ item, onSelectPlayer, locked, rowRef }) {
         </div>
       </td>
       <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
-      <td className={`hit-rate-score ${item.isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
+      <td className={`hit-rate-score ${item.isOver ? 'over' : 'under'}`}>
+        <CgScoreCell
+          scoreText={item.score.toFixed(1)}
+          note={locked ? null : scoreNote}
+          open={whyOpen}
+          onToggle={onWhy}
+        />
+      </td>
       <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
       <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
       <td>
@@ -124,6 +142,14 @@ function PropRow({ item, onSelectPlayer, locked, rowRef }) {
         </div>
       </td>
     </tr>
+    {whyOpen && !locked && scoreNote && (
+      <tr className="cg-score-note-row" ref={rowRef}>
+        <td colSpan={6}>
+          <CgScoreNote note={scoreNote} />
+        </td>
+      </tr>
+    )}
+    </>
   )
 }
 
@@ -295,6 +321,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [loadError, setLoadError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [whyId, setWhyId] = useState(null)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
@@ -407,7 +434,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [hasLockedRows, rows])
+  }, [hasLockedRows, rows, whyId])
 
   return (
     <div className="fade-in">
@@ -446,6 +473,8 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                       onSelectPlayer={onSelectPlayer}
                       locked={!isPaid && index >= FREE_ROW_LIMIT}
                       rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                      whyOpen={whyId === item.id}
+                      onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
                     />
                   ))}
                   {Array.from({ length: placeholderCount }, (_, index) => (

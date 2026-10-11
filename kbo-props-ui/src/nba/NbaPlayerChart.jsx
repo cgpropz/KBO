@@ -3,7 +3,10 @@ import { AltLinesRow, LinePlot } from '../LineSlider'
 import { useChartLine } from '../useChartLine'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
-import { logsSupport, opponentFromMatchup, statValue } from './nbaPropLines'
+import { logsSupport, opponentFromMatchup, statValue, storedL10Values } from './nbaPropLines'
+import { cgScore } from '../cgScore'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreNote } from '../CgScoreExplainer'
 
 const RANGES = [
   { id: 'l5', label: 'L5', count: 5 },
@@ -98,6 +101,19 @@ export default function NbaPlayerChart({ player, projection }) {
 
   if (!current || slider.line == null) return null
 
+  const chartProp = current.rows.find((prop) => Number(prop.line) === Number(current.posted)) || current.rows[0]
+  const chartLogs = Array.isArray(player?.gameLogs) ? player.gameLogs : []
+  const scoreNote = buildCgScoreExplainer({
+    player: player?.name,
+    projection: chartProp?.projection,
+    line: current.posted,
+    stat: current.stat,
+    score: cgScore(chartProp?.projection, current.posted, current.stat),
+    recentValues: logsSupport(chartLogs, current.stat)
+      ? chartLogs.slice(0, 10).map((game) => statValue(game, current.stat))
+      : storedL10Values(chartProp),
+    newestFirst: true,
+  })
   const scaleMax = Math.max(slider.max || 0, 1)
   const chartLine = slider.line
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
@@ -160,6 +176,9 @@ export default function NbaPlayerChart({ player, projection }) {
             {shortDate(game.date || game.gameDate)}
           </span>
         ))}
+      </div>
+      <div className="cg-score-open">
+        <CgScoreNote note={scoreNote} />
       </div>
       <AltLinesRow slider={slider} />
     </section>

@@ -6,6 +6,8 @@ import { teamLogoUrl } from './nhlTeams'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
+import { buildCgScoreExplainer } from '../cgScoreExplainer'
+import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
@@ -70,6 +72,15 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
   const recent = Array.isArray(item.recent) ? item.recent : []
   const score = rowScore(item)
   const isOver = Number(item.projection) >= Number(item.line)
+  const [whyOpen, setWhyOpen] = useState(false)
+  const scoreNote = buildCgScoreExplainer({
+    player: item.player,
+    projection: item.projection,
+    line: item.line,
+    stat: item.prop,
+    score,
+    recentValues: recent,
+  })
   const grade = dvpGrade(item.dvpRank)
   const logo = teamLogoUrl(item.opponent)
   return (
@@ -92,7 +103,14 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
         </div>
       </td>
       <td className="hit-rate-chart"><MiniChart recent={recent} line={Number(item.line)} /></td>
-      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{score == null ? '—' : score.toFixed(1)}</td>
+      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>
+        <CgScoreCell
+          scoreText={score == null ? '—' : score.toFixed(1)}
+          note={scoreNote}
+          open={whyOpen}
+          onToggle={() => setWhyOpen((current) => !current)}
+        />
+      </td>
       <td className="hit-rate-col"><HitRateStrip pills={nhlHitPills(item)} /></td>
       <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
       <td>
@@ -102,6 +120,13 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
         </div>
       </td>
     </tr>
+    {whyOpen && scoreNote && (
+      <tr className="cg-score-note-row">
+        <td colSpan={6}>
+          <CgScoreNote note={scoreNote} />
+        </td>
+      </tr>
+    )}
     {open && (
       <tr className="nfl-sharp-strip-row">
         <td colSpan={6}>

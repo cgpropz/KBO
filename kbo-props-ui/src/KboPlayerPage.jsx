@@ -9,6 +9,9 @@ import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 import { lineResult, overHitRate } from './hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from './lineSlider'
+import { scoreFor } from './kboBoardScore'
+import { buildCgScoreExplainer } from './cgScoreExplainer'
+import { CgScoreNote } from './CgScoreExplainer'
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -422,6 +425,17 @@ export default function KboPlayerPage({ playerName, onBack }) {
               {fmtDate(g.date)}
             </span>
           ))}
+        </div>
+        <div className="cg-score-open">
+          <CgScoreNote note={buildCgScoreExplainer({
+            player: player.name,
+            projection: currentProp.projection,
+            line,
+            stat: currentProp.stat,
+            score: scoreFor(currentProp),
+            recentValues: currentProp.recent_values,
+            newestFirst: true,
+          })} />
         </div>
         <AltLinesRow slider={slider} />
         {!isPitcher && (
