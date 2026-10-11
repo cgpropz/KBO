@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
 import SportSwitcher from '../SportSwitcher'
-import NbaPlayers from './NbaPlayers'
-import NbaTeams from './NbaTeams'
-import NbaEdge from './NbaEdge'
-import NbaDashboard from './NbaDashboard'
+import RouteFallback from '../RouteFallback'
+
+const NbaPlayers = lazy(() => import('./NbaPlayers'))
+const NbaTeams = lazy(() => import('./NbaTeams'))
+const NbaEdge = lazy(() => import('./NbaEdge'))
+const NbaDashboard = lazy(() => import('./NbaDashboard'))
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
@@ -120,7 +122,9 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
         </div>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        {content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {content}
+        </Suspense>
       </div>
     </div>
   )

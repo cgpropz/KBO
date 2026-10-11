@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import './wnba.css'
-import Projections from './Projections'
-import Dashboard from './Dashboard'
-import PlayerMap from './PlayerMap'
-import Teams from './Teams'
-import Lineups from './Lineups'
-import WnbaPlayerPage from './WnbaPlayerPage'
 import WnbaPlayerSearch from './WnbaPlayerSearch'
 import SportSwitcher from '../SportSwitcher'
 import Paywall from '../Paywall'
+import RouteFallback from '../RouteFallback'
+
+const Projections = lazy(() => import('./Projections'))
+const Dashboard = lazy(() => import('./Dashboard'))
+const PlayerMap = lazy(() => import('./PlayerMap'))
+const Teams = lazy(() => import('./Teams'))
+const Lineups = lazy(() => import('./Lineups'))
+const WnbaPlayerPage = lazy(() => import('./WnbaPlayerPage'))
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
@@ -84,9 +86,11 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
         <WnbaPlayerSearch onSelect={handleSelectPlayer} />
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        {needsPaywall
-          ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
-          : content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {needsPaywall
+            ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
+            : content}
+        </Suspense>
       </div>
     </div>
   )
