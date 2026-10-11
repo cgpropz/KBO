@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { fetchWnbaData } from './wnbaData'
 import { fmtDvpRank } from './utils/formatters'
+import { cgScore } from '../cgScore'
 import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
 
@@ -239,8 +240,9 @@ export default function Projections({ onSelectPlayer }) {
         const projectionFn = PROP_PROJECTION[prop.stat]
         const projection = prop.projection ?? (projectionFn ? projectionFn(player) : null)
         const score = projection != null && Number.isFinite(line) && line > 0
-          ? (projection / line) * 50
+          ? cgScore(projection, line, prop.stat)
           : null
+        if (projection != null && Number.isFinite(line) && line > 0 && score == null) return
         const hitRateLine = prop.standardLine ?? line
         rows.push({
           key: `${player.name}-${prop.stat}`,

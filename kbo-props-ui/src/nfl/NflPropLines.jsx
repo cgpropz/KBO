@@ -7,6 +7,7 @@ import { sportAccess } from '../entitlements'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
+import { cgScore, lineMatchesStat } from '../cgScore'
 
 const FREE_ROW_LIMIT = 3
 
@@ -270,7 +271,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   }, [projections])
 
   const rows = useMemo(() => {
-    const withScore = projections.map((item) => {
+    const withScore = projections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
       const pills = nflHitPills(item)
       const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
       return {
@@ -280,7 +281,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         gamesPlayed: byId.l10?.games ?? 0,
         seasonHitRate: byId.season?.rate ?? null,
         h2hHitRate: byId.h2h?.rate ?? null,
-        score: item.line ? (item.projection / item.line) * 50 : 0,
+        score: cgScore(item.projection, item.line, item.prop) ?? 0,
         isOver: item.projection >= item.line,
       }
     })

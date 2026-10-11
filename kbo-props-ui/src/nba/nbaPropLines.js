@@ -3,6 +3,7 @@
 // five positions and a 30-team defense rank.
 
 import { windowPills } from '../hitRateStrip.js'
+import { cgScore } from '../cgScore.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 export const NBA_TEAM_COUNT = 30
@@ -292,7 +293,8 @@ export function buildPropRows(projections, players) {
       const standard = num(prop.standardLine)
       const line = standard ?? rawLine
       const projection = num(prop.projection)
-      if (projection == null || line == null || line <= 0) return
+      const score = cgScore(projection, line, prop.stat)
+      if (projection == null || line == null || line <= 0 || score == null) return
 
       const recentGames = logsSupport(logs, prop.stat) ? logs : []
       const l10Games = recentGames.slice(0, 10)
@@ -325,7 +327,7 @@ export function buildPropRows(projections, players) {
         prop: prop.stat,
         line,
         projection,
-        score: (projection / line) * 50,
+        score,
         isOver: projection >= line,
         recent,
         hitRate: l10Obj ? Math.round(l10Obj.pct) : (storedL10 ?? 0),

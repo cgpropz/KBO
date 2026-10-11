@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
 import { sortBoard } from './NhlPropLines'
+import { cgScore, lineMatchesStat } from '../cgScore'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -18,14 +19,14 @@ function Card({ item, onSelectPlayer }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const dates = Array.isArray(item.gameDates) ? item.gameDates : []
   const seasons = Array.isArray(item.chartSeasons) ? item.chartSeasons : []
-  const score = item.line ? (item.projection / item.line) * 50 : 0
+  const score = cgScore(item.projection, item.line, item.prop)
   const isOver = item.projection >= item.line
   const maxValue = Math.max(item.line, ...recent, 1)
   return (
     <article className="nfl-edge-card">
       <div className="nfl-card-topline">
         <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME'}</span>
-        <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score.toFixed(1)}</b>
+        <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
@@ -38,7 +39,7 @@ function Card({ item, onSelectPlayer }) {
       <div className="nfl-card-metrics">
         <div><small>LINE</small><strong>{formatValue(item.line)}</strong></div>
         <div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div>
-        <div><small>SCORE</small><strong className={isOver ? 'over' : 'under'}>{score.toFixed(1)}</strong></div>
+        <div><small>SCORE</small><strong className={isOver ? 'over' : 'under'}>{score == null ? '—' : score.toFixed(1)}</strong></div>
         <div><small>DVP</small><strong>{item.dvpRank || '—'}<i> /32</i></strong></div>
       </div>
       <div className="nfl-card-meta">
@@ -79,7 +80,7 @@ export default function NhlProjections({ onSelectPlayer }) {
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const filtered = projections.filter((item) => (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
+    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
     return sortBoard(filtered, 'CG Score')
   }, [projections, tab, query])
 
