@@ -145,6 +145,11 @@ jobs:
             echo "No PrizePicks lines available this run — skipping publish so existing lines are preserved."
           fi
 
+      - name: Build WNBA prop correlations
+        if: steps.check_lines.outputs.has_lines == 'true'
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport wnba
+
       - name: Publish WNBA prop lines to Supabase
         if: steps.check_lines.outputs.has_lines == 'true'
         run: python publish_supabase.py

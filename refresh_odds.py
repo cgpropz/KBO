@@ -88,11 +88,14 @@ def fetch_odds():
     return True
 
 
-def _publish_snapshot(client, filename, table, dry_run=False):
+def _publish_snapshot(client, filename, table, dry_run=False, optional=False):
     """Publish one JSON snapshot file to a Supabase table."""
     file_path = os.path.join(PUBLIC_DATA, filename)
 
     if not os.path.exists(file_path):
+        if optional:
+            print(f"  ! {filename} not found; skipping optional snapshot")
+            return True
         print(f"⚠ {filename} not found at {file_path}")
         return False
 
@@ -109,6 +112,9 @@ def _publish_snapshot(client, filename, table, dry_run=False):
         print(f"  ✓ {table} table updated")
         return True
     except Exception as exc:
+        if optional:
+            print(f"  ! {table} skipped: {exc}")
+            return True
         print(f"  ✗ Failed to publish {filename} to {table}: {exc}")
         return False
 
@@ -208,6 +214,7 @@ def publish_to_supabase(skip=False, dry_run=False):
         ok = True
         for filename, table in targets:
             ok = _publish_snapshot(client, filename, table, dry_run=dry_run) and ok
+        _publish_snapshot(client, "correlations_kbo.json", "correlations_kbo", dry_run=dry_run, optional=True)
         return ok
     
     except Exception as exc:
@@ -255,6 +262,17 @@ def pipeline_lock(lock_path, stale_seconds=3 * 60 * 60):
             pass
 
 
+def build_kbo_correlations():
+    script = os.path.join(BASE, "pipeline", "build_correlations.py")
+    try:
+        result = subprocess.run([PYTHON, script, "--sport", "kbo"], cwd=BASE)
+    except Exception as exc:
+        print(f"⚠ KBO correlations failed — continuing ({exc})")
+        return
+    if result.returncode != 0:
+        print("⚠ KBO correlations failed — continuing")
+
+
 def main():
     ensure_project_python()
 
@@ -275,6 +293,10 @@ def main():
         # Step 1: Fetch odds
         if not fetch_odds():
             sys.exit(1)
+
+        # Lines changed, so the slip pairs have to be rescored. A miss here
+        # must not block the odds publish.
+        build_kbo_correlations()
 
         # Step 2: Publish to Supabase
         if not publish_to_supabase(skip=skip_supabase, dry_run=dry_run):

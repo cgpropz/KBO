@@ -89,6 +89,11 @@ jobs:
           fi
           exit "$status"
 
+      - name: Build NBA prop correlations
+        if: steps.lines.outputs.has_lines == 'true'
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport nba
+
       - name: Publish NBA prop lines to Supabase
         if: steps.lines.outputs.has_lines == 'true'
         run: python publish_supabase.py

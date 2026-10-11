@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
@@ -17,7 +17,10 @@ const NAV_ITEMS = [
   { id: 'sharp', label: 'PP Odds' },
   { id: 'markets', label: 'Game Markets' },
   { id: 'lineups', label: 'Starting Lineups' },
+  { id: 'slip', label: 'Slip Builder' },
 ]
+
+const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
 export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const { tier } = useAuth()
@@ -41,6 +44,12 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
           ? <NflGameMarkets />
           : view === 'lineups'
             ? <NflLineups />
+            : view === 'slip'
+              ? (
+                <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+                  <SlipOptimizer sport="nfl" />
+                </Suspense>
+              )
             : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
 
   // The dashboard gates itself (top 3 free, rest blurred by membership), so it skips the full-page paywall.
@@ -54,7 +63,7 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="nfl-nav-links">
           {NAV_ITEMS.map((item) => (
-            <button key={item.id} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
+            <button key={item.id} data-testid={item.id === 'slip' ? 'nfl-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
               {item.label}
             </button>
           ))}

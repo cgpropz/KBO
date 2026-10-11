@@ -1,18 +1,37 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import './SlipOptimizer.css';
-import { fetchData } from './dataUrl';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
-
-const TEAMS = {
-  Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
-  KT: '#e0e0e0', LG: '#e8557a', Lotte: '#ff6666', NC: '#5b9bd5',
-  Samsung: '#60a5fa', SSG: '#ff5555',
-};
+import { correlationSuggestions, formatAgreement } from './slipCorrelations';
+import { loadCorrelations, slipSport, sportDate } from './slipSports';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
+const SLIP_SPORT_KEY = 'cg_slip_sports';
 
-function SlipOptimizer({ onNavigate }) {
+function rememberSlipSport(id, sport) {
+  if (!id) return;
+  try {
+    const map = JSON.parse(localStorage.getItem(SLIP_SPORT_KEY) || '{}');
+    map[id] = sport;
+    localStorage.setItem(SLIP_SPORT_KEY, JSON.stringify(map));
+  } catch { /* ignore */ }
+}
+
+function slipMatchesSport(slip, sport) {
+  try {
+    const map = JSON.parse(localStorage.getItem(SLIP_SPORT_KEY) || '{}');
+    if (map[slip.id]) return map[slip.id] === sport;
+  } catch { /* ignore */ }
+  return sport === 'kbo';
+}
+
+function formatProjection(value) {
+  return value == null || Number.isNaN(Number(value)) ? '—' : Number(value).toFixed(2);
+}
+
+function SlipOptimizer({ sport = 'kbo', onNavigate }) {
+  const config = slipSport(sport);
+  const teams = config.teams;
   const { user } = useAuth();
   const [allProps, setAllProps] = useState([]);
   const [selected, setSelected] = useState(new Set()); // Set of indices
@@ -26,12 +45,9 @@ function SlipOptimizer({ onNavigate }) {
   const [savedSlips, setSavedSlips] = useState([]);
   const [slipsLoading, setSlipsLoading] = useState(false);
   const [savingSlip, setSavingSlip] = useState(false);
+  const [correlations, setCorrelations] = useState({ pairs: [], minShared: config.minShared });
 
-  // Today's date in YYYY-MM-DD (KST, which is where KBO games are)
-  const gameDate = useMemo(() => {
-    const kst = new Date(Date.now() + 9 * 3600000);
-    return kst.toISOString().slice(0, 10);
-  }, []);
+  const gameDate = useMemo(() => sportDate(config.timeZone), [config.timeZone]);
 
   // ── Supabase-backed slip persistence ──
   const getAuthToken = useCallback(async () => {
@@ -79,6 +95,7 @@ function SlipOptimizer({ onNavigate }) {
       });
       if (resp.ok) {
         const { slip } = await resp.json();
+        rememberSlipSport(slip?.id, config.id);
         setSavedSlips(prev => [slip, ...prev]);
         return slip;
       }
@@ -88,7 +105,7 @@ function SlipOptimizer({ onNavigate }) {
       setSavingSlip(false);
     }
     return null;
-  }, [getAuthToken]);
+  }, [getAuthToken, config.id]);
 
   const saveCurrentSlip = async () => {
     if (selectedArr.length === 0) return;
@@ -151,8 +168,9 @@ function SlipOptimizer({ onNavigate }) {
     if (!confirm('Delete all saved slips?')) return;
     const token = await getAuthToken();
     if (!token) return;
-    const ids = savedSlips.map(s => s.id);
-    setSavedSlips([]);
+    const ids = savedSlips.filter((slip) => slipMatchesSport(slip, config.id)).map(s => s.id);
+    const drop = new Set(ids);
+    setSavedSlips(prev => prev.filter(s => !drop.has(s.id)));
     for (const id of ids) {
       try {
         await fetch(`/api/saved-slips?id=${id}`, {
@@ -164,62 +182,47 @@ function SlipOptimizer({ onNavigate }) {
   };
 
   useEffect(() => {
-    debugLog('Fetching projections for optimizer...');
-    Promise.all([
-      fetchData('strikeout_projections.json').catch(() => null),
-      fetchData('batter_projections.json').catch(() => null),
-    ]).then(([k, b]) => {
-      const props = [];
-      (k?.projections || []).forEach(p => {
-        if (p.projection != null && p.edge != null) {
-          const propShort = p.prop === 'Strikeouts' ? 'K' : p.prop === 'Hits Allowed' ? 'HA' : p.prop === 'Pitching Outs' ? 'OUTS' : 'P';
-          props.push({ ...p, propShort });
-        }
-      });
-      (b?.projections || []).forEach(p => {
-        if (p.projection != null && p.edge != null) {
-          props.push({ ...p, propShort: p.prop === 'Hits+Runs+RBIs' ? 'HRR' : 'TB' });
-        }
-      });
-      // Sort by absolute edge descending
-      props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
-      debugLog('Data loaded:', { totalProps: props.length, pitcherProps: props.filter(p => ['K','HA','OUTS','P'].includes(p.propShort)).length, batterProps: props.filter(p => ['HRR','TB'].includes(p.propShort)).length });
+    let cancelled = false;
+    debugLog('Fetching projections for optimizer...', config.id);
+    config.loadProps().then((props) => {
+      if (cancelled) return;
+      debugLog('Data loaded:', { sport: config.id, totalProps: props.length });
       setAllProps(props);
-
-      // Check for imported picks from Pitchers page
+      if (!config.importKey) return;
       try {
-        const raw = localStorage.getItem('kbo_parlay_import');
-        if (raw) {
-          localStorage.removeItem('kbo_parlay_import');
-          const picks = JSON.parse(raw);
-          if (Array.isArray(picks) && picks.length > 0) {
-            const matched = new Set();
-            const overrides = {};
-            picks.forEach(pk => {
-              const idx = props.findIndex(p =>
-                p.name === pk.name && p.prop === pk.prop &&
-                p.team === pk.team && p.opponent === pk.opponent
-              );
-              if (idx !== -1) {
-                matched.add(idx);
-                const p = props[idx];
-                const promo = p.odds_type === 'demon' || p.odds_type === 'goblin';
-                if (!promo && pk.side && pk.side !== (p.edge >= 0 ? 'OVER' : 'UNDER')) {
-                  overrides[idx] = pk.side;
-                }
-              }
-            });
-            if (matched.size > 0) {
-              setSelected(matched);
-              setSideOverrides(overrides);
-              setMode('build');
-              debugLog('Imported picks from Pitchers page:', matched.size);
+        const raw = localStorage.getItem(config.importKey);
+        if (!raw) return;
+        localStorage.removeItem(config.importKey);
+        const picks = JSON.parse(raw);
+        if (!Array.isArray(picks) || picks.length === 0) return;
+        const matched = new Set();
+        const overrides = {};
+        picks.forEach(pk => {
+          const idx = props.findIndex(p =>
+            p.name === pk.name && p.prop === pk.prop &&
+            p.team === pk.team && p.opponent === pk.opponent
+          );
+          if (idx !== -1) {
+            matched.add(idx);
+            const p = props[idx];
+            const promo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+            if (!promo && pk.side && pk.side !== (p.edge >= 0 ? 'OVER' : 'UNDER')) {
+              overrides[idx] = pk.side;
             }
           }
+        });
+        if (matched.size > 0) {
+          setSelected(matched);
+          setSideOverrides(overrides);
+          setMode('build');
         }
-      } catch {}
+      } catch { /* ignore a bad import */ }
+    }).catch((err) => debugLog('Props failed:', err.message));
+    loadCorrelations(config.id).then((doc) => {
+      if (!cancelled) setCorrelations(doc || { pairs: [], minShared: config.minShared });
     });
-  }, []);
+    return () => { cancelled = true; };
+  }, [config]);
 
   // Determine the natural side for a prop (demon/goblin are over-only)
   const isPromo = (p) => p.odds_type === 'demon' || p.odds_type === 'goblin';
@@ -349,14 +352,22 @@ function SlipOptimizer({ onNavigate }) {
   // Current manual slip stats
   const selectedArr = [...selected];
   const slipScore = computeSlipScore(selectedArr);
+  const sportSlips = savedSlips.filter((slip) => slipMatchesSport(slip, config.id));
+  const suggestions = useMemo(() => {
+    const legs = [];
+    selected.forEach((idx) => {
+      const row = allProps[idx];
+      if (row) legs.push(row);
+    });
+    const board = allProps.map((row, idx) => ({ ...row, idx }));
+    return correlationSuggestions(legs, board, correlations);
+  }, [selected, allProps, correlations]);
 
   // Filtered props
-  const filteredProps = allProps.map((p, i) => ({ ...p, idx: i })).filter(p => {
-    if (filter === 'K') return p.propShort === 'K';
-    if (filter === 'HRR') return p.propShort === 'HRR';
-    if (filter === 'TB') return p.propShort === 'TB';
-    return true;
-  });
+  const activeFilter = (config.filters || []).find((item) => item.id === filter) || config.filters?.[0];
+  const filteredProps = allProps.map((p, i) => ({ ...p, idx: i })).filter(p => (
+    activeFilter?.match ? activeFilter.match(p) : true
+  ));
 
   const getConfidenceClass = (c) => {
     if (c >= 15) return 'conf-elite';
@@ -366,9 +377,9 @@ function SlipOptimizer({ onNavigate }) {
   };
 
   return (
-    <div className="so-container">
+    <div className={`so-container ${config.theme}`} data-testid="slip-builder" data-sport={config.id}>
       <header className="so-header">
-        <h1 className="so-title">🎰 Slip Optimizer</h1>
+        <h1 className="so-title">{config.title}</h1>
       </header>
 
       {/* Mode toggle */}
@@ -389,7 +400,7 @@ function SlipOptimizer({ onNavigate }) {
           className={`so-mode-btn ${mode === 'saved' ? 'active' : ''}`}
           onClick={() => setMode('saved')}
         >
-          💾 Saved{savedSlips.length > 0 ? ` (${savedSlips.length})` : ''}
+          💾 Saved{sportSlips.length > 0 ? ` (${sportSlips.length})` : ''}
         </button>
       </div>
 
@@ -457,6 +468,38 @@ function SlipOptimizer({ onNavigate }) {
                 <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user}>
                   {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
                 </button>
+                <div className="so-corr">
+                  <div className="so-corr-col" data-testid="slip-pairs-well">
+                    <h3 className="so-corr-title">Pairs well</h3>
+                    {suggestions.pairsWell.length === 0 ? (
+                      <p className="so-corr-empty">No teammates or opponents on today's board hit with these legs often enough.</p>
+                    ) : suggestions.pairsWell.map((item) => (
+                      <button key={`well-${item.idx}`} type="button" className="so-corr-row" onClick={() => toggleSelect(item.idx)}>
+                        <span className="so-corr-name">{item.name} <span className="so-prop-tag">{item.propShort}</span></span>
+                        <span className="so-corr-meta">
+                          {formatAgreement(item.agreement)} · n={item.n}
+                          {item.smallSample && <span className="so-small-sample">small sample</span>}
+                        </span>
+                        <span className="so-corr-add">Add</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="so-corr-col" data-testid="slip-works-against">
+                    <h3 className="so-corr-title">Works against</h3>
+                    {suggestions.worksAgainst.length === 0 ? (
+                      <p className="so-corr-empty">Nothing on today's board disagrees with these legs often enough.</p>
+                    ) : suggestions.worksAgainst.map((item) => (
+                      <button key={`against-${item.idx}`} type="button" className="so-corr-row" onClick={() => toggleSelect(item.idx)}>
+                        <span className="so-corr-name">{item.name} <span className="so-prop-tag">{item.propShort}</span></span>
+                        <span className="so-corr-meta">
+                          {formatAgreement(item.agreement)} · n={item.n}
+                          {item.smallSample && <span className="so-small-sample">small sample</span>}
+                        </span>
+                        <span className="so-corr-add">Add</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -466,13 +509,13 @@ function SlipOptimizer({ onNavigate }) {
             <div className="so-picker-header">
               <h3 className="so-picker-title">Available Props</h3>
               <div className="so-picker-filters">
-                {['all', 'K', 'HRR', 'TB'].map(f => (
+                {(config.filters || []).map(f => (
                   <button
-                    key={f}
-                    className={`so-filter-chip ${filter === f ? 'active' : ''}`}
-                    onClick={() => setFilter(f)}
+                    key={f.id}
+                    className={`so-filter-chip ${filter === f.id ? 'active' : ''}`}
+                    onClick={() => setFilter(f.id)}
                   >
-                    {f === 'all' ? 'All' : f}
+                    {f.label}
                   </button>
                 ))}
               </div>
@@ -496,14 +539,14 @@ function SlipOptimizer({ onNavigate }) {
                     <div className="so-prop-info">
                       <span className="so-prop-name">{p.name}</span>
                       <span className="so-prop-meta">
-                        <span style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span>
+                        <span style={{ color: teams[p.team] || '#999' }}>{p.team}</span>
                         <span className="so-vs">vs</span>
-                        <span style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span>
+                        <span style={{ color: teams[p.opponent] || '#999' }}>{p.opponent}</span>
                       </span>
                     </div>
                     <span className="so-prop-tag">{p.propShort}</span>
                     <span className="so-prop-line"><span className="pp-mini">P</span>{p.line}</span>
-                    <span className="so-prop-proj">{p.projection.toFixed(2)}</span>
+                    <span className="so-prop-proj">{formatProjection(p.projection)}</span>
                     <span
                       className={`so-prop-side ${side === 'OVER' ? 'side-over' : 'side-under'}`}
                       onClick={(e) => { e.stopPropagation(); toggleSide(p.idx); }}
@@ -644,7 +687,7 @@ function SlipOptimizer({ onNavigate }) {
         <div className="so-saved">
           <div className="so-saved-header">
             <h3 className="so-saved-title">Saved Slips</h3>
-            {savedSlips.length > 0 && (
+            {sportSlips.length > 0 && (
               <button className="so-clear-all-btn" onClick={clearAllSlips}>
                 Clear All
               </button>
@@ -654,11 +697,11 @@ function SlipOptimizer({ onNavigate }) {
             <p className="so-auto-empty">Log in to save and track your slips.</p>
           ) : slipsLoading ? (
             <p className="so-auto-empty">Loading your slips...</p>
-          ) : savedSlips.length === 0 ? (
+          ) : sportSlips.length === 0 ? (
             <p className="so-auto-empty">No saved slips yet. Build or auto-generate a slip, then save it.</p>
           ) : (
             <div className="so-saved-list">
-              {savedSlips.map((slip) => {
+              {sportSlips.map((slip) => {
                 const slipLegs = Array.isArray(slip.legs) ? slip.legs : [];
                 const isGraded = slip.graded;
                 const resultClass = isGraded

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import { sportAccess } from '../entitlements'
@@ -19,7 +19,10 @@ const NAV = [
   { id: 'sharp', label: 'PP Odds' },
   { id: 'lineups', label: 'Lineups' },
   { id: 'dvp', label: 'DvP' },
+  { id: 'slip', label: 'Slip Builder' },
 ]
+
+const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
 export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const { tier } = useAuth()
@@ -39,6 +42,13 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
   else if (view === 'sharp') content = <NhlSharpOdds onSelectPlayer={openPlayer} />
   else if (view === 'lineups') content = <NhlLineups />
   else if (view === 'dvp') content = <NhlDvp />
+  else if (view === 'slip') {
+    content = (
+      <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+        <SlipOptimizer sport="nhl" />
+      </Suspense>
+    )
+  }
 
   return (
     <div className="nfl-root nhl-root">
@@ -47,7 +57,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
         <SportSwitcher sport={sport} setSport={setSport} />
         <div className="nfl-nav-links">
           {NAV.map((item) => (
-            <button key={item.id} data-testid={`nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
+            <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
           ))}
         </div>
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NHL</button>
