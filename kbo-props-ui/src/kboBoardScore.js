@@ -39,3 +39,17 @@ export function scoreFor(prop) {
   const score = cgScore(projection, prop.line, prop.stat)
   return Number.isFinite(score) ? score : null
 }
+
+// Player-page header. Same number and side as the board cell. `cg_projection`
+// is the old 1-100 confidence score and is not this badge.
+export function playerHeaderBadge(prop) {
+  const score = scoreFor(prop)
+  if (score == null) return null
+  const side = directionFor(prop)
+  const label = side === 'over' ? 'OVER' : side === 'under' ? 'UNDER' : null
+  return {
+    scoreText: score.toFixed(1),
+    side: label ? side : 'neutral',
+    label,
+  }
+}
