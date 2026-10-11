@@ -19,7 +19,7 @@ export const XWEEK_PROMOTION_CODE_ID = 'promo_1UKqOLPwL0k9PEMvJZQU5GKA';
 // Every paid tier unlocks the same full toolkit — tiers differ only by
 // billing cadence/price, not by feature.
 export const ALL_ACCESS_FEATURES = [
-  '⚾🏀🏈 Full KBO, WNBA & NFL projections',
+  '⚾🏀🏈🏒 Full KBO, WNBA, NFL & NHL projections',
   'PrizePicks edge board for every sport',
   'Player prop cards & hit rates',
   'Slip builder, optimizer & prop tracker',
@@ -78,11 +78,11 @@ export const TIERS = [
     description: 'Preview CGPropz before you commit',
     features: [
       'Today\'s KBO & WNBA schedules',
-      'Top 3 projections — KBO, WNBA & NFL',
+      'Top 3 projections — KBO, WNBA, NFL & NHL',
       'Landing page overview',
     ],
     limited: [
-      'Full KBO, WNBA + NFL projections',
+      'Full KBO, WNBA, NFL + NHL projections',
       'Player prop cards & PrizePicks edge',
       'Slip builder & optimizer',
       'Matchups, lineups & tracker',

@@ -10,7 +10,7 @@ test('client and server sport access stay in sync, and discord unlocks nothing',
   for (const tier of TIERS) {
     assert.deepEqual(serverAccess(tier), clientAccess(tier), tier)
   }
-  assert.deepEqual(clientAccess('discord'), { kbo: false, wnba: false, nfl: false })
+  assert.deepEqual(clientAccess('discord'), { kbo: false, wnba: false, nfl: false, nhl: false })
   assert.equal(hasAnyPaidAccess('discord'), false)
   assert.equal(hasAnyPaidAccess('combined'), true)
   assert.equal(hasAnyPaidAccess('kbo'), true)
@@ -27,4 +27,8 @@ test('a discord tier receives the free preview, not the paid board', () => {
   assert.equal(paid.preview, false)
   assert.equal(shapeForTier('nfl_projections', [{ projection: 1, line: 1 }], 'discord').preview, true)
   assert.equal(shapeForTier('nfl_projections', [{ projection: 1, line: 1 }], 'weekly').preview, false)
+  assert.equal(shapeForTier('nhl_projections', [{ projection: 1, line: 1 }], 'discord').preview, true)
+  assert.equal(shapeForTier('nhl_projections', [{ projection: 1, line: 1 }], 'weekly').preview, false)
+  assert.equal(shapeForTier('nhl_projections', [{ projection: 1, line: 1 }], 'combined').preview, false)
+  assert.equal(shapeForTier('nhl_projections', [{ projection: 1, line: 1 }], 'monthly').preview, false)
 })

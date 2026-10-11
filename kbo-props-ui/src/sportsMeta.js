@@ -1,5 +1,20 @@
 // Shared sport metadata — used by CgpropzLanding (post-login hub) and
 // PublicLanding (pre-login marketing page) so copy/colors stay in sync.
+// NHL is a live All-Access sport. NBA stays out of this list until it opens.
+export const NHL_CARD = {
+  id: 'nhl',
+  emoji: '🏒',
+  name: 'NHL',
+  full: 'Pro Hockey',
+  tagline: 'Shots, saves, points, and power-play points from the PrizePicks board.',
+  accent: '#7dd3fc',
+  glow: 'rgba(125, 211, 252, 0.35)',
+  features: ['Shots and saves model', 'Points and power-play points', 'Lines and starting goalies'],
+  // Original illustration of a fictional player. Not a real athlete and not a league logo.
+  portrait: '/sport-cards/nhl-card.webp',
+  portraitAlt: 'Illustrated hockey player in a dark helmet',
+};
+
 export const SPORTS = [
   {
     id: 'kbo',
@@ -38,6 +53,7 @@ export const SPORTS = [
     portrait: '/sport-cards/nfl-card.webp',
     portraitAlt: 'Illustrated football player in a dark helmet',
   },
+  NHL_CARD,
 ];
 
 // Shown beside SPORTS on both landings. Kept out of SPORTS so the trust strip
@@ -56,17 +72,3 @@ export const NBA_CARD = {
   portraitAlt: 'Illustrated basketball player in a dark jersey',
 };
 
-// Shown beside SPORTS, locked the same way as NBA. Not a league logo.
-export const NHL_CARD = {
-  id: 'nhl',
-  emoji: '🏒',
-  name: 'NHL',
-  full: 'Pro Hockey',
-  tagline: 'Shots, saves, points, and power-play points from the PrizePicks board.',
-  accent: '#7dd3fc',
-  glow: 'rgba(125, 211, 252, 0.35)',
-  features: ['Shots and saves model', 'Points and power-play points', 'Lines and starting goalies'],
-  // Original illustration of a fictional player. Not a real athlete and not a league logo.
-  portrait: '/sport-cards/nhl-card.webp',
-  portraitAlt: 'Illustrated hockey player in a dark helmet',
-};

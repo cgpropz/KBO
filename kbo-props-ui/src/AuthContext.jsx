@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { devTierOverride } from './entitlements';
 import { supabase } from './supabaseClient';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
@@ -16,12 +17,25 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+function readDevPreview() {
+  if (typeof window === 'undefined') return null;
+  const tier = devTierOverride(import.meta.env.DEV, window.location.search);
+  if (!tier) return null;
+  return {
+    user: { id: 'dev-tier-preview', email: `${tier}@preview.local` },
+    tier,
+  };
+}
+
+// Read once at load. Production builds pass isDev=false, so this stays null.
+const DEV_PREVIEW = readDevPreview();
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [tier, setTier] = useState('free');
+  const [user, setUser] = useState(DEV_PREVIEW?.user ?? null);
+  const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? 'free');
   const [discord, setDiscord] = useState(EMPTY_DISCORD);
-  const [loading, setLoading] = useState(true);
-  const userRef = useRef(null);
+  const [loading, setLoading] = useState(!DEV_PREVIEW);
+  const userRef = useRef(DEV_PREVIEW?.user ?? null);
   const lastPaidDiscordSync = useRef(0);
 
   const fetchDiscord = useCallback(async (userId) => {
@@ -54,7 +68,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const fetchTier = useCallback(async (userId) => {
-    if (!supabase || !userId) return;
+    if (DEV_PREVIEW || !supabase || !userId) return;
     const { data: rows } = await supabase
       .from('user_profiles')
       .select('tier')
@@ -105,6 +119,7 @@ export function AuthProvider({ children }) {
   }, [fetchDiscord]);
 
   useEffect(() => {
+    if (DEV_PREVIEW) return;
     if (!supabase) {
       setLoading(false);
       return;

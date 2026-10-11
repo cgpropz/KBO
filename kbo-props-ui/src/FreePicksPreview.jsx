@@ -72,6 +72,7 @@ const BOARDS = [
   { id: 'kbo', emoji: '⚾', label: 'KBO', ds: 'prizepicks_props', toRows: kboRows },
   { id: 'nfl', emoji: '🏈', label: 'NFL', ds: 'nfl_projections', toRows: nflRows },
   { id: 'wnba', emoji: '🏀', label: 'WNBA', ds: 'wnba_projections_standard', toRows: wnbaRows },
+  { id: 'nhl', emoji: '🏒', label: 'NHL', ds: 'nhl_projections', toRows: nflRows },
 ];
 
 function updatedLabel(iso) {

@@ -1,9 +1,8 @@
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
-import { NBA_CARD, NHL_CARD, SPORTS } from './sportsMeta';
+import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
-import { useNhlOpen } from './useNhlOpen';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import TestimonialForm from './TestimonialForm';
@@ -18,17 +17,16 @@ import './CgpropzLanding.css';
  * pick a sport to enter, or jump to the unified pricing page.
  *
  * Props:
- *   onEnterSport(sport)  → 'kbo' | 'wnba' | 'nfl'
+ *   onEnterSport(sport)  → 'kbo' | 'wnba' | 'nfl' | 'nhl'
  *   onNavigate(view)     → e.g. 'pricing'
  */
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
   const { open: nbaOpen } = useNbaOpen();
-  const { open: nhlOpen } = useNhlOpen();
   const access = sportAccess(tier);
-  const isPaid = access.kbo || access.wnba || access.nfl;
-  const isAllAccess = access.kbo && access.wnba && access.nfl;
+  const isPaid = access.kbo || access.wnba || access.nfl || access.nhl;
+  const isAllAccess = access.kbo && access.wnba && access.nfl && access.nhl;
   const isDiscordOnly = tier === 'discord';
 
   return (
@@ -60,8 +58,8 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
             One edge. <span className="cg-hero-grad">Every sport.</span>
           </h1>
           <p className="cg-hero-sub">
-            Data-driven projections, hit rates, and prop analysis across KBO baseball and
-            WNBA basketball, and NFL football — all under one login, one subscription.
+            Data-driven projections, hit rates, and prop analysis across KBO baseball,
+            WNBA basketball, NFL football, and NHL hockey — all under one login, one subscription.
           </p>
           <div className="cg-hero-cta">
             <button className="cg-cta-primary" onClick={() => onEnterSport('kbo')}>Enter the app</button>
@@ -75,13 +73,12 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         {user && <DiscordAccount />}
 
         <section className="cg-sports">
-          {[...SPORTS, NBA_CARD, NHL_CARD].map((s) => (
+          {[...SPORTS, NBA_CARD].map((s) => (
             <LandingSportCard
               key={s.id}
               variant="hub"
               sport={s}
               nbaOpen={nbaOpen}
-              nhlOpen={nhlOpen}
               onOpen={onEnterSport}
             />
           ))}
@@ -95,7 +92,7 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
         <section className="cg-pricing-strip">
           <div className="cg-pricing-copy">
             <h3>One subscription. Every sport.</h3>
-            <p>All Access unlocks KBO, WNBA, and NFL projections, prop cards, and edge boards.</p>
+            <p>All Access unlocks KBO, WNBA, NFL, and NHL projections, prop cards, and edge boards.</p>
             <p className="cg-pricing-note">No credit card required to explore the free board first.</p>
           </div>
           <button className="cg-cta-primary" onClick={() => onNavigate('pricing')}>

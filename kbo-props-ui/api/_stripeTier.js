@@ -3,7 +3,7 @@
 // endpoint. Imported by api/stripe-webhook.js and api/sync-subscription.js.
 //
 // Plans are now sold by billing cadence (Weekly / Monthly / Lifetime), not by
-// sport — every current price grants 'combined' (all-access: KBO+WNBA+NFL).
+// sport — every current price grants 'combined' (all-access: KBO+WNBA+NFL+NHL).
 // The old single-sport prices ('kbo' / 'wnba') are kept here only so legacy
 // subscribers' renewals still resolve correctly; mergeTier() never downgrades
 // an existing all-access tier, and mergeTier() unions two single-sport tiers

@@ -18,8 +18,8 @@ const ALL_ACCESS_TIERS = new Set([
 ]);
 
 export function sportAccess(tier) {
-  if (ALL_ACCESS_TIERS.has(tier)) return { kbo: true, wnba: true, nfl: true };
-  return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false };
+  if (ALL_ACCESS_TIERS.has(tier)) return { kbo: true, wnba: true, nfl: true, nhl: true };
+  return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false, nhl: false };
 }
 
 // Must match src/entitlements.js NBA_OWNER_EMAIL. Server-side gate only.
@@ -40,8 +40,8 @@ export function isNbaDataset(ds) {
  * cannot fall open to a preview.
  *
  * Once nba_public is true, all-access tiers get full data. Legacy kbo/wnba
- * tiers and free accounts get the preview path. sportAccess() itself stays
- * { kbo, wnba, nfl } so existing boards are unchanged.
+ * tiers and free accounts get the preview path. sportAccess() still has no
+ * nba key. NHL uses the same all-access flag as NFL.
  */
 export function nbaAccessDecision({
   emailResolved,
@@ -68,22 +68,26 @@ export function isNhlDataset(ds) {
 }
 
 /**
- * NHL is admin-only. 'full' or 'deny'.
+ * NHL uses the same entitlement as KBO, WNBA, and NFL.
  *
- * The email comes from Supabase auth.getUser on the caller's access token,
- * the same allowlist as the NBA owner account. A paid tier, including
- * 'owner', does not qualify. nhl_public does not open the tab. A missing
- * or failed auth check denies everyone, including a caller who claims the
- * admin address without a resolved session.
+ * 'full' when the resolved session is the admin email, or the resolved tier
+ * is all-access (sportAccess().nhl). Discord-only, legacy single-sport,
+ * free, and anonymous callers get 'preview' — the same trimmed snapshot the
+ * other sports return, not a hard deny. A missing or failed auth check never
+ * counts as full, including a caller who claims the admin address or an
+ * all-access tier without a resolved session. nhl_public is not consulted.
  */
 export function nhlAccessDecision({
   emailResolved,
   email,
+  tierResolved,
+  tier,
 }) {
-  if (emailResolved !== true) return 'deny';
+  if (emailResolved !== true) return 'preview';
   const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (normalized === NHL_OWNER_EMAIL) return 'full';
-  return 'deny';
+  if (tierResolved === true && sportAccess(tier).nhl === true) return 'full';
+  return 'preview';
 }
 
 export function nbaAllowed(email, tier, nbaPublic) {
@@ -344,7 +348,7 @@ export const DATASETS = {
   nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewWnbaProjections },
   nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewWnbaProjections },
   nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewWnbaProjections },
-  // NHL. The /api/data gate returns these only for the admin email.
+  // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
   nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewObjectList('records', nhlSharpScore) },

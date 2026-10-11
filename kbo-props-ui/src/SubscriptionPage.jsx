@@ -231,7 +231,7 @@ function SubscriptionPage() {
                 tier === 'discord'
                   ? 'Props are posted in Discord. Upgrade to All-Access for the full site boards.'
                   : (TIER_LABELS[tier] === 'All Access')
-                  ? 'All features are unlocked across ⚾ KBO and 🏀 WNBA. Enjoy the full toolkit.'
+                  ? 'All features are unlocked across ⚾ KBO, 🏀 WNBA, 🏈 NFL, and 🏒 NHL. Enjoy the full toolkit.'
                   : `Your ${TIER_LABELS[tier] || tier} tools are fully unlocked. Add All Access anytime to include the other sport.`
               }</p>
             </div>
@@ -292,11 +292,11 @@ function SubscriptionPage() {
         <div className="sub-faq-grid">
           <FaqItem
             q="What's included in the free tier?"
-            a="You get the landing page, today's KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA & NFL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport."
+            a="You get the landing page, today's KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA, NFL, and NHL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport."
           />
           <FaqItem
-            q="Does one subscription cover both sports?"
-            a="Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, and NFL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
+            q="Does one subscription cover every sport?"
+            a="Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
           />
           <FaqItem
             q="Can I cancel anytime?"
@@ -304,7 +304,7 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="What is Discord Only?"
-            a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, or NFL boards on the site. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
+            a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, NFL, or NHL boards on the site. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
           />
           <FaqItem
             q="How often is the data updated?"
