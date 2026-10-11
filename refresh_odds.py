@@ -32,6 +32,7 @@ if PIPELINE_DIR not in sys.path:
 from snapshot_consistency import (  # noqa: E402
     COHORT_FILENAMES,
     intraday_publish_block_reason,
+    quarantine_lone_pitcher_mismatch,
     with_published_at,
 )
 
@@ -151,6 +152,15 @@ def publish_to_supabase(skip=False, dry_run=False):
     strikeout = _load_public_json("strikeout_projections.json")
     batter = _load_public_json("batter_projections.json")
     matchup = _load_public_json("matchup_data.json")
+    cleaned, warning, _fatal = quarantine_lone_pitcher_mismatch(strikeout, matchup)
+    if warning and isinstance(cleaned, dict):
+        print(f"⚠ {warning}")
+        strikeout = cleaned
+        if not dry_run:
+            path = os.path.join(PUBLIC_DATA, "strikeout_projections.json")
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(cleaned, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
     reason = intraday_publish_block_reason(strikeout=strikeout, batter=batter, matchup=matchup)
     if reason:
         print(f"⚠ {reason}")

@@ -9,7 +9,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-from snapshot_consistency import strikeout_pair_mismatches
+from snapshot_consistency import quarantine_lone_pitcher_mismatch
 
 
 BASE = Path(__file__).resolve().parents[1]
@@ -152,7 +152,14 @@ def main() -> int:
     elif not projections and market_status == "no_current_pitcher_markets":
         warnings.append("strikeout_projections.json has no current pitcher markets")
     else:
-        bad_pairs = strikeout_pair_mismatches(strikeout_data, matchup_data)
+        cleaned, lone_warning, bad_pairs = quarantine_lone_pitcher_mismatch(strikeout_data, matchup_data)
+        if lone_warning:
+            warnings.append(lone_warning)
+            strikeout_data = cleaned
+            projections = cleaned.get("projections", []) if isinstance(cleaned, dict) else []
+            with open(PUBLIC / "strikeout_projections.json", "w", encoding="utf-8") as handle:
+                json.dump(cleaned, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
         missing_opp_stats = []
         for row in projections:
             if not isinstance(row, dict):

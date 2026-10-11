@@ -7,7 +7,9 @@ from pipeline.snapshot_consistency import (
     PUBLISH_SKEW_LIMIT_MINUTES,
     age_timestamp,
     intraday_publish_block_reason,
+    opponent_for_line,
     publish_gate_errors,
+    quarantine_lone_pitcher_mismatch,
     skew_anchor,
     skew_minutes,
     strikeout_pair_mismatches,
@@ -141,6 +143,63 @@ class PairMismatchTests(unittest.TestCase):
         self.assertEqual(len(mismatches), 1)
         self.assertIn("Hwang Jun-Seo", mismatches[0])
         self.assertIn("Lotte", mismatches[0])
+
+    def test_cached_prizepicks_opponent_does_not_replace_the_schedule(self):
+        self.assertIsNone(opponent_for_line("LG", "Lotte"))
+        self.assertEqual(opponent_for_line("LG", "LG"), "LG")
+        self.assertEqual(opponent_for_line("LG", ""), "LG")
+        self.assertEqual(opponent_for_line("", "Lotte"), "Lotte")
+        self.assertEqual(opponent_for_line("KIA", "Kia"), "Kia")
+
+
+class LonePitcherQuarantineTests(unittest.TestCase):
+    def test_three_markets_for_one_pitcher_are_a_warning_and_the_rows_are_dropped(self):
+        strikeout = {
+            "market_status": "active",
+            "projections": [
+                {"name": "Adam Oller", "team": "Kia", "opponent": "Lotte", "prop": "Strikeouts"},
+                {"name": "Adam Oller", "team": "Kia", "opponent": "Lotte", "prop": "Hits Allowed"},
+                {"name": "Adam Oller", "team": "Kia", "opponent": "Lotte", "prop": "Pitching Outs"},
+                {"name": "Son", "team": "KT", "opponent": "Samsung", "prop": "Strikeouts"},
+            ],
+        }
+        matchup = {
+            "matchups": [
+                {"away": "LG", "home": "Kia"},
+                {"away": "KT", "home": "Samsung"},
+            ],
+        }
+
+        cleaned, warning, fatal = quarantine_lone_pitcher_mismatch(strikeout, matchup)
+
+        self.assertEqual(fatal, [])
+        self.assertIn("Adam Oller", warning)
+        self.assertIn("once per pitcher market", warning)
+        self.assertIn("Strikeouts", warning)
+        self.assertEqual([row["name"] for row in cleaned["projections"]], ["Son"])
+        self.assertEqual(len(strikeout["projections"]), 4)
+
+    def test_two_disagreeing_pitchers_still_fail_the_slate(self):
+        strikeout = {
+            "projections": [
+                {"name": "Adam Oller", "team": "Kia", "opponent": "Lotte", "prop": "Strikeouts"},
+                {"name": "Park Se Woong", "team": "Lotte", "opponent": "Kia", "prop": "Strikeouts"},
+            ],
+        }
+        matchup = {
+            "matchups": [
+                {"away": "LG", "home": "Kia"},
+                {"away": "Lotte", "home": "Doosan"},
+            ],
+        }
+
+        cleaned, warning, fatal = quarantine_lone_pitcher_mismatch(strikeout, matchup)
+
+        self.assertIsNone(warning)
+        self.assertIs(cleaned, strikeout)
+        self.assertEqual(len(fatal), 2)
+        self.assertTrue(any("Adam Oller" in item for item in fatal))
+        self.assertTrue(any("Park Se Woong" in item for item in fatal))
 
 
 class IntradayGateTests(unittest.TestCase):
