@@ -12,8 +12,8 @@
   justify-content: center;
   min-width: 52px;
   padding: 4px 7px 5px;
+  border: 1px solid transparent;
   border-radius: 9px;
-  color: #04140a;
   line-height: 1.1;
 }
 
@@ -29,13 +29,24 @@
 
 .hit-rate-pill-n {
   margin-top: 1px;
-  font: 800 8px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0.04em;
-  opacity: 0.72;
+  font: 700 8px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.hit-rate-pill.is-thin .hit-rate-pill-k,
+.hit-rate-pill.is-thin .hit-rate-pill-v,
+.hit-rate-pill.is-thin .hit-rate-pill-n {
+  opacity: 1;
 }
 
 .hit-rate-col {
   white-space: normal;
+}
+
+table.hit-rate-board > thead > tr > th,
+table.hit-rate-board > tbody > tr > td {
+  vertical-align: middle;
 }
 
 @media (max-width: 760px) {
@@ -63,9 +74,9 @@
     white-space: normal;
   }
 
-  table.hit-rate-board > tbody > tr > td.kbo-player-cell,
-  table.hit-rate-board > tbody > tr > td.nfl-lines-player,
-  table.hit-rate-board > tbody > tr > td.wnba-lines-player {
+  table.hit-rate-board > tbody > tr > td:has(> .kbo-player-cell),
+  table.hit-rate-board > tbody > tr > td:has(> .nfl-lines-player),
+  table.hit-rate-board > tbody > tr > td:has(> .wnba-lines-player) {
     display: flex;
     padding-right: 72px;
   }

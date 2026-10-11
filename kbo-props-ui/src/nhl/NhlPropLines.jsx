@@ -75,27 +75,31 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
   return (
     <>
     <tr className={`nfl-lines-row${open ? ' is-open' : ''}`} onClick={onToggle}>
-      <td className="nfl-lines-player">
-        <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
-        <div className="nfl-lines-info">
-          <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
-          {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
-          {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
-          <span className="nfl-lines-tag">{item.team}, {item.position}</span>
-          <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
-            <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
-            {item.oddsType && item.oddsType !== 'standard' && <span className="nhl-odds">{item.oddsType.toUpperCase()}</span>}
+      <td>
+        <div className="nfl-lines-player">
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-info">
+            <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
+            {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
+            {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
+            <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+            <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
+              <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
+              {item.oddsType && item.oddsType !== 'standard' && <span className="nhl-odds">{item.oddsType.toUpperCase()}</span>}
+            </div>
           </div>
+          <OddsChevron open={open} player={item.player} onToggle={onToggle} />
         </div>
-        <OddsChevron open={open} player={item.player} onToggle={onToggle} />
       </td>
       <td className="hit-rate-chart"><MiniChart recent={recent} line={Number(item.line)} /></td>
       <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{score.toFixed(1)}</td>
       <td className="hit-rate-col"><HitRateStrip pills={nhlHitPills(item)} /></td>
       <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
-      <td className="nfl-lines-matchup">
-        {logo && <img className="nfl-lines-matchup-logo" src={logo} alt={item.opponent} />}
-        <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+      <td>
+        <div className="nfl-lines-matchup">
+          {logo && <img className="nfl-lines-matchup-logo" src={logo} alt={item.opponent} />}
+          <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        </div>
       </td>
     </tr>
     {open && (

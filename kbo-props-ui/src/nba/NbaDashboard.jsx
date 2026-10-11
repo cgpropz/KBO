@@ -98,25 +98,29 @@ function PropRow({ item, onSelectPlayer, locked, rowRef }) {
 
   return (
     <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={rowRef}>
-      <td className="wnba-lines-player">
-        <div className="wnba-lines-avatar">
-          {item.imageUrl
-            ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
-            : initials(item.player)}
-        </div>
-        <div className="wnba-lines-info">
-          <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
-          <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
-          <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+      <td>
+        <div className="wnba-lines-player">
+          <div className="wnba-lines-avatar">
+            {item.imageUrl
+              ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
+              : initials(item.player)}
+          </div>
+          <div className="wnba-lines-info">
+            <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
+            <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+            <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+          </div>
         </div>
       </td>
       <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
       <td className={`hit-rate-score ${item.isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
       <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
       <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-      <td className="wnba-lines-matchup">
-        <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
-        <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+      <td>
+        <div className="wnba-lines-matchup">
+          <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+          <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        </div>
       </td>
     </tr>
   )

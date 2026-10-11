@@ -77,6 +77,44 @@ export function hitRatePillColor(rate) {
   return HIT_RATE_RED
 }
 
+export const HIT_RATE_NEUTRAL_BG = '#3f3f46'
+export const HIT_RATE_NEUTRAL_TEXT = '#a1a1aa'
+
+export function hitRateFill(hex, alpha) {
+  const int = Number.parseInt(String(hex).slice(1), 16)
+  const red = (int >> 16) & 255
+  const green = (int >> 8) & 255
+  const blue = int & 255
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+// Tinted pill. Fewer than 3 games stays neutral so a tiny sample is not a green or red signal.
+export function hitRatePillStyle(pill) {
+  const games = Number(pill?.games)
+  if (Number.isFinite(games) && games < 3) {
+    return {
+      thin: true,
+      background: HIT_RATE_NEUTRAL_BG,
+      borderColor: 'rgba(161, 161, 170, 0.45)',
+      color: HIT_RATE_NEUTRAL_TEXT,
+    }
+  }
+  const color = hitRatePillColor(pill?.rate)
+  if (!color) return null
+  return {
+    thin: false,
+    background: hitRateFill(color, 0.16),
+    borderColor: hitRateFill(color, 0.45),
+    color,
+  }
+}
+
+export function formatGameCount(games) {
+  const count = Number(games)
+  if (!Number.isFinite(count) || count <= 0) return ''
+  return `${count} gm`
+}
+
 export function formatHitRate(rate) {
   const value = numericRate(rate)
   if (value == null) return ''

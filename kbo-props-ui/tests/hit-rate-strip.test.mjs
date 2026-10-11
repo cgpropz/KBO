@@ -5,10 +5,15 @@ import {
   HIT_RATE_AMBER,
   HIT_RATE_GREEN,
   HIT_RATE_LIGHT,
+  HIT_RATE_NEUTRAL_BG,
+  HIT_RATE_NEUTRAL_TEXT,
   HIT_RATE_RED,
   fixedWindowPill,
+  formatGameCount,
   formatHitRate,
+  hitRateFill,
   hitRatePillColor,
+  hitRatePillStyle,
   kboHitPills,
   nflHitPills,
   nhlHitPills,
@@ -27,6 +32,29 @@ test('hit-rate colors follow the 70 / 55 / 45 thresholds', () => {
   assert.equal(hitRatePillColor(0), HIT_RATE_RED)
   assert.equal(hitRatePillColor(null), null)
   assert.equal(hitRatePillColor('nope'), null)
+})
+
+test('tinted pills use the threshold color for text and wash it into the fill', () => {
+  const tone = hitRatePillStyle({ rate: 60, games: 10 })
+  assert.equal(tone.thin, false)
+  assert.equal(tone.color, HIT_RATE_LIGHT)
+  assert.equal(tone.background, hitRateFill(HIT_RATE_LIGHT, 0.16))
+  assert.equal(tone.borderColor, hitRateFill(HIT_RATE_LIGHT, 0.45))
+  assert.equal(hitRatePillStyle({ rate: 80, games: 5 }).color, HIT_RATE_GREEN)
+  assert.equal(hitRatePillStyle({ rate: 45, games: 8 }).color, HIT_RATE_AMBER)
+  assert.equal(hitRatePillStyle({ rate: 20, games: 6 }).color, HIT_RATE_RED)
+  assert.equal(hitRatePillStyle({ rate: null, games: 6 }), null)
+})
+
+test('a sample under 3 games is neutral instead of a hit-rate color', () => {
+  const tone = hitRatePillStyle({ rate: 100, games: 2 })
+  assert.equal(tone.thin, true)
+  assert.equal(tone.background, HIT_RATE_NEUTRAL_BG)
+  assert.equal(tone.color, HIT_RATE_NEUTRAL_TEXT)
+  assert.equal(tone.color === HIT_RATE_GREEN, false)
+  assert.equal(formatGameCount(2), '2 gm')
+  assert.equal(formatGameCount(0), '')
+  assert.equal(hitRatePillStyle({ rate: 40, games: 3 }).thin, false)
 })
 
 test('format keeps a tenth only when the chart rate is not a whole number', () => {

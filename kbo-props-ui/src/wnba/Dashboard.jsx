@@ -195,26 +195,30 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
   return (
     <>
       <tr className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`} ref={open ? undefined : rowRef} onClick={locked ? undefined : onToggle}>
-        <td className="wnba-lines-player">
-          <div className="wnba-lines-avatar">
-            {item.imageUrl
-              ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
-              : initials(item.player)}
+        <td>
+          <div className="wnba-lines-player">
+            <div className="wnba-lines-avatar">
+              {item.imageUrl
+                ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+                : initials(item.player)}
+            </div>
+            <div className="wnba-lines-info">
+              <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
+              <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+            </div>
+            <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
-          <div className="wnba-lines-info">
-            <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
-            <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
-            <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
-          </div>
-          <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
         </td>
         <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
         <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
         <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
         <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-        <td className="wnba-lines-matchup">
-          <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
-          <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        <td>
+          <div className="wnba-lines-matchup">
+            <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+            <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+          </div>
         </td>
       </tr>
       {open && !locked && (

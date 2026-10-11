@@ -100,22 +100,26 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
         ref={open ? undefined : rowRef}
         onClick={locked ? undefined : onToggle}
       >
-        <td className="nfl-lines-player">
-          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
-          <div className="nfl-lines-info">
-            <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
-            <span className="nfl-lines-tag">{item.team}, {item.position}</span>
-            <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+        <td>
+          <div className="nfl-lines-player">
+            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
+            <div className="nfl-lines-info">
+              <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
+              <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+              <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+            </div>
+            <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
-          <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
         </td>
         <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
         <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
         <td className="hit-rate-col"><HitRateStrip pills={nflHitPills(item)} /></td>
         <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
-        <td className="nfl-lines-matchup">
-          <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
-          <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+        <td>
+          <div className="nfl-lines-matchup">
+            <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
+            <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+          </div>
         </td>
       </tr>
       {open && !locked && (
