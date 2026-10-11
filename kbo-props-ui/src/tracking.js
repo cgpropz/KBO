@@ -158,9 +158,29 @@ export function weeklyCheckoutHref(user, token = '') {
   return readyWeeklyCheckoutUrl(token) || buildCheckoutUrl(STRIPE_LINKS.weekly, user);
 }
 
+// Lifetime ($249.99) and Founders ($99.99) Checkout Sessions. The server picks
+// the price. Founders past the cap or the deadline returns the Lifetime URL
+// instead of the $99.99 price (plan: 'lifetime', fallback: true).
+export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const path = plan === 'founders' ? '/api/checkout/founders' : '/api/checkout/lifetime';
+  const res = await fetchImpl(path, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(utm || {}),
+  });
+  if (!res.ok) throw new Error('checkout failed');
+  const data = await res.json();
+  const url = String(data?.url || '');
+  if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
+  return { url, plan: data.plan || plan, fallback: Boolean(data.fallback), reason: data.reason || null };
+}
+
 // Weekly goes to the XWEEK Checkout Session. If that call fails, fall back to
 // the weekly Payment Link (full $9.99, no broken promo param) so the button
-// still opens the same plan. Monthly and lifetime stay on their Payment Links.
+// still opens the same plan. Monthly and yearly stay on their Payment Links.
+// Lifetime is a Checkout Session (there is no $249.99 Payment Link).
 export async function resolvePlanCheckoutUrl(tier, user, options = {}) {
   if (tier?.id === 'weekly') {
     try {
@@ -168,6 +188,10 @@ export async function resolvePlanCheckoutUrl(tier, user, options = {}) {
     } catch {
       return buildCheckoutUrl(STRIPE_LINKS.weekly, user);
     }
+  }
+  if (tier?.id === 'lifetime' || tier?.checkout === 'session') {
+    const session = await requestOfferCheckoutUrl({ ...options, plan: 'lifetime' });
+    return session.url;
   }
   if (!tier?.link) return null;
   return buildCheckoutUrl(tier.link, user);

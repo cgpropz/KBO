@@ -1,7 +1,7 @@
 /* ── Subscription Page ── dark/purple theme matching the app ── */
 
 .sub-page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 3rem 1.5rem 4rem;
 }
@@ -110,7 +110,7 @@
 /* Tier grid */
 .sub-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 1.25rem;
   margin-bottom: 3rem;
 }
@@ -313,6 +313,16 @@
 
 .sub-cta-season:hover:not(:disabled) {
   box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.sub-cta-yearly {
+  background: linear-gradient(135deg, #0f766e, #2dd4bf);
+  color: #042f2e;
+}
+
+.sub-cta-yearly:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(45, 212, 191, 0.35);
   transform: translateY(-1px);
 }
 

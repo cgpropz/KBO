@@ -2,11 +2,17 @@
  * Shared, single-source-of-truth pricing data — real Stripe Payment Links
  * and prices, reused by SubscriptionPage.jsx (checkout) and PublicLanding.jsx
  * (marketing pricing preview) so the two never drift out of sync.
+ *
+ * Lifetime ($249.99) and Founders ($99.99) are Checkout Sessions, not Payment
+ * Links, so the server can enforce the Founders cap and deadline. Yearly uses
+ * its Payment Link. None of these plans include a free trial.
  */
+import { YEARLY_PAYMENT_LINK } from './foundersOffer.js';
+
 export const STRIPE_LINKS = {
   weekly:   'https://buy.stripe.com/00wcN7gkD7Ui8ng6z65Ne08', // Weekly All-Access   $9.99  / wk
   monthly:  'https://buy.stripe.com/6oU5kFfgzdeCfPIcXu5Ne09', // Monthly All-Access  $29.99 / mo
-  lifetime: 'https://buy.stripe.com/dRmeVfd8r3E2avo4qY5Ne03', // Lifetime All-Access $99.99 once
+  yearly:   YEARLY_PAYMENT_LINK,                              // Yearly All-Access   $149.99 / yr
 };
 
 // Existing Weekly All-Access price (price_1TtFEr…, $9.99/week) and the live
@@ -57,9 +63,22 @@ export const TIERS = [
     link: STRIPE_LINKS.monthly,
   },
   {
+    id: 'yearly',
+    name: 'Yearly All-Access',
+    price: '$149.99',
+    period: '/ year',
+    badge: 'FULL YEAR',
+    description: 'Every board for a year, including NHL',
+    features: [...ALL_ACCESS_FEATURES, 'Billed once a year', 'KBO, WNBA, NFL, and NHL'],
+    limited: [],
+    cta: 'Get Yearly Access',
+    ctaStyle: 'yearly',
+    link: STRIPE_LINKS.yearly,
+  },
+  {
     id: 'lifetime',
     name: 'Lifetime All-Access',
-    price: '$99.99',
+    price: '$249.99',
     period: 'once',
     badge: 'ONE-TIME',
     description: 'Pay once, keep everything forever',
@@ -67,7 +86,8 @@ export const TIERS = [
     limited: [],
     cta: 'Buy Lifetime Access',
     ctaStyle: 'season',
-    link: STRIPE_LINKS.lifetime,
+    link: null,
+    checkout: 'session',
   },
   {
     id: 'free',

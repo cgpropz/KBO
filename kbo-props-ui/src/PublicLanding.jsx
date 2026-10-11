@@ -7,7 +7,8 @@ import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
-import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import FoundersOffer from './FoundersOffer';
 import DiscordInviteLink from './DiscordInviteLink';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
 import './PublicLanding.css';
@@ -57,11 +58,11 @@ const FAQS = [
   },
   {
     q: 'Does one subscription cover every sport?',
-    a: 'Yes — every All-Access plan (Weekly, Monthly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
+    a: 'Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
   },
   {
     q: 'Can I cancel anytime?',
-    a: 'Yes. Weekly and Monthly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel.',
+    a: 'Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial.',
   },
   {
     q: 'What is Discord Only?',
@@ -92,10 +93,24 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   }, []);
   // Logged-out checkout: Stripe collects the email; access is matched to it
   // when the buyer signs up with the same email (webhook + sync-subscription).
-  // Monthly and lifetime stay on their Payment Links and navigate in this click.
-  const checkout = (tier) => {
+  // Monthly and yearly stay on their Payment Links. Lifetime and Founders
+  // open a Checkout Session so the Founders cap and deadline are enforced.
+  const checkout = async (tier) => {
+    if (tier?.checkout === 'session' || tier?.id === 'lifetime') {
+      try {
+        const result = await requestOfferCheckoutUrl({ plan: 'lifetime' });
+        window.location.assign(result.url);
+      } catch { /* button stays put; they can retry */ }
+      return;
+    }
     if (!tier?.link) return;
     window.location.assign(buildCheckoutUrl(tier.link, null));
+  };
+  const claimFounders = async () => {
+    try {
+      const result = await requestOfferCheckoutUrl({ plan: 'founders' });
+      window.location.assign(result.url);
+    } catch { /* offer stays visible until the server says it is closed */ }
   };
 
   return (
@@ -221,6 +236,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <ul className="pl-pricing-features">
               {activeTier.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
+            {activeTier.id === 'lifetime' && <FoundersOffer onClaim={claimFounders} />}
             {activeTier.id === 'weekly' ? (
               <a className="pl-cta-primary pl-pricing-cta" href={weeklyHref}>
                 {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}

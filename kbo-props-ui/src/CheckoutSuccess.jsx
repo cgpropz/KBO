@@ -8,7 +8,9 @@ import './FreeFunnel.css';
 const PLAN_LABELS = {
   weekly: 'Weekly All-Access',
   monthly: 'Monthly All-Access',
+  yearly: 'Yearly All-Access',
   lifetime: 'Lifetime All-Access',
+  founders: 'Founders Lifetime',
   discord_weekly: 'Discord Only · Weekly',
   discord_monthly: 'Discord Only · Monthly',
 };

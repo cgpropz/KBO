@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { mergeTier, tierForStripePrice } from './_stripeTier.js';
+import { mergeTier, tierForStripePrice, signalsLifetimePurchase } from './_stripeTier.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 
 function cleanEnv(value) {
@@ -100,6 +100,41 @@ async function walkSubscriptions(status, { byEmail, discordEmails, recordSite })
     if (!page.has_more || page.data.length === 0) break;
     startingAfter = page.data[page.data.length - 1].id;
   }
+}
+
+// One-time Lifetime and Founders purchases are not subscriptions. Scan recent
+// paid Checkout Sessions and grant combined when the price id, product id, or
+// one-time metadata says so. The legacy $49.99/yr KBO price is recurring and
+// is ignored here.
+async function collectLifetimeEmails() {
+  const emails = new Set();
+  let startingAfter;
+  const since = Math.floor(Date.now() / 1000) - 120 * 24 * 3600;
+  for (let page = 0; page < 10; page += 1) {
+    const list = await stripe.checkout.sessions.list({
+      status: 'complete',
+      limit: 100,
+      starting_after: startingAfter,
+      created: { gte: since },
+      expand: ['data.line_items.data.price'],
+    });
+    for (const session of list.data || []) {
+      if (session.mode !== 'payment' || session.payment_status !== 'paid') continue;
+      const email = (session.customer_details?.email || session.customer_email || '').trim().toLowerCase();
+      if (!email) continue;
+      const lines = session.line_items?.data || [];
+      const hit = lines.some((line) => signalsLifetimePurchase({
+        price: line?.price,
+        priceId: typeof line?.price === 'string' ? line.price : line?.price?.id,
+        product: line?.price && typeof line.price === 'object' ? line.price.product : null,
+        metadata: session.metadata,
+      })) || session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders';
+      if (hit) emails.add(email);
+    }
+    if (!list.has_more || !list.data?.length) break;
+    startingAfter = list.data[list.data.length - 1].id;
+  }
+  return emails;
 }
 
 async function collectActiveSubscriberTiers() {
@@ -251,6 +286,7 @@ export default async function handler(req, res) {
       patched: 0,
       missingAccount: 0,
       errors: 0,
+      lifetimeGranted: 0,
     };
 
     for (const [email, tier] of activeByEmail.entries()) {
@@ -259,6 +295,20 @@ export default async function handler(req, res) {
       if (r.status === 'patched') results.patched += 1;
       if (r.status === 'missing_account') results.missingAccount += 1;
       if (r.status === 'error') results.errors += 1;
+    }
+
+    try {
+      const lifetimeEmails = await collectLifetimeEmails();
+      for (const email of lifetimeEmails) {
+        const r = await setTierByEmail(email, 'combined');
+        if (r.status === 'patched') results.lifetimeGranted += 1;
+        if (r.status === 'already_paid') results.alreadyPaid += 1;
+        if (r.status === 'missing_account') results.missingAccount += 1;
+        if (r.status === 'error') results.errors += 1;
+      }
+    } catch (err) {
+      console.error('[reconcile] lifetime pass failed:', err?.message || err);
+      results.lifetimeError = true;
     }
 
     let discord = null;

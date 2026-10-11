@@ -45,7 +45,7 @@ export async function handleCheckoutSessionRequest(req, res, client) {
 
   let session;
   try {
-    session = await client.checkout.sessions.retrieve(sessionId);
+    session = await client.checkout.sessions.retrieve(sessionId, { expand: ['line_items'] });
   } catch (err) {
     if (err?.statusCode === 404 || err?.code === 'resource_missing') {
       return res.status(404).json({ error: 'Session not found' });

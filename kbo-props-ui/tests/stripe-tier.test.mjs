@@ -13,6 +13,10 @@ import {
   isDiscordPrice,
   mergeTier,
   resolvePurchaseTier,
+  planForAmount,
+  planForCheckout,
+  planForPriceId,
+  signalsLifetimePurchase,
   tierForPrice,
   tierForStripePrice,
 } from '../api/_stripeTier.js'
@@ -36,7 +40,7 @@ const DISCORD_ENV = {
   STRIPE_PRICE_DISCORD_MONTHLY: DISCORD_MONTHLY,
 }
 
-function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {}, chargesByCustomer = {}, invoicesById = {}, pricesById = {} } = {}) {
+function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {}, chargesByCustomer = {}, invoicesById = {}, pricesById = {}, sessionsByPaymentIntent = {} } = {}) {
   const calls = []
   return {
     calls,
@@ -73,6 +77,14 @@ function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {},
         calls.push({ op: 'price', id })
         if (!pricesById[id]) throw new Error('missing price')
         return pricesById[id]
+      },
+    },
+    checkout: {
+      sessions: {
+        async list({ payment_intent: paymentIntent }) {
+          calls.push({ op: 'sessions', paymentIntent })
+          return { data: sessionsByPaymentIntent[paymentIntent] || [] }
+        },
       },
     },
   }
@@ -368,6 +380,144 @@ test('a $99.99 charge on the lifetime price still grants combined', async () => 
     },
   })
   assert.equal(await computeStripeTier(stripe, 'fan@example.com', DISCORD_ENV), 'combined')
+})
+
+const NEW_LIFETIME = 'price_1UPJ78PwL0k9PEMvnZPU3k5a'
+const YEARLY = 'price_1UPJ7DPwL0k9PEMv2Z9Ca8B5'
+const FOUNDERS = 'price_1THZjaPwL0k9PEMvARtuGG1F'
+const KBO_YEARLY = 'price_1THCpZPwL0k9PEMvPlLqiIDu'
+
+test('lifetime, founders, and yearly price ids grant combined; the old yearly price stays kbo', () => {
+  assert.equal(tierForPrice(NEW_LIFETIME), 'combined')
+  assert.equal(tierForPrice(FOUNDERS), 'combined')
+  assert.equal(tierForPrice(YEARLY), 'combined')
+  assert.equal(tierForPrice(KBO_YEARLY), 'kbo')
+  assert.equal(planForPriceId(YEARLY), 'yearly')
+  assert.equal(planForPriceId(NEW_LIFETIME), 'lifetime')
+  assert.equal(planForPriceId(FOUNDERS), 'lifetime')
+  assert.equal(signalsLifetimePurchase({ priceId: NEW_LIFETIME }), true)
+  assert.equal(signalsLifetimePurchase({ priceId: YEARLY, price: { id: YEARLY, type: 'recurring', recurring: { interval: 'year' } } }), false)
+  assert.equal(signalsLifetimePurchase({
+    priceId: 'price_custom',
+    price: { id: 'price_custom', type: 'one_time', metadata: { tier: 'combined' } },
+  }), true)
+  assert.equal(signalsLifetimePurchase({ product: 'prod_UG5v4BQ2Mo0wie' }), true)
+})
+
+test('env price ids grant combined and stay site plans if a discord env var points at them', () => {
+  const env = {
+    STRIPE_PRICE_LIFETIME: 'price_newLifeEnv',
+    STRIPE_PRICE_YEARLY: 'price_yearEnv',
+    STRIPE_PRICE_FOUNDERS: 'price_foundersEnv',
+    STRIPE_PRICE_DISCORD_WEEKLY: 'price_newLifeEnv',
+  }
+  assert.equal(tierForPrice('price_newLifeEnv', env), 'combined')
+  assert.equal(tierForPrice('price_yearEnv', env), 'combined')
+  assert.equal(tierForPrice('price_foundersEnv', env), 'combined')
+  assert.equal(isDiscordPrice('price_newLifeEnv', env), false)
+  assert.equal(tierForPrice(KBO_YEARLY, env), 'kbo')
+})
+
+test('a taxed lifetime charge grants combined by price id', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: 26749, invoice: 'in_new' }],
+    },
+    invoicesById: {
+      in_new: { lines: { data: [{ price: { id: NEW_LIFETIME, product: 'prod_UG5v4BQ2Mo0wie' } }] } },
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'combined')
+})
+
+test('a taxed founders charge grants combined by the shared lifetime price id', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: 10724, invoice: 'in_founders' }],
+    },
+    invoicesById: {
+      in_founders: { lines: { data: [{ price: { id: FOUNDERS } }] } },
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'combined')
+})
+
+test('the lifetime product id grants combined when the price id is unrecognized', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: 26000, invoice: 'in_prod' }],
+    },
+    invoicesById: {
+      in_prod: { lines: { data: [{ price: { id: 'price_not_listed', product: 'prod_UG5v4BQ2Mo0wie' } }] } },
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'combined')
+})
+
+test('a taxed charge with no price attached does not use the legacy amount fallback', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: 10724 }],
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'free')
+})
+
+test('a checkout session on the payment intent grants lifetime without an invoice', async () => {
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_life: [{ paid: true, refunded: false, amount: 26749, payment_intent: 'pi_life' }],
+    },
+    sessionsByPaymentIntent: {
+      pi_life: [{
+        id: 'cs_test_lifetime1234',
+        metadata: { cg_plan: 'lifetime' },
+        line_items: { data: [{ price: { id: NEW_LIFETIME } }] },
+      }],
+    },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'combined')
+})
+
+test('a yearly subscription grants combined and a yearly invoice charge is not lifetime', async () => {
+  const subscribed = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_year', 'fan@example.com')] },
+    subsByCustomer: { cus_year: [sub(YEARLY)] },
+  })
+  assert.equal(await computeStripeTier(subscribed, 'fan@example.com'), 'combined')
+
+  const chargeOnly = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_year', 'fan@example.com')] },
+    chargesByCustomer: {
+      cus_year: [{ paid: true, refunded: false, amount: 16049, invoice: 'in_year' }],
+    },
+    invoicesById: {
+      in_year: { lines: { data: [{ price: { id: YEARLY, type: 'recurring', recurring: { interval: 'year' }, metadata: { tier: 'combined' } } }] } },
+    },
+  })
+  assert.equal(await computeStripeTier(chargeOnly, 'fan@example.com'), 'free')
+})
+
+test('planForCheckout uses the price id when sales tax changes the total', () => {
+  assert.equal(planForCheckout({
+    amount_total: 16049,
+    line_items: { data: [{ price: { id: YEARLY } }] },
+  }), 'yearly')
+  assert.equal(planForCheckout({
+    amount_total: 26749,
+    metadata: { cg_plan: 'lifetime' },
+  }), 'lifetime')
+  assert.equal(planForCheckout({
+    amount_total: 10724,
+    metadata: { cg_plan: 'founders' },
+  }), 'founders')
+  assert.equal(planForAmount(14999), 'yearly')
+  assert.equal(planForAmount(24999), 'lifetime')
 })
 
 test('quotes in an email are escaped in the search query', async () => {

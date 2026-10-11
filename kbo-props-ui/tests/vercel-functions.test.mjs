@@ -105,6 +105,8 @@ test('dispatchers keep the existing handlers and reject an unknown action', asyn
   assert.equal(league.statusCode, 404)
 
   const checkout = mockRes()
-  await checkoutHandler({ query: { action: 'lifetime' }, method: 'POST' }, checkout)
+  await checkoutHandler({ query: { action: 'no-such-plan' }, method: 'POST' }, checkout)
   assert.equal(checkout.statusCode, 404)
+  assert.equal(typeof CHECKOUT_ACTIONS.lifetime, 'function')
+  assert.equal(typeof CHECKOUT_ACTIONS.founders, 'function')
 })

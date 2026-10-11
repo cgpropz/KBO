@@ -47,10 +47,10 @@ test('logged-out weekly payment link has no promo and no identifiers', () => {
   assert.equal(query.get('utm_source'), null)
 })
 
-test('monthly and lifetime checkouts do not get the weekly promo', () => {
+test('monthly and yearly checkouts do not get the weekly promo', () => {
   memory.clear()
   captureAttribution('?utm_source=x&utm_campaign=all_access')
-  for (const link of [STRIPE_LINKS.monthly, STRIPE_LINKS.lifetime]) {
+  for (const link of [STRIPE_LINKS.monthly, STRIPE_LINKS.yearly]) {
     const query = params(link, USER)
     assert.equal(query.get('prefilled_promo_code'), null)
     assert.equal(query.get('client_reference_id'), 'user-1')
@@ -146,6 +146,40 @@ test('a failed weekly prefetch leaves the payment link without a promo code', as
   const href = weeklyCheckoutHref(null, 'token-fail')
   assert.equal(href.startsWith(STRIPE_LINKS.weekly), true)
   assert.equal(new URL(href).searchParams.get('prefilled_promo_code'), null)
+})
+
+test('lifetime uses a checkout session and yearly stays on its payment link', async () => {
+  memory.clear()
+  const lifetime = TIERS.find((t) => t.id === 'lifetime')
+  const yearly = TIERS.find((t) => t.id === 'yearly')
+  assert.equal(lifetime.price, '$249.99')
+  assert.equal(lifetime.link, null)
+  assert.equal(yearly.price, '$149.99')
+  assert.equal(yearly.link, STRIPE_LINKS.yearly)
+
+  let seen
+  const url = await resolvePlanCheckoutUrl(lifetime, USER, {
+    token: 'jwt-1',
+    fetchImpl: async (path, init) => {
+      seen = { path, init }
+      return jsonResponse({ url: 'https://checkout.stripe.com/c/pay/cs_live_lifetime249' })
+    },
+  })
+  assert.equal(url, 'https://checkout.stripe.com/c/pay/cs_live_lifetime249')
+  assert.equal(seen.path, '/api/checkout/lifetime')
+  assert.equal(seen.init.method, 'POST')
+  assert.equal(seen.init.headers.Authorization, 'Bearer jwt-1')
+
+  let yearlyCalled = false
+  const yearlyUrl = await resolvePlanCheckoutUrl(yearly, USER, {
+    fetchImpl: async () => {
+      yearlyCalled = true
+      return jsonResponse({ url: 'https://checkout.stripe.com/c/pay/cs_live_nope' })
+    },
+  })
+  assert.equal(yearlyCalled, false)
+  assert.equal(yearlyUrl.startsWith(STRIPE_LINKS.yearly), true)
+  assert.equal(new URL(yearlyUrl).searchParams.get('prefilled_promo_code'), null)
 })
 
 test('resolvePlanCheckoutUrl keeps monthly on its payment link', async () => {
