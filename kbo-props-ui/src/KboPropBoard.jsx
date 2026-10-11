@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
 import { useAuth } from './AuthContext'
 import { sportAccess } from './entitlements'
+import HitRateStrip from './HitRateStrip'
+import { kboHitPills } from './hitRateStrip'
 import './KboPropBoard.css'
 
 const FREE_ROW_LIMIT = 3
@@ -144,7 +146,13 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   }, [])
 
   const photoLookup = useMemo(() => Object.fromEntries(Object.entries(photos).map(([name, url]) => [name.toLowerCase(), url])), [photos])
-  const allRows = useMemo(() => (snapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({ card, prop, score: scoreFor(prop), direction: directionFor(prop) }))), [snapshot])
+  const allRows = useMemo(() => (snapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({
+    card,
+    prop,
+    score: scoreFor(prop),
+    direction: directionFor(prop),
+    hitPills: kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent }),
+  }))), [snapshot])
   const propTabs = useMemo(() => ['All Props', ...[...new Set(allRows.map(({ prop }) => prop.stat))].sort()], [allRows])
   const rows = useMemo(() => {
     const minimumScore = filters.minScore === '' ? -Infinity : Number(filters.minScore)
@@ -191,13 +199,13 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       </section>
       {error && <p className="kbo-notice">{error}</p>}
       {!error && !snapshot && <p className="kbo-notice">Loading KBO prop lines...</p>}
-      {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>L5</th><th>L10</th><th>Full</th><th>Matchup</th></tr></thead><tbody>
-        {rows.map(({ card, prop, score, direction }, index) => {
+      {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table hit-rate-board"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></tr></thead><tbody>
+        {rows.map(({ card, prop, score, direction, hitPills }, index) => {
           const photo = photoLookup[String(card.name || '').toLowerCase()]
           const locked = !isPaid && index >= FREE_ROW_LIMIT
-          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td className="kbo-player-cell" onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={direction}>{value(score)}</td><td>{value(prop.hit_rate_l5, 0)}%</td><td className={Number(prop.hit_rate_l10) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_l10, 0)}%</td><td className={Number(prop.hit_rate_all) >= 50 ? 'over' : 'under'}>{value(prop.hit_rate_all, 0)}%</td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
+          return <tr key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`} className={locked ? 'locked' : undefined} ref={index === lastFreeIndex ? lastFreeRowRef : undefined}><td className="kbo-player-cell" onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}><div className="kbo-avatar">{photo ? <img src={photo} alt="" loading="lazy" /> : initials(card.name)}</div><div><strong>{card.name}</strong><small>{card.team}, {card.type}</small><b className={direction}>{direction === 'over' ? 'O' : 'U'} {value(prop.line)} {prop.stat}</b></div></td><td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td><td className={`hit-rate-score ${direction}`}>{value(score)}</td><td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td><td className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></td></tr>
         })}
-        {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={7}><span className="kbo-placeholder-bar" /></td></tr>)}
+        {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={5}><span className="kbo-placeholder-bar" /></td></tr>)}
       </tbody></table>
         {hasLockedRows && lockTop != null && (
           <div className="kbo-lines-lock-overlay" style={{ top: lockTop }}>

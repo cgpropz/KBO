@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
+import HitRateStrip from '../HitRateStrip'
 import {
   DEFAULT_FILTERS,
   GAMES_OPTIONS,
@@ -7,7 +8,6 @@ import {
   HIT_RATE_OPTIONS,
   POSITIONS,
   PROP_TABS,
-  SEASON_LABEL,
   SORT_OPTIONS,
   buildPropRows,
   dvpColor,
@@ -110,11 +110,10 @@ function PropRow({ item, onSelectPlayer, locked, rowRef }) {
           <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
         </div>
       </td>
-      <td><MiniChart recent={recent} line={item.line} /></td>
-      <td className={item.isOver ? 'over' : 'under'}>{item.score.toFixed(1)}</td>
-      <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
-      <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>{item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}</td>
-      <td style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
+      <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
+      <td className={`hit-rate-score ${item.isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
+      <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
+      <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
       <td className="wnba-lines-matchup">
         <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
         <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
@@ -426,10 +425,10 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
             <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
-              <table className="wnba-lines-table">
+              <table className="wnba-lines-table hit-rate-board">
                 <thead>
                   <tr>
-                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON_LABEL}</th><th>H2H</th><th>DVP</th><th>Matchup</th>
+                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -444,7 +443,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                   ))}
                   {Array.from({ length: placeholderCount }, (_, index) => (
                     <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
-                      <td colSpan={7}><span className="wnba-placeholder-bar" /></td>
+                      <td colSpan={6}><span className="wnba-placeholder-bar" /></td>
                     </tr>
                   ))}
                 </tbody>

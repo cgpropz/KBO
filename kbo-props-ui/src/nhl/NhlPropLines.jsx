@@ -3,6 +3,8 @@ import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { teamLogoUrl } from './nhlTeams'
+import HitRateStrip from '../HitRateStrip'
+import { nhlHitPills } from '../hitRateStrip'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -87,15 +89,10 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
         </div>
         <OddsChevron open={open} player={item.player} onToggle={onToggle} />
       </td>
-      <td><MiniChart recent={recent} line={Number(item.line)} /></td>
-      <td className={isOver ? 'over' : 'under'}>{score.toFixed(1)}</td>
-      <td className={item.seasonHitRate == null ? '' : item.seasonHitRate >= 50 ? 'over' : 'under'}>{item.seasonHitRate == null ? '—' : `${item.seasonHitRate}%`}</td>
-      <td className={item.priorSeasonHitRate == null ? '' : item.priorSeasonHitRate >= 50 ? 'over' : 'under'}>{item.priorSeasonHitRate == null ? '—' : `${item.priorSeasonHitRate}%`}</td>
-      <td className={item.h2hHitRate == null ? '' : item.h2hHitRate >= 50 ? 'over' : 'under'}>
-        {item.h2hHitRate == null ? '—' : `${item.h2hHitRate}%`}
-        {item.h2hIncludesPriorSeason ? <small className="nhl-odds">last yr</small> : null}
-      </td>
-      <td>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
+      <td className="hit-rate-chart"><MiniChart recent={recent} line={Number(item.line)} /></td>
+      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{score.toFixed(1)}</td>
+      <td className="hit-rate-col"><HitRateStrip pills={nhlHitPills(item)} /></td>
+      <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
       <td className="nfl-lines-matchup">
         {logo && <img className="nfl-lines-matchup-logo" src={logo} alt={item.opponent} />}
         <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
@@ -103,7 +100,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
     </tr>
     {open && (
       <tr className="nfl-sharp-strip-row">
-        <td colSpan={8}>
+        <td colSpan={6}>
           <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
         </td>
       </tr>
@@ -163,8 +160,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
         </div>
       </div>
       <p className="nhl-note">
-        CG Score is the projection divided by the line, times 50. The {SEASON} column is this season only.
-        The chart and H2H can include 2025-26, and those are labeled. Probable goalies stay off the top of the list until they are confirmed.
+        CG Score is the projection divided by the line, times 50. The Season pill is {SEASON} only.
+        H2H uses the same games as the player chart, which can include 2025-26. Probable goalies stay off the top of the list until they are confirmed.
         Rank 1 is the toughest matchup for the over.
       </p>
       {error && <div className="nfl-notice">Unable to load the NHL board: {error}</div>}
@@ -172,10 +169,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
       {!error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
-          <table className="nfl-lines-table">
+          <table className="nfl-lines-table hit-rate-board">
             <thead>
               <tr>
-                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>{SEASON}</th><th>2025-26</th><th>H2H</th><th>DVP</th><th>Matchup</th>
+                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
               </tr>
             </thead>
             <tbody>
