@@ -35,15 +35,15 @@ function NumberTile({ label, value, tone, book, missing }) {
   )
 }
 
-function GameCard({ game }) {
-  const view = cardView(game, GAME_CARD_PROBS_ENABLED)
+function GameCard({ game, hideTotalEdge = false }) {
+  const view = cardView(game, GAME_CARD_PROBS_ENABLED, new Date(), { hideTotalEdge })
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState('')
   const share = async () => {
     setShareError('')
     setSharing(true)
     try {
-      await downloadGameCardPng(game, GAME_CARD_PROBS_ENABLED)
+      await downloadGameCardPng(game, GAME_CARD_PROBS_ENABLED, { hideTotalEdge })
     } catch (error) {
       setShareError(error?.message || 'Could not export this card')
     } finally {
@@ -131,15 +131,15 @@ function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
   )
 }
 
-function relevantEdge(game, filters) {
+function relevantEdge(game, filters, hideTotalEdge) {
   if (filters.side === 'Spread +' || filters.sortBy === 'Spread edge') return finite(game.spread?.edge)
-  if (filters.side === 'Total +' || filters.sortBy === 'Total edge') return finite(game.total?.edge)
-  if (filters.sortBy === 'Edge') return edgeRank(game)
-  const edges = [game.spread?.edge, game.total?.edge].map(finite).filter((value) => value != null)
+  if (!hideTotalEdge && (filters.side === 'Total +' || filters.sortBy === 'Total edge')) return finite(game.total?.edge)
+  if (filters.sortBy === 'Edge') return edgeRank(game, { includeTotal: !hideTotalEdge })
+  const edges = [game.spread?.edge, hideTotalEdge ? null : game.total?.edge].map(finite).filter((value) => value != null)
   return edges.length ? Math.max(...edges) : null
 }
 
-function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days, resultCount }) {
+function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days, resultCount, hideTotalEdge = false }) {
   const [expandedRow, setExpandedRow] = useState(null)
   const toggleRow = (id) => setExpandedRow((current) => (current === id ? null : id))
   if (!open) return null
@@ -152,13 +152,13 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, days
           <button type="button" className="nfl-filters-close" onClick={onClose}>Close <span>&times;</span></button>
         </div>
         <div className="nfl-filters-side">
-          {SIDE_OPTIONS.map((option) => (
+          {(hideTotalEdge ? SIDE_OPTIONS.filter((option) => option !== 'Total +') : SIDE_OPTIONS).map((option) => (
             <button type="button" key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
           ))}
         </div>
         <FilterRow id="sort" label="Sort By" value={filters.sortBy} expandedRow={expandedRow} onToggle={toggleRow}>
           <select value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
-            {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
+            {(hideTotalEdge ? SORT_OPTIONS.filter((option) => option !== 'Total edge') : SORT_OPTIONS).map((option) => <option key={option}>{option}</option>)}
           </select>
         </FilterRow>
         <FilterRow id="day" label="Day" value={filters.day} expandedRow={expandedRow} onToggle={toggleRow}>
@@ -192,6 +192,7 @@ export default function NflGameMarkets() {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [previewMode, setPreviewMode] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
@@ -201,6 +202,7 @@ export default function NflGameMarkets() {
       .then(({ payload: next, preview, lockedCount: locked }) => {
         if (!active) return
         setPayload(next)
+        setPreviewMode(!!preview)
         setLockedCount(preview ? locked : 0)
         setLoaded(true)
       })
@@ -209,36 +211,40 @@ export default function NflGameMarkets() {
   }, [])
 
   const games = useMemo(() => (Array.isArray(payload?.games) ? payload.games : []), [payload])
+  const hideTotalEdges = previewMode && games.every((game) => finite(game.total?.edge) == null)
+  const activeFilters = hideTotalEdges && (filters.side === 'Total +' || filters.sortBy === 'Total edge')
+    ? { ...filters, side: filters.side === 'Total +' ? 'All' : filters.side, sortBy: filters.sortBy === 'Total edge' ? 'Kickoff' : filters.sortBy }
+    : filters
   const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
   const resetFilters = () => setFilters(DEFAULT_FILTERS)
   const days = useMemo(() => ['All', ...Array.from(new Set(games.map((game) => game.weekday).filter(Boolean)))], [games])
 
   const rows = useMemo(() => {
-    const query = filters.team.trim().toLowerCase()
-    const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
-    const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
+    const query = activeFilters.team.trim().toLowerCase()
+    const edgeMin = activeFilters.edgeMin === '' ? -Infinity : Number(activeFilters.edgeMin)
+    const edgeMax = activeFilters.edgeMax === '' ? Infinity : Number(activeFilters.edgeMax)
     const filtered = games.filter((game) => {
-      if (filters.day !== 'All' && game.weekday !== filters.day) return false
+      if (activeFilters.day !== 'All' && game.weekday !== activeFilters.day) return false
       if (query) {
         const haystack = `${game.awayTeam} ${game.homeTeam} ${game.awayName} ${game.homeName}`.toLowerCase()
         if (!haystack.includes(query)) return false
       }
-      if (filters.side === 'Spread +' && !(finite(game.spread?.edge) > 0)) return false
-      if (filters.side === 'Total +' && !(finite(game.total?.edge) > 0)) return false
-      const edge = relevantEdge(game, filters)
-      if (filters.edgeMin !== '' || filters.edgeMax !== '') {
+      if (activeFilters.side === 'Spread +' && !(finite(game.spread?.edge) > 0)) return false
+      if (!hideTotalEdges && activeFilters.side === 'Total +' && !(finite(game.total?.edge) > 0)) return false
+      const edge = relevantEdge(game, activeFilters, hideTotalEdges)
+      if (activeFilters.edgeMin !== '' || activeFilters.edgeMax !== '') {
         if (edge == null || edge < edgeMin || edge > edgeMax) return false
       }
       return true
     })
     const rank = {
-      Edge: (game) => edgeRank(game) ?? -Infinity,
+      Edge: (game) => edgeRank(game, { includeTotal: !hideTotalEdges }) ?? -Infinity,
       'Spread edge': (game) => finite(game.spread?.edge) ?? -Infinity,
-      'Total edge': (game) => finite(game.total?.edge) ?? -Infinity,
-    }[filters.sortBy]
+      ...(hideTotalEdges ? {} : { 'Total edge': (game) => finite(game.total?.edge) ?? -Infinity }),
+    }[activeFilters.sortBy]
     if (!rank) return filtered
     return [...filtered].sort((a, b) => rank(b) - rank(a))
-  }, [games, filters])
+  }, [games, activeFilters, hideTotalEdges])
 
   const week = payload?.week
   const modelLabel = payload?.model?.label
@@ -263,7 +269,7 @@ export default function NflGameMarkets() {
       {!error && loaded && !!games.length && !rows.length && <div className="nfl-notice">No games match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-game-board">
-          {rows.map((game) => <GameCard key={game.id || `${game.awayTeam}-${game.homeTeam}`} game={game} />)}
+          {rows.map((game) => <GameCard key={game.id || `${game.awayTeam}-${game.homeTeam}`} game={game} hideTotalEdge={hideTotalEdges} />)}
         </div>
       )}
       <p className="nfl-market-disclaimer">21+ · Play responsibly · Entertainment only</p>
@@ -275,6 +281,7 @@ export default function NflGameMarkets() {
         resetFilters={resetFilters}
         days={days}
         resultCount={rows.length}
+        hideTotalEdge={hideTotalEdges}
       />
     </section>
   )

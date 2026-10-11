@@ -4,6 +4,7 @@ import {
   GAME_CARD_PROBS_ENABLED,
   PLAY_EDGE_POINTS,
   cardView,
+  edgeRank,
   footerLine,
   formatSpread,
   isPlay,
@@ -98,6 +99,23 @@ test('book and model spreads share the away sign and name the favorite', () => {
   assert.equal(view.spreadOurs, 'BAL -1.0')
   assert.equal(view.totalBookMissing, true)
   assert.equal(view.totalOurs, '43.0')
+})
+
+test('a withheld total edge stays off the lean, the tint, and the rank', () => {
+  const matchup = {
+    awayTeam: 'PHI',
+    homeTeam: 'DAL',
+    spread: { line: -7, projection: -3, edge: 4 },
+    total: { line: 41, projection: 47 },
+  }
+  const shown = cardView(matchup, true, new Date('2026-10-12T00:00:00Z'), { hideTotalEdge: true })
+  assert.equal(shown.totalBook, '41.0')
+  assert.equal(shown.totalOurs, '47.0')
+  assert.equal(shown.totalTone, '')
+  assert.equal(shown.spreadOurs, 'PHI -3.0')
+  assert.equal(shown.footer, 'Lean PHI -7.0 · edge +4.0 · play')
+  assert.equal(edgeRank({ spread: { edge: 1.5 }, total: { edge: 9 } }, { includeTotal: false }), 1.5)
+  assert.equal(isPlay({ spread: { edge: 0.4 }, total: { edge: 6 } }, true), false)
 })
 
 test('a started game reads LIVE and a later kickoff keeps its time', () => {

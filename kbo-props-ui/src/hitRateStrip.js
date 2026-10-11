@@ -124,8 +124,26 @@ export function formatGameCount(games) {
 export function formatHitRate(rate) {
   const value = numericRate(rate)
   if (value == null) return ''
-  const tenths = Math.round(value * 10) / 10
-  return Number.isInteger(tenths) ? `${tenths}%` : `${tenths.toFixed(1)}%`
+  return `${Math.round(value)}%`
+}
+
+export function pillById(pills, id) {
+  return (Array.isArray(pills) ? pills : []).find((pill) => pill.id === id) || null
+}
+
+// Homepage free picks and the board pills share this. `text` is the rounded
+// rate. `games` is the decided-game count, empty when the pill has none.
+export function l10Display(pills) {
+  const pill = pillById(pills, 'l10')
+  if (!pill) return null
+  const text = formatHitRate(pill.rate)
+  if (!text) return null
+  return {
+    text,
+    games: formatGameCount(pill.games),
+    rate: pill.rate,
+    decided: pill.games,
+  }
 }
 
 // 'hit' is over the line, 'miss' is under it, 'push' ties it. Missing numbers

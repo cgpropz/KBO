@@ -153,6 +153,17 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.match(wnba, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/wnba-finals-featured.png"/)
     assert.match(wnba, /name="twitter:image" content="https:\/\/www\.cgpropz\.com\/images\/wnba-finals-featured.png"/)
     assert.match(wnba, /does not include paid board rows/)
+    assert.match(wnba, /href="https:\/\/www\.cgpropz\.com\/\?sport=wnba">Open the WNBA board/)
+
+    for (const [path, sport, label] of [
+      ['/kbo-player-props', 'kbo', 'KBO'],
+      ['/nfl-player-props', 'nfl', 'NFL'],
+      ['/nba-player-props', 'nba', 'NBA'],
+      ['/nhl-player-props', 'nhl', 'NHL'],
+    ]) {
+      const page = await (await fetch(`${server.url}${path}`)).text()
+      assert.match(page, new RegExp(`href="https://www\\.cgpropz\\.com/\\?sport=${sport}">Open the ${label} board`))
+    }
 
     for (const image of [
       '/images/start-here-featured.png',

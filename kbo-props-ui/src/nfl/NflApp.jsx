@@ -2,14 +2,17 @@ import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
-import NflGameMarkets from './NflGameMarkets'
-import NflLineups from './NflLineups'
-import NflProjections from './NflProjections'
-import NflPropLines from './NflPropLines'
-import NflSharpOdds from './NflSharpOdds'
-import NflPlayerPage from './NflPlayerPage'
 import NflPlayerSearch from './NflPlayerSearch'
+import RouteFallback from '../RouteFallback'
+import { GuideNavLinks } from '../GuideLinks'
 import './nfl.css'
+
+const NflGameMarkets = lazy(() => import('./NflGameMarkets'))
+const NflLineups = lazy(() => import('./NflLineups'))
+const NflProjections = lazy(() => import('./NflProjections'))
+const NflPropLines = lazy(() => import('./NflPropLines'))
+const NflSharpOdds = lazy(() => import('./NflSharpOdds'))
+const NflPlayerPage = lazy(() => import('./NflPlayerPage'))
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -67,12 +70,15 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
               {item.label}
             </button>
           ))}
+          <GuideNavLinks />
         </div>
         <NflPlayerSearch onSelect={openPlayer} />
         <button className="nfl-pro-badge" onClick={onNavigatePricing}>NFL PRO</button>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
-        {isDashboard ? content : <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>}
+        <Suspense fallback={<RouteFallback inset />}>
+          {isDashboard ? content : <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>}
+        </Suspense>
       </main>
     </div>
   )

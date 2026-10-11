@@ -136,9 +136,9 @@ function absEdge(value) {
   return number == null ? null : Math.abs(number)
 }
 
-export function isPlay(game) {
+export function isPlay(game, hideTotalEdge = false) {
   const spread = absEdge(game?.spread?.edge)
-  const total = absEdge(game?.total?.edge)
+  const total = hideTotalEdge ? null : absEdge(game?.total?.edge)
   return (spread != null && spread >= PLAY_EDGE_POINTS) || (total != null && total >= PLAY_EDGE_POINTS)
 }
 
@@ -161,19 +161,19 @@ function totalLean(game) {
   return { label: `Lean ${side} ${formatPoints(line)}`, edge: Math.abs(edge) }
 }
 
-export function leanDetail(game) {
+export function leanDetail(game, hideTotalEdge = false) {
   const spread = spreadLean(game)
-  const total = totalLean(game)
+  const total = hideTotalEdge ? null : totalLean(game)
   if (!spread && !total) return null
   if (!total) return spread
   if (!spread) return total
   return spread.edge >= total.edge ? spread : total
 }
 
-export function footerLine(game, probsEnabled) {
+export function footerLine(game, probsEnabled, hideTotalEdge = false) {
   if (!probsEnabled) return 'CG number vs the book'
-  const play = isPlay(game) ? 'play' : 'no play'
-  const lean = leanDetail(game)
+  const play = isPlay(game, hideTotalEdge) ? 'play' : 'no play'
+  const lean = leanDetail(game, hideTotalEdge)
   if (!lean) return `CG number vs the book · ${play}`
   return `${lean.label} · edge ${formatEdge(lean.edge)} · ${play}`
 }
@@ -185,7 +185,8 @@ export function winSplit(game) {
   return { awayPct: 100 - homePct, homePct }
 }
 
-export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED, now = new Date()) {
+export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED, now = new Date(), options = {}) {
+  const hideTotalEdge = options.hideTotalEdge === true
   const scores = projectedScores(game)
   return {
     away: game?.awayTeam || '',
@@ -201,12 +202,13 @@ export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED, now = new
     totalBook: formatPoints(game?.total?.line),
     totalOurs: formatPoints(game?.total?.projection),
     totalBookMissing: finite(game?.total?.line) == null,
-    totalTone: probsEnabled ? tileTone(game?.total?.projection, game?.total?.line) : '',
-    footer: footerLine(game, probsEnabled),
+    totalTone: probsEnabled && !hideTotalEdge ? tileTone(game?.total?.projection, game?.total?.line) : '',
+    footer: footerLine(game, probsEnabled, hideTotalEdge),
   }
 }
 
-export function edgeRank(game) {
-  const edges = [game?.spread?.edge, game?.total?.edge].map(absEdge).filter((value) => value != null)
+export function edgeRank(game, options = {}) {
+  const includeTotal = options.includeTotal !== false
+  const edges = [game?.spread?.edge, includeTotal ? game?.total?.edge : null].map(absEdge).filter((value) => value != null)
   return edges.length ? Math.max(...edges) : null
 }

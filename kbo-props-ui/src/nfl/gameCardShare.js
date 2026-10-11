@@ -84,8 +84,8 @@ function drawTile(ctx, x, y, w, h, label, value, tone, book, missing) {
   ctx.fillText(text, x + 28, y + (missing ? 108 : 92))
 }
 
-export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENABLED) {
-  const view = cardView(game, probsEnabled)
+export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENABLED, options = {}) {
+  const view = cardView(game, probsEnabled, new Date(), options)
   const [awayLogo, homeLogo] = await Promise.all([loadLogo(view.away), loadLogo(view.home)])
   const canvas = document.createElement('canvas')
   canvas.width = WIDTH
@@ -203,8 +203,8 @@ export async function renderGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENA
   return canvas
 }
 
-export async function downloadGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENABLED) {
-  const canvas = await renderGameCardPng(game, probsEnabled)
+export async function downloadGameCardPng(game, probsEnabled = GAME_CARD_PROBS_ENABLED, options = {}) {
+  const canvas = await renderGameCardPng(game, probsEnabled, options)
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('Could not export this card')
   const url = URL.createObjectURL(blob)

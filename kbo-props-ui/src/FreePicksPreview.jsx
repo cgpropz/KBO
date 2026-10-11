@@ -4,7 +4,7 @@ import { lineMatchesStat } from './cgScore';
 import { scoreFor } from './kboBoardScore';
 import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
-import { wnbaLoggedValues } from './hitRateStrip';
+import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip';
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import { freeTop3SectionState } from './freePreviewCopy';
@@ -40,7 +40,7 @@ function kboRows(data) {
       stat: prop.stat,
       line: prop.line,
       projection: prop.projection ?? prop.avg,
-      hitRate: prop.hit_rate_l10,
+      l10: l10Display(kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })),
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
       score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line, prop.stat)),
       note: {
@@ -57,14 +57,14 @@ function kboRows(data) {
   return rows;
 }
 
-function nflRows(data) {
+function projectionRows(data, pillsFor) {
   return (Array.isArray(data) ? data : []).map((row) => ({
     player: row.player,
     matchup: [row.team, row.opponent].filter(Boolean).join(' vs '),
     stat: row.prop,
     line: row.line,
     projection: row.projection,
-    hitRate: row.hitRate,
+    l10: l10Display(pillsFor(row)),
     tag: null,
     score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
     note: {
@@ -78,6 +78,14 @@ function nflRows(data) {
   }));
 }
 
+function nflRows(data) {
+  return projectionRows(data, nflHitPills);
+}
+
+function nhlRows(data) {
+  return projectionRows(data, nhlHitPills);
+}
+
 function wnbaRows(data) {
   const rows = [];
   (Array.isArray(data) ? data : []).forEach((player) => (player?.ppAllProps || []).forEach((prop) => {
@@ -88,7 +96,12 @@ function wnbaRows(data) {
       stat: prop.stat,
       line,
       projection: prop.projection,
-      hitRate: null,
+      l10: l10Display(wnbaHitPills({
+        games: player.recentGames,
+        stat: prop.stat,
+        line,
+        opponent: prop.opponent || prop.versus,
+      })),
       tag: null,
       score: wnbaCgScore(prop.projection, prop) ?? -Infinity,
       note: {
@@ -105,11 +118,18 @@ function wnbaRows(data) {
   return rows;
 }
 
+const DEV_STATIC = {
+  prizepicks_props: 'prizepicks_props.json',
+  nfl_projections: 'nfl/projections.json',
+  wnba_projections_standard: 'wnba/projections_standard.json',
+  nhl_projections: 'nhl/projections.json',
+};
+
 const BOARDS = [
   { id: 'kbo', emoji: '⚾', label: 'KBO', ds: 'prizepicks_props', toRows: kboRows },
   { id: 'nfl', emoji: '🏈', label: 'NFL', ds: 'nfl_projections', toRows: nflRows },
   { id: 'wnba', emoji: '🏀', label: 'WNBA', ds: 'wnba_projections_standard', toRows: wnbaRows },
-  { id: 'nhl', emoji: '🏒', label: 'NHL', ds: 'nhl_projections', toRows: nflRows },
+  { id: 'nhl', emoji: '🏒', label: 'NHL', ds: 'nhl_projections', toRows: nhlRows },
 ];
 
 function updatedLabel(iso) {
@@ -130,7 +150,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
   useEffect(() => {
     let active = true;
     BOARDS.forEach((board) => {
-      fetchApiDataset(board.ds)
+      fetchApiDataset(board.ds, { devStaticPath: DEV_STATIC[board.ds] })
         .then((snap) => {
           if (!active) return;
           const rows = board.toRows(snap.data)
@@ -221,7 +241,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                     <div className="ff-pick-stats">
                       <span><b>{fmt(row.projection)}</b> proj</span>
                       {note && <span><b>{note.score}</b> CG Score</span>}
-                      {Number.isFinite(num(row.hitRate)) && <span><b>{fmt(row.hitRate, 0)}%</b> L10</span>}
+                      {row.l10 && <span><b>{row.l10.text}</b> L10{row.l10.games ? ` · ${row.l10.games}` : ''}</span>}
                     </div>
                     {note && <WhyThisScore className="ff-pick-why" note={note} />}
                   </li>

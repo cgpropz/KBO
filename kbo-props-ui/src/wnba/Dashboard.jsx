@@ -6,7 +6,8 @@ import { sportAccess } from '../entitlements'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
-import { wnbaHitPills } from '../hitRateStrip'
+import { pillById, wnbaHitPills } from '../hitRateStrip'
+import { HOT_L10_GAMES, HOT_L10_RATE, buildSlate, hotStreakRows, propsOnBoardCount, sortWnbaRows } from '../wnbaBoard'
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
@@ -120,40 +121,6 @@ function dvpColor(rank) {
     ? mixColor(DVP_RED, DVP_NEUTRAL, (value - 1) / 6.5)
     : mixColor(DVP_NEUTRAL, DVP_GREEN, (value - 7.5) / 7.5)
   return `rgb(${r}, ${g}, ${b})`
-}
-
-function computeRatePct(recentGames, stat, line) {
-  const getter = GAME_STAT_VALUE[stat]
-  const numericLine = Number(line)
-  if (!getter || !Number.isFinite(numericLine)) return null
-  const games = recentGames || []
-  if (!games.length) return null
-  let hits = 0
-  let counted = 0
-  games.forEach(g => {
-    const v = getter(g)
-    if (v == null) return
-    counted += 1
-    if (v > numericLine) hits += 1
-  })
-  if (!counted) return null
-  return { hits, total: counted, pct: (hits / counted) * 100 }
-}
-
-// Head-to-head hit rate against the current opponent, derived from game log matchup strings.
-function computeH2H(recentGames, stat, line, opponent) {
-  if (!opponent) return null
-  const getter = GAME_STAT_VALUE[stat]
-  const numericLine = Number(line)
-  if (!getter || !Number.isFinite(numericLine)) return null
-  const games = (recentGames || []).filter(g => (g.matchup || '').toUpperCase().includes(opponent.toUpperCase()))
-  if (!games.length) return null
-  let hits = 0
-  games.forEach(g => {
-    const v = getter(g)
-    if (v != null && v > numericLine) hits += 1
-  })
-  return { hits, total: games.length, pct: (hits / games.length) * 100 }
 }
 
 function hitColor(pct) {
@@ -503,9 +470,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         const recent = getter
           ? recentGames.slice(0, 10).map(g => getter(g)).filter(v => v != null).reverse()
           : []
-        const l10Obj = computeRatePct(recentGames.slice(0, 10), prop.stat, line)
-        const seasonObj = computeRatePct(recentGames, prop.stat, line)
-        const h2hObj = computeH2H(recentGames, prop.stat, line, prop.opponent ?? null)
+        const hitPills = wnbaHitPills({ games: recentGames, stat: prop.stat, line, opponent: prop.opponent ?? null })
+        const l10 = pillById(hitPills, 'l10')
 
         rows.push({
           id: `${player.name}-${prop.stat}`,
@@ -514,21 +480,19 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           position: player.position,
           imageUrl: player.image || null,
           opponent: prop.opponent ?? null,
+          gameDate: prop.gameDate || null,
           prop: prop.stat,
           line,
           projection,
           score,
           isOver: projection >= line,
           recent,
-          hitRate: l10Obj ? Math.round(l10Obj.pct) : 0,
-          gamesPlayed: l10Obj ? l10Obj.total : 0,
-          seasonHitRate: seasonObj ? Math.round(seasonObj.pct) : null,
-          h2hHitRate: h2hObj ? Math.round(h2hObj.pct) : null,
-          hitPills: wnbaHitPills({ games: recentGames, stat: prop.stat, line, opponent: prop.opponent ?? null }),
+          hitRate: l10 ? l10.rate : 0,
+          gamesPlayed: l10 ? l10.games : 0,
+          hitPills,
           dvpRank: prop.effectiveDvpFactor ?? player.dvpFactor ?? 1,
           // Preserved for the insight panels below.
           _player: player,
-          _hit: l10Obj,
           _edgePct: ((projection - line) / line) * 100,
         })
       })
@@ -562,13 +526,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         return grade && grade[0] === filters.grade
       })
 
-    return filtered.sort((a, b) => {
-      if (filters.sortBy === 'CG Score') return b.score - a.score
-      if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
-      if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
-      if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
-      return b.hitRate - a.hitRate
-    })
+    return sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
   }, [allRows, propTab, filters])
 
   // ── Bonus insight panels (kept from the previous board) ──────────────────
@@ -588,10 +546,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   }
 
   const hotStreaks = useMemo(() => {
-    const filtered = allRows
-      .filter(r => r._hit && r._hit.total >= 5)
-      .sort((a, b) => (b._hit.pct - a._hit.pct) || (b.score - a.score))
-    return dedupePlayers(filtered, insightLimit)
+    return dedupePlayers(hotStreakRows(allRows), insightLimit)
   }, [allRows, insightLimit])
 
   const bestValue = useMemo(() => {
@@ -601,20 +556,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     return dedupePlayers(filtered, insightLimit)
   }, [allRows, insightLimit])
 
-  const slate = useMemo(() => {
-    const seen = new Map()
-    allRows.forEach(r => {
-      const a = (r.team || '').toUpperCase()
-      const b = (r.opponent || '').toUpperCase()
-      if (!a || !b) return
-      const [t1, t2] = [a, b].sort()
-      const key = `${t1}_${t2}`
-      const entry = seen.get(key) || { key, label: `${t1} vs ${t2}`, count: 0 }
-      entry.count += 1
-      seen.set(key, entry)
-    })
-    return [...seen.values()].sort((a, b) => b.count - a.count).slice(0, 8)
-  }, [allRows])
+  const slate = useMemo(() => buildSlate(allRows), [allRows])
 
   const avgTopScore = useMemo(() => {
     if (!allRows.length) return null
@@ -730,7 +672,12 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       <div className="wnba-kpi-grid">
         <KpiCard label="Active Players" value={totalPlayers} sub="2025–2026 roster" color="#FF6900" />
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="combined 2025+2026" color="#3b82f6" />
-        <KpiCard label="Props on Board" value={projLoading ? '…' : allRows.length.toLocaleString()} sub="scored & rated" color="#a855f7" />
+        <KpiCard
+          label="Props on Board"
+          value={projLoading ? '…' : propsOnBoardCount(allRows.length, isPaid ? 0 : lockedCount).toLocaleString()}
+          sub={!projLoading && !isPaid && lockedCount > 0 ? `${allRows.length} shown, ${lockedCount} locked` : 'scored & rated'}
+          color="#a855f7"
+        />
         <KpiCard label="Avg Top Score" value={avgTopScore != null ? avgTopScore.toFixed(1) : '…'} sub="top 10 plays" color="#22c55e" />
       </div>
 
@@ -741,15 +688,18 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             ? Array(insightLimit).fill(0).map((_, i) => <div key={i} style={{ height: 44, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
             : hotStreaks.length
               ? <>
-                  {hotStreaks.map((r, i) => (
-                    <MiniRow
-                      key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
-                      primary={`${r._hit.pct.toFixed(0)}%`} primaryColor={hitColor(r._hit.pct)}
-                      sub={`${r._hit.hits}/${r._hit.total} · line ${r.line}`}
-                      onClick={() => goPlayer(r.player)}
-                      last={i === hotStreaks.length - 1 && (isPaid || hotStreaks.length < FREE_ROW_LIMIT)}
-                    />
-                  ))}
+                  {hotStreaks.map((r, i) => {
+                    const l10 = pillById(r.hitPills, 'l10')
+                    return (
+                      <MiniRow
+                        key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
+                        primary={`${Math.round(l10.rate)}%`} primaryColor={hitColor(l10.rate)}
+                        sub={`${l10.games} gm · line ${r.line}`}
+                        onClick={() => goPlayer(r.player)}
+                        last={i === hotStreaks.length - 1 && (isPaid || hotStreaks.length < FREE_ROW_LIMIT)}
+                      />
+                    )
+                  })}
                   {!isPaid && hotStreaks.length >= FREE_ROW_LIMIT && (
                     <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
                       Free members see the top {FREE_ROW_LIMIT}.{' '}
@@ -758,7 +708,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                     </p>
                   )}
                 </>
-              : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>Not enough game history yet.</p>}
+              : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>No L10 streak at {HOT_L10_RATE}%+ over at least {HOT_L10_GAMES} games.</p>}
         </InsightPanel>
 
         <InsightPanel title="Best Value Edges" kicker="proj vs line" accent="#FF6900">
@@ -786,17 +736,17 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
               : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>No value edges available.</p>}
         </InsightPanel>
 
-        <InsightPanel title="Today's Slate" kicker={`${slate.length} matchups`} accent="#3b82f6">
+        <InsightPanel title={slate.title} kicker={slate.kicker} accent="#3b82f6">
           {projLoading
             ? Array(5).fill(0).map((_, i) => <div key={i} style={{ height: 36, background: '#0e1623', borderRadius: 8, marginBottom: 6 }} />)
-            : slate.length
-              ? slate.map((m, i) => (
+            : slate.matchups.length
+              ? slate.matchups.map((m, i) => (
                   <div
                     key={m.key}
                     onClick={goProjections}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-                      padding: '9px 0', borderBottom: i === slate.length - 1 ? 'none' : '1px solid #161616',
+                      padding: '9px 0', borderBottom: i === slate.matchups.length - 1 ? 'none' : '1px solid #161616',
                     }}
                   >
                     <span style={{ width: 16, fontSize: 11, fontWeight: 800, color: '#4b5563', textAlign: 'center' }}>{i + 1}</span>
