@@ -23,6 +23,9 @@ SKATER_FIELDS = (
     "gameDate", "position", "situation", "icetime",
     "I_F_shotsOnGoal", "I_F_goals", "I_F_primaryAssists", "I_F_secondaryAssists",
     "I_F_points", "I_F_xGoals",
+    # Profile-only columns. A file that omits one leaves that stat blank.
+    "I_F_shotAttempts", "I_F_missedShots", "I_F_blockedShotAttempts",
+    "I_F_hits", "shotsBlockedByPlayer",
 )
 GOALIE_FIELDS = (
     "playerId", "name", "gameId", "playerTeam", "opposingTeam", "home_or_away",
@@ -35,6 +38,19 @@ def _num(value) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _optional(row: dict, key: str):
+    """None when the column is absent or blank. A real zero stays zero."""
+    if key not in row:
+        return None
+    value = row.get(key)
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _blank_skater(row: dict, season: str) -> dict:
@@ -56,6 +72,13 @@ def _blank_skater(row: dict, season: str) -> dict:
         "sog": 0.0,
         "points": 0.0,
         "xg": 0.0,
+        "toi": None,
+        "goals": None,
+        "attempts": None,
+        "missed": None,
+        "blocked_attempts": None,
+        "hits": None,
+        "blocks": None,
         "has_all": False,
     }
 
@@ -66,6 +89,15 @@ def _apply_skater(game: dict, row: dict) -> None:
         game["sog"] = _num(row.get("I_F_shotsOnGoal"))
         game["points"] = _num(row.get("I_F_points"))
         game["xg"] = _num(row.get("I_F_xGoals"))
+        # All-situations ice and the counting stats. Read only from "all" so
+        # 5-on-5 and power-play rows are not added on top.
+        game["toi"] = _optional(row, "icetime")
+        game["goals"] = _optional(row, "I_F_goals")
+        game["attempts"] = _optional(row, "I_F_shotAttempts")
+        game["missed"] = _optional(row, "I_F_missedShots")
+        game["blocked_attempts"] = _optional(row, "I_F_blockedShotAttempts")
+        game["hits"] = _optional(row, "I_F_hits")
+        game["blocks"] = _optional(row, "shotsBlockedByPlayer")
         game["has_all"] = True
         return
     if situation in EV_SITUATIONS:

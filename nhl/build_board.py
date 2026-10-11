@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from nhl.history import load_goalies, load_skaters, team_shot_games
+from nhl.profile import profile_splits, usage_role
 from nhl.model import (
     LAUNCH_PROPS,
     PROP_PPP,
@@ -467,6 +468,17 @@ def _ranks(rates: dict[str, dict]) -> dict[str, dict[str, int]]:
     return {"sog": rank("sa60"), "points": rank("xga60"), "saves": rank("sf_per_game")}
 
 
+def _usage(name: str, lineup: dict | None) -> dict:
+    if not lineup:
+        return {"line": None, "ppUnit": None, "source": None}
+    key = _name_key(name)
+    matches = [
+        row for row in lineup.get("players") or []
+        if _name_key(row.get("name")) == key
+    ]
+    return usage_role(matches, lineup.get("source"))
+
+
 def _pp_role(name: str, lineup: dict | None) -> str | None:
     if not lineup:
         return None
@@ -788,10 +800,12 @@ def build(root: Path, out_dir: Path) -> int:
                     eligible = True
                 chart = _chart(history, _stat_key(card["prop"]), card["line"], opponent)
                 dvp = _dvp(card["prop"], opponent, ranks)
+                is_goalie = card["prop"] == PROP_SAVES
                 projections.append({
                     **chart,
                     "id": card["id"],
                     "player": card["player"],
+                    "playerId": str(history[-1]["player_id"]) if history else None,
                     "team": card["team"],
                     "opponent": opponent,
                     "home": home,
@@ -811,6 +825,8 @@ def build(root: Path, out_dir: Path) -> int:
                     "awayTeam": game["away"],
                     "homeTeam": game["home"],
                     "ppRole": role,
+                    "usage": None if is_goalie else _usage(card["player"], lines.get(card["team"])),
+                    "profile": profile_splits(history, CURRENT_SEASON, "G" if is_goalie else "S"),
                 })
             projections.sort(key=lambda row: (row["rankEligible"] is False, -(row["score"] or 0), row["player"], row["prop"]))
 
