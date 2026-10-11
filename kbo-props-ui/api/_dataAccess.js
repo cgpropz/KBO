@@ -1,4 +1,5 @@
 import { lineMatchesStat } from '../src/cgScore.js';
+import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
@@ -145,9 +146,11 @@ function wnbaPropScore(player, prop) {
   return ratioScore(projection, line, prop?.stat);
 }
 
-// NFL Prop Lines: score = projection / line × 50
+// NFL Prop Lines: projection / max(line, per-stat floor) × 50.
+// A yardage line at or below 0.5 still does not score.
 function nflScore(row) {
-  return ratioScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  return score == null ? -Infinity : score;
 }
 
 // Unconfirmed goalies stay off the free top 3.

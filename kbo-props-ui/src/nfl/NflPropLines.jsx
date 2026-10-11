@@ -7,7 +7,8 @@ import { sportAccess } from '../entitlements'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
-import { cgScore, lineMatchesStat } from '../cgScore'
+import { lineMatchesStat } from '../cgScore'
+import { nflCgScore } from './nflLineFloors'
 
 const FREE_ROW_LIMIT = 3
 
@@ -281,7 +282,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         gamesPlayed: byId.l10?.games ?? 0,
         seasonHitRate: byId.season?.rate ?? null,
         h2hHitRate: byId.h2h?.rate ?? null,
-        score: cgScore(item.projection, item.line, item.prop) ?? 0,
+        score: nflCgScore(item.projection, item.line, item.prop) ?? 0,
         isOver: item.projection >= item.line,
       }
     })

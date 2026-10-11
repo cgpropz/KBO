@@ -4,7 +4,8 @@ import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
-import { cgScore, lineMatchesStat } from '../cgScore'
+import { lineMatchesStat } from '../cgScore'
+import { nflCgScore } from './nflLineFloors'
 import { gameMatchesTeammates, hitRateForValues, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
@@ -127,7 +128,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   const playerRows = useMemo(() => sortProps(projections
     .filter((item) => item.player === player && lineMatchesStat(item.prop, item.line))
-    .map((item) => ({ ...item, score: cgScore(item.projection, item.line, item.prop) ?? 0 }))), [projections, player])
+    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0 }))), [projections, player])
 
   const currentRow = useMemo(() => playerRows.find((item) => item.prop === selectedProp) || playerRows[0], [playerRows, selectedProp])
   const oddsRows = useMemo(
