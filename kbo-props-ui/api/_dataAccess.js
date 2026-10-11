@@ -343,6 +343,15 @@ function previewGradedHistory(payload) {
   };
 }
 
+function previewCorrelations(payload) {
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  const pairs = Array.isArray(obj.pairs) ? obj.pairs : [];
+  return {
+    data: { ...obj, pairs: [] },
+    lockedCount: pairs.length,
+  };
+}
+
 const FULL = 'full';
 
 // ds → { table, sport, free }. `free` is either FULL (dataset only contains
@@ -355,6 +364,7 @@ export const DATASETS = {
   matchup_data: { table: 'matchup_data', sport: 'kbo', free: previewMatchups },
   pitcher_rankings: { table: 'pitcher_rankings', sport: 'kbo', free: FULL },
   graded_props_history: { table: 'graded_props_history', sport: 'kbo', free: previewGradedHistory },
+  correlations_kbo: { table: 'correlations_kbo', sport: 'kbo', free: previewCorrelations },
   // WNBA
   wnba_projections_standard: { table: 'wnba_projections_standard', sport: 'wnba', free: previewWnbaProjections },
   wnba_projections_demon: { table: 'wnba_projections_demon', sport: 'wnba', free: previewWnbaProjections },
@@ -365,6 +375,7 @@ export const DATASETS = {
   wnba_dvp_forward: { table: 'wnba_dvp_forward', sport: 'wnba', free: FULL },
   wnba_dvp_center: { table: 'wnba_dvp_center', sport: 'wnba', free: FULL },
   wnba_sharp_odds: { table: 'wnba_sharp_odds', sport: 'wnba', free: previewObjectList('records', wnbaSharpScore) },
+  correlations_wnba: { table: 'correlations_wnba', sport: 'wnba', free: previewCorrelations },
   // NFL
   nfl_projections: {
     table: 'nfl_projections',
@@ -377,6 +388,7 @@ export const DATASETS = {
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },
+  correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
   // NBA. The /api/data gate still denies these unless the caller is full access.
   // The free builder is only the preview path after nba_public is on.
   nba_players: { table: 'nba_players', sport: 'nba', free: previewList(() => 0) },
@@ -389,6 +401,7 @@ export const DATASETS = {
   nba_projections_standard: { table: 'nba_projections_standard', sport: 'nba', free: previewWnbaProjections },
   nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewWnbaProjections },
   nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewWnbaProjections },
+  nba_correlations: { table: 'nba_correlations', sport: 'nba', free: previewCorrelations },
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
@@ -396,6 +409,7 @@ export const DATASETS = {
   nhl_dvp_f: { table: 'nhl_dvp_f', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_d: { table: 'nhl_dvp_d', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
+  nhl_correlations: { table: 'nhl_correlations', sport: 'nhl', free: previewCorrelations },
 };
 
 function countList(payload, key) {

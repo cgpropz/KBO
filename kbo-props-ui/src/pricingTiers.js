@@ -8,6 +8,7 @@
  * its Payment Link. None of these plans include a free trial.
  */
 import { YEARLY_PAYMENT_LINK } from './foundersOffer.js';
+import { freeTierPreviewFeature } from './freePreviewCopy.js';
 
 export const STRIPE_LINKS = {
   weekly:   'https://buy.stripe.com/00wcN7gkD7Ui8ng6z65Ne08', // Weekly All-Access   $9.99  / wk
@@ -98,7 +99,7 @@ export const TIERS = [
     description: 'Preview CGPropz before you commit',
     features: [
       'Today\'s KBO & WNBA schedules',
-      'Top 3 projections — KBO, WNBA, NFL & NHL',
+      freeTierPreviewFeature(),
       'Landing page overview',
     ],
     limited: [

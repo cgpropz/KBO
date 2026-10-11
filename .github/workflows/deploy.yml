@@ -103,8 +103,24 @@ jobs:
       # pre-merge slate, so the live board had the tab and no rows. Rebuild and
       # publish here, in the step that has the service role key. The Vercel
       # step below still must not regenerate snapshots.
+      - name: Build KBO prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport kbo
+
+      - name: Publish KBO prop correlations
+        continue-on-error: true
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: correlations_kbo.json
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Build current NFL projections and starting lineups
         run: python nfl/build_projection_data.py
+
+      - name: Build NFL prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport nfl
 
       - name: Match NFL PrizePicks lines to Unabated sportsbook odds
         continue-on-error: true

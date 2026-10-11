@@ -13,6 +13,11 @@ export const PAID_DATA_FILES = [
   'pitcher_rankings.json',
   'pitcher_rankings_meta.json',
   'graded_props_history.json',
+  'correlations_kbo.json',
+  'correlations_wnba.json',
+  'correlations_nfl.json',
+  'correlations_nba.json',
+  'correlations_nhl.json',
 ]
 
 // Whole directories under public/data that are paid.

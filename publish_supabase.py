@@ -38,6 +38,10 @@ OPTIONAL_TABLES = {
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
     "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
+    # Correlation tables are created by sql/correlations.sql. A missing table
+    # or a missing file must not fail the rest of the publish.
+    "correlations_kbo", "correlations_wnba", "correlations_nfl",
+    "nba_correlations", "nhl_correlations",
 }
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
@@ -295,6 +299,28 @@ TABLES = {
     "nhl/dvp_f.json": "nhl_dvp_f",
     "nhl/dvp_d.json": "nhl_dvp_d",
     "nhl/dvp_g.json": "nhl_dvp_g",
+    # Paid slip-builder pairs. Files live in public/data, not the sport folder,
+    # so a sport prefix has to pull its file in explicitly.
+    "correlations_kbo.json": "correlations_kbo",
+    "correlations_wnba.json": "correlations_wnba",
+    "correlations_nfl.json": "correlations_nfl",
+    "correlations_nba.json": "nba_correlations",
+    "correlations_nhl.json": "nhl_correlations",
+}
+
+# NBA and NHL correlation files stay out of a full publish, same as the
+# rest of those sports. A sport prefix still includes its own file.
+CORRELATION_GATES = {
+    "correlations_nba.json": "nba/",
+    "correlations_nhl.json": "nhl/",
+}
+
+CORRELATION_FOR_SPORT = {
+    "kbo": "correlations_kbo.json",
+    "wnba": "correlations_wnba.json",
+    "nfl": "correlations_nfl.json",
+    "nba": "correlations_nba.json",
+    "nhl": "correlations_nhl.json",
 }
 
 # Lines-only boards. A missing file or a zero-line file must not replace a
@@ -322,10 +348,23 @@ def should_publish_nba_lines(data) -> bool:
     return nba_line_count(data) > 0
 
 
+def correlation_file_for_prefix(only_prefix: str) -> str | None:
+    """The correlations file a sport refresh should publish with its board."""
+    if not only_prefix:
+        return None
+    for sport, filename in CORRELATION_FOR_SPORT.items():
+        if only_prefix.startswith(f"{sport}/") or only_prefix.startswith(f"correlations_{sport}"):
+            return filename
+    return None
+
+
 def tables_for_prefix(only_prefix: str) -> dict:
     """Snapshot files to publish. nba/ is included only for an nba/ prefix."""
     selected = {}
     for filename, table in TABLES.items():
+        gate = CORRELATION_GATES.get(filename)
+        if gate and not only_prefix.startswith(gate):
+            continue
         if filename.startswith("nba/") and not only_prefix.startswith("nba/"):
             continue
         if filename.startswith("nhl/") and not only_prefix.startswith("nhl/"):
@@ -333,6 +372,9 @@ def tables_for_prefix(only_prefix: str) -> dict:
         if only_prefix and not filename.startswith(only_prefix):
             continue
         selected[filename] = table
+    extra = correlation_file_for_prefix(only_prefix)
+    if extra and extra in TABLES:
+        selected[extra] = TABLES[extra]
     return selected
 
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { devTierOverride } from './entitlements';
+import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
 import { supabase } from './supabaseClient';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
@@ -22,7 +22,7 @@ function readDevPreview() {
   const tier = devTierOverride(import.meta.env.DEV, window.location.search);
   if (!tier) return null;
   return {
-    user: { id: 'dev-tier-preview', email: `${tier}@preview.local` },
+    user: { id: 'dev-tier-preview', email: tier === 'owner' ? NBA_OWNER_EMAIL : `${tier}@preview.local` },
     tier,
   };
 }

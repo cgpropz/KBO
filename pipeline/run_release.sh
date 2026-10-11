@@ -209,6 +209,9 @@ PYEOF
   # Keep matchup markets/weather fresh for quick-release runs.
   "$PYTHON" "$BASE/generate_matchups.py" || { echo "⚠ generate_matchups.py failed in quick mode"; QUICK_RC=1; }
 
+  # Correlations use the lines this step just wrote. A failure stays non-fatal.
+  "$PYTHON" "$BASE/pipeline/build_correlations.py" --sport kbo || echo "⚠ KBO correlations failed (non-fatal)"
+
   # Step F: Push fresh snapshots only when every quick-mode step succeeded.
   # A partial regen must not replace the live cohort.
   if [[ "$QUICK_RC" -eq 0 && "$SUPABASE_READY" -eq 1 ]]; then

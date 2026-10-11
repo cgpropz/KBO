@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
+import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
@@ -54,7 +55,7 @@ const TOOLS = [
 const FAQS = [
   {
     q: 'What\'s included in the free tier?',
-    a: 'You get the landing page, today\'s KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA, NFL, and NHL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport.',
+    a: freeTierFaqAnswer(),
   },
   {
     q: 'Does one subscription cover every sport?',

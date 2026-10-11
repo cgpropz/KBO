@@ -117,6 +117,10 @@ jobs:
             kill "$BACKEND_PID" 2>/dev/null || true
           fi
 
+      - name: Build WNBA prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport wnba
+
       - name: Publish WNBA snapshots to Supabase
         run: python publish_supabase.py
         env:

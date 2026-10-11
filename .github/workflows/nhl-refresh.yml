@@ -66,6 +66,10 @@ jobs:
         continue-on-error: true
         run: python -m nhl.build_dvp --root /tmp/moneypuck
 
+      - name: Build NHL prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport nhl --root /tmp/moneypuck
+
       - name: Publish protected NHL snapshot
         run: python publish_supabase.py
         env:
