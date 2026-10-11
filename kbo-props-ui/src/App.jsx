@@ -1,8 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
-import AuthPage from './AuthPage'
 import PublicLanding from './PublicLanding'
-import CgpropzLanding from './CgpropzLanding'
 import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
@@ -11,19 +9,38 @@ import { sportFromSearch } from './appSport'
 import './FreeFunnel.css'
 import './App.css'
 
-const KboApp = lazy(() => import('./KboApp'))
-const WnbaApp = lazy(() => import('./wnba/WnbaApp'))
-const NflApp = lazy(() => import('./nfl/NflApp'))
-const NbaApp = lazy(() => import('./nba/NbaApp'))
-const NhlApp = lazy(() => import('./nhl/NhlApp'))
+const AuthPage = lazy(() => import('./AuthPage'))
+const CgpropzLanding = lazy(() => import('./CgpropzLanding'))
+
+const sportImporters = {
+  kbo: () => import('./KboApp'),
+  wnba: () => import('./wnba/WnbaApp'),
+  nfl: () => import('./nfl/NflApp'),
+  nba: () => import('./nba/NbaApp'),
+  nhl: () => import('./nhl/NhlApp'),
+}
+const sportLoads = new Map()
+function loadSport(id) {
+  if (!sportLoads.has(id)) sportLoads.set(id, sportImporters[id]())
+  return sportLoads.get(id)
+}
+if (typeof window !== 'undefined') {
+  const linked = sportFromSearch(window.location.search)
+  if (linked) loadSport(linked)
+}
+
+const KboApp = lazy(() => loadSport('kbo'))
+const WnbaApp = lazy(() => loadSport('wnba'))
+const NflApp = lazy(() => loadSport('nfl'))
+const NbaApp = lazy(() => loadSport('nba'))
+const NhlApp = lazy(() => loadSport('nhl'))
 
 const SPORT_STORAGE_KEY = 'cg_sport';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
-  const [showUI, setShowUI] = useState(false);
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
@@ -49,10 +66,6 @@ function App() {
   };
 
   useEffect(() => {
-    setTimeout(() => setShowUI(true), 100);
-  }, []);
-
-  useEffect(() => {
     if (!previewNode) {
       document.documentElement.style.removeProperty('--ff-preview-offset');
       return undefined;
@@ -71,15 +84,6 @@ function App() {
       document.documentElement.style.removeProperty('--ff-preview-offset');
     };
   }, [previewNode]);
-
-  if (loading || !showUI) {
-    return (
-      <>
-        <RouteFallback />
-        <SiteFooter />
-      </>
-    );
-  }
 
   // Stored cg_sport=nba stays put until the access check finishes, so a later
   // public flag does not wipe All-Access. Until then the NBA shell is not
@@ -109,7 +113,9 @@ function App() {
   if (!user && publicView === 'auth') {
     return (
       <>
-        <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />
+        <Suspense fallback={<RouteFallback />}>
+          <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />
+        </Suspense>
         <SiteFooter />
         {checkoutSuccess}
       </>
@@ -121,10 +127,12 @@ function App() {
     return (
       <>
         {user ? (
-          <CgpropzLanding
-            onEnterSport={(s) => { setSport(s); setView('home'); }}
-            onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
-          />
+          <Suspense fallback={<RouteFallback />}>
+            <CgpropzLanding
+              onEnterSport={(s) => { setSport(s); setView('home'); }}
+              onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
+            />
+          </Suspense>
         ) : (
           <PublicLanding
             onGetStarted={openSignUp}

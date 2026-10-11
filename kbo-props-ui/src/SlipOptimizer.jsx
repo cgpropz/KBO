@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import './SlipOptimizer.css';
 import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 
@@ -50,11 +50,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const gameDate = useMemo(() => sportDate(config.timeZone), [config.timeZone]);
 
   // ── Supabase-backed slip persistence ──
-  const getAuthToken = useCallback(async () => {
-    if (!supabase) return null;
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
-  }, []);
+  const getAuthToken = useCallback(async () => sessionAccessToken(), []);
 
   const loadSavedSlips = useCallback(async () => {
     const token = await getAuthToken();

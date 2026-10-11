@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from './supabaseClient';
+import { loadSupabase } from './supabaseClient';
 import { getAttribution } from './tracking';
 import './AuthPage.css';
 
@@ -17,6 +17,7 @@ export default function AuthPage({ initialMode = 'login', onBack } = {}) {
     setMessage('');
     setLoading(true);
 
+    const supabase = await loadSupabase();
     if (!supabase) {
       setError('Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.');
       setLoading(false);

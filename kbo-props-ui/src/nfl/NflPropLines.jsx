@@ -12,6 +12,7 @@ import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
+import { BoardSkeleton } from '../BootScreen.jsx'
 
 const FREE_ROW_LIMIT = 3
 
@@ -374,7 +375,11 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         </div>
       </div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading NFL prop lines.</div>}
+      {!error && !loaded && (
+        <div role="status" aria-label="Loading NFL prop lines">
+          <BoardSkeleton />
+        </div>
+      )}
       {!error && loaded && !projections.length && !isPaid && lockedCount > 0 && (
         <div className="nfl-lines-lock-card">
           <div className="nfl-lines-lock-icon">🔒</div>

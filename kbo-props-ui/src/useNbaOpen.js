@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useAuth } from './AuthContext';
 import { canSeeNba } from './entitlements';
-import { supabase } from './supabaseClient';
+import { cachedAccessToken, sessionAccessToken } from './supabaseClient';
 
 // One in-flight check shared by the hub, the public landing, and the switcher.
 // The owner email is full immediately. Logged-out visitors are never full, so
@@ -27,11 +27,8 @@ function getSnapshot() {
 
 async function resolveRemote(key, id) {
   try {
-    let token = null;
-    if (supabase) {
-      const { data } = await supabase.auth.getSession();
-      token = data?.session?.access_token || null;
-    }
+    let token = cachedAccessToken();
+    if (!token) token = await sessionAccessToken();
     const res = await fetch('/api/nba-access', {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : {},

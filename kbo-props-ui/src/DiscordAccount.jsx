@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { sessionAccessToken } from './supabaseClient';
 import './Discord.css';
 
 const EMPTY = { userId: null, username: null, discordOnly: false };
@@ -32,8 +32,7 @@ export default function DiscordAccount({ compact = false }) {
   if (!user) return null;
 
   async function authHeader() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await sessionAccessToken();
     if (!token) return null;
     return { Authorization: `Bearer ${token}` };
   }

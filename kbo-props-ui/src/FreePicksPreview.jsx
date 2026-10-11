@@ -9,6 +9,7 @@ import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import { freeTop3SectionState } from './freePreviewCopy';
 import './FreeFunnel.css';
+import './bootScreen.css';
 
 /*
  * Landing-page "today's free picks" card for logged-out visitors.
@@ -213,8 +214,18 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
 
       <div className="ff-picks-card">
         {!activeBoard ? (
-          <div className="ff-picks-loading" aria-live="polite">
-            {[0, 1, 2].map((i) => <div key={i} className="ff-skeleton" />)}
+          <div className="ff-picks-loading" aria-live="polite" aria-busy="true">
+            <span className="cg-sr">Loading today’s free picks</span>
+            {[0, 1, 2].map((i) => (
+              <div className="cg-pick" key={i} aria-hidden="true">
+                <span className="cg-rank cg-shimmer" />
+                <span className="cg-lines">
+                  <i className="cg-shimmer" />
+                  <i className="cg-shimmer" />
+                </span>
+                <span className="cg-stat cg-shimmer" />
+              </div>
+            ))}
           </div>
         ) : (
           <>

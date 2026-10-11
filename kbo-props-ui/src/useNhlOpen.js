@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useAuth } from './AuthContext';
 import { nhlDevBypass } from './entitlements';
-import { supabase } from './supabaseClient';
+import { cachedAccessToken, sessionAccessToken } from './supabaseClient';
 
 // The browser does not decide full access. Every signed-in account asks
 // /api/nhl-access, which uses the same All-Access entitlement as KBO, WNBA,
@@ -35,11 +35,8 @@ function devOpen() {
 
 async function resolveRemote(key, id) {
   try {
-    let token = null;
-    if (supabase) {
-      const { data } = await supabase.auth.getSession();
-      token = data?.session?.access_token || null;
-    }
+    let token = cachedAccessToken();
+    if (!token) token = await sessionAccessToken();
     const res = await fetch('/api/nhl-access', {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
