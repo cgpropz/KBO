@@ -17,6 +17,7 @@ board is the expected count. The probability is for grading calibration.
 from __future__ import annotations
 
 import math
+import re
 from typing import Iterable, Sequence
 
 PROP_SOG = "Shots On Goal"
@@ -75,20 +76,26 @@ def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 
-def rank_score(projection: float | None, line: float | None, rank_eligible: bool = True) -> float:
+def rank_score(projection: float | None, line: float | None, rank_eligible: bool = True, stat: str | None = None) -> float:
     """Board sort key. Unconfirmed goalies stay off the top of every list."""
     if rank_eligible is False:
         return float("-inf")
-    score = cg_score(projection, line)
+    score = cg_score(projection, line, stat)
     return float("-inf") if score is None else float(score)
 
 
-def cg_score(projection: float | None, line: float | None) -> float | None:
-    """Same board score as the NFL and NBA tabs: (projection / line) * 50."""
+def cg_score(projection: float | None, line: float | None, stat: str | None = None) -> float | None:
+    """Same board score as the NFL and NBA tabs: (projection / line) * 50.
+
+    A yardage stat at 0.5 or below is not scored. That line is an any-yards
+    floor, and the ratio is not an edge.
+    """
     try:
         projection_f = float(projection)
         line_f = float(line)
     except (TypeError, ValueError):
+        return None
+    if stat and re.search(r"\byards?\b|\byds?\b", str(stat), re.IGNORECASE) and line_f <= 0.5:
         return None
     if line_f <= 0 or not math.isfinite(projection_f):
         return None

@@ -1,3 +1,5 @@
+import { lineMatchesStat } from '../src/cgScore.js';
+
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
 // Imported by api/data.js. Kept free of Supabase/network code so the free-vs-
@@ -110,7 +112,8 @@ function num(value) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-function ratioScore(projection, line) {
+function ratioScore(projection, line, stat) {
+  if (!lineMatchesStat(stat, line)) return -Infinity;
   const p = num(projection);
   const l = num(line);
   return Number.isFinite(p) && l > 0 ? (p / l) * 50 : -Infinity;
@@ -118,13 +121,17 @@ function ratioScore(projection, line) {
 
 // KboPropBoard.scoreFor
 function kboPropScore(prop) {
+  const stat = prop?.stat;
+  if (!lineMatchesStat(stat, prop?.line)) return -Infinity;
   const score = num(prop?.cg_projection ?? prop?.rating);
   if (Number.isFinite(score)) return score;
-  return ratioScore(prop?.avg ?? prop?.projection, prop?.line);
+  return ratioScore(prop?.avg ?? prop?.projection, prop?.line, stat);
 }
 
 // StrikeoutProjections / BatterProjections rows
 function kboProjectionScore(row) {
+  const stat = row?.prop ?? row?.stat;
+  if (!lineMatchesStat(stat, row?.line)) return -Infinity;
   const score = num(row?.cg_projection ?? row?.rating);
   if (Number.isFinite(score)) return score;
   const edge = num(row?.edge);
@@ -135,18 +142,18 @@ function kboProjectionScore(row) {
 function wnbaPropScore(player, prop) {
   const line = prop?.standardLine ?? prop?.line;
   const projection = prop?.projection ?? player?.propProjectionByStat?.[prop?.stat];
-  return ratioScore(projection, line);
+  return ratioScore(projection, line, prop?.stat);
 }
 
 // NFL Prop Lines: score = projection / line × 50
 function nflScore(row) {
-  return ratioScore(row?.projection, row?.line);
+  return ratioScore(row?.projection, row?.line, row?.prop ?? row?.stat);
 }
 
 // Unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
   if (row?.rankEligible === false) return -Infinity;
-  return ratioScore(row?.projection, row?.line);
+  return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
 }
 
 function nhlSharpScore(row) {
@@ -181,6 +188,7 @@ function wnbaSharpScore(row) {
 function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
   return items
     .map((item, index) => ({ item, index, score: scoreFn(item) }))
+    .filter((row) => Number.isFinite(row.score))
     .sort((a, b) => (b.score - a.score) || (a.index - b.index))
     .slice(0, n);
 }
@@ -189,9 +197,9 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
 // Every builder keeps the original payload shape so the existing UI code can
 // render the preview without special cases.
 
-function previewList(scoreFn) {
+function previewList(scoreFn, keep) {
   return (payload) => {
-    const rows = Array.isArray(payload) ? payload : [];
+    const rows = (Array.isArray(payload) ? payload : []).filter((row) => (keep ? keep(row) : true));
     const kept = topN(rows, scoreFn).map(({ item }) => item);
     return { data: kept, lockedCount: Math.max(0, rows.length - kept.length) };
   };
@@ -332,7 +340,11 @@ export const DATASETS = {
   wnba_dvp_center: { table: 'wnba_dvp_center', sport: 'wnba', free: FULL },
   wnba_sharp_odds: { table: 'wnba_sharp_odds', sport: 'wnba', free: previewObjectList('records', wnbaSharpScore) },
   // NFL
-  nfl_projections: { table: 'nfl_projections', sport: 'nfl', free: previewList(nflScore) },
+  nfl_projections: {
+    table: 'nfl_projections',
+    sport: 'nfl',
+    free: previewList(nflScore, (row) => lineMatchesStat(row?.prop ?? row?.stat, row?.line)),
+  },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },

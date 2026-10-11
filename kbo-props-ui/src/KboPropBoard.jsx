@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import { sportAccess } from './entitlements'
 import HitRateStrip from './HitRateStrip'
 import { kboHitPills } from './hitRateStrip'
+import { cgScore, lineMatchesStat } from './cgScore'
 import './KboPropBoard.css'
 
 const FREE_ROW_LIMIT = 3
@@ -37,11 +38,10 @@ function directionFor(prop) {
 }
 
 function scoreFor(prop) {
+  if (!lineMatchesStat(prop.stat, prop.line)) return null
   const score = Number(prop.cg_projection ?? prop.rating)
   if (Number.isFinite(score)) return score
-  const projection = Number(prop.avg ?? prop.projection)
-  const line = Number(prop.line)
-  return Number.isFinite(projection) && line > 0 ? (projection / line) * 50 : 0
+  return cgScore(prop.avg ?? prop.projection, prop.line, prop.stat)
 }
 
 function FilterIcon() {

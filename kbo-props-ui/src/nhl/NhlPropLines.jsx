@@ -5,6 +5,7 @@ import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { teamLogoUrl } from './nhlTeams'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
+import { cgScore, lineMatchesStat } from '../cgScore'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -48,9 +49,7 @@ function MiniChart({ recent, line }) {
 }
 
 function rowScore(item) {
-  const line = Number(item.line)
-  const projection = Number(item.projection)
-  return line > 0 && Number.isFinite(projection) ? (projection / line) * 50 : 0
+  return cgScore(item.projection, item.line, item.prop ?? item.stat)
 }
 
 export function sortBoard(rows, sortBy) {
@@ -58,7 +57,7 @@ export function sortBoard(rows, sortBy) {
     const ae = a.rankEligible === false ? 1 : 0
     const be = b.rankEligible === false ? 1 : 0
     if (ae !== be) return ae - be
-    if (sortBy === 'CG Score') return rowScore(b) - rowScore(a)
+    if (sortBy === 'CG Score') return (rowScore(b) ?? -Infinity) - (rowScore(a) ?? -Infinity)
     if (sortBy === 'Season') return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
     if (sortBy === 'H2H') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
     if (sortBy === 'DVP') return (a.dvpRank ?? 99) - (b.dvpRank ?? 99)
@@ -92,7 +91,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
         </div>
       </td>
       <td className="hit-rate-chart"><MiniChart recent={recent} line={Number(item.line)} /></td>
-      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{score.toFixed(1)}</td>
+      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{score == null ? '—' : score.toFixed(1)}</td>
       <td className="hit-rate-col"><HitRateStrip pills={nhlHitPills(item)} /></td>
       <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
       <td>
@@ -139,7 +138,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   }, [])
 
   const rows = useMemo(() => {
-    const filtered = projections.filter((item) => tab === 'All Props' || item.prop === tab)
+    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
     return sortBoard(filtered, sortBy)
   }, [projections, tab, sortBy])
 

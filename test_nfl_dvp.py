@@ -133,6 +133,40 @@ class DvpRankTests(unittest.TestCase):
             ('Tyson Bagent', 'Pass TDs', 1.5, 'NYJ'),
         })
 
+    def test_yardage_floor_is_dropped_and_not_replaced_by_a_demon(self):
+        # PrizePicks labels the 0.5 any-yards card odds_type=standard on the
+        # yardage stat itself. The demon ladder is an alt, not the line.
+        # A real standard (Higgins 64.5) wins even when the 0.5 card is more
+        # trending. Receptions at 0.5 and a 1.5 rush line still match.
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {'name': 'Tanner Hudson', 'team': 'CIN', 'league': 'NFL'}},
+                {'id': '2', 'attributes': {'name': 'Matthew Stafford', 'team': 'LA', 'league': 'NFL'}},
+                {'id': '3', 'attributes': {'name': 'Tee Higgins', 'team': 'CIN', 'league': 'NFL'}},
+                {'id': '4', 'attributes': {'name': 'Aaron Rodgers', 'team': 'PIT', 'league': 'NFL'}},
+            ],
+            'data': [
+                _pp('1', 'Receiving Yards', 'standard', 0.5, 'MIA', trending=748),
+                _pp('1', 'Receiving Yards', 'demon', 19.5, 'MIA'),
+                _pp('1', 'Receiving Yards', 'demon', 29.5, 'MIA'),
+                _pp('1', 'Receptions', 'standard', 0.5, 'MIA', trending=2051),
+                _pp('2', 'Rush Yards', 'standard', 0.5, 'BUF', trending=1414),
+                _pp('2', 'Rush Yards', 'demon', 4.5, 'BUF'),
+                _pp('2', 'Pass Yards', 'standard', 278.5, 'BUF', trending=6823),
+                _pp('3', 'Receiving Yards', 'standard', 0.5, 'MIA', trending=9000),
+                _pp('3', 'Receiving Yards', 'standard', 64.5, 'MIA', trending=10),
+                _pp('4', 'Rush Yards', 'standard', 1.5, 'IND', trending=1191),
+                _pp('4', 'Rush Yards', 'demon', 9.5, 'IND'),
+            ],
+        }
+        rows = {(row['player'], row['prop'], row['line']) for row in nfl.slate_records(payload)}
+        self.assertEqual(rows, {
+            ('Tanner Hudson', 'Receptions', 0.5),
+            ('Matthew Stafford', 'Pass Yards', 278.5),
+            ('Tee Higgins', 'Receiving Yards', 64.5),
+            ('Aaron Rodgers', 'Rush Yards', 1.5),
+        })
+
     def test_slate_keeps_prizepicks_start_time(self):
         payload = {
             'included': [
