@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
+import BoardStatus from './BoardStatus'
 import { useAuth } from './AuthContext'
 import { sportAccess } from './entitlements'
 import HitRateStrip from './HitRateStrip'
@@ -143,6 +144,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, photo, locked, ro
 
 export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [snapshot, setSnapshot] = useState(null)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
@@ -170,6 +172,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         ])
         if (!active) return
         setSnapshot(props.data)
+        setUpdatedAt(props.updatedAt || null)
         setLockedCount(props.preview ? props.lockedCount : 0)
         setPhotos(playerPhotos.data || {})
         setError('')
@@ -232,7 +235,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         {propTabs.map((tab) => <button key={tab} className={tab === propTab ? 'active' : ''} onClick={() => setPropTab(tab)}>{tab}</button>)}
       </nav>
       <section className="kbo-board-header">
-        <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1></div>
+        <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
         <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
       </section>
       {error && <p className="kbo-notice">{error}</p>}

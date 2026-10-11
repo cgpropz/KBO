@@ -4,7 +4,8 @@ name: Refresh NBA PrizePicks Lines (30 min)
 #
 # Rebuilds DVP from the committed box scores, fetches the current board, fills
 # projections, and publishes only the three projection tables. It does not
-# refresh ESPN logs, commit anything, or publish players, teams, or DVP.
+# refresh ESPN logs or publish players, teams, or DVP. The only commit is
+# kbo-props-ui/public/status.json (clocks and prop counts, never the rows).
 #
 # A pull with zero lines skips publish. publish_supabase.py also refuses to
 # replace a projection table with a zero-line file. nba_public is not changed.
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   # Share the full-refresh lock so a props job never publishes projections
@@ -101,3 +102,9 @@ jobs:
           PUBLISH_ONLY_PREFIX: "nba/projections"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Publish public board status
+        if: always()
+        continue-on-error: true
+        run: |
+          bash pipeline/commit_status.sh "chore: nba board status"

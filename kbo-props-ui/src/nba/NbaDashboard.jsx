@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
+import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
@@ -323,6 +324,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [whyId, setWhyId] = useState(null)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [lockedCount, setLockedCount] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [isPaid, setIsPaid] = useState(false)
 
   const tableWrapRef = useRef(null)
@@ -344,6 +346,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
         ])
         if (cancelled) return
         setLockedCount(board?.preview ? board.lockedCount : 0)
+        setUpdatedAt(board?.updatedAt || null)
         setIsPaid(board?.preview !== true)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
@@ -443,7 +446,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
             ))}
           </div>
           <div className="wnba-board-header">
-            <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1></div>
+            <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="nba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>

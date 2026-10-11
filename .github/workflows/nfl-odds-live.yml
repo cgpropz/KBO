@@ -22,7 +22,7 @@ on:
       - ".github/workflows/nfl-odds-live.yml"
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 concurrency:
@@ -66,6 +66,12 @@ jobs:
           PUBLISH_ONLY_PREFIX: "nfl/"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Publish public board status
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          bash pipeline/commit_status.sh "chore: nfl board status"
 
       - name: Queue the next Unabated refresh
         if: ${{ always() && github.ref == 'refs/heads/main' }}

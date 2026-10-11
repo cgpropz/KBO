@@ -3,8 +3,10 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DISCORD_INVITE_URL } from '../src/discordInvite.js';
 import { landingFaqs } from '../src/landingFaq.js';
 import { discordPlanCards, TIERS } from '../src/pricingTiers.js';
+import { AFFILIATION_LINE, AGE_LINE } from '../src/responsibleGambling.js';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
 import {
   assertNoCurlyPlaceholders,
@@ -176,6 +178,7 @@ export function renderPricingPage() {
       <p>These are the published CGPropz plan prices. Checkout stays in the app, which opens the current Stripe session. This page does not list prop rows.</p>
       <div class="actions">
         <a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a>
+        <a class="btn btn-ghost" href="${pageUrl('/policies')}">Plans &amp; Policies</a>
         <a class="btn btn-ghost" href="${pageUrl('/guides/cg-score')}">How CG Score works</a>
       </div>
       <h2>All-Access</h2>
@@ -222,6 +225,65 @@ export function renderPricingPage() {
   };
 }
 
+export function renderPoliciesPage() {
+  const path = '/policies';
+  const title = 'Plans & Policies | CGPropz';
+  const description = 'Refund, cancellation, and price-change terms for CGPropz plans. Current prices are on the pricing page.';
+  const faqs = [
+    {
+      q: 'What is the refund policy?',
+      a: 'Weekly plans: no refunds once a weekly period has started. Monthly, Yearly and Lifetime: 7-day refund window on the first payment. All plans: cancel anytime.',
+    },
+    {
+      q: 'How do I cancel?',
+      a: 'Sign in and open the subscription page from Upgrade, Manage, or View Plans. A renewing plan shows Cancel Subscription. Choose it, then confirm Yes, Cancel. CGPropz tells Stripe to end that subscription at the close of the current billing period, and the page shows the date full access lasts through. Lifetime is a one-time payment, so that page has no cancel button. Discord Only uses the same Cancel Subscription button.',
+    },
+    {
+      q: 'What happens if a price changes?',
+      a: 'If a plan price changes, CGPropz will announce the new price before it applies. Current prices are listed on the pricing page.',
+    },
+  ];
+  const bodyHtml = `
+      <p class="lede">Plans</p>
+      <h1>Plans &amp; Policies</h1>
+      <p>These are the refund, cancellation, and price-change terms for CGPropz plans. Current prices are on the <a href="${pageUrl('/pricing')}">pricing page</a>.</p>
+      <h2>Refunds</h2>
+      <ul>
+        <li>Weekly plans: no refunds once a weekly period has started.</li>
+        <li>Monthly, Yearly and Lifetime: 7-day refund window on the first payment.</li>
+        <li>All plans: cancel anytime.</li>
+      </ul>
+      <h2>How to cancel</h2>
+      <p>Sign in and open the subscription page. That page is the one behind Upgrade, Manage, or View Plans. A renewing plan shows Cancel Subscription. Choose it, then confirm Yes, Cancel. CGPropz tells Stripe to end that subscription when the current billing period ends. The page then says the subscription has been cancelled and shows the date full access lasts through. Lifetime is a one-time payment and has no cancel button. Discord Only uses the same Cancel Subscription button.</p>
+      <h2>Price changes</h2>
+      <p>If a plan price changes, CGPropz will announce the new price before it applies.</p>
+      <h2>Contact</h2>
+      <p>Questions about a plan go to the <a href="${escapeHtml(DISCORD_INVITE_URL)}">CGPropz Discord</a>.</p>
+      <p>${escapeHtml(AGE_LINE)} Play responsibly. ${escapeHtml(AFFILIATION_LINE)}</p>
+      ${renderFaqSection(faqs)}
+    `;
+  return {
+    path,
+    file: 'policies.html',
+    title,
+    description,
+    lastmod: PUBLISHED_ON,
+    html: renderDocument({
+      title,
+      description,
+      path,
+      bodyHtml,
+      schemas: [
+        breadcrumbNode([
+          { name: 'Home', url: pageUrl('/') },
+          { name: 'Plans & Policies', url: pageUrl(path) },
+        ]),
+        faqNode(faqs),
+      ],
+    }),
+  };
+}
+
 export function renderSportPages() {
   return SPORT_PAGES.map(([id, path, file]) => ({
     path,
@@ -241,6 +303,7 @@ export function renderNotFoundPage() {
       <ul>
         <li><a href="${pageUrl('/')}">Home</a></li>
         <li><a href="${pageUrl('/pricing')}">Pricing</a></li>
+        <li><a href="${pageUrl('/policies')}">Plans &amp; Policies</a></li>
         <li><a href="${pageUrl('/kbo-player-props')}">KBO player props</a></li>
         <li><a href="${pageUrl('/nfl-player-props')}">NFL player props</a></li>
         <li><a href="${pageUrl('/wnba-player-props')}">WNBA player props</a></li>

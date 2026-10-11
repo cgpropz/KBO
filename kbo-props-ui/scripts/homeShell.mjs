@@ -11,6 +11,7 @@ const NAV = [
   ['/nba-player-props', 'NBA player props'],
   ['/nhl-player-props', 'NHL player props'],
   ['/pricing', 'Pricing'],
+  ['/policies', 'Plans & Policies'],
   ['/guides/cg-score', 'CG Score'],
 ];
 
@@ -50,6 +51,7 @@ export function homeRootInner() {
       </section>
     </main>
     <footer>
+      <p><a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
     </footer>

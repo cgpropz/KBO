@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 
 import requests
 
+from pipeline.board_status import BOARD_TABLES, apply_published, record_from_payload
+
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or "https://ocaqjkfdjqxszevtllew.supabase.co"
@@ -466,6 +468,7 @@ def main():
     }
 
     failures = []
+    status_updates = {}
     session = requests.Session()
     published_at = datetime.now(timezone.utc).isoformat()
 
@@ -519,6 +522,9 @@ def main():
 
             if response.status_code in (200, 201, 204):
                 print(f"  ✓ {table:30} updated")
+                sport = BOARD_TABLES.get(table)
+                if sport:
+                    status_updates[sport] = record_from_payload(sport, data, published_at)
             else:
                 body = response.text.strip().replace("\n", " ")
                 if optional_table_missing(table, response):
@@ -532,6 +538,13 @@ def main():
             msg = f"{table}: {exc}"
             print(f"  ✗ {msg}")
             failures.append(msg)
+
+    if status_updates:
+        try:
+            apply_published(status_updates)
+            print(f"  ✓ public/status.json ({', '.join(status_updates)})")
+        except Exception as exc:
+            print(f"  ! status.json: {exc}")
 
     print("\n" + "=" * 60)
     if failures:

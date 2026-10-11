@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import { fetchWnbaData } from './wnbaData'
+import { fetchWnbaSnapshot } from './wnbaData'
+import BoardStatus from '../BoardStatus'
 import { fmtDvpRank } from './utils/formatters'
 import { wnbaCgScore } from './wnbaScore'
 import ProjectionTable from './components/ProjectionTable'
@@ -118,6 +119,7 @@ export default function Projections({ onSelectPlayer }) {
   const [lineType, setLineType] = useState('standard')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState(null)
   const [propType, setPropType] = useState('All')
   const [viewMode, setViewMode] = useState('cards')
@@ -133,9 +135,10 @@ export default function Projections({ onSelectPlayer }) {
       setLoading(true)
       setError(null)
       try {
-        const json = await fetchWnbaData(`wnba/projections_${lineType}.json`)
+        const snapshot = await fetchWnbaSnapshot(`wnba/projections_${lineType}.json`)
         if (cancelled) return
-        setData(Array.isArray(json) ? json : [])
+        setData(Array.isArray(snapshot?.data) ? snapshot.data : [])
+        setUpdatedAt(snapshot?.updatedAt || null)
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -296,6 +299,7 @@ export default function Projections({ onSelectPlayer }) {
 
       <div style={{ marginBottom: 18, position: 'relative' }}>
         <h1 className="edge-title">WNBA PrizePicks Edge</h1>
+        <BoardStatus sport="wnba" updatedAt={updatedAt} />
         <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
           Formula: L3 x 0.5 + L7 x 0.3 + L15 x 0.2, then multiplied by expected minutes and DVP
         </p>

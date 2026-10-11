@@ -248,6 +248,7 @@ def push_snapshots_to_supabase(skip_flags):
     published_at = datetime.now(timezone.utc).isoformat()
     print(f"\n📡 Publishing snapshots to Supabase (cohort {published_at})...")
     _stamp_publish_cohort(published_at)
+    prizepicks_payload = None
 
     for filename, table in DATA_SNAPSHOTS:
         file_path = os.path.join(PUBLIC_DATA, filename)
@@ -263,13 +264,28 @@ def push_snapshots_to_supabase(skip_flags):
 
             client.table(table).upsert({"id": 1, "data": payload}).execute()
             print(f"  ✓ {table} updated")
+            if filename == "prizepicks_props.json":
+                prizepicks_payload = payload
         except Exception as exc:
             msg = f"{table}: {exc}"
             print(f"  ✗ {msg}")
             errors.append(msg)
 
+    if prizepicks_payload is not None:
+        _record_kbo_board_status(prizepicks_payload, published_at)
+
     publish_optional_snapshot(client, "correlations_kbo.json", "correlations_kbo")
     return errors
+
+
+def _record_kbo_board_status(payload, published_at):
+    """Rewrite public/status.json for the KBO board. Never includes prop rows."""
+    try:
+        from pipeline.board_status import apply_published, record_from_payload
+        apply_published({"kbo": record_from_payload("kbo", payload, published_at)})
+        print("  ✓ public/status.json (kbo)")
+    except Exception as exc:
+        print(f"  ! status.json: {exc}")
 
 
 def build_kbo_correlations():

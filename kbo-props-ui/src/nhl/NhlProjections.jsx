@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
-import { formatBoardUpdated } from './formatBoardUpdated'
+import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { cgScore, lineMatchesStat } from '../cgScore'
 
@@ -91,8 +91,7 @@ export default function NhlProjections({ onSelectPlayer }) {
   return (
     <section>
       <div className="nfl-board-header">
-        <div><p>NHL / PRIZEPICKS</p><h1>Board</h1></div>
-        {formatBoardUpdated(updatedAt) && <span>Last updated {formatBoardUpdated(updatedAt)}</span>}
+        <div><p>NHL / PRIZEPICKS</p><h1>Board</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
       </div>
       <p className="nhl-note">One card per player and prop. Standard lines are preferred. A demon or goblin is shown only when that is the line PrizePicks posted. Probable goalies are tagged and sorted to the bottom.</p>
       <div className="nfl-edge-controls">

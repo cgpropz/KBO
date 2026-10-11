@@ -15,6 +15,7 @@ const config = JSON.parse(readFileSync(join(uiRoot, 'vercel.json'), 'utf8'))
 const PUBLIC_PAGES = [
   ['/', 'CGPropz: Free PrizePicks prop picks daily', 'One edge. Every sport.'],
   ['/pricing', 'All-Access pricing | CGPropz', 'All-Access pricing'],
+  ['/policies', 'Plans &amp; Policies | CGPropz', 'Plans &amp; Policies'],
   ['/kbo-player-props', 'KBO player props and full-board results | CGPropz', 'KBO player props, with the full board.'],
   ['/nfl-player-props', 'NFL player props | CGPropz', 'NFL player props'],
   ['/wnba-player-props', 'WNBA player props | CGPropz', 'WNBA player props'],
@@ -90,7 +91,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     const home = await (await fetch(server.url + '/')).text()
     assert.equal(home.includes('Loading KBO Player Props'), false)
     assert.match(home, /id="free-top-3"/)
-    for (const path of ['/pricing', '/kbo-player-props', '/nfl-player-props', '/wnba-player-props', '/nba-player-props', '/nhl-player-props', '/guides/cg-score']) {
+    for (const path of ['/pricing', '/policies', '/kbo-player-props', '/nfl-player-props', '/wnba-player-props', '/nba-player-props', '/nhl-player-props', '/guides/cg-score']) {
       assert.match(home, new RegExp(`href="https://www\\.cgpropz\\.com${path}"`))
     }
 
@@ -183,6 +184,22 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     for (const guide of listGuides()) {
       assert.match(sitemap, new RegExp(`<loc>https://www\\.cgpropz\\.com${escapeRegExp(guide.path)}</loc>`))
     }
+
+    const policies = await (await fetch(`${server.url}/policies`)).text()
+    assert.match(policies, /rel="canonical" href="https:\/\/www\.cgpropz\.com\/policies"/)
+    assert.match(policies, /Weekly plans: no refunds once a weekly period has started\./)
+    assert.match(policies, /Monthly, Yearly and Lifetime: 7-day refund window on the first payment\./)
+    assert.match(policies, /All plans: cancel anytime\./)
+    assert.match(policies, /Cancel Subscription/)
+    assert.match(policies, /Yes, Cancel/)
+    assert.match(policies, /If a plan price changes, CGPropz will announce the new price before it applies\./)
+    assert.match(policies, /Play responsibly\./)
+    assert.match(policies, /https:\/\/discord\.gg\/w3wgbCcxDZ/)
+    assert.match(policies, /href="https:\/\/www\.cgpropz\.com\/pricing"/)
+    assert.equal(/\$\d/.test(policies), false)
+    assert.equal(/grandfather/i.test(policies), false)
+    const pricingPage = await (await fetch(`${server.url}/pricing`)).text()
+    assert.match(pricingPage, /href="https:\/\/www\.cgpropz\.com\/policies"/)
 
     const robots = await (await fetch(`${server.url}/robots.txt`)).text()
     assert.match(robots, /Sitemap: https:\/\/www\.cgpropz\.com\/sitemap\.xml/)

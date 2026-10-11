@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchNbaData } from './nbaData'
+import { fetchNbaSnapshot } from './nbaData'
+import BoardStatus from '../BoardStatus'
 
 const LINE_TYPES = ['standard', 'demon', 'goblin']
 const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
@@ -40,6 +41,7 @@ export default function NbaEdge() {
   const [lineType, setLineType] = useState('standard')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState(null)
   const [propType, setPropType] = useState('All')
   const [viewMode, setViewMode] = useState('cards')
@@ -55,9 +57,10 @@ export default function NbaEdge() {
       setLoading(true)
       setError(null)
       try {
-        const json = await fetchNbaData(`nba/projections_${lineType}.json`)
+        const snapshot = await fetchNbaSnapshot(`nba/projections_${lineType}.json`)
         if (cancelled) return
-        setData(Array.isArray(json) ? json : [])
+        setData(Array.isArray(snapshot?.data) ? snapshot.data : [])
+        setUpdatedAt(snapshot?.updatedAt || null)
       } catch (err) {
         if (!cancelled) {
           setData(null)
@@ -184,6 +187,7 @@ export default function NbaEdge() {
       <div className="edge-board-bg" />
       <div style={{ marginBottom: 18, position: 'relative' }}>
         <h1 className="edge-title">NBA PrizePicks Edge</h1>
+        <BoardStatus sport="nba" updatedAt={updatedAt} />
         <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
           Live PrizePicks lines{activeSlateDate ? ` for ${activeSlateDate}` : ''}. Projection is the last 3/7/15 per-minute rates (0.5/0.3/0.2) times last-10 minutes times a PG/SG/SF/PF/C DVP factor clamped to 0.85–1.15. Edge is (projection / line) × 50.
         </p>
