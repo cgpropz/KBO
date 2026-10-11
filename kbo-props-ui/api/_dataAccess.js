@@ -20,6 +20,15 @@ export const FREE_ROW_LIMIT = 3;
 // does not read this flag.
 export const NFL_FREE_PREVIEW_ENABLED = false;
 
+// Total-edge calls inside the free NFL game-markets preview. Paid
+// All-Access does not read this. NFL_FREE_TOTAL_EDGES_ENABLED=true sends
+// them again and lets a total rank a game into the preview. Unset or any
+// other value withholds the number. Spreads are unchanged.
+export function nflFreeTotalEdgesEnabled(env = process.env) {
+  const raw = String(env?.NFL_FREE_TOTAL_EDGES_ENABLED ?? '').trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
 const NFL_FREE_PREVIEW_DATASETS = new Set([
   'nfl_projections',
   'nfl_sharp_odds',
@@ -231,15 +240,52 @@ function nhlSharpScore(row) {
   return nflSharpScore(row);
 }
 
-// PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
-// Older snapshots that only stored sportsbook EV still sort on that.
-function nflGameMarketScore(row) {
-  const edges = [row?.spread?.edge, row?.total?.edge, row?.moneyline?.edge]
-    .map(num)
+function marketEdgeMagnitude(row, keys) {
+  const edges = keys
+    .map((key) => num(row?.[key]?.edge))
     .filter(Number.isFinite)
     .map((value) => Math.abs(value));
   return edges.length ? Math.max(...edges) : -Infinity;
 }
+
+// Biggest absolute spread, total, or moneyline edge. Used only when
+// NFL_FREE_TOTAL_EDGES_ENABLED is on.
+function nflGameMarketScore(row) {
+  return marketEdgeMagnitude(row, ['spread', 'total', 'moneyline']);
+}
+
+// Same ranking with the total left out, so a total edge cannot feature a game.
+function nflGameMarketSpreadScore(row) {
+  return marketEdgeMagnitude(row, ['spread', 'moneyline']);
+}
+
+// Copy. The cached snapshot is shared with paid readers and must keep its edge.
+function withoutTotalEdge(game) {
+  if (!game || typeof game !== 'object' || !game.total || typeof game.total !== 'object') return game;
+  const total = { ...game.total };
+  delete total.edge;
+  return { ...game, total };
+}
+
+// Free game-markets preview. Total edges stay off unless the flag is on.
+export function previewNflGameMarkets(payload, options = {}) {
+  const totalEdges = Object.hasOwn(options, 'totalEdges')
+    ? options.totalEdges === true
+    : nflFreeTotalEdgesEnabled();
+  const preview = previewObjectList(
+    'games',
+    totalEdges ? nflGameMarketScore : nflGameMarketSpreadScore,
+  )(payload);
+  if (totalEdges) return preview;
+  const games = Array.isArray(preview.data?.games) ? preview.data.games.map(withoutTotalEdge) : [];
+  return {
+    data: { ...preview.data, games },
+    lockedCount: preview.lockedCount,
+  };
+}
+
+// PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
+// Older snapshots that only stored sportsbook EV still sort on that.
 
 function nflSharpScore(row) {
   const edge = num(row?.pp_edge_flex ?? row?.pp_edge_pct);
@@ -437,7 +483,7 @@ export const DATASETS = {
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
-  nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewObjectList('games', nflGameMarketScore) },
+  nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewNflGameMarkets },
   correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
   // NBA. The /api/data gate still denies these unless the caller is full access.
   // The free builder is only the preview path after nba_public is on.

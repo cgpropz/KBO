@@ -10,6 +10,8 @@ import {
   NFL_FREE_PREVIEW_ENABLED,
   isNbaDataset,
   isNhlDataset,
+  nflFreeTotalEdgesEnabled,
+  previewNflGameMarkets,
   shapeForTier,
 } from '../api/_dataAccess.js'
 
@@ -331,6 +333,54 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
     }
   } finally {
     TABLES.nfl_sharp_odds = original
+  }
+})
+
+test('NFL free game markets withhold total edges unless the flag is on', () => {
+  assert.equal(nflFreeTotalEdgesEnabled({}), false)
+  assert.equal(nflFreeTotalEdgesEnabled({ NFL_FREE_TOTAL_EDGES_ENABLED: 'false' }), false)
+  assert.equal(nflFreeTotalEdgesEnabled({ NFL_FREE_TOTAL_EDGES_ENABLED: 'true' }), true)
+
+  const payload = {
+    provider: 'unabated',
+    model: { proven: false, label: 'Not proven' },
+    week: 5,
+    games: [
+      { id: 'total-only', awayTeam: 'KC', homeTeam: 'BUF', spread: { edge: 0.4, line: -3 }, total: { edge: 9.5, line: 44.5, projection: 54 }, moneyline: { edge: 0.2 } },
+      { id: 'spread', awayTeam: 'PHI', homeTeam: 'DAL', spread: { edge: 4.2, line: -7 }, total: { edge: 0.1, line: 41, projection: 41.1 }, moneyline: { edge: 1 } },
+      { id: 'mid', awayTeam: 'DET', homeTeam: 'GB', spread: { edge: 2.5, line: -1 }, total: { edge: 6, line: 47, projection: 53 }, moneyline: { edge: 0 } },
+      { id: 'low', awayTeam: 'SF', homeTeam: 'SEA', spread: { edge: 1.1, line: 3 }, total: { edge: 1, line: 40, projection: 41 }, moneyline: { edge: 0.3 } },
+    ],
+  }
+
+  const preview = previewNflGameMarkets(payload)
+  assert.deepEqual(preview.data.games.map((game) => game.id), ['spread', 'mid', 'low'])
+  assert.equal(preview.lockedCount, 1)
+  assert.equal(preview.data.provider, 'unabated')
+  for (const game of preview.data.games) {
+    assert.equal(Object.hasOwn(game.total, 'edge'), false)
+    assert.equal(game.spread.edge > 0, true)
+    assert.notEqual(game.total.line, undefined)
+    assert.notEqual(game.total.projection, undefined)
+  }
+  assert.equal(JSON.stringify(preview.data).includes('"edge":9.5'), false)
+  assert.equal(JSON.stringify(preview.data).includes('"edge":6'), false)
+  // The cached snapshot paid readers share is not mutated.
+  assert.equal(payload.games[0].total.edge, 9.5)
+  assert.equal(payload.games[1].total.edge, 0.1)
+
+  const restored = previewNflGameMarkets(payload, { totalEdges: true })
+  assert.deepEqual(restored.data.games.map((game) => game.id), ['total-only', 'mid', 'spread'])
+  assert.equal(restored.data.games[0].total.edge, 9.5)
+  assert.equal(restored.data.games[1].spread.edge, 2.5)
+
+  for (const tier of ['owner', 'combined', 'weekly', 'monthly', 'season', 'pro', 'all']) {
+    const paid = shapeForTier('nfl_game_markets', payload, tier)
+    assert.equal(paid.preview, false)
+    assert.equal(paid.lockedCount, 0)
+    assert.equal(paid.data, payload)
+    assert.equal(paid.data.games[0].total.edge, 9.5)
+    assert.equal(paid.data.games.length, 4)
   }
 })
 
