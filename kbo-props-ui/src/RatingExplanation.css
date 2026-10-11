@@ -1,0 +1,139 @@
+.rating-why {
+  margin: 0;
+  padding: 0.55rem 0.7rem 0.5rem;
+  border: 1px solid #273b4a;
+  border-radius: 7px;
+  background: #101b25;
+  box-sizing: border-box;
+}
+
+.rating-why-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
+  margin: 0 0 0.4rem;
+}
+
+.rating-why-side {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rating-why.is-over .rating-why-side {
+  background: #123f30;
+  color: #6ae0aa;
+}
+
+.rating-why.is-under .rating-why-side {
+  background: #4d2024;
+  color: #ffabb0;
+}
+
+.rating-why.is-push .rating-why-side {
+  background: #4d3d16;
+  color: #f6cf6b;
+}
+
+.rating-why-score {
+  color: #f2c259;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-why-prop {
+  color: #d5e2ea;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.rating-why-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rating-why-lines li {
+  margin: 0;
+  padding: 0.16rem 0 0.16rem 0.65rem;
+  border-left: 2px solid #2c4a3e;
+  color: #c5d5e0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.rating-why-lines li + li {
+  margin-top: 0.22rem;
+}
+
+/* Pitcher and batter tables scroll sideways. Keep the explanation in the
+   visible slice of that scroll, at the width of the screen. */
+.so-detail-row .rating-why,
+.bp-log-row .rating-why {
+  position: sticky;
+  left: 0.75rem;
+  width: min(720px, calc(100vw - 2.5rem));
+  max-width: calc(100vw - 2.5rem);
+}
+
+.so-detail-panel.is-why-only {
+  margin: 0.35rem 0.65rem 0.55rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rating-why-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rating-why-link small {
+  color: #8de2bb;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rating-why-block {
+  margin-top: 10px;
+}
+
+.wnba-root .edge-card:has(.rating-why),
+.nfl-root .nfl-edge-card:has(.rating-why) {
+  grid-column: 1 / -1;
+}
+
+.rating-why-toggle {
+  border: 1px solid #2f6b56;
+  border-radius: 999px;
+  background: #10241c;
+  color: #b7f3d4;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.rating-why-toggle:hover {
+  background: #163528;
+}
