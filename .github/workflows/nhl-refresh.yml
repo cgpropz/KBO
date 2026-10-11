@@ -52,15 +52,19 @@ jobs:
       - name: Download MoneyPuck game logs
         run: python nhl/fetch_history.py
 
-      - name: Build NHL defense vs position
-        run: python -m nhl.build_dvp --root /tmp/moneypuck
-
       - name: Build the NHL board and lineups
         run: python -m nhl.build_board --root /tmp/moneypuck
 
       - name: Match PrizePicks lines to Unabated
         continue-on-error: true
         run: python -m nhl.sharp_odds
+
+      # After the board. continue-on-error plus an exit 0 when the files are
+      # short so a DvP miss cannot skip publish or the memory/ slate freeze.
+      # A good build still lands before publish, so this run can ship it.
+      - name: Build NHL defense vs position
+        continue-on-error: true
+        run: python -m nhl.build_dvp --root /tmp/moneypuck
 
       - name: Publish protected NHL snapshot
         run: python publish_supabase.py
