@@ -86,7 +86,7 @@ function MiniChart({ recent, line }) {
   return (
     <div className="wnba-lines-chart" aria-hidden="true">
       {recent.map((value, index) => (
-        <span key={index} className={value >= line ? 'hit' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
+        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
       ))}
     </div>
   )

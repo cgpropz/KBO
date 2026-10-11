@@ -29,8 +29,10 @@ test('both teammates on requires both ids', () => {
   assert.equal(gameMatchesTeammates(['bateman'], modes), false)
 })
 
-test('hit rate counts values on or over the line', () => {
+test('hit rate counts only games over the line and drops a push', () => {
   assert.deepEqual(hitRateForValues([80, 40, 10, 70], 50), { hits: 2, games: 4, rate: 50 })
+  assert.deepEqual(hitRateForValues([80, 50, 10], 50), { hits: 1, games: 2, rate: 50 })
+  assert.deepEqual(hitRateForValues([50, 50], 50), { hits: 0, games: 0, rate: null })
   assert.deepEqual(hitRateForValues([], 50), { hits: 0, games: 0, rate: null })
 })
 

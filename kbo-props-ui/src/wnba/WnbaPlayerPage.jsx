@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import PlayerOddsTable from '../PlayerOddsTable'
+import { lineResult } from '../hitRateStrip'
 import { rowsFromBookPrices, wnbaOddsRows } from '../playerOdds'
 import {
   formatMinutes,
@@ -455,10 +456,10 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
           {line != null && <div className="wnba-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(line)}</span></div>}
           <div className="wnba-player-bars">
             {filteredGames.map((g, index) => {
-              const hit = line != null && g.value != null && g.value > line
+              const kind = lineResult(g.value, line) || 'miss'
               return (
                 <div className="wnba-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`} title={[recordedMinutes(g) == null ? 'No minutes recorded' : `${formatMinutes(recordedMinutes(g))} min`, fmtDate(g.date), g.postseason ? 'Playoffs' : null].filter(Boolean).join(' · ')}>
-                  <div className={`wnba-player-bar ${hit ? 'hit' : 'miss'}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
+                  <div className={`wnba-player-bar ${kind}${g.postseason ? ' postseason' : ''}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
             })}

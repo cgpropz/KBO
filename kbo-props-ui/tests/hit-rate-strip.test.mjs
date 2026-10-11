@@ -15,6 +15,7 @@ import {
   hitRatePillColor,
   hitRatePillStyle,
   kboHitPills,
+  lineResult,
   nflHitPills,
   nhlHitPills,
   overHitRate,
@@ -63,20 +64,15 @@ test('format keeps a tenth only when the chart rate is not a whole number', () =
   assert.equal(formatHitRate(50.04), '50%')
 })
 
-test('strict over leaves a push in the sample and does not count it', () => {
-  const rated = overHitRate([2, 1.5, 1], 1.5, 'strict')
-  assert.deepEqual(rated, { rate: 33, hits: 1, games: 3 })
-})
-
-test('NFL push counts as a hit', () => {
-  const rated = overHitRate([2, 1.5, 1], 1.5, 'count-push')
-  assert.deepEqual(rated, { rate: 67, hits: 2, games: 3 })
-})
-
-test('NHL push is left out of the sample', () => {
-  const rated = overHitRate([2, 1.5, 1], 1.5, 'exclude-push')
+test('a push is neither a hit nor a miss and leaves the sample', () => {
+  assert.equal(lineResult(2, 1.5), 'hit')
+  assert.equal(lineResult(1.5, 1.5), 'push')
+  assert.equal(lineResult(1, 1.5), 'miss')
+  assert.equal(lineResult(null, 1.5), null)
+  const rated = overHitRate([2, 1.5, 1], 1.5)
   assert.deepEqual(rated, { rate: 50, hits: 1, games: 2 })
-  assert.equal(overHitRate([1.5, 1.5], 1.5, 'exclude-push'), null)
+  assert.equal(overHitRate([1.5, 1.5], 1.5), null)
+  assert.equal(formatGameCount(rated.games), '2 gm')
 })
 
 test('a short window is hidden unless the chart already shows a count', () => {
@@ -137,27 +133,47 @@ test('WNBA season is the newest game year and H2H is that opponent only', () => 
   assert.equal(byId.h2h.rate, 75)
 })
 
-test('NFL pills use the shipped chart rates and hide a short window', () => {
+test('NFL pills are recomputed from the log and a push is not a hit', () => {
+  // Oldest-first, same order as the shipped chart. Stored >= rates would call
+  // the two ties hits (L5 80%). The pill uses the decided games only.
   const pills = nflHitPills({
+    line: 1.5,
+    opponent: 'MIA',
+    priorSeasonLabel: 2025,
+    recent: [0, 0, 1.5, 0, 1.5, 2],
+    gameSeasons: [2025, 2025, 2025, 2026, 2026, 2026],
+    gameOpponents: ['BUF', 'MIA', 'NYJ', 'MIA', 'MIA', 'CIN'],
     hitRateL5: 80,
     gamesL5: 5,
     hitRate: 60,
     gamesPlayed: 6,
-    hitRateL20: 55,
-    gamesL20: 12,
-    h2hHitRate: 0,
-    h2hGames: 2,
-    seasonHitRate: 45,
-    seasonGames: 5,
   })
   const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
-  assert.equal(byId.l5.rate, 80)
+  assert.equal(byId.l5.rate, 33)
+  assert.equal(byId.l5.games, 3)
   assert.equal(byId.l10, undefined)
   assert.equal(byId.l20, undefined)
   assert.equal(byId.h2h.rate, 0)
-  assert.equal(hitRatePillColor(byId.h2h.rate), HIT_RATE_RED)
-  assert.equal(byId.season.rate, 45)
-  assert.equal(hitRatePillColor(byId.season.rate), HIT_RATE_AMBER)
+  assert.equal(byId.h2h.games, 2)
+  assert.equal(hitRatePillStyle(byId.h2h).thin, true)
+  assert.equal(hitRatePillStyle(byId.h2h).background, HIT_RATE_NEUTRAL_BG)
+  assert.equal(byId.season.rate, 50)
+  assert.equal(byId.season.games, 2)
+})
+
+test('a push drops out of a KBO pill count', () => {
+  const games = [
+    { season: '2026', opp: 'Kia', hrr: 3 },
+    { season: '2026', opp: 'KT', hrr: 1.5 },
+    { season: '2026', opp: 'Kia', hrr: 2 },
+    { season: '2026', opp: 'LG', hrr: 0 },
+    { season: '2026', opp: 'Kia', hrr: 2 },
+  ]
+  const pills = kboHitPills({ games, stat: 'Hits+Runs+RBIs', line: 1.5, opponent: 'Samsung' })
+  const l5 = pills.find((pill) => pill.id === 'l5')
+  assert.equal(l5.rate, 75)
+  assert.equal(l5.games, 4)
+  assert.equal(pills.find((pill) => pill.id === 'h2h'), undefined)
 })
 
 test('NHL short windows keep the chart game count', () => {

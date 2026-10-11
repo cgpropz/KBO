@@ -560,15 +560,17 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
             teams = player_history.loc[valid, 'team'].map(canonical_team).tolist()
         else:
             teams = [canonical_team(row.team)] * len(values)
-        games_l5 = min(5, len(values))
-        if games_l5:
-            hit_rate_l5 = round(sum(value >= row.line for value in values[-5:]) / games_l5 * 100)
-        games_l20 = min(20, len(values))
-        if games_l20:
-            hit_rate_l20 = round(sum(value >= row.line for value in values[-20:]) / games_l20 * 100)
-        games_l30 = min(30, len(values))
-        if games_l30:
-            hit_rate_l30 = round(sum(value >= row.line for value in values[-30:]) / games_l30 * 100)
+        def decided_rate(sample):
+            # A push equals the line and is neither a hit nor a miss.
+            decided = [value for value in sample if value != row.line]
+            if not decided:
+                return None, 0
+            hits = sum(value > row.line for value in decided)
+            return round(hits / len(decided) * 100), len(decided)
+
+        hit_rate_l5, games_l5 = decided_rate(values[-5:])
+        hit_rate_l20, games_l20 = decided_rate(values[-20:])
+        hit_rate_l30, games_l30 = decided_rate(values[-30:])
     recent, recent_dates, recent_opponents = values[-30:], dates[-30:], opponents[-30:]
     recent_weeks, recent_seasons = weeks[-30:], seasons[-30:]
     recent_teams = teams[-30:]
@@ -578,14 +580,23 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
     last10 = values[-10:]
 
     # Season/prior season/H2H hit rates are computed from the same shipped 30-game window as the
-    # chart, so the range strip pills always match what the chart can actually show.
-    season_games = sum(1 for s in recent_seasons if s == CURRENT_SEASON)
-    season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON) / season_games * 100) if season_games else None
-    prior_season_games = sum(1 for s in recent_seasons if s == CURRENT_SEASON - 1)
-    prior_season_hit_rate = round(sum(v >= row.line for v, s in zip(recent, recent_seasons) if s == CURRENT_SEASON - 1) / prior_season_games * 100) if prior_season_games else None
+    # chart, so the range strip always matches what the chart can actually show.
+    # Pushes are left out of the numerator and the denominator.
+    def window_rate(predicate):
+        sample = [value for value, flag in zip(recent, predicate) if flag]
+        decided = [value for value in sample if value != row.line]
+        if not decided:
+            return None, 0
+        hits = sum(value > row.line for value in decided)
+        return round(hits / len(decided) * 100), len(decided)
+
+    season_hit_rate, season_games = window_rate([season == CURRENT_SEASON for season in recent_seasons])
+    prior_season_hit_rate, prior_season_games = window_rate([season == CURRENT_SEASON - 1 for season in recent_seasons])
     opponent_key = canonical_team(row.opponent)
-    h2h_games = sum(1 for o in recent_opponents if canonical_team(o) == opponent_key)
-    h2h_hit_rate = round(sum(v >= row.line for v, o in zip(recent, recent_opponents) if canonical_team(o) == opponent_key) / h2h_games * 100) if h2h_games else None
+    h2h_hit_rate, h2h_games = window_rate([canonical_team(opponent) == opponent_key for opponent in recent_opponents])
+    l10_decided = [value for value in last10 if value != row.line]
+    l10_rate = round(sum(value > row.line for value in l10_decided) / len(l10_decided) * 100) if l10_decided else 0
+    l10_games = len(l10_decided)
 
     if len(values) >= 3:
         last_three = sum(values[-3:]) / 3
@@ -651,8 +662,8 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,
-        'hitRate': round(sum(value >= row.line for value in last10) / len(last10) * 100) if last10 else 0,
-        'gamesPlayed': len(last10), 'snapCount': round(float(snap_counts.get(key, 0)), 1),
+        'hitRate': l10_rate,
+        'gamesPlayed': l10_games, 'snapCount': round(float(snap_counts.get(key, 0)), 1),
         'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
         'seasonHitRate': season_hit_rate, 'seasonGames': season_games,
         'priorSeasonHitRate': prior_season_hit_rate, 'priorSeasonGames': prior_season_games, 'priorSeasonLabel': CURRENT_SEASON - 1,

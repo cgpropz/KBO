@@ -1,14 +1,14 @@
 // Over-hit rates for the prop-board color strip.
 //
-// Each sport uses the same comparison as its player-page chart:
-//   strict       value > line is a hit; a push stays in the sample (KBO, WNBA, NBA)
-//   count-push   value >= line is a hit (NFL bars and hitRateForValues)
-//   exclude-push value > line is a hit; a push is left out (NHL hit_rate)
+// Every sport uses the same rule. A game over the line is a hit. A game under
+// the line is a miss. A push (the result equals the line) is neither, so it
+// leaves both the numerator and the denominator. The count under a pill is
+// decided games only.
 //
 // A fixed window (L5, L10, L20) is hidden when the log is shorter than that
 // window. The NHL chart already prints the game count on a short window, so
 // those pills stay and carry that count. Season and H2H have no fixed length:
-// they show whenever the chart's filter has at least one decided game.
+// they show whenever at least one decided game exists.
 
 export const HIT_RATE_GREEN = '#22c55e'
 export const HIT_RATE_LIGHT = '#4ade80'
@@ -122,18 +122,28 @@ export function formatHitRate(rate) {
   return Number.isInteger(tenths) ? `${tenths}%` : `${tenths.toFixed(1)}%`
 }
 
-export function overHitRate(values, line, mode = 'strict') {
+// 'hit' is over the line, 'miss' is under it, 'push' ties it. Missing numbers
+// are not a result.
+export function lineResult(value, line) {
+  if (value == null || value === '' || line == null || line === '') return null
+  const actual = Number(value)
+  const target = Number(line)
+  if (!Number.isFinite(actual) || !Number.isFinite(target)) return null
+  if (actual > target) return 'hit'
+  if (actual === target) return 'push'
+  return 'miss'
+}
+
+export function overHitRate(values, line) {
   const target = Number(line)
   if (!Number.isFinite(target)) return null
   let hits = 0
   let decided = 0
   for (const raw of values || []) {
-    const value = Number(raw)
-    if (!Number.isFinite(value)) continue
-    if (mode === 'exclude-push' && value === target) continue
+    const result = lineResult(raw, target)
+    if (result == null || result === 'push') continue
     decided += 1
-    const isHit = mode === 'count-push' ? value >= target : value > target
-    if (isHit) hits += 1
+    if (result === 'hit') hits += 1
   }
   if (!decided) return null
   return { rate: Math.round((hits / decided) * 100), hits, games: decided }
@@ -149,13 +159,13 @@ function finiteValues(values) {
 }
 
 // `values` is newest-first, one entry per logged game.
-export function fixedWindowPill(values, line, { id, label, size, mode = 'strict', partial = 'hide' }) {
+export function fixedWindowPill(values, line, { id, label, size, partial = 'hide' }) {
   const games = Array.isArray(values) ? values : []
   if (games.length < size) {
     if (partial !== 'count' || games.length === 0) return null
   }
   const sample = finiteValues(games.slice(0, size))
-  const rated = overHitRate(sample, line, mode)
+  const rated = overHitRate(sample, line)
   if (!rated) return null
   return {
     id,
@@ -172,13 +182,14 @@ export function windowPills(values, line, options = {}) {
     .filter(Boolean)
 }
 
-export function openPill(values, line, { id, label, mode = 'strict' }) {
-  const rated = overHitRate(finiteValues(values), line, mode)
+export function openPill(values, line, { id, label }) {
+  const rated = overHitRate(finiteValues(values), line)
   if (!rated) return null
   return { id, label, rate: rated.rate, games: rated.games, count: null }
 }
 
-// Precomputed chart rates (NFL, NHL). `games` is the sample the chart button uses.
+// Precomputed NHL chart rates. `games` is the decided-game count from hit_rate,
+// which already leaves pushes out. NFL pills are recomputed from the log.
 export function storedPill({ id, label, rate, games, size = null, partial = 'hide', note = null }) {
   const value = Number(rate)
   const count = Number(games)
@@ -258,14 +269,34 @@ export function wnbaHitPills({ games, stat, line, opponent }) {
   return [...windowPills(values, line), h2h, season].filter(Boolean)
 }
 
+// Shipped NFL `recent` is oldest-first, the same 30-game window as the chart.
+// Stored hit rates counted a push as a hit, so the pills are recomputed here.
+export function nflCurrentSeason(row) {
+  if (row?.priorSeasonLabel != null && row.priorSeasonLabel !== '') {
+    const year = Number(row.priorSeasonLabel)
+    if (Number.isFinite(year)) return year + 1
+  }
+  const seasons = Array.isArray(row?.gameSeasons) ? row.gameSeasons : []
+  const newest = Number(seasons[seasons.length - 1])
+  return Number.isFinite(newest) ? newest : null
+}
+
 export function nflHitPills(row) {
-  if (!row) return []
+  if (!row || row.line == null) return []
+  const recent = Array.isArray(row.recent) ? row.recent : []
+  if (!recent.length) return []
+  const newest = [...recent].reverse()
+  const seasons = [...(Array.isArray(row.gameSeasons) ? row.gameSeasons : [])].reverse()
+  const opponents = [...(Array.isArray(row.gameOpponents) ? row.gameOpponents : [])].reverse()
+  const currentSeason = nflCurrentSeason(row)
+  const h2h = newest.filter((_, index) => sameTeam(opponents[index], row.opponent))
+  const season = currentSeason == null
+    ? []
+    : newest.filter((_, index) => Number(seasons[index]) === currentSeason)
   return [
-    storedPill({ id: 'l5', label: 'L5', rate: row.hitRateL5, games: row.gamesL5, size: 5 }),
-    storedPill({ id: 'l10', label: 'L10', rate: row.hitRate, games: row.gamesPlayed, size: 10 }),
-    storedPill({ id: 'l20', label: 'L20', rate: row.hitRateL20, games: row.gamesL20, size: 20 }),
-    storedPill({ id: 'h2h', label: 'H2H', rate: row.h2hHitRate, games: row.h2hGames }),
-    storedPill({ id: 'season', label: 'Season', rate: row.seasonHitRate, games: row.seasonGames }),
+    ...windowPills(newest, row.line),
+    openPill(h2h, row.line, { id: 'h2h', label: 'H2H' }),
+    openPill(season, row.line, { id: 'season', label: 'Season' }),
   ].filter(Boolean)
 }
 

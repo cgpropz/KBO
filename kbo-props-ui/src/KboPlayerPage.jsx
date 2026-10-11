@@ -5,6 +5,7 @@ import PlayerOddsTable from './PlayerOddsTable'
 import { batterProfile, battingHandPhrase, projectionRow, resolveBattingHand } from './batterSplits'
 import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
+import { lineResult, overHitRate } from './hitRateStrip'
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -209,11 +210,11 @@ export default function KboPlayerPage({ playerName, onBack }) {
   }
 
   const hitRateFor = range => {
-    if (!getValue || line == null) return { pct: null, games: 0 }
+    if (!getValue || line == null) return { pct: null, hits: 0, games: 0 }
     const values = rangeGames(range).map(getValue).filter(v => v != null)
-    if (!values.length) return { pct: null, games: 0 }
-    const hits = values.filter(v => v > line).length
-    return { pct: Math.round((hits / values.length) * 100), games: values.length }
+    const rated = overHitRate(values, line)
+    if (!rated) return { pct: null, hits: 0, games: 0 }
+    return { pct: rated.rate, hits: rated.hits, games: rated.games }
   }
 
   const rangeOptions = [
@@ -304,7 +305,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
           <div className="kbo-player-hitrate">
             <small>HIT RATE</small>
             <strong className={currentRange?.pct != null && currentRange.pct >= 50 ? 'over' : 'under'}>{currentRange?.pct != null ? `${currentRange.pct}%` : '—'}</strong>
-            <span>{currentRange?.games ? `(${Math.round((currentRange.pct / 100) * currentRange.games)}/${currentRange.games})` : ''}</span>
+            <span>{currentRange?.games ? `(${currentRange.hits}/${currentRange.games})` : ''}</span>
           </div>
           <div><small>LINE</small><strong>{formatValue(line)}</strong></div>
           <div>
@@ -372,10 +373,10 @@ export default function KboPlayerPage({ playerName, onBack }) {
           {line != null && <div className="kbo-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(line)}</span></div>}
           <div className="kbo-player-bars">
             {filteredGames.map((g, index) => {
-              const hit = line != null && g.value != null && g.value > line
+              const kind = lineResult(g.value, line) || 'miss'
               return (
                 <div className="kbo-player-bar-col" key={`${currentProp.stat}-${g.date}-${index}`}>
-                  <div className={`kbo-player-bar ${hit ? 'hit' : 'miss'}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
+                  <div className={`kbo-player-bar ${kind}`} style={{ height: `${Math.max(4, ((g.value ?? 0) / maxValue) * 100)}%` }}><i>{formatValue(g.value)}</i></div>
                 </div>
               )
             })}

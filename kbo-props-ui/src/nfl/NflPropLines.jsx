@@ -81,7 +81,7 @@ function MiniChart({ recent, line }) {
   return (
     <div className="nfl-lines-chart" aria-hidden="true">
       {recent.map((value, index) => (
-        <span key={index} className={value >= line ? 'hit' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
+        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
       ))}
     </div>
   )
@@ -113,7 +113,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, odds, o
         </td>
         <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
         <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>{item.score.toFixed(1)}</td>
-        <td className="hit-rate-col"><HitRateStrip pills={nflHitPills(item)} /></td>
+        <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
         <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
         <td>
           <div className="nfl-lines-matchup">
@@ -270,7 +270,20 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   }, [projections])
 
   const rows = useMemo(() => {
-    const withScore = projections.map((item) => ({ ...item, score: item.line ? (item.projection / item.line) * 50 : 0, isOver: item.projection >= item.line }))
+    const withScore = projections.map((item) => {
+      const pills = nflHitPills(item)
+      const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
+      return {
+        ...item,
+        hitPills: pills,
+        hitRate: byId.l10?.rate ?? 0,
+        gamesPlayed: byId.l10?.games ?? 0,
+        seasonHitRate: byId.season?.rate ?? null,
+        h2hHitRate: byId.h2h?.rate ?? null,
+        score: item.line ? (item.projection / item.line) * 50 : 0,
+        isOver: item.projection >= item.line,
+      }
+    })
     const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
     const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
     const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)

@@ -82,16 +82,18 @@ export function passesChartFilters(game, {
   return true
 }
 
-// Same rule the player page already used: a game hits when the stat is over the line.
+// A game hits when the stat is over the line. A push is left out of the rate.
 export function hitRateForGames(games, getValue, line) {
   if (typeof getValue !== 'function' || line == null || !Number.isFinite(Number(line))) {
     return { pct: null, hits: 0, games: 0 }
   }
+  const numericLine = Number(line)
   const values = (games || [])
     .map(game => getValue(game))
     .filter(value => value != null && Number.isFinite(Number(value)))
     .map(Number)
-  if (!values.length) return { pct: null, hits: 0, games: 0 }
-  const hits = values.filter(value => value > line).length
-  return { pct: Math.round((hits / values.length) * 100), hits, games: values.length }
+  const decided = values.filter(value => value !== numericLine)
+  if (!decided.length) return { pct: null, hits: 0, games: 0 }
+  const hits = decided.filter(value => value > numericLine).length
+  return { pct: Math.round((hits / decided.length) * 100), hits, games: decided.length }
 }

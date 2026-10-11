@@ -82,8 +82,9 @@ function hitRateForWindow(games, stat, line, windowSize) {
     .map(game => getValue(game))
     .filter(value => value != null)
 
-  if (!eligibleGames.length) return null
-  return Math.round((eligibleGames.filter(value => value > numericLine).length / eligibleGames.length) * 100)
+  const decided = eligibleGames.filter(value => Number(value) !== numericLine)
+  if (!decided.length) return null
+  return Math.round((decided.filter(value => value > numericLine).length / decided.length) * 100)
 }
 
 function fmtScore(value) {

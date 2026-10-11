@@ -152,7 +152,7 @@ export function computeRate(games, label, line) {
   let counted = 0
   games.forEach((game) => {
     const value = statValue(game, label)
-    if (value == null) return
+    if (value == null || value === numericLine) return
     counted += 1
     if (value > numericLine) hits += 1
   })
@@ -163,11 +163,10 @@ export function computeRate(games, label, line) {
 function rateFromSeries(values, line) {
   const numericLine = num(line)
   if (!values?.length || numericLine == null) return null
-  let hits = 0
-  values.forEach((value) => {
-    if (value > numericLine) hits += 1
-  })
-  return { hits, total: values.length, pct: (hits / values.length) * 100 }
+  const decided = values.filter((value) => value !== numericLine)
+  if (!decided.length) return null
+  const hits = decided.filter((value) => value > numericLine).length
+  return { hits, total: decided.length, pct: (hits / decided.length) * 100 }
 }
 
 // Newest-first series saved with the hit rate. Empty when the snapshot is

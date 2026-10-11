@@ -3,6 +3,7 @@ import PlayerOddsTable from '../PlayerOddsTable'
 import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
+import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
 import { gameMatchesTeammates, hitRateForValues, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
@@ -172,33 +173,35 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const defaultSnapThreshold = validSnaps.length ? Math.round(average(validSnaps) * 10) / 10 : 0
   const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
   const isOver = currentRow.projection >= currentRow.line
-  const hits = Math.round((currentRow.hitRate / 100) * currentRow.gamesPlayed)
   const modelDelta = currentRow.projection - currentRow.line
-  const currentSeason = currentRow.priorSeasonLabel != null ? currentRow.priorSeasonLabel + 1 : new Date().getFullYear()
+  const currentSeason = nflCurrentSeason(currentRow) ?? new Date().getFullYear()
+  const summary = overHitRate(recent.slice(-10), currentRow.line)
 
-  const rangeOptions = [
-    { id: 'season', label: String(currentSeason), hitRate: currentRow.seasonHitRate, games: currentRow.seasonGames },
-    { id: 'priorSeason', label: currentRow.priorSeasonLabel ? String(currentRow.priorSeasonLabel) : '—', hitRate: currentRow.priorSeasonHitRate, games: currentRow.priorSeasonGames },
-    { id: 'h2h', label: 'H2H', hitRate: currentRow.h2hHitRate, games: currentRow.h2hGames },
-    { id: 'l5', label: 'L5', hitRate: currentRow.hitRateL5, games: currentRow.gamesL5 },
-    { id: 'l10', label: 'L10', hitRate: currentRow.hitRate, games: currentRow.gamesPlayed },
-    { id: 'l20', label: 'L20', hitRate: currentRow.hitRateL20, games: currentRow.gamesL20 },
-    { id: 'l30', label: 'L30', hitRate: currentRow.hitRateL30, games: currentRow.gamesL30 },
-  ]
-
-  // Base indices for the selected range: season/prior season/H2H filter by game metadata, L5-L30 slice the trailing window.
-  let baseIndices
-  if (selectedRange === 'season') {
-    baseIndices = gameSeasons.map((season, index) => (season === currentSeason ? index : -1)).filter((index) => index !== -1)
-  } else if (selectedRange === 'priorSeason') {
-    baseIndices = gameSeasons.map((season, index) => (season === currentSeason - 1 ? index : -1)).filter((index) => index !== -1)
-  } else if (selectedRange === 'h2h') {
-    baseIndices = gameOpponents.map((opponent, index) => (opponent === currentRow.opponent ? index : -1)).filter((index) => index !== -1)
-  } else {
-    const count = selectedRange === 'l5' ? 5 : selectedRange === 'l20' ? 20 : selectedRange === 'l30' ? 30 : 10
+  const indicesFor = (rangeId) => {
+    if (rangeId === 'season') return gameSeasons.map((season, index) => (Number(season) === currentSeason ? index : -1)).filter((index) => index !== -1)
+    if (rangeId === 'priorSeason') return gameSeasons.map((season, index) => (Number(season) === currentSeason - 1 ? index : -1)).filter((index) => index !== -1)
+    if (rangeId === 'h2h') {
+      const opponent = String(currentRow.opponent ?? '').trim().toUpperCase()
+      return gameOpponents.map((team, index) => (String(team ?? '').trim().toUpperCase() === opponent ? index : -1)).filter((index) => index !== -1)
+    }
+    const count = rangeId === 'l5' ? 5 : rangeId === 'l20' ? 20 : rangeId === 'l30' ? 30 : 10
     const size = Math.min(count, recent.length)
-    baseIndices = Array.from({ length: size }, (_, i) => recent.length - size + i)
+    return Array.from({ length: size }, (_, i) => recent.length - size + i)
   }
+  const rangeOptions = [
+    { id: 'season', label: String(currentSeason) },
+    { id: 'priorSeason', label: currentRow.priorSeasonLabel ? String(currentRow.priorSeasonLabel) : '—' },
+    { id: 'h2h', label: 'H2H' },
+    { id: 'l5', label: 'L5' },
+    { id: 'l10', label: 'L10' },
+    { id: 'l20', label: 'L20' },
+    { id: 'l30', label: 'L30' },
+  ].map((option) => {
+    const rated = overHitRate(indicesFor(option.id).map((index) => recent[index]), currentRow.line)
+    return { ...option, hitRate: rated?.rate ?? null, games: rated?.games ?? 0 }
+  })
+
+  const baseIndices = indicesFor(selectedRange)
   const chartIndices = baseIndices.filter((index) => {
     const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
     const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
@@ -251,7 +254,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       </div>
 
       <div className="nfl-player-summary">
-        <div className="nfl-player-hitrate"><small>HIT RATE</small><strong className={hits / currentRow.gamesPlayed >= 0.5 ? 'over' : 'under'}>{currentRow.hitRate}%</strong><span>({hits}/{currentRow.gamesPlayed})</span></div>
+        <div className="nfl-player-hitrate"><small>HIT RATE</small><strong className={summary?.rate == null ? '' : summary.rate >= 50 ? 'over' : 'under'}>{summary?.rate == null ? '—' : `${summary.rate}%`}</strong><span>{summary ? `(${summary.hits}/${summary.games})` : ''}</span></div>
         <div><small>LINE</small><strong>{formatValue(currentRow.line)}</strong></div>
         <div><small>MODEL</small><strong>{formatValue(currentRow.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></div>
         <div><small>SEASON AVG</small><strong>{formatValue(currentRow.seasonAverage)}</strong></div>
@@ -341,10 +344,10 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div className="nfl-player-chart-line" style={{ bottom: `${linePct}%` }}><span>{formatValue(currentRow.line)}</span></div>
         <div className="nfl-player-bars">
           {chartValues.map((value, index) => {
-            const hit = value >= currentRow.line
+            const kind = lineResult(value, currentRow.line) || 'miss'
             return (
               <div className="nfl-player-bar-col" key={`${currentRow.id}-${chartIndices[index]}`}>
-                <div className={`nfl-player-bar ${hit ? 'hit' : 'miss'}`} style={{ height: `${Math.max(4, (value / maxValue) * 100)}%` }}><i>{formatValue(value)}</i></div>
+                <div className={`nfl-player-bar ${kind}`} style={{ height: `${Math.max(4, (value / maxValue) * 100)}%` }}><i>{formatValue(value)}</i></div>
               </div>
             )
           })}

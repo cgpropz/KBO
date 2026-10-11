@@ -1,3 +1,5 @@
+import { overHitRate } from '../hitRateStrip.js'
+
 // Teammate on/off filters for the NFL player hit-rate chart.
 // A game counts only when every active constraint matches. "On" means that
 // teammate played offense in the game. "Off" means the snap file covers the
@@ -17,10 +19,9 @@ export function gameMatchesTeammates(onIds, modes) {
 }
 
 export function hitRateForValues(values, line) {
-  const games = Array.isArray(values) ? values.length : 0
-  if (!games) return { hits: 0, games: 0, rate: null }
-  const hits = values.filter((value) => value >= line).length
-  return { hits, games, rate: Math.round((hits / games) * 100) }
+  const rated = overHitRate(values, line)
+  if (!rated) return { hits: 0, games: 0, rate: null }
+  return { hits: rated.hits, games: rated.games, rate: rated.rate }
 }
 
 export function teammateFilterLabel(teammates, modes) {
