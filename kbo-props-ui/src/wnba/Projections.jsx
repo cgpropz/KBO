@@ -5,7 +5,6 @@ import { fmtDvpRank } from './utils/formatters'
 import { wnbaCgScore } from './wnbaScore'
 import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
-import { slateDateLabel } from '../wnbaBoard'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const LINE_TYPES = ['standard', 'demon', 'goblin']
@@ -161,7 +160,17 @@ export default function Projections({ onSelectPlayer }) {
     return ['All', ...[...set].sort((a, b) => a.localeCompare(b))]
   }, [data])
 
-  // Build sorted matchup options. A future slate keeps its calendar date.
+  const activeSlateDate = useMemo(() => {
+    if (!data) return null
+    const dates = [...new Set(
+      data.flatMap(player => (player.ppAllProps || [])
+        .map(prop => prop?.gameDate)
+        .filter(Boolean))
+    )].sort()
+    return dates[0] || null
+  }, [data])
+
+  // Build sorted matchup options grouped by the active slate date
   const matchups = useMemo(() => {
     if (!data) return []
 
@@ -178,12 +187,21 @@ export default function Projections({ onSelectPlayer }) {
         if (seen.has(key)) return
         // Date label
         const gd = prop.gameDate || ''
-        const dateLabel = slateDateLabel(gd)
+        let dateLabel = ''
+        if (gd) {
+          const isActiveSlate = gd === activeSlateDate
+          if (isActiveSlate) dateLabel = 'Todays slate'
+          else {
+            const d = new Date(gd + 'T00:00:00Z')
+            d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+            dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          }
+        }
         seen.set(key, { label: `${t1} vs ${t2}`, dateLabel, dateStr: gd || '9999' })
       })
     })
     // Sort: active slate first, then by date string, then alphabetical
-    const order = { "Today's slate": 0 }
+    const order = { 'Todays slate': 0 }
     return [...seen.values()].sort((a, b) => {
       const oa = order[a.dateLabel] ?? 2
       const ob = order[b.dateLabel] ?? 2
@@ -191,7 +209,7 @@ export default function Projections({ onSelectPlayer }) {
       if (a.dateStr !== b.dateStr) return a.dateStr.localeCompare(b.dateStr)
       return a.label.localeCompare(b.label)
     })
-  }, [data])
+  }, [data, activeSlateDate])
 
   const filtered = useMemo(() => {
     if (!data) return []

@@ -181,7 +181,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
-          <select className="nhl-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
             <option>CG Score</option>
             <option>Hit Rate</option>
             <option>Season</option>

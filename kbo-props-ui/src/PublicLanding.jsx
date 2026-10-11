@@ -9,7 +9,6 @@ import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
-import StartHereBanner from './StartHereBanner';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import FoundersOffer from './FoundersOffer';
 import DiscordInviteLink from './DiscordInviteLink';
@@ -115,8 +114,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           <a href="/nba-player-props">NBA</a>
           <a href="/nhl-player-props">NHL</a>
           <a href="/pricing">Pricing</a>
-          <a href="/guides/start-here">Start Here</a>
-          <a href="/guides/cg-score">How CG Score works</a>
+          <a href="/guides/cg-score">CG Score</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div className="pl-header-actions">
@@ -156,7 +154,6 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           </div>
         </section>
 
-        <StartHereBanner />
         <FreePicksPreview
           onSignUp={onGetStarted}
           onOpenBoard={(sport) => onOpenBoard?.(sport)}

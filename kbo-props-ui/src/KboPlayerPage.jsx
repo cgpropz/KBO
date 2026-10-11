@@ -9,7 +9,7 @@ import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 import { lineResult, overHitRate } from './hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from './lineSlider'
-import { playerHeaderBadge, scoreFor } from './kboBoardScore'
+import { scoreFor } from './kboBoardScore'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreNote } from './CgScoreExplainer'
 
@@ -280,7 +280,6 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const hitColor = rateTextColor(currentRange?.pct, currentRange?.games)
   const model = currentProp.projection ?? currentProp.avg ?? null
   const isOver = model != null && line != null && model >= line
-  const headerBadge = playerHeaderBadge(currentProp)
   const modelDelta = model != null && line != null ? model - line : null
 
   const seasonGames = currentSeason ? games.filter(g => String(g.season) === currentSeason) : games
@@ -325,10 +324,8 @@ export default function KboPlayerPage({ playerName, onBack }) {
           </div>
           <div className="kbo-player-prop-pill">
             <span>{formatValue(line)} {currentProp.stat}</span>
-            {headerBadge && (
-              <b className={headerBadge.side === 'neutral' ? undefined : headerBadge.side}>
-                {headerBadge.label ? `${headerBadge.label} ` : ''}{headerBadge.scoreText}
-              </b>
+            {currentProp.cg_projection != null && (
+              <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {Number(currentProp.cg_projection).toFixed(1)}</b>
             )}
           </div>
         </div>
