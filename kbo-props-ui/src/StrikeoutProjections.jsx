@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData } from './dataUrl';
 import { getCgProjectionColor } from './cgProjectionColor';
+import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 
 // Hit rate color scale (matches BatterProjections)
@@ -494,12 +495,7 @@ function StrikeoutProjections({ onNavigate }) {
 
   const hasCurrentPitcherMarkets = data.market_status !== 'no_current_pitcher_markets';
 
-  const deriveValue = (proj, line) => {
-    if (proj == null || line == null) return 'PUSH';
-    if (proj > line) return 'OVER';
-    if (proj < line) return 'UNDER';
-    return 'PUSH';
-  };
+  const deriveValue = (proj, line) => pregameSide(proj, line);
 
   const getValClass = (val) => {
     if (val === 'OVER') return 'val-over';
@@ -940,7 +936,7 @@ function StrikeoutProjections({ onNavigate }) {
             <div className="so-legend-items">
               <div className="so-legend-item"><span className="val-badge val-over">OVER</span><span>Projection &gt; Line</span></div>
               <div className="so-legend-item"><span className="val-badge val-under">UNDER</span><span>Projection &lt; Line</span></div>
-              <div className="so-legend-item"><span className="val-badge val-push">PUSH</span><span>Projection = Line</span></div>
+              <div className="so-legend-item"><span className="val-badge val-push">EVEN</span><span>Projection equals the line</span></div>
             </div>
           </div>
 

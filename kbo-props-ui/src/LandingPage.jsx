@@ -4,6 +4,7 @@ import HighchartsReact from 'highcharts-react-official';
 import DiscordInviteLink from './DiscordInviteLink';
 import './LandingPage.css';
 import { getCgProjectionColor } from './cgProjectionColor';
+import { pregameSide } from './kboBoardScore';
 import { fetchDataSnapshot } from './dataUrl';
 import SportSwitcher from './SportSwitcher';
 
@@ -117,10 +118,8 @@ function enrichPick(pick) {
   const line = toNum(pick.line);
   const projection = toNum(pick.projection);
   const edge = toNum(pick.edge);
-  const oddsType = (pick.odds_type || 'standard').toLowerCase();
-  const isPromo = oddsType === 'demon' || oddsType === 'goblin';
   let rec = String(pick.recommendation || '').toUpperCase();
-  if (isPromo && rec === 'UNDER') rec = 'PUSH';
+  if (rec !== 'OVER' && rec !== 'UNDER') rec = pregameSide(pick.projection, pick.line);
 
   if (!Number.isFinite(line) || !Number.isFinite(projection) || !Number.isFinite(edge)) return null;
   if (rec !== 'OVER' && rec !== 'UNDER') return null;
@@ -300,9 +299,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
     if (!Number.isFinite(liveLine)) return null;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
-    let pitcherRec = edge == null ? 'NO LINE' : edge > 0.45 ? 'OVER' : edge < -0.45 ? 'UNDER' : 'PUSH';
-    if (isPromo && pitcherRec === 'UNDER') pitcherRec = 'PUSH';
+    const pitcherRec = pregameSide(Number.isFinite(projection) ? projection : null, liveLine);
     return {
       ...p,
       line: liveLine,
@@ -327,9 +324,7 @@ function LandingPage({ onNavigate, sport, setSport }) {
     if (!Number.isFinite(liveLine)) return null;
     const projection = Number(p.projection);
     const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
-    let batterRec = edge == null ? 'NO LINE' : edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH';
-    if (isPromo && batterRec === 'UNDER') batterRec = 'PUSH';
+    const batterRec = pregameSide(Number.isFinite(projection) ? projection : null, liveLine);
     return {
       ...p,
       line: liveLine,

@@ -4,6 +4,7 @@ import HighchartsReact from 'highcharts-react-official';
 import './PlayerPropsUI.css';
 import { fetchDataSnapshot } from './dataUrl';
 import { cgScore } from './cgScore';
+import { pregameSide, scoreFor } from './kboBoardScore';
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Lotte: '#ff6666',
@@ -90,11 +91,14 @@ const PlayerPropsUI = () => {
     }
     items.sort((a, b) => {
       if (sortBy === 'hit_rate') {
-        const scoreA = cgScore(a.prop.avg, a.prop.line, a.prop.stat) ?? -Infinity;
-        const scoreB = cgScore(b.prop.avg, b.prop.line, b.prop.stat) ?? -Infinity;
+        const scoreA = scoreFor(a.prop) ?? -Infinity;
+        const scoreB = scoreFor(b.prop) ?? -Infinity;
         return scoreB - scoreA;
       }
-      if (sortBy === 'edge') return ((b.prop.avg || 0) - b.prop.line) - ((a.prop.avg || 0) - a.prop.line);
+      if (sortBy === 'edge') {
+        const edgeOf = (prop) => (prop.projection == null || prop.projection === '' ? -Infinity : Number(prop.projection) - Number(prop.line));
+        return edgeOf(b.prop) - edgeOf(a.prop);
+      }
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
@@ -179,10 +183,11 @@ function PropCard({ card, photoUrl, matchup }) {
   const oppColor = TEAM_COLORS[opponent] || '#888';
   const oddsType = prop.odds_type || 'standard';
   const isPromo = oddsType === 'demon' || oddsType === 'goblin';
-  const edge = (prop.avg || 0) - prop.line;
-  let rec = prop.recommendation || (edge > 0.3 ? 'OVER' : edge < -0.3 ? 'UNDER' : 'PUSH');
-  if (isPromo && rec === 'UNDER') rec = 'PUSH';
-  const score = cgScore(prop.avg, prop.line, prop.stat);
+  const hasProjection = prop.projection != null && prop.projection !== '' && Number.isFinite(Number(prop.projection));
+  const edge = hasProjection ? Number(prop.projection) - Number(prop.line) : null;
+  let rec = String(prop.recommendation || '').toUpperCase();
+  if (rec !== 'OVER' && rec !== 'UNDER') rec = pregameSide(hasProjection ? prop.projection : null, prop.line);
+  const score = hasProjection ? cgScore(prop.projection, prop.line, prop.stat) : null;
   const [imageFailed, setImageFailed] = useState(false);
   const [chartPeriod, setChartPeriod] = useState(null);
   const [flipped, setFlipped] = useState(false);
