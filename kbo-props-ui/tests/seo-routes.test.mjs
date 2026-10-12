@@ -82,6 +82,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       ['/board', '/kbo-player-props'],
       ['/app', '/'],
       ['/start-here', '/guides/start-here'],
+      ['/how-cg-score', '/guides/cg-score'],
     ]) {
       const response = await fetch(server.url + source, { redirect: 'manual' })
       assert.equal(response.status, 301, source)

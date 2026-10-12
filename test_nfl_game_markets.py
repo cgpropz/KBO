@@ -311,7 +311,12 @@ class GameMarketArchiveTests(unittest.TestCase):
             # 8:20 PM ET in October is 00:20 UTC the next day.
             self.assertEqual(early["games"][0]["kickoff_at"], "2026-10-12T00:20:00Z")
             after = self._snapshot("2026-10-12T01:00:00Z", 9.0, "after kickoff")
-            markets.archive_game_markets(after, root)
+            archived = markets.archive_game_markets(after, root)
+            # 01:00 UTC is still 9:00 PM Eastern on Oct 11, so the daily file
+            # stays on the slate date. The per-run capture keeps the UTC name.
+            self.assertEqual(archived["daily"].name, "2026-10-11.json")
+            self.assertFalse((root / "2026-10-12.json").exists())
+            self.assertTrue((root / "lines" / "2026-10-12T010000Z.json").is_file())
             captures = [
                 json.loads(path.read_text(encoding="utf-8"))
                 for path in sorted((root / "lines").glob("*.json"))
@@ -320,6 +325,26 @@ class GameMarketArchiveTests(unittest.TestCase):
             self.assertEqual(close["captured_at"], "2026-10-11T16:00:00Z")
             self.assertEqual(close["spread"]["line"], 3.0)
             self.assertIsNone(late["games"][0]["spread"]["line"])
+
+    def test_daily_filename_uses_eastern_slate_date(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # 9:00 PM ET on Oct 11 is 01:00 UTC on Oct 12 (EDT, UTC-4).
+            evening = self._snapshot("2026-10-12T01:00:00Z", 3.0, "sunday night")
+            markets.archive_game_markets(evening, root)
+            self.assertTrue((root / "2026-10-11.json").is_file())
+            self.assertFalse((root / "2026-10-12.json").exists())
+            self.assertEqual(markets.eastern_slate_date("2026-10-12T01:00:00Z"), "2026-10-11")
+            # 12:30 AM ET on Oct 12 is 04:30 UTC the same calendar morning.
+            morning = self._snapshot("2026-10-12T04:30:00Z", 4.0, "after midnight eastern")
+            markets.archive_game_markets(morning, root)
+            self.assertTrue((root / "2026-10-12.json").is_file())
+            self.assertEqual(
+                json.loads((root / "2026-10-11.json").read_text(encoding="utf-8"))["message"],
+                "sunday night",
+            )
+            self.assertTrue((root / "lines" / "2026-10-12T010000Z.json").is_file())
+            self.assertTrue((root / "lines" / "2026-10-12T043000Z.json").is_file())
 
     def test_memory_archive_commit_does_not_redeploy(self):
         deploy = _push_globs(".github/workflows/deploy.yml")

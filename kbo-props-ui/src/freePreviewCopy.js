@@ -16,6 +16,16 @@ export function freeTierPreviewFeature() {
     : 'Top 3 projections — KBO, WNBA & NHL'
 }
 
+const TOP_3_BANNER = "Free preview: you're seeing the top 3 lines on each board."
+const NFL_PAUSED_BANNER = 'NFL free preview is paused. Sign up to see the full board.'
+
+// The green bar reads the same flag the API uses. Turning the preview back
+// on restores the top-3 sentence on NFL without a copy change.
+export function freePreviewBannerText(sport, enabled = NFL_FREE_PREVIEW_ENABLED) {
+  if (sport === 'nfl' && !enabled) return NFL_PAUSED_BANNER
+  return TOP_3_BANNER
+}
+
 const FREE_TOP_3_BOARDS = ['kbo', 'nfl', 'wnba', 'nhl']
 
 // The homepage anchor stays mounted even when a board has no rows. An empty

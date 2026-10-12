@@ -799,18 +799,34 @@ def closing_line_before_kickoff(captures, game_id, kickoff_at):
     return chosen
 
 
+def eastern_slate_date(captured_at):
+    """Calendar date in America/New_York for the daily archive filename.
+
+    A Sunday night kickoff is still that Eastern date after midnight UTC.
+    """
+    text = str(captured_at).strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    moment = datetime.fromisoformat(text)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(EASTERN).date().isoformat()
+
+
 def archive_game_markets(snapshot, memory_dir=GAME_MARKET_MEMORY, now=None):
     """Write the published board and a per-run Unabated line capture.
 
-    `memory_dir/YYYY-MM-DD.json` is the published snapshot. A later run on the
-    same UTC day replaces it. `memory_dir/lines/<captured_at>.json` is one file
-    per run, so the last capture before kickoff is still there.
+    `memory_dir/YYYY-MM-DD.json` is the published snapshot for that
+    America/New_York slate date. A later run on the same Eastern date replaces
+    it. Existing files are left where they are. `memory_dir/lines/<captured_at>.json`
+    stays one file per run, named from the UTC timestamp, so the last capture
+    before kickoff is still there.
     """
     captured_at = snapshot.get("generated_at")
     if not captured_at:
         moment = now or datetime.now(timezone.utc)
         captured_at = moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    day = str(captured_at)[:10]
+    day = eastern_slate_date(captured_at)
     memory_dir = Path(memory_dir)
     memory_dir.mkdir(parents=True, exist_ok=True)
     daily_path = memory_dir / f"{day}.json"
