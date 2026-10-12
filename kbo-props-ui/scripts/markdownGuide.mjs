@@ -78,7 +78,7 @@ function renderTable(rows) {
   if (!parsed.length) return '';
   const head = parsed[0].map((cell) => `<th>${inlineMarkdown(cell)}</th>`).join('');
   const body = parsed.slice(1).map((cells) => `<tr>${cells.map((cell) => `<td>${inlineMarkdown(cell)}</td>`).join('')}</tr>`).join('\n');
-  return `<table>\n<thead><tr>${head}</tr></thead>\n<tbody>\n${body}\n</tbody>\n</table>`;
+  return `<div class="table-scroll">\n<table>\n<thead><tr>${head}</tr></thead>\n<tbody>\n${body}\n</tbody>\n</table>\n</div>`;
 }
 
 export function renderMarkdown(src) {

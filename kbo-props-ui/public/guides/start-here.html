@@ -30,12 +30,13 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.55;
     }
+    html { overflow-x: clip; }
     a { color: #4ade80; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .wrap { width: min(980px, 100%); max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
     header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
     .wordmark span { color: #4ade80; }
-    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; }
+    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; min-width: 0; }
     h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     h2 { margin: 36px 0 10px; font-size: 22px; }
     h3 { margin: 18px 0 6px; font-size: 17px; }
@@ -44,7 +45,8 @@
     .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
     .btn-primary { background: #22c55e; color: #04140a; }
     .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
+    .table-scroll { display: block; max-width: 100%; overflow-x: auto; margin: 12px 0 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
     thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
     .missing-day td { color: #fbbf24; }
@@ -106,12 +108,14 @@
 <h2>How to read a board row</h2>
 <h3>Example only. The player and every number below are made up to show the layout. This is not a real prop.</h3>
 <figure><img src="/images/start-here-board-row.png" alt="Annotated example of a CGPropz board row for a made-up points prop. Labels point to the player, line, projection, CG Score, hit rates, and defense versus position." /></figure>
+<div class="table-scroll">
 <table>
 <thead><tr><th>Player</th><th>Stat</th><th>Line</th><th>Side</th><th>Projection</th><th>CG Score</th><th>L5</th><th>L10</th><th>Season</th><th>DVP</th></tr></thead>
 <tbody>
 <tr><td>Sample Player (Team A)</td><td>Points</td><td>18.5</td><td>Over</td><td>21.0</td><td>56.8</td><td>3 of 5</td><td>6 of 10</td><td>20 of 34</td><td>Soft matchup</td></tr>
 </tbody>
 </table>
+</div>
 <p>What each column tells you:</p>
 <ul>
 <li><strong>Line (18.5):</strong> the number posted by the pick'em app or sportsbook.</li>
@@ -146,6 +150,7 @@
 <h2>Projections and hit rates</h2>
 <p><strong>Projection:</strong> the model's estimate of a player's stat for today's game, built from recent form, the matchup and the posted line. It's an estimate, not a forecast you can count on.</p>
 <p><strong>Hit rate:</strong> how often a player cleared <strong>today's line</strong> over a set of past games. It's always tied to the line. The same player can have a high hit rate at one line and a low one at another.</p>
+<div class="table-scroll">
 <table>
 <thead><tr><th>Window</th><th>What it covers</th><th>How to use it</th></tr></thead>
 <tbody>
@@ -154,6 +159,7 @@
 <tr><td><strong>Season</strong></td><td>Every game this season</td><td>Largest sample. Slower to reflect role changes.</td></tr>
 </tbody>
 </table>
+</div>
 <p>Some boards also show <strong>H2H</strong> (games against today's opponent), usually the smallest sample of all.</p>
 <p>Three rules for reading hit rates:</p>
 <ol>

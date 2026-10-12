@@ -30,12 +30,13 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.55;
     }
+    html { overflow-x: clip; }
     a { color: #4ade80; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .wrap { width: min(980px, 100%); max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
     header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
     .wordmark span { color: #4ade80; }
-    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; }
+    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; min-width: 0; }
     h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     h2 { margin: 36px 0 10px; font-size: 22px; }
     h3 { margin: 18px 0 6px; font-size: 17px; }
@@ -44,7 +45,8 @@
     .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
     .btn-primary { background: #22c55e; color: #04140a; }
     .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
+    .table-scroll { display: block; max-width: 100%; overflow-x: auto; margin: 12px 0 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
     thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
     .missing-day td { color: #fbbf24; }
@@ -104,6 +106,7 @@
 <p>The 2026 WNBA Finals pairs the Golden State Valkyries and the Atlanta Dream, and the league will crown a first-time champion either way. This page is the CGPropz hub for the series. It has the game schedule, the free top 3 player props from the CGPropz board for each game, and the context you need to read those numbers in a short playoff series.</p>
 <p>The free top 3 for each game is posted here once the board for that game is built. The full board, with every graded prop for both teams, is part of All-Access.</p>
 <h3>WNBA Finals 2026 schedule (ET)</h3>
+<div class="table-scroll">
 <table>
 <thead><tr><th>Game</th><th>Date</th><th>Tip-off (ET)</th><th>Home court</th><th>TV</th></tr></thead>
 <tbody>
@@ -116,6 +119,7 @@
 <tr><td>Game 7 <em>(if necessary)</em></td><td>Saturday, Oct 31</td><td>8:00 PM</td><td>Golden State</td><td>USA / Peacock</td></tr>
 </tbody>
 </table>
+</div>
 <p>The series is best-of-seven in a 2-2-1-1-1 format, with Golden State holding home-court advantage as the higher seed.</p>
 <h3>How the teams got here</h3>
 <ul>
