@@ -57,9 +57,321 @@
     .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
     </style>
     <!--/seo-style-->
+      <script>window.__cgBoot=0</script>
+    <!--boot-style-->
+    <style>
+.cg-boot,
+.cg-boot * { box-sizing: border-box; }
+
+.cg-boot {
+  min-height: 100vh;
+  padding: 18px 16px 32px;
+  background: #050506;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cg-boot.is-inset {
+  min-height: 40vh;
+  padding-top: 4px;
+}
+
+.cg-boot.is-slow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, rgba(34, 197, 94, 0.22), rgba(5, 5, 6, 0) 58%),
+    #050506;
+}
+
+.cg-boot.is-inset .cg-boot-top,
+.cg-boot.is-inset .cg-picks,
+.cg-boot.is-inset .cg-kicker { display: none; }
+
+.cg-boot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cg-boot-mark {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.cg-boot-mark span { color: #4ade80; }
+
+.cg-boot-nav {
+  display: flex;
+  gap: 4px;
+  overflow: auto;
+}
+
+.cg-boot-nav span {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #78918a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.cg-kicker {
+  margin: 4px 0 10px;
+  color: #54e0bf;
+  font: 800 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cg-pick,
+.cg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.cg-rank,
+.cg-avatar {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.cg-avatar { width: 40px; height: 40px; }
+
+.cg-lines {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 7px;
+  min-width: 0;
+}
+
+.cg-lines i,
+.cg-stat {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.cg-lines i:first-child { width: 62%; height: 12px; }
+.cg-lines i:last-child { width: 38%; }
+.cg-stat { width: 72px; height: 22px; border-radius: 8px; flex: 0 0 auto; }
+
+.cg-mini {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 56px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.cg-mini b {
+  display: block;
+  flex: 1 1 0;
+  min-width: 3px;
+  border-radius: 1px 1px 0 0;
+  background: rgba(34, 197, 94, 0.55);
+}
+
+.cg-mini b:nth-child(1) { height: 40%; }
+.cg-mini b:nth-child(2) { height: 72%; }
+.cg-mini b:nth-child(3) { height: 48%; }
+.cg-mini b:nth-child(4) { height: 90%; }
+.cg-mini b:nth-child(5) { height: 60%; }
+
+.cg-shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: cg-shimmer 1.4s linear infinite;
+}
+
+@keyframes cg-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.cg-boot-skeleton { display: block; }
+.cg-boot.is-slow .cg-boot-skeleton { display: none; }
+
+.cg-boot-stage {
+  position: relative;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 1;
+}
+
+.cg-boot.is-slow .cg-boot-stage { display: flex; }
+
+.cg-glow {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 42%;
+  width: 220px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.45), rgba(34, 197, 94, 0) 68%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.cg-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  width: 92px;
+  height: 46px;
+}
+
+.cg-bars span {
+  flex: 1 1 0;
+  height: 100%;
+  border-radius: 2px 2px 0 0;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.45);
+  transform: scaleY(0.35);
+  transform-origin: bottom;
+  animation: cg-rise 1.05s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.12s);
+}
+
+.cg-bars i {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 46%;
+  border-top: 1.5px dashed rgba(167, 243, 208, 0.9);
+  pointer-events: none;
+}
+
+@keyframes cg-rise {
+  0%, 100% { transform: scaleY(0.28); }
+  50% { transform: scaleY(1); }
+}
+
+.cg-boot-copy {
+  position: relative;
+  height: 1.2em;
+  margin: 0;
+  min-width: 15em;
+  color: #a1a1aa;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.cg-boot-copy span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  animation: cg-line 3s infinite;
+}
+
+.cg-boot-copy span:nth-child(2) { animation-delay: 1s; }
+.cg-boot-copy span:nth-child(3) { animation-delay: 2s; }
+
+@keyframes cg-line {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  30% { opacity: 1; }
+  38% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.cg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-shimmer,
+  .cg-bars span,
+  .cg-boot-copy span { animation: none; }
+
+  .cg-shimmer { background: rgba(255, 255, 255, 0.08); }
+
+  .cg-bars span:nth-child(1) { transform: scaleY(0.42); }
+  .cg-bars span:nth-child(2) { transform: scaleY(0.74); }
+  .cg-bars span:nth-child(3) { transform: scaleY(0.58); }
+  .cg-bars span:nth-child(4) { transform: scaleY(0.92); }
+  .cg-bars span:nth-child(5) { transform: scaleY(0.5); }
+
+  .cg-boot-copy span { opacity: 0; }
+  .cg-boot-copy span:first-child { position: static; opacity: 1; }
+}
+
+
+#cg-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(34, 197, 94, 0.22), rgba(5, 5, 6, 0) 58%),
+    #050506;
+  animation: cg-boot-reveal 0s linear 1.5s forwards;
+}
+@keyframes cg-boot-reveal {
+  to { opacity: 1; visibility: visible; pointer-events: auto; }
+}
+#cg-boot .cg-boot-skeleton { display: none; }
+#cg-boot .cg-boot-stage { display: flex; }
+    </style>
+    <!--/boot-style-->
   </head>
   <body>
     <div id="root">
+<!--boot-screen-->
+    <div id="cg-boot" class="cg-boot" role="status" aria-live="polite" aria-label="Loading cgpropz">
+      <div class="cg-boot-skeleton">
+        <header class="cg-boot-top">
+          <div class="cg-boot-mark">cg<span>propz</span></div>
+          <nav class="cg-boot-nav" aria-hidden="true"><span>KBO</span><span>NFL</span><span>WNBA</span><span>NHL</span></nav>
+        </header>
+        <p class="cg-kicker">Today’s free top 3</p>
+        <div class="cg-picks"><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div></div>
+        <p class="cg-kicker">Board</p>
+        <div class="cg-rows"><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div></div>
+      </div>
+      <div class="cg-boot-stage">
+        <div class="cg-glow" aria-hidden="true"></div>
+        <div class="cg-boot-mark">cg<span>propz</span></div>
+        <div class="cg-bars" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><i></i></div>
+        <p class="cg-boot-copy"><span>Pulling today’s lines…</span><span>Crunching CG Scores…</span><span>Checking hit rates…</span></p>
+      </div>
+    </div>
+    <!--/boot-screen-->
 <!--seo-root-->
 <div class="seo-prerender">
     <header>

@@ -8,6 +8,7 @@ import { kboHitPills } from './hitRateStrip'
 import { directionFor, scoreFor } from './kboBoardScore'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
+import { BoardSkeleton } from './BootScreen.jsx'
 import './KboPropBoard.css'
 
 const FREE_ROW_LIMIT = 3
@@ -239,7 +240,11 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
       </section>
       {error && <p className="kbo-notice">{error}</p>}
-      {!error && !snapshot && <p className="kbo-notice">Loading KBO prop lines...</p>}
+      {!error && !snapshot && (
+        <div role="status" aria-label="Loading KBO prop lines">
+          <BoardSkeleton />
+        </div>
+      )}
       {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table hit-rate-board"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></tr></thead><tbody>
         {rows.map(({ card, prop, score, direction, hitPills }, index) => (
           <KboBoardRow

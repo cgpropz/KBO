@@ -1,5 +1,5 @@
 import { publishedAtFromPayload } from './boardFreshness';
-import { supabase } from './supabaseClient';
+import { cachedAccessToken, readCachedSession, sessionAccessToken } from './supabaseClient';
 
 /*
  * Client for the server-gated data endpoint (api/data.js).
@@ -19,10 +19,12 @@ import { supabase } from './supabaseClient';
 export const FETCH_TIMEOUT_MS = 12_000;
 
 async function accessToken() {
-  if (!supabase) return null;
+  const cached = cachedAccessToken();
+  if (cached) return cached;
+  // Logged-out visitors have no session. Skip the client download entirely.
+  if (!readCachedSession()) return null;
   try {
-    const { data } = await supabase.auth.getSession();
-    return data?.session?.access_token || null;
+    return await sessionAccessToken();
   } catch {
     return null;
   }

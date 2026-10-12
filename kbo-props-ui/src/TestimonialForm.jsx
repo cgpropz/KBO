@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { sessionAccessToken } from './supabaseClient';
 import './Testimonials.css';
 
 const MAX_NAME = 40;
 const MAX_QUOTE = 280;
 
 async function authHeader() {
-  if (!supabase) return {};
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
+  const token = await sessionAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

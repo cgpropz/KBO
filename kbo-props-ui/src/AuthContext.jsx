@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
-import { supabase } from './supabaseClient';
+import { loadSupabase, readCachedSession } from './supabaseClient';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
+const TIER_CACHE_KEY = 'cg_tier';
 const AuthContext = createContext({
   user: null,
   tier: 'free',
-  loading: true,
+  loading: false,
   signOut: () => {},
   refreshTier: () => {},
   discord: EMPTY_DISCORD,
@@ -27,20 +28,48 @@ function readDevPreview() {
   };
 }
 
+function readCachedTier(userId) {
+  if (typeof sessionStorage === 'undefined' || !userId) return 'free';
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(TIER_CACHE_KEY) || 'null');
+    if (parsed?.userId === userId && typeof parsed.tier === 'string') return parsed.tier;
+  } catch { /* ignore */ }
+  return 'free';
+}
+
+function writeCachedTier(userId, tier) {
+  if (typeof sessionStorage === 'undefined' || !userId || !tier) return;
+  try { sessionStorage.setItem(TIER_CACHE_KEY, JSON.stringify({ userId, tier })); } catch { /* ignore */ }
+}
+
+function clearCachedTier() {
+  if (typeof sessionStorage === 'undefined') return;
+  try { sessionStorage.removeItem(TIER_CACHE_KEY); } catch { /* ignore */ }
+}
+
 // Read once at load. Production builds pass isDev=false, so this stays null.
 const DEV_PREVIEW = readDevPreview();
+const CACHED_SESSION = DEV_PREVIEW ? null : readCachedSession();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(DEV_PREVIEW?.user ?? null);
-  const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? 'free');
+  const [user, setUser] = useState(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
+  const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? (CACHED_SESSION?.user ? readCachedTier(CACHED_SESSION.user.id) : 'free'));
   const [discord, setDiscord] = useState(EMPTY_DISCORD);
-  const [loading, setLoading] = useState(!DEV_PREVIEW);
-  const userRef = useRef(DEV_PREVIEW?.user ?? null);
+  // Session is resolved from local storage before paint. Tier refresh and the
+  // Supabase client download stay off the first render.
+  const loading = false;
+  const userRef = useRef(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
   const lastPaidDiscordSync = useRef(0);
 
+  const applyTier = useCallback((next, userId) => {
+    setTier(next || 'free');
+    writeCachedTier(userId || userRef.current?.id, next || 'free');
+  }, []);
+
   const fetchDiscord = useCallback(async (userId) => {
-    if (!supabase || !userId) return;
-    const { data, error } = await supabase
+    const client = await loadSupabase();
+    if (!client || !userId) return;
+    const { data, error } = await client
       .from('user_profiles')
       .select('discord_user_id, discord_username, discord_only')
       .eq('id', userId)
@@ -55,8 +84,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const postSync = useCallback(async () => {
-    if (!supabase) return null;
-    const { data: { session } } = await supabase.auth.getSession();
+    const client = await loadSupabase();
+    if (!client) return null;
+    const { data: { session } } = await client.auth.getSession();
     const token = session?.access_token;
     if (!token) return null;
     const resp = await fetch('/api/sync-subscription', {
@@ -68,8 +98,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const fetchTier = useCallback(async (userId) => {
-    if (DEV_PREVIEW || !supabase || !userId) return;
-    const { data: rows } = await supabase
+    if (DEV_PREVIEW || !userId) return;
+    const client = await loadSupabase();
+    if (!client) return;
+    const { data: rows } = await client
       .from('user_profiles')
       .select('tier')
       .eq('id', userId)
@@ -81,7 +113,7 @@ export function AuthProvider({ children }) {
     // Discord role sync (throttled) so a failed webhook update can land.
     // Discord-only is not a site tier: the server may upgrade it to All-Access.
     if (dbTier && dbTier !== 'free' && dbTier !== 'discord') {
-      setTier(dbTier);
+      applyTier(dbTier, userId);
       await fetchDiscord(userId);
       if (Date.now() - lastPaidDiscordSync.current > 60_000) {
         lastPaidDiscordSync.current = Date.now();
@@ -95,7 +127,7 @@ export function AuthProvider({ children }) {
     try {
       const body = await postSync();
       if (body) {
-        setTier(body.tier || 'free');
+        applyTier(body.tier || 'free', userId);
         await fetchDiscord(userId);
         return;
       }
@@ -103,9 +135,9 @@ export function AuthProvider({ children }) {
       // Sync failed (e.g. local dev with no API) — fall through to free
     }
 
-    setTier(dbTier || 'free');
+    applyTier(dbTier || 'free', userId);
     await fetchDiscord(userId);
-  }, [fetchDiscord, postSync]);
+  }, [applyTier, fetchDiscord, postSync]);
 
   // Public method: force a tier re-check (e.g. after payment)
   const refreshTier = useCallback(() => {
@@ -119,33 +151,48 @@ export function AuthProvider({ children }) {
   }, [fetchDiscord]);
 
   useEffect(() => {
-    if (DEV_PREVIEW) return;
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    // Wait for BOTH session + tier before clearing loading
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      userRef.current = u;
-      if (u) await fetchTier(u.id);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      userRef.current = u;
-      if (u) {
-        fetchTier(u.id);
-      } else {
-        setTier('free');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    if (DEV_PREVIEW) return undefined;
+    let cancelled = false;
+    let unsubscribe = () => {};
+    const start = () => {
+      loadSupabase().then((client) => {
+        if (cancelled || !client) return;
+        client.auth.getSession().then(({ data: { session } }) => {
+          if (cancelled) return;
+          const u = session?.user ?? null;
+          setUser(u);
+          userRef.current = u;
+          if (u) fetchTier(u.id);
+          else {
+            setTier('free');
+            clearCachedTier();
+          }
+        });
+        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+          const u = session?.user ?? null;
+          setUser(u);
+          userRef.current = u;
+          if (u) {
+            fetchTier(u.id);
+          } else {
+            setTier('free');
+            setDiscord(EMPTY_DISCORD);
+            clearCachedTier();
+          }
+        });
+        if (cancelled) subscription.unsubscribe();
+        else unsubscribe = () => subscription.unsubscribe();
+      }).catch(() => { /* a failed client download must not block the shell */ });
+    };
+    // Anonymous visitors have nothing to refresh. Wait so the client download
+    // does not compete with the first board requests.
+    const delay = readCachedSession() ? 0 : 1200;
+    const timer = setTimeout(start, delay);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, [fetchTier]);
 
   // Re-check tier when user returns to the tab (e.g. after paying in Stripe tab)
@@ -160,11 +207,13 @@ export function AuthProvider({ children }) {
   }, [fetchTier]);
 
   async function signOut() {
-    if (supabase) await supabase.auth.signOut();
+    const client = await loadSupabase();
+    if (client) await client.auth.signOut();
     setUser(null);
     userRef.current = null;
     setTier('free');
     setDiscord(EMPTY_DISCORD);
+    clearCachedTier();
   }
 
   return (

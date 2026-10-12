@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
 import { useNbaOpen } from './useNbaOpen';
@@ -6,8 +6,6 @@ import { landingFaqs } from './landingFaq';
 import { ResponsibleGamblingCopy } from './SiteFooter';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import TrustStrip from './TrustStrip';
-import Testimonials from './Testimonials';
-import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
 import StartHereBanner from './StartHereBanner';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
@@ -17,6 +15,9 @@ import DiscordOnlyPlans from './DiscordOnlyPlans';
 import SportSwitcher from './SportSwitcher';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import './PublicLanding.css';
+
+const Results = lazy(() => import('./Results'));
+const Testimonials = lazy(() => import('./Testimonials'));
 
 /*
  * cgpropz — public marketing landing page.
@@ -207,7 +208,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           </div>
         </section>
 
-        <Results />
+        <Suspense fallback={null}>
+          <Results />
+        </Suspense>
 
         <section className="pl-pricing" id="pricing">
           <div className="pl-section-heading">
@@ -254,7 +257,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           <DiscordOnlyPlans variant="public" />
         </section>
 
-        <Testimonials />
+        <Suspense fallback={null}>
+          <Testimonials />
+        </Suspense>
 
         <section className="pl-faq" id="faq">
           <div className="pl-section-heading">

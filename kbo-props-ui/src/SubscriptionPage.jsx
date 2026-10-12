@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
@@ -64,10 +64,7 @@ function SubscriptionPage() {
     (async () => {
       let token = '';
       if (user) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          token = session?.access_token || '';
-        } catch { /* guest checkout still works */ }
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
       }
       if (!cancelled) setWeeklyHref(buildCheckoutUrl(STRIPE_LINKS.weekly, user));
       try {
@@ -85,10 +82,7 @@ function SubscriptionPage() {
     try {
       let token = '';
       if (user) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          token = session?.access_token || '';
-        } catch { /* guest checkout still works */ }
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
       }
       const result = await requestOfferCheckoutUrl(token ? { plan, token } : { plan });
       if (!user) {
@@ -128,8 +122,7 @@ function SubscriptionPage() {
     setCancelling(true);
     setCancelResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = await sessionAccessToken();
       if (!token) {
         setCancelResult({ ok: false, message: 'Please sign in again to cancel.' });
         return;

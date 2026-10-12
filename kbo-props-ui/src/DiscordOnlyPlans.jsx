@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DISCORD_ONLY_NOTE, discordPlanCards } from './pricingTiers';
 import { requestDiscordCheckoutUrl } from './tracking';
-import { supabase } from './supabaseClient';
+import { sessionAccessToken } from './supabaseClient';
 import './Discord.css';
 
 export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutStart }) {
@@ -13,11 +13,8 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
     let cancelled = false;
     (async () => {
       let token = '';
-      if (user && supabase) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          token = session?.access_token || '';
-        } catch { /* guest checkout still works */ }
+      if (user) {
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
       }
       for (const plan of ['weekly', 'monthly']) {
         try {
@@ -47,10 +44,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
     }
     try {
       let token = '';
-      if (user && supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        token = session?.access_token || '';
-      }
+      if (user) token = await sessionAccessToken() || '';
       const url = await requestDiscordCheckoutUrl({ plan, token });
       setHrefs((prev) => ({ ...prev, [plan]: url }));
       open(url);

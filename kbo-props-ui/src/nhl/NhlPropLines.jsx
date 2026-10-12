@@ -9,6 +9,7 @@ import { cgScore, lineMatchesStat } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
+import { BoardSkeleton } from '../BootScreen.jsx'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -196,7 +197,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
         Rank 1 is the toughest matchup for the over.
       </p>
       {error && <div className="nfl-notice">Unable to load the NHL board: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading NHL prop lines.</div>}
+      {!error && !loaded && (
+        <div role="status" aria-label="Loading NHL prop lines">
+          <BoardSkeleton />
+        </div>
+      )}
       {!error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">

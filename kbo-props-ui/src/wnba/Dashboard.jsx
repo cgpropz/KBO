@@ -11,6 +11,7 @@ import { HOT_L10_GAMES, HOT_L10_RATE, buildSlate, hotStreakRows, propsOnBoardCou
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
+import { BoardSkeleton } from '../BootScreen.jsx'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -602,7 +603,11 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             </div>
           </div>
 
-          {projLoading && <div className="wnba-notice">Loading WNBA prop lines…</div>}
+          {projLoading && (
+            <div role="status" aria-label="Loading WNBA prop lines">
+              <BoardSkeleton />
+            </div>
+          )}
           {!projLoading && loadError && <div className="wnba-notice">Unable to load WNBA prop lines: {loadError}. Please refresh to try again.</div>}
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
