@@ -33,6 +33,20 @@ export function canSeeNba(user) {
   return email === NBA_OWNER_EMAIL;
 }
 
+// Admin preview of the anytime goal scorer board. Members do not see the tab.
+// ?ags=1 opens it on a dev server for a phone screenshot. Production builds
+// compile DEV to false, so that query cannot open the live site.
+export function agsDevBypass(isDev, search) {
+  if (!isDev) return false;
+  const params = new URLSearchParams(typeof search === 'string' ? search : '');
+  return params.get('ags') === '1';
+}
+
+export function canSeeAgs(user, isDev, search) {
+  if (agsDevBypass(isDev, search)) return true;
+  return canSeeNba(user);
+}
+
 // Local screenshots only. Production builds set DEV to false, so this cannot
 // open the live tab or pretend to be a subscriber.
 const DEV_PREVIEW_TIERS = new Set([

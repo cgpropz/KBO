@@ -8,6 +8,7 @@ import {
   isNhlDataset,
   nbaAccessDecision,
   nhlAccessDecision,
+  nhlAgsAccessDecision,
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
@@ -367,6 +368,38 @@ async function handleNhlRequest(req, res, client, ds) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
     return res.status(400).json({ error: 'Unknown dataset' });
+  }
+
+  // Anytime goal scorer stays off the member board and off the free preview.
+  if (spec.adminOnly) {
+    const agsDecision = nhlAgsAccessDecision({
+      emailResolved: caller.emailResolved,
+      email: caller.email,
+    });
+    if (agsDecision !== 'full') return forbid(res);
+    let agsRow;
+    try {
+      agsRow = await readSnapshot(client, spec.table);
+    } catch (err) {
+      console.error(`[api/data] ${ds} read failed:`, err.message);
+      if (err?.code === 'UPSTREAM_TIMEOUT') {
+        return res.status(503).json({
+          error: 'Dataset temporarily unavailable',
+          code: 'upstream_timeout',
+          message: 'Upstream data store timed out. Please refresh in a moment.',
+        });
+      }
+      return res.status(502).json({ error: 'Dataset unavailable' });
+    }
+    if (!agsRow) return res.status(404).json({ error: 'Dataset not published yet' });
+    return res.status(200).json({
+      data: agsRow.data,
+      updatedAt: agsRow.updated_at || null,
+      preview: false,
+      lockedCount: 0,
+      tier: caller.tier,
+      access: sportAccess(caller.tier),
+    });
   }
 
   let row;

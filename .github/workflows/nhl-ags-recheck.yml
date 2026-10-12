@@ -1,0 +1,47 @@
+name: NHL AGS warmup recheck
+
+# Manual only. Run this about 30 minutes before puck drop. It refreshes
+# lineups and rebuilds the anytime goal scorer preview, so a scratch or a
+# power-play change comes off the admin board.
+#
+# Do not add a schedule until launch approval. This file has no cron and no
+# push trigger. A pull request cannot publish: the job runs only on main.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nhl-ags-recheck
+  cancel-in-progress: false
+
+jobs:
+  recheck:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install requests
+
+      - name: Download MoneyPuck game logs
+        run: python nhl/fetch_history.py
+
+      - name: Recheck lineups and rebuild the AGS preview
+        run: python -m nhl.ags --root /tmp/moneypuck --recheck
+
+      - name: Publish the AGS preview
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nhl/ags"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -66,6 +66,8 @@ def _blank_skater(row: dict, season: str) -> dict:
         "season": season,
         "ev_toi": 0.0,
         "pp_toi": 0.0,
+        "ev_goals": 0.0,
+        "pp_goals": 0.0,
         "ev_sog": 0.0,
         "pp_sog": 0.0,
         "ppp": 0.0,
@@ -103,10 +105,12 @@ def _apply_skater(game: dict, row: dict) -> None:
     if situation in EV_SITUATIONS:
         game["ev_toi"] += _num(row.get("icetime"))
         game["ev_sog"] += _num(row.get("I_F_shotsOnGoal"))
+        game["ev_goals"] += _num(row.get("I_F_goals"))
         return
     if situation in PP_SITUATIONS:
         game["pp_toi"] += _num(row.get("icetime"))
         game["pp_sog"] += _num(row.get("I_F_shotsOnGoal"))
+        game["pp_goals"] += _num(row.get("I_F_goals"))
         game["ppp"] += _num(row.get("I_F_goals")) + _num(row.get("I_F_primaryAssists")) + _num(row.get("I_F_secondaryAssists"))
 
 

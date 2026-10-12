@@ -93,6 +93,17 @@ export function isNhlDataset(ds) {
 }
 
 /**
+ * Anytime goal scorer is an admin preview. Members and the public get neither
+ * the rows nor a free top-3. A missing session never counts as the admin.
+ */
+export function nhlAgsAccessDecision({ emailResolved, email }) {
+  if (emailResolved !== true) return 'deny';
+  const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (normalized === NHL_OWNER_EMAIL) return 'full';
+  return 'deny';
+}
+
+/**
  * NHL uses the same entitlement as KBO, WNBA, and NFL.
  *
  * 'full' when the resolved session is the admin email, or the resolved tier
@@ -506,7 +517,17 @@ export const DATASETS = {
   nhl_dvp_d: { table: 'nhl_dvp_d', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_correlations: { table: 'nhl_correlations', sport: 'nhl', free: previewCorrelations },
+  // Admin preview only. shapeForTier never returns these rows. The handler
+  // in api/data.js returns them solely for the admin email.
+  nhl_ags: { table: 'nhl_ags', sport: 'nhl', adminOnly: true, free: hideAdminDataset },
 };
+
+function hideAdminDataset(payload) {
+  if (Array.isArray(payload)) return { data: [], lockedCount: payload.length };
+  const obj = payload && typeof payload === 'object' ? payload : {};
+  const records = Array.isArray(obj.records) ? obj.records : [];
+  return { data: { ...obj, records: [] }, lockedCount: records.length };
+}
 
 function countList(payload, key) {
   if (key) {
@@ -532,6 +553,12 @@ function hiddenNflPreview(ds, payload) {
 export function shapeForTier(ds, payload, tier) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
+  // Checked before the paid-tier shortcut. All-Access includes NHL, and that
+  // must not open the anytime-goal preview.
+  if (spec.adminOnly) {
+    const hidden = hideAdminDataset(payload);
+    return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
+  }
   const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };

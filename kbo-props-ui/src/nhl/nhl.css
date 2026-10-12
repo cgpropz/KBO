@@ -625,6 +625,37 @@
   outline: 2px solid #8ecfff;
   outline-offset: 2px;
 }
+.nhl-ags-page .nfl-lines-tag { display: block; }
+.nhl-ags-page .nfl-player-link { cursor: default; }
+.nhl-ags-page .nfl-player-link:hover { text-decoration: none; }
+.nhl-ags-role {
+  display: inline-block;
+  margin-top: 4px;
+  color: #8ecfff;
+  font: 800 10px monospace;
+  letter-spacing: .04em;
+}
+.nhl-ags-label {
+  display: block;
+  color: #8f939b;
+  font: 10px monospace;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.nhl-ags-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nhl-ags-search input {
+  border: 1px solid #1c3a52;
+  border-radius: 6px;
+  background: #0b1424;
+  color: #e7eef8;
+  padding: 6px 8px;
+  min-width: 0;
+  width: 140px;
+}
 .nhl-note {
   margin: 4px 0 18px;
   clear: both;
