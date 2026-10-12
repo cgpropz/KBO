@@ -13,6 +13,7 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
@@ -21,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pipeline.memory.common import (  # noqa: E402
     RESULT_DNP,
+    RESULT_MISSING,
+    compute_hit_rate_stats,
     format_iso,
     format_mmddyyyy,
     grade_line,
@@ -48,11 +51,77 @@ STAT_KEYS = {
 }
 
 
+def _plain(value) -> str:
+    """Accent-fold a name. NHL name objects use {'default': '...'}."""
+    if isinstance(value, dict):
+        value = value.get("default") or ""
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    return "".join(ch for ch in text if not unicodedata.combining(ch))
+
+
 def name_key(name: str) -> str:
-    if isinstance(name, dict):
-        name = name.get("default") or ""
-    stripped = re.sub(r"\s+(jr|sr|ii|iii|iv|v)\.?$", "", str(name).lower().strip())
+    stripped = re.sub(r"\s+(jr|sr|ii|iii|iv|v)\.?$", "", _plain(name).lower().strip())
     return re.sub(r"[^a-z0-9]", "", stripped)
+
+
+def _player_id(value) -> int | None:
+    if isinstance(value, bool) or value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def roster_full_names(pbp: dict | None) -> dict[int, str]:
+    """playerId -> firstName + lastName from play-by-play rosterSpots.
+
+    Box-score name.default is abbreviated ('J. Eberle') and does not match
+    the slate. The roster spot carries the full name.
+    """
+    names: dict[int, str] = {}
+    for spot in (pbp or {}).get("rosterSpots") or []:
+        pid = _player_id(spot.get("playerId"))
+        if pid is None:
+            continue
+        first = _plain(spot.get("firstName")).strip()
+        last = _plain(spot.get("lastName")).strip()
+        if first and last:
+            names[pid] = f"{first} {last}"
+    return names
+
+
+def _store_player(players: dict, team: str, player: dict, row: dict, full_names: dict[int, str]) -> None:
+    pid = _player_id(player.get("playerId"))
+    full = full_names.get(pid) if pid is not None else None
+    if pid is not None:
+        players[("id", pid)] = row
+    if full:
+        players[(team, name_key(full))] = row
+
+
+def _lookup_player(players: dict, team: str, prop: dict) -> dict | None:
+    """playerId when the prop has one, otherwise the accent-folded full name."""
+    pid = _player_id(prop.get("playerId"))
+    if pid is None:
+        pid = _player_id(prop.get("player_id"))
+    if pid is not None:
+        hit = players.get(("id", pid))
+        if hit:
+            return hit
+    return players.get((team, name_key(prop.get("player"))))
+
+
+def _counts(graded: list[dict], ungraded: list) -> dict:
+    stats = compute_hit_rate_stats(graded)
+    return {
+        "hits": stats["hits"],
+        "misses": stats["misses"],
+        "pushes": stats["pushes"],
+        "dnps": stats["dnps"],
+        "missing": stats["missing"],
+        "ungraded": len(ungraded),
+    }
 
 
 def _get_json(url: str):
@@ -108,11 +177,13 @@ def actuals_from_score(score: dict, fetch=_get_json) -> dict:
             box = fetch(BOX_URL.format(game_id=game.get("id")))
         except Exception:
             continue
-        ppp = None
+        pbp = None
         try:
-            ppp = _ppp_by_player(fetch(PBP_URL.format(game_id=game.get("id"))))
+            pbp = fetch(PBP_URL.format(game_id=game.get("id")))
         except Exception:
-            ppp = None
+            pbp = None
+        ppp = _ppp_by_player(pbp) if pbp else None
+        full_names = roster_full_names(pbp)
         sides = (box.get("playerByGameStats") or {})
         for team, side_key in ((away, "awayTeam"), (home, "homeTeam")):
             if not team:
@@ -121,30 +192,29 @@ def actuals_from_score(score: dict, fetch=_get_json) -> dict:
             side = sides.get(side_key) or {}
             for group in ("forwards", "defense"):
                 for player in side.get(group) or []:
-                    player_id = player.get("playerId")
+                    player_id = _player_id(player.get("playerId"))
                     row = {
                         "sog": float(player.get("sog") or 0),
                         "points": float(player.get("points") or 0),
-                        "ppp": None if ppp is None else float(ppp.get(int(player_id), 0) if player_id else 0),
+                        "ppp": None if ppp is None else float(ppp.get(player_id, 0) if player_id else 0),
                         "saves": None,
                         "played": True,
                     }
-                    players[(team, name_key(player.get("name")))] = row
+                    _store_player(players, team, player, row, full_names)
             for player in side.get("goalies") or []:
                 shots = player.get("shotsAgainst")
                 try:
                     played = float(shots or 0) > 0 or str(player.get("toi") or "0:00") not in {"0:00", "00:00", ""}
                 except (TypeError, ValueError):
                     played = False
-                if not played:
-                    continue
-                players[(team, name_key(player.get("name")))] = {
+                row = {
                     "sog": None,
                     "points": None,
                     "ppp": None,
-                    "saves": float(player.get("saves") or 0),
-                    "played": True,
+                    "saves": None if not played else float(player.get("saves") or 0),
+                    "played": played,
                 }
+                _store_player(players, team, player, row, full_names)
     return {"final_teams": final_teams, "players": players}
 
 
@@ -179,8 +249,17 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
         if team not in final_teams:
             missing.append({"player": prop.get("player"), "stat": stat, "reason": "game_not_final"})
             continue
-        stats = players.get((team, name_key(prop.get("player"))))
+        stats = _lookup_player(players, team, prop)
         if not stats:
+            graded.append({
+                **prop,
+                "actual": None,
+                "result": RESULT_MISSING,
+                "model_result": model_result(RESULT_MISSING, prop.get("recommendation")),
+                "graded_at": utc_now_iso(),
+            })
+            continue
+        if stats.get("played") is False:
             graded.append({
                 **prop,
                 "actual": None,
@@ -206,6 +285,7 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
         })
 
     total = len(slate["props"])
+    counts = _counts(graded, missing)
     if missing:
         if not dry_run:
             write_partial_progress("nhl", d, graded, props_total=total, missing=missing)
@@ -214,13 +294,27 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
             "slate_date": format_mmddyyyy(d),
             "props_total": total,
             "props_graded": len(graded),
-            "missing": len(missing),
+            **counts,
             "dry_run": dry_run,
         }
     if dry_run:
-        return {"status": "complete", "slate_date": format_mmddyyyy(d), "props_total": total, "props_graded": len(graded), "dry_run": True}
+        return {
+            "status": "complete",
+            "slate_date": format_mmddyyyy(d),
+            "props_total": total,
+            "props_graded": len(graded),
+            **counts,
+            "dry_run": True,
+        }
     path = write_recap("nhl", d, graded)
-    return {"status": "complete", "slate_date": format_mmddyyyy(d), "props_total": total, "props_graded": len(graded), "path": str(path)}
+    return {
+        "status": "complete",
+        "slate_date": format_mmddyyyy(d),
+        "props_total": total,
+        "props_graded": len(graded),
+        **counts,
+        "path": str(path),
+    }
 
 
 def main(argv=None) -> int:

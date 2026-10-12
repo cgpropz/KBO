@@ -30,6 +30,9 @@ RESULT_UNDER = "UNDER"
 RESULT_PUSH = "PUSH"
 RESULT_DNP = "DNP"
 RESULT_VOID = "VOID"
+# A player we could not find in the official box score. Distinct from DNP,
+# which is a player the box score shows did not play.
+RESULT_MISSING = "missing"
 
 MODEL_HIT = "HIT"
 MODEL_MISS = "MISS"
@@ -203,7 +206,8 @@ def grade_line(actual: float | int | None, line: float | int | None) -> str:
 
 def model_result(outcome: str, recommendation: str | None) -> str:
     """HIT/MISS/PUSH/N/A vs model recommendation direction."""
-    if outcome in (RESULT_DNP, RESULT_VOID):
+    text = str(outcome or "").strip().lower()
+    if text in (RESULT_DNP.lower(), RESULT_VOID.lower(), RESULT_MISSING):
         return MODEL_NA
     if outcome == RESULT_PUSH:
         return MODEL_PUSH
@@ -250,12 +254,17 @@ def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
     pushes = 0
     dnps = 0
     voids = 0
+    missing = 0
     props_hit: list[dict] = []
     props_miss: list[dict] = []
 
     for prop in props or []:
         mr = str(prop.get("model_result") or "").strip().upper()
-        result = str(prop.get("result") or "").strip().upper()
+        raw_result = str(prop.get("result") or "").strip()
+        result = raw_result.upper()
+        if raw_result.lower() == RESULT_MISSING:
+            missing += 1
+            continue
         if result == RESULT_VOID:
             voids += 1
             continue
@@ -287,6 +296,7 @@ def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
         "pushes": pushes,
         "dnps": dnps,
         "voids": voids,
+        "missing": missing,
         "hit_rate": hit_rate,
         "hit_rate_pct": hit_rate_pct,
         "props_hit": props_hit,
@@ -454,6 +464,7 @@ def build_day_summary(
         "pushes": stats["pushes"],
         "dnps": stats["dnps"],
         "voids": stats["voids"],
+        "missing": stats["missing"],
         "hit_rate": stats["hit_rate"],
         "hit_rate_pct": stats["hit_rate_pct"],
         "props_hit": stats["props_hit"],

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Grade an NFL memory slate day against nflverse weekly stats by gameday."""
+"""Grade NFL memory slates against nflverse weekly stats by gameday.
+
+A scheduled run grades every slate from the last 14 days that is still
+awaiting a complete recap, so Monday and Thursday cards are not skipped
+just because the latest Sunday was the only default.
+"""
 from __future__ import annotations
 
 import argparse
@@ -13,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pipeline.memory.common import (
     RESULT_DNP,
+    compute_hit_rate_stats,
     format_iso,
     format_mmddyyyy,
     grade_line,
@@ -28,6 +34,9 @@ from pipeline.memory.common import (
     write_partial_progress,
     write_recap,
 )
+
+# Today plus the 14 days before it. A slate dated exactly 14 days ago is included.
+LOOKBACK_DAYS = 14
 
 STATS_URL = "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv"
 # nflverse dropped uncompressed games.csv on 2026-10-06. pandas reads this gzip URL.
@@ -45,6 +54,40 @@ STAT_COLUMNS = {
     "Receptions": "receptions",
     "Rec Targets": "targets",
 }
+
+
+def _counts(graded: list[dict], ungraded: list) -> dict:
+    stats = compute_hit_rate_stats(graded)
+    return {
+        "hits": stats["hits"],
+        "misses": stats["misses"],
+        "pushes": stats["pushes"],
+        "dnps": stats["dnps"],
+        "missing": stats["missing"],
+        "ungraded": len(ungraded),
+    }
+
+
+def awaiting_slate_dates(today: date | None = None, days: int = LOOKBACK_DAYS) -> list[date]:
+    """Slate dates in the last `days` days that are not graded complete.
+
+    The window is inclusive of `today` and of the date `days` days earlier.
+    A day is awaiting when it has a slate and does not yet have a complete
+    recap. Monday and Thursday slates stay in this window; a finished Sunday
+    does not.
+    """
+    today = today or today_et()
+    found: list[date] = []
+    for offset in range(max(0, days) + 1):
+        d = today - timedelta(days=offset)
+        day_dir = memory_dir("nfl", d)
+        if not (day_dir / "slate.json").exists():
+            continue
+        meta = load_json(day_dir / "meta.json", default={}) or {}
+        if meta.get("status") == "complete" and (day_dir / "recap.json").exists():
+            continue
+        found.append(d)
+    return sorted(found)
 
 
 def name_key(name: str) -> str:
@@ -227,6 +270,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
 
     total = len(props)
     n_graded = len(graded)
+    counts = _counts(graded, missing)
     if missing:
         status = "partial" if n_graded else "waiting"
         if not dry_run:
@@ -242,7 +286,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
             "slate_date": format_mmddyyyy(d),
             "props_total": total,
             "props_graded": n_graded,
-            "missing": len(missing),
+            **counts,
             "finalized": finalized,
             "dry_run": dry_run,
         }
@@ -253,6 +297,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
             "slate_date": format_mmddyyyy(d),
             "props_total": total,
             "props_graded": n_graded,
+            **counts,
             "dry_run": True,
             "sample": graded[:2],
         }
@@ -263,23 +308,34 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         "slate_date": format_mmddyyyy(d),
         "props_total": total,
         "props_graded": n_graded,
+        **counts,
         "path": str(path),
     }
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Grade NFL memory slate for a gameday")
-    parser.add_argument("--date", help="Gameday mm/dd/YYYY or YYYY-MM-DD (default: last Sunday ET)")
+    parser = argparse.ArgumentParser(description="Grade NFL memory slates for gamedays still awaiting grades")
+    parser.add_argument("--date", help="One gameday, mm/dd/YYYY or YYYY-MM-DD. Default: every awaiting slate in the last 14 days.")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--lookback-days",
+        type=int,
+        default=LOOKBACK_DAYS,
+        help=f"With no --date, grade awaiting slates from this many days back (default {LOOKBACK_DAYS}, inclusive).",
+    )
     args = parser.parse_args(argv)
 
     if args.date:
-        d = parse_cli_date(args.date, today_et())
+        days = [parse_cli_date(args.date, today_et())]
     else:
-        # Default: most recent Sunday (common NFL slate day)
-        today = today_et()
-        d = today - timedelta(days=(today.weekday() - 6) % 7)
-    print(json.dumps(grade_day(d, dry_run=args.dry_run), indent=2))
+        days = awaiting_slate_dates(today_et(), args.lookback_days)
+    results = []
+    for day in days:
+        try:
+            results.append(grade_day(day, dry_run=args.dry_run))
+        except Exception as exc:  # noqa: BLE001 - one slate must not block the rest
+            results.append({"status": "waiting", "slate_date": format_iso(day), "reason": str(exc)})
+    print(json.dumps(results if not args.date else results[0], indent=2))
     return 0
 
 
