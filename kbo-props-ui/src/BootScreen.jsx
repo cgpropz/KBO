@@ -38,7 +38,7 @@ function LoaderStage() {
   return (
     <div className="cg-boot-stage">
       <div className="cg-glow" aria-hidden="true" />
-      <div className="cg-wordmark">cg<span>propz</span></div>
+      <div className="cg-boot-mark">cg<span>propz</span></div>
       <div className="cg-bars" aria-hidden="true">
         {[0, 1, 2, 3, 4].map((i) => <span key={i} style={{ '--i': i }} />)}
         <i />
@@ -68,7 +68,7 @@ export default function BootScreen({ inset = false }) {
     >
       <div className="cg-boot-skeleton">
         <header className="cg-boot-top">
-          <div className="cg-wordmark">cg<span>propz</span></div>
+          <div className="cg-boot-mark">cg<span>propz</span></div>
           <nav className="cg-boot-nav" aria-hidden="true">
             <span>KBO</span>
             <span>NFL</span>
