@@ -6,6 +6,7 @@ import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
 import { sportFromSearch } from './appSport'
+import { freePreviewBannerText } from './freePreviewCopy'
 import './FreeFunnel.css'
 import './App.css'
 
@@ -38,7 +39,7 @@ const NhlApp = lazy(() => loadSport('nhl'))
 const SPORT_STORAGE_KEY = 'cg_sport';
 
 function App() {
-  const { user } = useAuth();
+  const { user, tier } = useAuth();
   const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
@@ -145,13 +146,21 @@ function App() {
     );
   }
 
-  /* Logged-out visitors can browse the boards in preview mode (the server
-     only sends them the top 3 lines per board + a locked count). */
-  const previewBar = !user && (
+  /* Anonymous visitors and free accounts browse in preview mode. The server
+     sends the top 3 lines per board, except NFL while its preview flag is off. */
+  const seesFreePreview = !user || tier === 'free'
+  const previewBar = seesFreePreview && (
     <div className="ff-preview-bar" role="note" ref={setPreviewNode}>
-      <span>👀 Free preview: you're seeing the top 3 lines on each board.</span>
-      <button className="ff-btn ff-btn-primary ff-btn-small" onClick={openSignUp}>Sign up free</button>
-      <button className="ff-btn ff-btn-ghost ff-btn-small" onClick={openLogin}>Log in</button>
+      <span>👀 {freePreviewBannerText(visibleSport)}</span>
+      {!user && (
+        <>
+          <button className="ff-btn ff-btn-primary ff-btn-small" onClick={openSignUp}>Sign up free</button>
+          <button className="ff-btn ff-btn-ghost ff-btn-small" onClick={openLogin}>Log in</button>
+        </>
+      )}
+      {user && (
+        <button className="ff-btn ff-btn-primary ff-btn-small" onClick={() => { setSport('kbo'); setView('pricing'); }}>View plans</button>
+      )}
     </div>
   );
 

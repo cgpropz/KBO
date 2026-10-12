@@ -56,6 +56,26 @@ test('a missing projection window leaves the based-on clause out', () => {
   assert.doesNotMatch(text, /last \d+ games/)
 })
 
+test('the recent record follows the side the projection points to', () => {
+  const recentValues = [22, 10, 19, 12, 21, 9, 20, 11, 18, 8]
+  const over = explainerText(note({
+    projection: 21,
+    line: 18.5,
+    score: (21 / 18.5) * 50,
+    recentValues,
+  }))
+  const under = explainerText(note({
+    projection: 12,
+    line: 18.5,
+    score: (12 / 18.5) * 50,
+    recentValues,
+  }))
+  assert.match(over, /Recent record: 4 of the last 10 went over this line\./)
+  assert.doesNotMatch(over, /went under/)
+  assert.match(under, /Recent record: 6 of the last 10 went under this line\./)
+  assert.doesNotMatch(under, /went over/)
+})
+
 test('unders count the under side and pushes stay out of the hit count', () => {
   const text = explainerText(note({
     projection: 12,

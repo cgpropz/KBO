@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { NFL_FREE_PREVIEW_ENABLED } from '../api/_dataAccess.js'
-import { freeTierFaqAnswer, freeTierPreviewFeature, freeTop3SectionState } from '../src/freePreviewCopy.js'
+import { freePreviewBannerText, freeTierFaqAnswer, freeTierPreviewFeature, freeTop3SectionState } from '../src/freePreviewCopy.js'
 
 test('the free-tier FAQ follows NFL_FREE_PREVIEW_ENABLED', () => {
   const answer = freeTierFaqAnswer()
@@ -19,6 +19,30 @@ test('the free-tier FAQ follows NFL_FREE_PREVIEW_ENABLED', () => {
     assert.doesNotMatch(answer, /NFL/)
     assert.doesNotMatch(feature, /NFL/)
   }
+})
+
+test('the NFL preview banner follows NFL_FREE_PREVIEW_ENABLED and other sports stay on the top-3 line', () => {
+  const paused = 'NFL free preview is paused. Sign up to see the full board.'
+  const top3 = "Free preview: you're seeing the top 3 lines on each board."
+  for (const sport of ['kbo', 'wnba', 'nba', 'nhl']) {
+    assert.equal(freePreviewBannerText(sport, false), top3)
+    assert.equal(freePreviewBannerText(sport, true), top3)
+  }
+  assert.equal(freePreviewBannerText('nfl', false), paused)
+  assert.equal(freePreviewBannerText('nfl', true), top3)
+  assert.equal(freePreviewBannerText('nfl'), NFL_FREE_PREVIEW_ENABLED ? top3 : paused)
+  const app = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '../src/App.jsx'), 'utf8')
+  assert.match(app, /freePreviewBannerText\(visibleSport\)/)
+  assert.match(app, /!user \|\| tier === 'free'/)
+})
+
+test('the phone lock card is full width in the unlayered mobile sheet', () => {
+  const css = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '../src/mobile.css'), 'utf8')
+  const phone = css.slice(css.indexOf('@media (max-width: 767px)'))
+  const rule = phone.slice(phone.indexOf('.nfl-lines-lock-card'))
+  assert.match(rule, /width:\s*100%/)
+  assert.match(rule, /max-width:\s*none/)
+  assert.match(rule, /box-sizing:\s*border-box/)
 })
 
 test('the free top 3 anchor stays when the NFL preview flag withholds NFL rows', () => {
