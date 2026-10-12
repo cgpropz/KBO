@@ -120,6 +120,15 @@ def _next_data(url: str):
     return json.loads(match.group(1))
 
 
+
+# Manual hotfix: players known to be OUT/IR/scratched. Their props are dropped
+# before the board is written, so they never reach the free top 3. Edit this
+# list by hand (NHL player id -> note). The full injury filter replaces it.
+EXCLUDED_PLAYER_IDS = {
+    "8473419",  # Brad Marchand, OUT (2026-10-12)
+    "8482667",  # William Eklund, IR (2026-10-12)
+}
+
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
     if not ready:
         print(f"skip write {path.name}: source failed, leaving the previous file")
@@ -832,6 +841,7 @@ def build(root: Path, out_dir: Path) -> int:
                         baselines.get("G" if is_goalie else card["position"]),
                     ),
                 })
+            projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
             projections.sort(key=lambda row: (row["rankEligible"] is False, -(row["score"] or 0), row["player"], row["prop"]))
 
     lineups = build_lineups(games, goalies, lines)
