@@ -4,19 +4,19 @@
   "slate_date_iso": "2026-10-12",
   "timezone_basis": "ET-gameday",
   "schema_version": 2,
-  "frozen_at": "2026-10-12T08:39:50.132042+00:00",
+  "frozen_at": "2026-10-12T16:07:33.290055+00:00",
   "source": "nfl/projections.json",
-  "source_commit": "2ca5c78f5057",
+  "source_commit": "d31123e9be5d",
   "props": [
     {
       "projection": 4.6,
-      "edge": 2.1,
+      "edge": 1.1,
       "player": "Blake Corum",
       "team": "LA",
       "opponent": "BUF",
       "position": "RB",
       "stat": "Receiving Yards",
-      "line": 2.5,
+      "line": 3.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -36,8 +36,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-10T15:54:23+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 8.8,
@@ -72,13 +72,13 @@
     },
     {
       "projection": 40.7,
-      "edge": 5.2,
+      "edge": 7.2,
       "player": "Blake Corum",
       "team": "LA",
       "opponent": "BUF",
       "position": "RB",
       "stat": "Rush Yards",
-      "line": 35.5,
+      "line": 33.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -98,8 +98,39 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
+    },
+    {
+      "projection": 46.7,
+      "edge": 6.2,
+      "player": "Blake Corum",
+      "team": "LA",
+      "opponent": "BUF",
+      "position": "RB",
+      "stat": "Rush+Rec Yds",
+      "line": 40.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 50,
+      "game_date_iso": "2026-10-12",
+      "season_average": 45.9,
+      "games_played": 10,
+      "snap_count": 28.0,
+      "dvp_rank": 18,
+      "dvp_ratio": 1.05,
+      "baseline_projection": 49.4,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-12T16:07:33+00:00",
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.8,
@@ -134,13 +165,13 @@
     },
     {
       "projection": 20.4,
-      "edge": 3.9,
+      "edge": 2.9,
       "player": "Colby Parkinson",
       "team": "LA",
       "opponent": "BUF",
       "position": "TE",
       "stat": "Receiving Yards",
-      "line": 16.5,
+      "line": 17.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -160,8 +191,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 1.9,
@@ -191,8 +222,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T23:19:37+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 4.0,
@@ -222,8 +253,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 43.4,
@@ -253,8 +284,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 3.0,
@@ -284,18 +315,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T13:30:53+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 8.4,
-      "edge": 0.9,
+      "edge": 1.4,
       "player": "Davante Adams",
       "team": "LA",
       "opponent": "BUF",
       "position": "WR",
       "stat": "Rec Targets",
-      "line": 7.5,
+      "line": 7.0,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -315,8 +346,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 68.6,
@@ -346,8 +377,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 4.8,
@@ -382,18 +413,18 @@
     },
     {
       "projection": 11.7,
-      "edge": 4.2,
+      "edge": 6.2,
       "player": "Davis Allen",
       "team": "LA",
       "opponent": "BUF",
       "position": "TE",
       "stat": "Receiving Yards",
-      "line": 7.5,
+      "line": 5.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
-      "rating": 50,
+      "rating": 75,
       "game_date_iso": "2026-10-12",
       "season_average": 13.0,
       "games_played": 10,
@@ -408,8 +439,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-10T15:54:23+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.3,
@@ -439,18 +470,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 18.3,
-      "edge": 7.8,
+      "edge": 6.8,
       "player": "Dawson Knox",
       "team": "BUF",
       "opponent": "LA",
       "position": "TE",
       "stat": "Receiving Yards",
-      "line": 10.5,
+      "line": 11.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -470,51 +501,51 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.2,
-      "edge": 0.2,
+      "edge": -0.3,
       "player": "James Cook III",
       "team": "BUF",
       "opponent": "LA",
       "position": "RB",
       "stat": "Rec Targets",
-      "line": 2.0,
+      "line": 2.5,
       "odds_type": "standard",
-      "recommendation": "OVER",
+      "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
-      "rating": 67,
+      "rating": 50,
       "game_date_iso": "2026-10-12",
       "season_average": 2.4,
-      "games_played": 7,
+      "games_played": 10,
       "snap_count": 68.0,
       "dvp_rank": 23,
       "dvp_ratio": 1.14,
       "baseline_projection": 2.2,
-      "baseline_recommendation": "OVER",
+      "baseline_recommendation": "UNDER",
       "formula_mode": "tuned",
       "formula_applied": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 9.9,
-      "edge": 0.4,
+      "edge": -0.6,
       "player": "James Cook III",
       "team": "BUF",
       "opponent": "LA",
       "position": "RB",
       "stat": "Receiving Yards",
-      "line": 9.5,
+      "line": 10.5,
       "odds_type": "standard",
-      "recommendation": "OVER",
+      "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "rating": 25,
@@ -532,8 +563,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 1.4,
@@ -553,8 +584,8 @@
       "season_average": 1.9,
       "games_played": 10,
       "snap_count": 68.0,
-      "dvp_rank": 21,
-      "dvp_ratio": 1.03,
+      "dvp_rank": 20,
+      "dvp_ratio": 1.04,
       "baseline_projection": 1.3,
       "baseline_recommendation": "UNDER",
       "formula_mode": "tuned",
@@ -563,18 +594,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T01:04:27+00:00",
-      "source_commit": "457e09e3175d"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 18.1,
-      "edge": 1.1,
+      "edge": 1.6,
       "player": "James Cook III",
       "team": "BUF",
       "opponent": "LA",
       "position": "RB",
       "stat": "Rush Attempts",
-      "line": 17.0,
+      "line": 16.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -594,8 +625,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 91.6,
@@ -625,8 +656,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 104.7,
@@ -656,8 +687,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 1.4,
@@ -687,8 +718,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 6.9,
@@ -718,8 +749,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 29.1,
@@ -749,18 +780,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 19.4,
-      "edge": -1.6,
+      "edge": -1.1,
       "player": "Josh Allen",
       "team": "BUF",
       "opponent": "LA",
       "position": "QB",
       "stat": "Pass Completions",
-      "line": 21.0,
+      "line": 20.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -780,8 +811,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 1.4,
@@ -811,18 +842,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 225.9,
-      "edge": -19.6,
+      "edge": -18.6,
       "player": "Josh Allen",
       "team": "BUF",
       "opponent": "LA",
       "position": "QB",
       "stat": "Pass Yards",
-      "line": 245.5,
+      "line": 244.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -842,18 +873,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 252.5,
-      "edge": -34.0,
+      "edge": -35.0,
       "player": "Josh Allen",
       "team": "BUF",
       "opponent": "LA",
       "position": "QB",
       "stat": "Pass+Rush Yds",
-      "line": 286.5,
+      "line": 287.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -873,8 +904,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T07:37:58+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 8.3,
@@ -904,8 +935,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 31.9,
@@ -935,8 +966,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.5,
@@ -1056,20 +1087,20 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 39.0,
-      "edge": -0.5,
+      "edge": 0.5,
       "player": "Keon Coleman",
       "team": "BUF",
       "opponent": "LA",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 39.5,
+      "line": 38.5,
       "odds_type": "standard",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
       "rating": 50,
@@ -1087,8 +1118,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 3.3,
@@ -1118,49 +1149,49 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T23:19:37+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 5.2,
-      "edge": -0.3,
+      "edge": -0.8,
       "player": "Khalil Shakir",
       "team": "BUF",
       "opponent": "LA",
       "position": "WR",
       "stat": "Rec Targets",
-      "line": 5.5,
+      "line": 6.0,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
-      "rating": 75,
+      "rating": 50,
       "game_date_iso": "2026-10-12",
       "season_average": 5.9,
-      "games_played": 10,
+      "games_played": 8,
       "snap_count": 62.7,
       "dvp_rank": 9,
       "dvp_ratio": 0.93,
       "baseline_projection": 5.6,
-      "baseline_recommendation": "OVER",
+      "baseline_recommendation": "UNDER",
       "formula_mode": "tuned",
       "formula_applied": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 36.3,
-      "edge": -10.2,
+      "edge": -9.2,
       "player": "Khalil Shakir",
       "team": "BUF",
       "opponent": "LA",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 46.5,
+      "line": 45.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1180,8 +1211,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 3.5,
@@ -1211,8 +1242,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 3.5,
@@ -1242,18 +1273,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 18.9,
-      "edge": 11.4,
+      "edge": 10.4,
       "player": "Konata Mumpfield",
       "team": "LA",
       "opponent": "BUF",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 7.5,
+      "line": 8.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1273,18 +1304,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 5.2,
-      "edge": 1.7,
+      "edge": 1.2,
       "player": "Kyren Williams",
       "team": "LA",
       "opponent": "BUF",
       "position": "RB",
       "stat": "Rec Targets",
-      "line": 3.5,
+      "line": 4.0,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1304,8 +1335,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 26.3,
@@ -1335,8 +1366,39 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
+    },
+    {
+      "projection": 4.1,
+      "edge": 1.1,
+      "player": "Kyren Williams",
+      "team": "LA",
+      "opponent": "BUF",
+      "position": "RB",
+      "stat": "Receptions",
+      "line": 3.0,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 67,
+      "game_date_iso": "2026-10-12",
+      "season_average": 2.7,
+      "games_played": 6,
+      "snap_count": 68.2,
+      "dvp_rank": 23,
+      "dvp_ratio": 1.07,
+      "baseline_projection": 4.6,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-12T16:07:33+00:00",
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 14.4,
@@ -1366,8 +1428,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 69.0,
@@ -1397,8 +1459,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 105.4,
@@ -1428,8 +1490,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 41.9,
@@ -1459,18 +1521,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 25.9,
-      "edge": 2.9,
+      "edge": 2.4,
       "player": "Matthew Stafford",
       "team": "LA",
       "opponent": "BUF",
       "position": "QB",
       "stat": "Pass Completions",
-      "line": 23.0,
+      "line": 23.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1490,8 +1552,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.2,
@@ -1521,18 +1583,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 275.0,
-      "edge": -3.5,
+      "edge": -5.5,
       "player": "Matthew Stafford",
       "team": "LA",
       "opponent": "BUF",
       "position": "QB",
       "stat": "Pass Yards",
-      "line": 278.5,
+      "line": 280.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1552,18 +1614,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 286.0,
-      "edge": 6.5,
+      "edge": 1.5,
       "player": "Matthew Stafford",
       "team": "LA",
       "opponent": "BUF",
       "position": "QB",
       "stat": "Pass+Rush Yds",
-      "line": 279.5,
+      "line": 284.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1583,8 +1645,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T22:15:22+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.3,
@@ -1676,18 +1738,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 90.5,
-      "edge": -3.0,
+      "edge": -4.0,
       "player": "Puka Nacua",
       "team": "LA",
       "opponent": "BUF",
       "position": "WR",
       "stat": "Receiving Yards",
-      "line": 93.5,
+      "line": 94.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1707,8 +1769,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T00:51:40+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 6.8,
@@ -1738,8 +1800,70 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-06T14:30:45+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
+    },
+    {
+      "projection": 10.8,
+      "edge": 9.3,
+      "player": "Puka Nacua",
+      "team": "LA",
+      "opponent": "BUF",
+      "position": "WR",
+      "stat": "Rush Yards",
+      "line": 1.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 50,
+      "game_date_iso": "2026-10-12",
+      "season_average": 5.9,
+      "games_played": 10,
+      "snap_count": 80.0,
+      "dvp_rank": 13,
+      "dvp_ratio": 0.54,
+      "baseline_projection": 6.2,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-12T16:07:33+00:00",
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
+    },
+    {
+      "projection": 97.4,
+      "edge": -1.1,
+      "player": "Puka Nacua",
+      "team": "LA",
+      "opponent": "BUF",
+      "position": "WR",
+      "stat": "Rush+Rec Yds",
+      "line": 98.5,
+      "odds_type": "standard",
+      "recommendation": "UNDER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 50,
+      "game_date_iso": "2026-10-12",
+      "season_average": 112.3,
+      "games_played": 10,
+      "snap_count": 80.0,
+      "dvp_rank": 25,
+      "dvp_ratio": 1.15,
+      "baseline_projection": 107.9,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-12T16:07:33+00:00",
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.6,
@@ -1769,18 +1893,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 20.2,
-      "edge": 8.7,
+      "edge": 6.7,
       "player": "Ty Johnson",
       "team": "BUF",
       "opponent": "LA",
       "position": "RB",
       "stat": "Receiving Yards",
-      "line": 11.5,
+      "line": 13.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1800,8 +1924,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 2.3,
@@ -1831,18 +1955,49 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T23:19:37+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
+    },
+    {
+      "projection": 15.7,
+      "edge": 10.2,
+      "player": "Ty Johnson",
+      "team": "BUF",
+      "opponent": "LA",
+      "position": "RB",
+      "stat": "Rush Yards",
+      "line": 5.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 0,
+      "game_date_iso": "2026-10-12",
+      "season_average": 10.7,
+      "games_played": 10,
+      "snap_count": 27.5,
+      "dvp_rank": 8,
+      "dvp_ratio": 0.84,
+      "baseline_projection": 12.5,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T00:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-12T16:07:33+00:00",
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 35.6,
-      "edge": 16.1,
+      "edge": 14.1,
       "player": "Ty Johnson",
       "team": "BUF",
       "opponent": "LA",
       "position": "RB",
       "stat": "Rush+Rec Yds",
-      "line": 19.5,
+      "line": 21.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1853,7 +2008,7 @@
       "games_played": 10,
       "snap_count": 27.5,
       "dvp_rank": 7,
-      "dvp_ratio": 0.83,
+      "dvp_ratio": 0.84,
       "baseline_projection": 36.6,
       "baseline_recommendation": "OVER",
       "formula_mode": "tuned",
@@ -1862,8 +2017,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-07T19:34:48+00:00",
-      "last_pregame_frozen_at": "2026-10-07T19:34:48+00:00",
-      "source_commit": "9067bf484134"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 5.0,
@@ -1893,18 +2048,18 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T19:03:12+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 33.2,
-      "edge": 8.7,
+      "edge": 6.7,
       "player": "Tyler Higbee",
       "team": "LA",
       "opponent": "BUF",
       "position": "TE",
       "stat": "Receiving Yards",
-      "line": 24.5,
+      "line": 26.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -1924,8 +2079,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-08T23:59:04+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     },
     {
       "projection": 3.8,
@@ -1955,8 +2110,8 @@
       "start_time_utc": "2026-10-13T00:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-09T23:19:37+00:00",
-      "last_pregame_frozen_at": "2026-10-12T08:39:50+00:00",
-      "source_commit": "2ca5c78f5057"
+      "last_pregame_frozen_at": "2026-10-12T16:07:33+00:00",
+      "source_commit": "d31123e9be5d"
     }
   ]
 }
