@@ -21,10 +21,10 @@ const TEAM_COLORS = {
 
 // Logos live under kbo-props-ui/public/team-logos/ (shared with LandingPage/MatchupDeepDive).
 const TEAM_LOGOS = {
-  Doosan: '/team-logos/doosan.svg', Hanwha: '/team-logos/hanwha.svg', Kia: '/team-logos/kia.png',
-  Kiwoom: '/team-logos/kiwoom.png', KT: '/team-logos/kt.svg', LG: '/team-logos/lg.svg',
-  Lotte: '/team-logos/lotte.svg', NC: '/team-logos/nc.svg', Samsung: '/team-logos/samsung.svg',
-  SSG: '/team-logos/ssg.png',
+  Doosan: '/team-logos/doosan.webp', Hanwha: '/team-logos/hanwha.webp', Kia: '/team-logos/kia.webp',
+  Kiwoom: '/team-logos/kiwoom.webp', KT: '/team-logos/kt.webp', LG: '/team-logos/lg.webp',
+  Lotte: '/team-logos/lotte.webp', NC: '/team-logos/nc.webp', Samsung: '/team-logos/samsung.webp',
+  SSG: '/team-logos/ssg.webp',
 }
 
 // Per-game value getters, keyed by the PrizePicks stat labels used on the KBO board.
@@ -423,7 +423,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
         <div className="kbo-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
-              {TEAM_LOGOS[g.opp] && <img className="kbo-player-date-logo" src={TEAM_LOGOS[g.opp]} alt={g.opp} />}
+              {TEAM_LOGOS[g.opp] && <img className="kbo-player-date-logo" src={TEAM_LOGOS[g.opp]} alt={g.opp} loading="lazy" />}
               <b className="kbo-player-date-team" style={{ color: TEAM_COLORS[g.opp] || '#78918a' }}>{g.opp || '—'}</b>
               {fmtDate(g.date)}
             </span>

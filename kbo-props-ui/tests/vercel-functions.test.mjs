@@ -36,7 +36,11 @@ const PUBLIC_ROUTES = [
 test('serverless function files stay within the Vercel Hobby limit', () => {
   const files = serverlessFunctionFiles(join(uiRoot, 'api'))
   assert.ok(files.length <= HOBBY_FUNCTION_LIMIT, files.join('\n'))
-  assert.equal(files.length, 11)
+  // img.js is the headshot/logo resizer. Board clocks stay inside data.js
+  // so this count does not go past the Hobby limit of 12.
+  assert.equal(files.length, 12)
+  assert.equal(files.some((file) => file.endsWith('img.js')), true)
+  assert.equal(files.some((file) => file.includes('board_status') || file.includes('board-status')), false)
   assert.equal(files.some((file) => file.endsWith('discord-callback.js')), false)
   assert.equal(files.some((file) => file.endsWith('nba-access.js')), false)
   assert.equal(files.some((file) => file.endsWith('weekly-checkout.js')), false)
@@ -60,6 +64,9 @@ test('public api urls are not swallowed by an SPA catch-all and keep their query
     rewrites.find((rule) => rule.source === '/api/discord-callback').destination,
     '/api/discord/callback',
   )
+  const status = rewrites.find((rule) => rule.source === '/status.json')
+  assert.equal(status?.destination, '/api/data?ds=board_status')
+  assert.ok(rewrites.indexOf(status) < generic)
 })
 
 function mockRes() {

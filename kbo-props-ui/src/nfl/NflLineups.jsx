@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflLineups } from './nflData'
+import { fitImage } from '../fitImage.js'
 
 const TEAM_NAMES = { ARI: 'Cardinals', ATL: 'Falcons', BAL: 'Ravens', BUF: 'Bills', CAR: 'Panthers', CHI: 'Bears', CIN: 'Bengals', CLE: 'Browns', DAL: 'Cowboys', DEN: 'Broncos', DET: 'Lions', GB: 'Packers', HOU: 'Texans', IND: 'Colts', JAC: 'Jaguars', JAX: 'Jaguars', KC: 'Chiefs', LA: 'Rams', LAC: 'Chargers', LV: 'Raiders', MIA: 'Dolphins', MIN: 'Vikings', NE: 'Patriots', NO: 'Saints', NYG: 'Giants', NYJ: 'Jets', PHI: 'Eagles', PIT: 'Steelers', SEA: 'Seahawks', SF: '49ers', TB: 'Buccaneers', TEN: 'Titans', WAS: 'Commanders' }
 
@@ -8,7 +9,7 @@ function statusClass(status) {
 }
 
 function TeamColumn({ team, record, lineup }) {
-  return <div className="nfl-lineup-team"><header><b>{team}</b><span>{TEAM_NAMES[team] || team}<small>{record}</small></span></header>{lineup.map((player) => <div className="nfl-lineup-player" key={`${team}-${player.position}-${player.name}`}><em>{player.position}</em><i>{player.imageUrl && <img src={player.imageUrl} alt="" loading="lazy" />}</i><span>{player.name}</span>{player.status && <b className={`nfl-status ${statusClass(player.status)}`}>{player.status}</b>}</div>)}</div>
+  return <div className="nfl-lineup-team"><header><b>{team}</b><span>{TEAM_NAMES[team] || team}<small>{record}</small></span></header>{lineup.map((player) => <div className="nfl-lineup-player" key={`${team}-${player.position}-${player.name}`}><em>{player.position}</em><i>{player.imageUrl && <img src={fitImage(player.imageUrl, 40)} alt="" loading="lazy" />}</i><span>{player.name}</span>{player.status && <b className={`nfl-status ${statusClass(player.status)}`}>{player.status}</b>}</div>)}</div>
 }
 
 function InjuryColumn({ team, entries }) {

@@ -1,285 +1,114 @@
-name: Refresh Data & Deploy to Vercel
+name: Deploy site
+
+# Site-only deploy. A push that changes the UI or the API builds and ships
+# the website. It does not refresh prop data, so a data problem cannot block
+# or undo a site fix. Data publishes on its own schedule in publish-data.yml.
+# The two jobs use different concurrency groups, so they do not cancel or
+# queue behind each other.
 
 on:
   push:
     branches:
       - main
     paths:
-      # Data file changes (paid kbo-props-ui/public/data/** snapshots are no
-      # longer committed at all) and memory/** archive commits are
-      # intentionally excluded here. Odds/data and
-      # memory commits must NOT re-trigger a full 14-minute deploy.
-      # Only code/config/pipeline changes should kick off a full redeploy.
-      - "pipeline/**"
-      - ".github/workflows/**"
-      - "refresh_data.py"
-      - "refresh_odds.py"
-      - "publish_supabase.py"
-      - "generate_*.py"
-      - "build_opponent_stats.py"
-      - "_build_player_photos.py"
-      - "Batters-Data/batterlog.py"
-      - "Batters-Data/kbo_batter_hands.csv"
       - "kbo-props-ui/src/**"
       - "kbo-props-ui/index.html"
       - "kbo-props-ui/scripts/**"
       - "kbo-props-ui/content/**"
-      - "kbo-props-ui/public/*.html"
-      - "kbo-props-ui/public/guides/**"
-      - "kbo-props-ui/public/sitemap.xml"
-      - "kbo-props-ui/public/robots.txt"
-      - "kbo-props-ui/public/index.html"
+      - "kbo-props-ui/public/**"
       - "kbo-props-ui/package*.json"
       - "kbo-props-ui/vite.config.*"
       - "kbo-props-ui/api/**"
       - "kbo-props-ui/vercel.json"
       - "kbo-props-ui/.vercelignore"
       - "kbo-props-ui/paidDataFiles.js"
-      # Offline ML work (D6): ml/** and the ml-*.yml workflows never touch the
-      # live site, so they must not kick off a full redeploy. Negations must
-      # stay LAST: GitHub evaluates path filters in order and the last match
-      # wins. A push that also touches a live path above still deploys.
+      - "kbo-props-ui/cssLayerPlugin.js"
+      - ".github/workflows/deploy.yml"
+      # Negations stay last. A status or paid-snapshot commit must not ship a
+      # new site. A push that also changes a path above still deploys.
+      - "!kbo-props-ui/public/status.json"
+      - "!kbo-props-ui/public/data/**"
       - "!ml/**"
       - "!.github/workflows/ml-*.yml"
       - "!.github/workflows/ml-*.yaml"
-  schedule:
-    # Full refresh + deploy. GitHub schedule uses UTC.
-    # 12:00 PM ET is the post-game actuals window (gives overnight KST
-    # finals time to land in logs before we grade memory).
-    - cron: "0 16 * * *" # 12:00 PM ET — post-game actuals
-    # Later ET cluster for pre-slate / US-day updates.
-    - cron: "0 18 * * *" # 2:00 PM ET
-    - cron: "0 19 * * *" # 3:00 PM ET
-    - cron: "0 20 * * *" # 4:00 PM ET
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 concurrency:
-  group: kbo-refresh-pipeline
+  group: cgpropz-code-deploy
   cancel-in-progress: false
 
 jobs:
-  refresh-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: kbo-props-ui
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install Python dependencies
-        run: |
-          pip install -r requirements.txt
-          playwright install chromium --with-deps
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "npm"
+          cache-dependency-path: kbo-props-ui/package-lock.json
 
-      - name: Write credentials.json
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
-        continue-on-error: true
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
 
-      - name: Restore last published snapshots (paid data is not in git)
-        run: python pipeline/restore_snapshots.py
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Vercel Hobby function limit
+        run: node scripts/check-function-limit.mjs
 
-      - name: Run full data refresh (stats, logs, projections, player props)
+      - name: This job does not refresh data
+        working-directory: .
         run: |
-          bash pipeline/run_release.sh --skip-deploy
-        env:
-          ALLOW_STALE_DEPLOY: "1"
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      # NFL snapshots are gitignored and are not part of the KBO release above.
-      # Deploy run 37204386295 shipped the Pass TDs UI and left Supabase on the
-      # pre-merge slate, so the live board had the tab and no rows. Rebuild and
-      # publish here, in the step that has the service role key. The Vercel
-      # step below still must not regenerate snapshots.
-      - name: Build KBO prop correlations
-        continue-on-error: true
-        run: python pipeline/build_correlations.py --sport kbo
-
-      - name: Publish KBO prop correlations
-        continue-on-error: true
-        run: python publish_supabase.py
-        env:
-          PUBLISH_ONLY_PREFIX: correlations_kbo.json
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      - name: Build current NFL projections and starting lineups
-        run: python nfl/build_projection_data.py
-
-      - name: Build NFL prop correlations
-        continue-on-error: true
-        run: python pipeline/build_correlations.py --sport nfl
-
-      - name: Match NFL PrizePicks lines to Unabated sportsbook odds
-        continue-on-error: true
-        run: python nfl/sharp_odds.py
-
-      - name: Publish protected NFL snapshot
-        run: python publish_supabase.py
-        env:
-          PUBLISH_ONLY_PREFIX: "nfl/"
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      - name: Check for duplicate data generation steps
-        run: |
-          if grep -E 'python.*(refresh_data\.py|refresh_odds\.py)' .github/workflows/deploy.yml | grep -v 'pipeline/run_release.sh'; then
-            echo "ERROR: Data generation scripts must only be run once via pipeline/run_release.sh."
+          if grep -E 'refresh_data\.py|refresh_odds\.py|run_release\.sh|build_projection_data\.py' .github/workflows/deploy.yml; then
+            echo "The site deploy must not refresh or rebuild prop data."
             exit 1
           fi
-        shell: bash
-        continue-on-error: false
 
-      # Removed redundant odds refresh step to prevent stale data
-
-      - name: Verify all public data snapshots (fail if missing/stale)
-        run: |
-          # Keep deploys unblocked when some props-player headshots are unavailable.
-          # The script still fails for stale/missing core snapshots.
-          python pipeline/verify_local_data.py --max-missing-photos 25
-        timeout-minutes: 10
+      - name: Build the site
+        run: npm run build
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-
-      - name: Commit data updates
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Never commit credential material generated from secrets.
-          if git ls-files --error-unmatch credentials.json >/dev/null 2>&1; then
-            git checkout -- credentials.json
-          else
-            rm -f credentials.json
-          fi
-
-          git add -A
-          git restore --staged credentials.json >/dev/null 2>&1 || true
-
-          if git diff --cached --quiet; then
-            echo "No data changes to commit"
-          else
-            git commit -m "chore: auto-refresh data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            # Attempt 1: direct push
-            if git push origin HEAD:main; then
-              echo "Push succeeded on first attempt"
-            else
-              echo "Push rejected; fetching latest and rebasing..."
-              if git pull --rebase origin main; then
-                # Clean rebase — push again
-                if git push origin HEAD:main; then
-                  echo "Push succeeded after clean rebase"
-                else
-                  # Extreme race: another commit landed in the window between rebase and push.
-                  # --force-with-lease is safe here: we are strictly ahead of the remote state
-                  # we just fetched, so we won't overwrite commits we haven't seen.
-                  echo "Second push rejected; attempting --force-with-lease..."
-                  git push --force-with-lease origin HEAD:main \
-                    && echo "Push succeeded with --force-with-lease" \
-                    || echo "All push attempts failed — fresh data deployed from workspace"
-                fi
-              else
-                # Rebase conflict (most likely prizepicks_props.json raced with intraday
-                # odds refresh). Take OUR version — the full rebuild has today's correct
-                # cards + lines and must not be discarded.
-                echo "Rebase conflict — auto-resolving with our full-refresh version..."
-                CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-                if [ -n "$CONFLICTS" ]; then
-                  echo "Conflicted files: $CONFLICTS"
-                  # --theirs in a rebase = the commit being replayed = OUR local commit
-                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
-                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
-                fi
-                GIT_EDITOR=true git rebase --continue \
-                  && git push origin HEAD:main \
-                  && echo "Push succeeded after conflict auto-resolution" \
-                  || {
-                    git rebase --abort >/dev/null 2>&1 || true
-                    echo "Push failed after conflict resolution — fresh data deployed from workspace"
-                  }
-              fi
-            fi
-          fi
-
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to Vercel
         run: |
           npm i -g vercel@latest
-          # Pull in any commits that landed while we were refreshing data so the
-          # Vercel bundle always contains the absolute latest committed snapshots.
-          git pull --ff-only origin main 2>/dev/null || git pull --rebase origin main 2>/dev/null || true
-          # IMPORTANT: do NOT pass --skip-build. We need to build locally so the
-          # VITE_* env vars below get baked into the bundle. If we skip the build,
-          # Vercel's own builder runs without our system env vars and the deployed
-          # JS may be missing Supabase config (root cause of GH-Actions deploys
-          # silently shipping a broken bundle).
-          # Do NOT regenerate data here. This step has the anon key for the
-          # frontend bundle and does not have SUPABASE_SERVICE_ROLE_KEY. A quick
-          # regen used to rewrite snapshots and publish nothing, which left the
-          # live cohort split. The refresh step above already published.
-          bash pipeline/run_release.sh --skip-odds --skip-full-refresh --skip-snapshot-regen
+          vercel --prod --token "$VERCEL_TOKEN" --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Freeze KBO slate into memory/
-        if: success()
-        continue-on-error: true
-        run: python pipeline/memory/freeze_slate.py --sport kbo
-
-      - name: Grade KBO memory for yesterday (KST) if complete
-        if: success()
-        continue-on-error: true
-        run: python pipeline/memory/grade_kbo_day.py
-
-      - name: Publish memory/ changes
-        if: success()
-        continue-on-error: true
+      # Confirms the new site is up and still hides paid files. It does not
+      # fail when the prop numbers are old. That check lives on the data job.
+      - name: Check the live site still hides paid data
+        working-directory: .
         run: |
-          bash pipeline/memory/commit_memory.sh "chore: kbo memory update"
-
-      - name: Verify production data (strict)
-        run: |
-          for attempt in 1 2 3 4 5 6; do
-            echo "Production verify attempt ${attempt}/6"
-            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict; then
+          pip install requests
+          for attempt in 1 2 3 4; do
+            echo "Site check attempt ${attempt}/4"
+            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --site-only; then
               exit 0
             fi
-            if [ "$attempt" -lt 6 ]; then
-              echo "Verification not green yet, retrying in 30s..."
-              sleep 30
+            if [ "$attempt" -lt 4 ]; then
+              sleep 15
             fi
           done
-          echo "Production verification failed after retries"
+          echo "The new site failed the paid-data check"
           exit 1
 
-      # Email-on-failure: open or update a GitHub issue when this scheduled
-      # full pipeline fails. GitHub's default notification settings will email
-      # the repo owner whenever an issue is opened or commented on.
       - name: Notify on failure (open/update issue)
         if: failure()
+        working-directory: .
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/notify-failure.sh "🚨 Full refresh + deploy FAILED"
+        run: bash .github/scripts/notify-failure.sh "🚨 Site deploy FAILED"

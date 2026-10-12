@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflGameMarkets } from './nflData'
 import { teamColor, teamLogoUrl } from './nflTeams'
+import { fitImage } from '../fitImage.js'
 import { downloadGameCardPng } from './gameCardShare'
 import {
   GAME_CARD_PROBS_ENABLED,
@@ -17,7 +18,7 @@ function TeamMark({ team }) {
   const url = teamLogoUrl(team)
   const [failed, setFailed] = useState(false)
   if (url && !failed) {
-    return <img src={url} alt="" width={40} height={40} onError={() => setFailed(true)} />
+    return <img src={fitImage(url, 40)} alt="" width={40} height={40} loading="lazy" onError={() => setFailed(true)} />
   }
   return (
     <span className="nfl-market-fallback" style={{ background: teamColor(team) }} aria-hidden="true">

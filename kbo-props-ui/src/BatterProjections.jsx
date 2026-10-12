@@ -6,6 +6,7 @@ import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
+import { fitImage } from './fitImage.js';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -824,7 +825,7 @@ function BatterProjections() {
                       {photoLookup[normalizeName(p.name)] ? (
                         <img
                           className="bp-player-avatar"
-                          src={photoLookup[normalizeName(p.name)]}
+                          src={fitImage(photoLookup[normalizeName(p.name)], 25)}
                           alt={p.name}
                           loading="lazy"
                           onError={(e) => {

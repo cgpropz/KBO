@@ -28,8 +28,50 @@ function stripPaidData() {
 }
 
 // https://vite.dev/config/
+// Vite preview does not apply vercel.json rewrites. Map the public pages the
+// phone check opens so a local production build matches the live URLs.
+function previewCleanUrls() {
+  const map = {
+    '/pricing': '/pricing.html',
+    '/policies': '/policies.html',
+    '/guides/start-here': '/guides/start-here.html',
+    '/guides/cg-score': '/guides/cg-score.html',
+  }
+  return {
+    name: 'preview-clean-urls',
+    configurePreviewServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const raw = String(req.url || '')
+        const path = raw.split('?')[0]
+        if (map[path]) {
+          const query = raw.includes('?') ? `?${raw.split('?')[1]}` : ''
+          req.url = `${map[path]}${query}`
+          return next()
+        }
+        if (path !== '/api/img') return next()
+        try {
+          const { default: handler } = await import('./api/img.js')
+          const params = new URL(raw, 'http://127.0.0.1').searchParams
+          await handler(
+            { method: req.method || 'GET', query: { src: params.get('src') || '', w: params.get('w') || '' } },
+            {
+              setHeader(key, value) { res.setHeader(key, value) },
+              end(body) { res.end(body) },
+              get statusCode() { return res.statusCode },
+              set statusCode(code) { res.statusCode = code },
+            },
+          )
+        } catch (err) {
+          res.statusCode = 502
+          res.end('Image unavailable')
+        }
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [cssLayerPlugin(), react(), stripPaidData()],
+  plugins: [cssLayerPlugin(), react(), stripPaidData(), previewCleanUrls()],
   // For GitHub Pages: set base to repo name, or '/' for custom domain
   base: process.env.GITHUB_PAGES ? '/KBO/' : '/',
 })

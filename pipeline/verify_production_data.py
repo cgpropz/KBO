@@ -264,6 +264,52 @@ def verify_projections_list(name: str, payload: Any, key: str) -> List[str]:
 	return errors
 
 
+STATUS_SPORTS = ("kbo", "wnba", "nfl", "nba", "nhl")
+STATUS_KEYS = {
+	"sport",
+	"board_updated_at",
+	"injuries_checked_at",
+	"prop_count",
+	"stale",
+}
+
+
+def status_document_error(payload: Any) -> str | None:
+	"""Public clocks only. Extra keys would mean prop rows leaked into status."""
+	if not isinstance(payload, dict):
+		return "status document is not an object"
+	if set(payload) - {"boards"}:
+		return "status document has fields other than boards"
+	boards = payload.get("boards")
+	if not isinstance(boards, list):
+		return "status document is missing boards"
+	sports = []
+	for row in boards:
+		if not isinstance(row, dict):
+			return "status board row is not an object"
+		if set(row) - STATUS_KEYS:
+			return "status board row has extra fields"
+		sports.append(row.get("sport"))
+	if sports != list(STATUS_SPORTS):
+		return "status boards are not the five sports"
+	return None
+
+
+def anonymous_preview_error(payload: Any, limit: int = 3) -> str | None:
+	"""Free and signed-out visitors must get the trimmed board, never the paid one."""
+	if not isinstance(payload, dict):
+		return "anonymous prizepicks response is not an object"
+	if payload.get("preview") is not True:
+		return "anonymous visitors received paid board data"
+	data = payload.get("data")
+	cards = data.get("cards") if isinstance(data, dict) else None
+	if not isinstance(cards, list):
+		return "anonymous prizepicks preview is missing cards"
+	if len(cards) > limit:
+		return "anonymous preview includes more than the free rows"
+	return None
+
+
 def verify_matchup_payload(payload: Any) -> List[str]:
 	errors: List[str] = []
 	if not isinstance(payload, dict):
@@ -272,6 +318,55 @@ def verify_matchup_payload(payload: Any) -> List[str]:
 	if not isinstance(rows, list) or len(rows) == 0:
 		errors.append("matchup_data missing non-empty 'matchups' list")
 	return errors
+
+
+def verify_site(base_url: str, headers: Dict[str, str]) -> int:
+	"""Homepage, paid-file leak list, anonymous preview, and public clocks.
+
+	Stale prop numbers are not a failure here. That check stays on the data job,
+	so a site fix can ship while the boards keep the last good publish.
+	"""
+	print(f"Checking the live site at: {base_url}")
+	failures: List[str] = []
+
+	try:
+		home = requests.get(base_url + "/", headers={**headers, "Accept": "text/html"}, timeout=20)
+	except Exception as exc:
+		failures.append(f"homepage request failed: {exc}")
+		home = None
+	if home is not None and home.status_code != 200:
+		failures.append(f"homepage returned http {home.status_code}")
+	elif home is not None and "html" not in (home.headers.get("content-type") or "").lower() and "<html" not in home.text[:500].lower():
+		failures.append("homepage did not return a web page")
+
+	for path in MUST_NOT_BE_PUBLIC:
+		leak = check_not_public(f"{base_url}{path}", headers)
+		if leak:
+			failures.append(leak)
+
+	preview = fetch_json(f"{base_url}/api/data?ds=prizepicks_props", headers)
+	if not preview.ok:
+		failures.append(f"anonymous board check failed: {preview.error}")
+	else:
+		preview_error = anonymous_preview_error(preview.json_data)
+		if preview_error:
+			failures.append(preview_error)
+
+	status = fetch_json(f"{base_url}/status.json", headers)
+	if not status.ok:
+		failures.append(f"status.json check failed: {status.error}")
+	else:
+		status_error = status_document_error(status.json_data)
+		if status_error:
+			failures.append(status_error)
+
+	if failures:
+		print("\nSite check failures:")
+		for msg in failures:
+			print(f"- {msg}")
+		return 1
+	print("\nSite check passed. Paid files stay hidden, and old board numbers are left alone.")
+	return 0
 
 
 def main() -> int:
@@ -290,6 +385,11 @@ def main() -> int:
 		"--strict",
 		action="store_true",
 		help="Exit non-zero on any verification warning/failure",
+	)
+	parser.add_argument(
+		"--site-only",
+		action="store_true",
+		help="Check the website is up and still hides paid data. Do not fail on stale numbers.",
 	)
 	parser.add_argument(
 		"--max-age-hours",
@@ -314,6 +414,9 @@ def main() -> int:
 		bypass_secret = os.environ.get("VERCEL_PROTECTION_BYPASS")
 
 	headers = build_headers(bypass_secret)
+
+	if args.site_only:
+		return verify_site(base_url, headers)
 
 	print(f"Verifying production endpoints at: {base_url}")
 

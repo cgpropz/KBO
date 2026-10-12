@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchNhlDvp } from './nhlData'
 import { TEAM_NAMES, teamLogoUrl } from './nhlTeams'
+import { fitImage } from '../fitImage.js'
 
 const TABS = [
   { id: 'F', label: 'Forwards', ds: 'nhl_dvp_f', file: 'nhl/dvp_f.json' },
@@ -47,7 +48,7 @@ function DvpRow({ team, leagueAvg }) {
     <article className="nhl-dvp-row" data-testid={`nhl-dvp-row-${team.team}`}>
       <span className="nhl-dvp-rank">{team.rank}</span>
       <div className="nhl-dvp-team">
-        {logo && <img src={logo} alt="" width="22" height="22" onError={(event) => { event.currentTarget.style.display = 'none' }} />}
+        {logo && <img src={fitImage(logo, 22)} alt="" width="22" height="22" loading="lazy" onError={(event) => { event.currentTarget.style.display = 'none' }} />}
         <b>{team.team}</b>
         <span>{TEAM_NAMES[team.team] || team.name}</span>
       </div>

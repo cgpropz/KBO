@@ -17,6 +17,7 @@ import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
+import { fitImage } from '../fitImage.js'
 
 const PROP_PRIORITY = [
   'Points', 'Rebounds', 'Assists', '3-PT Made', 'Pts+Rebs+Asts', 'Pts+Rebs', 'Pts+Asts', 'Rebs+Asts',
@@ -365,7 +366,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
         <button className="wnba-player-back" onClick={onBack}>&larr; Back</button>
         <div className="wnba-player-header">
           <div className="wnba-player-avatar">
-            {player.image ? <img className="wnba-player-avatar-photo" src={player.image} alt={player.name} loading="lazy" /> : initials(player.name)}
+            {player.image ? <img className="wnba-player-avatar-photo" src={fitImage(player.image, 68)} alt={player.name} /> : initials(player.name)}
           </div>
           <div className="wnba-player-title">
             <h1>{player.name}<span>{player.position}</span></h1>

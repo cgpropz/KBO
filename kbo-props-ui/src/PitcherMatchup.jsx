@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { buildPitcherMatchup, resolveLeague } from './pitcherMatchup'
+import { fitImage } from './fitImage.js'
 
 const TEAM_LOGOS = {
-  Doosan: '/team-logos/doosan.svg', Hanwha: '/team-logos/hanwha.svg', Kia: '/team-logos/kia.png',
-  Kiwoom: '/team-logos/kiwoom.png', KT: '/team-logos/kt.svg', LG: '/team-logos/lg.svg',
-  Lotte: '/team-logos/lotte.svg', NC: '/team-logos/nc.svg', Samsung: '/team-logos/samsung.svg',
-  SSG: '/team-logos/ssg.png',
+  Doosan: '/team-logos/doosan.webp', Hanwha: '/team-logos/hanwha.webp', Kia: '/team-logos/kia.webp',
+  Kiwoom: '/team-logos/kiwoom.webp', KT: '/team-logos/kt.webp', LG: '/team-logos/lg.webp',
+  Lotte: '/team-logos/lotte.webp', NC: '/team-logos/nc.webp', Samsung: '/team-logos/samsung.webp',
+  SSG: '/team-logos/ssg.webp',
 }
 
 function identityLine(model) {
@@ -67,7 +68,7 @@ export default function PitcherMatchup({
       {status === 'ready' && model.starterName && (
         <>
           <div className="kbo-pitcher-matchup-identity">
-            {logo && <img src={logo} alt="" />}
+            {logo && <img src={fitImage(logo, 28)} alt="" loading="lazy" />}
             <div>
               <div className="kbo-pitcher-matchup-name">
                 <strong>{model.starterName}</strong>

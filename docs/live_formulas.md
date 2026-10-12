@@ -14,7 +14,7 @@ To put the previous formulas back:
 
 1. Change that file's `mode` from `tuned` to `current` (or run one job with `CG_PROJECTION_FORMULA=current`).
 2. Rerun the refresh that publishes each sport:
-   - KBO: **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
+   - KBO: **Refresh data** (`.github/workflows/publish-data.yml`). Start it with `workflow_dispatch`. It runs `pipeline/run_release.sh --skip-deploy --skip-build` and writes the boards to the database. It does not upload a new website.
    - WNBA: **Refresh WNBA Data** (`.github/workflows/wnba-refresh.yml`) and **Refresh WNBA PrizePicks Lines (30 min)** (`.github/workflows/wnba-props-refresh.yml`). Both export snapshots and then run `pipeline/apply_live_formula.py`. Supabase updates without a Vercel redeploy. Start either with `workflow_dispatch` if you do not want to wait for the schedule.
    - NFL: **Refresh NFL PrizePicks Board** (`.github/workflows/nfl-refresh.yml`). It runs `python nfl/build_projection_data.py`, which reads the same switch. Start it with `workflow_dispatch` or wait for the next scheduled run.
 

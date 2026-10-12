@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -59,3 +60,73 @@ jobs:
       - name: Lint (non-blocking)
         continue-on-error: true
         run: npm run lint
+
+  phone-width:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: kbo-props-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: kbo-props-ui/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build the site
+        run: npm run build
+      - name: iPhone width check
+        run: npm run test:phone
+        env:
+          PHONE_SKIP_BUILD: "1"
+          CI: "true"
+      - name: Save board screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phone-boards
+          path: kbo-props-ui/phone-screenshots/*.png
+          if-no-files-found: ignore
+      - name: Comment the screenshots on the pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- phone-width-screenshots -->'
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const body = [
+              marker,
+              '### Phone board screenshots',
+              '',
+              'iPhone-width pictures of the NFL, NHL, KBO, and WNBA boards are attached to this check as **phone-boards**.',
+              '',
+              `Open them here: ${runUrl}`,
+              '',
+              'The check fails if a main page is wider than an iPhone (390px), in Safari and in the X app.',
+            ].join('\n')
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            })
+            const existing = comments.find((comment) => (comment.body || '').includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              })
+            }

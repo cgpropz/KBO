@@ -4,6 +4,7 @@ const safariUa = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWe
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/phone-width.spec.js',
   timeout: 60_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,

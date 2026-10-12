@@ -1,0 +1,205 @@
+name: Refresh data
+
+# Publishes prop numbers to the database the site already reads. It does not
+# build or ship a new website, so a failed refresh cannot block a site fix
+# or put an older website back. The live boards keep the last publish that
+# succeeded. Clocks land in board_status, which /status.json reads.
+
+on:
+  schedule:
+    # GitHub schedule uses UTC.
+    # 12:00 PM ET is the post-game actuals window.
+    - cron: "0 16 * * *" # 12:00 PM ET — post-game actuals
+    - cron: "0 18 * * *" # 2:00 PM ET
+    - cron: "0 19 * * *" # 3:00 PM ET
+    - cron: "0 20 * * *" # 4:00 PM ET
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: cgpropz-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Write credentials.json
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+        continue-on-error: true
+
+      - name: Restore last published snapshots (paid data is not in git)
+        run: python pipeline/restore_snapshots.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Run full data refresh (stats, logs, projections, player props)
+        run: |
+          bash pipeline/run_release.sh --skip-deploy --skip-build
+        env:
+          ALLOW_STALE_DEPLOY: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Build KBO prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport kbo
+
+      - name: Publish KBO prop correlations
+        continue-on-error: true
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: correlations_kbo.json
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Build current NFL projections and starting lineups
+        run: python nfl/build_projection_data.py
+
+      - name: Build NFL prop correlations
+        continue-on-error: true
+        run: python pipeline/build_correlations.py --sport nfl
+
+      - name: Match NFL PrizePicks lines to Unabated sportsbook odds
+        continue-on-error: true
+        run: python nfl/sharp_odds.py
+
+      - name: Publish protected NFL snapshot
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nfl/"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Check for duplicate data generation steps
+        run: |
+          if grep -E 'python.*(refresh_data\.py|refresh_odds\.py)' .github/workflows/publish-data.yml | grep -v 'pipeline/run_release.sh'; then
+            echo "ERROR: Data generation scripts must only be run once via pipeline/run_release.sh."
+            exit 1
+          fi
+        shell: bash
+
+      - name: Verify all public data snapshots (fail if missing/stale)
+        run: |
+          python pipeline/verify_local_data.py --max-missing-photos 25
+        timeout-minutes: 10
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+
+      - name: Commit data updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git ls-files --error-unmatch credentials.json >/dev/null 2>&1; then
+            git checkout -- credentials.json
+          else
+            rm -f credentials.json
+          fi
+
+          git add -A
+          git restore --staged credentials.json >/dev/null 2>&1 || true
+          # Never let a data commit rewrite the website source.
+          git restore --staged kbo-props-ui/src kbo-props-ui/api kbo-props-ui/index.html kbo-props-ui/package.json kbo-props-ui/package-lock.json kbo-props-ui/vercel.json >/dev/null 2>&1 || true
+
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore: auto-refresh data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            if git push origin HEAD:main; then
+              echo "Push succeeded on first attempt"
+            else
+              echo "Push rejected; fetching latest and rebasing..."
+              if git pull --rebase origin main; then
+                if git push origin HEAD:main; then
+                  echo "Push succeeded after clean rebase"
+                else
+                  echo "Second push rejected; attempting --force-with-lease..."
+                  git push --force-with-lease origin HEAD:main \
+                    && echo "Push succeeded with --force-with-lease" \
+                    || echo "All push attempts failed — database already has the fresh publish"
+                fi
+              else
+                echo "Rebase conflict — auto-resolving with our full-refresh version..."
+                CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+                if [ -n "$CONFLICTS" ]; then
+                  echo "Conflicted files: $CONFLICTS"
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                fi
+                GIT_EDITOR=true git rebase --continue \
+                  && git push origin HEAD:main \
+                  && echo "Push succeeded after conflict auto-resolution" \
+                  || {
+                    git rebase --abort >/dev/null 2>&1 || true
+                    echo "Push failed after conflict resolution — database already has the fresh publish"
+                  }
+              fi
+            fi
+          fi
+
+      - name: Freeze KBO slate into memory/
+        if: success()
+        continue-on-error: true
+        run: python pipeline/memory/freeze_slate.py --sport kbo
+
+      - name: Grade KBO memory for yesterday (KST) if complete
+        if: success()
+        continue-on-error: true
+        run: python pipeline/memory/grade_kbo_day.py
+
+      - name: Publish memory/ changes
+        if: success()
+        continue-on-error: true
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: kbo memory update"
+
+      - name: Verify production data (strict)
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            echo "Production verify attempt ${attempt}/6"
+            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --strict; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 6 ]; then
+              echo "Verification not green yet, retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "Production verification failed after retries"
+          exit 1
+
+      - name: Notify on failure (open/update issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/notify-failure.sh "🚨 Data refresh FAILED"

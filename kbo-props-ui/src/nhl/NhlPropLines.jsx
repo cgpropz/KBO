@@ -3,6 +3,7 @@ import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { teamLogoUrl } from './nhlTeams'
+import { fitImage } from '../fitImage.js'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
@@ -89,7 +90,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
     <tr className={`nfl-lines-row${open ? ' is-open' : ''}`} onClick={onToggle}>
       <td>
         <div className="nfl-lines-player">
-          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
           <div className="nfl-lines-info">
             <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
             {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
@@ -116,7 +117,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
       <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
       <td>
         <div className="nfl-lines-matchup">
-          {logo && <img className="nfl-lines-matchup-logo" src={logo} alt={item.opponent} />}
+          {logo && <img className="nfl-lines-matchup-logo" src={fitImage(logo, 22)} alt={item.opponent} loading="lazy" />}
           <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
         </div>
       </td>

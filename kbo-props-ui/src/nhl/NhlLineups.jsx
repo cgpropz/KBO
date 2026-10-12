@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchNhlLineups } from './nhlData'
 import { TEAM_NAMES, teamLogoUrl } from './nhlTeams'
+import { fitImage } from '../fitImage.js'
 
 const UNIT_LABEL = {
   F1: 'Line 1', F2: 'Line 2', F3: 'Line 3', F4: 'Line 4',
@@ -25,7 +26,7 @@ function TeamColumn({ team, players, label }) {
   return (
     <div className="nfl-lineup-team">
       <header>
-        {logo && <img src={logo} alt="" width="28" height="28" />}
+        {logo && <img src={fitImage(logo, 28)} alt="" width="28" height="28" loading="lazy" />}
         <b>{team}</b>
         <span>{TEAM_NAMES[team] || team}</span>
         {tagClass && <b className={tagClass}>{label}</b>}

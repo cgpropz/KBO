@@ -218,7 +218,7 @@ To put the previous formulas back:
 
 1. Change that file's `mode` from `tuned` to `current` (or run one job with `CG_PROJECTION_FORMULA=current`).
 2. Rerun the refresh that publishes each sport:
-   - KBO: **Refresh Data & Deploy to Vercel** (`.github/workflows/deploy.yml`). A push to `main` that touches `pipeline/**` or `generate_*.py` starts it. It runs `pipeline/run_release.sh`, which regenerates pitcher and batter projections and deploys the site.
+   - KBO: **Refresh data** (`.github/workflows/publish-data.yml`). Start it with `workflow_dispatch`. It runs `pipeline/run_release.sh --skip-deploy --skip-build` and writes the boards to the database. It does not upload a new website.
    - WNBA: **Refresh WNBA Data** (`.github/workflows/wnba-refresh.yml`) and **Refresh WNBA PrizePicks Lines (30 min)** (`.github/workflows/wnba-props-refresh.yml`). Both export snapshots and then run `pipeline/apply_live_formula.py`. Supabase updates without a Vercel redeploy. Start either with `workflow_dispatch` if you do not want to wait for the schedule.
    - NFL: **Refresh NFL PrizePicks Board** (`.github/workflows/nfl-refresh.yml`). It runs `python nfl/build_projection_data.py`, which reads the same switch. Start it with `workflow_dispatch` or wait for the next scheduled run.
 
@@ -317,7 +317,7 @@ def html_doc(rows: list[dict]) -> str:
 <p class="src">Mode in <code>pipeline/projection_formula.json</code>: <strong>""" + html.escape(file_mode()) + """</strong>. Coefficients are the committed Phase 2 params, not new fits.</p>
 <div class="note">
 <p><strong>What is live.</strong> A stat is on the tuned formula only when its params file says <code>candidate</code>. That is the fit shadow has been scoring. Everything else stays on the previous formula.</p>
-<p><strong>Roll back.</strong> Set <code>mode</code> to <code>current</code>, then rerun <strong>Refresh Data &amp; Deploy to Vercel</strong> for KBO (<code>deploy.yml</code>), <strong>Refresh WNBA Data</strong> or <strong>Refresh WNBA PrizePicks Lines (30 min)</strong> for WNBA, and <strong>Refresh NFL PrizePicks Board</strong> for NFL. One run can also set <code>CG_PROJECTION_FORMULA=current</code> without editing the file.</p>
+<p><strong>Roll back.</strong> Set <code>mode</code> to <code>current</code>, then rerun <strong>Refresh data</strong> for KBO (<code>publish-data.yml</code>), <strong>Refresh WNBA Data</strong> or <strong>Refresh WNBA PrizePicks Lines (30 min)</strong> for WNBA, and <strong>Refresh NFL PrizePicks Board</strong> for NFL. One run can also set <code>CG_PROJECTION_FORMULA=current</code> without editing the file. Refreshing the numbers does not put an older website back.</p>
 </div>
 """]
     for sport in ("kbo", "wnba", "nfl"):

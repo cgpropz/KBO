@@ -432,7 +432,8 @@ class TestWorkflowAndIsolation(unittest.TestCase):
 
     def test_deploy_ignores_memory_and_ml_workflows(self):
         text = (REPO / ".github/workflows/deploy.yml").read_text()
-        paths = text.split("paths:", 1)[1].split("schedule:", 1)[0]
+        # The site deploy has no schedule. Path filters end at workflow_dispatch.
+        paths = text.split("paths:", 1)[1].split("workflow_dispatch:", 1)[0]
         entries = re.findall(r'-\s*"([^"]+)"', paths)
         self.assertFalse(any(e.startswith("memory") for e in entries))
         self.assertEqual(entries[-3:], ["!ml/**", "!.github/workflows/ml-*.yml", "!.github/workflows/ml-*.yaml"])

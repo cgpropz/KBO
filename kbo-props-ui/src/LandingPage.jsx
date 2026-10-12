@@ -7,6 +7,7 @@ import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import { fetchDataSnapshot } from './dataUrl';
 import SportSwitcher from './SportSwitcher';
+import { fitImage } from './fitImage.js';
 
 const TEAMS = {
   Doosan:  { color: '#9595d3', full: 'Doosan Bears' },
@@ -24,16 +25,16 @@ const TEAMS = {
 // Logos live under kbo-props-ui/public/team-logos/. Files match other pages
 // (PlayerPropsUI / MatchupDeepDive) so future deploys reuse the same assets.
 const TEAM_LOGOS = {
-  Doosan:  '/team-logos/doosan.svg',
-  Hanwha:  '/team-logos/hanwha.svg',
-  Kia:     '/team-logos/kia.png',
-  Kiwoom:  '/team-logos/kiwoom.png',
-  KT:      '/team-logos/kt.svg',
-  LG:      '/team-logos/lg.svg',
-  Lotte:   '/team-logos/lotte.svg',
-  NC:      '/team-logos/nc.svg',
-  Samsung: '/team-logos/samsung.svg',
-  SSG:     '/team-logos/ssg.png',
+  Doosan:  '/team-logos/doosan.webp',
+  Hanwha:  '/team-logos/hanwha.webp',
+  Kia:     '/team-logos/kia.webp',
+  Kiwoom:  '/team-logos/kiwoom.webp',
+  KT:      '/team-logos/kt.webp',
+  LG:      '/team-logos/lg.webp',
+  Lotte:   '/team-logos/lotte.webp',
+  NC:      '/team-logos/nc.webp',
+  Samsung: '/team-logos/samsung.webp',
+  SSG:     '/team-logos/ssg.webp',
 };
 
 function normalizePhotoKey(value) {
@@ -678,7 +679,7 @@ function ValuePickCard({ pick, typeLabel, cardClass, photoUrl, gameLog, onClick 
           {showPhoto ? (
             <img
               className="lp-pick-avatar-img"
-              src={photoUrl}
+              src={fitImage(photoUrl, 42)}
               alt={pick.name}
               loading="lazy"
               onError={() => setPhotoFailed(true)}

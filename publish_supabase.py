@@ -39,6 +39,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 # migration). A missing table is reported and skipped instead of failing the
 # whole publish.
 OPTIONAL_TABLES = {
+    "board_status",
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
     "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
@@ -428,6 +429,39 @@ def tables_for_prefix(only_prefix: str) -> dict:
     return selected
 
 
+def publish_board_status(session, headers, published_at):
+    """Upsert the public clock file. Never includes prop rows."""
+    path = os.path.join(BASE, "kbo-props-ui", "public", "status.json")
+    if not os.path.exists(path):
+        print("  ! public/status.json missing; board clocks stay on the last publish")
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            document = json.load(handle)
+    except (OSError, ValueError) as exc:
+        print(f"  ! status.json unreadable: {exc}")
+        return
+    if not isinstance(document, dict) or not isinstance(document.get("boards"), list):
+        print("  ! status.json has no boards list; leaving the published clocks unchanged")
+        return
+    response = post_with_retry(
+        session,
+        f"{SUPABASE_URL}/rest/v1/board_status",
+        params={"on_conflict": "id"},
+        json=snapshot_record(1, document, published_at),
+        headers=headers,
+        timeout=30,
+    )
+    if response.status_code in (200, 201, 204):
+        print("  ✓ board_status")
+        return
+    if optional_table_missing("board_status", response):
+        print("  ! board_status table is not created yet. Apply sql/board_status.sql. Clocks stay on the last good publish.")
+        return
+    body = response.text.strip().replace("\n", " ")
+    print(f"  ! board_status HTTP {response.status_code}: {body[:200]}")
+
+
 def verify_wnba_gamelogs(only_prefix):
     if not only_prefix.startswith("wnba/"):
         return
@@ -545,6 +579,11 @@ def main():
             print(f"  ✓ public/status.json ({', '.join(status_updates)})")
         except Exception as exc:
             print(f"  ! status.json: {exc}")
+
+    # The live site reads this row for /status.json. A missing table or a
+    # failed write leaves the previous clocks in place. It is not a paid
+    # snapshot, so it must not fail the rest of the publish.
+    publish_board_status(session, headers, published_at)
 
     print("\n" + "=" * 60)
     if failures:

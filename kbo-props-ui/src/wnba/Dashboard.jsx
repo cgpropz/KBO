@@ -12,6 +12,7 @@ import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import { fitImage } from '../fitImage.js'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -179,7 +180,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
           <div className="wnba-lines-player">
             <div className="wnba-lines-avatar">
               {item.imageUrl
-                ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+                ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
                 : initials(item.player)}
             </div>
             <div className="wnba-lines-info">
@@ -367,7 +368,7 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
         fontSize: 10, fontWeight: 800, color: '#7efc6a',
       }}>
         {player.image
-          ? <img src={player.image} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
+          ? <img src={fitImage(player.image, 68)} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
           : initials(player.name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
