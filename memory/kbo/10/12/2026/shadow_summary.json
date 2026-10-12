@@ -1,0 +1,355 @@
+{
+  "schema": 1,
+  "sport": "kbo",
+  "slate_date": "10/12/2026",
+  "slate_date_iso": "2026-10-12",
+  "period": "2026-10-12",
+  "graded_at": "2026-10-12T23:45:28+00:00",
+  "status": "graded",
+  "evaluation": {
+    "excluded": false
+  },
+  "sources": {
+    "shadow": "shadow.json",
+    "recap": "recap.json",
+    "recap_graded_at": "2026-10-12T23:31:03.907943+00:00"
+  },
+  "params": {
+    "sha256": "d8ff68ba6527a1ae",
+    "files": 6,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "7daee36463af"
+  },
+  "definitions": {
+    "current": "pre-promotion formula (baseline_recommendation vs recap result) while the site is publishing the tuned formula; published_result is the site pick (recap model_result)",
+    "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
+    "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
+    "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
+    "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
+    "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
+    "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
+  },
+  "overall": {
+    "graded_props": 6,
+    "current": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "shadow": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "hit_rate_delta_pct_points": 0.0,
+    "paired": {
+      "n": 6,
+      "current_hits": 2,
+      "shadow_hits": 2,
+      "current_hit_rate_pct": 33.3,
+      "shadow_hit_rate_pct": 33.3
+    },
+    "current_edge": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "mae": {
+      "n": 6,
+      "current": 2.51,
+      "shadow": 2.019,
+      "delta": -0.491,
+      "sum_abs_current": 15.06,
+      "sum_abs_shadow": 12.114
+    },
+    "mae_shadow_all": {
+      "n": 6,
+      "shadow": 2.019,
+      "sum_abs": 12.114
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      }
+    }
+  },
+  "candidate_rows_only": {
+    "graded_props": 6,
+    "current": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "shadow": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "hit_rate_delta_pct_points": 0.0,
+    "paired": {
+      "n": 6,
+      "current_hits": 2,
+      "shadow_hits": 2,
+      "current_hit_rate_pct": 33.3,
+      "shadow_hit_rate_pct": 33.3
+    },
+    "current_edge": {
+      "hits": 2,
+      "misses": 4,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.333333,
+      "hit_rate_pct": 33.3
+    },
+    "mae": {
+      "n": 6,
+      "current": 2.51,
+      "shadow": 2.019,
+      "delta": -0.491,
+      "sum_abs_current": 15.06,
+      "sum_abs_shadow": 12.114
+    },
+    "mae_shadow_all": {
+      "n": 6,
+      "shadow": 2.019,
+      "sum_abs": 12.114
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      }
+    }
+  },
+  "per_stat": {
+    "Hits+Runs+RBIs": {
+      "graded_props": 6,
+      "current": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 6,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 33.3,
+        "shadow_hit_rate_pct": 33.3
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "mae": {
+        "n": 6,
+        "current": 2.51,
+        "shadow": 2.019,
+        "delta": -0.491,
+        "sum_abs_current": 15.06,
+        "sum_abs_shadow": 12.114
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 2.019,
+        "sum_abs": 12.114
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Pitcher Strikeouts": {
+      "graded_props": 0,
+      "current": {
+        "hits": 0,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": null,
+        "hit_rate_pct": null
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": null,
+        "hit_rate_pct": null
+      },
+      "hit_rate_delta_pct_points": null,
+      "paired": {
+        "n": 0,
+        "current_hits": 0,
+        "shadow_hits": 0,
+        "current_hit_rate_pct": null,
+        "shadow_hit_rate_pct": null
+      },
+      "current_edge": {
+        "hits": 0,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": null,
+        "hit_rate_pct": null
+      },
+      "mae": {
+        "n": 0,
+        "current": null,
+        "shadow": null,
+        "delta": null,
+        "sum_abs_current": 0.0,
+        "sum_abs_shadow": 0.0
+      },
+      "mae_shadow_all": {
+        "n": 0,
+        "shadow": null,
+        "sum_abs": 0.0
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 1,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    }
+  },
+  "props": [
+    {"player":"Ahn Hyun-min","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":2.58,"current_side":"OVER","current_result":"MISS","published_projection":1.75,"published_side":"OVER","published_result":"MISS","shadow_projection":1.752,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4922,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.58,"abs_err_shadow":1.752},
+    {"player":"Ariel Jurado","team":"Samsung","stat":"Pitcher Strikeouts","odds_type":"standard","line":4.5,"actual":null,"result":"DNP","current_projection":3.36,"current_side":"UNDER","current_result":"DNP","published_projection":4.35,"published_side":"UNDER","published_result":"DNP","shadow_projection":3.36,"shadow_side":"UNDER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":true,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Choi Won-jun","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":5.0,"result":"OVER","current_projection":4.53,"current_side":"OVER","current_result":"HIT","published_projection":2.37,"published_side":"UNDER","published_result":"MISS","shadow_projection":2.368,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4573,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":0.47,"abs_err_shadow":2.632},
+    {"player":"Kim Ji-chan","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.44,"current_side":"UNDER","current_result":"HIT","published_projection":1.45,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.449,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.44,"abs_err_shadow":1.449},
+    {"player":"Ko Young-Pyo","team":"KT","stat":"Pitcher Strikeouts","odds_type":"standard","line":6.0,"actual":null,"result":"DNP","current_projection":6.09,"current_side":"OVER","current_result":"DNP","published_projection":5.86,"published_side":"UNDER","published_result":"DNP","shadow_projection":6.09,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Lewin Diaz","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.0,"actual":0.0,"result":"UNDER","current_projection":2.58,"current_side":"OVER","current_result":"MISS","published_projection":1.97,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.972,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4656,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.58,"abs_err_shadow":1.972},
+    {"player":"Park Seung-kyu","team":"Samsung","stat":"Hits+Runs+RBIs","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.41,"current_side":"UNDER","current_result":"MISS","published_projection":1.46,"published_side":"UNDER","published_result":"MISS","shadow_projection":1.457,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4616,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.59,"abs_err_shadow":1.543},
+    {"player":"Sam Hilliard","team":"KT","stat":"Hits+Runs+RBIs","odds_type":"standard","line":2.5,"actual":0.0,"result":"UNDER","current_projection":6.4,"current_side":"OVER","current_result":"MISS","published_projection":2.77,"published_side":"OVER","published_result":"MISS","shadow_projection":2.766,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4986,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":6.4,"abs_err_shadow":2.766}
+  ]
+}
