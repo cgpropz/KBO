@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from nhl.availability import blocked_status, finish_board
 from nhl.history import load_goalies, load_skaters, team_shot_games
 from nhl.profile import attach_baseline, build_baselines, profile_splits, usage_role
 from nhl.model import (
@@ -119,30 +120,6 @@ def _next_data(url: str):
         raise ValueError(f"No page data at {url}")
     return json.loads(match.group(1))
 
-
-
-# Manual hotfix: players known to be OUT/IR/scratched. Their props are dropped
-# before the board is written, so they never reach the free top 3. Edit this
-# list by hand (NHL player id -> note). The full injury filter replaces it.
-EXCLUDED_PLAYER_IDS = {
-    "8473419",  # Brad Marchand, OUT (2026-10-12)
-    "8482667",  # William Eklund, IR (2026-10-12)
-    "8475220",  # Marcus Foligno, OUT (2026-10-12)
-    "8483766",  # David Spacek, healthy scratch (2026-10-12)
-    "8480839",  # Rasmus Dahlin (BUF), OUT (2026-10-13)
-    "8476891",  # Matt Grzelcyk (BUF), IR (2026-10-13)
-    "8476875",  # Mike Matheson (MTL), OUT (2026-10-13)
-    "8473533",  # Jordan Staal (CAR), OUT (2026-10-13)
-    "8477456",  # J.T. Compher (DET), IR (2026-10-13)
-    "8478439",  # Travis Konecny (PHI), IR (2026-10-13)
-    "8483493",  # Frank Nazar (CHI), suspended (2026-10-13)
-    "8483808",  # Andrei Kuzmenko (PIT), IR (2026-10-13)
-    "8477845",  # Trevor van Riemsdyk (PIT), IR (2026-10-13)
-    "8478450",  # Parker Wotherspoon (VGK), OUT (2026-10-13)
-    "8475690",  # Chris Tanev (TOR), IR (2026-10-13)
-    "8479619",  # Michael Carcone (UTA), OUT (2026-10-13)
-    "8481563",  # Drew Helleson (ANA), IR (2026-10-13)
-}
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
     if not ready:
@@ -660,6 +637,26 @@ def build_lineups(games, goalies, lines) -> list[dict]:
             roster = info.get("players") or []
             shown = []
             hurt = []
+            seen_hurt = set()
+
+            def remember(name, position, status):
+                if not name or not status:
+                    return
+                key = (_name_key(name), str(status))
+                if key in seen_hurt:
+                    return
+                seen_hurt.add(key)
+                hurt.append({"name": name, "position": position, "status": status, "detail": ""})
+
+            # Off the line sheet (category "oi") still counts. Those rows are
+            # the OUT / IR / LTIR list the board filter reads.
+            for player in roster:
+                if blocked_status(player.get("injury")):
+                    remember(
+                        player.get("name"),
+                        str(player.get("position") or player.get("group") or "").upper(),
+                        player.get("injury"),
+                    )
             for group in order:
                 for player in roster:
                     if player.get("group") != group or player.get("category") == "oi":
@@ -673,7 +670,7 @@ def build_lineups(games, goalies, lines) -> list[dict]:
                         "status": player.get("injury"),
                     })
                     if player.get("injury"):
-                        hurt.append({"name": player["name"], "position": group.upper(), "status": player["injury"], "detail": ""})
+                        remember(player["name"], group.upper(), player.get("injury"))
             starter = goalies.get(team)
             if starter and starter.get("name"):
                 status = "CONFIRMED" if starter["confirmed"] else "PROBABLE"
@@ -856,10 +853,16 @@ def build(root: Path, out_dir: Path) -> int:
                         baselines.get("G" if is_goalie else card["position"]),
                     ),
                 })
-            projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
-            projections.sort(key=lambda row: (row["rankEligible"] is False, -(row["score"] or 0), row["player"], row["prop"]))
 
     lineups = build_lineups(games, goalies, lines)
+    # OUT, IR, LTIR, and scratched players come off before the file is saved
+    # and before this list is ranked for the free top 3.
+    if projections_ready:
+        before = len(projections)
+        projections = finish_board(projections, lineups, games)
+        removed = before - len(projections)
+    else:
+        removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)
     _write_if_ready(out_dir / "projections.json", projections, projections_ready)
     # Lineups can publish with an empty goalie page. They cannot publish if the schedule failed
@@ -869,6 +872,7 @@ def build(root: Path, out_dir: Path) -> int:
     print(json.dumps({
         "games": len(games),
         "props": len(projections),
+        "unavailable": removed,
         "saves": sum(1 for row in projections if row.get("prop") == PROP_SAVES),
         "lineups": len(lineups),
         "line_labels": dict(labels),
