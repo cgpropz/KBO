@@ -30,12 +30,13 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.55;
     }
+    html { overflow-x: clip; }
     a { color: #4ade80; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .wrap { width: min(980px, 100%); max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
     header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
     .wordmark span { color: #4ade80; }
-    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; }
+    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; min-width: 0; }
     h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     h2 { margin: 36px 0 10px; font-size: 22px; }
     h3 { margin: 18px 0 6px; font-size: 17px; }
@@ -44,7 +45,8 @@
     .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
     .btn-primary { background: #22c55e; color: #04140a; }
     .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
+    .table-scroll { display: block; max-width: 100%; overflow-x: auto; margin: 12px 0 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
     thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
     .missing-day td { color: #fbbf24; }
@@ -99,6 +101,7 @@
 <blockquote><p><strong>CG Score = (projection ÷ line) × 50</strong></p></blockquote>
 <figure><img src="/images/how-cg-score-diagram.png" alt="CG Score diagram: 50 means the projection equals the line. Above 50 the projection is over the line, and below 50 it is under the line." /></figure>
 <p>That puts the midpoint at 50:</p>
+<div class="table-scroll">
 <table>
 <thead><tr><th>CG Score</th><th>What it means</th></tr></thead>
 <tbody>
@@ -107,9 +110,11 @@
 <tr><td><strong>Below 50</strong></td><td>The projection is under the line. The lower the score, the further under.</td></tr>
 </tbody>
 </table>
+</div>
 <p><strong>Illustrative example (not a real prop):</strong> if the projection is 6.0 and the line is 5.0, the score is 6.0 ÷ 5.0 × 50 = 60. If the projection is 4.0 against the same line, the score is 40.</p>
 <p>Because the score is a ratio, the same gap means more on a small line than on a big one. A projection half a point over a low line produces a bigger score than half a point over a high line.</p>
 <h3>By sport</h3>
+<div class="table-scroll">
 <table>
 <thead><tr><th>Sport</th><th>Formula on the board</th></tr></thead>
 <tbody>
@@ -119,9 +124,11 @@
 <tr><td>KBO</td><td>The stored KBO score when one exists. Otherwise, projection (or season average when there's no projection) ÷ line × 50.</td></tr>
 </tbody>
 </table>
+</div>
 <p><strong>All sports:</strong> yardage lines of 0.5 or lower are not scored.</p>
 <p><strong>WNBA minimum lines.</strong> Each WNBA stat has a minimum line, from 0.5 for low-count stats such as blocked shots and offensive rebounds up to 33 for minutes. A few common ones: points 4.5, rebounds 3.5, assists 1.5, points + rebounds + assists 10.5, three-pointers made 1.5. If a prop's line is below its stat's minimum, the minimum is used instead.</p>
 <p><strong>NFL minimum lines.</strong> If the posted line is below the minimum for its prop type, the minimum is used instead:</p>
+<div class="table-scroll">
 <table>
 <thead><tr><th>Prop type</th><th>Minimum line</th></tr></thead>
 <tbody>
@@ -138,6 +145,7 @@
 <tr><td>Rush + rec yards</td><td>30.5</td></tr>
 </tbody>
 </table>
+</div>
 <p>This keeps a tiny line from producing an extreme score. It also means that on WNBA and NFL, when the line is below the minimum, a score of 50 means the projection equals the minimum, not the posted line.</p>
 <p><strong>KBO is different.</strong> When a KBO prop has a stored score, the board shows that score instead of the plain ratio. On KBO, don't assume 50 means the projection equals the line until that's confirmed.</p>
 <p><strong>How the free top 3 is chosen.</strong> On NHL and WNBA, the free top 3 is the top three props on the full board by the formulas above. KBO's free top 3 is chosen on the server and does not follow the site formula. NFL has no free top 3 right now.</p>

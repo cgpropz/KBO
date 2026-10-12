@@ -169,10 +169,12 @@ function propTable(day) {
     </tr>`).join('');
   return `<details open>
     <summary>${escapeHtml(formatDayLabel(day.iso))} player rows (${day.rows.length})</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    </div>
   </details>`;
 }
 
@@ -250,6 +252,7 @@ export function renderKboPage(days) {
         from ${escapeHtml(range)}. Dates in this table are the calendar dates stored with each KBO slate (Korea game dates), not US Eastern Time.
         Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
       </p>
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -266,6 +269,7 @@ export function renderKboPage(days) {
           ${days.map(dayRow).join('\n')}
         </tbody>
       </table>
+      </div>
       <p class="note">
         Push and DNP totals are part of the full board. Where the archive stores a player row, it is listed below,
         including misses. Days without a summary stay in the table.

@@ -29,12 +29,13 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.55;
     }
+    html { overflow-x: clip; }
     a { color: #4ade80; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    .wrap { width: min(980px, 100%); max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
     header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .wordmark { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -0.03em; }
     .wordmark span { color: #4ade80; }
-    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; }
+    nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 700; min-width: 0; }
     h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     h2 { margin: 36px 0 10px; font-size: 22px; }
     h3 { margin: 18px 0 6px; font-size: 17px; }
@@ -43,7 +44,8 @@
     .btn { display: inline-block; text-decoration: none; font-weight: 800; border-radius: 999px; padding: 10px 16px; }
     .btn-primary { background: #22c55e; color: #04140a; }
     .btn-ghost { border: 1px solid rgba(255,255,255,0.16); color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
+    .table-scroll { display: block; max-width: 100%; overflow-x: auto; margin: 12px 0 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e1e2e; vertical-align: top; }
     thead th { color: #a1a1aa; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
     .missing-day td { color: #fbbf24; }
@@ -126,6 +128,7 @@
         from Sep 23, 2026 through Oct 12, 2026. Dates in this table are the calendar dates stored with each KBO slate (Korea game dates), not US Eastern Time.
         Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
       </p>
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -296,6 +299,7 @@
     </tr>
         </tbody>
       </table>
+      </div>
       <p class="note">
         Push and DNP totals are part of the full board. Where the archive stores a player row, it is listed below,
         including misses. Days without a summary stay in the table.
@@ -303,6 +307,7 @@
       
 <details open>
     <summary>Sep 24, 2026 player rows (28)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -531,9 +536,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Sep 25, 2026 player rows (4)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -570,9 +577,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Sep 26, 2026 player rows (13)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -681,9 +690,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Sep 27, 2026 player rows (20)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -848,10 +859,12 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 
 <details open>
     <summary>Sep 29, 2026 player rows (36)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -1144,9 +1157,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Sep 30, 2026 player rows (49)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -1543,9 +1558,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 1, 2026 player rows (14)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -1662,10 +1679,12 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 
 <details open>
     <summary>Oct 3, 2026 player rows (18)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -1814,9 +1833,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 4, 2026 player rows (15)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -1941,9 +1962,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 5, 2026 player rows (27)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2164,9 +2187,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 6, 2026 player rows (22)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2347,9 +2372,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 7, 2026 player rows (18)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2498,10 +2525,12 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 
 <details open>
     <summary>Oct 9, 2026 player rows (6)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2554,9 +2583,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 10, 2026 player rows (7)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2617,9 +2648,11 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 <details open>
     <summary>Oct 11, 2026 player rows (2)</summary>
+    <div class="table-scroll">
     <table>
       <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
       <tbody><tr>
@@ -2640,6 +2673,7 @@
       <td>MISS</td>
     </tr></tbody>
     </table>
+    </div>
   </details>
 
 
