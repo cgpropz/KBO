@@ -6,6 +6,9 @@ on:
     # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
     # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
     # job actually ran only every ~3-6 h). Same 30-minute cadence.
+    # The half-hour gap is not what tripped Cloudflare. The 2026-10-12 07:14Z
+    # run fetched lines and then immediately tried again, which produced
+    # error 1015. Keep this schedule. Wait longer only after a rate limit.
     - cron: "7,37 * * * *"
   workflow_dispatch:
 
@@ -54,16 +57,32 @@ jobs:
 
       - name: Refresh odds-derived projection snapshots
         run: |
+          # A try that returns lines exits 0, including one that had to wait
+          # out a rate limit. Leave immediately so that success is the result.
+          # set +e is only so we can read a non-zero code (75 = still limited).
+          set +e
           for attempt in 1 2 3; do
             echo "Refresh attempt ${attempt}/3"
-            if python refresh_odds.py; then
+            python refresh_odds.py
+            code=$?
+            if [ "$code" -eq 0 ]; then
+              echo "Refresh succeeded on attempt ${attempt}"
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
-              # Outer backoff in addition to the fetcher's own retry. The
-              # fetcher logs the HTTP status and a short response snippet.
-              delay=$((attempt * 15))
-              echo "Refresh failed, retrying in ${delay}s..."
+              if [ "$code" -eq 75 ]; then
+                # Cloudflare 1015: 60s after the first miss, 120s after the
+                # second, plus up to 15s of jitter so retries don't line up.
+                base=$((attempt * 60))
+                jitter=$((RANDOM % 16))
+                delay=$((base + jitter))
+                echo "Odds source rate limited. Retrying in ${delay}s..."
+              else
+                # Other failures keep the short outer wait. The fetcher logs
+                # the HTTP status and a short response snippet.
+                delay=$((attempt * 15))
+                echo "Refresh failed, retrying in ${delay}s..."
+              fi
               sleep "$delay"
             fi
           done

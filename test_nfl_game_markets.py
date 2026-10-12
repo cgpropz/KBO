@@ -233,10 +233,12 @@ class PostedLineTests(unittest.TestCase):
         self.assertNotEqual(game["spread"]["line"], -99.0)
         self.assertEqual(game["total"]["line"], 44.5)
         self.assertEqual(game["moneyline"]["line"], 110)
-        self.assertIsNotNone(game["awayScore"])
-        self.assertIsNotNone(game["homeScore"])
-        self.assertEqual(game["total"]["projection"], game["awayScore"] + game["homeScore"])
-        self.assertEqual(game["spread"]["projection"], game["homeScore"] - game["awayScore"])
+        self.assertIsNotNone(game["projectedAwayScore"])
+        self.assertIsNotNone(game["projectedHomeScore"])
+        self.assertIsNone(game["awayScore"])
+        self.assertIsNone(game["homeScore"])
+        self.assertEqual(game["total"]["projection"], game["projectedAwayScore"] + game["projectedHomeScore"])
+        self.assertEqual(game["spread"]["projection"], game["projectedHomeScore"] - game["projectedAwayScore"])
         self.assertNotEqual(game["spread"]["projection"], -99.0)
         self.assertIsNotNone(game["moneyline"]["projection"])
         self.assertAlmostEqual(game["spread"]["edge"], round(game["spread"]["line"] - game["spread"]["projection"], 1))
@@ -325,6 +327,57 @@ class GameMarketArchiveTests(unittest.TestCase):
             self.assertEqual(close["captured_at"], "2026-10-11T16:00:00Z")
             self.assertEqual(close["spread"]["line"], 3.0)
             self.assertIsNone(late["games"][0]["spread"]["line"])
+
+    def test_backfill_moves_the_projection_and_fills_a_final(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            legacy = self._snapshot("2026-10-12T01:04:17Z", None, "sunday night")
+            upcoming = {
+                "id": "2026-10-12-BUF-LA",
+                "gameday": "2026-10-12",
+                "awayTeam": "BUF",
+                "homeTeam": "LA",
+                "awayScore": 25,
+                "homeScore": 25,
+            }
+            legacy["games"].append(upcoming)
+            (root / "2026-10-11.json").write_text(json.dumps(legacy), encoding="utf-8")
+            lines = root / "lines"
+            lines.mkdir()
+            (lines / "2026-10-11T160000Z.json").write_text("{}\n", encoding="utf-8")
+            schedule = [
+                {
+                    "gameday": "2026-10-11", "away_team": "BAL", "home_team": "ATL",
+                    "away_score": 30.0, "home_score": 23.0, "overtime": 1,
+                },
+                {
+                    "gameday": "2026-10-12", "away_team": "BUF", "home_team": "LA",
+                    "away_score": None, "home_score": None,
+                },
+            ]
+            updated = markets.backfill_actual_scores(root, schedule)
+            self.assertEqual([path.name for path in updated], ["2026-10-11.json"])
+            daily = json.loads((root / "2026-10-11.json").read_text(encoding="utf-8"))
+            ravens = daily["games"][0]
+            self.assertEqual(ravens["projectedAwayScore"], 24)
+            self.assertEqual(ravens["projectedHomeScore"], 23)
+            self.assertEqual(ravens["awayScore"], 30)
+            self.assertEqual(ravens["homeScore"], 23)
+            self.assertEqual(ravens["status"], "final")
+            self.assertIs(ravens["overtime"], True)
+            bills = daily["games"][1]
+            self.assertEqual(bills["projectedAwayScore"], 25)
+            self.assertEqual(bills["projectedHomeScore"], 25)
+            self.assertIsNone(bills["awayScore"])
+            self.assertIsNone(bills["homeScore"])
+            self.assertNotIn("status", bills)
+            self.assertEqual((lines / "2026-10-11T160000Z.json").read_text(encoding="utf-8"), "{}\n")
+            # A later run must not move the real score back into the projection.
+            again = markets.backfill_actual_scores(root, schedule)
+            self.assertEqual(again, [])
+            kept = json.loads((root / "2026-10-11.json").read_text(encoding="utf-8"))
+            self.assertEqual(kept["games"][0]["projectedAwayScore"], 24)
+            self.assertEqual(kept["games"][0]["awayScore"], 30)
 
     def test_daily_filename_uses_eastern_slate_date(self):
         with tempfile.TemporaryDirectory() as tmp:

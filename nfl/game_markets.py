@@ -7,7 +7,10 @@ called. A game's own nflverse spread_line and total_line are never the posted
 number. Older nflverse closes are an input to team strength only.
 
 The card projects a score for each team. The spread is the difference and the
-total is the sum of those two scores. This is not the live player-prop window,
+total is the sum of those two scores. Those projections are stored separately
+from the actual final score. Actual points are filled only once the game is
+final, including on a later run that backfills an earlier day's file. This is
+not the live player-prop window,
 and it does not change that formula. It is also not a proven bet against the
 closing line. See MODEL["summary"].
 """
@@ -610,8 +613,11 @@ def build_games(schedule, history, markets, today=None):
             "homeTeam": home,
             "awayName": NICKNAMES.get(away, away),
             "homeName": NICKNAMES.get(home, home),
-            "awayScore": projected["away_score"],
-            "homeScore": projected["home_score"],
+            # Projection only. awayScore/homeScore stay empty until the game is final.
+            "projectedAwayScore": projected["away_score"],
+            "projectedHomeScore": projected["home_score"],
+            "awayScore": None,
+            "homeScore": None,
             "spread": {
                 "line": spread_line,
                 "projection": projected["spread"],
@@ -679,6 +685,39 @@ def _score(value):
         return None
 
 
+def _points(value):
+    """Whole points, or None when the score has not been played yet."""
+    score = _score(value)
+    if score is None:
+        return None
+    whole = int(round(score))
+    if abs(score - whole) < 1e-9:
+        return whole
+    return score
+
+
+def _overtime_flag(value):
+    if value is None or value == "":
+        return None
+    try:
+        if value != value:  # NaN
+            return None
+    except Exception:
+        return None
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in {"", "nan", "none"}:
+            return None
+        if text in {"true", "yes", "ot", "overtime"}:
+            return True
+        if text in {"false", "no"}:
+            return False
+    try:
+        return bool(int(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
 def _text(value):
     if value is None:
         return ""
@@ -704,6 +743,7 @@ def frame_to_games(frame):
             "home_team": canonical_team(record.get("home_team")),
             "away_score": _score(record.get("away_score")),
             "home_score": _score(record.get("home_score")),
+            "overtime": _overtime_flag(record.get("overtime")),
             "spread_line": _score(record.get("spread_line")),
             "total_line": _score(record.get("total_line")),
             "away_rest": _score(record.get("away_rest")),
@@ -813,6 +853,83 @@ def eastern_slate_date(captured_at):
     return moment.astimezone(EASTERN).date().isoformat()
 
 
+def _move_legacy_projection(game):
+    """Older daily files stored the projection in awayScore/homeScore."""
+    if "projectedAwayScore" in game or "projectedHomeScore" in game:
+        return False
+    game["projectedAwayScore"] = game.get("awayScore")
+    game["projectedHomeScore"] = game.get("homeScore")
+    game["awayScore"] = None
+    game["homeScore"] = None
+    return True
+
+
+def final_scores_by_id(schedule):
+    """Map game id to actual points for games that have both scores."""
+    finals = {}
+    for game in schedule or []:
+        away = _points(game.get("away_score"))
+        home = _points(game.get("home_score"))
+        if away is None or home is None:
+            continue
+        away_team = canonical_team(game.get("away_team"))
+        home_team = canonical_team(game.get("home_team"))
+        gameday = game.get("gameday") or ""
+        if not away_team or not home_team or not gameday:
+            continue
+        entry = {"awayScore": away, "homeScore": home}
+        overtime = _overtime_flag(game.get("overtime"))
+        if overtime is True or overtime is False:
+            entry["overtime"] = overtime
+        finals[f"{gameday}-{away_team}-{home_team}"] = entry
+    return finals
+
+
+def backfill_actual_scores(memory_dir, schedule):
+    """Fill actual scores on archived boards once a game is final.
+
+    A file written before the game ended keeps its projection and gets the
+    real score on a later run. Games that are not final stay empty. Line
+    captures under lines/ are not score logs and are left alone.
+    """
+    finals = final_scores_by_id(schedule)
+    memory_dir = Path(memory_dir)
+    if not memory_dir.is_dir():
+        return []
+    updated = []
+    for path in sorted(memory_dir.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        games = payload.get("games")
+        if not isinstance(games, list):
+            continue
+        changed = False
+        for game in games:
+            if not isinstance(game, dict):
+                continue
+            if _move_legacy_projection(game):
+                changed = True
+            actual = finals.get(game.get("id"))
+            if not actual:
+                continue
+            if game.get("awayScore") != actual["awayScore"] or game.get("homeScore") != actual["homeScore"]:
+                game["awayScore"] = actual["awayScore"]
+                game["homeScore"] = actual["homeScore"]
+                changed = True
+            if game.get("status") != "final":
+                game["status"] = "final"
+                changed = True
+            if "overtime" in actual and game.get("overtime") is not actual["overtime"]:
+                game["overtime"] = actual["overtime"]
+                changed = True
+        if changed:
+            path.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+            updated.append(path)
+    return updated
+
+
 def archive_game_markets(snapshot, memory_dir=GAME_MARKET_MEMORY, now=None):
     """Write the published board and a per-run Unabated line capture.
 
@@ -878,11 +995,14 @@ def main():
     snapshot = build_snapshot(schedule, schedule, payload, today=args.today, lines_status=lines_status)
     write_snapshot(snapshot, output_path=args.output)
     archived = archive_game_markets(snapshot)
+    filled = backfill_actual_scores(GAME_MARKET_MEMORY, schedule)
     print(
         f"Wrote {len(snapshot['games'])} NFL game markets "
         f"(week {snapshot['week']}, status {snapshot['status']}). {snapshot['message']}"
     )
     print(f"Archived game markets to {archived['daily']} and {archived['lines']}.")
+    if filled:
+        print(f"Filled actual scores on {len(filled)} archived board(s).")
 
 
 if __name__ == "__main__":

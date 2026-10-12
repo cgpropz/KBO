@@ -115,10 +115,28 @@ export function formatSpread(game, value) {
   return team ? `${team} ${formatPoints(shown, true)}` : formatPoints(shown, true)
 }
 
+function hasProjectedFields(game) {
+  return game != null && (
+    Object.prototype.hasOwnProperty.call(game, 'projectedAwayScore')
+    || Object.prototype.hasOwnProperty.call(game, 'projectedHomeScore')
+  )
+}
+
+// CG number. Older boards stored that projection in awayScore/homeScore.
+// Once the split fields exist, awayScore/homeScore are the actual final.
 export function projectedScores(game) {
-  const away = finite(game?.awayScore)
-  const home = finite(game?.homeScore)
+  const split = hasProjectedFields(game)
+  const away = finite(split ? game.projectedAwayScore : game?.awayScore)
+  const home = finite(split ? game.projectedHomeScore : game?.homeScore)
   if (away == null && home == null) return null
+  return { away, home }
+}
+
+export function actualScores(game) {
+  if (!hasProjectedFields(game)) return null
+  const away = finite(game.awayScore)
+  const home = finite(game.homeScore)
+  if (away == null || home == null) return null
   return { away, home }
 }
 
@@ -188,12 +206,15 @@ export function winSplit(game) {
 export function cardView(game, probsEnabled = GAME_CARD_PROBS_ENABLED, now = new Date(), options = {}) {
   const hideTotalEdge = options.hideTotalEdge === true
   const scores = projectedScores(game)
+  const actuals = actualScores(game)
   return {
     away: game?.awayTeam || '',
     home: game?.homeTeam || '',
     status: statusPill(game, now),
     scores,
     scoreLine: scoreLine(scores),
+    actualScores: actuals,
+    actualScoreLine: scoreLine(actuals),
     wins: probsEnabled ? winSplit(game) : null,
     spreadBook: formatSpread(game, game?.spread?.line) ?? '—',
     spreadOurs: formatSpread(game, game?.spread?.projection) ?? '—',

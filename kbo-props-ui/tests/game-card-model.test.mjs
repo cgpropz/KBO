@@ -3,11 +3,13 @@ import assert from 'node:assert/strict'
 import {
   GAME_CARD_PROBS_ENABLED,
   PLAY_EDGE_POINTS,
+  actualScores,
   cardView,
   edgeRank,
   footerLine,
   formatSpread,
   isPlay,
+  projectedScores,
   statusPill,
   tileTone,
   winSplit,
@@ -116,6 +118,41 @@ test('a withheld total edge stays off the lean, the tint, and the rank', () => {
   assert.equal(shown.footer, 'Lean PHI -7.0 · edge +4.0 · play')
   assert.equal(edgeRank({ spread: { edge: 1.5 }, total: { edge: 9 } }, { includeTotal: false }), 1.5)
   assert.equal(isPlay({ spread: { edge: 0.4 }, total: { edge: 6 } }, true), false)
+})
+
+test('the card keeps the projection when the final score is filled in', () => {
+  const finished = {
+    awayTeam: 'BAL',
+    homeTeam: 'ATL',
+    gameday: '2026-10-11',
+    weekday: 'Sunday',
+    gametime: '20:20',
+    status: 'final',
+    projectedAwayScore: 24,
+    projectedHomeScore: 23,
+    awayScore: 30,
+    homeScore: 23,
+    spread: { projection: -1 },
+    total: { projection: 47 },
+  }
+  assert.deepEqual(projectedScores(finished), { away: 24, home: 23 })
+  assert.deepEqual(actualScores(finished), { away: 30, home: 23 })
+  const view = cardView(finished, false, new Date('2026-10-12T04:00:00Z'))
+  assert.equal(view.scoreLine, '24 – 23')
+  assert.equal(view.actualScoreLine, '30 – 23')
+  assert.equal(view.status, 'FINAL')
+  const upcoming = {
+    awayTeam: 'BUF',
+    homeTeam: 'LA',
+    projectedAwayScore: 25,
+    projectedHomeScore: 25,
+    awayScore: null,
+    homeScore: null,
+  }
+  assert.equal(actualScores(upcoming), null)
+  assert.deepEqual(projectedScores(upcoming), { away: 25, home: 25 })
+  assert.deepEqual(projectedScores(game), { away: 24, home: 21 })
+  assert.equal(actualScores(game), null)
 })
 
 test('a started game reads LIVE and a later kickoff keeps its time', () => {

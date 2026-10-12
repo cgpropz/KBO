@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import sys
 import time
 import requests
@@ -21,6 +22,10 @@ PP_URL = "https://partner-api.prizepicks.com/projections"
 KBO_LEAGUE_ID = "135"
 MAX_RETRIES = 4
 BACKOFF_CAP_SECONDS = 30.0
+# Cloudflare error 1015. 30s was not enough; the next request was still blocked.
+RATE_LIMIT_WAIT_SECONDS = (60.0, 120.0)
+RATE_LIMIT_JITTER_SECONDS = 15.0
+RATE_LIMIT_EXIT = 75
 SNIPPET_CHARS = 180
 
 
@@ -30,16 +35,48 @@ def response_snippet(text, limit=SNIPPET_CHARS):
     return compact[:limit]
 
 
+def _retry_after_seconds(retry_after):
+    if retry_after in (None, ""):
+        return None
+    try:
+        parsed = float(str(retry_after).strip())
+    except (TypeError, ValueError):
+        return None
+    if parsed > 0:
+        return parsed
+    return None
+
+
 def backoff_seconds(attempt, retry_after=None):
     """Exponential delay. Honor Retry-After when PrizePicks sends one."""
-    if retry_after not in (None, ""):
-        try:
-            parsed = float(str(retry_after).strip())
-        except (TypeError, ValueError):
-            parsed = None
-        if parsed is not None and parsed > 0:
-            return min(BACKOFF_CAP_SECONDS, parsed)
+    parsed = _retry_after_seconds(retry_after)
+    if parsed is not None:
+        return min(BACKOFF_CAP_SECONDS, parsed)
     return min(BACKOFF_CAP_SECONDS, 2.0 * (2 ** (attempt - 1)))
+
+
+def is_cloudflare_rate_limit(status, text):
+    """True when the body is Cloudflare error 1015 (you are being rate limited).
+
+    1015 arrives as HTTP 429. A plain 429 without that body keeps the short backoff.
+    """
+    if status not in (429, 403, 503, None) and not text:
+        return False
+    blob = " ".join(str(text or "").split()).lower()
+    return "1015" in blob or "rate limited" in blob or "rate-limited" in blob
+
+
+def rate_limit_backoff(attempt, retry_after=None, rng=None):
+    """60s after the first block, 120s after that, plus up to 15s of jitter.
+
+    A Retry-After shorter than that is ignored. A longer one is kept.
+    """
+    roll = random.random if rng is None else rng
+    base = RATE_LIMIT_WAIT_SECONDS[0] if int(attempt) <= 1 else RATE_LIMIT_WAIT_SECONDS[1]
+    parsed = _retry_after_seconds(retry_after)
+    if parsed is not None and parsed > base:
+        base = parsed
+    return base + (float(roll()) * RATE_LIMIT_JITTER_SECONDS)
 
 
 def _league_summary(payload):
@@ -118,7 +155,8 @@ def _request_kbo(get, params, attempt, log):
             retry_after = headers.get("Retry-After")
         except Exception:
             retry_after = None
-        return None, status if retry_after is None else (status, retry_after)
+        limited = is_cloudflare_rate_limit(status, getattr(response, "text", ""))
+        return None, (status, retry_after, limited)
 
     try:
         payload = response.json()
@@ -146,52 +184,75 @@ def _request_kbo(get, params, attempt, log):
     return frame, status
 
 
-def _retry_delay(attempt, status):
-    retry_after = None
-    status_code = status
+def _status_parts(status):
+    """Return (http_code, retry_after, rate_limited) for a request result."""
     if isinstance(status, tuple):
-        status_code, retry_after = status
+        code = status[0] if len(status) > 0 else None
+        retry_after = status[1] if len(status) > 1 else None
+        rate_limited = bool(status[2]) if len(status) > 2 else False
+        return code, retry_after, rate_limited
+    return status, None, False
+
+
+def _retry_delay(attempt, status, rng=None):
+    status_code, retry_after, rate_limited = _status_parts(status)
+    if rate_limited:
+        return rate_limit_backoff(attempt, retry_after, rng=rng), status_code
     return backoff_seconds(attempt, retry_after), status_code
 
 
-def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print):
+def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print, rng=None):
     """Fetch KBO lines, retrying transient HTTP failures and empty boards.
 
-    Returns (dataframe, source) where source is 'fresh', 'cache', or 'empty'.
-    An empty live board keeps the last saved file instead of wiping it.
+    Returns (dataframe, source, rate_limited). source is 'fresh', 'cache', or
+    'empty'. A later attempt that returns rows is fresh, including one that
+    follows Cloudflare 1015. An empty live board keeps the last saved file
+    instead of wiping it. rate_limited is true when we gave up after 1015.
     """
     if load_cached is None:
         load_cached = _load_cached
 
     last_status = None
+    saw_rate_limit = False
     filtered = {"league_id": KBO_LEAGUE_ID, "per_page": 1000}
     for attempt in range(1, MAX_RETRIES + 1):
         frame, status = _request_kbo(get, filtered, attempt, log)
-        last_status = status[0] if isinstance(status, tuple) else status
+        last_status, _retry_after, rate_limited = _status_parts(status)
+        saw_rate_limit = saw_rate_limit or rate_limited
         if frame is not None and len(frame) > 0:
-            return frame, "fresh"
+            # Rows on this attempt are a successful fetch, even after 1015.
+            return frame, "fresh", False
+        # 60s then 120s is the whole rate-limit wait. Another request now
+        # would still be blocked, and three of those runs would blow the
+        # 20-minute job limit.
+        if rate_limited and attempt >= 3:
+            log("  ⏳ still rate limited after 60s and 120s; not sending another request this run")
+            break
         if attempt < MAX_RETRIES:
-            delay, _status_code = _retry_delay(attempt, status)
+            delay, _status_code = _retry_delay(attempt, status, rng=rng)
             log(f"  ⏳ retrying in {delay:.0f}s")
             sleep(delay)
 
-    log("  ⚠ Filtered KBO request did not return lines; trying the unfiltered board once")
-    frame, status = _request_kbo(get, {"per_page": 1000}, MAX_RETRIES + 1, log)
-    last_status = status[0] if isinstance(status, tuple) else status
-    if frame is not None and len(frame) > 0:
-        return frame, "fresh"
+    if not saw_rate_limit:
+        log("  ⚠ Filtered KBO request did not return lines; trying the unfiltered board once")
+        frame, status = _request_kbo(get, {"per_page": 1000}, MAX_RETRIES + 1, log)
+        last_status, _retry_after, rate_limited = _status_parts(status)
+        saw_rate_limit = saw_rate_limit or rate_limited
+        if frame is not None and len(frame) > 0:
+            return frame, "fresh", False
 
     cached = load_cached()
     if cached is not None and not cached.empty:
         log(f"  ↳ Keeping {len(cached)} last-good lines (last HTTP status={last_status})")
-        return cached, "cache"
+        return cached, "cache", saw_rate_limit
     log(f"  ✗ No KBO lines and no last-good cache (last HTTP status={last_status})")
-    return cached if cached is not None else pd.DataFrame(), "empty"
+    empty = cached if cached is not None else pd.DataFrame()
+    return empty, "empty", saw_rate_limit
 
 
 def dfs_scraper():
     """Historical entry point. Returns a frame; does not exit the process."""
-    frame, source = fetch_kbo_lines(requests.get)
+    frame, source, _rate_limited = fetch_kbo_lines(requests.get)
     if source == "empty":
         return _load_cached()
     return frame
@@ -208,11 +269,17 @@ def _load_cached():
     return pd.DataFrame(columns=["Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type"])
 
 
-def save_to_json(df):
+def save_to_json(df, base=None):
+    """Write the odds files. True means the fetch can count as success.
+
+    A batter-only board must not wipe saved pitcher lines. Keeping that file
+    is still a success: the download returned rows, so the job should not
+    retry and trip Cloudflare.
+    """
     if df.empty:
         print("No new data to save — keeping existing files")
         return False
-    base = os.path.dirname(os.path.abspath(__file__))
+    base = base or os.path.dirname(os.path.abspath(__file__))
     out_json = os.path.join(base, "KBO_odds_2025.json")
     out_csv = os.path.join(base, "KBO_odds_2025.csv")
 
@@ -226,8 +293,8 @@ def save_to_json(df):
         except (OSError, ValueError, TypeError):
             cached_has_pitcher_markets = False
         if cached_has_pitcher_markets:
-            print("✗ Refusing to overwrite cached pitcher markets with a batter-only response")
-            return False
+            print("⚠ Fresh board has no pitcher markets; keeping the last-good odds file")
+            return True
 
     df.to_json(out_json, orient="records", indent=2)
     df.to_csv(out_csv, index=False)
@@ -236,7 +303,7 @@ def save_to_json(df):
 
 
 if __name__ == "__main__":
-    df, source = fetch_kbo_lines(requests.get)
+    df, source, rate_limited = fetch_kbo_lines(requests.get)
     if source == "cache":
         # The live board had no usable KBO lines. Keep the file as-is so a
         # formatter diff is not committed, and let the pipeline publish on it.
@@ -244,8 +311,9 @@ if __name__ == "__main__":
         sys.exit(0)
     if source == "empty" or df is None or df.empty:
         print("✗ No KBO lines in the response and no last-good cache")
-        sys.exit(1)
+        sys.exit(RATE_LIMIT_EXIT if rate_limited else 1)
     print("Scraping complete... saving local odds files")
     if not save_to_json(df):
         sys.exit(1)
+    print("✓ KBO odds fetch succeeded")
     print("Google Sheets sync disabled")

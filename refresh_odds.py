@@ -55,7 +55,9 @@ def fetch_odds():
     
     if result.returncode != 0:
         print("✗ Failed to fetch odds (see the HTTP status and response snippet above)")
-        return False
+        # 75: still rate limited, and no try returned rows. 0 from the fetcher
+        # means a try did return rows (including a retry after Cloudflare 1015).
+        return 75 if result.returncode == 75 else 1
     
     print("✓ PrizePicks odds fetched")
 
@@ -64,7 +66,7 @@ def fetch_odds():
     pitcher_result = subprocess.run(pitcher_cmd, cwd=BASE)
     if pitcher_result.returncode != 0:
         print("✗ Failed to regenerate pitcher projections")
-        return False
+        return 1
     print("✓ strikeout_projections.json updated")
 
     print("\n▶  Regenerating batter projections...")
@@ -72,7 +74,7 @@ def fetch_odds():
     batter_result = subprocess.run(batter_cmd, cwd=BASE)
     if batter_result.returncode != 0:
         print("✗ Failed to regenerate batter projections")
-        return False
+        return 1
     print("✓ batter_projections.json updated")
 
     # Rebuild only the derived prop-card snapshot so hit rates, recommendations,
@@ -82,10 +84,10 @@ def fetch_odds():
     props_result = subprocess.run(props_cmd, cwd=BASE)
     if props_result.returncode != 0:
         print("✗ Failed to rebuild line-sensitive prop data")
-        return False
+        return 1
     print("✓ prizepicks_props.json projections and lines updated")
 
-    return True
+    return 0
 
 
 def _publish_snapshot(client, filename, table, dry_run=False, optional=False):
@@ -306,9 +308,11 @@ def main():
         sys.exit(0)
 
     with lock:
-        # Step 1: Fetch odds
-        if not fetch_odds():
-            sys.exit(1)
+        # Step 1: Fetch odds. 0 means a try returned lines (including a retry
+        # after Cloudflare 1015). 75 means we were still rate limited.
+        fetch_code = fetch_odds()
+        if fetch_code:
+            sys.exit(fetch_code)
 
         # Lines changed, so the slip pairs have to be rescored. A miss here
         # must not block the odds publish.
