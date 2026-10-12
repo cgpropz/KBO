@@ -3,6 +3,7 @@ import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
 import SportSwitcher from '../SportSwitcher'
+import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
 
@@ -71,6 +72,7 @@ function EmptyTab({ title, body }) {
 
 export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const { tier } = useAuth()
+  const menu = usePageMenu()
   const [view, setView] = useState(readLinkedNbaView)
   const [playerName, setPlayerName] = useState('')
   const openView = (next) => {
@@ -105,23 +107,25 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
 
   return (
     <div className="wnba-root nba-root">
-      <nav className="wnba-nav">
+      <nav className="wnba-nav" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close() }}>
         <button className="wnba-nav-logo" onClick={onNavigateHome} title="cgpropz home">cgpropz</button>
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
         <SportSwitcher sport={sport} setSport={setSport} />
-        <div className="wnba-nav-links">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className={`btn-ghost${view === item.id ? ' active' : ''}`}
-              data-testid={item.id === 'slip' ? 'nba-slip-nav' : undefined}
-              onClick={() => openView(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-          <GuideNavLinks />
-        </div>
-        <div className="wnba-player-search">
+        <PageMenu open={menu.open}>
+          <div className="wnba-nav-links">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                className={`btn-ghost${view === item.id ? ' active' : ''}`}
+                data-testid={item.id === 'slip' ? 'nba-slip-nav' : undefined}
+                onClick={() => openView(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+            <GuideNavLinks />
+          </div>
+          <div className="wnba-player-search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
@@ -132,7 +136,8 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
             aria-label="Search players"
             disabled
           />
-        </div>
+          </div>
+        </PageMenu>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
         <Suspense fallback={<RouteFallback inset />}>
