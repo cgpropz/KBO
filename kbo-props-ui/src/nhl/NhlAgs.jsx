@@ -10,8 +10,6 @@ import { BoardSkeleton } from '../BootScreen.jsx'
 // until a feed is wired and this flag is turned on.
 export const SHOW_AGS_ODDS = false
 
-const SEASON = '2026-27'
-
 function initials(name) {
   return String(name || '').split(' ').map((part) => part[0]).join('').slice(0, 2)
 }
@@ -173,12 +171,6 @@ export default function NhlAgs() {
           </label>
         </div>
       </div>
-      <p className="nhl-note">
-        CG Score is the model probability of a goal, times 100. L10 is the share of the last 10 games with a goal.
-        2026 is the {SEASON} season, with the game count beside the rate. Rank 1 is the toughest matchup for scoring,
-        the same direction as DvP: fewer goals allowed, and a better opposing goalie, rank higher.
-        Price to beat is the American odds whose implied probability equals that chance. The odds column stays hidden until a feed exists.
-      </p>
       {error && <div className="nfl-notice">Unable to load the anytime goal board: {error}</div>}
       {!error && !loaded && (
         <div role="status" aria-label="Loading anytime goal scorer">
