@@ -127,6 +127,8 @@ def _next_data(url: str):
 EXCLUDED_PLAYER_IDS = {
     "8473419",  # Brad Marchand, OUT (2026-10-12)
     "8482667",  # William Eklund, IR (2026-10-12)
+    "8475220",  # Marcus Foligno, OUT (2026-10-12)
+    "8483766",  # David Spacek, healthy scratch (2026-10-12)
 }
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
