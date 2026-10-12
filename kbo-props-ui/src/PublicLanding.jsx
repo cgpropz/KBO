@@ -9,10 +9,13 @@ import TrustStrip from './TrustStrip';
 import Testimonials from './Testimonials';
 import Results from './Results';
 import FreePicksPreview from './FreePicksPreview';
+import StartHereBanner from './StartHereBanner';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import FoundersOffer from './FoundersOffer';
 import DiscordInviteLink from './DiscordInviteLink';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
+import SportSwitcher from './SportSwitcher';
+import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import './PublicLanding.css';
 
 /*
@@ -56,6 +59,7 @@ const TOOLS = [
 const FAQS = landingFaqs();
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
+  const menu = usePageMenu();
   const { open: nbaOpen } = useNbaOpen();
   const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
@@ -101,26 +105,31 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
     <div className="pl-landing">
       <div className="pl-bg" />
 
-      <header className="pl-header">
+      <header className="pl-header" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close(); }}>
         <div className="pl-wordmark">
           cg<span className="pl-wordmark-accent">propz</span>
         </div>
-        <nav className="pl-nav">
-          <a href="#free-picks">Free Picks</a>
-          <a href="#sports">Sports</a>
-          <a href="/kbo-player-props">KBO</a>
-          <a href="/nfl-player-props">NFL</a>
-          <a href="/wnba-player-props">WNBA</a>
-          <a href="/nba-player-props">NBA</a>
-          <a href="/nhl-player-props">NHL</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/guides/cg-score">CG Score</a>
-          <a href="#faq">FAQ</a>
-        </nav>
-        <div className="pl-header-actions">
-          <button className="pl-link-btn" onClick={onLogin}>Log In</button>
-          <button className="pl-cta-primary pl-cta-small" onClick={onGetStarted}>Get Started</button>
-        </div>
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
+        <SportSwitcher sport="" setSport={onOpenBoard} />
+        <PageMenu open={menu.open}>
+          <nav className="pl-nav">
+            <a href="#free-picks">Free Picks</a>
+            <a href="#sports">Sports</a>
+            <a href="/kbo-player-props">KBO</a>
+            <a href="/nfl-player-props">NFL</a>
+            <a href="/wnba-player-props">WNBA</a>
+            <a href="/nba-player-props">NBA</a>
+            <a href="/nhl-player-props">NHL</a>
+            <a href="/pricing">Pricing</a>
+            <a href="/guides/start-here">Start Here</a>
+            <a href="/guides/cg-score">How CG Score works</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <div className="pl-header-actions">
+            <button className="pl-link-btn" onClick={onLogin}>Log In</button>
+            <button className="pl-cta-primary pl-cta-small" onClick={onGetStarted}>Get Started</button>
+          </div>
+        </PageMenu>
       </header>
 
       <main className="pl-main">
@@ -154,6 +163,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
           </div>
         </section>
 
+        <StartHereBanner />
         <FreePicksPreview
           onSignUp={onGetStarted}
           onOpenBoard={(sport) => onOpenBoard?.(sport)}

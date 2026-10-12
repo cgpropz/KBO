@@ -1,0 +1,22 @@
+.kbo-app-nav-links a.guide-nav-link,
+.nfl-nav-links a.guide-nav-link,
+.wnba-nav-links a.guide-nav-link {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  padding: 8px 10px;
+  color: #86efac;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kbo-app-nav-links a.guide-nav-link:hover,
+.nfl-nav-links a.guide-nav-link:hover,
+.wnba-nav-links a.guide-nav-link:hover {
+  color: #bbf7d0;
+}

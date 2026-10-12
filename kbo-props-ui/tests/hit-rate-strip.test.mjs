@@ -15,6 +15,7 @@ import {
   hitRatePillColor,
   hitRatePillStyle,
   kboHitPills,
+  l10Display,
   lineResult,
   nflHitPills,
   nhlHitPills,
@@ -58,9 +59,10 @@ test('a sample under 3 games is neutral instead of a hit-rate color', () => {
   assert.equal(hitRatePillStyle({ rate: 40, games: 3 }).thin, false)
 })
 
-test('format keeps a tenth only when the chart rate is not a whole number', () => {
+test('format rounds the chart rate to a whole number', () => {
   assert.equal(formatHitRate(80), '80%')
-  assert.equal(formatHitRate(13.9), '13.9%')
+  assert.equal(formatHitRate(13.9), '14%')
+  assert.equal(formatHitRate(33.3), '33%')
   assert.equal(formatHitRate(50.04), '50%')
 })
 
@@ -209,7 +211,7 @@ test('NHL short windows keep the chart game count', () => {
     seasonGames: 8,
   })
   assert.equal(withPrior.find((pill) => pill.id === 'h2h').note, 'includes 2025-26')
-  assert.equal(formatHitRate(byId.season.rate), '13.9%')
+  assert.equal(formatHitRate(byId.season.rate), '14%')
   assert.equal(hitRatePillColor(byId.season.rate), HIT_RATE_RED)
 })
 
@@ -258,4 +260,24 @@ test('NBA falls back to the saved last-10 series and still hides H2H', () => {
   assert.deepEqual(rows[0].hitPills.map((pill) => pill.id), ['l5', 'l10'])
   assert.equal(rows[0].hitPills[0].rate, 60)
   assert.equal(rows[0].hitPills[1].rate, 60)
+})
+
+test('homepage L10 uses the board pill and leaves pushes out', () => {
+  const games = [
+    { season: '2026', opp: 'Kia', tb: 3 },
+    { season: '2026', opp: 'KT', tb: 2 },
+    { season: '2026', opp: 'LG', tb: 1 },
+    { season: '2026', opp: 'Kia', tb: 4 },
+    { season: '2026', opp: 'NC', tb: 2 },
+    { season: '2026', opp: 'SSG', tb: 0 },
+    { season: '2026', opp: 'Kia', tb: 5 },
+    { season: '2026', opp: 'Doosan', tb: 2 },
+    { season: '2026', opp: 'KT', tb: 1 },
+    { season: '2026', opp: 'LG', tb: 0 },
+  ]
+  const pills = kboHitPills({ games, stat: 'Total Bases', line: 2, opponent: 'Samsung' })
+  const shown = l10Display(pills)
+  assert.equal(shown.text, '43%')
+  assert.equal(shown.games, '7 gm')
+  assert.equal(shown.decided, 7)
 })

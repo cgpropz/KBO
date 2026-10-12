@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import AuthPage from './AuthPage'
 import PublicLanding from './PublicLanding'
-import KboApp from './KboApp'
 import CgpropzLanding from './CgpropzLanding'
-import WnbaApp from './wnba/WnbaApp'
-import NflApp from './nfl/NflApp'
-import NbaApp from './nba/NbaApp'
-import NhlApp from './nhl/NhlApp'
 import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
+import RouteFallback from './RouteFallback'
+import { sportFromSearch } from './appSport'
 import './FreeFunnel.css'
 import './App.css'
+
+const KboApp = lazy(() => import('./KboApp'))
+const WnbaApp = lazy(() => import('./wnba/WnbaApp'))
+const NflApp = lazy(() => import('./nfl/NflApp'))
+const NbaApp = lazy(() => import('./nba/NbaApp'))
+const NhlApp = lazy(() => import('./nhl/NhlApp'))
 
 const SPORT_STORAGE_KEY = 'cg_sport';
 
@@ -21,11 +24,21 @@ function App() {
   const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
   const [showUI, setShowUI] = useState(false);
-  const [view, setView] = useState('hub');
+  const [view, setView] = useState(() => {
+    if (typeof window === 'undefined') return 'hub';
+    return sportFromSearch(window.location.search) ? 'home' : 'hub';
+  });
   // Pre-login flow: marketing page first, then the login/signup form.
   const [publicView, setPublicView] = useState('landing'); // 'landing' | 'auth'
   const [authMode, setAuthMode] = useState('login');
   const [sport, setSportState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const linked = sportFromSearch(window.location.search);
+      if (linked) {
+        try { localStorage.setItem(SPORT_STORAGE_KEY, linked); } catch { /* ignore */ }
+        return linked;
+      }
+    }
     if (typeof localStorage === 'undefined') return 'kbo';
     return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
   });
@@ -62,18 +75,7 @@ function App() {
   if (loading || !showUI) {
     return (
       <>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '100vh',
-          background: 'linear-gradient(135deg, #04140a, #22c55e)',
-          color: 'white',
-          fontSize: '24px',
-          fontFamily: 'Arial, sans-serif'
-        }}>
-          Loading cgpropz…
-        </div>
+        <RouteFallback />
         <SiteFooter />
       </>
     );
@@ -87,18 +89,7 @@ function App() {
   if (sport === 'nba' && !nba.ready) {
     return (
       <>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          background: 'linear-gradient(135deg, #04140a, #22c55e)',
-          color: 'white',
-          fontSize: '24px',
-          fontFamily: 'Arial, sans-serif'
-        }}>
-          Loading cgpropz…
-        </div>
+        <RouteFallback />
         <SiteFooter />
       </>
     );
@@ -208,7 +199,9 @@ function App() {
   return (
     <>
       {previewBar}
-      {sportApp}
+      <Suspense fallback={<RouteFallback />}>
+        {sportApp}
+      </Suspense>
       <SiteFooter />
       {checkoutSuccess}
     </>

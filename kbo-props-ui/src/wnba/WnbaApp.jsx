@@ -1,15 +1,19 @@
 import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import './wnba.css'
-import Projections from './Projections'
-import Dashboard from './Dashboard'
-import PlayerMap from './PlayerMap'
-import Teams from './Teams'
-import Lineups from './Lineups'
-import WnbaPlayerPage from './WnbaPlayerPage'
 import WnbaPlayerSearch from './WnbaPlayerSearch'
 import SportSwitcher from '../SportSwitcher'
+import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import Paywall from '../Paywall'
+import RouteFallback from '../RouteFallback'
+import { GuideNavLinks } from '../GuideLinks'
+
+const Projections = lazy(() => import('./Projections'))
+const Dashboard = lazy(() => import('./Dashboard'))
+const PlayerMap = lazy(() => import('./PlayerMap'))
+const Teams = lazy(() => import('./Teams'))
+const Lineups = lazy(() => import('./Lineups'))
+const WnbaPlayerPage = lazy(() => import('./WnbaPlayerPage'))
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
@@ -36,6 +40,7 @@ function ComingSoon({ label }) {
 
 export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
   const { tier } = useAuth()
+  const menu = usePageMenu()
   const [view, setView] = useState('dashboard')
   const [teamFilter, setTeamFilter] = useState('All')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -75,27 +80,33 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
 
   return (
     <div className="wnba-root">
-      <nav className="wnba-nav">
+      <nav className="wnba-nav" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close() }}>
         <button className="wnba-nav-logo" onClick={() => onNavigateKbo('hub')} title="cgpropz home">cgpropz</button>
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
         <SportSwitcher sport={sport} setSport={setSport} />
-        <div className="wnba-nav-links">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              className={`btn-ghost${view === item.id ? ' active' : ''}`}
-              data-testid={item.id === 'slip' ? 'wnba-slip-nav' : undefined}
-              onClick={() => setView(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <WnbaPlayerSearch onSelect={handleSelectPlayer} />
+        <PageMenu open={menu.open}>
+          <div className="wnba-nav-links">
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.id}
+                className={`btn-ghost${view === item.id ? ' active' : ''}`}
+                data-testid={item.id === 'slip' ? 'wnba-slip-nav' : undefined}
+                onClick={() => setView(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+            <GuideNavLinks />
+          </div>
+          <WnbaPlayerSearch onSelect={handleSelectPlayer} />
+        </PageMenu>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        {needsPaywall
-          ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
-          : content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {needsPaywall
+            ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
+            : content}
+        </Suspense>
       </div>
     </div>
   )

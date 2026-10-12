@@ -3,17 +3,21 @@ import { useAuth } from './AuthContext'
 import { hasAnyPaidAccess } from './entitlements'
 import Paywall from './Paywall'
 import SportSwitcher from './SportSwitcher'
-import KboPropBoard from './KboPropBoard'
-import StrikeoutProjections from './StrikeoutProjections'
-import BatterProjections from './BatterProjections'
-import PitcherRankings from './PitcherRankings'
-import PropTracker from './PropTracker'
-import MatchupDeepDive from './MatchupDeepDive'
-import SubscriptionPage from './SubscriptionPage'
-import TutorialPage from './TutorialPage'
-import KboPlayerPage from './KboPlayerPage'
+import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu'
 import PlayerSearch from './PlayerSearch'
+import RouteFallback from './RouteFallback'
+import { GuideNavLinks } from './GuideLinks'
 import './KboPropBoard.css'
+
+const KboPropBoard = lazy(() => import('./KboPropBoard'))
+const StrikeoutProjections = lazy(() => import('./StrikeoutProjections'))
+const BatterProjections = lazy(() => import('./BatterProjections'))
+const PitcherRankings = lazy(() => import('./PitcherRankings'))
+const PropTracker = lazy(() => import('./PropTracker'))
+const MatchupDeepDive = lazy(() => import('./MatchupDeepDive'))
+const SubscriptionPage = lazy(() => import('./SubscriptionPage'))
+const TutorialPage = lazy(() => import('./TutorialPage'))
+const KboPlayerPage = lazy(() => import('./KboPlayerPage'))
 
 const NAV_ITEMS = [
   { id: 'board', label: 'PrizePicks Board' },
@@ -35,6 +39,7 @@ const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
 export default function KboApp({ sport, setSport, onNavigateHome, initialView }) {
   const { signOut, user, tier } = useAuth()
+  const menu = usePageMenu()
   const [view, setView] = useState(NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board')
   const [previousView, setPreviousView] = useState('board')
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -69,23 +74,29 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView })
 
   return (
     <div className="kbo-app-root">
-      <nav className="kbo-app-nav">
+      <nav className="kbo-app-nav" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close() }}>
         <button className="kbo-app-logo" onClick={onNavigateHome}>cgpropz</button>
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
         <SportSwitcher sport={sport} setSport={setSport} />
-        <div className="kbo-app-nav-links">
-          {NAV_ITEMS.map((item) => (
-            <button key={item.id} data-testid={item.id === 'optimizer' ? 'kbo-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <PlayerSearch onSelect={openPlayer} />
-        <button className="kbo-app-pro-badge" onClick={() => setView('pricing')}>{isPaid ? 'MANAGE' : 'UPGRADE'}</button>
-        {user && <button className="kbo-app-signout" onClick={signOut} title={user.email}>Sign Out</button>}
+        <PageMenu open={menu.open}>
+          <div className="kbo-app-nav-links">
+            {NAV_ITEMS.map((item) => (
+              <button key={item.id} data-testid={item.id === 'optimizer' ? 'kbo-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
+                {item.label}
+              </button>
+            ))}
+            <GuideNavLinks />
+          </div>
+          <PlayerSearch onSelect={openPlayer} />
+          <button className="kbo-app-pro-badge" onClick={() => setView('pricing')}>{isPaid ? 'MANAGE' : 'UPGRADE'}</button>
+          {user && <button className="kbo-app-signout" onClick={signOut} title={user.email}>Sign Out</button>}
+        </PageMenu>
       </nav>
       {/* keyed on tier so data views refetch (full vs. preview) when the tier changes */}
       <main className="kbo-app-content" key={tier || 'free'}>
-        {needsPaywall ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall> : content}
+        <Suspense fallback={<RouteFallback inset />}>
+          {needsPaywall ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall> : content}
+        </Suspense>
       </main>
     </div>
   )

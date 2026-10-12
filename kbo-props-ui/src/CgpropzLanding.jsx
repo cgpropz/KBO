@@ -1,4 +1,6 @@
 import { useAuth } from './AuthContext';
+import SportSwitcher from './SportSwitcher';
+import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { sportAccess } from './entitlements';
 import { NBA_CARD, SPORTS } from './sportsMeta';
 import LandingSportCard from './LandingSportCard';
@@ -24,6 +26,7 @@ import './CgpropzLanding.css';
 
 export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
+  const menu = usePageMenu();
   const { open: nbaOpen } = useNbaOpen();
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl || access.nhl;
@@ -34,20 +37,28 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
     <div className="cg-landing">
       <div className="cg-bg" />
 
-      <header className="cg-header">
+      <header className="cg-header" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close(); }}>
         <div className="cg-wordmark">
           cg<span className="cg-wordmark-accent">propz</span>
         </div>
-        <div className="cg-header-actions">
-          <button className="cg-link-btn" onClick={() => onNavigate('pricing')}>
-            {isPaid ? 'Manage Plan' : 'Pricing'}
-          </button>
-          {user && (
-            <button className="cg-signout" onClick={signOut} title={user.email}>
-              Sign Out
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
+        <SportSwitcher sport="" setSport={onEnterSport} />
+        <PageMenu open={menu.open}>
+          <nav className="cg-guide-nav" aria-label="Guides">
+            <a href="/guides/start-here">Start Here</a>
+            <a href="/guides/cg-score">How CG Score works</a>
+          </nav>
+          <div className="cg-header-actions">
+            <button className="cg-link-btn" onClick={() => onNavigate('pricing')}>
+              {isPaid ? 'Manage Plan' : 'Pricing'}
             </button>
-          )}
-        </div>
+            {user && (
+              <button className="cg-signout" onClick={signOut} title={user.email}>
+                Sign Out
+              </button>
+            )}
+          </div>
+        </PageMenu>
       </header>
 
       <main className="cg-main">

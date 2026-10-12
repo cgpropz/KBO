@@ -3,15 +3,19 @@ import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import { sportAccess } from '../entitlements'
 import SportSwitcher from '../SportSwitcher'
+import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import { useNhlOpen } from '../useNhlOpen'
+import RouteFallback from '../RouteFallback'
+import { GuideNavLinks } from '../GuideLinks'
 import '../nfl/nfl.css'
-import NhlDvp from './NhlDvp'
-import NhlLineups from './NhlLineups'
-import NhlPlayerPage from './NhlPlayerPage'
-import NhlProjections from './NhlProjections'
-import NhlPropLines from './NhlPropLines'
-import NhlSharpOdds from './NhlSharpOdds'
 import './nhl.css'
+
+const NhlDvp = lazy(() => import('./NhlDvp'))
+const NhlLineups = lazy(() => import('./NhlLineups'))
+const NhlPlayerPage = lazy(() => import('./NhlPlayerPage'))
+const NhlProjections = lazy(() => import('./NhlProjections'))
+const NhlPropLines = lazy(() => import('./NhlPropLines'))
+const NhlSharpOdds = lazy(() => import('./NhlSharpOdds'))
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -26,6 +30,7 @@ const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
 export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
   const { tier } = useAuth()
+  const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
   const [view, setView] = useState('dashboard')
@@ -52,20 +57,26 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
 
   return (
     <div className="nfl-root nhl-root">
-      <nav className="nfl-nav">
+      <nav className="nfl-nav" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close() }}>
         <button className="nfl-logo" onClick={onNavigateHome}>cgpropz</button>
+        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
         <SportSwitcher sport={sport} setSport={setSport} />
-        <div className="nfl-nav-links">
-          {NAV.map((item) => (
-            <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
-          ))}
-        </div>
-        <button className="nfl-pro-badge" onClick={onNavigatePricing}>NHL</button>
+        <PageMenu open={menu.open}>
+          <div className="nfl-nav-links">
+            {NAV.map((item) => (
+              <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
+            ))}
+            <GuideNavLinks />
+          </div>
+          <button className="nfl-pro-badge" onClick={onNavigatePricing}>{unlocked ? 'MANAGE' : 'UPGRADE'}</button>
+        </PageMenu>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
-        {view === 'dashboard' ? content : (
-          <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
-        )}
+        <Suspense fallback={<RouteFallback inset />}>
+          {view === 'dashboard' ? content : (
+            <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
+          )}
+        </Suspense>
       </main>
     </div>
   )
