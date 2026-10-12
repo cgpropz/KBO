@@ -4,13 +4,13 @@
   "slate_date_iso": "2026-10-13",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-10-12T20:11:26.249166+00:00",
+  "frozen_at": "2026-10-12T20:38:12.131776+00:00",
   "source": "nhl/projections.json",
-  "source_commit": "85df229daefc",
+  "source_commit": "056d1b9078ba",
   "props": [
     {
-      "projection": 2.38,
-      "edge": -0.12,
+      "projection": 2.4,
+      "edge": -0.1,
       "player": "Adam Fantilli",
       "team": "CBJ",
       "opponent": "FLA",
@@ -23,14 +23,62 @@
       "rating": 50.0,
       "game_date_iso": "2026-10-13",
       "games_played": 86,
-      "dvp_rank": 8,
+      "dvp_rank": 10,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.73,
+      "edge": -0.77,
+      "player": "Adam Fox",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "D",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 14.3,
+      "game_date_iso": "2026-10-13",
+      "games_played": 62,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.45,
+      "edge": -1.05,
+      "player": "Adam Fox",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 62,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.25,
@@ -53,12 +101,12 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 3.21,
-      "edge": -2.29,
+      "projection": 3.22,
+      "edge": -2.28,
       "player": "Alex DeBrincat",
       "team": "DET",
       "opponent": "NJD",
@@ -77,8 +125,8 @@
       "start_time_utc": "2026-10-13T22:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.1,
@@ -101,8 +149,8 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.66,
@@ -125,8 +173,8 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.05,
@@ -149,8 +197,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.62,
@@ -173,8 +221,32 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.69,
+      "edge": -0.81,
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 75,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 3.1,
@@ -197,8 +269,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.54,
@@ -215,14 +287,38 @@
       "rating": 20.0,
       "game_date_iso": "2026-10-13",
       "games_played": 82,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.55,
+      "edge": -0.95,
+      "player": "Bobby McMann",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 84,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.07,
@@ -245,12 +341,12 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.33,
-      "edge": -1.17,
+      "projection": 1.34,
+      "edge": -1.16,
       "player": "Bowen Byram",
       "team": "CHI",
       "opponent": "PIT",
@@ -269,8 +365,8 @@
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 3.15,
@@ -293,12 +389,84 @@
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.13,
-      "edge": -1.37,
+      "projection": 1.01,
+      "edge": -0.49,
+      "player": "Brandon Hagel",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 40.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 76,
+      "dvp_rank": 14,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.81,
+      "edge": -2.69,
+      "player": "Brandon Hagel",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 5.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 60.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 76,
+      "dvp_rank": 21,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.46,
+      "edge": -1.04,
+      "player": "Brandon Montour",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "D",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 33.3,
+      "game_date_iso": "2026-10-13",
+      "games_played": 70,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.14,
+      "edge": -1.36,
       "player": "Brandon Montour",
       "team": "SEA",
       "opponent": "PHI",
@@ -317,12 +485,60 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.6,
-      "edge": -0.9,
+      "projection": 0.72,
+      "edge": -0.78,
+      "player": "Brayden Point",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 68,
+      "dvp_rank": 14,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.1,
+      "edge": -2.4,
+      "player": "Brayden Point",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 68,
+      "dvp_rank": 21,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.61,
+      "edge": -0.89,
       "player": "Bryan Rust",
       "team": "PIT",
       "opponent": "CHI",
@@ -335,14 +551,62 @@
       "rating": 33.3,
       "game_date_iso": "2026-10-13",
       "games_played": 75,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.11,
+      "edge": -2.39,
+      "player": "Cale Makar",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 80,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.56,
+      "edge": -0.94,
+      "player": "Chandler Stephenson",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 16.7,
+      "game_date_iso": "2026-10-13",
+      "games_played": 86,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.69,
@@ -365,8 +629,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.08,
@@ -383,14 +647,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 88,
-      "dvp_rank": 31,
+      "dvp_rank": 30,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.86,
@@ -413,12 +677,12 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 0.98,
-      "edge": -1.52,
+      "projection": 0.97,
+      "edge": -1.53,
       "player": "Cole Caufield",
       "team": "MTL",
       "opponent": "BUF",
@@ -431,14 +695,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 86,
-      "dvp_rank": 19,
+      "dvp_rank": 18,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.93,
@@ -461,8 +725,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.53,
@@ -479,18 +743,18 @@
       "rating": 20.0,
       "game_date_iso": "2026-10-13",
       "games_played": 73,
-      "dvp_rank": 9,
+      "dvp_rank": 8,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.21,
-      "edge": -0.29,
+      "projection": 2.22,
+      "edge": -0.28,
       "player": "Cole Perfetti",
       "team": "WPG",
       "opponent": "MIN",
@@ -509,12 +773,12 @@
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.88,
-      "edge": -2.62,
+      "projection": 2.89,
+      "edge": -2.61,
       "player": "Connor Bedard",
       "team": "CHI",
       "opponent": "PIT",
@@ -532,8 +796,8 @@
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.34,
@@ -556,8 +820,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.95,
@@ -574,14 +838,14 @@
       "rating": 33.3,
       "game_date_iso": "2026-10-13",
       "games_played": 85,
-      "dvp_rank": 31,
+      "dvp_rank": 30,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 3.42,
@@ -604,8 +868,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.09,
@@ -628,8 +892,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.54,
@@ -652,8 +916,8 @@
       "start_time_utc": "2026-10-13T22:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.42,
@@ -676,8 +940,8 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.85,
@@ -694,18 +958,18 @@
       "rating": 16.7,
       "game_date_iso": "2026-10-13",
       "games_played": 81,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.12,
-      "edge": -2.38,
+      "projection": 2.13,
+      "edge": -2.37,
       "player": "Erik Karlsson",
       "team": "PIT",
       "opponent": "CHI",
@@ -718,14 +982,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 81,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.03,
@@ -742,14 +1006,14 @@
       "rating": 16.7,
       "game_date_iso": "2026-10-13",
       "games_played": 62,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.45,
@@ -766,14 +1030,14 @@
       "rating": 33.3,
       "game_date_iso": "2026-10-13",
       "games_played": 62,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.77,
@@ -796,8 +1060,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.44,
@@ -820,8 +1084,80 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.77,
+      "edge": -0.73,
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 65,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.65,
+      "edge": -0.85,
+      "player": "J.T. Miller",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 14.3,
+      "game_date_iso": "2026-10-13",
+      "games_played": 75,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.77,
+      "edge": -0.73,
+      "player": "J.T. Miller",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 14.3,
+      "game_date_iso": "2026-10-13",
+      "games_played": 75,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.69,
@@ -838,18 +1174,18 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 28,
+      "dvp_rank": 27,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.46,
-      "edge": -1.04,
+      "projection": 2.47,
+      "edge": -1.03,
       "player": "Jack Quinn",
       "team": "BUF",
       "opponent": "MTL",
@@ -868,8 +1204,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.3,
@@ -892,8 +1228,56 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.99,
+      "edge": -0.51,
+      "player": "Jake Guentzel",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 40.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 86,
+      "dvp_rank": 14,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.53,
+      "edge": 0.03,
+      "player": "Jake Guentzel",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 60.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 86,
+      "dvp_rank": 21,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.43,
@@ -916,8 +1300,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.08,
@@ -940,8 +1324,32 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.65,
+      "edge": -0.85,
+      "player": "Jared McCann",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 16.7,
+      "game_date_iso": "2026-10-13",
+      "games_played": 58,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.47,
@@ -964,8 +1372,32 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 3.05,
+      "edge": -1.45,
+      "player": "Jason Robertson",
+      "team": "DAL",
+      "opponent": "COL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 87,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.62,
@@ -988,8 +1420,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.98,
@@ -1012,8 +1444,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.81,
@@ -1036,8 +1468,56 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.73,
+      "edge": -0.77,
+      "player": "John Carlson",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "D",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 76,
+      "dvp_rank": 14,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.88,
+      "edge": -1.62,
+      "player": "John Carlson",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 40.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 76,
+      "dvp_rank": 21,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.36,
@@ -1060,8 +1540,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.53,
@@ -1084,8 +1564,32 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.58,
+      "edge": -0.92,
+      "player": "Jordan Eberle",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 86,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.52,
@@ -1108,8 +1612,8 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.62,
@@ -1126,14 +1630,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 28,
+      "dvp_rank": 27,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.82,
@@ -1156,8 +1660,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.8,
@@ -1174,14 +1678,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 19,
+      "dvp_rank": 18,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.43,
@@ -1204,12 +1708,12 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.39,
-      "edge": -1.11,
+      "projection": 2.4,
+      "edge": -1.1,
       "player": "Kirill Marchenko",
       "team": "TOR",
       "opponent": "UTA",
@@ -1228,8 +1732,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.97,
@@ -1246,18 +1750,18 @@
       "rating": 20.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 9,
+      "dvp_rank": 8,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 3.2,
-      "edge": -0.3,
+      "projection": 3.21,
+      "edge": -0.29,
       "player": "Kyle Connor",
       "team": "WPG",
       "opponent": "MIN",
@@ -1276,12 +1780,12 @@
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 0.88,
-      "edge": -0.62,
+      "projection": 0.87,
+      "edge": -0.63,
       "player": "Lane Hutson",
       "team": "MTL",
       "opponent": "BUF",
@@ -1294,14 +1798,14 @@
       "rating": 20.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 19,
+      "dvp_rank": 18,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.57,
@@ -1324,8 +1828,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.66,
@@ -1348,8 +1852,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.82,
@@ -1366,14 +1870,14 @@
       "rating": 16.7,
       "game_date_iso": "2026-10-13",
       "games_played": 60,
-      "dvp_rank": 31,
+      "dvp_rank": 30,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.08,
@@ -1396,22 +1900,22 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.96,
-      "edge": -1.54,
+      "edge": -2.54,
       "player": "Logan Stankoven",
       "team": "CAR",
       "opponent": "WSH",
       "position": "F",
       "stat": "Shots On Goal",
-      "line": 3.5,
+      "line": 4.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "nhl/build_board.py",
-      "rating": 42.9,
+      "rating": 14.3,
       "game_date_iso": "2026-10-13",
       "games_played": 88,
       "dvp_rank": 20,
@@ -1420,8 +1924,8 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.27,
@@ -1444,8 +1948,8 @@
       "start_time_utc": "2026-10-13T22:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.65,
@@ -1468,8 +1972,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.53,
@@ -1492,12 +1996,12 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.03,
-      "edge": -1.47,
+      "projection": 1.02,
+      "edge": -1.48,
       "player": "Mark Scheifele",
       "team": "WPG",
       "opponent": "MIN",
@@ -1510,18 +2014,18 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 9,
+      "dvp_rank": 8,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.03,
-      "edge": -2.47,
+      "projection": 2.04,
+      "edge": -2.46,
       "player": "Mark Scheifele",
       "team": "WPG",
       "opponent": "MIN",
@@ -1540,8 +2044,32 @@
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.34,
+      "edge": -2.16,
+      "player": "Martin Necas",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 83,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.5,
@@ -1564,8 +2092,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.39,
@@ -1588,12 +2116,12 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.54,
-      "edge": -1.96,
+      "projection": 1.56,
+      "edge": -1.94,
       "player": "Matthew Knies",
       "team": "CBJ",
       "opponent": "FLA",
@@ -1606,14 +2134,14 @@
       "rating": 25.0,
       "game_date_iso": "2026-10-13",
       "games_played": 83,
-      "dvp_rank": 8,
+      "dvp_rank": 10,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.63,
@@ -1636,8 +2164,32 @@
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.51,
+      "edge": -0.99,
+      "player": "Matty Beniers",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 16.7,
+      "game_date_iso": "2026-10-13",
+      "games_played": 88,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.45,
@@ -1660,8 +2212,8 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.89,
@@ -1684,8 +2236,56 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.84,
+      "edge": -0.66,
+      "player": "Mika Zibanejad",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 42.9,
+      "game_date_iso": "2026-10-13",
+      "games_played": 88,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.41,
+      "edge": -2.09,
+      "player": "Mika Zibanejad",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 88,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.73,
@@ -1708,8 +2308,8 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.75,
@@ -1726,14 +2326,14 @@
       "rating": 33.3,
       "game_date_iso": "2026-10-13",
       "games_played": 84,
-      "dvp_rank": 31,
+      "dvp_rank": 30,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.12,
@@ -1756,8 +2356,56 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.06,
+      "edge": -1.44,
+      "player": "Mikko Rantanen",
+      "team": "DAL",
+      "opponent": "COL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 69,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.5,
+      "edge": -1.0,
+      "player": "Miro Heiskanen",
+      "team": "DAL",
+      "opponent": "COL",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 82,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.74,
@@ -1780,8 +2428,8 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.34,
@@ -1804,12 +2452,12 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.99,
-      "edge": -1.51,
+      "projection": 2.0,
+      "edge": -1.5,
       "player": "Moritz Seider",
       "team": "DET",
       "opponent": "NJD",
@@ -1828,8 +2476,56 @@
       "start_time_utc": "2026-10-13T22:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 3.46,
+      "edge": -3.04,
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 6.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 40.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 85,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.28,
+      "edge": -1.22,
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "opponent": "DAL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 40.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 82,
+      "dvp_rank": 4,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.25,
@@ -1846,14 +2542,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 56,
-      "dvp_rank": 9,
+      "dvp_rank": 8,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.01,
@@ -1876,8 +2572,8 @@
       "start_time_utc": "2026-10-14T00:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.94,
@@ -1894,14 +2590,14 @@
       "rating": 33.3,
       "game_date_iso": "2026-10-13",
       "games_played": 88,
-      "dvp_rank": 31,
+      "dvp_rank": 30,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.8,
@@ -1924,8 +2620,8 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.12,
@@ -1942,18 +2638,18 @@
       "rating": 20.0,
       "game_date_iso": "2026-10-13",
       "games_played": 87,
-      "dvp_rank": 19,
+      "dvp_rank": 18,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.05,
-      "edge": -2.45,
+      "projection": 2.06,
+      "edge": -2.44,
       "player": "Nick Suzuki",
       "team": "MTL",
       "opponent": "BUF",
@@ -1972,8 +2668,56 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 1.45,
+      "edge": -1.05,
+      "player": "Nikita Kucherov",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Points",
+      "line": 2.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 81,
+      "dvp_rank": 14,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.66,
+      "edge": -2.84,
+      "player": "Nikita Kucherov",
+      "team": "TBL",
+      "opponent": "NYR",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 5.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 81,
+      "dvp_rank": 21,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.33,
@@ -1996,8 +2740,56 @@
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.67,
+      "edge": -0.83,
+      "player": "Pavel Dorofeyev",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 14.3,
+      "game_date_iso": "2026-10-13",
+      "games_played": 89,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.58,
+      "edge": -1.92,
+      "player": "Pavel Dorofeyev",
+      "team": "NYR",
+      "opponent": "TBL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 28.6,
+      "game_date_iso": "2026-10-13",
+      "games_played": 89,
+      "dvp_rank": 9,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:15:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.61,
@@ -2014,14 +2806,14 @@
       "rating": 16.7,
       "game_date_iso": "2026-10-13",
       "games_played": 66,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.75,
@@ -2044,12 +2836,12 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.34,
-      "edge": -1.16,
+      "projection": 1.35,
+      "edge": -1.15,
       "player": "Robert Thomas",
       "team": "STL",
       "opponent": "OTT",
@@ -2068,8 +2860,8 @@
       "start_time_utc": "2026-10-13T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.66,
@@ -2092,8 +2884,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.99,
@@ -2116,12 +2908,12 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.95,
-      "edge": -1.55,
+      "projection": 1.96,
+      "edge": -1.54,
       "player": "Roman Kantserov",
       "team": "CHI",
       "opponent": "PIT",
@@ -2140,8 +2932,32 @@
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.02,
+      "edge": -1.48,
+      "player": "Roope Hintz",
+      "team": "DAL",
+      "opponent": "COL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 20.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 58,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.56,
@@ -2164,8 +2980,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.77,
@@ -2188,8 +3004,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.64,
@@ -2212,12 +3028,12 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.28,
-      "edge": -1.22,
+      "projection": 2.29,
+      "edge": -1.21,
       "player": "Sam Bennett",
       "team": "FLA",
       "opponent": "CBJ",
@@ -2236,12 +3052,12 @@
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.35,
-      "edge": -2.15,
+      "projection": 2.36,
+      "edge": -2.14,
       "player": "Sam Reinhart",
       "team": "FLA",
       "opponent": "CBJ",
@@ -2260,12 +3076,12 @@
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.28,
-      "edge": -0.22,
+      "projection": 2.29,
+      "edge": -0.21,
       "player": "Sebastian Aho",
       "team": "CAR",
       "opponent": "WSH",
@@ -2284,12 +3100,12 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.8,
-      "edge": -0.7,
+      "projection": 1.81,
+      "edge": -0.69,
       "player": "Seth Jones",
       "team": "FLA",
       "opponent": "CBJ",
@@ -2308,8 +3124,8 @@
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.96,
@@ -2332,8 +3148,8 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.0,
@@ -2350,18 +3166,18 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 74,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.41,
-      "edge": -2.09,
+      "projection": 2.42,
+      "edge": -2.08,
       "player": "Sidney Crosby",
       "team": "PIT",
       "opponent": "CHI",
@@ -2374,14 +3190,14 @@
       "rating": 16.7,
       "game_date_iso": "2026-10-13",
       "games_played": 74,
-      "dvp_rank": 30,
+      "dvp_rank": 29,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-14T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.42,
@@ -2428,8 +3244,8 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.74,
@@ -2452,8 +3268,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.13,
@@ -2476,8 +3292,8 @@
       "start_time_utc": "2026-10-14T00:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.99,
@@ -2494,14 +3310,14 @@
       "rating": 40.0,
       "game_date_iso": "2026-10-13",
       "games_played": 86,
-      "dvp_rank": 28,
+      "dvp_rank": 27,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 3.13,
@@ -2524,8 +3340,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.57,
@@ -2548,12 +3364,12 @@
       "start_time_utc": "2026-10-13T22:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 1.82,
-      "edge": -0.68,
+      "projection": 1.84,
+      "edge": -0.66,
       "player": "Valeri Nichushkin",
       "team": "CBJ",
       "opponent": "FLA",
@@ -2566,14 +3382,14 @@
       "rating": 25.0,
       "game_date_iso": "2026-10-13",
       "games_played": 76,
-      "dvp_rank": 8,
+      "dvp_rank": 10,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 2.6,
@@ -2596,8 +3412,32 @@
       "start_time_utc": "2026-10-13T22:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T17:56:57+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 0.49,
+      "edge": -1.01,
+      "player": "Vince Dunn",
+      "team": "SEA",
+      "opponent": "PHI",
+      "position": "D",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 16.7,
+      "game_date_iso": "2026-10-13",
+      "games_played": 87,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-13T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.55,
@@ -2620,8 +3460,8 @@
       "start_time_utc": "2026-10-13T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.47,
@@ -2644,12 +3484,12 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
-      "projection": 2.12,
-      "edge": -2.38,
+      "projection": 2.13,
+      "edge": -2.37,
       "player": "William Nylander",
       "team": "TOR",
       "opponent": "UTA",
@@ -2668,8 +3508,32 @@
       "start_time_utc": "2026-10-14T01:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:50:34+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
+    },
+    {
+      "projection": 2.29,
+      "edge": -2.21,
+      "player": "Wyatt Johnston",
+      "team": "DAL",
+      "opponent": "COL",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "nhl/build_board.py",
+      "rating": 0.0,
+      "game_date_iso": "2026-10-13",
+      "games_played": 87,
+      "dvp_rank": 6,
+      "rank_eligible": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-14T00:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-12T20:38:12+00:00",
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.61,
@@ -2692,8 +3556,8 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 0.69,
@@ -2710,14 +3574,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 70,
-      "dvp_rank": 28,
+      "dvp_rank": 27,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:44:33+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.78,
@@ -2740,8 +3604,8 @@
       "start_time_utc": "2026-10-13T22:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T20:11:26+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.78,
@@ -2768,8 +3632,8 @@
       "source_commit": "b6edf83c3455"
     },
     {
-      "projection": 3.03,
-      "edge": -2.47,
+      "projection": 3.06,
+      "edge": -2.44,
       "player": "Zach Werenski",
       "team": "CBJ",
       "opponent": "FLA",
@@ -2782,14 +3646,14 @@
       "rating": 0.0,
       "game_date_iso": "2026-10-13",
       "games_played": 79,
-      "dvp_rank": 8,
+      "dvp_rank": 10,
       "rank_eligible": true,
       "projection_schema": 2,
       "start_time_utc": "2026-10-13T22:15:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T18:23:55+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     },
     {
       "projection": 1.28,
@@ -2812,8 +3676,8 @@
       "start_time_utc": "2026-10-14T01:45:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-12T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-12T20:11:26+00:00",
-      "source_commit": "85df229daefc"
+      "last_pregame_frozen_at": "2026-10-12T20:38:12+00:00",
+      "source_commit": "056d1b9078ba"
     }
   ]
 }
