@@ -1,4 +1,5 @@
 import { fmt1, posBadgeClass } from '../utils/formatters'
+import { fitImage } from '../../fitImage.js'
 
 const FALLBACK_AVATAR = (name = '') => {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -62,7 +63,7 @@ export default function PlayerCard({ player, ppLines = null, onSelect }) {
           overflow: 'hidden',
         }}>
           {image
-            ? <img src={image} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
+            ? <img src={fitImage(image, 52)} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
             : FALLBACK_AVATAR(name)
           }
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
+import { fitImage } from '../fitImage.js'
 import { cgScore, lineMatchesStat } from '../cgScore'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
@@ -30,7 +31,7 @@ function Card({ item, onSelectPlayer }) {
         <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">
-        <div className="nfl-card-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
+        <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
         <div>
           <h2 className="nfl-player-link" onClick={() => onSelectPlayer(item)}>{item.player}</h2>
           <p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p>

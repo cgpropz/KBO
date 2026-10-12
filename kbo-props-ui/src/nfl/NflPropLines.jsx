@@ -3,6 +3,7 @@ import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
+import { fitImage } from '../fitImage.js'
 import { useAuth } from '../AuthContext'
 import { sportAccess } from '../entitlements'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
@@ -69,7 +70,7 @@ function dvpColor(rank) {
 
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
-  return url ? <img className={className} src={url} alt={team} loading="lazy" /> : null
+  return url ? <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" /> : null
 }
 
 function FilterIcon() {
@@ -116,7 +117,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
       >
         <td>
           <div className="nfl-lines-player">
-            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
+            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
               <span className="nfl-lines-tag">{item.team}, {item.position}</span>

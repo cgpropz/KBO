@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
+import { fitImage } from '../fitImage.js'
 
 const LINE_TYPES = ['standard', 'demon', 'goblin']
 const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
@@ -324,7 +325,7 @@ export default function NbaEdge() {
                 </div>
                 <div className="edge-player">
                   {card.player.image ? (
-                    <img src={card.player.image} alt="" className="edge-headshot" loading="lazy" />
+                    <img src={fitImage(card.player.image, 68)} alt="" className="edge-headshot" loading="lazy" />
                   ) : (
                     <div className="edge-headshot" style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',

@@ -287,6 +287,17 @@
     margin: 0 !important;
   }
 
+  .wnba-lines-header-actions,
+  .wnba-board-header {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .wnba-lines-header-actions > span {
+    white-space: normal;
+  }
+
   :is(.kbo-app-content, .nfl-content, .wnba-content, .pl-main, .cg-main) {
     max-width: 100% !important;
     min-width: 0;

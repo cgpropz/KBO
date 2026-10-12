@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from './BookOddsStrip'
@@ -179,7 +180,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
         aria-controls={stripDomId(item)}
       >
         <td className="nfl-lines-player">
-          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
           <div className="nfl-lines-info">
             <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer?.(item.player, item.prop) }}>{item.player}</button>
             <span className="nfl-lines-tag">{[item.team, item.position].filter(Boolean).join(', ') || 'NFL'}</span>

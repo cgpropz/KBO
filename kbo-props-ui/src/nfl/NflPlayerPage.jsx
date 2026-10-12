@@ -5,6 +5,7 @@ import { useChartLine } from '../useChartLine'
 import { nflOddsRows } from '../playerOdds'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
+import { fitImage } from '../fitImage.js'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { lineMatchesStat } from '../cgScore'
@@ -84,7 +85,7 @@ function dvpColor(rank) {
 
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
-  return url ? <img className={className} src={url} alt={team} loading="lazy" /> : null
+  return url ? <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" /> : null
 }
 
 function sortProps(rows) {
@@ -283,7 +284,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       <button className="nfl-player-back" onClick={onBack}>&larr; Back</button>
       <div className="nfl-player-header">
         <div className="nfl-player-avatar">
-          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={currentRow.imageUrl} alt={player} loading="lazy" /> : initials(player)}
+          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={fitImage(currentRow.imageUrl, 72)} alt={player} /> : initials(player)}
         </div>
         <div className="nfl-player-title"><h1>{player}<span>{currentRow.position}</span></h1><p>{currentRow.team} vs {currentRow.opponent}</p></div>
         <div className="nfl-player-prop-pill">

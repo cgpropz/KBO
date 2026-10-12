@@ -5,6 +5,7 @@ import './PlayerPropsUI.css';
 import { fetchDataSnapshot } from './dataUrl';
 import { cgScore } from './cgScore';
 import { pregameSide, scoreFor } from './kboBoardScore';
+import { fitImage } from './fitImage.js';
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Lotte: '#ff6666',
@@ -13,11 +14,11 @@ const TEAM_COLORS = {
 };
 
 const TEAM_LOGOS = {
-  Doosan: 'team-logos/doosan.svg', Hanwha: 'team-logos/hanwha.svg',
-  Lotte: 'team-logos/lotte.svg', Kia: 'team-logos/kia.png',
-  Kiwoom: 'team-logos/kiwoom.png', LG: 'team-logos/lg.svg',
-  KT: 'team-logos/kt.svg', NC: 'team-logos/nc.svg',
-  Samsung: 'team-logos/samsung.svg', SSG: 'team-logos/ssg.png',
+  Doosan: 'team-logos/doosan.webp', Hanwha: 'team-logos/hanwha.webp',
+  Lotte: 'team-logos/lotte.webp', Kia: 'team-logos/kia.webp',
+  Kiwoom: 'team-logos/kiwoom.webp', LG: 'team-logos/lg.webp',
+  KT: 'team-logos/kt.webp', NC: 'team-logos/nc.webp',
+  Samsung: 'team-logos/samsung.webp', SSG: 'team-logos/ssg.webp',
 };
 
 /* ============== Main Component ============== */
@@ -246,7 +247,7 @@ function PropCard({ card, photoUrl, matchup }) {
               {photoUrl && !imageFailed ? (
                 <img
                   className="pc-avatar"
-                  src={photoUrl}
+                  src={fitImage(photoUrl, 42)}
                   alt={name}
                   loading="lazy"
                   onError={() => setImageFailed(true)}

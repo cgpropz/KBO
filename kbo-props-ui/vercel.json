@@ -62,6 +62,7 @@
     { "source": "/policies", "destination": "/policies.html" },
     { "source": "/guides/cg-score", "destination": "/guides/cg-score.html" },
     { "source": "/guides/start-here", "destination": "/guides/start-here.html" },
+    { "source": "/status.json", "destination": "/api/data?ds=board_status" },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"

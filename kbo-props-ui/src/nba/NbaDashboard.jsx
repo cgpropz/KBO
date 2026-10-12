@@ -18,6 +18,7 @@ import {
   filterAndSortRows,
   nbaLogoUrl,
 } from './nbaPropLines'
+import { fitImage } from '../fitImage.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -70,7 +71,7 @@ function hitColor(pct) {
 function TeamLogo({ team, className }) {
   const url = nbaLogoUrl(team)
   if (!url) return null
-  return <img className={className} src={url} alt={team} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
+  return <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
 }
 
 function FilterIcon() {
@@ -114,7 +115,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy }) {
         <div className="wnba-lines-player">
           <div className="wnba-lines-avatar">
             {item.imageUrl
-              ? <img src={item.imageUrl} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
+              ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
               : initials(item.player)}
           </div>
           <div className="wnba-lines-info">
@@ -293,7 +294,7 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
         fontSize: 10, fontWeight: 800, color: '#7efc6a',
       }}>
         {player.image
-          ? <img src={player.image} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(event) => { event.target.style.display = 'none' }} />
+          ? <img src={fitImage(player.image, 68)} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(event) => { event.target.style.display = 'none' }} />
           : initials(player.name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>

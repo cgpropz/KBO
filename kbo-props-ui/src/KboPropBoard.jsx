@@ -10,6 +10,7 @@ import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
 import { BoardSkeleton } from './BootScreen.jsx'
 import './KboPropBoard.css'
+import { fitImage } from './fitImage.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -109,7 +110,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, photo, locked, ro
       <tr className={locked ? 'locked' : undefined} ref={whyOpen ? undefined : rowRef}>
         <td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}>
           <div className="kbo-player-cell">
-            <div className="kbo-avatar">{photo ? <img src={photo} alt="" /> : initials(card.name)}</div>
+            <div className="kbo-avatar">{photo ? <img src={fitImage(photo, 42)} alt="" loading="lazy" /> : initials(card.name)}</div>
             <div>
               <strong>{card.name}</strong>
               <small>{card.team}, {card.type}</small>

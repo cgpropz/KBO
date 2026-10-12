@@ -46,19 +46,33 @@ class WorkflowGuardTests(unittest.TestCase):
         names = [step["name"] for step in refresh_data.STEPS]
         self.assertIn(ODDS_FETCH_STEP, names)
 
-    def test_deploy_does_not_raise_the_skew_limit_or_regenerate_snapshots(self):
+    def test_code_deploy_does_not_refresh_data_or_raise_the_skew_limit(self):
         root = Path(__file__).resolve().parent
         deploy = (root / ".github" / "workflows" / "deploy.yml").read_text()
+        data = (root / ".github" / "workflows" / "publish-data.yml").read_text()
         verifier = (root / "pipeline" / "verify_production_data.py").read_text()
-        self.assertIn("--skip-snapshot-regen", deploy)
         self.assertNotIn("max-skew-minutes", deploy)
+        self.assertNotIn("max-skew-minutes", data)
         self.assertIn("default=180.0", verifier)
-        # The Vercel step stays a no-regen deploy. NFL rows live in Supabase,
-        # so the refresh step that has the service role key has to rebuild them.
-        refresh = deploy.split("- name: Deploy to Vercel")[0]
-        self.assertIn("python nfl/build_projection_data.py", refresh)
-        self.assertIn("python nfl/sharp_odds.py", refresh)
-        self.assertIn('PUBLISH_ONLY_PREFIX: "nfl/"', refresh)
+        # A site upload must not rebuild boards. The data job publishes NFL
+        # rows and never uploads a website, so the two cannot roll each other back.
+        for forbidden in (
+            "refresh_data.py",
+            "refresh_odds.py",
+            "run_release.sh",
+            "build_projection_data.py",
+            "sharp_odds.py",
+        ):
+            self.assertNotIn(forbidden, deploy)
+        self.assertNotIn("vercel --prod", data)
+        self.assertNotIn("vercel deploy", data.lower())
+        self.assertIn("--skip-deploy", data)
+        self.assertIn("--skip-build", data)
+        self.assertIn("python nfl/build_projection_data.py", data)
+        self.assertIn("python nfl/sharp_odds.py", data)
+        self.assertIn('PUBLISH_ONLY_PREFIX: "nfl/"', data)
+        self.assertIn("cgpropz-code-deploy", deploy)
+        self.assertIn("cgpropz-data-refresh", data)
         nfl_refresh = (root / ".github" / "workflows" / "nfl-refresh.yml").read_text()
         self.assertIn("push:", nfl_refresh)
         self.assertIn("nfl/**", nfl_refresh)

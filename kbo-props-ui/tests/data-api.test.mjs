@@ -491,3 +491,68 @@ test('slow snapshot read returns 503 upstream_timeout instead of hanging', async
     _setTimeouts(prev)
   }
 })
+
+test('board clocks are public and never include prop rows', async () => {
+  const client = mockClient()
+  client.from = (table) => {
+    const chain = {
+      select() { return chain },
+      eq() { return chain },
+      async maybeSingle() {
+        if (table !== 'board_status') return { data: null, error: null }
+        return {
+          data: {
+            data: {
+              boards: [{
+                sport: 'nfl',
+                board_updated_at: NOW,
+                injuries_checked_at: null,
+                prop_count: 4,
+                stale: false,
+                cards: [{ name: 'Paid Player', line: 64.5 }],
+                props: [{ player: 'Paid Player' }],
+              }],
+              cards: [{ name: 'Also paid' }],
+            },
+            updated_at: NOW,
+          },
+          error: null,
+        }
+      },
+    }
+    return chain
+  }
+  const res = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'board_status' }, headers: {} }, res, client)
+  assert.equal(res.statusCode, 200)
+  assert.match(res.headers['cache-control'], /public/)
+  assert.equal(res.body.preview, undefined)
+  assert.deepEqual(res.body.boards.map((row) => row.sport), ['kbo', 'wnba', 'nfl', 'nba', 'nhl'])
+  const nfl = res.body.boards.find((row) => row.sport === 'nfl')
+  assert.equal(nfl.prop_count, 4)
+  assert.equal(nfl.board_updated_at, NOW)
+  assert.equal(JSON.stringify(res.body).includes('Paid Player'), false)
+  for (const row of res.body.boards) {
+    assert.deepEqual(Object.keys(row).sort(), ['board_updated_at', 'injuries_checked_at', 'prop_count', 'sport', 'stale'])
+  }
+})
+
+test('board clocks fall back when the status table is missing', async () => {
+  const client = {
+    from() {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        async maybeSingle() {
+          return { data: null, error: { message: 'relation board_status does not exist' } }
+        },
+      }
+      return chain
+    },
+  }
+  const res = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'board_status' }, headers: {} }, res, client)
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.boards.length, 5)
+  assert.equal(JSON.stringify(res.body).includes('cards'), false)
+})

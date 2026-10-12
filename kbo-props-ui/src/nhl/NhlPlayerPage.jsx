@@ -8,6 +8,7 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
+import { fitImage } from '../fitImage.js'
 
 const RANGES = [
   { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
@@ -247,11 +248,12 @@ function barKind(value, line) {
 }
 
 function PlayerHeadshot({ playerId, imageUrl, name, team }) {
-  const nhlSrc = nhlHeadshotUrl(playerId)
+  const nhlSrc = fitImage(nhlHeadshotUrl(playerId), 72)
+  const fallbackSrc = fitImage(imageUrl, 72)
   const [failedNhl, setFailedNhl] = useState(false)
   const [failedFallback, setFailedFallback] = useState(false)
-  const src = !failedNhl && nhlSrc ? nhlSrc : (!failedFallback && imageUrl ? imageUrl : '')
-  const logo = teamLogoUrl(team)
+  const src = !failedNhl && nhlSrc ? nhlSrc : (!failedFallback && fallbackSrc ? fallbackSrc : '')
+  const logo = fitImage(teamLogoUrl(team), 26)
   return (
     <div className="nhl-avatar-wrap">
       <div className="nhl-avatar">

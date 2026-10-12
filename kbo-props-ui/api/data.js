@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import bundledStatus from '../public/status.json' with { type: 'json' };
+import { publicBoardStatus } from './_boardStatus.js';
 import {
   DATASETS,
   NBA_PUBLIC_FLAG,
@@ -440,7 +442,29 @@ export async function resolveTier(client, authorization) {
  * user_profiles server-side with the service-role key — never trusted from
  * the client.
  */
+
+// Clocks and prop counts only. Paid rows never ride along. A failed read
+// returns the clocks shipped with the last site deploy, so a data blip
+// cannot blank the public status file.
+export async function handleBoardStatus(req, res, client) {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  try {
+    const row = await readSnapshot(client || getClient(), 'board_status');
+    if (row && row.data) return res.status(200).json(publicBoardStatus(row.data));
+  } catch (err) {
+    console.error('[api/data] board status read failed:', err.message);
+  }
+  return res.status(200).json(publicBoardStatus(bundledStatus));
+}
+
 export async function handleDataRequest(req, res, client) {
+  const dsEarly = String(req.query?.ds || '');
+  if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
+
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   res.setHeader('Vary', 'Authorization');
 

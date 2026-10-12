@@ -32,6 +32,11 @@ dist/data/nfl/
 dist/data/nba/
 dist/data/nhl/
 
+# Live clocks come from /api/data?ds=board_status. A static copy would
+# freeze "last updated" until the next site deploy.
+public/status.json
+dist/status.json
+
 # Local secrets / env files (Vercel uses dashboard env vars)
 .env
 .env.*

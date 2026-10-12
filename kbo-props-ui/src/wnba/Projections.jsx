@@ -6,6 +6,7 @@ import { wnbaCgScore } from './wnbaScore'
 import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
 import { slateDateLabel } from '../wnbaBoard'
+import { fitImage } from '../fitImage.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const LINE_TYPES = ['standard', 'demon', 'goblin']
@@ -395,7 +396,7 @@ export default function Projections({ onSelectPlayer }) {
 
                 <div className="edge-player">
                   {player.image ? (
-                    <img src={player.image} alt={player.name} className="edge-headshot" loading="lazy" />
+                    <img src={fitImage(player.image, 68)} alt={player.name} className="edge-headshot" loading="lazy" />
                   ) : (
                     <div className="edge-headshot" style={{
                       display: 'flex',

@@ -5,6 +5,7 @@ import BoardStatus from './BoardStatus';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
+import { fitImage } from './fitImage.js';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -702,7 +703,7 @@ function StrikeoutProjections({ onNavigate }) {
                       {photoLookup[normalizeName(p.name)] ? (
                         <img
                           className="so-player-avatar"
-                          src={photoLookup[normalizeName(p.name)]}
+                          src={fitImage(photoLookup[normalizeName(p.name)], 22)}
                           alt={p.name}
                           loading="lazy"
                           onError={(e) => {
