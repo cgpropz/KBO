@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { cssLayerPlugin } from './cssLayerPlugin.js'
 import { PAID_DATA_DIRS, PAID_DATA_FILES } from './paidDataFiles.js'
 
 // Vite copies everything in public/ into the build. The pipeline still writes
@@ -28,7 +29,7 @@ function stripPaidData() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), stripPaidData()],
+  plugins: [cssLayerPlugin(), react(), stripPaidData()],
   // For GitHub Pages: set base to repo name, or '/' for custom domain
   base: process.env.GITHUB_PAGES ? '/KBO/' : '/',
 })
