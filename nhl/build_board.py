@@ -129,6 +129,19 @@ EXCLUDED_PLAYER_IDS = {
     "8482667",  # William Eklund, IR (2026-10-12)
     "8475220",  # Marcus Foligno, OUT (2026-10-12)
     "8483766",  # David Spacek, healthy scratch (2026-10-12)
+    "8480839",  # Rasmus Dahlin (BUF), OUT (2026-10-13)
+    "8476891",  # Matt Grzelcyk (BUF), IR (2026-10-13)
+    "8476875",  # Mike Matheson (MTL), OUT (2026-10-13)
+    "8473533",  # Jordan Staal (CAR), OUT (2026-10-13)
+    "8477456",  # J.T. Compher (DET), IR (2026-10-13)
+    "8478439",  # Travis Konecny (PHI), IR (2026-10-13)
+    "8483493",  # Frank Nazar (CHI), suspended (2026-10-13)
+    "8483808",  # Andrei Kuzmenko (PIT), IR (2026-10-13)
+    "8477845",  # Trevor van Riemsdyk (PIT), IR (2026-10-13)
+    "8478450",  # Parker Wotherspoon (VGK), OUT (2026-10-13)
+    "8475690",  # Chris Tanev (TOR), IR (2026-10-13)
+    "8479619",  # Michael Carcone (UTA), OUT (2026-10-13)
+    "8481563",  # Drew Helleson (ANA), IR (2026-10-13)
 }
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
