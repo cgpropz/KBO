@@ -22,3 +22,11 @@ export function pauseTokenFromSearch(search) {
   const token = params.get('pause');
   return token ? token : '';
 }
+
+// Pause 1 week is hidden until the server path works with live Stripe keys.
+// Set VITE_PAUSE_WEEK_ENABLED=true to show it (e.g. on a test-mode preview).
+export function pauseWeekEnabled(env) {
+  const source = env || (typeof import.meta !== 'undefined' ? import.meta.env : {}) || {};
+  return String(source?.VITE_PAUSE_WEEK_ENABLED || '').toLowerCase() === 'true';
+}
+export const PAUSE_WEEK_ENABLED = pauseWeekEnabled();
