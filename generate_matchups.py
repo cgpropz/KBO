@@ -556,6 +556,23 @@ def _starter_game_date():
     return None
 
 
+def _official_game_pairs():
+    """(away, home) pairs from the KBO-site scrape, normalized. Empty if unknown."""
+    path = os.path.join(BASE, "Pitchers-Data", "player_names_meta.json")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            meta = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return set()
+    pairs = set()
+    for game in (meta or {}).get("games") or []:
+        away = normalize_team_name(str(game.get("away") or "").strip())
+        home = normalize_team_name(str(game.get("home") or "").strip())
+        if away and home:
+            pairs.add((away, home))
+    return pairs
+
+
 def load_pitcher_logs():
     # Canonical source: same combined pitching CSV consumed by
     # generate_batter_projections.py to keep WHIP/ERA consistent across pages.
@@ -1018,6 +1035,15 @@ def main():
     for p in local_starters:
         _add_game(p.get("team"), p.get("opponent"))
 
+    # The KBO-site scrape (player_names_meta.json) lists the official games for
+    # the slate date. When it is present it is the whole slate: add any official
+    # game without starters yet, and never let K/batter props or odds add a
+    # pairing that is not on it (stale props once kept KT-Samsung and Kia-Lotte
+    # on a postseason day with one game).
+    official_pairs = _official_game_pairs()
+    for away, home in sorted(official_pairs):
+        _add_game(away, home)
+
     # Build the set of teams already locked onto the slate so we can reject
     # stale pairings (e.g. NC@KT when today NC plays Hanwha).
     slate_teams = set()
@@ -1028,6 +1054,9 @@ def main():
     def _add_game_if_new_teams(team, opp):
         """Only add a game if neither team already has a matchup on the slate."""
         if team in slate_teams or opp in slate_teams:
+            return
+        if official_pairs and frozenset((team, opp)) not in {frozenset(pair) for pair in official_pairs}:
+            print(f"skip {team} vs {opp}: not on the official KBO schedule")
             return
         _add_game(team, opp)
         if team:
