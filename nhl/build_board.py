@@ -141,6 +141,16 @@ EXCLUDED_PLAYER_IDS = {
     "8475690",  # Chris Tanev (TOR), IR (2026-10-13)
     "8479619",  # Michael Carcone (UTA), OUT (2026-10-13)
     "8481563",  # Drew Helleson (ANA), IR (2026-10-13)
+    "8480069",  # Cale Makar (COL), OUT personal (2026-10-13)
+    "8481641",  # Joel Kiviranta (DAL), scratched (2026-10-13)
+    "8482072",  # Jack Ahcan (NSH), scratched (2026-10-13)
+    "8482145",  # Mavrik Bourque (NSH), scratched (2026-10-13)
+    "8479772",  # Zack MacEwen (TOR), scratched (2026-10-13)
+    "8482747",  # Brennan Othmann (CGY), scratched (2026-10-13)
+    "8484262",  # Travis Mitchell (ANA), AHL (2026-10-13)
+    "8483756",  # Jared Wright (LAK), AHL (2026-10-13)
+    "8477365",  # Connor Clifton (BOS), scratched (2026-10-13)
+    "8480848",  # Ty Dellandrea (SJS), scratched (2026-10-13)
 }
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
