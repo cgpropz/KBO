@@ -4,7 +4,7 @@ import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
-import { PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
+import { PAUSE_WEEK_ENABLED, PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
 import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
@@ -168,7 +168,7 @@ function SubscriptionPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !CANCELLABLE_TIERS.has(tier)) return undefined;
+    if (!PAUSE_WEEK_ENABLED || !user || !CANCELLABLE_TIERS.has(tier)) return undefined;
     let cancelled = false;
     (async () => {
       try {
@@ -181,7 +181,7 @@ function SubscriptionPage() {
   }, [user, tier, requestMembership]);
 
   useEffect(() => {
-    if (!user || typeof window === 'undefined') return undefined;
+    if (!PAUSE_WEEK_ENABLED || !user || typeof window === 'undefined') return undefined;
     const fromUrl = pauseTokenFromSearch(window.location.search);
     let linkToken = fromUrl;
     try {
@@ -443,7 +443,7 @@ function SubscriptionPage() {
                 </div>
               ) : (
                 <div className="sub-cancel-confirm" data-testid="cancel-choices">
-                  {!paused && (
+                  {PAUSE_WEEK_ENABLED && !paused && (
                     <div className="sub-pause-offer">
                       <p>Need a break instead? Pause billing for 1 week. You keep access, and billing resumes automatically.</p>
                       <button
@@ -497,10 +497,12 @@ function SubscriptionPage() {
             q="Can I cancel anytime?"
             a="Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial."
           />
-          <FaqItem
+          {PAUSE_WEEK_ENABLED && (
+            <FaqItem
             q="Can I pause for a week instead?"
             a="Yes. Cancel Subscription offers Pause 1 week first. That pauses Stripe payment collection for 7 days and voids invoices created in that window. Billing resumes automatically, and this page shows the resume date. You keep access while paused. Cancel anytime is unchanged."
           />
+          )}
           <FaqItem
             q="What is Discord Only?"
             a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, NFL, or NHL boards on the site. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
