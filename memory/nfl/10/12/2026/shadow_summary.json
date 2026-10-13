@@ -1,0 +1,1103 @@
+{
+  "schema": 1,
+  "sport": "nfl",
+  "slate_date": "10/12/2026",
+  "slate_date_iso": "2026-10-12",
+  "period": "week-of-2026-10-06",
+  "graded_at": "2026-10-13T20:20:28+00:00",
+  "status": "graded",
+  "evaluation": {
+    "excluded": false
+  },
+  "sources": {
+    "shadow": "shadow.json",
+    "recap": "recap.json",
+    "recap_graded_at": "2026-10-13T20:00:38.829280+00:00"
+  },
+  "params": {
+    "sha256": "6a5f4958099df0c8",
+    "files": 10,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "9078e5e02d61"
+  },
+  "definitions": {
+    "current": "pre-promotion formula (baseline_recommendation vs recap result) while the site is publishing the tuned formula; published_result is the site pick (recap model_result)",
+    "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
+    "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
+    "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
+    "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
+    "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
+    "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
+  },
+  "overall": {
+    "graded_props": 67,
+    "current": {
+      "hits": 43,
+      "misses": 23,
+      "pushes": 1,
+      "dnps": 5,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.651515,
+      "hit_rate_pct": 65.2
+    },
+    "shadow": {
+      "hits": 41,
+      "misses": 25,
+      "pushes": 1,
+      "dnps": 5,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.621212,
+      "hit_rate_pct": 62.1
+    },
+    "hit_rate_delta_pct_points": -3.0,
+    "paired": {
+      "n": 66,
+      "current_hits": 43,
+      "shadow_hits": 41,
+      "current_hit_rate_pct": 65.2,
+      "shadow_hit_rate_pct": 62.1
+    },
+    "current_edge": {
+      "hits": 43,
+      "misses": 22,
+      "pushes": 1,
+      "dnps": 5,
+      "voids": 0,
+      "no_pick": 1,
+      "hit_rate": 0.661538,
+      "hit_rate_pct": 66.2
+    },
+    "mae": {
+      "n": 66,
+      "current": 15.853,
+      "shadow": 17.337,
+      "delta": 1.4839,
+      "sum_abs_current": 1046.3,
+      "sum_abs_shadow": 1144.24
+    },
+    "mae_shadow_all": {
+      "n": 66,
+      "shadow": 17.337,
+      "sum_abs": 1144.24
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 10,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.909091,
+        "hit_rate_pct": 90.9
+      },
+      "shadow": {
+        "hits": 10,
+        "misses": 2,
+        "pushes": 1,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.833333,
+        "hit_rate_pct": 83.3
+      }
+    }
+  },
+  "candidate_rows_only": {
+    "graded_props": 54,
+    "current": {
+      "hits": 36,
+      "misses": 17,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.679245,
+      "hit_rate_pct": 67.9
+    },
+    "shadow": {
+      "hits": 34,
+      "misses": 19,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.641509,
+      "hit_rate_pct": 64.2
+    },
+    "hit_rate_delta_pct_points": -3.8,
+    "paired": {
+      "n": 53,
+      "current_hits": 36,
+      "shadow_hits": 34,
+      "current_hit_rate_pct": 67.9,
+      "shadow_hit_rate_pct": 64.2
+    },
+    "current_edge": {
+      "hits": 36,
+      "misses": 17,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.679245,
+      "hit_rate_pct": 67.9
+    },
+    "mae": {
+      "n": 54,
+      "current": 18.1704,
+      "shadow": 19.9841,
+      "delta": 1.8137,
+      "sum_abs_current": 981.2,
+      "sum_abs_shadow": 1079.14
+    },
+    "mae_shadow_all": {
+      "n": 54,
+      "shadow": 19.9841,
+      "sum_abs": 1079.14
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 10,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.909091,
+        "hit_rate_pct": 90.9
+      },
+      "shadow": {
+        "hits": 8,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.888889,
+        "hit_rate_pct": 88.9
+      }
+    }
+  },
+  "per_stat": {
+    "Pass Attempts": {
+      "graded_props": 2,
+      "current": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 100.0,
+        "shadow_hit_rate_pct": 100.0
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 11.1,
+        "shadow": 11.1,
+        "delta": 0.0,
+        "sum_abs_current": 22.2,
+        "sum_abs_shadow": 22.2
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 11.1,
+        "sum_abs": 22.2
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 2,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    },
+    "Pass Completions": {
+      "graded_props": 2,
+      "current": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 100.0,
+        "shadow_hit_rate_pct": 100.0
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 10.75,
+        "shadow": 10.75,
+        "delta": 0.0,
+        "sum_abs_current": 21.5,
+        "sum_abs_shadow": 21.5
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 10.75,
+        "sum_abs": 21.5
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Pass TDs": {
+      "graded_props": 2,
+      "current": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 50.0,
+        "shadow_hit_rate_pct": 50.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 0.6,
+        "shadow": 0.6,
+        "delta": 0.0,
+        "sum_abs_current": 1.2,
+        "sum_abs_shadow": 1.2
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 0.6,
+        "sum_abs": 1.2
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Pass Yards": {
+      "graded_props": 2,
+      "current": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "hit_rate_delta_pct_points": -50.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 2,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 100.0,
+        "shadow_hit_rate_pct": 50.0
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 41.65,
+        "shadow": 61.967,
+        "delta": 20.317,
+        "sum_abs_current": 83.3,
+        "sum_abs_shadow": 123.934
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 61.967,
+        "sum_abs": 123.934
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Pass+Rush Yds": {
+      "graded_props": 2,
+      "current": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 50.0,
+        "shadow_hit_rate_pct": 50.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 62.0,
+        "shadow": 87.8105,
+        "delta": 25.8105,
+        "sum_abs_current": 124.0,
+        "sum_abs_shadow": 175.621
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 87.8105,
+        "sum_abs": 175.621
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Rec Targets": {
+      "graded_props": 12,
+      "current": {
+        "hits": 10,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.909091,
+        "hit_rate_pct": 90.9
+      },
+      "shadow": {
+        "hits": 9,
+        "misses": 2,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.818182,
+        "hit_rate_pct": 81.8
+      },
+      "hit_rate_delta_pct_points": -9.1,
+      "paired": {
+        "n": 11,
+        "current_hits": 10,
+        "shadow_hits": 9,
+        "current_hit_rate_pct": 90.9,
+        "shadow_hit_rate_pct": 81.8
+      },
+      "current_edge": {
+        "hits": 10,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.909091,
+        "hit_rate_pct": 90.9
+      },
+      "mae": {
+        "n": 12,
+        "current": 2.625,
+        "shadow": 2.6455,
+        "delta": 0.0205,
+        "sum_abs_current": 31.5,
+        "sum_abs_shadow": 31.746
+      },
+      "mae_shadow_all": {
+        "n": 12,
+        "shadow": 2.6455,
+        "sum_abs": 31.746
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 3,
+          "misses": 0,
+          "pushes": 1,
+          "dnps": 1,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 3,
+          "misses": 0,
+          "pushes": 1,
+          "dnps": 1,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    },
+    "Receiving Yards": {
+      "graded_props": 16,
+      "current": {
+        "hits": 8,
+        "misses": 8,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 9,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5625,
+        "hit_rate_pct": 56.2
+      },
+      "hit_rate_delta_pct_points": 6.2,
+      "paired": {
+        "n": 16,
+        "current_hits": 8,
+        "shadow_hits": 9,
+        "current_hit_rate_pct": 50.0,
+        "shadow_hit_rate_pct": 56.2
+      },
+      "current_edge": {
+        "hits": 8,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 1,
+        "hit_rate": 0.533333,
+        "hit_rate_pct": 53.3
+      },
+      "mae": {
+        "n": 15,
+        "current": 27.0467,
+        "shadow": 25.4568,
+        "delta": -1.5899,
+        "sum_abs_current": 405.7,
+        "sum_abs_shadow": 381.852
+      },
+      "mae_shadow_all": {
+        "n": 15,
+        "shadow": 25.4568,
+        "sum_abs": 381.852
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 1,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Receptions": {
+      "graded_props": 10,
+      "current": {
+        "hits": 9,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.9,
+        "hit_rate_pct": 90.0
+      },
+      "shadow": {
+        "hits": 8,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "hit_rate_delta_pct_points": -10.0,
+      "paired": {
+        "n": 10,
+        "current_hits": 9,
+        "shadow_hits": 8,
+        "current_hit_rate_pct": 90.0,
+        "shadow_hit_rate_pct": 80.0
+      },
+      "current_edge": {
+        "hits": 9,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 1,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.9,
+        "hit_rate_pct": 90.0
+      },
+      "mae": {
+        "n": 10,
+        "current": 2.03,
+        "shadow": 2.1374,
+        "delta": 0.1074,
+        "sum_abs_current": 20.3,
+        "sum_abs_shadow": 21.374
+      },
+      "mae_shadow_all": {
+        "n": 10,
+        "shadow": 2.1374,
+        "sum_abs": 21.374
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 4,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 4,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    },
+    "Rush Attempts": {
+      "graded_props": 6,
+      "current": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 6,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 33.3,
+        "shadow_hit_rate_pct": 33.3
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "mae": {
+        "n": 6,
+        "current": 3.3667,
+        "shadow": 3.3667,
+        "delta": 0.0,
+        "sum_abs_current": 20.2,
+        "sum_abs_shadow": 20.2
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 3.3667,
+        "sum_abs": 20.2
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Rush Yards": {
+      "graded_props": 8,
+      "current": {
+        "hits": 2,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.375,
+        "hit_rate_pct": 37.5
+      },
+      "hit_rate_delta_pct_points": 12.5,
+      "paired": {
+        "n": 8,
+        "current_hits": 2,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 25.0,
+        "shadow_hit_rate_pct": 37.5
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "mae": {
+        "n": 8,
+        "current": 22.0625,
+        "shadow": 23.8236,
+        "delta": 1.7611,
+        "sum_abs_current": 176.5,
+        "sum_abs_shadow": 190.589
+      },
+      "mae_shadow_all": {
+        "n": 8,
+        "shadow": 23.8236,
+        "sum_abs": 190.589
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    },
+    "Rush+Rec Yds": {
+      "graded_props": 5,
+      "current": {
+        "hits": 4,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.6,
+        "hit_rate_pct": 60.0
+      },
+      "hit_rate_delta_pct_points": -20.0,
+      "paired": {
+        "n": 5,
+        "current_hits": 4,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 80.0,
+        "shadow_hit_rate_pct": 60.0
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "mae": {
+        "n": 5,
+        "current": 27.98,
+        "shadow": 30.8048,
+        "delta": 2.8248,
+        "sum_abs_current": 139.9,
+        "sum_abs_shadow": 154.024
+      },
+      "mae_shadow_all": {
+        "n": 5,
+        "shadow": 30.8048,
+        "sum_abs": 154.024
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    }
+  },
+  "props": [
+    {"player":"Blake Corum","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":2.5,"actual":53.0,"result":"OVER","current_projection":5.4,"current_side":"OVER","current_result":"HIT","published_projection":4.6,"published_side":"OVER","published_result":"HIT","shadow_projection":5.993,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":47.6,"abs_err_shadow":47.007},
+    {"player":"Blake Corum","team":"LA","stat":"Rush Attempts","odds_type":"standard","line":7.5,"actual":5.0,"result":"UNDER","current_projection":8.8,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":8.8,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.8,"abs_err_shadow":3.8},
+    {"player":"Blake Corum","team":"LA","stat":"Rush Yards","odds_type":"standard","line":33.5,"actual":19.0,"result":"UNDER","current_projection":44.0,"current_side":"OVER","current_result":"MISS","published_projection":40.7,"published_side":"OVER","published_result":"MISS","shadow_projection":40.658,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":25.0,"abs_err_shadow":21.658},
+    {"player":"Blake Corum","team":"LA","stat":"Rush+Rec Yds","odds_type":"standard","line":39.5,"actual":72.0,"result":"OVER","current_projection":49.4,"current_side":"OVER","current_result":"HIT","published_projection":46.7,"published_side":"OVER","published_result":"HIT","shadow_projection":46.687,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":22.6,"abs_err_shadow":25.313},
+    {"player":"Colby Parkinson","team":"LA","stat":"Rec Targets","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":2.9,"current_side":"OVER","current_result":"MISS","published_projection":2.8,"published_side":"OVER","published_result":"MISS","shadow_projection":2.848,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.9,"abs_err_shadow":0.848},
+    {"player":"Colby Parkinson","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":17.5,"actual":3.0,"result":"UNDER","current_projection":17.8,"current_side":"OVER","current_result":"MISS","published_projection":20.4,"published_side":"OVER","published_result":"MISS","shadow_projection":23.546,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":14.8,"abs_err_shadow":20.546},
+    {"player":"Colby Parkinson","team":"LA","stat":"Receptions","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":1.9,"current_side":"UNDER","current_result":"HIT","published_projection":1.9,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.871,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.9,"abs_err_shadow":0.871},
+    {"player":"Dalton Kincaid","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":6.0,"actual":2.0,"result":"UNDER","current_projection":4.2,"current_side":"UNDER","current_result":"HIT","published_projection":4.0,"published_side":"UNDER","published_result":"HIT","shadow_projection":3.951,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.2,"abs_err_shadow":1.951},
+    {"player":"Dalton Kincaid","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":55.5,"actual":7.0,"result":"UNDER","current_projection":48.5,"current_side":"UNDER","current_result":"HIT","published_projection":43.4,"published_side":"UNDER","published_result":"HIT","shadow_projection":44.454,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":41.5,"abs_err_shadow":37.454},
+    {"player":"Dalton Kincaid","team":"BUF","stat":"Receptions","odds_type":"standard","line":4.5,"actual":1.0,"result":"UNDER","current_projection":3.3,"current_side":"UNDER","current_result":"HIT","published_projection":3.0,"published_side":"UNDER","published_result":"HIT","shadow_projection":3.021,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.3,"abs_err_shadow":2.021},
+    {"player":"Davante Adams","team":"LA","stat":"Rec Targets","odds_type":"standard","line":7.0,"actual":7.0,"result":"PUSH","current_projection":9.4,"current_side":"OVER","current_result":"PUSH","published_projection":8.4,"published_side":"OVER","published_result":"PUSH","shadow_projection":8.361,"shadow_side":"OVER","shadow_result":"PUSH","shadow_source":"candidate","p_over":null,"current_edge_result":"PUSH","top_current":true,"top_shadow":true,"abs_err_current":2.4,"abs_err_shadow":1.361},
+    {"player":"Davante Adams","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":63.5,"actual":51.0,"result":"UNDER","current_projection":93.7,"current_side":"OVER","current_result":"MISS","published_projection":68.6,"published_side":"OVER","published_result":"MISS","shadow_projection":70.142,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":42.7,"abs_err_shadow":19.142},
+    {"player":"Davante Adams","team":"LA","stat":"Receptions","odds_type":"standard","line":4.0,"actual":5.0,"result":"OVER","current_projection":5.4,"current_side":"OVER","current_result":"HIT","published_projection":4.8,"published_side":"OVER","published_result":"HIT","shadow_projection":4.746,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":0.4,"abs_err_shadow":0.254},
+    {"player":"Davis Allen","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":5.5,"actual":24.0,"result":"OVER","current_projection":11.2,"current_side":"OVER","current_result":"HIT","published_projection":11.7,"published_side":"OVER","published_result":"HIT","shadow_projection":11.655,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":12.8,"abs_err_shadow":12.345},
+    {"player":"Dawson Knox","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":2.0,"actual":3.0,"result":"OVER","current_projection":2.3,"current_side":"OVER","current_result":"HIT","published_projection":2.3,"published_side":"OVER","published_result":"HIT","shadow_projection":2.339,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.7,"abs_err_shadow":0.661},
+    {"player":"Dawson Knox","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":11.5,"actual":6.0,"result":"UNDER","current_projection":16.3,"current_side":"OVER","current_result":"MISS","published_projection":18.3,"published_side":"OVER","published_result":"MISS","shadow_projection":17.212,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":10.3,"abs_err_shadow":11.212},
+    {"player":"Greg Dortch","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":2.5,"actual":0.0,"result":"UNDER","current_projection":7.2,"current_side":"OVER","current_result":"MISS","published_projection":9.8,"published_side":"OVER","published_result":"MISS","shadow_projection":9.831,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":7.2,"abs_err_shadow":9.831},
+    {"player":"James Cook III","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":2.5,"actual":1.0,"result":"UNDER","current_projection":2.2,"current_side":"UNDER","current_result":"HIT","published_projection":2.2,"published_side":"UNDER","published_result":"HIT","shadow_projection":2.255,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.2,"abs_err_shadow":1.255},
+    {"player":"James Cook III","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":11.5,"actual":7.0,"result":"UNDER","current_projection":8.0,"current_side":"UNDER","current_result":"HIT","published_projection":9.9,"published_side":"UNDER","published_result":"HIT","shadow_projection":10.285,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.0,"abs_err_shadow":3.285},
+    {"player":"James Cook III","team":"BUF","stat":"Receptions","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.3,"current_side":"UNDER","current_result":"HIT","published_projection":1.4,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.378,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.3,"abs_err_shadow":0.378},
+    {"player":"James Cook III","team":"BUF","stat":"Rush Attempts","odds_type":"standard","line":16.5,"actual":25.0,"result":"OVER","current_projection":18.1,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":18.1,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":6.9,"abs_err_shadow":6.9},
+    {"player":"James Cook III","team":"BUF","stat":"Rush Yards","odds_type":"standard","line":77.5,"actual":111.0,"result":"OVER","current_projection":108.4,"current_side":"OVER","current_result":"HIT","published_projection":91.6,"published_side":"OVER","published_result":"HIT","shadow_projection":91.592,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.6,"abs_err_shadow":19.408},
+    {"player":"James Cook III","team":"BUF","stat":"Rush+Rec Yds","odds_type":"standard","line":92.5,"actual":118.0,"result":"OVER","current_projection":116.3,"current_side":"OVER","current_result":"HIT","published_projection":104.7,"published_side":"OVER","published_result":"HIT","shadow_projection":104.669,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":1.7,"abs_err_shadow":13.331},
+    {"player":"Jordan Whittington","team":"LA","stat":"Rec Targets","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.2,"current_side":"UNDER","current_result":"HIT","published_projection":1.4,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.407,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.2,"abs_err_shadow":1.407},
+    {"player":"Jordan Whittington","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":5.5,"actual":0.0,"result":"UNDER","current_projection":5.8,"current_side":"OVER","current_result":"MISS","published_projection":6.9,"published_side":"OVER","published_result":"MISS","shadow_projection":7.907,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.8,"abs_err_shadow":7.907},
+    {"player":"Josh Allen","team":"BUF","stat":"Pass Attempts","odds_type":"standard","line":33.0,"actual":19.0,"result":"UNDER","current_projection":29.1,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":29.1,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":10.1,"abs_err_shadow":10.1},
+    {"player":"Josh Allen","team":"BUF","stat":"Pass Completions","odds_type":"standard","line":21.0,"actual":12.0,"result":"UNDER","current_projection":19.4,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":19.4,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":7.4,"abs_err_shadow":7.4},
+    {"player":"Josh Allen","team":"BUF","stat":"Pass TDs","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.4,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.4,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.4,"abs_err_shadow":0.4},
+    {"player":"Josh Allen","team":"BUF","stat":"Pass Yards","odds_type":"standard","line":244.5,"actual":210.0,"result":"UNDER","current_projection":231.2,"current_side":"UNDER","current_result":"HIT","published_projection":225.9,"published_side":"UNDER","published_result":"HIT","shadow_projection":225.923,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":21.2,"abs_err_shadow":15.923},
+    {"player":"Josh Allen","team":"BUF","stat":"Pass+Rush Yds","odds_type":"standard","line":287.5,"actual":331.0,"result":"OVER","current_projection":264.1,"current_side":"UNDER","current_result":"MISS","published_projection":252.5,"published_side":"UNDER","published_result":"MISS","shadow_projection":252.429,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":66.9,"abs_err_shadow":78.571},
+    {"player":"Josh Allen","team":"BUF","stat":"Rush Attempts","odds_type":"standard","line":7.5,"actual":10.0,"result":"OVER","current_projection":8.3,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":8.3,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.7,"abs_err_shadow":1.7},
+    {"player":"Josh Allen","team":"BUF","stat":"Rush Yards","odds_type":"standard","line":36.5,"actual":121.0,"result":"OVER","current_projection":33.0,"current_side":"UNDER","current_result":"MISS","published_projection":31.9,"published_side":"UNDER","published_result":"MISS","shadow_projection":31.958,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":88.0,"abs_err_shadow":89.042},
+    {"player":"Joshua Palmer","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":2.5,"actual":null,"result":"DNP","current_projection":null,"current_side":"OVER","current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":null,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Joshua Palmer","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":21.5,"actual":null,"result":"DNP","current_projection":null,"current_side":"OVER","current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":null,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Joshua Palmer","team":"BUF","stat":"Receptions","odds_type":"standard","line":1.5,"actual":null,"result":"DNP","current_projection":null,"current_side":"OVER","current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":null,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Keon Coleman","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":5.0,"actual":2.0,"result":"UNDER","current_projection":4.6,"current_side":"UNDER","current_result":"HIT","published_projection":4.3,"published_side":"UNDER","published_result":"HIT","shadow_projection":4.29,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.6,"abs_err_shadow":2.29},
+    {"player":"Keon Coleman","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":39.5,"actual":7.0,"result":"UNDER","current_projection":54.3,"current_side":"OVER","current_result":"MISS","published_projection":39.0,"published_side":"UNDER","published_result":"HIT","shadow_projection":38.57,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":47.3,"abs_err_shadow":31.57},
+    {"player":"Keon Coleman","team":"BUF","stat":"Receptions","odds_type":"standard","line":3.0,"actual":1.0,"result":"UNDER","current_projection":3.6,"current_side":"OVER","current_result":"MISS","published_projection":3.3,"published_side":"OVER","published_result":"MISS","shadow_projection":3.268,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.6,"abs_err_shadow":2.268},
+    {"player":"Khalil Shakir","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":6.5,"actual":3.0,"result":"UNDER","current_projection":5.6,"current_side":"UNDER","current_result":"HIT","published_projection":5.2,"published_side":"UNDER","published_result":"HIT","shadow_projection":5.138,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":2.6,"abs_err_shadow":2.138},
+    {"player":"Khalil Shakir","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":46.5,"actual":80.0,"result":"OVER","current_projection":41.2,"current_side":"UNDER","current_result":"MISS","published_projection":36.3,"published_side":"UNDER","published_result":"MISS","shadow_projection":40.569,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":38.8,"abs_err_shadow":39.431},
+    {"player":"Khalil Shakir","team":"BUF","stat":"Receptions","odds_type":"standard","line":4.5,"actual":3.0,"result":"UNDER","current_projection":3.8,"current_side":"UNDER","current_result":"HIT","published_projection":3.5,"published_side":"UNDER","published_result":"HIT","shadow_projection":3.432,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":0.8,"abs_err_shadow":0.432},
+    {"player":"Konata Mumpfield","team":"LA","stat":"Rec Targets","odds_type":"standard","line":1.5,"actual":null,"result":"DNP","current_projection":3.7,"current_side":"OVER","current_result":"DNP","published_projection":3.5,"published_side":"OVER","published_result":"DNP","shadow_projection":3.527,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"candidate","p_over":null,"current_edge_result":"DNP","top_current":true,"top_shadow":true,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Konata Mumpfield","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":6.5,"actual":null,"result":"DNP","current_projection":26.9,"current_side":"OVER","current_result":"DNP","published_projection":18.9,"published_side":"OVER","published_result":"DNP","shadow_projection":18.221,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"candidate","p_over":null,"current_edge_result":"DNP","top_current":true,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Kyren Williams","team":"LA","stat":"Rec Targets","odds_type":"standard","line":4.0,"actual":8.0,"result":"OVER","current_projection":5.7,"current_side":"OVER","current_result":"HIT","published_projection":5.2,"published_side":"OVER","published_result":"HIT","shadow_projection":5.223,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.3,"abs_err_shadow":2.777},
+    {"player":"Kyren Williams","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":22.5,"actual":27.0,"result":"OVER","current_projection":37.3,"current_side":"OVER","current_result":"HIT","published_projection":26.3,"published_side":"OVER","published_result":"HIT","shadow_projection":28.374,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":10.3,"abs_err_shadow":1.374},
+    {"player":"Kyren Williams","team":"LA","stat":"Receptions","odds_type":"standard","line":3.0,"actual":6.0,"result":"OVER","current_projection":4.6,"current_side":"OVER","current_result":"HIT","published_projection":4.1,"published_side":"OVER","published_result":"HIT","shadow_projection":4.089,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":1.4,"abs_err_shadow":1.911},
+    {"player":"Kyren Williams","team":"LA","stat":"Rush Attempts","odds_type":"standard","line":14.5,"actual":16.0,"result":"OVER","current_projection":14.4,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":14.4,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.6,"abs_err_shadow":1.6},
+    {"player":"Kyren Williams","team":"LA","stat":"Rush Yards","odds_type":"standard","line":69.5,"actual":49.0,"result":"UNDER","current_projection":79.8,"current_side":"OVER","current_result":"MISS","published_projection":69.0,"published_side":"UNDER","published_result":"HIT","shadow_projection":68.972,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":30.8,"abs_err_shadow":19.972},
+    {"player":"Kyren Williams","team":"LA","stat":"Rush+Rec Yds","odds_type":"standard","line":98.5,"actual":76.0,"result":"UNDER","current_projection":117.1,"current_side":"OVER","current_result":"MISS","published_projection":105.4,"published_side":"OVER","published_result":"MISS","shadow_projection":105.362,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":41.1,"abs_err_shadow":29.362},
+    {"player":"Matthew Stafford","team":"LA","stat":"Pass Attempts","odds_type":"standard","line":37.0,"actual":54.0,"result":"OVER","current_projection":41.9,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":41.9,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":12.1,"abs_err_shadow":12.1},
+    {"player":"Matthew Stafford","team":"LA","stat":"Pass Completions","odds_type":"standard","line":24.0,"actual":40.0,"result":"OVER","current_projection":25.9,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":25.9,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":14.1,"abs_err_shadow":14.1},
+    {"player":"Matthew Stafford","team":"LA","stat":"Pass TDs","odds_type":"standard","line":2.5,"actual":3.0,"result":"OVER","current_projection":2.2,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.2,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.8,"abs_err_shadow":0.8},
+    {"player":"Matthew Stafford","team":"LA","stat":"Pass Yards","odds_type":"standard","line":281.5,"actual":383.0,"result":"OVER","current_projection":320.9,"current_side":"OVER","current_result":"HIT","published_projection":275.0,"published_side":"UNDER","published_result":"MISS","shadow_projection":274.989,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":62.1,"abs_err_shadow":108.011},
+    {"player":"Matthew Stafford","team":"LA","stat":"Pass+Rush Yds","odds_type":"standard","line":285.5,"actual":383.0,"result":"OVER","current_projection":325.9,"current_side":"OVER","current_result":"HIT","published_projection":286.0,"published_side":"OVER","published_result":"HIT","shadow_projection":285.95,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":57.1,"abs_err_shadow":97.05},
+    {"player":"Matthew Stafford","team":"LA","stat":"Rush Attempts","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":2.3,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.3,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.3,"abs_err_shadow":2.3},
+    {"player":"Matthew Stafford","team":"LA","stat":"Rush Yards","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":5.0,"current_side":"OVER","current_result":"MISS","published_projection":9.8,"published_side":"OVER","published_result":"MISS","shadow_projection":9.812,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.0,"abs_err_shadow":9.812},
+    {"player":"Puka Nacua","team":"LA","stat":"Rec Targets","odds_type":"standard","line":10.0,"actual":24.0,"result":"OVER","current_projection":10.6,"current_side":"OVER","current_result":"HIT","published_projection":9.4,"published_side":"UNDER","published_result":"MISS","shadow_projection":9.379,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":13.4,"abs_err_shadow":14.621},
+    {"player":"Puka Nacua","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":94.5,"actual":138.0,"result":"OVER","current_projection":101.7,"current_side":"OVER","current_result":"HIT","published_projection":90.5,"published_side":"UNDER","published_result":"MISS","shadow_projection":98.081,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":36.3,"abs_err_shadow":39.919},
+    {"player":"Puka Nacua","team":"LA","stat":"Receptions","odds_type":"standard","line":7.0,"actual":17.0,"result":"OVER","current_projection":7.8,"current_side":"OVER","current_result":"HIT","published_projection":6.8,"published_side":"UNDER","published_result":"MISS","shadow_projection":6.718,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":9.2,"abs_err_shadow":10.282},
+    {"player":"Puka Nacua","team":"LA","stat":"Rush Yards","odds_type":"standard","line":1.5,"actual":9.0,"result":"OVER","current_projection":6.2,"current_side":"OVER","current_result":"HIT","published_projection":10.8,"published_side":"OVER","published_result":"HIT","shadow_projection":10.762,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.8,"abs_err_shadow":1.762},
+    {"player":"Puka Nacua","team":"LA","stat":"Rush+Rec Yds","odds_type":"standard","line":101.5,"actual":147.0,"result":"OVER","current_projection":107.9,"current_side":"OVER","current_result":"HIT","published_projection":97.4,"published_side":"UNDER","published_result":"MISS","shadow_projection":97.389,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":39.1,"abs_err_shadow":49.611},
+    {"player":"Ray Davis","team":"BUF","stat":"Rush Yards","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":11.8,"current_side":"OVER","current_result":"MISS","published_projection":15.2,"published_side":"OVER","published_result":"MISS","shadow_projection":15.191,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":9.8,"abs_err_shadow":13.191},
+    {"player":"Skyler Bell","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":10.5,"actual":0.0,"result":"UNDER","current_projection":null,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":null,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"NO_PICK","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Ty Johnson","team":"BUF","stat":"Rec Targets","odds_type":"standard","line":2.5,"actual":4.0,"result":"OVER","current_projection":2.6,"current_side":"OVER","current_result":"HIT","published_projection":2.6,"published_side":"OVER","published_result":"HIT","shadow_projection":2.594,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.4,"abs_err_shadow":1.406},
+    {"player":"Ty Johnson","team":"BUF","stat":"Receiving Yards","odds_type":"standard","line":14.5,"actual":72.0,"result":"OVER","current_projection":24.1,"current_side":"OVER","current_result":"HIT","published_projection":20.2,"published_side":"OVER","published_result":"HIT","shadow_projection":20.187,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":47.9,"abs_err_shadow":51.813},
+    {"player":"Ty Johnson","team":"BUF","stat":"Receptions","odds_type":"standard","line":2.0,"actual":4.0,"result":"OVER","current_projection":2.4,"current_side":"OVER","current_result":"HIT","published_projection":2.3,"published_side":"OVER","published_result":"HIT","shadow_projection":2.282,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.6,"abs_err_shadow":1.718},
+    {"player":"Ty Johnson","team":"BUF","stat":"Rush Attempts","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":3.9,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.9,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":3.9,"abs_err_shadow":3.9},
+    {"player":"Ty Johnson","team":"BUF","stat":"Rush Yards","odds_type":"standard","line":4.5,"actual":0.0,"result":"UNDER","current_projection":12.5,"current_side":"OVER","current_result":"MISS","published_projection":15.7,"published_side":"OVER","published_result":"MISS","shadow_projection":15.744,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":12.5,"abs_err_shadow":15.744},
+    {"player":"Ty Johnson","team":"BUF","stat":"Rush+Rec Yds","odds_type":"standard","line":21.5,"actual":72.0,"result":"OVER","current_projection":36.6,"current_side":"OVER","current_result":"HIT","published_projection":35.6,"published_side":"OVER","published_result":"HIT","shadow_projection":35.593,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":35.4,"abs_err_shadow":36.407},
+    {"player":"Tyler Higbee","team":"LA","stat":"Rec Targets","odds_type":"standard","line":4.0,"actual":6.0,"result":"OVER","current_projection":5.4,"current_side":"OVER","current_result":"HIT","published_projection":5.0,"published_side":"OVER","published_result":"HIT","shadow_projection":4.969,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":0.6,"abs_err_shadow":1.031},
+    {"player":"Tyler Higbee","team":"LA","stat":"Receiving Yards","odds_type":"standard","line":24.5,"actual":83.0,"result":"OVER","current_projection":41.6,"current_side":"OVER","current_result":"HIT","published_projection":33.2,"published_side":"OVER","published_result":"HIT","shadow_projection":33.984,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":41.4,"abs_err_shadow":49.016},
+    {"player":"Tyler Higbee","team":"LA","stat":"Receptions","odds_type":"standard","line":2.5,"actual":5.0,"result":"OVER","current_projection":4.2,"current_side":"OVER","current_result":"HIT","published_projection":3.8,"published_side":"OVER","published_result":"HIT","shadow_projection":3.761,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.8,"abs_err_shadow":1.239}
+  ]
+}
