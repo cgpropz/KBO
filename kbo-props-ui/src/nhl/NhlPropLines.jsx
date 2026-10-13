@@ -13,7 +13,6 @@ import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
-const SEASON = '2026-27'
 
 function formatValue(value) {
   const number = Number(value)
@@ -192,11 +191,6 @@ export default function NhlPropLines({ onSelectPlayer }) {
           </select>
         </div>
       </div>
-      <p className="nhl-note">
-        CG Score is the projection divided by the line, times 50. The Season pill is {SEASON} only.
-        H2H uses the same games as the player chart, which can include 2025-26. Probable goalies stay off the top of the list until they are confirmed.
-        Rank 1 is the toughest matchup for the over.
-      </p>
       {error && <div className="nfl-notice">Unable to load the NHL board: {error}</div>}
       {!error && !loaded && (
         <div role="status" aria-label="Loading NHL prop lines">
