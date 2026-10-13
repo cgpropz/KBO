@@ -208,6 +208,18 @@ test('two customers on one email union a legacy sport with all-access', async ()
   assert.equal(await computeStripeTier(stripe, 'marianogarcia2300@icloud.com'), 'combined')
 })
 
+test('pause_collection keeps access while the subscription stays active', async () => {
+  const paused = {
+    ...sub(WEEKLY),
+    pause_collection: { behavior: 'void', resumes_at: 1_900_000_000 },
+  }
+  const stripe = mockStripe({
+    listByEmail: { 'fan@example.com': [customer('cus_pause', 'fan@example.com')] },
+    subsByCustomer: { cus_pause: [paused] },
+  })
+  assert.equal(await computeStripeTier(stripe, 'fan@example.com'), 'combined')
+})
+
 test('canceled subscriptions do not grant access', async () => {
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_old', 'fan@example.com')] },

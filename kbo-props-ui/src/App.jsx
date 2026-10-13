@@ -6,6 +6,7 @@ import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
 import { sportFromSearch } from './appSport'
+import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
 import './FreeFunnel.css'
 import './App.css'
@@ -44,10 +45,15 @@ function App() {
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
+    if (pauseTokenFromSearch(window.location.search)) return 'pricing';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
   });
   // Pre-login flow: marketing page first, then the login/signup form.
-  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'auth'
+  // A pause email link must be opened by the matching signed-in member.
+  const [publicView, setPublicView] = useState(() => {
+    if (typeof window === 'undefined') return 'landing';
+    return pauseTokenFromSearch(window.location.search) ? 'auth' : 'landing';
+  }); // 'landing' | 'auth'
   const [authMode, setAuthMode] = useState('login');
   const [sport, setSportState] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -115,7 +121,13 @@ function App() {
     return (
       <>
         <Suspense fallback={<RouteFallback />}>
-          <AuthPage initialMode={authMode} onBack={() => setPublicView('landing')} />
+          <AuthPage
+            initialMode={authMode}
+            onBack={() => setPublicView('landing')}
+            notice={pauseTokenFromSearch(window.location.search)
+              ? 'Sign in with the membership this pause link was sent to. It only pauses that member.'
+              : ''}
+          />
         </Suspense>
         <SiteFooter />
         {checkoutSuccess}

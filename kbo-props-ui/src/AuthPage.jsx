@@ -3,7 +3,7 @@ import { loadSupabase } from './supabaseClient';
 import { getAttribution } from './tracking';
 import './AuthPage.css';
 
-export default function AuthPage({ initialMode = 'login', onBack } = {}) {
+export default function AuthPage({ initialMode = 'login', onBack, notice = '' } = {}) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,6 +66,8 @@ export default function AuthPage({ initialMode = 'login', onBack } = {}) {
           <span className="auth-logo-k">cgpropz</span>
         </button>
         <p className="auth-tagline">Hand-crafted props for ⚾ KBO, 🏀 WNBA & 🏈 NFL</p>
+
+        {notice ? <p className="auth-notice">{notice}</p> : null}
 
         <div className="auth-tabs">
           <button
