@@ -42,7 +42,7 @@ OPTIONAL_TABLES = {
     "board_status",
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
-    "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
+    "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g", "nhl_ags",
     # Correlation tables are created by sql/correlations.sql. A missing table
     # or a missing file must not fail the rest of the publish.
     "correlations_kbo", "correlations_wnba", "correlations_nfl",
@@ -350,6 +350,7 @@ TABLES = {
     "nhl/dvp_f.json": "nhl_dvp_f",
     "nhl/dvp_d.json": "nhl_dvp_d",
     "nhl/dvp_g.json": "nhl_dvp_g",
+    "nhl/ags.json": "nhl_ags",
     # Paid slip-builder pairs. Files live in public/data, not the sport folder,
     # so a sport prefix has to pull its file in explicitly.
     "correlations_kbo.json": "correlations_kbo",

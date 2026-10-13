@@ -55,6 +55,13 @@ jobs:
       - name: Build the NHL board and lineups
         run: python -m nhl.build_board --root /tmp/moneypuck
 
+      # Admin preview only. A failure here must not block the props board.
+      # The pre-puck warmup is a separate manual workflow (nhl-ags-recheck.yml).
+      # It is not on this schedule.
+      - name: Build the NHL anytime goal scorer preview
+        continue-on-error: true
+        run: python -m nhl.ags --root /tmp/moneypuck
+
       - name: Match PrizePicks lines to Unabated
         continue-on-error: true
         run: python -m nhl.sharp_odds

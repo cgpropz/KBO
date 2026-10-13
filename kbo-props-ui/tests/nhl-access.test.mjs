@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import {
   nhlAccessDecision,
+  nhlAgsAccessDecision,
   shapeForTier,
   sportAccess as serverAccess,
 } from '../api/_dataAccess.js'
@@ -14,7 +15,7 @@ import {
   TIER_BY_PRICE,
   tierForPrice,
 } from '../api/_stripeTier.js'
-import { devTierOverride, landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
+import { agsDevBypass, canSeeAgs, devTierOverride, landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
 
 const ALL_ACCESS_PRICE_IDS = {
   'price_1TtFErPwL0k9PEMvIrEJajK1': 'weekly',
@@ -158,6 +159,15 @@ function mockClient({ flag = false } = {}) {
           if (table === 'app_flags') {
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
+          if (table === 'nhl_ags') {
+            return Promise.resolve({
+              data: {
+                data: { records: [{ player: 'Secret Skater', score: 41.2 }] },
+                updated_at: '2026-10-12T00:00:00Z',
+              },
+              error: null,
+            })
+          }
           if (table === 'nhl_projections' || table === 'nhl_lineups') {
             return Promise.resolve({
               data: { data: PROJECTION_ROWS, updated_at: '2026-10-09T00:00:00Z' },
@@ -284,4 +294,60 @@ test('NHL defense vs position follows the same All-Access gate', async () => {
     client,
   )
   assert.equal(missing.statusCode, 404)
+})
+
+test('the dev AGS query cannot open a production build', () => {
+  assert.equal(agsDevBypass(false, '?ags=1'), false)
+  assert.equal(agsDevBypass(true, '?ags=1'), true)
+  assert.equal(agsDevBypass(true, ''), false)
+  assert.equal(canSeeAgs({ email: 'cgpropz@gmail.com' }, false, ''), true)
+  assert.equal(canSeeAgs({ email: 'fan@example.com' }, false, ''), false)
+  assert.equal(canSeeAgs({ email: 'fan@example.com' }, true, '?ags=1'), true)
+  assert.equal(canSeeAgs({ email: 'member@example.com' }, false, '?ags=1'), false)
+})
+
+test('anytime goal scorer is admin-only and has no free preview', async () => {
+  assert.equal(nhlAgsAccessDecision({ emailResolved: true, email: 'cgpropz@gmail.com' }), 'full')
+  assert.equal(nhlAgsAccessDecision({ emailResolved: true, email: 'fan@example.com' }), 'deny')
+  assert.equal(nhlAgsAccessDecision({ emailResolved: false, email: 'cgpropz@gmail.com' }), 'deny')
+
+  const payload = { records: [{ player: 'Secret Skater', score: 41.2 }, { player: 'Other', score: 10 }] }
+  for (const tier of ['free', 'discord', 'combined', 'weekly', 'monthly', 'owner']) {
+    const shaped = shapeForTier('nhl_ags', payload, tier)
+    assert.equal(shaped.preview, true, tier)
+    assert.deepEqual(shaped.data.records, [], tier)
+    assert.equal(shaped.lockedCount, 2, tier)
+    assert.equal(JSON.stringify(shaped).includes('Secret Skater'), false, tier)
+  }
+
+  const client = mockClient()
+  const admin = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_ags' }, headers: { authorization: 'Bearer tok-owner' } },
+    admin,
+    client,
+  )
+  assert.equal(admin.statusCode, 200)
+  assert.equal(admin.body.preview, false)
+  assert.equal(admin.body.data.records[0].player, 'Secret Skater')
+
+  for (const token of ['tok-fan', 'tok-member', 'tok-weekly', 'tok-discord', 'tok-nope']) {
+    const denied = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_ags' }, headers: { authorization: `Bearer ${token}` } },
+      denied,
+      client,
+    )
+    assert.equal(denied.statusCode, 403, token)
+    assert.equal(JSON.stringify(denied.body).includes('Secret Skater'), false, token)
+  }
+
+  const anon = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nhl_ags' }, headers: {} },
+    anon,
+    client,
+  )
+  assert.equal(anon.statusCode, 403)
+  assert.equal(JSON.stringify(anon.body).includes('Secret Skater'), false)
 })

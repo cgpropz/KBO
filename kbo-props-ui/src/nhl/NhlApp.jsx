@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
-import { sportAccess } from '../entitlements'
+import { canSeeAgs, sportAccess } from '../entitlements'
 import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import { useNhlOpen } from '../useNhlOpen'
@@ -10,6 +10,7 @@ import { GuideNavLinks } from '../GuideLinks'
 import '../nfl/nfl.css'
 import './nhl.css'
 
+const NhlAgs = lazy(() => import('./NhlAgs'))
 const NhlDvp = lazy(() => import('./NhlDvp'))
 const NhlLineups = lazy(() => import('./NhlLineups'))
 const NhlPlayerPage = lazy(() => import('./NhlPlayerPage'))
@@ -29,11 +30,12 @@ const NAV = [
 const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
 export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
-  const { tier } = useAuth()
+  const { user, tier } = useAuth()
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
-  const [view, setView] = useState('dashboard')
+  const showAgs = canSeeAgs(user, import.meta.env.DEV, typeof window === 'undefined' ? '' : window.location.search)
+  const [view, setView] = useState(() => (showAgs && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('ags') === '1' ? 'ags' : 'dashboard'))
   const [selected, setSelected] = useState(null)
 
   const openPlayer = (item) => {
@@ -43,6 +45,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
 
   let content = <NhlPropLines onSelectPlayer={openPlayer} />
   if (view === 'player') content = <NhlPlayerPage item={selected} onBack={() => setView('dashboard')} />
+  else if (view === 'ags' && showAgs) content = <NhlAgs />
   else if (view === 'projections') content = <NhlProjections onSelectPlayer={openPlayer} />
   else if (view === 'sharp') content = <NhlSharpOdds onSelectPlayer={openPlayer} />
   else if (view === 'lineups') content = <NhlLineups />
@@ -66,6 +69,9 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
             {NAV.map((item) => (
               <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
             ))}
+            {showAgs && (
+              <button data-testid="nhl-nav-ags" className={view === 'ags' ? 'active' : ''} onClick={() => setView('ags')}>AGS</button>
+            )}
             <GuideNavLinks />
           </div>
           <button className="nfl-pro-badge" onClick={onNavigatePricing}>{unlocked ? 'MANAGE' : 'UPGRADE'}</button>
@@ -73,7 +79,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
         <Suspense fallback={<RouteFallback inset />}>
-          {view === 'dashboard' ? content : (
+          {view === 'dashboard' || view === 'ags' ? content : (
             <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
           )}
         </Suspense>
