@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import { fitImage } from '../fitImage.js'
+import GameSelect from '../GameSelect.jsx'
+import { matchesGame } from '../gameFilter.js'
+import { useGameFilter } from '../useGameFilter.js'
 
 const LINE_TYPES = ['standard', 'demon', 'goblin']
 const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
@@ -48,7 +51,6 @@ export default function NbaEdge() {
   const [viewMode, setViewMode] = useState('cards')
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('All')
-  const [matchupFilter, setMatchupFilter] = useState('All')
   const [minMinutes, setMinMinutes] = useState(0)
   const [hitRateSort, setHitRateSort] = useState('score')
 
@@ -94,33 +96,8 @@ export default function NbaEdge() {
     return dates[0] || null
   }, [data])
 
-  const matchups = useMemo(() => {
-    if (!data) return []
-    const seen = new Map()
-    data.forEach((player) => {
-      const teamA = (player.team || '').toUpperCase()
-      if (!teamA) return
-      ;(player.ppAllProps || []).forEach((prop) => {
-        const teamB = (prop.opponent || '').toUpperCase()
-        if (!teamB) return
-        const [t1, t2] = [teamA, teamB].sort()
-        const key = `${t1}_${t2}`
-        if (seen.has(key)) return
-        const gameDate = prop.gameDate || ''
-        let dateLabel = ''
-        if (gameDate) {
-          dateLabel = gameDate === activeSlateDate
-            ? 'Todays slate'
-            : new Date(`${gameDate}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        }
-        seen.set(key, { label: `${t1} vs ${t2}`, dateLabel, dateStr: gameDate || '9999' })
-      })
-    })
-    return [...seen.values()].sort((a, b) => {
-      if (a.dateStr !== b.dateStr) return a.dateStr.localeCompare(b.dateStr)
-      return a.label.localeCompare(b.label)
-    })
-  }, [data, activeSlateDate])
+  const boardSource = useMemo(() => data || [], [data])
+  const { games, selected: gameId, setSelected: setGameId } = useGameFilter(boardSource)
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -132,22 +109,22 @@ export default function NbaEdge() {
       const propMatch = propType === 'All'
         ? (player.ppAllProps || []).length > 0
         : (player.ppAllProps || []).some((prop) => prop?.stat === propType)
-      let matchupMatch = true
-      if (matchupFilter !== 'All') {
-        const [t1, t2] = matchupFilter.split(' vs ')
-        const teamUp = (player.team || '').toUpperCase()
-        matchupMatch = teamUp === t1 || teamUp === t2
-      }
-      return nameMatch && posMatch && minMinutesMatch && propMatch && matchupMatch
+      return nameMatch && posMatch && minMinutesMatch && propMatch && matchesGame(player, gameId)
     })
-  }, [data, search, posFilter, matchupFilter, minMinutes, propType])
+  }, [data, search, posFilter, gameId, minMinutes, propType])
 
   const cards = useMemo(() => {
     const rows = []
     filtered.forEach((player) => {
-      const props = propType === 'All'
+      const props = (propType === 'All'
         ? (player.ppAllProps || [])
         : (player.ppAllProps || []).filter((prop) => prop.stat === propType)
+      ).filter((prop) => matchesGame({
+        team: player.team,
+        opponent: prop.opponent,
+        versus: prop.versus,
+        gameDate: prop.gameDate,
+      }, gameId))
       props.forEach((prop) => {
         rows.push({
           key: `${player.athleteId || player.name}-${prop.stat}-${prop.line}`,
@@ -181,7 +158,7 @@ export default function NbaEdge() {
       return a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat)
     })
     return rows
-  }, [filtered, propType, hitRateSort])
+  }, [filtered, propType, hitRateSort, gameId])
 
   return (
     <div className="fade-in edge-board-wrap">
@@ -224,14 +201,7 @@ export default function NbaEdge() {
           {POSITIONS.map((pos) => <option key={pos} value={pos}>{pos}</option>)}
         </select>
 
-        <select className="edge-select" aria-label="Matchup" value={matchupFilter} onChange={(event) => setMatchupFilter(event.target.value)}>
-          <option value="All">All Matchups</option>
-          {matchups.map((matchup) => (
-            <option key={matchup.label} value={matchup.label}>
-              {matchup.dateLabel ? `${matchup.dateLabel} · ${matchup.label}` : matchup.label}
-            </option>
-          ))}
-        </select>
+        <GameSelect games={games} value={gameId} onChange={setGameId} />
 
         <select className="edge-select" aria-label="Odds type" value={lineType} onChange={(event) => setLineType(event.target.value)}>
           {LINE_TYPES.map((type) => (

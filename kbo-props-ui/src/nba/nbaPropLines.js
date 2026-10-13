@@ -324,6 +324,7 @@ export function buildPropRows(projections, players) {
         position,
         imageUrl,
         opponent: prop.opponent ?? null,
+        versus: prop.versus ?? null,
         prop: prop.stat,
         line,
         projection,

@@ -11,6 +11,8 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SEASON = '2026-27'
@@ -167,10 +169,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(projections)
   const rows = useMemo(() => {
-    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
+    const filtered = boardRows.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
     return sortBoard(filtered, sortBy)
-  }, [projections, tab, sortBy])
+  }, [boardRows, tab, sortBy])
 
   return (
     <section className="nfl-lines-page">
@@ -183,6 +186,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
+          <GameSelect games={games} value={gameId} onChange={setGameId} />
           <select className="nhl-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
             <option>CG Score</option>
             <option>Hit Rate</option>
@@ -203,7 +207,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
           <BoardSkeleton />
         </div>
       )}
-      {!error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
+      {!error && loaded && !projections.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
+      {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NHL prop lines match these filters.</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table hit-rate-board">

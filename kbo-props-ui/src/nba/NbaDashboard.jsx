@@ -19,6 +19,8 @@ import {
   nbaLogoUrl,
 } from './nbaPropLines'
 import { fitImage } from '../fitImage.js'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -370,6 +372,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const totalGames = projections ? projections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0
 
   const allRows = useMemo(() => buildPropRows(projections, players), [projections, players])
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(allRows)
 
   const lineBounds = useMemo(() => {
     const lines = allRows.map((item) => item.line).filter((value) => typeof value === 'number')
@@ -378,29 +381,29 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   }, [allRows])
 
   const rows = useMemo(
-    () => filterAndSortRows(allRows, propTab, filters),
-    [allRows, propTab, filters],
+    () => filterAndSortRows(boardRows, propTab, filters),
+    [boardRows, propTab, filters],
   )
 
   const insightLimit = isPaid ? 5 : FREE_ROW_LIMIT
 
   const hotStreaks = useMemo(() => {
-    const filtered = allRows
+    const filtered = boardRows
       .filter((row) => row._hit && row._hit.total >= 5)
       .sort((a, b) => (b._hit.pct - a._hit.pct) || (b.score - a.score))
     return dedupePlayers(filtered, insightLimit)
-  }, [allRows, insightLimit])
+  }, [boardRows, insightLimit])
 
   const bestValue = useMemo(() => {
-    const filtered = allRows
+    const filtered = boardRows
       .filter((row) => row.isOver)
       .sort((a, b) => b._edgePct - a._edgePct)
     return dedupePlayers(filtered, insightLimit)
-  }, [allRows, insightLimit])
+  }, [boardRows, insightLimit])
 
   const slate = useMemo(() => {
     const seen = new Map()
-    allRows.forEach((row) => {
+    boardRows.forEach((row) => {
       const home = (row.team || '').toUpperCase()
       const away = (row.opponent || '').toUpperCase()
       if (!home || !away) return
@@ -411,13 +414,13 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
       seen.set(key, entry)
     })
     return [...seen.values()].sort((a, b) => b.count - a.count).slice(0, 8)
-  }, [allRows])
+  }, [boardRows])
 
   const avgTopScore = useMemo(() => {
-    if (!allRows.length) return null
-    const top = [...allRows].sort((a, b) => b.score - a.score).slice(0, 10)
+    if (!boardRows.length) return null
+    const top = [...boardRows].sort((a, b) => b.score - a.score).slice(0, 10)
     return top.reduce((sum, row) => sum + row.score, 0) / top.length
-  }, [allRows])
+  }, [boardRows])
 
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
@@ -450,6 +453,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
             <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="nba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+              <GameSelect games={games} value={gameId} onChange={setGameId} />
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
@@ -515,7 +519,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
       <div className="wnba-kpi-grid">
         <KpiCard label="Active Players" value={totalPlayers} sub="2025–26 roster" color="#FF6900" />
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="players with a projection" color="#3b82f6" />
-        <KpiCard label="Props on Board" value={projLoading ? '…' : allRows.length.toLocaleString()} sub="scored & rated" color="#a855f7" />
+        <KpiCard label="Props on Board" value={projLoading ? '…' : (gameId ? boardRows.length : allRows.length).toLocaleString()} sub="scored & rated" color="#a855f7" />
         <KpiCard label="Avg Top Score" value={avgTopScore != null ? avgTopScore.toFixed(1) : '…'} sub="top 10 plays" color="#22c55e" />
       </div>
 

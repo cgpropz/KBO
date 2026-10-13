@@ -15,6 +15,45 @@
 .pl-header > .sport-switcher,
 .cg-header > .sport-switcher { display: none; }
 
+.game-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  color: #8ba39c;
+  font: 800 11px/1 monospace;
+}
+.game-filter-label {
+  flex: 0 0 auto;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.game-filter select {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  height: 36px;
+  margin: 0;
+  padding: 0 32px 0 12px;
+  border: 1px solid #1a3c36;
+  border-radius: 999px;
+  color: #e8f4e6;
+  background-color: #0a1615;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237fff68' d='M1 1.2 6 6.2 11 1.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  font: 800 11px/1 monospace;
+  cursor: pointer;
+}
+.game-filter select:focus-visible {
+  outline: 2px solid #7fff68;
+  outline-offset: 2px;
+}
+
 @media (max-width: 767px) {
   html,
   body {
@@ -288,14 +327,51 @@
   }
 
   .wnba-lines-header-actions,
-  .wnba-board-header {
+  .wnba-board-header,
+  .kbo-header-actions,
+  .kbo-board-header,
+  .nfl-lines-header-actions,
+  .nfl-board-header {
     min-width: 0;
     max-width: 100%;
     flex-wrap: wrap;
   }
 
-  .wnba-lines-header-actions > span {
+  .wnba-lines-header-actions > span,
+  .kbo-header-actions > span,
+  .nfl-lines-header-actions > span {
     white-space: normal;
+    min-width: 0;
+  }
+
+  .game-filter {
+    position: relative;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .game-filter-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .game-filter select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  :is(.nfl-edge-controls, .edge-controls) .game-filter {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   :is(.kbo-app-content, .nfl-content, .wnba-content, .pl-main, .cg-main) {
