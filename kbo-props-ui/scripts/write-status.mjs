@@ -12,7 +12,7 @@
 // the deploy. In that layout the status file is public/status.json, and the
 // paid snapshots are absent (.vercelignore), so the previous clocks are kept.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BOARD_SPORTS, buildBoardStatus } from '../src/boardFreshness.js'
@@ -84,7 +84,16 @@ export function statusFromRepo({ root = defaultStatusRoot(), now = new Date() } 
 export function writeBoardStatus({ root = defaultStatusRoot(), now = new Date() } = {}) {
   const document = statusFromRepo({ root, now })
   const { statusPath } = resolveStatusCheckout(root)
-  writeFileSync(statusPath, `${JSON.stringify(document, null, 2)}\n`)
+  // The path is already relative to the checkout (public/status.json in the UI
+  // package, kbo-props-ui/public/status.json in the repo). Create the folder
+  // and swallow a write error so a missing directory cannot fail `npm run build`.
+  try {
+    mkdirSync(dirname(statusPath), { recursive: true })
+    writeFileSync(statusPath, `${JSON.stringify(document, null, 2)}\n`)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.warn(`[status] could not write ${statusPath}: ${message}`)
+  }
   return document
 }
 
