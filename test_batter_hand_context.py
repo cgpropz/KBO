@@ -2,6 +2,7 @@
 
 import json
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 import batter_hand_context as hands
@@ -15,12 +16,32 @@ class BatterHandContextTests(unittest.TestCase):
         context = hands.build_batter_hand_context(generated_at="test")
         batter = context["batters"][hands.name_key("Choi Won-jun")]
         self.assertEqual(batter["hand"], "L")
-        self.assertEqual(batter["vs_lhp"]["avg"], 0.394)
-        self.assertEqual(batter["vs_lhp"]["ab"], 175)
-        self.assertEqual(batter["vs_lhp"]["tb"], 86)
-        self.assertEqual(batter["vs_rhp"]["avg"], 0.327)
-        self.assertEqual(batter["vs_rhp"]["ab"], 398)
-        self.assertEqual(batter["vs_rhp"]["tb"], 188)
+        self.assertEqual(batter["splits_season"], datetime.now().year)
+        for side in ("vs_lhp", "vs_rhp"):
+            self._assert_official_split(batter[side])
+
+    def _assert_official_split(self, split):
+        """A real platoon line: counting stats present, average in a batter's range.
+
+        The published average moves when the split file refreshes, so this
+        checks the shape of an official split instead of one frozen decimal.
+        """
+        at_bats = split["ab"]
+        average = split["avg"]
+        total_bases = split["tb"]
+        hits = split["h"]
+        self.assertIsInstance(at_bats, int)
+        self.assertGreater(at_bats, 0)
+        self.assertIsInstance(hits, int)
+        self.assertGreaterEqual(hits, 0)
+        self.assertLessEqual(hits, at_bats)
+        self.assertIsInstance(average, float)
+        self.assertGreaterEqual(average, 0.100)
+        self.assertLessEqual(average, 0.500)
+        self.assertAlmostEqual(average, hits / at_bats, delta=0.005)
+        self.assertIsInstance(total_bases, int)
+        self.assertGreaterEqual(total_bases, hits)
+        self.assertLess(total_bases / at_bats, 1.500)
 
     def test_switch_hitters_stay_switch(self):
         context = hands.build_batter_hand_context(generated_at="test")
