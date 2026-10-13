@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
 import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
@@ -21,6 +22,20 @@ const TIER_LABELS = {
 // lifetime and free). Grandfathered all-access tiers remain cancellable.
 const CANCELLABLE_TIERS = new Set(['combined', 'kbo', 'wnba', 'monthly', 'season', 'weekly', 'pro', 'all', 'discord']);
 
+function formatMemberDate(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'the scheduled date';
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+async function membershipAuthToken(user) {
+  const token = await sessionAccessToken();
+  if (token) return token;
+  // Local screenshots only. Production builds set DEV to false.
+  if (import.meta.env.DEV && user?.id === 'dev-tier-preview') return 'dev-preview';
+  return null;
+}
+
 function SubscriptionPage() {
   const [selectedTier, setSelectedTier] = useState(null);
   const { user, tier, refreshTier } = useAuth();
@@ -29,6 +44,10 @@ function SubscriptionPage() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelResult, setCancelResult] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showPauseConfirm, setShowPauseConfirm] = useState(false);
+  const [pausing, setPausing] = useState(false);
+  const [pauseResult, setPauseResult] = useState(null);
+  const [paused, setPaused] = useState(null);
 
   // After user clicks a payment link, poll for tier upgrade every 4s for up to 2 min
   useEffect(() => {
@@ -118,11 +137,86 @@ function SubscriptionPage() {
     setAwaitingPayment(true);
   };
 
+  const requestMembership = useCallback(async (payload) => {
+    const token = await membershipAuthToken(user);
+    if (!token) return { ok: false, data: { error: 'Please sign in again.' } };
+    const resp = await fetch('/api/cancel-subscription', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json().catch(() => ({}));
+    return { ok: resp.ok, data };
+  }, [user]);
+
+  const applyPauseResult = useCallback((result) => {
+    if (result.ok && result.data?.paused && result.data.resumes_at) {
+      const resumeDate = formatMemberDate(result.data.resumes_at);
+      setPaused({ resumes_at: result.data.resumes_at });
+      setPauseResult({
+        ok: true,
+        message: `Billing is paused. It resumes automatically on ${resumeDate}. You keep full access while it is paused.`,
+      });
+      setShowPauseConfirm(false);
+      setShowCancelConfirm(false);
+      return;
+    }
+    setPauseResult({ ok: false, message: result.data?.error || 'Failed to pause subscription.' });
+  }, []);
+
+  useEffect(() => {
+    if (!user || !CANCELLABLE_TIERS.has(tier)) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await requestMembership({ action: 'status' });
+        if (cancelled || !result.ok || !result.data?.paused || !result.data.resumes_at) return;
+        setPaused({ resumes_at: result.data.resumes_at });
+      } catch { /* status is optional; cancel still works */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user, tier, requestMembership]);
+
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return undefined;
+    const fromUrl = pauseTokenFromSearch(window.location.search);
+    let linkToken = fromUrl;
+    try {
+      linkToken = fromUrl || sessionStorage.getItem('cg_pause_link') || '';
+      if (fromUrl) sessionStorage.setItem('cg_pause_link', fromUrl);
+    } catch { /* private mode still pauses from the URL once */ }
+    if (!linkToken) return undefined;
+    if (fromUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('pause');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+    let cancelled = false;
+    (async () => {
+      setPausing(true);
+      setPauseResult(null);
+      try {
+        const result = await requestMembership({ action: 'pause', token: linkToken });
+        if (cancelled) return;
+        try { sessionStorage.removeItem('cg_pause_link'); } catch { /* ignore */ }
+        applyPauseResult(result);
+      } catch {
+        if (!cancelled) setPauseResult({ ok: false, message: 'Network error — please try again.' });
+      } finally {
+        if (!cancelled) setPausing(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, requestMembership, applyPauseResult]);
+
   const handleCancel = async () => {
     setCancelling(true);
     setCancelResult(null);
     try {
-      const token = await sessionAccessToken();
+      const token = await membershipAuthToken(user);
       if (!token) {
         setCancelResult({ ok: false, message: 'Please sign in again to cancel.' });
         return;
@@ -147,6 +241,20 @@ function SubscriptionPage() {
       setShowCancelConfirm(false);
     }
   };
+
+  const handlePause = async () => {
+    setPausing(true);
+    setPauseResult(null);
+    try {
+      applyPauseResult(await requestMembership({ action: 'pause' }));
+    } catch {
+      setPauseResult({ ok: false, message: 'Network error — please try again.' });
+    } finally {
+      setPausing(false);
+    }
+  };
+
+  const previewResumeDate = formatMemberDate(new Date(Date.now() + PAUSE_WEEK_MS));
 
   const noLinksConfigured = !STRIPE_LINKS.monthly;
 
@@ -234,7 +342,7 @@ function SubscriptionPage() {
       <DiscordOnlyPlans variant="page" user={user} onCheckoutStart={() => setAwaitingPayment(true)} />
 
       <p className="ff-checkout-note" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 1.5rem' }}>
-        <a href="/policies">Plans & Policies</a> covers refunds, how to cancel, and price changes.
+        <a href="/policies">Plans & Policies</a> covers refunds, how to cancel, pausing, and price changes.
       </p>
 
       {!user && (
@@ -283,21 +391,75 @@ function SubscriptionPage() {
             </div>
           )}
 
+          {pauseResult && (
+            <div className="sub-setup-notice" style={{
+              borderColor: pauseResult.ok ? '#22c55e40' : '#ef444440',
+              background: pauseResult.ok ? '#22c55e10' : '#ef444410',
+              marginTop: '0.75rem',
+            }}>
+              <span className="sub-setup-icon">{pauseResult.ok ? '✓' : '✕'}</span>
+              <div>
+                <p style={{ color: pauseResult.ok ? '#4ade80' : '#f87171', margin: 0 }}>{pauseResult.message}</p>
+              </div>
+            </div>
+          )}
+
           {CANCELLABLE_TIERS.has(tier) && !cancelResult?.ok && (
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-              {!showCancelConfirm ? (
+            <div className="sub-cancel-wrap">
+              {paused?.resumes_at && (
+                <div className="sub-paused-note" data-testid="membership-paused">
+                  <strong>Billing is paused</strong>
+                  <span>It resumes automatically on {formatMemberDate(paused.resumes_at)}. You keep full access while billing is paused. Cancel anytime still ends the plan at the close of the current period.</span>
+                </div>
+              )}
+              {!showCancelConfirm && !showPauseConfirm ? (
                 <button
                   className="sub-cancel-btn"
-                  onClick={() => setShowCancelConfirm(true)}
+                  onClick={() => { setShowCancelConfirm(true); setShowPauseConfirm(false); }}
                 >
                   Cancel Subscription
                 </button>
+              ) : showPauseConfirm ? (
+                <div className="sub-pause-confirm" data-testid="pause-confirm">
+                  <p>
+                    Pause billing for 1 week? Stripe will skip collection for this week and resume automatically on {previewResumeDate}. You keep full access, and this does not cancel your plan.
+                  </p>
+                  <div className="sub-cancel-actions">
+                    <button
+                      className="sub-pause-btn"
+                      onClick={handlePause}
+                      disabled={pausing}
+                    >
+                      {pausing ? 'Pausing...' : 'Confirm pause'}
+                    </button>
+                    <button
+                      className="sub-cancel-btn sub-cancel-btn-back"
+                      onClick={() => setShowPauseConfirm(false)}
+                      disabled={pausing}
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <div className="sub-cancel-confirm">
-                  <p style={{ color: '#a1a1aa', marginBottom: '0.75rem' }}>
+                <div className="sub-cancel-confirm" data-testid="cancel-choices">
+                  {!paused && (
+                    <div className="sub-pause-offer">
+                      <p>Need a break instead? Pause billing for 1 week. You keep access, and billing resumes automatically.</p>
+                      <button
+                        className="sub-pause-btn"
+                        data-testid="pause-week"
+                        onClick={() => setShowPauseConfirm(true)}
+                        disabled={pausing}
+                      >
+                        Pause 1 week
+                      </button>
+                    </div>
+                  )}
+                  <p className="sub-cancel-warning">
                     Are you sure? You'll keep access until the end of your current billing period.
                   </p>
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                  <div className="sub-cancel-actions">
                     <button
                       className="sub-cancel-btn sub-cancel-btn-danger"
                       onClick={handleCancel}
@@ -334,6 +496,10 @@ function SubscriptionPage() {
           <FaqItem
             q="Can I cancel anytime?"
             a="Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial."
+          />
+          <FaqItem
+            q="Can I pause for a week instead?"
+            a="Yes. Cancel Subscription offers Pause 1 week first. That pauses Stripe payment collection for 7 days and voids invoices created in that window. Billing resumes automatically, and this page shows the resume date. You keep access while paused. Cancel anytime is unchanged."
           />
           <FaqItem
             q="What is Discord Only?"

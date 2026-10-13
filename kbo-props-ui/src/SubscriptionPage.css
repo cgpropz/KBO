@@ -502,3 +502,91 @@
   background: rgba(239, 68, 68, 0.05);
   border: 1px solid rgba(239, 68, 68, 0.15);
 }
+
+.sub-cancel-wrap {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.sub-cancel-warning {
+  color: #a1a1aa;
+  margin: 0 0 0.75rem;
+}
+
+.sub-cancel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.sub-pause-offer {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sub-pause-offer p,
+.sub-pause-confirm p {
+  color: #d4d4d8;
+  margin: 0 0 0.75rem;
+}
+
+.sub-pause-btn {
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 58, 237, 0.55);
+  background: rgba(124, 58, 237, 0.2);
+  color: #f3e8ff;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+  width: 100%;
+  max-width: 280px;
+}
+
+.sub-pause-btn:hover {
+  background: rgba(124, 58, 237, 0.32);
+}
+
+.sub-pause-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sub-pause-confirm {
+  padding: 1rem;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.28);
+}
+
+.sub-paused-note {
+  margin-bottom: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fde68a;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.sub-paused-note strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #fef3c7;
+}
+
+@media (max-width: 560px) {
+  .sub-cancel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sub-pause-btn,
+  .sub-cancel-actions .sub-cancel-btn {
+    width: 100%;
+    max-width: none;
+  }
+}

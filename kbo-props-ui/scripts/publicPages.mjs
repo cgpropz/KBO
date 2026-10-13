@@ -243,6 +243,10 @@ export function renderPoliciesPage() {
       q: 'What happens if a price changes?',
       a: 'If a plan price changes, CGPropz will announce the new price before it applies. Current prices are listed on the pricing page.',
     },
+    {
+      q: 'Can I pause for a week instead of cancelling?',
+      a: 'Yes. Cancel Subscription offers Pause 1 week before Yes, Cancel. CGPropz tells Stripe to pause payment collection for 7 days and void any invoice created during that week. Billing resumes automatically, and the page shows the resume date. Paused members keep access. Cancel anytime is unchanged.',
+    },
   ];
   const bodyHtml = `
       <p class="lede">Plans</p>
@@ -256,6 +260,8 @@ export function renderPoliciesPage() {
       </ul>
       <h2>How to cancel</h2>
       <p>Sign in and open the subscription page. That page is the one behind Upgrade, Manage, or View Plans. A renewing plan shows Cancel Subscription. Choose it, then confirm Yes, Cancel. CGPropz tells Stripe to end that subscription when the current billing period ends. The page then says the subscription has been cancelled and shows the date full access lasts through. Lifetime is a one-time payment and has no cancel button. Discord Only uses the same Cancel Subscription button.</p>
+      <h2>Pause for one week</h2>
+      <p>Before you cancel, a renewing plan can pause billing for 7 days. CGPropz tells Stripe to pause payment collection and void any invoice created during that week, so that week of billing is skipped. Billing resumes automatically 7 days later, and the subscription page shows that resume date. Pausing does not cancel the plan and does not refund the current period. Paused members keep access, because the subscription stays active and the paid period is not cut short. Cancel anytime is unchanged: Yes, Cancel still ends the subscription when the current billing period ends, and full access lasts through that date. Lifetime has nothing to pause. An email pause link is signed, expires after 48 hours, and pauses billing only when the signed-in member is the member the link was created for.</p>
       <h2>Price changes</h2>
       <p>If a plan price changes, CGPropz will announce the new price before it applies.</p>
       <h2>Contact</h2>
