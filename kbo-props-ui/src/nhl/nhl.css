@@ -656,6 +656,38 @@
   min-width: 0;
   width: 140px;
 }
+.nhl-ags-score-line {
+  margin: 0 0 8px;
+  color: #e7eef8;
+  font: 600 13px/1.3 system-ui, sans-serif;
+}
+.nhl-ags-backtest {
+  margin: 0 0 14px;
+  max-width: 100%;
+  color: #9eb0c4;
+  font: 11px/1.4 monospace;
+}
+.nhl-ags-backtest p { margin: 0 0 4px; }
+.nhl-ags-backtest-label {
+  color: #8ecfff;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.nhl-ags-backtest-bands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.nhl-ags-backtest-bands li {
+  border: 1px solid #1c3a52;
+  border-radius: 6px;
+  background: #0b1424;
+  padding: 4px 6px;
+}
 .nhl-note {
   margin: 4px 0 18px;
   clear: both;

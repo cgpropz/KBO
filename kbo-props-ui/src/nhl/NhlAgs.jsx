@@ -5,6 +5,7 @@ import { fitImage } from '../fitImage.js'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import { NHL_AGS_BACKTEST, SCORE_LINE, formatBacktestBand } from './agsScore.js'
 
 // No odds feed exists yet. The column is in this table and stays unrendered
 // until a feed is wired and this flag is turned on.
@@ -51,8 +52,8 @@ function scoreNoteFor(item) {
   if (!Number.isFinite(score)) return null
   return {
     score: score.toFixed(1),
-    lead: `CG Score is the model chance ${item.player} scores, times 100. ${score.toFixed(1)} means about a ${score.toFixed(1)}% chance of a goal.`,
-    disclaimer: 'Anytime goal scorer preview. There is no PrizePicks line on this row.',
+    lead: SCORE_LINE,
+    disclaimer: NHL_AGS_BACKTEST.responsible,
   }
 }
 
@@ -134,14 +135,16 @@ export default function NhlAgs() {
   const [loaded, setLoaded] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [query, setQuery] = useState('')
+  const [backtest, setBacktest] = useState(NHL_AGS_BACKTEST)
 
   useEffect(() => {
     let active = true
     fetchNhlAgs()
-      .then(({ records: next, updatedAt: publishedAt }) => {
+      .then(({ records: next, updatedAt: publishedAt, payload }) => {
         if (!active) return
         setRecords(next)
         setUpdatedAt(publishedAt || null)
+        if (payload?.backtest?.bands?.length) setBacktest(payload.backtest)
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
@@ -170,6 +173,17 @@ export default function NhlAgs() {
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" aria-label="Search players" />
           </label>
         </div>
+      </div>
+      <p className="nhl-ags-score-line" data-testid="nhl-ags-score-line">{SCORE_LINE}</p>
+      <div className="nhl-ags-backtest" data-testid="nhl-ags-backtest">
+        <p className="nhl-ags-backtest-label">{backtest.label || 'Backtest'}</p>
+        <ul className="nhl-ags-backtest-bands">
+          {(backtest.bands || []).map((band) => (
+            <li key={band.band}>{formatBacktestBand(band)}</li>
+          ))}
+        </ul>
+        <p>{backtest.smallSample}</p>
+        <p>{backtest.responsible}</p>
       </div>
       {error && <div className="nfl-notice">Unable to load the anytime goal board: {error}</div>}
       {!error && !loaded && (

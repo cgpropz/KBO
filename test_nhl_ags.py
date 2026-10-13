@@ -6,16 +6,21 @@ import unittest
 from pathlib import Path
 
 from nhl.ags import (
+    AGS_BACKTEST,
+    LAMBDA_SCALE,
     _fold_key,
     adjust_ev_seconds,
     ags_cg_score,
     blocked_status,
+    build_payload,
     build_rows,
     format_price,
     goalie_scoring_factor,
+    league_scoring_rate,
     price_to_beat,
     rank_high_is_tougher,
     rank_low_is_tougher,
+    score_band,
     score_probability,
     team_scoring_factor,
     _project_one,
@@ -65,11 +70,61 @@ class ProbabilityTests(unittest.TestCase):
         self.assertAlmostEqual(score_probability(1), 1 - math.exp(-1))
         self.assertAlmostEqual(score_probability(0.4), 1 - math.exp(-0.4))
 
-    def test_cg_score_is_the_probability_scaled_to_100(self):
-        probability = 1 - math.exp(-0.5)
-        self.assertEqual(ags_cg_score(probability), round(probability * 100, 1))
-        self.assertEqual(ags_cg_score(0), 0.0)
-        self.assertEqual(ags_cg_score(1), 100.0)
+    def test_cg_score_is_probability_over_the_league_rate_times_50(self):
+        self.assertEqual(ags_cg_score(0.15, 0.15), 50.0)
+        self.assertEqual(ags_cg_score(0.30, 0.15), 100.0)
+        self.assertEqual(ags_cg_score(0.075, 0.15), 25.0)
+        self.assertIsNone(ags_cg_score(0.2, 0))
+        self.assertIsNone(ags_cg_score(float("nan"), 0.15))
+
+    def test_lambda_is_scaled_by_the_approved_1_18_before_the_probability(self):
+        self.assertEqual(LAMBDA_SCALE, 1.18)
+        history = [_skater("Skater", 1, "ANA", "BOS", "20261001", ev_goals=0.4, ev_toi=1200)]
+        rates = {"f_ev_g60": 0.65, "f_pp_g60": 2.2, "d_ev_g60": 0.18, "d_pp_g60": 0.85}
+        row = _project_one(
+            history, group="F", rates=rates, line=None, pp_role=None,
+            team_ga60=2.4, league_ga60=2.4, goalie_sv=None, league_sv=0.9, league_rate=0.15,
+        )
+        self.assertAlmostEqual(row["probability"], round(1 - math.exp(-row["lambda"] * 1.18), 4))
+        self.assertGreater(row["probability"], round(1 - math.exp(-row["lambda"]), 4))
+        self.assertEqual(row["score"], ags_cg_score(row["probability"], 0.15))
+
+    def test_score_bands_match_the_approved_cuts(self):
+        self.assertEqual(score_band(0), "<25")
+        self.assertEqual(score_band(24.9), "<25")
+        self.assertEqual(score_band(25), "25-50")
+        self.assertEqual(score_band(49.9), "25-50")
+        self.assertEqual(score_band(50), "50-75")
+        self.assertEqual(score_band(74.9), "50-75")
+        self.assertEqual(score_band(75), "75-100")
+        self.assertEqual(score_band(99.9), "75-100")
+        self.assertEqual(score_band(100), "100+")
+        self.assertEqual(score_band(140.2), "100+")
+        self.assertIsNone(score_band(None))
+
+    def test_league_rate_uses_only_games_before_the_slate(self):
+        rows = [
+            _skater("A", 1, "ANA", "BOS", "20261001", goals=1),
+            _skater("B", 2, "ANA", "BOS", "20261002", goals=0),
+            _skater("C", 3, "ANA", "BOS", "20261012", goals=1),
+            _skater("D", 4, "ANA", "BOS", "20261013", goals=1),
+            _skater("E", 5, "ANA", "BOS", "", goals=1),
+        ]
+        rate, count = league_scoring_rate(rows, "2026-10-12")
+        self.assertEqual(count, 2)
+        self.assertAlmostEqual(rate, 0.5)
+
+    def test_backtest_table_is_the_approved_nhl_result(self):
+        bands = {band["band"]: band for band in AGS_BACKTEST["bands"]}
+        self.assertEqual(AGS_BACKTEST["label"], "Backtest")
+        self.assertEqual(bands["<25"], {"band": "<25", "n": 5385, "hitPct": 5.0})
+        self.assertEqual(bands["25-50"], {"band": "25-50", "n": 6678, "hitPct": 10.8})
+        self.assertEqual(bands["50-75"], {"band": "50-75", "n": 5979, "hitPct": 19.8})
+        self.assertEqual(bands["75-100"], {"band": "75-100", "n": 3460, "hitPct": 28.8})
+        self.assertEqual(bands["100+"], {"band": "100+", "n": 737, "hitPct": 34.7})
+        self.assertEqual(sum(band["n"] for band in AGS_BACKTEST["bands"]), 22239)
+        self.assertIn("Small sample", AGS_BACKTEST["smallSample"])
+        self.assertEqual(AGS_BACKTEST["responsible"], "21+ · Play responsibly")
 
     def test_price_to_beat_is_the_break_even_american_price(self):
         self.assertEqual(price_to_beat(0.25), 300)
@@ -93,13 +148,16 @@ class ProbabilityTests(unittest.TestCase):
             for day in range(1, 16)
         ]
         rates = {"f_ev_g60": 0.65, "f_pp_g60": 2.2, "d_ev_g60": 0.18, "d_pp_g60": 0.85}
-        kwargs = dict(group="F", rates=rates, team_ga60=2.4, league_ga60=2.4, goalie_sv=None, league_sv=0.9)
+        kwargs = dict(
+            group="F", rates=rates, team_ga60=2.4, league_ga60=2.4,
+            goalie_sv=None, league_sv=0.9, league_rate=0.15,
+        )
         base = _project_one(history, line=None, pp_role=None, **kwargs)
         top = _project_one(history, line="F1", pp_role="pp1", **kwargs)
         bottom = _project_one(history, line="F4", pp_role="none", **kwargs)
         self.assertGreater(top["lambda"], base["lambda"])
         self.assertLess(bottom["lambda"], base["lambda"])
-        self.assertEqual(top["score"], ags_cg_score(top["probability"]))
+        self.assertEqual(top["score"], ags_cg_score(top["probability"], 0.15))
         self.assertEqual(top["priceToBeat"], price_to_beat(top["probability"]))
 
     def test_worse_team_and_worse_goalie_raise_the_chance(self):
@@ -210,6 +268,24 @@ class ExclusionTests(unittest.TestCase):
         self.assertIn("Tim Sttzle", names)
         self.assertNotIn("Juraj Slafkovský (ANA)", gaps["playersWithoutHistory"])
         self.assertNotIn("Tim Stützle (ANA)", gaps["playersWithoutHistory"])
+
+    def test_a_result_on_slate_day_does_not_change_the_score(self):
+        games, lines, goalies, skaters, goalie_rows = self._slate()
+        before, _gaps = build_rows(games, lines, goalies, skaters, goalie_rows, excluded_ids=set())
+        leaked = list(skaters)
+        leaked.append(_skater("Already Played", 99, "ANA", "BOS", "20261012", goals=1, ev_goals=0, pp_goals=0, ev_toi=0, pp_toi=0))
+        after, gaps = build_rows(games, lines, goalies, leaked, goalie_rows, excluded_ids=set())
+        first = next(row for row in before if row["player"] == "Healthy Forward")
+        second = next(row for row in after if row["player"] == "Healthy Forward")
+        self.assertEqual(gaps["leagueScoringGames"], 42)
+        self.assertAlmostEqual(gaps["leagueScoringRate"], round(4 / 6, 4))
+        self.assertEqual(second["score"], first["score"])
+        self.assertEqual(second["score"], ags_cg_score(second["probability"], 4 / 6))
+        payload = build_payload(games, lines, goalies, skaters, goalie_rows, excluded_ids=set())
+        self.assertEqual(payload["scoreLine"], "50 = league-average scorer")
+        self.assertEqual(payload["lambdaScale"], 1.18)
+        self.assertEqual(payload["backtest"]["label"], "Backtest")
+        self.assertEqual(payload["backtest"]["bands"][-1]["band"], "100+")
 
 
 class RankTests(unittest.TestCase):

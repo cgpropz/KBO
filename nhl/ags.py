@@ -8,9 +8,10 @@ goals allowed and, when a starter is known, that goalie's save percentage
 versus the league. lambda is expected goals. P(score) = 1 - exp(-lambda),
 which is the Poisson chance of at least one goal.
 
-CG Score is that probability scaled to 0-100. The props board score is
-(projection / line) * 50. An anytime goal has no line yet, so 34.0 means
-the model assigns about a 34% chance he scores.
+CG Score is the calibrated probability divided by the league-wide scoring
+rate from prior games only, times 50. 50 is a league-average scorer.
+100 is twice the league rate. The props board score is
+(projection / line) * 50 and is a different number.
 
 Price to beat is the American odds whose no-vig implied probability equals
 P(score). A 25% chance is +300. A 60% chance is -150. Exactly 50% is +100.
@@ -85,7 +86,26 @@ GOALIE_CLAMP = (0.85, 1.15)
 GOALIE_PRIOR_SHOTS = 500
 # No odds feed yet. The page column stays behind this flag.
 SHOW_ODDS = False
-MODEL_NAME = "ags-v1"
+# First-half fit from the 2025-26 backtest (1.17989), applied as 1.18.
+# It stands in for goals outside 5-on-5 and 5-on-4. P = 1 - exp(-1.18 * lambda).
+LAMBDA_SCALE = 1.18
+MODEL_NAME = "ags-v2"
+# Approved (a2) backtest, test window 2026-01-08 to 2026-04-16, n=22,239.
+# Hit rate is the share who scored. These are not live probabilities.
+AGS_BACKTEST = {
+    "label": "Backtest",
+    "window": "2026-01-08 to 2026-04-16",
+    "n": 22239,
+    "smallSample": "One season (2026-01-08 to 2026-04-16). Small sample.",
+    "responsible": "21+ · Play responsibly",
+    "bands": [
+        {"band": "<25", "n": 5385, "hitPct": 5.0},
+        {"band": "25-50", "n": 6678, "hitPct": 10.8},
+        {"band": "50-75", "n": 5979, "hitPct": 19.8},
+        {"band": "75-100", "n": 3460, "hitPct": 28.8},
+        {"band": "100+", "n": 737, "hitPct": 34.7},
+    ],
+}
 RECHECK_NOTE = (
     "Manual warmup recheck. Run about 30 minutes before puck drop so the "
     "sheet can drop scratches and power-play changes. It is not scheduled. "
@@ -100,15 +120,64 @@ def score_probability(lam: float) -> float:
     return 1.0 - math.exp(-lam)
 
 
-def ags_cg_score(probability: float) -> float:
-    """Model probability scaled to 0-100.
+def ags_cg_score(probability: float, league_rate: float) -> float | None:
+    """Score = P(score) / league scoring rate * 50.
 
-    0 is no chance. 100 is a goal the model treats as certain. 50 is a
-    coin flip. This is not the props-board ratio (projection / line) * 50.
+    50 is a league-average scorer. 100 is twice that rate. The rate is the
+    share of prior skater games with a goal, and it does not include the
+    slate being scored. This is not the props-board ratio (projection / line) * 50.
     """
-    if not math.isfinite(probability):
-        return 0.0
-    return round(clamp(probability, 0.0, 1.0) * 100.0, 1)
+    if not math.isfinite(probability) or not math.isfinite(league_rate) or league_rate <= 0:
+        return None
+    return round(probability / league_rate * 50.0, 1)
+
+
+def score_band(score: float | None) -> str | None:
+    """Bands are [0, 25), [25, 50), [50, 75), [75, 100), [100, inf)."""
+    if score is None or not math.isfinite(score):
+        return None
+    if score < 25:
+        return "<25"
+    if score < 50:
+        return "25-50"
+    if score < 75:
+        return "50-75"
+    if score < 100:
+        return "75-100"
+    return "100+"
+
+
+def _date_key(value) -> str:
+    text = str(value or "").replace("-", "")[:8]
+    return text if text.isdigit() and len(text) == 8 else ""
+
+
+def league_scoring_rate(skaters: list[dict], before: str | None) -> tuple[float | None, int]:
+    """Share of skater games with a goal, strictly before `before`.
+
+    A game on the slate date, or with no date, is left out so tonight's
+    result cannot move tonight's rate.
+    """
+    cutoff = _date_key(before)
+    played = scored = 0
+    for row in skaters:
+        key = _date_key(row.get("date"))
+        if cutoff and (not key or key >= cutoff):
+            continue
+        if not cutoff and not key:
+            continue
+        played += 1
+        if float(row.get("goals") or 0) > 0:
+            scored += 1
+    if played == 0:
+        return None, 0
+    return scored / played, played
+
+
+def _slate_cutoff(games: list[dict]) -> str:
+    keys = [_date_key(game.get("date")) for game in games]
+    keys = [key for key in keys if key]
+    return min(keys) if keys else ""
 
 
 def price_to_beat(probability: float) -> int | None:
@@ -389,6 +458,7 @@ def _project_one(
     league_ga60: float | None,
     goalie_sv: float | None,
     league_sv: float | None,
+    league_rate: float | None = None,
 ) -> dict:
     ev_key = "d_ev_g60" if group == "D" else "f_ev_g60"
     pp_key = "d_pp_g60" if group == "D" else "f_pp_g60"
@@ -403,13 +473,15 @@ def _project_one(
     team_factor = team_scoring_factor(team_ga60, league_ga60)
     goalie_factor = goalie_scoring_factor(goalie_sv, league_sv)
     lam = expected_goals(ev_toi, ev_rate, pp_toi, pp_rate, team_factor, goalie_factor)
-    probability = score_probability(lam)
+    probability = score_probability(lam * LAMBDA_SCALE)
     shown = round(probability, 4)
     odds = price_to_beat(shown)
+    score = ags_cg_score(shown, league_rate) if league_rate else None
     return {
         "lambda": round(lam, 4),
         "probability": shown,
-        "score": ags_cg_score(probability),
+        "score": score,
+        "band": score_band(score),
         "priceToBeat": odds,
         "priceToBeatText": format_price(odds),
         "evToi": round(ev_toi, 1),
@@ -486,6 +558,7 @@ def build_rows(
         goalie_sv = (starters.get(team) or {}).get("sv")
         environments[team] = team_scoring_factor(ga60.get(team), league_ga) * goalie_scoring_factor(goalie_sv, league_sv)
     matchup_ranks = rank_low_is_tougher(environments)
+    league_rate, league_games = league_scoring_rate(skaters, _slate_cutoff(games))
 
     rows = []
     missing_history = []
@@ -529,6 +602,7 @@ def build_rows(
                     league_ga60=league_ga,
                     goalie_sv=starter.get("sv"),
                     league_sv=league_sv,
+                    league_rate=league_rate,
                 )
                 l10_pct, l10_n = _scored_pct(history[-10:])
                 season_rows = [row for row in history if row.get("season") == CURRENT_SEASON]
@@ -570,6 +644,8 @@ def build_rows(
         "playersWithoutHistory": list(dict.fromkeys(missing_history)),
         "injuryFilter": "lineup OUT/IR/LTIR/scratched plus EXCLUDED_PLAYER_IDS; PR 131 is not merged",
         "showOdds": SHOW_ODDS,
+        "leagueScoringRate": round(league_rate, 4) if league_rate else None,
+        "leagueScoringGames": league_games,
     }
     return rows, gaps
 
@@ -606,7 +682,10 @@ def build_payload(games, lines, goalie_page, skaters, goalie_rows, *, recheck: b
         "recheck": recheck is True,
         "recheckNote": RECHECK_NOTE if recheck else None,
         "showOdds": SHOW_ODDS,
-        "cgScore": "P(score) * 100. P(score) = 1 - exp(-lambda).",
+        "lambdaScale": LAMBDA_SCALE,
+        "cgScore": "50 = league-average scorer. Score = calibrated P(score) / prior league scoring rate * 50.",
+        "scoreLine": "50 = league-average scorer",
+        "backtest": AGS_BACKTEST,
         "rankNote": "Rank 1 is the toughest matchup.",
         "priceNote": "Price to beat is the American odds whose implied probability equals P(score).",
         "gaps": gaps,
