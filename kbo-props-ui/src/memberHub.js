@@ -22,7 +22,20 @@ function sideFor(projection, line, rec) {
   return p >= l ? 'OVER' : 'UNDER'
 }
 
+// Same normalisation the KBO board (PlayerPropsUI) uses for player_photos.json keys.
+export function normalizePlayerName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’`]/g, "'")
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
 export function kboHubRows(data, photos = {}) {
+  const lookup = {}
+  for (const [name, url] of Object.entries(photos || {})) lookup[normalizePlayerName(name)] = url
   const rows = []
   for (const card of Array.isArray(data?.cards) ? data.cards : []) {
     for (const prop of Array.isArray(card?.props) ? card.props : []) {
@@ -38,7 +51,7 @@ export function kboHubRows(data, photos = {}) {
         projection: prop.projection ?? prop.avg,
         side: sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation),
         score,
-        image: photos?.[card.name] || null,
+        image: photos?.[card.name] || lookup[normalizePlayerName(card.name)] || null,
         start: card.start_time || card.game_time || null,
       })
     }
@@ -81,8 +94,25 @@ export function nhlHubRows(data) {
     }))
 }
 
-function basketballRows(data, scoreFn) {
+// Roster image first, then the board row's own image, same as nbaPropLines.buildPropRows.
+function rosterImages(roster) {
+  const byId = new Map()
+  const byName = new Map()
+  for (const p of Array.isArray(roster) ? roster : []) {
+    if (!p?.image) continue
+    if (p.athleteId != null && p.athleteId !== '') byId.set(String(p.athleteId), p.image)
+    const name = String(p.name || '').trim().toLowerCase()
+    if (name) byName.set(name, p.image)
+  }
+  return (player) => {
+    const id = player?.athleteId == null ? '' : String(player.athleteId)
+    return (id && byId.get(id)) || byName.get(String(player?.name || '').trim().toLowerCase()) || null
+  }
+}
+
+function basketballRows(data, scoreFn, roster) {
   const rows = []
+  const imageFor = rosterImages(roster)
   for (const player of Array.isArray(data) ? data : []) {
     for (const prop of Array.isArray(player?.ppAllProps) ? player.ppAllProps : []) {
       if (!isStandard(prop?.odds_type ?? prop?.oddsType)) continue
@@ -96,7 +126,7 @@ function basketballRows(data, scoreFn) {
         projection: prop.projection,
         side: sideFor(prop.projection, prop.line),
         score: num(scoreFn(prop)),
-        image: player.image || null,
+        image: imageFor(player) || player.image || null,
         start: prop.start_time || prop.gameDate || null,
       })
     }
@@ -104,8 +134,8 @@ function basketballRows(data, scoreFn) {
   return rows
 }
 
-export const wnbaHubRows = (data) => basketballRows(data, (prop) => wnbaCgScore(prop.projection, prop))
-export const nbaHubRows = (data) => basketballRows(data, (prop) => prop.rating)
+export const wnbaHubRows = (data, roster) => basketballRows(data, (prop) => wnbaCgScore(prop.projection, prop), roster)
+export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.rating, roster)
 
 // Highest CG Score first, one row per player so the list is not one star's props.
 export function topHubRows(rows, limit = 5) {

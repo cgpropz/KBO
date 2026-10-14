@@ -29,12 +29,24 @@ const KBO_LOGOS = {
 };
 const kboLogo = (team) => (KBO_LOGOS[team] ? `/team-logos/${KBO_LOGOS[team]}.webp` : null);
 
+// The WNBA board points at /logos/<team>.png, which is not shipped in this app,
+// so use the same public ESPN logo CDN the NFL/NHL/NBA boards use.
+const ESPN_WNBA = {
+  ATL: 'atl', CHI: 'chi', CON: 'conn', CONN: 'conn', DAL: 'dal', GS: 'gs', GSV: 'gs', IND: 'ind',
+  LA: 'la', LAS: 'la', LV: 'lv', LVA: 'lv', MIN: 'min', NY: 'ny', NYL: 'ny', PHX: 'phx', PHO: 'phx',
+  SEA: 'sea', WSH: 'wsh', WAS: 'wsh', TOR: 'tor', POR: 'por',
+};
+const wnbaLogo = (team) => {
+  const slug = ESPN_WNBA[String(team || '').trim().toUpperCase()];
+  return slug ? `https://a.espncdn.com/i/teamlogos/wnba/500/${slug}.png` : null;
+};
+
 const SPORTS = [
   { id: 'kbo', name: 'KBO', full: 'Korean Baseball', ds: 'prizepicks_props', dev: 'prizepicks_props.json', toRows: kboHubRows, logo: kboLogo },
   { id: 'nfl', name: 'NFL', full: 'Pro Football', ds: 'nfl_projections', dev: 'nfl/projections.json', toRows: nflHubRows, logo: nflLogo },
   { id: 'nhl', name: 'NHL', full: 'Pro Hockey', ds: 'nhl_projections', dev: 'nhl/projections.json', toRows: nhlHubRows, logo: nhlLogo },
-  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: () => null },
-  { id: 'nba', name: 'NBA', full: 'Pro Basketball', ds: 'nba_projections_standard', dev: 'nba/projections_standard.json', toRows: nbaHubRows, logo: nbaLogoUrl },
+  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: wnbaLogo, roster: 'wnba_players', rosterDev: 'wnba/players.json' },
+  { id: 'nba', name: 'NBA', full: 'Pro Basketball', ds: 'nba_projections_standard', dev: 'nba/projections_standard.json', toRows: nbaHubRows, logo: nbaLogoUrl, roster: 'nba_players', rosterDev: 'nba/players.json' },
 ];
 
 const fmt = (v) => {
@@ -57,37 +69,66 @@ function initials(name) {
   return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 }
 
-function Avatar({ row }) {
-  // Same-origin resized image first, then the original URL the boards use.
+// Tries each URL in turn (same-origin resized copy, then the original the
+// boards use) and reports when none of them load.
+function useImageChain(urls) {
+  const sources = [...new Set(urls.filter(Boolean))];
+  const key = sources.join('|');
+  const [state, setState] = useState({ key, idx: 0 });
+  const idx = state.key === key ? state.idx : 0;
+  const next = () => setState({ key, idx: idx + 1 });
+  return { src: sources[idx] || null, next };
+}
+
+function headshotSources(row, cssPx) {
   const nhl = row.playerId ? nhlHeadshotUrl(row.playerId) : null;
-  const sources = [...new Set([nhl && fitImage(nhl, 40), row.image && fitImage(row.image, 40), row.image].filter(Boolean))];
-  const [idx, setIdx] = useState(0);
-  if (idx >= sources.length) return <div className="mcc-avatar" aria-hidden="true">{initials(row.player)}</div>;
+  return [nhl && fitImage(nhl, cssPx), nhl, row.image && fitImage(row.image, cssPx), row.image];
+}
+
+function TeamLogo({ src, size = 16, className = 'mcc-team-logo', title }) {
+  const { src: url, next } = useImageChain(src ? [fitImage(src, size), src] : []);
+  if (!url) return null;
+  return <img className={className} src={url} alt={title || ''} title={title} width={size} height={size} loading="lazy" onError={next} />;
+}
+
+function Avatar({ row, sport, size = 48, badge = true }) {
+  const { src, next } = useImageChain(headshotSources(row, size));
+  const logo = badge && sport ? sport.logo(row.team) : null;
   return (
-    <div className="mcc-avatar">
-      <img src={sources[idx]} alt="" loading="lazy" onError={() => setIdx((i) => i + 1)} />
+    <div className="mcc-avatar-wrap" style={{ width: size, height: size }}>
+      <div className="mcc-avatar" aria-hidden="true">
+        {src ? <img src={src} alt="" width={size} height={size} loading="lazy" onError={next} /> : initials(row.player)}
+      </div>
+      {logo && <span className="mcc-avatar-badge"><TeamLogo src={logo} size={18} className="" title={row.team} /></span>}
     </div>
   );
 }
 
-function TeamLogo({ src }) {
-  const [tries, setTries] = useState(0);
-  const sources = src ? [...new Set([fitImage(src, 16), src])] : [];
-  if (tries >= sources.length) return null;
-  return <img className="mcc-team-logo" src={sources[tries]} alt="" loading="lazy" onError={() => setTries((t) => t + 1)} />;
+function Matchup({ row, sport }) {
+  return (
+    <span className="mcc-matchup">
+      <TeamLogo src={sport.logo(row.team)} size={18} title={row.team} />
+      <span>{row.team}</span>
+      {row.opponent && (
+        <>
+          <span className="mcc-vs">vs</span>
+          <TeamLogo src={sport.logo(row.opponent)} size={18} title={row.opponent} />
+          <span>{row.opponent}</span>
+        </>
+      )}
+    </span>
+  );
 }
 
 function PlayRow({ row, sport, onOpen }) {
-  const logo = sport.logo(row.team);
   const when = startLabel(row.start);
   return (
     <button type="button" className="mcc-row" onClick={() => onOpen(sport.id)}>
-      <Avatar row={row} />
+      <Avatar row={row} sport={sport} size={48} />
       <div className="mcc-row-main">
         <div className="mcc-row-name">{row.player}</div>
         <div className="mcc-row-meta">
-          <TeamLogo src={logo} />
-          <span>{[row.team, row.opponent].filter(Boolean).join(' vs ')}</span>
+          <Matchup row={row} sport={sport} />
           {when && <span>· {when}</span>}
         </div>
         <div className="mcc-row-line">
@@ -107,6 +148,7 @@ function PlayRow({ row, sport, onOpen }) {
 function useBoards(access, nbaOpen) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
+  const [rosters, setRosters] = useState({});
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -119,6 +161,11 @@ function useBoards(access, nbaOpen) {
       if (!allowed) {
         setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && nbaOpen !== true ? 'closed' : 'locked', raw: null } }));
         return;
+      }
+      if (sport.roster) {
+        fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
+          .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
+          .catch(() => {});
       }
       fetchApiDataset(sport.ds, { devStaticPath: sport.dev })
         .then((snap) => {
@@ -136,12 +183,12 @@ function useBoards(access, nbaOpen) {
       const b = boards[sport.id];
       if (!b) { out[sport.id] = { status: 'loading', rows: [], count: 0 }; return; }
       if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], count: 0 }; return; }
-      const all = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw);
+      const all = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
       const rows = topHubRows(all, 5);
       out[sport.id] = { status: rows.length ? 'ready' : 'empty', rows, count: countPlayable(all), updatedAt: b.updatedAt };
     });
     return out;
-  }, [boards, photos]);
+  }, [boards, photos, rosters]);
 }
 
 function useRecap() {
@@ -218,8 +265,13 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
           )}
           <div className="mcc-strip-cell">
             <span>Top CG today</span>
-            <strong>{topToday ? Math.round(topToday.row.score) : '—'}</strong>
-            <small>{topToday ? `${topToday.row.player} · ${topToday.sport.name}` : 'Waiting on today\'s lines'}</small>
+            <div className="mcc-strip-top">
+              {topToday && <Avatar row={topToday.row} sport={topToday.sport} size={40} />}
+              <div>
+                <strong>{topToday ? Math.round(topToday.row.score) : '—'}</strong>
+                <small>{topToday ? `${topToday.row.player} · ${topToday.sport.name}` : 'Waiting on today\'s lines'}</small>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -234,7 +286,12 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       : b?.status === 'error' ? 'Retry' : '…';
               return (
                 <button key={s.id} type="button" className={`mcc-sport ${s.id === selected.id ? 'is-active' : ''}`} onClick={() => setPicked(s.id)} aria-pressed={s.id === selected.id}>
-                  <span>{s.name}</span>
+                  <span className="mcc-sport-name">{s.name}</span>
+                  {b?.rows?.length > 0 && (
+                    <span className="mcc-sport-faces" aria-hidden="true">
+                      {b.rows.slice(0, 3).map((row) => <Avatar key={row.player} row={row} size={24} badge={false} />)}
+                    </span>
+                  )}
                   <span className="mcc-badge">{badge}</span>
                 </button>
               );
