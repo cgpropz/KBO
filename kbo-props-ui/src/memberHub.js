@@ -33,6 +33,94 @@ export function normalizePlayerName(name) {
     .trim()
 }
 
+// Same compact rule as nhl/availability.py blocked_status. OUT, IR, LTIR,
+// scratched, and suspended come off. GTD, questionable, and probable stay.
+export function blockedAvailability(value) {
+  const compact = String(value || '').toUpperCase().replace(/[^A-Z]/g, '')
+  if (!compact) return null
+  if (compact.includes('LTIR') || compact === 'LONGTERMIR' || compact === 'LONGTERMINJUREDRESERVE' || compact === 'IRLT') return 'LTIR'
+  if (compact === 'IR' || compact === 'INJUREDRESERVE') return 'IR'
+  if (compact === 'OUT' || compact.startsWith('OUT')) return 'OUT'
+  if (compact.includes('SCRATCH')) return 'SCRATCHED'
+  if (compact.startsWith('SUSPEN')) return 'SUSPENDED'
+  return null
+}
+
+const HELD_STATUS = new Set(['held', 'hold', 'onhold', 'suspended', 'removed'])
+
+function statusText(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z]/g, '')
+}
+
+function availabilityOf(source) {
+  const src = source && typeof source === 'object' ? source : {}
+  return {
+    status: src.status ?? src.injury_status ?? null,
+    injury: src.injury ?? src.injuryStatus ?? null,
+    ppStatus: src.pp_status ?? src.ppStatus ?? src.board_status ?? src.boardStatus ?? src.line_status ?? src.lineStatus ?? null,
+    held: src.held === true || src.isHeld === true || src.onHold === true || src.on_hold === true || src.is_held === true,
+  }
+}
+
+// Held lines (PrizePicks hold / suspended / removed, or an explicit flag) and
+// OUT / IR / LTIR / scratched / suspended players. Does not touch the score.
+export function rowIsHeldOrOut(row) {
+  if (!row || typeof row !== 'object') return false
+  const flags = availabilityOf(row)
+  if (flags.held) return true
+  for (const value of [flags.status, flags.injury, flags.ppStatus]) {
+    if (blockedAvailability(value)) return true
+    if (HELD_STATUS.has(statusText(value))) return true
+  }
+  return false
+}
+
+export function playableRows(rows, unavailableNames) {
+  const blocked = unavailableNames instanceof Set ? unavailableNames : new Set()
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (rowIsHeldOrOut(row)) return false
+    if (row?.player && blocked.has(normalizePlayerName(row.player))) return false
+    return true
+  })
+}
+
+function addBlockedName(names, name, status) {
+  if (!name || !blockedAvailability(status)) return
+  names.add(normalizePlayerName(name))
+}
+
+// Players the lineup snapshots already mark unavailable. WNBA "out" matches
+// Lineups.jsx; inactive names are the same list that page groups with OUT.
+// NFL and NHL read the injury report and any lineup row carrying that status.
+export function unavailableFromLineups(sport, payload) {
+  const names = new Set()
+  const games = Array.isArray(payload) ? payload : []
+  if (sport === 'wnba') {
+    for (const game of games) {
+      for (const side of ['visitor', 'home', 'away']) {
+        const team = game?.[side]
+        if (!team || typeof team !== 'object') continue
+        for (const player of team.players || []) addBlockedName(names, player?.name, player?.status)
+        for (const player of team.inactive || []) {
+          if (player?.name) names.add(normalizePlayerName(player.name))
+        }
+      }
+    }
+    return names
+  }
+  if (sport === 'nfl' || sport === 'nhl') {
+    for (const game of games) {
+      for (const list of Object.values(game?.injuries || {})) {
+        for (const player of list || []) addBlockedName(names, player?.name, player?.status)
+      }
+      for (const list of Object.values(game?.lineups || {})) {
+        for (const player of list || []) addBlockedName(names, player?.name, player?.status || player?.injury)
+      }
+    }
+  }
+  return names
+}
+
 export function kboHubRows(data, photos = {}) {
   const lookup = {}
   for (const [name, url] of Object.entries(photos || {})) lookup[normalizePlayerName(name)] = url
@@ -53,6 +141,7 @@ export function kboHubRows(data, photos = {}) {
         score,
         image: photos?.[card.name] || lookup[normalizePlayerName(card.name)] || null,
         start: card.start_time || card.game_time || null,
+        ...availabilityOf({ ...card, ...prop }),
       })
     }
   }
@@ -73,6 +162,7 @@ export function nflHubRows(data) {
       score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
       image: row.imageUrl || null,
       start: row.start_time || null,
+      ...availabilityOf(row),
     }))
 }
 
@@ -91,6 +181,7 @@ export function nhlHubRows(data) {
       image: row.imageUrl || null,
       playerId: row.playerId || null,
       start: row.start_time || null,
+      ...availabilityOf(row),
     }))
 }
 
@@ -128,6 +219,7 @@ function basketballRows(data, scoreFn, roster) {
         score: num(scoreFn(prop)),
         image: imageFor(player) || player.image || null,
         start: prop.start_time || prop.gameDate || null,
+        ...availabilityOf({ ...player, ...prop }),
       })
     }
   }
@@ -139,7 +231,7 @@ export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.
 
 // Highest CG Score first, one row per player so the list is not one star's props.
 export function topHubRows(rows, limit = 5) {
-  const valid = rows
+  const valid = playableRows(rows)
     .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score))
     .sort((a, b) => b.score - a.score)
   const seen = new Set()
@@ -154,7 +246,7 @@ export function topHubRows(rows, limit = 5) {
 }
 
 export function countPlayable(rows) {
-  return rows.filter((r) => r.player && Number.isFinite(r.score)).length
+  return playableRows(rows).filter((r) => r.player && Number.isFinite(r.score)).length
 }
 
 // "Yesterday" in ET. A slate older than that is shown as the last graded slate.

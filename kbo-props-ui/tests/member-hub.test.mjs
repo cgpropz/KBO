@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { formatRecord, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, recapLabel, topHubRows } from '../src/memberHub.js'
+import { formatRecord, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, topHubRows, unavailableFromLineups } from '../src/memberHub.js'
 import { standardRecord } from '../scripts/write-member-recap.mjs'
 
 test('hub rows keep standard lines only', () => {
@@ -26,6 +26,36 @@ test('top rows are one per player, best score first', () => {
     { player: 'C', stat: 's', line: 1, score: NaN },
   ]
   assert.deepEqual(topHubRows(rows).map((r) => [r.player, r.score]), [['A', 90], ['B', 70]])
+})
+
+test('held and OUT players stay off the hub, including a Gauthier-style row', () => {
+  const rows = [
+    { player: 'Cutter Gauthier', stat: 'Points', line: 0.5, score: 88, injury: 'OUT' },
+    { player: 'Held Skater', stat: 'Shots On Goal', line: 2.5, score: 91, status: 'held' },
+    { player: 'Questionable', stat: 'Points', line: 0.5, score: 60, status: 'GTD' },
+    { player: 'Healthy', stat: 'Points', line: 0.5, score: 70 },
+  ]
+  assert.deepEqual(topHubRows(rows).map((r) => r.player), ['Healthy', 'Questionable'])
+  const names = unavailableFromLineups('nhl', [{
+    injuries: { ANA: [{ name: 'Cutter Gauthier', status: 'out' }, { name: 'Alex Tuch', status: 'GTD' }] },
+    lineups: { ANA: [{ name: 'Cutter Gauthier', status: 'out' }] },
+  }])
+  const slate = [
+    { player: 'Cutter Gauthier', stat: 'Points', line: 0.5, score: 80 },
+    { player: 'Alex Tuch', stat: 'Points', line: 0.5, score: 55 },
+  ]
+  assert.deepEqual(playableRows(slate, names).map((r) => r.player), ['Alex Tuch'])
+  const nfl = unavailableFromLineups('nfl', [{
+    injuries: { DET: [{ name: 'Amon-Ra St. Brown', status: 'OUT' }, { name: 'Sam LaPorta', status: 'GTD' }] },
+  }])
+  assert.equal(nfl.has('amon ra st brown'), true)
+  assert.equal(nfl.has('sam laporta'), false)
+  const wnba = unavailableFromLineups('wnba', [{
+    visitor: { players: [{ name: 'Angel Reese', status: 'out' }, { name: 'Allisha Gray', status: 'questionable' }], inactive: [{ name: 'Rhyne Howard' }] },
+  }])
+  assert.equal(wnba.has('angel reese'), true)
+  assert.equal(wnba.has('rhyne howard'), true)
+  assert.equal(wnba.has('allisha gray'), false)
 })
 
 test('record counts standard graded lines and labels the slate', () => {

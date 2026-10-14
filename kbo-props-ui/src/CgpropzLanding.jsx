@@ -34,8 +34,8 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const isAllAccess = access.kbo && access.wnba && access.nfl && access.nhl;
   const isDiscordOnly = tier === 'discord';
 
-  // Paid members land on the Command Center (today's plays first). Free and
-  // Discord-only accounts keep this hub; logged-out visitors see PublicLanding.
+  // Paid members land on the Sports Hub. Free and Discord-only accounts keep
+  // this page; logged-out visitors see PublicLanding.
   if (isPaid) {
     return <MemberCommandCenter onEnterSport={onEnterSport} onNavigate={onNavigate} />;
   }

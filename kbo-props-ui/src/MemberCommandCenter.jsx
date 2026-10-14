@@ -11,16 +11,17 @@ import { nbaLogoUrl } from './nba/nbaPropLines';
 import { ResponsibleGamblingCopy } from './SiteFooter';
 import {
   countPlayable, formatRecord, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  recapLabel, topHubRows, wnbaHubRows,
+  playableRows, recapLabel, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
 import './MemberCommandCenter.css';
 
 /*
- * Paid-member landing, "Command Center C5": sport list | today's plays | news.
+ * Paid-member landing, Sports Hub: sport rail, today's games, top plays, news.
  * Every row comes from the same server-gated /api/data snapshots the boards
- * use, standard PrizePicks lines only. The record strip reads
- * /member-recap.json, built from Board QA's graded recap files.
- * The public, logged-out landing (PublicLanding) is untouched.
+ * use, standard PrizePicks lines only. Held lines and OUT / IR / scratched
+ * players stay off, using the lineup statuses the boards already publish.
+ * The record strip reads /member-recap.json. The news panel is a slot for
+ * the market-signals branch. Logged-out and free visitors never see this page.
  */
 
 const KBO_LOGOS = {
@@ -43,9 +44,9 @@ const wnbaLogo = (team) => {
 
 const SPORTS = [
   { id: 'kbo', name: 'KBO', full: 'Korean Baseball', ds: 'prizepicks_props', dev: 'prizepicks_props.json', toRows: kboHubRows, logo: kboLogo },
-  { id: 'nfl', name: 'NFL', full: 'Pro Football', ds: 'nfl_projections', dev: 'nfl/projections.json', toRows: nflHubRows, logo: nflLogo },
-  { id: 'nhl', name: 'NHL', full: 'Pro Hockey', ds: 'nhl_projections', dev: 'nhl/projections.json', toRows: nhlHubRows, logo: nhlLogo },
-  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: wnbaLogo, roster: 'wnba_players', rosterDev: 'wnba/players.json' },
+  { id: 'nfl', name: 'NFL', full: 'Pro Football', ds: 'nfl_projections', dev: 'nfl/projections.json', toRows: nflHubRows, logo: nflLogo, lineups: 'nfl_lineups', lineupsDev: 'nfl/lineups.json' },
+  { id: 'nhl', name: 'NHL', full: 'Pro Hockey', ds: 'nhl_projections', dev: 'nhl/projections.json', toRows: nhlHubRows, logo: nhlLogo, lineups: 'nhl_lineups', lineupsDev: 'nhl/lineups.json' },
+  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: wnbaLogo, roster: 'wnba_players', rosterDev: 'wnba/players.json', lineups: 'wnba_lineups', lineupsDev: 'wnba/lineups.json' },
   { id: 'nba', name: 'NBA', full: 'Pro Basketball', ds: 'nba_projections_standard', dev: 'nba/projections_standard.json', toRows: nbaHubRows, logo: nbaLogoUrl, roster: 'nba_players', rosterDev: 'nba/players.json' },
 ];
 
@@ -123,7 +124,7 @@ function Matchup({ row, sport }) {
 function PlayRow({ row, sport, onOpen }) {
   const when = startLabel(row.start);
   return (
-    <button type="button" className="mcc-row" onClick={() => onOpen(sport.id)}>
+    <button type="button" className={`mcc-row ${row.side === 'UNDER' ? 'is-under' : 'is-over'}`} onClick={() => onOpen(sport.id)}>
       <Avatar row={row} sport={sport} size={48} />
       <div className="mcc-row-main">
         <div className="mcc-row-name">{row.player}</div>
@@ -145,10 +146,25 @@ function PlayRow({ row, sport, onOpen }) {
   );
 }
 
+function slateGames(rows) {
+  const seen = new Map();
+  for (const row of rows) {
+    if (!row?.team) continue;
+    const key = `${row.team}|${row.opponent || ''}`;
+    if (!seen.has(key)) seen.set(key, { team: row.team, opponent: row.opponent || '', start: row.start || null });
+  }
+  return [...seen.values()];
+}
+
+function todayLabel(now = new Date()) {
+  return now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/New_York' });
+}
+
 function useBoards(access, nbaOpen) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
   const [rosters, setRosters] = useState({});
+  const [lineups, setLineups] = useState({});
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -167,6 +183,11 @@ function useBoards(access, nbaOpen) {
           .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
           .catch(() => {});
       }
+      if (sport.lineups) {
+        fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
+          .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
+          .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); });
+      }
       fetchApiDataset(sport.ds, { devStaticPath: sport.dev })
         .then((snap) => {
           if (!alive) return;
@@ -183,12 +204,19 @@ function useBoards(access, nbaOpen) {
       const b = boards[sport.id];
       if (!b) { out[sport.id] = { status: 'loading', rows: [], count: 0 }; return; }
       if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], count: 0 }; return; }
-      const all = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
+      const raw = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
+      const all = playableRows(raw, unavailableFromLineups(sport.id, lineups[sport.id]));
       const rows = topHubRows(all, 5);
-      out[sport.id] = { status: rows.length ? 'ready' : 'empty', rows, count: countPlayable(all), updatedAt: b.updatedAt };
+      out[sport.id] = {
+        status: rows.length ? 'ready' : 'empty',
+        rows,
+        games: slateGames(all),
+        count: countPlayable(all),
+        updatedAt: b.updatedAt,
+      };
     });
     return out;
-  }, [boards, photos, rosters]);
+  }, [boards, photos, rosters, lineups]);
 }
 
 function useRecap() {
@@ -245,14 +273,52 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
       </header>
 
       <main className="mcc-main">
-        <div className="mcc-title-row">
+        <div className="hub-hero">
           <div>
-            <div className="mcc-kicker">{isAllAccess ? 'All Access' : 'Member'} · Command Center</div>
-            <h1>{selected.name} on the board</h1>
+            <div className="mcc-kicker">{isAllAccess ? 'All Access' : 'Member'} · Sports Hub</div>
+            <h1>Today</h1>
+            <p className="hub-date">{todayLabel()}</p>
           </div>
+          <button type="button" className="hub-feature" onClick={() => topToday && onEnterSport(topToday.sport.id)} disabled={!topToday}>
+            {topToday && <Avatar row={topToday.row} sport={topToday.sport} size={44} />}
+            <div>
+              <span>Top CG today</span>
+              <strong>{topToday ? Math.round(topToday.row.score) : '—'}</strong>
+              <small>{topToday ? `${topToday.row.player} · ${topToday.sport.name}` : 'Waiting on today\'s lines'}</small>
+            </div>
+          </button>
         </div>
 
-        <section className="mcc-strip" aria-label="Graded record and top score">
+        <div className="hub-rail" role="group" aria-label="Sports">
+          {SPORTS.map((s) => {
+            const b = boards[s.id];
+            const record = recap?.[s.id] ? formatRecord(recap[s.id]) : null;
+            const badge = b?.status === 'ready' ? `${b.count} lines`
+              : b?.status === 'empty' ? 'No lines'
+                : b?.status === 'locked' ? 'Locked'
+                  : b?.status === 'closed' ? 'Soon'
+                    : b?.status === 'error' ? 'Retry' : '…';
+            return (
+              <button key={s.id} type="button" className={`hub-sport ${s.id === selected.id ? 'is-active' : ''}`} onClick={() => setPicked(s.id)} aria-pressed={s.id === selected.id}>
+                <span className="hub-sport-top">
+                  <span className="hub-sport-name">{s.name}</span>
+                  <span className="mcc-badge">{badge}</span>
+                </span>
+                <span className="hub-sport-full">{s.full}</span>
+                <span className="hub-sport-foot">
+                  {b?.rows?.length > 0 && (
+                    <span className="mcc-sport-faces" aria-hidden="true">
+                      {b.rows.slice(0, 3).map((row) => <Avatar key={row.player} row={row} size={26} badge={false} />)}
+                    </span>
+                  )}
+                  <span className="hub-record">{record || (s.id === 'nba' && !nbaOpen ? 'Opens soon' : '—')}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <section className="mcc-strip" aria-label="Graded record">
           {recapCells.map(({ sport, r, label }) => (
             <div key={sport.id} className="mcc-strip-cell">
               <span>{label} · {sport.name}</span>
@@ -263,41 +329,28 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
           {recap && recapCells.length === 0 && (
             <div className="mcc-strip-cell"><span>Graded record</span><strong>—</strong><small>No graded slate yet</small></div>
           )}
-          <div className="mcc-strip-cell">
-            <span>Top CG today</span>
-            <div className="mcc-strip-top">
-              {topToday && <Avatar row={topToday.row} sport={topToday.sport} size={40} />}
-              <div>
-                <strong>{topToday ? Math.round(topToday.row.score) : '—'}</strong>
-                <small>{topToday ? `${topToday.row.player} · ${topToday.sport.name}` : 'Waiting on today\'s lines'}</small>
-              </div>
-            </div>
-          </div>
         </section>
 
-        <div className="mcc-grid">
-          <aside className="mcc-panel mcc-sports" aria-label="Sports">
-            {SPORTS.map((s) => {
-              const b = boards[s.id];
-              const badge = b?.status === 'ready' ? `${b.count} lines`
-                : b?.status === 'empty' ? 'No lines'
-                  : b?.status === 'locked' ? 'Locked'
-                    : b?.status === 'closed' ? 'Soon'
-                      : b?.status === 'error' ? 'Retry' : '…';
-              return (
-                <button key={s.id} type="button" className={`mcc-sport ${s.id === selected.id ? 'is-active' : ''}`} onClick={() => setPicked(s.id)} aria-pressed={s.id === selected.id}>
-                  <span className="mcc-sport-name">{s.name}</span>
-                  {b?.rows?.length > 0 && (
-                    <span className="mcc-sport-faces" aria-hidden="true">
-                      {b.rows.slice(0, 3).map((row) => <Avatar key={row.player} row={row} size={24} badge={false} />)}
-                    </span>
-                  )}
-                  <span className="mcc-badge">{badge}</span>
-                </button>
-              );
-            })}
-          </aside>
+        {state?.games?.length > 0 && (
+          <div className="hub-games" aria-label={`${selected.name} games`}>
+            {state.games.map((game) => (
+              <div key={`${game.team}-${game.opponent}`} className="hub-game">
+                <TeamLogo src={selected.logo(game.team)} size={22} title={game.team} />
+                <span>{game.team}</span>
+                {game.opponent && (
+                  <>
+                    <span className="mcc-vs">vs</span>
+                    <TeamLogo src={selected.logo(game.opponent)} size={22} title={game.opponent} />
+                    <span>{game.opponent}</span>
+                  </>
+                )}
+                {startLabel(game.start) && <span className="hub-game-time">{startLabel(game.start)}</span>}
+              </div>
+            ))}
+          </div>
+        )}
 
+        <div className="mcc-grid">
           <section className="mcc-panel mcc-plays" aria-label={`Top ${selected.name} plays`}>
             <div className="mcc-panel-head">
               <h2>Top plays · {selected.name}</h2>

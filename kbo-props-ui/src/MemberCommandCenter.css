@@ -1,4 +1,4 @@
-/* Paid-member Command Center (C5). Black + neon green, mobile first. */
+/* Paid-member Sports Hub. Black + neon green, mobile first. */
 .mcc {
   --mcc-bg: #050506;
   --mcc-panel: #0b0f0c;
@@ -8,14 +8,19 @@
   --mcc-text: #f4f4f5;
   --mcc-dim: #9ca3af;
   min-height: 100vh;
-  background: var(--mcc-bg);
+  background:
+    radial-gradient(900px 280px at 10% -10%, rgba(57, 255, 122, 0.08), transparent 60%),
+    var(--mcc-bg);
   color: var(--mcc-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
+.mcc *, .mcc *::before, .mcc *::after { box-sizing: border-box; }
 .mcc button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.mcc button:disabled { cursor: default; }
 .mcc-header {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 14px clamp(14px, 5vw, 64px); border-bottom: 1px solid var(--mcc-line);
@@ -28,9 +33,47 @@
 .mcc-nav > .is-active { color: var(--mcc-text); font-weight: 600; }
 .mcc-nav > *:hover { color: var(--mcc-text); background: var(--mcc-green-soft); }
 .mcc-signout { border: 1px solid var(--mcc-line) !important; }
-.mcc-main { width: 100%; max-width: 1312px; margin: 0 auto; padding: 20px clamp(14px, 5vw, 64px) 32px; box-sizing: border-box; flex: 1; }
+.mcc-main { width: 100%; max-width: 1312px; margin: 0 auto; padding: 20px clamp(14px, 5vw, 64px) 32px; flex: 1; min-width: 0; }
 .mcc-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mcc-green); }
-.mcc-title-row h1 { margin: 4px 0 16px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.02em; }
+.hub-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; min-width: 0; }
+.hub-hero h1 { margin: 4px 0 0; font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.03em; }
+.hub-date { margin: 4px 0 0; color: var(--mcc-dim); font-size: 14px; }
+.hub-feature {
+  display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0;
+  padding: 10px 12px !important; border-radius: 14px; border: 1px solid var(--mcc-line) !important;
+  background: var(--mcc-panel) !important;
+}
+.hub-feature:not(:disabled):hover { border-color: rgba(57, 255, 122, 0.45) !important; }
+.hub-feature > div { display: flex; flex-direction: column; min-width: 0; }
+.hub-feature span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mcc-dim); }
+.hub-feature strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; color: var(--mcc-green); line-height: 1.1; }
+.hub-feature small { font-size: 12px; color: var(--mcc-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-rail {
+  display: flex; gap: 10px; overflow-x: auto; margin: 0 0 14px; padding-bottom: 2px;
+  scrollbar-width: none; max-width: 100%;
+}
+.hub-rail::-webkit-scrollbar { display: none; }
+.hub-sport {
+  flex: 1 0 156px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding: 12px !important; border-radius: 14px; text-align: left;
+  border: 1px solid var(--mcc-line) !important; background: var(--mcc-panel) !important; color: var(--mcc-dim) !important;
+}
+.hub-sport.is-active { border-color: rgba(57, 255, 122, 0.55) !important; background: var(--mcc-green-soft) !important; color: var(--mcc-text) !important; }
+.hub-sport-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hub-sport-name { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: var(--mcc-text); }
+.hub-sport.is-active .hub-sport-name { color: var(--mcc-green); }
+.hub-sport-full { font-size: 12px; }
+.hub-sport-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; min-width: 0; }
+.hub-record { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 700; color: var(--mcc-green); }
+.mcc-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--mcc-line); color: var(--mcc-dim); white-space: nowrap; }
+.hub-games { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 14px; max-width: 100%; scrollbar-width: none; }
+.hub-games::-webkit-scrollbar { display: none; }
+.hub-game {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+  padding: 8px 12px; border-radius: 999px; border: 1px solid var(--mcc-line); background: var(--mcc-panel);
+  font-size: 13px; font-weight: 700;
+}
+.hub-game-time { color: var(--mcc-dim); font-weight: 500; font-size: 12px; }
 .mcc-strip {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
   background: var(--mcc-line); border: 1px solid var(--mcc-line); border-radius: 14px; overflow: hidden; margin-bottom: 16px;
@@ -41,23 +84,18 @@
 .mcc-strip-cell small { font-size: 11px; color: var(--mcc-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mcc-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .mcc-panel { background: var(--mcc-panel); border: 1px solid var(--mcc-line); border-radius: 14px; padding: 14px; min-width: 0; }
-.mcc-sports { display: flex; gap: 8px; overflow-x: auto; padding: 8px; scrollbar-width: none; }
-.mcc-sport {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: 0 0 auto;
-  padding: 9px 12px !important; border-radius: 10px; color: var(--mcc-dim) !important; font-weight: 600;
-}
-.mcc-sport.is-active { background: var(--mcc-green-soft) !important; color: var(--mcc-green) !important; }
-.mcc-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--mcc-line); color: var(--mcc-dim); white-space: nowrap; }
 .mcc-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .mcc-panel-head h2 { margin: 0; font-size: 17px; }
 .mcc-chip { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--mcc-green-soft); color: var(--mcc-green); white-space: nowrap; }
 .mcc-chip.is-placeholder { background: rgba(250, 204, 21, 0.14); color: #facc15; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; }
 .mcc-rows { display: flex; flex-direction: column; }
 .mcc-row {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 10px 4px !important; border-top: 1px solid var(--mcc-line) !important;
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-width: 0;
+  padding: 10px 8px !important; border-top: 1px solid var(--mcc-line) !important; border-radius: 10px;
 }
 .mcc-row:first-child { border-top: 0 !important; }
+.mcc-row.is-over { box-shadow: inset 3px 0 0 var(--mcc-green); }
+.mcc-row.is-under { box-shadow: inset 3px 0 0 #7dd3fc; }
 .mcc-row:hover { background: rgba(57, 255, 122, 0.04) !important; }
 .mcc-avatar-wrap { position: relative; flex: 0 0 auto; }
 .mcc-avatar {
@@ -73,10 +111,7 @@
 .mcc-avatar-badge img { width: 16px; height: 16px; object-fit: contain; }
 .mcc-matchup { display: inline-flex; align-items: center; gap: 4px; color: var(--mcc-text); font-weight: 600; }
 .mcc-vs { color: var(--mcc-dim); font-weight: 400; }
-.mcc-strip-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mcc-strip-top > div:last-child { display: flex; flex-direction: column; min-width: 0; }
-.mcc-sport-name { flex: 1; text-align: left; }
-.mcc-sport-faces { display: inline-flex; margin-right: 6px; }
+.mcc-sport-faces { display: inline-flex; }
 .mcc-sport-faces .mcc-avatar-wrap + .mcc-avatar-wrap { margin-left: -8px; }
 .mcc-sport-faces .mcc-avatar { border-width: 1px; font-size: 9px; }
 .mcc-row-main { flex: 1; min-width: 0; }
@@ -100,19 +135,22 @@
 }
 .mcc-explain { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--mcc-green); }
 .mcc-footer { border-top: 1px solid var(--mcc-line); padding: 24px 16px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.mcc-footer .site-footer { color: var(--mcc-dim); font-size: 13px; }
+.mcc-footer .site-footer { color: var(--mcc-dim); font-size: 13px; max-width: 100%; }
 .mcc-footer-links button { color: var(--mcc-dim); font-size: 13px; text-decoration: underline; }
-@media (min-width: 900px) {
-  .mcc-grid { grid-template-columns: 200px minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
-  .mcc-sports { flex-direction: column; overflow: visible; }
-  .mcc-sport { width: 100%; }
-}
 .mcc-rg { margin: 0; font-weight: 700; font-size: 13px; }
+@media (min-width: 900px) {
+  .mcc-grid { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; }
+  .hub-sport { flex: 1 1 0; }
+}
+@media (max-width: 720px) {
+  .hub-hero { flex-direction: column; align-items: stretch; }
+  .hub-feature small { white-space: normal; }
+}
 @media (max-width: 520px) {
   .mcc-header { padding: 10px 12px; }
   .mcc-wordmark { font-size: 19px; }
   .mcc-nav { flex-wrap: nowrap; gap: 0; }
   .mcc-nav > a { display: none; }
   .mcc-nav > * { padding: 6px 7px; font-size: 13px; }
+  .hub-sport { flex: 0 0 168px; }
 }
-@media (max-width: 899px) { .mcc-sport-faces { display: none; } }
