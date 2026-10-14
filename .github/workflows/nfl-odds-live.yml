@@ -67,6 +67,17 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # Open + closing price per book quote for the CG odds backtest. Reuses
+      # the pull above (no new request). Soft-fails until
+      # sql/nfl_prop_odds_history.sql is applied. Nothing on the site reads it.
+      - name: Log NFL book prop prices (open/close history)
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: timeout 120 python nfl/prop_odds_history.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Publish public board status
         if: always() && github.ref == 'refs/heads/main'
         continue-on-error: true
