@@ -1,0 +1,102 @@
+/* Paid-member Command Center (C5). Black + neon green, mobile first. */
+.mcc {
+  --mcc-bg: #050506;
+  --mcc-panel: #0b0f0c;
+  --mcc-line: #18241b;
+  --mcc-green: #39ff7a;
+  --mcc-green-soft: rgba(57, 255, 122, 0.12);
+  --mcc-text: #f4f4f5;
+  --mcc-dim: #9ca3af;
+  min-height: 100vh;
+  background: var(--mcc-bg);
+  color: var(--mcc-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+.mcc button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.mcc-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px clamp(14px, 5vw, 64px); border-bottom: 1px solid var(--mcc-line);
+  position: sticky; top: 0; z-index: 5; background: rgba(5, 5, 6, 0.92); backdrop-filter: blur(8px);
+}
+.mcc-wordmark { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
+.mcc-wordmark span { color: var(--mcc-green); }
+.mcc-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.mcc-nav > * { padding: 6px 10px; border-radius: 8px; font-size: 14px; color: var(--mcc-dim); text-decoration: none; }
+.mcc-nav > .is-active { color: var(--mcc-text); font-weight: 600; }
+.mcc-nav > *:hover { color: var(--mcc-text); background: var(--mcc-green-soft); }
+.mcc-signout { border: 1px solid var(--mcc-line) !important; }
+.mcc-main { width: 100%; max-width: 1312px; margin: 0 auto; padding: 20px clamp(14px, 5vw, 64px) 32px; box-sizing: border-box; flex: 1; }
+.mcc-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mcc-green); }
+.mcc-title-row h1 { margin: 4px 0 16px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.02em; }
+.mcc-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+  background: var(--mcc-line); border: 1px solid var(--mcc-line); border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+}
+.mcc-strip-cell { background: var(--mcc-panel); padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mcc-strip-cell span { font-size: 12px; color: var(--mcc-dim); }
+.mcc-strip-cell strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; color: var(--mcc-green); }
+.mcc-strip-cell small { font-size: 11px; color: var(--mcc-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcc-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.mcc-panel { background: var(--mcc-panel); border: 1px solid var(--mcc-line); border-radius: 14px; padding: 14px; min-width: 0; }
+.mcc-sports { display: flex; gap: 8px; overflow-x: auto; padding: 8px; scrollbar-width: none; }
+.mcc-sport {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: 0 0 auto;
+  padding: 9px 12px !important; border-radius: 10px; color: var(--mcc-dim) !important; font-weight: 600;
+}
+.mcc-sport.is-active { background: var(--mcc-green-soft) !important; color: var(--mcc-green) !important; }
+.mcc-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--mcc-line); color: var(--mcc-dim); white-space: nowrap; }
+.mcc-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.mcc-panel-head h2 { margin: 0; font-size: 17px; }
+.mcc-chip { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--mcc-green-soft); color: var(--mcc-green); white-space: nowrap; }
+.mcc-chip.is-placeholder { background: rgba(250, 204, 21, 0.14); color: #facc15; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; }
+.mcc-rows { display: flex; flex-direction: column; }
+.mcc-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 10px 4px !important; border-top: 1px solid var(--mcc-line) !important;
+}
+.mcc-row:first-child { border-top: 0 !important; }
+.mcc-row:hover { background: rgba(57, 255, 122, 0.04) !important; }
+.mcc-avatar {
+  width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; overflow: hidden; background: #141a16;
+  display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--mcc-dim);
+}
+.mcc-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.mcc-row-main { flex: 1; min-width: 0; }
+.mcc-row-name { font-weight: 650; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcc-row-meta, .mcc-row-line { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mcc-dim); flex-wrap: wrap; }
+.mcc-row-line { color: var(--mcc-text); margin-top: 2px; }
+.mcc-team-logo { width: 16px; height: 16px; object-fit: contain; }
+.mcc-side { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: var(--mcc-green); }
+.mcc-side.is-under { color: #7dd3fc; }
+.mcc-proj { color: var(--mcc-dim); }
+.mcc-score {
+  flex: 0 0 auto; min-width: 46px; padding: 6px 8px; border-radius: 10px; text-align: center;
+  border: 1px solid rgba(57, 255, 122, 0.4); background: var(--mcc-green-soft); display: flex; flex-direction: column;
+}
+.mcc-score strong { font-family: ui-monospace, Menlo, monospace; font-size: 17px; color: var(--mcc-green); line-height: 1.1; }
+.mcc-score span { font-size: 9px; letter-spacing: 0.12em; color: var(--mcc-dim); }
+.mcc-empty { color: var(--mcc-dim); font-size: 14px; line-height: 1.5; margin: 8px 0; }
+.mcc-open {
+  margin-top: 10px; width: 100%; padding: 11px !important; border-radius: 10px;
+  background: var(--mcc-green) !important; color: #04130a !important; font-weight: 700;
+}
+.mcc-explain { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--mcc-green); }
+.mcc-footer { border-top: 1px solid var(--mcc-line); padding: 24px 16px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.mcc-footer .site-footer { color: var(--mcc-dim); font-size: 13px; }
+.mcc-footer-links button { color: var(--mcc-dim); font-size: 13px; text-decoration: underline; }
+@media (min-width: 900px) {
+  .mcc-grid { grid-template-columns: 200px minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+  .mcc-sports { flex-direction: column; overflow: visible; }
+  .mcc-sport { width: 100%; }
+}
+.mcc-rg { margin: 0; font-weight: 700; font-size: 13px; }
+@media (max-width: 520px) {
+  .mcc-header { padding: 10px 12px; }
+  .mcc-wordmark { font-size: 19px; }
+  .mcc-nav { flex-wrap: nowrap; gap: 0; }
+  .mcc-nav > a { display: none; }
+  .mcc-nav > * { padding: 6px 7px; font-size: 13px; }
+}
