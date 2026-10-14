@@ -173,6 +173,75 @@ def post_with_retry(session, url, *, attempts=None, backoff=None, sleep=time.sle
     return response
 
 
+def rest_headers(key, prefer="resolution=merge-duplicates,return=minimal"):
+    """Service-role headers for a PostgREST write. `prefer` selects merge vs ignore."""
+    return {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": prefer,
+    }
+
+
+def upsert_ignore_duplicates(session, table, rows, on_conflict, *, url, key, batch_size=500):
+    """Insert rows and leave an existing `on_conflict` key unchanged.
+
+    The same item cannot be saved twice: PostgREST `resolution=ignore-duplicates`
+    drops a conflict instead of updating it. A missing table is an error string
+    (the caller logs it and continues). Returns (rows_sent, error_or_None).
+    """
+    if not rows:
+        return 0, None
+    headers = rest_headers(key, "resolution=ignore-duplicates,return=minimal")
+    sent = 0
+    endpoint = f"{url.rstrip('/')}/rest/v1/{table}"
+    for start in range(0, len(rows), batch_size):
+        batch = rows[start:start + batch_size]
+        response = post_with_retry(
+            session,
+            endpoint,
+            params={"on_conflict": on_conflict},
+            json=batch,
+            headers=headers,
+            timeout=60,
+        )
+        body = (response.text or "")
+        missing = response.status_code == 404 or "PGRST205" in body or "Could not find the table" in body
+        if missing:
+            return sent, (
+                f"{table} is not set up yet (HTTP {response.status_code}). "
+                f"Apply sql/{table}.sql in the Supabase SQL editor."
+            )
+        if response.status_code not in (200, 201, 204):
+            compact = body.strip().replace("\n", " ")
+            return sent, f"{table} HTTP {response.status_code}: {compact[:200]}"
+        sent += len(batch)
+    return sent, None
+
+
+def delete_matching(session, table, params, *, url, key):
+    """DELETE rows matching PostgREST params. None on success, else an error string.
+
+    A missing table is reported the same way as an upsert so the job can skip it.
+    """
+    response = session.delete(
+        f"{url.rstrip('/')}/rest/v1/{table}",
+        params=params,
+        headers=rest_headers(key, "return=minimal"),
+        timeout=60,
+    )
+    body = (response.text or "")
+    if response.status_code == 404 or "PGRST205" in body or "Could not find the table" in body:
+        return (
+            f"{table} is not set up yet (HTTP {response.status_code}). "
+            f"Apply sql/{table}.sql in the Supabase SQL editor."
+        )
+    if response.status_code not in (200, 204):
+        compact = body.strip().replace("\n", " ")
+        return f"{table} delete HTTP {response.status_code}: {compact[:200]}"
+    return None
+
+
 def json_safe(value):
     """Copy `value` into strict JSON.
 

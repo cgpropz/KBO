@@ -1,0 +1,76 @@
+name: Market signals
+
+# Fills public.market_signals from feeds the repo already fetches.
+# PrizePicks board snapshots are saved under memory/pp_board/. Unabated
+# inactive markets and NFL open-to-close prices are read from the existing
+# pull and from public.nfl_prop_odds_history. No new outside source.
+#
+# GitHub drops a tight cron, same as the NFL odds chain. The hourly schedule
+# only restarts the chain. The job prints WAIT_SECONDS:
+#   none — no game still locks today, so nothing is queued
+#   1800 — every 30 minutes while games are later today
+#   300  — every 5 minutes in the 90 minutes before the next lock
+# Rows whose game_start has passed are deleted. That is the lock.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: market-signals
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install requests
+
+      - name: Save board snapshots and write market signals
+        id: signals
+        run: |
+          set +e
+          python pipeline/market_signals.py | tee /tmp/market-signals.log
+          status=${PIPESTATUS[0]}
+          wait=$(grep -E '^WAIT_SECONDS=' /tmp/market-signals.log | tail -1 | cut -d= -f2)
+          echo "wait=${wait:-none}" >> "$GITHUB_OUTPUT"
+          exit "$status"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Publish PrizePicks board snapshots
+        if: always()
+        continue-on-error: true
+        run: bash pipeline/memory/commit_memory.sh "chore: prizepicks board snapshots"
+
+      - name: Queue the next run
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WAIT: ${{ steps.signals.outputs.wait }}
+        run: |
+          if [ -z "$WAIT" ] || [ "$WAIT" = "none" ]; then
+            echo "No game still locks today. Not queueing another run."
+            exit 0
+          fi
+          echo "Next market-signal check in ${WAIT}s"
+          sleep "$WAIT"
+          gh workflow run market-signals.yml --ref main

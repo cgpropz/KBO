@@ -11,6 +11,7 @@ import {
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
+import { signalsForViewer } from '../src/marketSignals.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -461,6 +462,88 @@ export async function handleBoardStatus(req, res, client) {
   return res.status(200).json(publicBoardStatus(bundledStatus));
 }
 
+const SIGNAL_COLUMNS = 'signal_key,sport,kind,player,team,game_start,signaled_at,source';
+
+function missingSignalsTable(error) {
+  const message = String(error?.message || error || '');
+  return message.includes('PGRST205') || message.includes('market_signals') || message.includes('does not exist');
+}
+
+// Many rows, not an id=1 snapshot. Locked games are already filtered in the
+// query and again in signalsForViewer. The select list has no projection
+// and no score.
+export async function readMarketSignals(client) {
+  const iso = new Date().toISOString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  try {
+    let builder = client
+      .from('market_signals')
+      .select(SIGNAL_COLUMNS)
+      .gt('game_start', iso)
+      .order('signaled_at', { ascending: false })
+      .limit(200);
+    if (typeof builder.abortSignal === 'function') builder = builder.abortSignal(controller.signal);
+    const { data, error } = await withTimeout(
+      builder,
+      timeouts.snapshotReadMs,
+      'Dataset read timed out'
+    );
+    if (error) {
+      if (missingSignalsTable(error)) return [];
+      throw new Error(error.message);
+    }
+    return data || [];
+  } catch (err) {
+    if (missingSignalsTable(err)) return [];
+    if (err?.code === 'UPSTREAM_TIMEOUT') throw err;
+    if (err?.name === 'AbortError' || controller.signal.aborted) {
+      throw timeoutError('Dataset read timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function handleMarketSignals(req, res, client) {
+  client = client || getClient();
+  let tier = 'free';
+  try {
+    ({ tier } = await withTimeout(
+      resolveTier(client, req.headers?.authorization),
+      timeouts.tierLookupMs,
+      'Tier lookup timed out'
+    ));
+  } catch {
+    tier = 'free';
+  }
+  let rows = [];
+  try {
+    rows = await readMarketSignals(client);
+  } catch (err) {
+    console.error('[api/data] market_signals read failed:', err.message);
+    if (err?.code === 'UPSTREAM_TIMEOUT') {
+      return res.status(503).json({
+        error: 'Dataset temporarily unavailable',
+        code: 'upstream_timeout',
+        message: 'Upstream data store timed out. Please refresh in a moment.',
+      });
+    }
+    rows = [];
+  }
+  const data = signalsForViewer(rows, tier);
+  const newest = data.reduce((best, row) => (row.signaled_at > best ? row.signaled_at : best), '');
+  return res.status(200).json({
+    data,
+    updatedAt: newest || null,
+    preview: false,
+    lockedCount: 0,
+    tier,
+    access: sportAccess(tier),
+  });
+}
+
 export async function handleDataRequest(req, res, client) {
   const dsEarly = String(req.query?.ds || '');
   if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
@@ -474,6 +557,7 @@ export async function handleDataRequest(req, res, client) {
   }
 
   const ds = String(req.query?.ds || '');
+  if (ds === 'market_signals') return handleMarketSignals(req, res, client);
   if (isNbaDataset(ds)) {
     return handleNbaRequest(req, res, client || getClient(), ds);
   }
