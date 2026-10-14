@@ -2,7 +2,8 @@
 
 Writes, under memory/nhl_hits/ (committed by pipeline/memory/commit_memory.sh):
   lines/<YYYY-MM-DD>.json  PrizePicks NHL "Hits" full-game lines, standard
-                           odds_type only, keyed by player + game start (ET
+                           odds_type only (lines_alt/ holds goblin/demon for
+                           research only; never grade or show those), keyed by player + game start (ET
                            date). Keeps first-seen line/time and the latest
                            (closing) line/time, plus every line change.
   games/<YYYY-MM-DD>.json  Per-game skater hits, TOI, PP/PK TOI, home/away and
@@ -55,8 +56,8 @@ def _et_date(iso: str | None) -> str | None:
         return None
 
 
-def parse_hits_lines(payload: dict) -> list[dict]:
-    """Standard, pre-game, full-game, single-player Hits projections."""
+def parse_hits_lines(payload: dict, odds_types=("standard",)) -> list[dict]:
+    """Pre-game, full-game, single-player Hits projections of the given odds types."""
     included = {(i.get("type"), str(i.get("id"))): i.get("attributes") or {}
                 for i in payload.get("included") or []}
     rows = []
@@ -65,7 +66,8 @@ def parse_hits_lines(payload: dict) -> list[dict]:
         rel = item.get("relationships") or {}
         if str(attrs.get("stat_type") or "").strip().lower() != "hits":
             continue
-        if str(attrs.get("odds_type") or "").lower() != "standard":
+        odds = str(attrs.get("odds_type") or "").lower()
+        if odds not in odds_types:
             continue
         if str(((rel.get("duration") or {}).get("data") or {}).get("id")) != "11":
             continue
@@ -89,7 +91,7 @@ def parse_hits_lines(payload: dict) -> list[dict]:
             "team": team_abbr(player.get("team")) or player.get("team"),
             "opponent": team_abbr(attrs.get("description")) or attrs.get("description"),
             "game_start": attrs.get("start_time"),
-            "line_type": "standard",
+            "line_type": odds,
             "line": line,
         })
     return rows
@@ -100,6 +102,8 @@ def merge_lines(store: dict, rows: list[dict], now: str) -> int:
     props = store.setdefault("props", {})
     for row in rows:
         key = f"{row['pp_player_id']}|{row['game_start']}"
+        if row["line_type"] != "standard":
+            key += f"|{row['line_type']}"
         rec = props.get(key)
         if rec is None:
             rec = dict(row, first_line=row["line"], first_seen=now, changes=[])
@@ -114,20 +118,33 @@ def merge_lines(store: dict, rows: list[dict], now: str) -> int:
     return len(rows)
 
 
-def log_lines(out: Path, now: str) -> int:
-    rows = parse_hits_lines(_json(PRIZEPICKS_URL))
-    if not rows:
-        print("NHL hits lines: none posted; nothing written")
-        return 0
+def _write_lines(folder: Path, rows: list[dict], now: str, note: str) -> None:
     by_date: dict[str, list[dict]] = {}
     for row in rows:
         by_date.setdefault(_et_date(row["game_start"]) or "unknown", []).append(row)
     for date, part in by_date.items():
-        path = out / "lines" / f"{date}.json"
-        store = _load(path, {"schema_version": 1, "source": "prizepicks", "stat": "Hits"})
+        path = folder / f"{date}.json"
+        store = _load(path, {"schema_version": 1, "source": "prizepicks", "stat": "Hits", "note": note})
         merge_lines(store, part, now)
         _save(path, store)
-    print(f"NHL hits lines: {len(rows)} standard lines logged")
+
+
+def log_lines(out: Path, now: str) -> int:
+    """Standard lines go to lines/ (the only set anything graded may read).
+    Goblin/demon go to lines_alt/ for research only."""
+    payload = _json(PRIZEPICKS_URL)
+    rows = parse_hits_lines(payload, ("standard",))
+    alt = parse_hits_lines(payload, ("goblin", "demon"))
+    if not rows and not alt:
+        print("NHL hits lines: none posted; nothing written")
+        return 0
+    if rows:
+        _write_lines(out / "lines", rows, now, "standard only")
+    if alt:
+        _write_lines(out / "lines_alt", alt, now, "goblin/demon, research only; never grade or show")
+    print(f"NHL hits lines: {len(rows)} standard, "
+          f"{sum(r['line_type'] == 'goblin' for r in alt)} goblin, "
+          f"{sum(r['line_type'] == 'demon' for r in alt)} demon")
     return len(rows)
 
 

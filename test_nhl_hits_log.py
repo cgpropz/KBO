@@ -38,3 +38,27 @@ def test_game_rows():
     rows = game_rows(box, [{"playerId": 5, "ppTimeOnIce": 60, "shTimeOnIce": 30, "skaterFullName": "Zed"}])
     assert rows[0]["hits"] == 3 and rows[0]["toi_sec"] == 1180 and rows[0]["home"] is True
     assert rows[0]["pp_toi_sec"] == 60 and rows[0]["venue"] == "Arena" and rows[0]["opponent"] == "FLA"
+
+
+def test_alt_lines_separate_and_labeled():
+    payload = {"data": [_proj("1", "standard", 2.5), _proj("2", "goblin", 1.5), _proj("3", "demon", 3.5)],
+               "included": [{"type": "new_player", "id": "9", "attributes": {"name": "A B", "team": "VGK"}}]}
+    alt = parse_hits_lines(payload, ("goblin", "demon"))
+    assert sorted(r["line_type"] for r in alt) == ["demon", "goblin"]
+    store = {}
+    merge_lines(store, alt, "t")
+    assert len(store["props"]) == 2  # same player+game kept apart by line_type
+    assert all(r["line_type"] == "standard" for r in parse_hits_lines(payload))
+
+
+def test_log_lines_writes_alt_to_own_folder(tmp_path, monkeypatch):
+    import json
+    import nhl.hits_log as h
+    payload = {"data": [_proj("1", "standard", 2.5), _proj("2", "goblin", 1.5)],
+               "included": [{"type": "new_player", "id": "9", "attributes": {"name": "A B", "team": "VGK"}}]}
+    monkeypatch.setattr(h, "_json", lambda url: payload)
+    h.log_lines(tmp_path, "t")
+    std = json.loads((tmp_path / "lines" / "2026-10-13.json").read_text())
+    alt = json.loads((tmp_path / "lines_alt" / "2026-10-13.json").read_text())
+    assert {r["line_type"] for r in std["props"].values()} == {"standard"}
+    assert {r["line_type"] for r in alt["props"].values()} == {"goblin"}

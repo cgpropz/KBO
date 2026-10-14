@@ -94,7 +94,7 @@ jobs:
       # slate. The commit happens before the wait below. A memory/ push does
       # not match this workflow's path filter, so it does not start another run.
       # Logging only for a future hits model; not shown on the site.
-      - name: Log PrizePicks NHL hits lines (standard)
+      - name: Log PrizePicks NHL hits lines (standard; goblin/demon to lines_alt/)
         continue-on-error: true
         run: python -m nhl.hits_log --only lines
 
