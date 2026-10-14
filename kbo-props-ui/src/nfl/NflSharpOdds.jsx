@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { useAuth } from '../AuthContext'
+import { canSeeNba } from '../entitlements'
+import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
@@ -149,7 +152,56 @@ function HitRate({ rate }) {
   return <span className="nfl-sharp-hit" style={color ? { color } : undefined}>{formatHit(rate)}</span>
 }
 
-function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle }) {
+// Admin-only draft column. Display only: it reads fields the Sharp Odds
+// snapshot already sends to this viewer, so it exposes no extra data.
+function cgFor(item, mode) {
+  const side = scoredSide(item)
+  return side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven) : null
+}
+
+function CgOddsCell({ item, mode }) {
+  const side = scoredSide(item)
+  const cg = cgFor(item, mode)
+  const baseline = BASELINES[mode] || BASELINES.flex
+  if (!cg) {
+    return (
+      <td className="nfl-sharp-cg is-empty">
+        <div className="cgo-hero">
+          <div className="cgo-head"><span className="cgo-label">CG ODDS</span><span className="cgo-draft">ADMIN DRAFT</span></div>
+          <div className="cgo-none">No CG price for this line</div>
+        </div>
+      </td>
+    )
+  }
+  const tone = cg.edgePct == null ? 'even' : cg.edgePct > 0 ? 'pos' : cg.edgePct < 0 ? 'neg' : 'even'
+  const sideLabel = side === 'under' ? 'Under' : 'Over'
+  const bookList = cg.books.join(', ')
+  return (
+    <td className={`nfl-sharp-cg tone-${tone}`}>
+      <div className="cgo-hero" title="CG odds draft (admin only). Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
+        <div className="cgo-head">
+          <span className="cgo-label">CG ODDS</span>
+          <span className={`cgo-edge ${tone}`} title={`CG fair win% minus the ${baseline.label} break-even (${(baseline.breakeven * 100).toFixed(2)}%)`}>
+            {formatEdge(cg.edgePct)} <small>vs {baseline.label}</small>
+          </span>
+        </div>
+        <div className="cgo-who">{item.player} · <span className={side}>{sideLabel} {formatValue(item.pp_line)} {item.prop}</span></div>
+        <div className="cgo-main">
+          <b className="cgo-price">{formatAmerican(cg.american)}</b>
+          <span className="cgo-prob"><strong>{(cg.probability * 100).toFixed(1)}%</strong><small>{sideLabel} fair win</small></span>
+        </div>
+        <div className="cgo-tags">
+          <span className="cgo-tag" title={bookList ? `Books in the CG price: ${bookList}` : 'Books in the CG price'}>{cg.books.length} book{cg.books.length === 1 ? '' : 's'}</span>
+          {cg.lineAdjusted && (
+            <span className="cgo-tag adj" title={`Books post ${formatValue(item.matched_line)}, PrizePicks posts ${formatValue(item.pp_line)}. CG shifted the book price to the PrizePicks line, so this number is less certain.`}>line adj {formatValue(item.matched_line)}→{formatValue(item.pp_line)}</span>
+          )}
+        </div>
+      </div>
+    </td>
+  )
+}
+
+function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle, showCg }) {
   const side = item.recommendation === 'UNDER' ? 'under' : 'over'
   const label = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
   const edge = activeEdge(item, mode)
@@ -167,7 +219,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
   return (
     <>
       <tr
-        className={`nfl-lines-row nfl-sharp-row${open ? ' is-open' : ''}`}
+        className={`nfl-lines-row nfl-sharp-row${open ? ' is-open' : ''}${showCg ? ' has-cg' : ''}`}
         onClick={onToggle}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -194,6 +246,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
             <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
           )}
         </td>
+        {showCg && <CgOddsCell item={item} mode={mode} />}
         <td><Quote quote={item.best_over} baselineAmerican={baselineAmerican} /></td>
         <td><Quote quote={item.best_under} baselineAmerican={baselineAmerican} /></td>
         <td>{formatValue(item.projection)}</td>
@@ -215,7 +268,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
       </tr>
       {open && (
         <tr className="nfl-sharp-strip-row" id={stripDomId(item)}>
-          <td colSpan={COLUMN_COUNT}>
+          <td colSpan={COLUMN_COUNT + (showCg ? 1 : 0)}>
             <BookStrip item={item} mode={mode} baselineAmerican={baselineAmerican} />
           </td>
         </tr>
@@ -234,11 +287,15 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [matchup, setMatchup] = useState(ALL_MATCHUPS)
   const [prop, setProp] = useState('All')
   const [side, setSide] = useState('All')
-  const [sort, setSort] = useState('PP Edge')
+  const [sortChoice, setSort] = useState(null)
   const [mode, setMode] = useState('flex')
   const [plusOnly, setPlusOnly] = useState(false)
   const [openId, setOpenId] = useState(null)
   const loadedRef = useRef(false)
+  const { user } = useAuth()
+  const showCg = canSeeNba(user)
+  // Admins default to CG edge; everyone else keeps PP Edge.
+  const sort = sortChoice ?? (showCg ? 'CG Edge' : 'PP Edge')
 
   useEffect(() => {
     let active = true
@@ -300,12 +357,19 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       return Number.isFinite(value) ? value : -999
     }
     return filtered.sort((a, b) => {
+      if (sort === 'CG Edge' && showCg) {
+        const cg = (item) => {
+          const value = cgFor(item, mode)?.edgePct
+          return Number.isFinite(value) ? value : -999
+        }
+        return (cg(b) - cg(a)) || (edge(b) - edge(a)) || String(a.player).localeCompare(String(b.player))
+      }
       if (sort === 'Grade') return (rank(b) - rank(a)) || (edge(b) - edge(a)) || String(a.player).localeCompare(String(b.player))
       if (sort === 'L10') return (b.hitRate ?? -1) - (a.hitRate ?? -1)
       if (sort === 'L5') return (b.hitRateL5 ?? -1) - (a.hitRateL5 ?? -1)
       return (edge(b) - edge(a)) || (rank(b) - rank(a)) || String(a.player).localeCompare(String(b.player))
     })
-  }, [records, prop, matchup, side, query, sort, mode, plusOnly])
+  }, [records, prop, matchup, side, query, sort, mode, plusOnly, showCg])
 
   const status = payload?.status || 'ok'
   const showStatus = loaded && !error && payload && status !== 'ok'
@@ -342,6 +406,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
         </div>
         <label><span>SORT</span>
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
+            {showCg && <option>CG Edge</option>}
             <option>PP Edge</option>
             <option>Grade</option>
             <option>L10</option>
@@ -376,11 +441,12 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} lines are locked. Upgrade to see the full board.`}</div>}
       {!!rows.length && (
         <div className="nfl-lines-table-wrap">
-          <table className="nfl-lines-table nfl-sharp-table">
+          <table className={`nfl-lines-table nfl-sharp-table${showCg ? ' has-cg' : ''}`}>
             <thead>
               <tr>
                 <th>Player</th>
                 <th>Prop</th>
+                {showCg && <th className="nfl-sharp-cg-th" title="Admin-only draft. CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>}
                 <th>Best Over</th>
                 <th>Best Under</th>
                 <th>Our Proj</th>
@@ -403,6 +469,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                     onSelectPlayer={onSelectPlayer}
                     open={openId === id}
                     onToggle={() => setOpenId((current) => current === id ? null : id)}
+                    showCg={showCg}
                   />
                 )
               })}

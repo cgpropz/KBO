@@ -455,6 +455,7 @@ def slate_records(payload):
         records.append({
             'player': chosen['player'], 'team': chosen['team'], 'opponent': chosen['opponent'],
             'prop': chosen['prop'], 'line': chosen['line'],
+            'odds_type': chosen.get('odds_type') or '',
             'start_time': chosen.get('start_time') or '',
         })
     return records
@@ -680,6 +681,8 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'gameday': text_or_empty(getattr(row, 'gameday', '')), 'gametime': text_or_empty(getattr(row, 'gametime', '')),
         'start_time': text_or_empty(getattr(row, 'start_time', '')),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
+        # PrizePicks odds_type of the published card: standard, demon (Pass TDs fallback), or goblin.
+        'line_type': text_or_empty(getattr(row, 'odds_type', '')),
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
         'formula_applied': tuned is not None,

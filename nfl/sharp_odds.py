@@ -465,6 +465,7 @@ def load_pp_rows(path):
                 "imageUrl": item.get("imageUrl") or "",
                 "prop": prop,
                 "pp_line": line,
+                "line_type": _optional_text(item.get("line_type") or item.get("odds_type")),
                 "projection": projection,
                 "hitRateL5": item.get("hitRateL5"),
                 "gamesL5": item.get("gamesL5"),
@@ -478,6 +479,24 @@ def load_pp_rows(path):
             }
         )
     return rows
+
+
+def filter_standard_lines(rows):
+    """Code Green's rule: CG odds use standard PrizePicks lines only.
+
+    Goblin and demon cards (and rows whose line type is unknown) are dropped
+    at ingest. Returns (kept_rows, counts) so the snapshot can report before
+    and after.
+    """
+    kept, dropped = [], {}
+    for row in rows or []:
+        line_type = (row.get("line_type") or "").lower()
+        if line_type == "standard":
+            kept.append(row)
+        else:
+            dropped[line_type or "unknown"] = dropped.get(line_type or "unknown", 0) + 1
+    counts = {"before": len(rows or []), "after": len(kept), "dropped": dropped}
+    return kept, counts
 
 
 def _paired_book_quotes(rows):
@@ -678,7 +697,7 @@ def _unmatched_reason(pp, available, line_match, props_in_feed, players_with_boo
     return "line_too_far"
 
 
-def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None):
+def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None):
     books_by_player_prop = {}
     props_in_feed = set()
     players_with_books = set()
@@ -834,6 +853,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
         "events_scanned": events_scanned,
         "sportsbook_record_count": len(book_rows),
         "prizepicks_prop_count": len(pp_rows),
+        "line_type_filter": line_type_filter,
         "matched_count": matched_count,
         "unmatched_count": unmatched_count,
         "unmatched_market_props": unmatched_market_props,
@@ -853,6 +873,8 @@ def run(projections_path, provider_name="unabated", fetch=None):
     if pp_rows is None:
         print(f"NFL projections not found at {projections_path}; sharp odds skipped.")
         return None
+    pp_rows, line_type_filter = filter_standard_lines(pp_rows)
+    print(f"PrizePicks lines: {line_type_filter['before']} before standard-only filter, {line_type_filter['after']} after; dropped {line_type_filter['dropped']}.")
     provider = resolve_provider(provider_name)
     if fetch is None:
         book_rows, events_scanned = provider.fetch_records()
@@ -864,6 +886,7 @@ def run(projections_path, provider_name="unabated", fetch=None):
         provider=provider.name,
         events_scanned=events_scanned,
         feed_snapshot_at=getattr(provider, "feed_snapshot_at", None),
+        line_type_filter=line_type_filter,
     )
 
 
