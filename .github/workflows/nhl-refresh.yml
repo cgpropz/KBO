@@ -93,6 +93,11 @@ jobs:
       # 25-minute chain can overlap the daily grade job without dropping the
       # slate. The commit happens before the wait below. A memory/ push does
       # not match this workflow's path filter, so it does not start another run.
+      # Logging only for a future hits model; not shown on the site.
+      - name: Log PrizePicks NHL hits lines (standard)
+        continue-on-error: true
+        run: python -m nhl.hits_log --only lines
+
       - name: Publish memory/nhl slate freeze
         if: success()
         continue-on-error: true
