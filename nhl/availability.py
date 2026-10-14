@@ -6,21 +6,35 @@ API (api-web.nhle.com) is the source when the snapshot has none of those
 statuses, and it also adds a scratch the snapshot missed. A failed API
 read logs a warning. Lineup statuses still apply. With neither source,
 the board stays as it is.
+
+Pregame, those two rarely flag anyone, so drop_unavailable also uses
+ESPN's public NHL injury report (Out, IR, LTIR, suspended), the
+api-web.nhle.com active roster (AHL assignments), and the projected
+lineup (a skater missing from a complete 18-skater lineup is a scratch).
+Each source fails on its own; the manual EXCLUDED_PLAYER_IDS list in
+build_board.py stays as a fallback.
 """
 from __future__ import annotations
 
 import json
 import logging
 import re
+import unicodedata
 import urllib.request
 
 log = logging.getLogger(__name__)
 
 RIGHT_RAIL_URL = "https://api-web.nhle.com/v1/gamecenter/{game_id}/right-rail"
+ROSTER_URL = "https://api-web.nhle.com/v1/roster/{team}/current"
+ESPN_INJURIES_URL = "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries"
+# A team's projected lineup only counts as complete with 12 forwards and 6 D.
+FULL_LINEUP_SKATERS = 18
+ESPN_TEAM = {"LA": "LAK", "NJ": "NJD", "SJ": "SJS", "TB": "TBL", "UTAH": "UTA"}
 
 
 def name_key(name: str | None) -> str:
-    text = str(name or "").lower()
+    text = unicodedata.normalize("NFKD", str(name or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch)).lower()
     text = re.sub(r"\s+(jr|sr|ii|iii|iv|v)\.?$", "", text.strip())
     return re.sub(r"[^a-z0-9]", "", text)
 
@@ -38,6 +52,8 @@ def blocked_status(value) -> str | None:
         return "OUT"
     if "SCRATCH" in compact:
         return "SCRATCHED"
+    if compact.startswith("SUSPEN"):
+        return "SUSPENDED"
     return None
 
 
@@ -174,21 +190,122 @@ def unavailable_keys(lineups, games, fetch_json=_json) -> tuple[set[str], set[st
     return api_names, api_ids
 
 
+def parse_espn_injuries(payload) -> set[tuple[str, str]]:
+    """(name key, team) for players ESPN lists Out, IR, LTIR, or suspended.
+
+    Day-to-day and questionable players stay on the board.
+    """
+    out: set[tuple[str, str]] = set()
+    for team in (payload or {}).get("injuries") or []:
+        for item in (team or {}).get("injuries") or []:
+            status = item.get("status")
+            kind = item.get("type")
+            if isinstance(kind, dict):
+                kind = kind.get("description") or kind.get("name")
+            if not (blocked_status(status) or blocked_status(kind)):
+                continue
+            athlete = item.get("athlete") or {}
+            name = athlete.get("displayName") or athlete.get("fullName")
+            abbr = str(((athlete.get("team") or {}).get("abbreviation")) or "").upper()
+            abbr = ESPN_TEAM.get(abbr, abbr)
+            if name:
+                out.add((name_key(name), abbr))
+    return out
+
+
+def fetch_espn_unavailable(fetch_json=_json) -> set[tuple[str, str]]:
+    return parse_espn_injuries(fetch_json(ESPN_INJURIES_URL))
+
+
+def fetch_rosters(teams, fetch_json=_json) -> dict[str, set[str]]:
+    """Active NHL roster ids by team. A team that fails to load is left out."""
+    rosters: dict[str, set[str]] = {}
+    for team in sorted({str(t).upper() for t in teams if t}):
+        try:
+            payload = fetch_json(ROSTER_URL.format(team=team))
+        except Exception as exc:  # noqa: BLE001 - one team must not wipe the board
+            log.warning("NHL roster %s failed: %s", team, exc)
+            continue
+        ids = {
+            str(player.get("id"))
+            for group in ("forwards", "defensemen", "goalies")
+            for player in (payload or {}).get(group) or []
+            if player.get("id") is not None
+        }
+        if ids:
+            rosters[team] = ids
+    return rosters
+
+
+def projected_lineups(lineups) -> dict[str, set[str]]:
+    """Name keys on each team's projected lineup, only for complete lineups."""
+    teams: dict[str, set[str]] = {}
+    for game in lineups or []:
+        bucket = (game or {}).get("lineups") if isinstance(game, dict) else None
+        if not isinstance(bucket, dict):
+            continue
+        for team, players in bucket.items():
+            if not isinstance(players, list):
+                continue
+            even = [p for p in players if isinstance(p, dict) and p.get("unit") == "ev" and p.get("name")]
+            dressed = [p for p in even if not blocked_status(p.get("status"))]
+            if len(dressed) < FULL_LINEUP_SKATERS:
+                continue
+            listed = [p["name"] for p in players if isinstance(p, dict) and p.get("name")]
+            keys = teams.setdefault(str(team).upper(), set())
+            keys.update(name_key(n) for n in listed)
+            keys.update("last:" + _last_key(n) for n in listed)
+    return teams
+
+
+def _last_key(name) -> str:
+    parts = str(name or "").split()
+    return name_key(parts[-1]) if parts else ""
+
+
 def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
-    """Remove players who will not dress. A failed source returns the same rows."""
+    """Remove players who will not dress. Each source fails on its own.
+
+    1. Lineup snapshot and NHL game data statuses (OUT/IR/LTIR/scratched).
+    2. ESPN's public NHL injury report: Out, IR, LTIR, suspended.
+    3. Not on the team's active NHL roster (AHL assignment, waived, traded).
+    4. A skater missing from his team's complete projected lineup
+       (healthy scratch). Goalies are handled by the starter check.
+    """
     rows = list(projections or [])
     try:
         names, ids = unavailable_keys(lineups, games, fetch_json)
     except Exception as exc:  # noqa: BLE001 - keep the board when the injury read fails
-        log.warning("NHL injury source failed, keeping the board: %s", exc)
-        return rows
+        log.warning("NHL injury source failed, keeping the board for that source: %s", exc)
+        names, ids = set(), set()
+    try:
+        espn = fetch_espn_unavailable(fetch_json)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("ESPN injury report failed: %s", exc)
+        espn = set()
+    espn_names = {key for key, _team in espn}
+    rosters = fetch_rosters({row.get("team") for row in rows}, fetch_json)
+    dressed = projected_lineups(lineups)
     kept = []
     for row in rows:
         player_id = str(row.get("playerId") or "").strip()
+        key = name_key(row.get("player"))
+        team = str(row.get("team") or "").upper()
         if player_id and player_id in ids:
             continue
-        if name_key(row.get("player")) in names:
+        if key in names:
             continue
+        if (key, team) in espn or (not team and key in espn_names):
+            continue
+        roster = rosters.get(team)
+        if roster and player_id and player_id not in roster:
+            continue
+        lineup = dressed.get(team)
+        if lineup and row.get("position") != "G" and key not in lineup:
+            # Last-name match keeps a player whose first name is spelled
+            # differently on the line sheet (Alex / Alexander).
+            if "last:" + _last_key(row.get("player")) not in lineup:
+                continue
         kept.append(row)
     return kept
 
