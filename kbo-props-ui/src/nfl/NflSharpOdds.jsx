@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { useAuth } from '../AuthContext'
+import { canSeeNba } from '../entitlements'
+import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
@@ -149,7 +152,26 @@ function HitRate({ rate }) {
   return <span className="nfl-sharp-hit" style={color ? { color } : undefined}>{formatHit(rate)}</span>
 }
 
-function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle }) {
+// Admin-only draft column. Display only: it reads fields the Sharp Odds
+// snapshot already sends to this viewer, so it exposes no extra data.
+function CgOddsCell({ item, mode }) {
+  const side = scoredSide(item)
+  const cg = side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven) : null
+  // The phone layout hides the table header, so the cell names itself.
+  if (!cg) return <td className="nfl-sharp-cg"><div className="nfl-sharp-book">CG odds · admin draft</div><span className="nfl-sharp-book">—</span></td>
+  const tone = cg.edgePct == null ? '' : cg.edgePct > 0 ? 'over' : cg.edgePct < 0 ? 'under' : ''
+  return (
+    <td className="nfl-sharp-cg" title="CG odds draft (admin only). Method: Sniper Bot spec (power devig, book weights, line shift). Weights are unfitted priors; not backtested.">
+      <div className="nfl-sharp-book">CG odds · admin draft</div>
+      <div className="nfl-sharp-price">{formatAmerican(cg.american)}</div>
+      <div className="nfl-sharp-book">{side === 'under' ? 'U' : 'O'} {(cg.probability * 100).toFixed(1)}%</div>
+      <div className={`nfl-sharp-ev ${tone}`}>{formatEdge(cg.edgePct)}</div>
+      <div className="nfl-sharp-book">{cg.books.length} book{cg.books.length === 1 ? '' : 's'}{cg.lineAdjusted ? ' · line adj' : ''}</div>
+    </td>
+  )
+}
+
+function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle, showCg }) {
   const side = item.recommendation === 'UNDER' ? 'under' : 'over'
   const label = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
   const edge = activeEdge(item, mode)
@@ -212,10 +234,11 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           )}
         </td>
         <td><span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span></td>
+        {showCg && <CgOddsCell item={item} mode={mode} />}
       </tr>
       {open && (
         <tr className="nfl-sharp-strip-row" id={stripDomId(item)}>
-          <td colSpan={COLUMN_COUNT}>
+          <td colSpan={COLUMN_COUNT + (showCg ? 1 : 0)}>
             <BookStrip item={item} mode={mode} baselineAmerican={baselineAmerican} />
           </td>
         </tr>
@@ -239,6 +262,8 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [plusOnly, setPlusOnly] = useState(false)
   const [openId, setOpenId] = useState(null)
   const loadedRef = useRef(false)
+  const { user } = useAuth()
+  const showCg = canSeeNba(user)
 
   useEffect(() => {
     let active = true
@@ -389,6 +414,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                 <th>L10</th>
                 <th title="De-vigged fair win% minus the selected PrizePicks break-even">PP Edge</th>
                 <th>Grade</th>
+                {showCg && <th title="Admin-only draft. CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>}
               </tr>
             </thead>
             <tbody>
@@ -403,6 +429,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                     onSelectPlayer={onSelectPlayer}
                     open={openId === id}
                     onToggle={() => setOpenId((current) => current === id ? null : id)}
+                    showCg={showCg}
                   />
                 )
               })}
