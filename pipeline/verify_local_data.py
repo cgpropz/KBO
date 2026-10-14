@@ -93,7 +93,12 @@ def main() -> int:
     matchup_data = load_json(PUBLIC / "matchup_data.json")
 
     cards = props.get("cards", []) if isinstance(props, dict) else []
-    if not isinstance(cards, list) or not cards:
+    # An empty board is valid after a finished slate: the publish drops those
+    # cards and leaves the next game (or an explicit empty-board note).
+    intentional_empty = isinstance(props, dict) and (
+        isinstance(props.get("next_game"), dict) or props.get("board_note") == "no_upcoming_games"
+    )
+    if not isinstance(cards, list) or (not cards and not intentional_empty):
         failures.append("prizepicks_props.json missing non-empty cards list")
 
     targets = sorted({c.get("name") for c in cards if isinstance(c, dict) and c.get("name")})

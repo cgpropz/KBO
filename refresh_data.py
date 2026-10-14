@@ -262,6 +262,17 @@ def push_snapshots_to_supabase(skip_flags):
             with open(file_path, "r", encoding="utf-8") as f:
                 payload = json.load(f)
 
+            if filename == "prizepicks_props.json":
+                from pipeline.kbo_board_cutoff import prepare_prizepicks_board
+                updated, note = prepare_prizepicks_board(payload)
+                if note:
+                    print(f"  ℹ {note}")
+                if updated is not payload:
+                    with open(file_path, "w", encoding="utf-8") as handle:
+                        json.dump(updated, handle, ensure_ascii=False, indent=2)
+                        handle.write("\n")
+                payload = updated
+
             client.table(table).upsert({"id": 1, "data": payload}).execute()
             print(f"  ✓ {table} updated")
             if filename == "prizepicks_props.json":

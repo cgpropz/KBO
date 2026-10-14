@@ -81,6 +81,9 @@ def frame_from_payload(prizepicks):
         if player["league"] != "KBO" or not name or "+" in str(name):
             continue
         attrs = ppdata.get("attributes") or {}
+        # start_time is an absolute timestamp from PrizePicks. The board cutoff
+        # reads it when the official schedule has no matching game. It is not
+        # a projection input.
         rows.append((
             name,
             player["league"],
@@ -89,10 +92,11 @@ def frame_from_payload(prizepicks):
             attrs.get("description", "N/A"),
             attrs.get("line_score", "N/A"),
             attrs.get("odds_type", "N/A"),
+            attrs.get("start_time") or attrs.get("board_time") or "",
         ))
 
     return pd.DataFrame(rows, columns=[
-        "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type",
+        "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time",
     ])
 
 
@@ -205,7 +209,7 @@ def _load_cached():
         df = pd.read_json(cached)
         print(f"  ↳ Loaded {len(df)} cached lines from KBO_odds_2025.json")
         return df
-    return pd.DataFrame(columns=["Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type"])
+    return pd.DataFrame(columns=["Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time"])
 
 
 def save_to_json(df):
@@ -238,8 +242,9 @@ def save_to_json(df):
 if __name__ == "__main__":
     df, source = fetch_kbo_lines(requests.get)
     if source == "cache":
-        # The live board had no usable KBO lines. Keep the file as-is so a
-        # formatter diff is not committed, and let the pipeline publish on it.
+        # The live board had no usable KBO lines. Keep this file so pitcher and
+        # batter projections are not rebuilt from nothing. It can still be a
+        # finished game. The board publish drops those lines before they go out.
         print("⚠ Fresh PrizePicks fetch did not return KBO lines; using the last-good odds file")
         sys.exit(0)
     if source == "empty" or df is None or df.empty:

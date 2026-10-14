@@ -395,6 +395,29 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, p
 
     return card
 
+
+def _attach_start_time(card, props):
+    """PrizePicks start, if the odds row had one. Not a projection field."""
+    for prop in props:
+        raw = str(prop.get("start_time") or "").strip()
+        if raw:
+            card["start_time"] = raw
+            return
+
+
+def _apply_board_cutoff(payload):
+    """Drop games that have started or finished before this file is published."""
+    try:
+        from pipeline.kbo_board_cutoff import prepare_prizepicks_board
+    except Exception as exc:
+        print(f"⚠ KBO board cutoff unavailable: {exc}")
+        return payload
+    updated, note = prepare_prizepicks_board(payload)
+    if note:
+        print(f"ℹ {note}")
+    return updated
+
+
 def main():
     odds = load_odds()
     pitcher_logs = load_pitcher_logs()
@@ -544,6 +567,9 @@ def main():
                 "vs": o["Versus"],
                 "team": o["Team"],
                 "odds_type": o.get("Odds Type", "standard").strip().lower(),
+                # Not copied onto the published prop. The board cutoff uses it
+                # only when the official schedule has no matching game.
+                "start_time": str(o.get("Start Time") or "").strip(),
             })
 
     cards = []
@@ -593,6 +619,7 @@ def main():
             ]
             card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=player_name)
             card["name"] = player_name  # Use PP display name
+            _attach_start_time(card, pitcher_props)
             cards.append(card)
 
         if is_batter:
@@ -615,6 +642,7 @@ def main():
                 profiles=batter_profiles,
             )
             card["name"] = player_name
+            _attach_start_time(card, batter_props)
             cards.append(card)
 
     # Sort: pitchers first, then batters, each by highest hit rate
@@ -636,6 +664,8 @@ def main():
         "total_props": sum(len(c["props"]) for c in cards),
         "cards": cards,
     }
+    output = _apply_board_cutoff(output)
+    cards = output["cards"]
 
     out_path = os.path.join(PUBLIC_DATA, "prizepicks_props.json")
 
@@ -777,6 +807,7 @@ def lines_only():
     data["generated_at"] = __import__("datetime").datetime.now(
         __import__("datetime").timezone.utc
     ).isoformat()
+    data = _apply_board_cutoff(data)
 
     with open(out_path, "w") as f:
         json.dump(data, f, indent=2)

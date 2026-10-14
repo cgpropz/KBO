@@ -32,6 +32,42 @@ function value(value, digits = 1) {
   return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(digits)
 }
 
+function formatNextGameEt(nextGame) {
+  const iso = nextGame?.start_time_utc || nextGame?.start_time_et
+  const date = new Date(iso || '')
+  if (Number.isNaN(date.getTime())) return nextGame?.label_et || ''
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hourCycle: 'h12',
+    }).formatToParts(date).map((part) => [part.type, part.value]),
+  )
+  return `${parts.weekday}, ${parts.month} ${parts.day}, ${parts.hour}:${parts.minute} ${parts.dayPeriod} ET`
+}
+
+function EmptyBoard({ nextGame }) {
+  const when = formatNextGameEt(nextGame)
+  const matchup = nextGame?.away && nextGame?.home ? `${nextGame.away} @ ${nextGame.home}` : ''
+  return (
+    <section className="kbo-board-empty" data-testid="kbo-board-empty">
+      <h2>No upcoming props</h2>
+      {when ? (
+        <>
+          <p>Next game{matchup ? ` · ${matchup}` : ''}</p>
+          <time dateTime={nextGame.start_time_utc || nextGame.start_time_et}>{when}</time>
+        </>
+      ) : (
+        <p>The next KBO game is not posted yet.</p>
+      )}
+    </section>
+  )
+}
+
 function FilterIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -213,6 +249,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     })
   }, [allRows, filters, propTab])
 
+  const boardEmpty = !!snapshot && !allRows.length
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
@@ -233,14 +270,15 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
 
   return (
     <main className="kbo-lines-page">
-      <nav className="kbo-prop-tabs" aria-label="KBO prop types">
+      {!boardEmpty && <nav className="kbo-prop-tabs" aria-label="KBO prop types">
         {propTabs.map((tab) => <button key={tab} className={tab === propTab ? 'active' : ''} onClick={() => setPropTab(tab)}>{tab}</button>)}
-      </nav>
+      </nav>}
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
-        <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
+        {!boardEmpty && <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
       {error && <p className="kbo-notice">{error}</p>}
+      {!error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
       {!error && !snapshot && (
         <div role="status" aria-label="Loading KBO prop lines">
           <BoardSkeleton />
@@ -275,7 +313,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
           </div>
         )}
       </div>}
-      {!error && snapshot && !rows.length && <p className="kbo-notice">No KBO prop lines match these filters.</p>}
+      {!error && snapshot && !boardEmpty && !rows.length && <p className="kbo-notice">No KBO prop lines match these filters.</p>}
       <Filters open={filtersOpen} close={() => setFiltersOpen(false)} filters={filters} setFilters={setFilters} propTabs={propTabs} propTab={propTab} setPropTab={setPropTab} count={rows.length} />
     </main>
   )

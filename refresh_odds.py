@@ -103,6 +103,17 @@ def _publish_snapshot(client, filename, table, dry_run=False, optional=False):
         with open(file_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
 
+        if filename == "prizepicks_props.json":
+            from pipeline.kbo_board_cutoff import prepare_prizepicks_board
+            updated, note = prepare_prizepicks_board(payload)
+            if note:
+                print(f"  ℹ {note}")
+            if updated is not payload and not dry_run:
+                with open(file_path, "w", encoding="utf-8") as handle:
+                    json.dump(updated, handle, ensure_ascii=False, indent=2)
+                    handle.write("\n")
+            payload = updated
+
         if dry_run:
             print(f"🔍 [DRY RUN] Would publish {filename} → {table} ({len(json.dumps(payload))} bytes)")
             return True
