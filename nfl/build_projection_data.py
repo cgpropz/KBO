@@ -419,6 +419,23 @@ def choose_published_line(candidates):
     return min(pool, key=lambda row: (row['line'], -(row['trending'] or 0)))
 
 
+def _optional_float(value):
+    """float(value), or None for missing/NaN/non-numeric."""
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if out != out else out
+
+
+def _payout_multiplier(attrs):
+    """Per-pick payout multiplier if the feed provides one; None otherwise (never guessed)."""
+    for key in ('payout_multiplier', 'multiplier'):
+        if attrs.get(key) is not None:
+            return _optional_float(attrs.get(key))
+    return None
+
+
 def slate_records(payload):
     """NFL PrizePicks lines the board publishes. One row per player and prop."""
     players = {
@@ -445,6 +462,7 @@ def slate_records(payload):
         grouped.setdefault(key, []).append({
             'player': player['name'], 'team': team, 'opponent': opponent, 'prop': stat,
             'line': line, 'odds_type': odds_type, 'trending': _trending_count(attrs.get('trending_count')),
+            'payout_multiplier': _payout_multiplier(attrs),
             'start_time': text_or_empty(attrs.get('start_time')),
         })
     records = []
@@ -455,6 +473,8 @@ def slate_records(payload):
         records.append({
             'player': chosen['player'], 'team': chosen['team'], 'opponent': chosen['opponent'],
             'prop': chosen['prop'], 'line': chosen['line'],
+            'odds_type': chosen.get('odds_type') or 'standard',
+            'payout_multiplier': chosen.get('payout_multiplier'),
             'start_time': chosen.get('start_time') or '',
         })
     return records
@@ -680,6 +700,8 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'gameday': text_or_empty(getattr(row, 'gameday', '')), 'gametime': text_or_empty(getattr(row, 'gametime', '')),
         'start_time': text_or_empty(getattr(row, 'start_time', '')),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
+        'oddsType': text_or_empty(getattr(row, 'odds_type', '')) or 'standard',
+        'payoutMultiplier': _optional_float(getattr(row, 'payout_multiplier', None)),
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
         'formula_applied': tuned is not None,

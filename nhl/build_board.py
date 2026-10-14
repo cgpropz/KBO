@@ -257,6 +257,8 @@ def fetch_prizepicks():
             "prop": stat,
             "line": line,
             "oddsType": odds,
+            # Per-pick payout multiplier only if the feed sends one; never guessed.
+            "payoutMultiplier": attrs.get("payout_multiplier"),
             "imageUrl": player.get("image_url") or "",
             "rank": attrs.get("rank") or 9999,
             "start": attrs.get("start_time"),
@@ -872,6 +874,7 @@ def build(root: Path, out_dir: Path) -> int:
                     "rankEligible": eligible,
                     "goalieStatus": status,
                     "oddsType": card["oddsType"],
+                    "payoutMultiplier": card.get("payoutMultiplier"),
                     "imageUrl": card["imageUrl"],
                     "dvpRank": dvp,
                     "gameday": game["date"],
