@@ -709,3 +709,11 @@ class PipelineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_filter_standard_lines_drops_goblin_demon_and_unknown():
+    from nfl.sharp_odds import filter_standard_lines
+    rows = [{"line_type": "standard"}, {"line_type": "demon"}, {"line_type": "goblin"}, {"line_type": None}, {"line_type": "Standard"}]
+    kept, counts = filter_standard_lines(rows)
+    assert len(kept) == 2
+    assert counts == {"before": 5, "after": 2, "dropped": {"demon": 1, "goblin": 1, "unknown": 1}}

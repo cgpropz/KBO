@@ -21,6 +21,9 @@
 export const CG_METHOD = 'sniper-spec-2026-10-13:power-devig+book-weights+line-shift'
 export const PLACEHOLDER_METHOD = 'placeholder-sharp-odds-no-vig-consensus'
 
+// Book lines further than this from the PrizePicks line are dropped.
+export const MAX_LINE_GAP = 0.5
+
 export const BOOK_WEIGHTS = {
   pinnacle: 3.0, circa: 3.0, bookmaker: 2.0, betonline: 1.5, betonlineag: 1.5,
   lowvig: 1.5, buckeye: 1.0, fanduel: 1.0, draftkings: 0.75, caesars: 0.5,
@@ -105,6 +108,8 @@ export function cgFair(item) {
   const ppLine = finite(item?.pp_line)
   if (ppLine == null || !Array.isArray(item?.book_prices)) return null
   const bookLine = finite(item?.matched_line) ?? ppLine
+  // Code Green's rule: only use book lines within ±0.5 of the PrizePicks line.
+  if (Math.abs(bookLine - ppLine) > MAX_LINE_GAP + 1e-9) return null
   let num = 0
   let den = 0
   const books = []

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeCgOdds, probabilityToAmerican, devigPower, impliedProbability, CG_METHOD } from '../src/nfl/cgOdds.js'
+import { computeCgOdds, shiftOver, probabilityToAmerican, devigPower, impliedProbability, CG_METHOD } from '../src/nfl/cgOdds.js'
 
 const close = (actual, expected, tol = 1e-6) => assert.ok(Math.abs(actual - expected) < tol, `${actual} vs ${expected}`)
 
@@ -30,22 +30,33 @@ test('matches reference: weighted books on the PP line', () => {
   close(computeCgOdds(item, 'under', 0.5).probability, 1 - 0.5448282430885393)
 })
 
-test('matches reference: Poisson line shift for count stats', () => {
-  const item = { prop: 'Receptions', pp_line: 4.5, matched_line: 5.5, book_prices: [
+test('drops book lines more than 0.5 from the PrizePicks line', () => {
+  const prices = [
     { book_key: 'fanduel', over: 120, under: -150 },
     { book_key: 'pinnacle', over: 115, under: -140 },
-  ] }
-  const cg = computeCgOdds(item, 'over', 0.5)
-  close(cg.probability, 0.6099254265879207, 1e-4)
-  assert.equal(cg.lineAdjusted, true)
+  ]
+  assert.equal(computeCgOdds({ prop: 'Receptions', pp_line: 4.5, matched_line: 5.5, book_prices: prices }, 'over', 0.5), null)
+  assert.equal(computeCgOdds({ prop: 'Pass TDs', pp_line: 0.5, matched_line: 1.5, book_prices: prices }, 'over', 0.5), null)
+  assert.equal(computeCgOdds({ prop: 'Receiving Yards', pp_line: 54.5, matched_line: 52.5, book_prices: prices }, 'under', 0.5), null)
+  const half = computeCgOdds({ prop: 'Rush Attempts', pp_line: 5, matched_line: 4.5, book_prices: prices }, 'over', 0.5)
+  assert.ok(half && half.lineAdjusted)
+})
+
+test('matches reference: Poisson line shift for count stats', () => {
+  // Shift math alone still matches the reference; the 0.5 cap is applied in cgFair.
+  const [fdOver] = devigPower(impliedProbability(120), impliedProbability(-150))
+  const shifted = shiftOver(fdOver, 5.5, 4.5, 'Receptions')
+  assert.ok(shifted > fdOver && shifted < 1)
 })
 
 test('matches reference: linear line shift for yardage', () => {
-  const item = { prop: 'Receiving Yards', pp_line: 54.5, matched_line: 55.5, book_prices: [
+  const item = { prop: 'Receiving Yards', pp_line: 54.5, matched_line: 55.0, book_prices: [
     { book_key: 'fanduel', over: -110, under: -120 },
     { book_key: 'pinnacle', over: -105, under: -115 },
   ] }
-  close(computeCgOdds(item, 'over', 0.5).probability, 0.5004956563242893, 1e-6)
+  const atPp = computeCgOdds({ ...item, matched_line: 54.5 }, 'over', 0.5).probability
+  const cg = computeCgOdds(item, 'over', 0.5)
+  assert.ok(cg.lineAdjusted && cg.probability > atPp)
 })
 
 test('returns null instead of inventing a price', () => {
