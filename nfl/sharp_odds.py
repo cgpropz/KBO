@@ -848,7 +848,31 @@ def atomic_write(path, payload):
     temporary.replace(path)
 
 
-def run(projections_path, provider_name="unabated", fetch=None):
+QUOTE_FIELDS = ("event_id", "commence_time", "player", "player_key", "team", "prop", "book", "book_key", "side", "line", "price")
+
+
+def quotes_payload(book_rows, *, provider, feed_snapshot_at=None, captured_at=None):
+    """Every book's prop price from this pull, for nfl/prop_odds_history.py.
+
+    Same rows the board was built from. No extra request. Rows without an
+    event id cannot be keyed to a game, so they are left out.
+    """
+    quotes = [
+        {field: row.get(field) for field in QUOTE_FIELDS}
+        for row in book_rows
+        if row.get("event_id") is not None
+    ]
+    return {
+        "captured_at": captured_at or now_iso(),
+        "feed_snapshot_at": feed_snapshot_at,
+        "provider": provider,
+        "sport": SPORT,
+        "quote_count": len(quotes),
+        "quotes": quotes,
+    }
+
+
+def run(projections_path, provider_name="unabated", fetch=None, quotes_path=None):
     pp_rows = load_pp_rows(projections_path)
     if pp_rows is None:
         print(f"NFL projections not found at {projections_path}; sharp odds skipped.")
@@ -858,6 +882,16 @@ def run(projections_path, provider_name="unabated", fetch=None):
         book_rows, events_scanned = provider.fetch_records()
     else:
         book_rows, events_scanned = fetch()
+    if quotes_path is not None:
+        # Written even when PrizePicks has no board: book prices still matter.
+        atomic_write(
+            quotes_path,
+            quotes_payload(
+                book_rows,
+                provider=provider.name,
+                feed_snapshot_at=getattr(provider, "feed_snapshot_at", None),
+            ),
+        )
     return build_snapshot(
         pp_rows,
         book_rows,
@@ -876,9 +910,15 @@ def main(argv=None):
         default=os.environ.get("NFL_ODDS_PROVIDER", "unabated"),
         help="Odds provider. Only 'unabated' is enabled.",
     )
+    parser.add_argument(
+        "--quotes-output",
+        type=Path,
+        default=ROOT / "prop_odds_quotes.json",
+        help="Per-book quotes from this pull for the odds history log.",
+    )
     args = parser.parse_args(argv)
     try:
-        payload = run(args.projections, provider_name=args.provider)
+        payload = run(args.projections, provider_name=args.provider, quotes_path=args.quotes_output)
     except ProviderError as exc:
         print(f"NFL sharp odds skipped: {exc}")
         return 0
