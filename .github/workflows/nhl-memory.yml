@@ -6,7 +6,7 @@ name: NHL Props Memory Grade
 
 on:
   schedule:
-    - cron: "41 14 * * *"
+    - cron: '30 11 * * *'
   workflow_dispatch:
     inputs:
       date:
