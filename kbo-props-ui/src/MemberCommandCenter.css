@@ -51,7 +51,24 @@
 .mcc-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .mcc-panel-head h2 { margin: 0; font-size: 17px; }
 .mcc-chip { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--mcc-green-soft); color: var(--mcc-green); white-space: nowrap; }
-.mcc-chip.is-placeholder { background: rgba(250, 204, 21, 0.14); color: #facc15; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; }
+.mcc-signals { list-style: none; margin: 0; padding: 0; }
+.mcc-signal { padding: 10px 2px; border-top: 1px solid var(--mcc-line); }
+.mcc-signal:first-child { border-top: 0; }
+.mcc-signal-top { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.mcc-signal-who { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.mcc-signal-chip {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+  padding: 3px 8px; border-radius: 999px; line-height: 1.3;
+}
+.mcc-signal-chip.is-line_pulled { background: rgba(251, 146, 60, 0.16); color: #fdba74; }
+.mcc-signal-chip.is-line_back { background: var(--mcc-green-soft); color: var(--mcc-green); }
+.mcc-signal-chip.is-big_move { background: rgba(125, 211, 252, 0.14); color: #7dd3fc; }
+.mcc-signal-name { font-weight: 650; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcc-signal-foot { margin-top: 4px; font-size: 11px; color: var(--mcc-dim); }
+.mcc-example {
+  margin: 0 0 8px; padding: 6px 8px; border-radius: 8px;
+  background: rgba(250, 204, 21, 0.12); color: #facc15; font-size: 12px; font-weight: 700;
+}
 .mcc-rows { display: flex; flex-direction: column; }
 .mcc-row {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;

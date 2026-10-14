@@ -13,10 +13,16 @@ import {
   countPlayable, formatRecord, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   recapLabel, topHubRows, wnbaHubRows,
 } from './memberHub';
+import {
+  exampleSignals, signalChipText, signalsForSport,
+} from './marketSignals';
 import './MemberCommandCenter.css';
 
 /*
- * Paid-member landing, "Command Center C5": sport list | today's plays | news.
+ * Paid-member landing, "Command Center C5": sport list | today's plays | signals.
+ * Signals are market moves already in our feeds (line pulled, line back, big
+ * move). They are not headlines, and they do not change a projection or a
+ * CG Score.
  * Every row comes from the same server-gated /api/data snapshots the boards
  * use, standard PrizePicks lines only. The record strip reads
  * /member-recap.json, built from Board QA's graded recap files.
@@ -191,6 +197,24 @@ function useBoards(access, nbaOpen) {
   }, [boards, photos, rosters]);
 }
 
+function exampleSignalMode() {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('exampleSignals') === '1';
+}
+
+function useMarketSignals(exampleMode) {
+  const [rows, setRows] = useState(() => (exampleMode ? exampleSignals() : null));
+  useEffect(() => {
+    if (exampleMode) return undefined;
+    let alive = true;
+    fetchApiDataset('market_signals')
+      .then((snap) => { if (alive) setRows(Array.isArray(snap.data) ? snap.data : []); })
+      .catch(() => { if (alive) setRows([]); });
+    return () => { alive = false; };
+  }, [exampleMode]);
+  return rows;
+}
+
 function useRecap() {
   const [recap, setRecap] = useState(null);
   useEffect(() => {
@@ -216,10 +240,13 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const { open: nbaOpen } = useNbaOpen();
   const boards = useBoards(access, nbaOpen);
   const recap = useRecap();
+  const exampleMode = exampleSignalMode();
+  const signals = useMarketSignals(exampleMode);
   const firstReady = SPORTS.find((s) => boards[s.id]?.status === 'ready');
-  const [picked, setPicked] = useState(null);
+  const [picked, setPicked] = useState(exampleMode ? 'nfl' : null);
   const selected = SPORTS.find((s) => s.id === picked) || firstReady || SPORTS[0];
   const state = boards[selected.id];
+  const signalRows = signals == null ? null : signalsForSport(signals, selected.id);
   const isAllAccess = access.kbo && access.wnba && access.nfl && access.nhl;
 
   const recapCells = SPORTS
@@ -316,15 +343,35 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
             <a className="mcc-explain" href="/guides/cg-score">What's in a CG Score?</a>
           </section>
 
-          <section className="mcc-panel mcc-news" aria-label="News">
+          <section className="mcc-panel mcc-news" aria-label="Market signals">
             <div className="mcc-panel-head">
-              <h2>{selected.name} news</h2>
-              <span className="mcc-chip is-placeholder">Placeholder</span>
+              <h2>{selected.name} signals</h2>
             </div>
-            <p className="mcc-empty">
-              News isn't connected yet. cgpropz doesn't have a headline source today, so nothing here is real reporting.
-              Injury and lineup notes still show on each sport's board.
-            </p>
+            {exampleMode && <p className="mcc-example">Example data — not a live signal</p>}
+            {signalRows == null ? (
+              <p className="mcc-empty">Loading market signals…</p>
+            ) : signalRows.length === 0 ? (
+              <p className="mcc-empty">
+                No market signals for {selected.name} right now. Pulled lines, lines that come back, and big moves show here until the game locks.
+              </p>
+            ) : (
+              <ul className="mcc-signals">
+                {signalRows.map((item) => (
+                  <li key={item.signal_key || `${item.source}-${item.kind}-${item.player}`} className="mcc-signal">
+                    <div className="mcc-signal-top">
+                      <span className={`mcc-signal-chip is-${item.kind}`}>{signalChipText(item)}</span>
+                      <span className="mcc-signal-who">
+                        <TeamLogo src={selected.logo(item.team)} size={18} title={item.team} />
+                        <span className="mcc-signal-name">{item.player}</span>
+                      </span>
+                    </div>
+                    <div className="mcc-signal-foot">
+                      <span>Market signal, not news</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
       </main>
