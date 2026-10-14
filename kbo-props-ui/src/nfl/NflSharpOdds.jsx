@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
-import { useAuth } from '../AuthContext'
-import { canSeeNba } from '../entitlements'
 import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
@@ -152,7 +150,7 @@ function HitRate({ rate }) {
   return <span className="nfl-sharp-hit" style={color ? { color } : undefined}>{formatHit(rate)}</span>
 }
 
-// Admin-only draft column. Display only: it reads fields the Sharp Odds
+// CG odds column (public). Display only: it reads fields the Sharp Odds
 // snapshot already sends to this viewer, so it exposes no extra data.
 function cgFor(item, mode) {
   const side = scoredSide(item)
@@ -167,7 +165,7 @@ function CgOddsCell({ item, mode }) {
     return (
       <td className="nfl-sharp-cg is-empty">
         <div className="cgo-hero">
-          <div className="cgo-head"><span className="cgo-label">CG ODDS</span><span className="cgo-draft">ADMIN DRAFT</span></div>
+          <div className="cgo-head"><span className="cgo-label">CG ODDS</span></div>
           <div className="cgo-none">No CG price for this line</div>
         </div>
       </td>
@@ -178,7 +176,7 @@ function CgOddsCell({ item, mode }) {
   const bookList = cg.books.join(', ')
   return (
     <td className={`nfl-sharp-cg tone-${tone}`}>
-      <div className="cgo-hero" title="CG odds draft (admin only). Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
+      <div className="cgo-hero" title="CG odds. Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
         <div className="cgo-head">
           <span className="cgo-label">CG ODDS</span>
           <span className={`cgo-edge ${tone}`} title={`CG fair win% minus the ${baseline.label} break-even (${(baseline.breakeven * 100).toFixed(2)}%)`}>
@@ -292,9 +290,8 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [plusOnly, setPlusOnly] = useState(false)
   const [openId, setOpenId] = useState(null)
   const loadedRef = useRef(false)
-  const { user } = useAuth()
-  const showCg = canSeeNba(user)
-  // Admins default to CG edge; everyone else keeps PP Edge.
+  // CG odds are public: every viewer sees the column and defaults to CG Edge.
+  const showCg = true
   const sort = sortChoice ?? (showCg ? 'CG Edge' : 'PP Edge')
 
   useEffect(() => {
@@ -446,7 +443,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
               <tr>
                 <th>Player</th>
                 <th>Prop</th>
-                {showCg && <th className="nfl-sharp-cg-th" title="Admin-only draft. CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>}
+                {showCg && <th className="nfl-sharp-cg-th" title="CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>}
                 <th>Best Over</th>
                 <th>Best Under</th>
                 <th>Our Proj</th>

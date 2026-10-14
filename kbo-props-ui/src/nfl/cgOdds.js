@@ -1,6 +1,6 @@
 // CG odds: one fair price per NFL prop, compared with the PrizePicks line.
 //
-// computeCgOdds() is the only entry point the admin column in
+// computeCgOdds() is the only entry point the CG odds column in
 // NflSharpOdds.jsx reads. Swap CG_METHOD (or the functions below) to change
 // the formula; the UI only reads { probability, american, edgePct, ... }.
 //
