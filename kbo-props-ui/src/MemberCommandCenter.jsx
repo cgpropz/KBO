@@ -14,7 +14,7 @@ import {
   recapLabel, topHubRows, wnbaHubRows,
 } from './memberHub';
 import {
-  SIGNAL_KINDS, exampleSignals, formatSignalTime, signalsForSport, teamHomeUrl,
+  exampleSignals, signalChipText, signalsForSport,
 } from './marketSignals';
 import './MemberCommandCenter.css';
 
@@ -356,23 +356,20 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               </p>
             ) : (
               <ul className="mcc-signals">
-                {signalRows.map((item) => {
-                  const home = teamHomeUrl(item.sport, item.team);
-                  return (
-                    <li key={item.signal_key || `${item.kind}-${item.player}`} className="mcc-signal">
-                      <div className="mcc-signal-top">
-                        <span className={`mcc-signal-chip is-${item.kind}`}>{SIGNAL_KINDS[item.kind]}</span>
+                {signalRows.map((item) => (
+                  <li key={item.signal_key || `${item.source}-${item.kind}-${item.player}`} className="mcc-signal">
+                    <div className="mcc-signal-top">
+                      <span className={`mcc-signal-chip is-${item.kind}`}>{signalChipText(item)}</span>
+                      <span className="mcc-signal-who">
                         <TeamLogo src={selected.logo(item.team)} size={18} title={item.team} />
                         <span className="mcc-signal-name">{item.player}</span>
-                        <time className="mcc-signal-time" dateTime={item.signaled_at}>{formatSignalTime(item.signaled_at)}</time>
-                      </div>
-                      <div className="mcc-signal-foot">
-                        <span>Market signal, not news</span>
-                        {home && <a className="mcc-source" href={home} target="_blank" rel="noreferrer">Check source</a>}
-                      </div>
-                    </li>
-                  );
-                })}
+                      </span>
+                    </div>
+                    <div className="mcc-signal-foot">
+                      <span>Market signal, not news</span>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </section>

@@ -2,13 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { handleDataRequest } from '../api/data.js'
 import {
-  SIGNAL_KINDS,
   exampleSignals,
   formatSignalTime,
   presentSignal,
+  signalChipText,
   signalsForSport,
   signalsForViewer,
-  teamHomeUrl,
 } from '../src/marketSignals.js'
 
 const FUTURE = '2026-12-01T23:00:00Z'
@@ -29,15 +28,24 @@ function row(overrides) {
   }
 }
 
-test('chips, clock, and team homepages', () => {
-  assert.deepEqual(Object.values(SIGNAL_KINDS), ['Line pulled', 'Line back', 'Big move'])
-  assert.equal(formatSignalTime('2026-10-18T22:40:00Z'), '6:40 PM ET')
-  assert.equal(teamHomeUrl('nfl', 'cin'), 'https://www.bengals.com/')
-  assert.equal(teamHomeUrl('kbo', 'LG'), 'https://www.lgtwins.com/')
-  assert.equal(teamHomeUrl('nhl', 'TOR'), 'https://www.nhl.com/mapleleafs')
-  assert.equal(teamHomeUrl('wnba', 'LV'), 'https://aces.wnba.com/')
-  assert.equal(teamHomeUrl('nba', 'LAL'), 'https://www.nba.com/lakers')
-  assert.equal(teamHomeUrl('nfl', 'NOPE'), null)
+test('chip text names the feed and the ET time', () => {
+  assert.equal(formatSignalTime('2026-10-18T22:42:00Z'), '6:42 PM ET')
+  assert.equal(
+    signalChipText({ source: 'prizepicks', kind: 'line_pulled', signaled_at: '2026-10-18T22:42:00Z' }),
+    'PrizePicks line pulled 6:42 PM ET',
+  )
+  assert.equal(
+    signalChipText({ source: 'prizepicks', kind: 'line_back', signaled_at: '2026-10-18T22:40:00Z' }),
+    'PrizePicks line back 6:40 PM ET',
+  )
+  assert.equal(
+    signalChipText({ source: 'unabated', kind: 'line_pulled', signaled_at: '2026-10-18T22:50:00Z' }),
+    'Unabated market off 6:50 PM ET',
+  )
+  assert.equal(
+    signalChipText({ source: 'nfl_odds', kind: 'big_move', signaled_at: '2026-10-18T22:40:00Z' }),
+    'Odds big move 6:40 PM ET',
+  )
 })
 
 test('viewer filter keeps the selected sport and drops scores', () => {
@@ -58,21 +66,23 @@ test('viewer filter keeps the selected sport and drops scores', () => {
   assert.equal(shown.projection, undefined)
   assert.deepEqual(signalsForSport(all, 'nfl').map((item) => item.player), ['Alex Example'])
   const dupes = signalsForSport([
-    row({ signal_key: 'a', signaled_at: '2026-12-01T18:00:00Z' }),
-    row({ signal_key: 'b', signaled_at: '2026-12-01T19:00:00Z', player: 'Alex Example' }),
-    row({ signal_key: 'c', kind: 'big_move', signaled_at: '2026-12-01T17:00:00Z' }),
+    row({ signal_key: 'a', source: 'prizepicks', signaled_at: '2026-12-01T18:00:00Z' }),
+    row({ signal_key: 'b', source: 'prizepicks', signaled_at: '2026-12-01T19:00:00Z', player: 'Alex Example' }),
+    row({ signal_key: 'u', source: 'unabated', kind: 'line_pulled', signaled_at: '2026-12-01T19:30:00Z' }),
+    row({ signal_key: 'c', source: 'nfl_odds', kind: 'big_move', signaled_at: '2026-12-01T17:00:00Z' }),
   ], 'nfl')
-  assert.deepEqual(dupes.map((item) => [item.kind, item.signal_key]), [
-    ['line_pulled', 'b'],
-    ['big_move', 'c'],
+  assert.deepEqual(dupes.map((item) => [item.source, item.signal_key]), [
+    ['unabated', 'u'],
+    ['prizepicks', 'b'],
+    ['nfl_odds', 'c'],
   ])
 })
 
 test('example rows are labeled and carry no model numbers', () => {
   const examples = exampleSignals(new Date('2026-10-18T18:00:00Z'))
-  assert.equal(examples.length, 3)
+  assert.equal(examples.length, 4)
   assert.ok(examples.every((item) => item.player.includes('Example')))
-  assert.deepEqual(examples.map((item) => item.kind), ['line_pulled', 'line_back', 'big_move'])
+  assert.deepEqual(examples.map((item) => item.source), ['prizepicks', 'prizepicks', 'unabated', 'nfl_odds'])
   for (const item of examples) {
     assert.equal('projection' in item, false)
     assert.equal('cg_score' in item, false)
