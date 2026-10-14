@@ -12,6 +12,7 @@ import Results from './Results';
 import DiscordInviteLink from './DiscordInviteLink';
 import DiscordAccount from './DiscordAccount';
 import { ResponsibleGamblingCopy } from './SiteFooter';
+import MemberCommandCenter from './MemberCommandCenter';
 import './CgpropzLanding.css';
 
 /*
@@ -32,6 +33,12 @@ export default function CgpropzLanding({ onEnterSport, onNavigate }) {
   const isPaid = access.kbo || access.wnba || access.nfl || access.nhl;
   const isAllAccess = access.kbo && access.wnba && access.nfl && access.nhl;
   const isDiscordOnly = tier === 'discord';
+
+  // Paid members land on the Command Center (today's plays first). Free and
+  // Discord-only accounts keep this hub; logged-out visitors see PublicLanding.
+  if (isPaid) {
+    return <MemberCommandCenter onEnterSport={onEnterSport} onNavigate={onNavigate} />;
+  }
 
   return (
     <div className="cg-landing">
