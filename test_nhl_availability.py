@@ -75,7 +75,7 @@ class AvailabilityTests(unittest.TestCase):
 
         board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
         names = [row["player"] for row in board]
-        self.assertEqual(called, ["https://api-web.nhle.com/v1/gamecenter/2026020087/right-rail"])
+        self.assertEqual(called[0], "https://api-web.nhle.com/v1/gamecenter/2026020087/right-rail")
         self.assertNotIn("Brad Marchand", names)
         self.assertNotIn("William Eklund", names)
         self.assertNotIn("Long Term", names)
@@ -230,3 +230,67 @@ def _row_gtd():
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --- pregame sources: ESPN injuries, active roster, projected lineup ---
+from nhl import availability as _av
+
+
+def _lineup(team, names):
+    return [{"lineups": {team: [{"name": n, "unit": "ev", "status": None} for n in names]}}]
+
+
+def _fetch(espn=None, rosters=None):
+    def fetch(url):
+        if url == _av.ESPN_INJURIES_URL:
+            return espn or {"injuries": []}
+        for team, ids in (rosters or {}).items():
+            if url == _av.ROSTER_URL.format(team=team):
+                return {"forwards": [{"id": int(i)} for i in ids]}
+        raise RuntimeError("offline")
+    return fetch
+
+
+def test_suspension_is_blocked():
+    assert _av.blocked_status("Suspension") == "SUSPENDED"
+    assert _av.blocked_status("Day-To-Day") is None
+
+
+def test_espn_out_and_suspended_dropped_day_to_day_kept():
+    espn = {"injuries": [{"injuries": [
+        {"status": "Out", "athlete": {"displayName": "Rasmus Dahlin", "team": {"abbreviation": "BUF"}}},
+        {"status": "Suspension", "athlete": {"displayName": "Frank Nazar", "team": {"abbreviation": "CHI"}}},
+        {"status": "Day-To-Day", "athlete": {"displayName": "Tage Thompson", "team": {"abbreviation": "BUF"}}},
+        {"status": "Out", "athlete": {"displayName": "Quinton Byfield", "team": {"abbreviation": "LA"}}},
+    ]}]}
+    rows = [
+        {"player": "Rasmus Dahlin", "team": "BUF"},
+        {"player": "Frank Nazar", "team": "CHI"},
+        {"player": "Tage Thompson", "team": "BUF"},
+        {"player": "Quinton Byfield", "team": "LAK"},
+    ]
+    kept = [r["player"] for r in _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn))]
+    assert kept == ["Tage Thompson"]
+
+
+def test_not_on_active_roster_dropped():
+    rows = [{"playerId": "1", "player": "A", "team": "LAK"}, {"playerId": "2", "player": "B", "team": "LAK"}]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}))
+    assert [r["player"] for r in kept] == ["A"]
+
+
+def test_missing_from_full_projected_lineup_dropped_accents_ok():
+    names = [f"Skater {i}" for i in range(17)] + ["Juraj Slafkovsky"]
+    rows = [
+        {"player": "Juraj Slafkovský", "team": "MTL", "position": "F"},
+        {"player": "Healthy Scratch", "team": "MTL", "position": "F"},
+        {"player": "Some Goalie", "team": "MTL", "position": "G"},
+    ]
+    kept = [r["player"] for r in _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch())]
+    assert kept == ["Juraj Slafkovský", "Some Goalie"]
+
+
+def test_partial_lineup_does_not_drop():
+    rows = [{"player": "Anyone", "team": "MTL", "position": "F"}]
+    kept = _av.drop_unavailable(rows, _lineup("MTL", ["X", "Y"]), [], fetch_json=_fetch())
+    assert len(kept) == 1
