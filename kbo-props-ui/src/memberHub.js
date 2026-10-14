@@ -411,7 +411,16 @@ export function statusChips({ sport, rows, lineups, recap, ready = true, now = n
   }
   const record = formatRecord(recap)
   if (record && recap?.slate_date_iso) {
-    chips.push({ tone: 'neutral', text: `${recapLabel(recap.slate_date_iso, now)} ${record} → Results`, action: 'results' })
+    const label = recapLabel(recap.slate_date_iso, now)
+    chips.push({
+      tone: 'neutral',
+      action: 'results',
+      text: `${label} ${record} → Results`,
+      prefix: label,
+      hits: recap.hits,
+      misses: recap.misses,
+      pushes: recap.pushes || 0,
+    })
   }
   return chips
 }

@@ -5,7 +5,8 @@ import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
-import { teamLogoUrl as nflLogo } from './nfl/nflTeams';
+import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
+import { teamColor as wnbaTeamColor } from './wnba/utils/formatters';
 import { teamLogoUrl as nhlLogo, nhlHeadshotUrl } from './nhl/nhlTeams';
 import { nbaLogoUrl } from './nba/nbaPropLines';
 import Results from './Results';
@@ -28,6 +29,24 @@ const KBO_LOGOS = {
   LG: 'lg', KT: 'kt', NC: 'nc', Samsung: 'samsung', SSG: 'ssg',
 };
 const kboLogo = (team) => (KBO_LOGOS[team] ? `/team-logos/${KBO_LOGOS[team]}.webp` : null);
+const KBO_COLORS = {
+  Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
+  KT: '#e0e0e0', LG: '#e8557a', Lotte: '#ff6666', NC: '#5b9bd5', Samsung: '#60a5fa', SSG: '#ff5555',
+};
+
+function inkOn(hex) {
+  const n = Number.parseInt(String(hex || '').slice(1), 16);
+  if (!Number.isFinite(n)) return '#fff';
+  const y = (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
+  return y > 160 ? '#111214' : '#fff';
+}
+
+function teamFill(sportId, team) {
+  if (sportId === 'kbo') return KBO_COLORS[team] || '#3f3f46';
+  if (sportId === 'nfl') return nflTeamColor(team);
+  if (sportId === 'wnba') return wnbaTeamColor(String(team || '').toUpperCase());
+  return '#3f3f46';
+}
 
 const ESPN_WNBA = {
   ATL: 'atl', CHI: 'chi', CON: 'conn', CONN: 'conn', DAL: 'dal', GS: 'gs', GSV: 'gs', IND: 'ind',
@@ -122,9 +141,10 @@ function TeamLogo({ src, size = 16, className = 'hub-logo-img', title }) {
 function Avatar({ row, sport, size = 48 }) {
   const { src, next } = useImageChain(headshotSources(row, size));
   const logo = sport ? sport.logo(row.team) : null;
+  const fill = teamFill(sport?.id, row.team);
   return (
     <div className="hub-avatar-wrap" style={{ width: size, height: size }}>
-      <div className="hub-avatar" aria-hidden="true">
+      <div className={`hub-avatar${src ? '' : ' is-fallback'}`} style={src ? undefined : { background: fill, color: inkOn(fill) }} aria-hidden="true">
         {src ? <img src={src} alt="" width={size} height={size} loading="lazy" onError={next} /> : initials(row.player)}
       </div>
       {logo && <span className="hub-avatar-badge"><TeamLogo src={logo} size={16} className="" title={row.team} /></span>}
@@ -161,16 +181,18 @@ function L10Chart({ values, line, side }) {
   return (
     <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
       {nums.map((value, index) => {
-        const hit = side === 'UNDER' ? value < target : value > target;
         const push = value === target;
-        const tone = push ? 'is-push' : hit ? 'is-hit' : 'is-miss';
+        const hit = side === 'UNDER' ? value < target : value > target;
+        const color = push ? '#a1a1aa' : hit ? '#22c55e' : '#f87171';
         return (
           <span key={`${value}-${index}`} className="hub-bar-col">
-            <span className={`hub-bar ${tone}`} style={{ height: `${Math.max(8, (value / max) * 100)}%` }} />
+            <span className="hub-bar" style={{ height: `${Math.max(8, (value / max) * 100)}%`, background: color }} />
           </span>
         );
       })}
-      <span className="hub-chart-line" style={{ bottom: `${linePct}%` }} />
+      <span className="hub-chart-line" style={{ bottom: `${linePct}%` }}>
+        <span className="hub-line-label hub-num">{side === 'UNDER' ? 'U' : 'O'} {fmt(target)}</span>
+      </span>
     </div>
   );
 }
@@ -409,21 +431,23 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
       ) : (
         <main className="hub-main">
           <div className="hub-heading">
-            <div>
-              <p className="hub-eyebrow">{selected.name} · {dayLabel(eyebrowWhen)}</p>
+            <p className="hub-eyebrow">{selected.name} · {dayLabel(eyebrowWhen)}</p>
+            <div className="hub-title-row">
+              {state.updatedAt && <p className="hub-updated">Board updated {updatedLabel(state.updatedAt)}</p>}
               <h1>Tonight&apos;s {selected.name} top 3</h1>
             </div>
             <p className="hub-slate">
               {shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
               {firstStart && <> · First start {clockLabel(firstStart.toISOString())}</>}
-              {state.updatedAt && <> · Board updated {updatedLabel(state.updatedAt)}</>}
             </p>
           </div>
 
           {chips.length > 0 && (
             <div className="hub-status" aria-label="Board status">
               {chips.map((chip) => chip.action === 'results' ? (
-                <button key={chip.text} type="button" className={`hub-status-chip is-${chip.tone}`} onClick={() => setPanel('results')}>{chip.text}</button>
+                <button key={chip.text} type="button" className={`hub-status-chip is-${chip.tone}`} onClick={() => setPanel('results')}>
+                  {chip.prefix} <span className="hub-win">{chip.hits}</span>-<span className="hub-loss">{chip.misses}</span>{chip.pushes ? `-${chip.pushes}` : ''} → Results
+                </button>
               ) : (
                 <span key={chip.text} className={`hub-status-chip is-${chip.tone}`}>{chip.text}</span>
               ))}
@@ -431,7 +455,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
           )}
 
           <div className="hub-columns">
-            <div className="hub-col">
+            <div className="hub-plays">
               {state.status === 'ready' && top.length > 0 ? top.map((row, index) => (
                 <button
                   key={rowKey(row)}
@@ -458,6 +482,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               )) : (
                 <section className="hub-card hub-card-empty"><p>{emptyCopy(state.status, selected)}</p></section>
               )}
+            </div>
 
               <section className="hub-card hub-preview">
                 <div className="hub-card-head">
@@ -473,18 +498,14 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     </span>
                     <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
                   </button>
-                )) : (
-                  <p className="hub-chart-empty">{state.count > ranked.length ? 'The next props are on the full board.' : 'Those are the standard lines on this slate.'}</p>
-                )}
+                )) : null}
                 {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (
                   <button type="button" className="hub-open" onClick={() => onEnterSport(selected.id, { view: 'board' })}>
                     Open full board ({state.count} props) →
                   </button>
                 )}
               </section>
-            </div>
 
-            <div className="hub-col">
               <section className="hub-card hub-drill" aria-label="Player drilldown">
                 <div className="hub-card-head">
                   <h2>Player drilldown</h2>
@@ -502,10 +523,9 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <L10Chart values={active.recent} line={active.line} side={active.side} />
                     <div className="hub-stats">
                       <div><span>L10</span><strong className="hub-num">{active.hitRate == null ? '—' : `${Math.round(active.hitRate)}%`}</strong></div>
-                      <div><span>Opp rank</span><strong className="hub-num">{active.oppRank == null ? '—' : ordinal(active.oppRank)}</strong></div>
+                      {active.oppRank != null && <div><span>Opp rank</span><strong className="hub-num">{ordinal(active.oppRank)}</strong></div>}
                       <div><span>Projection</span><strong className="hub-num">{fmt(active.projection)}</strong></div>
                     </div>
-                    <p className="hub-note">What&apos;s in a CG Score: projection vs line · recent hit rate · matchup · market. Not a guarantee.</p>
                     <div className="hub-actions">
                       <button type="button" className="hub-primary" onClick={() => openSlip('build')}>Add to slip</button>
                       <button type="button" className="hub-ghost" onClick={() => openLog(active)}>Full game log</button>
@@ -516,18 +536,12 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                 )}
               </section>
 
-              <section className="mcc-panel mcc-news" aria-label="News">
-                <div className="mcc-panel-head">
-                  <h2>{selected.name} news</h2>
-                  <span className="mcc-chip is-placeholder">Placeholder</span>
-                </div>
-                <p className="mcc-empty">
-                  News isn&apos;t connected yet. cgpropz doesn&apos;t have a headline source today, so nothing here is real reporting.
-                  Injury and lineup notes still show on each sport&apos;s board.
-                </p>
+              <section className="mcc-panel mcc-news hub-news" aria-label="News">
+                <h2>{selected.name} news</h2>
+                <p className="mcc-empty">No news yet</p>
               </section>
 
-              <section className="hub-card" aria-label="Other sports today">
+              <section className="hub-card hub-others" aria-label="Other sports today">
                 <div className="hub-card-head"><h2>Other sports today</h2></div>
                 <div className="hub-tiles">
                   {SPORTS.map((sport) => (
@@ -543,7 +557,6 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                   ))}
                 </div>
               </section>
-            </div>
           </div>
         </main>
       )}
@@ -553,10 +566,13 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
         <p>21+ · Play responsibly · Entertainment only</p>
         <p><a href="tel:18004262537">1-800-GAMBLER</a></p>
         <p>Not affiliated with PrizePicks or Underdog</p>
-        <nav aria-label="Footer">
+        <nav className="hub-footer-links" aria-label="Footer">
           <button type="button" onClick={() => onNavigate('pricing')}>Settings</button>
+          <span className="hub-footer-sep" aria-hidden="true">·</span>
           <button type="button" onClick={() => onNavigate('pricing')}>Discord &amp; integrations</button>
+          <span className="hub-footer-sep" aria-hidden="true">·</span>
           <button type="button" onClick={() => onNavigate('pricing')}>Manage plan</button>
+          <span className="hub-footer-sep" aria-hidden="true">·</span>
           <a href="/guides/start-here">Help</a>
         </nav>
       </footer>
