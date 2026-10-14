@@ -55,6 +55,7 @@ function App() {
     return pauseTokenFromSearch(window.location.search) ? 'auth' : 'landing';
   }); // 'landing' | 'auth'
   const [authMode, setAuthMode] = useState('login');
+  const [entry, setEntry] = useState(null);
   const [sport, setSportState] = useState(() => {
     if (typeof window !== 'undefined') {
       const linked = sportFromSearch(window.location.search);
@@ -142,8 +143,8 @@ function App() {
         {user ? (
           <Suspense fallback={<RouteFallback />}>
             <CgpropzLanding
-              onEnterSport={(s) => { setSport(s); setView('home'); }}
-              onNavigate={(nextView) => { setSport('kbo'); setView(nextView); }}
+              onEnterSport={(s, next) => { setSport(s); setEntry(next || null); setView('home'); }}
+              onNavigate={(nextView) => { setSport('kbo'); setEntry(null); setView(nextView); }}
             />
           </Suspense>
         ) : (
@@ -183,6 +184,7 @@ function App() {
       <WnbaApp
         sport={visibleSport}
         setSport={setSport}
+        entry={entry}
         onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
       />
     );
@@ -191,6 +193,7 @@ function App() {
       <NbaApp
         sport={visibleSport}
         setSport={setSport}
+        entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
@@ -200,6 +203,7 @@ function App() {
       <NhlApp
         sport={visibleSport}
         setSport={setSport}
+        entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
@@ -209,6 +213,7 @@ function App() {
       <NflApp
         sport={visibleSport}
         setSport={setSport}
+        entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
       />
@@ -221,6 +226,7 @@ function App() {
         setSport={setSport}
         onNavigateHome={() => setView('hub')}
         initialView={view}
+        entry={entry}
       />
     );
   }

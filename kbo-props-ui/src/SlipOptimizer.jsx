@@ -36,7 +36,16 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const [allProps, setAllProps] = useState([]);
   const [selected, setSelected] = useState(new Set()); // Set of indices
   const [legs, setLegs] = useState(3); // target legs for auto-optimizer
-  const [mode, setMode] = useState('build'); // 'build' | 'auto' | 'saved'
+  const [mode, setMode] = useState(() => {
+    if (typeof sessionStorage === 'undefined') return 'build';
+    try {
+      const saved = sessionStorage.getItem('cg_slip_mode');
+      sessionStorage.removeItem('cg_slip_mode');
+      return saved === 'auto' ? 'auto' : 'build';
+    } catch {
+      return 'build';
+    }
+  }); // 'build' | 'auto' | 'saved'
   const [filter, setFilter] = useState('all'); // all | K | HRR | TB
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
   const [maxReuse, setMaxReuse] = useState(2); // max times a single prop can appear across slips

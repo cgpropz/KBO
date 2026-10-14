@@ -5,6 +5,8 @@
 import { cgScore, lineMatchesStat } from './cgScore.js'
 import { nflCgScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
+import { kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
+import { nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
 
 const num = (v) => {
   const n = Number(v)
@@ -121,6 +123,45 @@ export function unavailableFromLineups(sport, payload) {
   return names
 }
 
+function finiteOrNull(value) {
+  const n = num(value)
+  return Number.isFinite(n) ? n : null
+}
+
+// Opponent ranks are 1–32. A non-integer factor is not a rank.
+function rankOrNull(value) {
+  const n = Number(value)
+  if (!Number.isInteger(n) || n < 1 || n > 32) return null
+  return n
+}
+
+// Chart bars run oldest → newest. Board logs are newest-first unless noted.
+function chartValues(values, newestFirst, limit = 10) {
+  const nums = (Array.isArray(values) ? values : []).map((value) => Number(value)).filter((value) => Number.isFinite(value))
+  const window = newestFirst ? nums.slice(0, limit) : nums.slice(-limit)
+  return newestFirst ? window.reverse() : window
+}
+
+function l10FromPills(pills, storedRate) {
+  const pill = pillById(pills, 'l10')
+  const stored = finiteOrNull(storedRate)
+  return {
+    hitRate: stored != null ? stored : (pill ? pill.rate : null),
+    hitGames: pill ? pill.games : null,
+  }
+}
+
+function availabilityLabel(source) {
+  const flags = availabilityOf(source)
+  for (const value of [flags.injury, flags.status]) {
+    if (!value || blockedAvailability(value) || HELD_STATUS.has(statusText(value))) continue
+    const text = String(value).trim()
+    if (!text || /^(active|healthy|available|standard)$/i.test(text)) continue
+    return text
+  }
+  return null
+}
+
 export function kboHubRows(data, photos = {}) {
   const lookup = {}
   for (const [name, url] of Object.entries(photos || {})) lookup[normalizePlayerName(name)] = url
@@ -130,6 +171,10 @@ export function kboHubRows(data, photos = {}) {
       if (!isStandard(prop?.odds_type)) continue
       if (!lineMatchesStat(prop?.stat, prop?.line)) continue
       const score = num(prop?.cg_projection ?? prop?.rating)
+      const logged = Array.isArray(prop?.recent_values) && prop.recent_values.length
+        ? prop.recent_values
+        : kboLoggedValues(card.games, prop.stat)
+      const pills = kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })
       rows.push({
         player: card.name,
         team: card.team,
@@ -141,6 +186,10 @@ export function kboHubRows(data, photos = {}) {
         score,
         image: photos?.[card.name] || lookup[normalizePlayerName(card.name)] || null,
         start: card.start_time || card.game_time || null,
+        recent: chartValues(logged, true),
+        ...l10FromPills(pills, prop.hit_rate_l10),
+        oppRank: null,
+        statusLabel: availabilityLabel({ ...card, ...prop }),
         ...availabilityOf({ ...card, ...prop }),
       })
     }
@@ -162,6 +211,10 @@ export function nflHubRows(data) {
       score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
       image: row.imageUrl || null,
       start: row.start_time || null,
+      recent: chartValues(row.recent, false),
+      ...l10FromPills(nflHitPills(row), null),
+      oppRank: rankOrNull(row.dvpRank),
+      statusLabel: availabilityLabel(row),
       ...availabilityOf(row),
     }))
 }
@@ -181,6 +234,12 @@ export function nhlHubRows(data) {
       image: row.imageUrl || null,
       playerId: row.playerId || null,
       start: row.start_time || null,
+      recent: chartValues(row.recent, false),
+      ...l10FromPills(nhlHitPills(row), row.hitRate),
+      oppRank: rankOrNull(row.dvpRank),
+      goalieStatus: row.goalieStatus || null,
+      statusLabel: row.goalieStatus === 'confirmed' ? 'Confirmed' : row.goalieStatus === 'probable' ? 'Probable' : availabilityLabel(row),
+      detail: row,
       ...availabilityOf(row),
     }))
 }
@@ -201,13 +260,22 @@ function rosterImages(roster) {
   }
 }
 
-function basketballRows(data, scoreFn, roster) {
+function basketballRows(data, scoreFn, roster, sport) {
   const rows = []
   const imageFor = rosterImages(roster)
+  const wnba = sport === 'wnba'
   for (const player of Array.isArray(data) ? data : []) {
     for (const prop of Array.isArray(player?.ppAllProps) ? player.ppAllProps : []) {
       if (!isStandard(prop?.odds_type ?? prop?.oddsType)) continue
       if (prop?.standardLine != null && num(prop.standardLine) !== num(prop.line)) continue
+      const games = Array.isArray(player?.recentGames) ? player.recentGames : (Array.isArray(player?.gameLogs) ? player.gameLogs : [])
+      const logged = wnba
+        ? wnbaLoggedValues(games, prop.stat)
+        : games.map((game) => statValue(game, prop.stat)).filter((value) => value != null)
+      const series = logged.length ? logged : (storedL10Values(prop) || [])
+      const pills = wnba
+        ? wnbaHitPills({ games, stat: prop.stat, line: prop.line, opponent: prop.opponent || prop.versus })
+        : nbaHitPills(games, prop.stat, prop.line, prop.opponent || prop.versus, storedL10Values(prop))
       rows.push({
         player: player.name,
         team: player.team,
@@ -219,6 +287,10 @@ function basketballRows(data, scoreFn, roster) {
         score: num(scoreFn(prop)),
         image: imageFor(player) || player.image || null,
         start: prop.start_time || prop.gameDate || null,
+        recent: chartValues(series, true),
+        ...l10FromPills(pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
+        oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
+        statusLabel: availabilityLabel({ ...player, ...prop }),
         ...availabilityOf({ ...player, ...prop }),
       })
     }
@@ -226,8 +298,8 @@ function basketballRows(data, scoreFn, roster) {
   return rows
 }
 
-export const wnbaHubRows = (data, roster) => basketballRows(data, (prop) => wnbaCgScore(prop.projection, prop), roster)
-export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.rating, roster)
+export const wnbaHubRows = (data, roster) => basketballRows(data, (prop) => wnbaCgScore(prop.projection, prop), roster, 'wnba')
+export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.rating, roster, 'nba')
 
 // Highest CG Score first, one row per player so the list is not one star's props.
 export function topHubRows(rows, limit = 5) {
@@ -269,4 +341,77 @@ export function recapLabel(slateIso, now = new Date()) {
 export function formatRecord(r) {
   if (!r) return null
   return `${r.hits}-${r.misses}${r.pushes ? `-${r.pushes}` : ''}`
+}
+
+function gameFromSides(team, opponent, start) {
+  if (!team) return null
+  return { team, opponent: opponent || '', start: start || null }
+}
+
+// Slate matchups from lineup cards, then any prop row whose game isn't listed.
+export function hubGames(sport, rows, lineups) {
+  const games = []
+  const seen = new Set()
+  const add = (game) => {
+    if (!game?.team) return
+    const key = [game.team, game.opponent].filter(Boolean).sort().join('|')
+    if (seen.has(key)) return
+    seen.add(key)
+    games.push(game)
+  }
+  const cards = Array.isArray(lineups) ? lineups : []
+  if (sport === 'nhl' || sport === 'nfl') {
+    for (const card of cards) add(gameFromSides(card.awayTeam || card.away, card.homeTeam || card.home, card.start_time || card.start || null))
+  } else if (sport === 'wnba') {
+    for (const card of cards) {
+      const away = card.visitor?.abbr || card.visitor?.team || card.away
+      const home = card.home?.abbr || card.home?.team || card.homeTeam
+      add(gameFromSides(away, home, card.start || card.start_time || null))
+    }
+  }
+  for (const row of rows || []) add(gameFromSides(row.team, row.opponent, row.start))
+  return games
+}
+
+export function sameMatchup(row, game) {
+  if (!game) return true
+  const sides = new Set([game.team, game.opponent].filter(Boolean))
+  if (!sides.size || !row?.team) return false
+  if (!sides.has(row.team)) return false
+  return !row.opponent || sides.has(row.opponent)
+}
+
+// Status chips the hub can stand behind. Goalie and line wording come from the
+// lineup snapshot. The recap chip is the graded record, not a projection.
+export function statusChips({ sport, rows, lineups, recap, ready = true, now = new Date() }) {
+  const chips = []
+  const cards = Array.isArray(lineups) ? lineups : []
+  if (sport === 'nhl') {
+    let confirmed = 0
+    let probable = 0
+    for (const card of cards) {
+      for (const goalie of Object.values(card?.goalies || {})) {
+        if (goalie?.confirmed === true || goalie?.status === 'confirmed') confirmed += 1
+        else if (goalie?.status === 'probable') probable += 1
+      }
+    }
+    if (!confirmed) {
+      for (const row of rows || []) {
+        if (row?.goalieStatus === 'confirmed') confirmed += 1
+        else if (row?.goalieStatus === 'probable') probable += 1
+      }
+    }
+    if (confirmed) chips.push({ tone: 'good', text: confirmed > 1 ? `${confirmed} goalies confirmed` : 'Goalie confirmed' })
+    else if (probable) chips.push({ tone: 'warn', text: 'Goalie probable' })
+    const labels = cards.flatMap((card) => Object.values(card?.lineLabels || {})).map((label) => String(label || ''))
+    if (labels.some((label) => /NOT POSTED|LAST GAME/i.test(label))) chips.push({ tone: 'warn', text: 'Lines pending' })
+    else if (labels.length && labels.every((label) => /PROJECTED/i.test(label))) chips.push({ tone: 'warn', text: 'Lines projected' })
+  } else if (ready && !(rows || []).length) {
+    chips.push({ tone: 'warn', text: 'Lines pending' })
+  }
+  const record = formatRecord(recap)
+  if (record && recap?.slate_date_iso) {
+    chips.push({ tone: 'neutral', text: `${recapLabel(recap.slate_date_iso, now)} ${record} → Results`, action: 'results' })
+  }
+  return chips
 }

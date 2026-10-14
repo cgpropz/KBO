@@ -8,20 +8,19 @@ import { fitImage } from './fitImage';
 import { teamLogoUrl as nflLogo } from './nfl/nflTeams';
 import { teamLogoUrl as nhlLogo, nhlHeadshotUrl } from './nhl/nhlTeams';
 import { nbaLogoUrl } from './nba/nbaPropLines';
-import { ResponsibleGamblingCopy } from './SiteFooter';
+import Results from './Results';
 import {
-  countPlayable, formatRecord, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  playableRows, recapLabel, topHubRows, unavailableFromLineups, wnbaHubRows,
+  countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
+  playableRows, sameMatchup, statusChips, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
 import './MemberCommandCenter.css';
 
 /*
- * Paid-member landing, Sports Hub: sport rail, today's games, top plays, news.
- * Every row comes from the same server-gated /api/data snapshots the boards
- * use, standard PrizePicks lines only. Held lines and OUT / IR / scratched
- * players stay off, using the lineup statuses the boards already publish.
- * The record strip reads /member-recap.json. The news panel is a slot for
- * the market-signals branch. Logged-out and free visitors never see this page.
+ * Paid-member landing, Option B Sports Hub.
+ * Rows come from the same server-gated /api/data snapshots as the boards.
+ * Held lines and OUT / IR / scratched players stay off. CG Score is the
+ * board score, unchanged. The news panel is a slot for the market-signals
+ * branch. Logged-out and free visitors never see this page.
  */
 
 const KBO_LOGOS = {
@@ -30,8 +29,6 @@ const KBO_LOGOS = {
 };
 const kboLogo = (team) => (KBO_LOGOS[team] ? `/team-logos/${KBO_LOGOS[team]}.webp` : null);
 
-// The WNBA board points at /logos/<team>.png, which is not shipped in this app,
-// so use the same public ESPN logo CDN the NFL/NHL/NBA boards use.
 const ESPN_WNBA = {
   ATL: 'atl', CHI: 'chi', CON: 'conn', CONN: 'conn', DAL: 'dal', GS: 'gs', GSV: 'gs', IND: 'ind',
   LA: 'la', LAS: 'la', LV: 'lv', LVA: 'lv', MIN: 'min', NY: 'ny', NYL: 'ny', PHX: 'phx', PHO: 'phx',
@@ -44,34 +41,64 @@ const wnbaLogo = (team) => {
 
 const SPORTS = [
   { id: 'kbo', name: 'KBO', full: 'Korean Baseball', ds: 'prizepicks_props', dev: 'prizepicks_props.json', toRows: kboHubRows, logo: kboLogo },
+  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: wnbaLogo, roster: 'wnba_players', rosterDev: 'wnba/players.json', lineups: 'wnba_lineups', lineupsDev: 'wnba/lineups.json' },
   { id: 'nfl', name: 'NFL', full: 'Pro Football', ds: 'nfl_projections', dev: 'nfl/projections.json', toRows: nflHubRows, logo: nflLogo, lineups: 'nfl_lineups', lineupsDev: 'nfl/lineups.json' },
   { id: 'nhl', name: 'NHL', full: 'Pro Hockey', ds: 'nhl_projections', dev: 'nhl/projections.json', toRows: nhlHubRows, logo: nhlLogo, lineups: 'nhl_lineups', lineupsDev: 'nhl/lineups.json' },
-  { id: 'wnba', name: 'WNBA', full: "Women's Basketball", ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', toRows: wnbaHubRows, logo: wnbaLogo, roster: 'wnba_players', rosterDev: 'wnba/players.json', lineups: 'wnba_lineups', lineupsDev: 'wnba/lineups.json' },
   { id: 'nba', name: 'NBA', full: 'Pro Basketball', ds: 'nba_projections_standard', dev: 'nba/projections_standard.json', toRows: nbaHubRows, logo: nbaLogoUrl, roster: 'nba_players', rosterDev: 'nba/players.json' },
 ];
 
 const fmt = (v) => {
   const n = Number(v);
-  if (!Number.isFinite(n)) return '-';
+  if (!Number.isFinite(n)) return '—';
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 };
 
-function startLabel(start) {
+function ordinal(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return '—';
+  const mod = n % 100;
+  const suffix = mod >= 11 && mod <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th';
+  return `${n}${suffix}`;
+}
+
+function rowKey(row) {
+  return `${row.player}|${row.stat}|${row.line}`;
+}
+
+function gameKey(game) {
+  return [game.team, game.opponent].filter(Boolean).sort().join('|');
+}
+
+function parseWhen(start) {
   if (!start) return null;
-  const t = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(start) ? `${start}T12:00:00Z` : start);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(start)) return new Date(`${start}T12:00:00Z`);
+  const t = Date.parse(start);
+  return Number.isFinite(t) ? new Date(t) : null;
+}
+
+function dayLabel(start, now = new Date()) {
+  const format = (when, timeZone) => when.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone }).replace(',', '');
+  if (start && /^\d{4}-\d{2}-\d{2}$/.test(start)) return format(new Date(`${start}T12:00:00Z`), 'UTC');
+  return format(parseWhen(start) || now, 'America/New_York');
+}
+
+function clockLabel(start) {
+  if (!start || /^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+  const when = parseWhen(start);
+  if (!when) return null;
+  return `${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`;
+}
+
+function updatedLabel(iso) {
+  const t = Date.parse(iso || '');
   if (!Number.isFinite(t)) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(start)) {
-    return new Date(t).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-  }
-  return `${new Date(t).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`;
+  return `${new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`;
 }
 
 function initials(name) {
   return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 }
 
-// Tries each URL in turn (same-origin resized copy, then the original the
-// boards use) and reports when none of them load.
 function useImageChain(urls) {
   const sources = [...new Set(urls.filter(Boolean))];
   const key = sources.join('|');
@@ -86,78 +113,77 @@ function headshotSources(row, cssPx) {
   return [nhl && fitImage(nhl, cssPx), nhl, row.image && fitImage(row.image, cssPx), row.image];
 }
 
-function TeamLogo({ src, size = 16, className = 'mcc-team-logo', title }) {
+function TeamLogo({ src, size = 16, className = 'hub-logo-img', title }) {
   const { src: url, next } = useImageChain(src ? [fitImage(src, size), src] : []);
   if (!url) return null;
-  return <img className={className} src={url} alt={title || ''} title={title} width={size} height={size} loading="lazy" onError={next} />;
+  return <img className={className} src={url} alt="" title={title} width={size} height={size} loading="lazy" onError={next} />;
 }
 
-function Avatar({ row, sport, size = 48, badge = true }) {
+function Avatar({ row, sport, size = 48 }) {
   const { src, next } = useImageChain(headshotSources(row, size));
-  const logo = badge && sport ? sport.logo(row.team) : null;
+  const logo = sport ? sport.logo(row.team) : null;
   return (
-    <div className="mcc-avatar-wrap" style={{ width: size, height: size }}>
-      <div className="mcc-avatar" aria-hidden="true">
+    <div className="hub-avatar-wrap" style={{ width: size, height: size }}>
+      <div className="hub-avatar" aria-hidden="true">
         {src ? <img src={src} alt="" width={size} height={size} loading="lazy" onError={next} /> : initials(row.player)}
       </div>
-      {logo && <span className="mcc-avatar-badge"><TeamLogo src={logo} size={18} className="" title={row.team} /></span>}
+      {logo && <span className="hub-avatar-badge"><TeamLogo src={logo} size={16} className="" title={row.team} /></span>}
     </div>
   );
 }
 
 function Matchup({ row, sport }) {
+  const when = clockLabel(row.start);
   return (
-    <span className="mcc-matchup">
-      <TeamLogo src={sport.logo(row.team)} size={18} title={row.team} />
+    <span className="hub-match">
+      <TeamLogo src={sport.logo(row.team)} size={16} title={row.team} />
       <span>{row.team}</span>
       {row.opponent && (
         <>
-          <span className="mcc-vs">vs</span>
-          <TeamLogo src={sport.logo(row.opponent)} size={18} title={row.opponent} />
+          <span className="hub-vs">vs</span>
+          <TeamLogo src={sport.logo(row.opponent)} size={16} title={row.opponent} />
           <span>{row.opponent}</span>
         </>
       )}
+      {when && <span className="hub-when">{when}</span>}
     </span>
   );
 }
 
-function PlayRow({ row, sport, onOpen }) {
-  const when = startLabel(row.start);
+function L10Chart({ values, line, side }) {
+  const nums = (values || []).map(Number).filter(Number.isFinite);
+  const target = Number(line);
+  if (!nums.length || !Number.isFinite(target)) {
+    return <p className="hub-chart-empty">No L10 game log on this line.</p>;
+  }
+  const max = Math.max(target, ...nums, 1);
+  const linePct = Math.min(96, Math.max(4, (target / max) * 100));
   return (
-    <button type="button" className={`mcc-row ${row.side === 'UNDER' ? 'is-under' : 'is-over'}`} onClick={() => onOpen(sport.id)}>
-      <Avatar row={row} sport={sport} size={48} />
-      <div className="mcc-row-main">
-        <div className="mcc-row-name">{row.player}</div>
-        <div className="mcc-row-meta">
-          <Matchup row={row} sport={sport} />
-          {when && <span>· {when}</span>}
-        </div>
-        <div className="mcc-row-line">
-          <span className={`mcc-side ${row.side === 'UNDER' ? 'is-under' : ''}`}>{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</span>
-          <span>{row.stat}</span>
-          <span className="mcc-proj">Proj {fmt(row.projection)}</span>
-        </div>
-      </div>
-      <div className="mcc-score" aria-label={`CG Score ${Math.round(row.score)}`}>
-        <strong>{Math.round(row.score)}</strong>
-        <span>CG</span>
-      </div>
-    </button>
+    <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
+      {nums.map((value, index) => {
+        const hit = side === 'UNDER' ? value < target : value > target;
+        const push = value === target;
+        const tone = push ? 'is-push' : hit ? 'is-hit' : 'is-miss';
+        return (
+          <span key={`${value}-${index}`} className="hub-bar-col">
+            <span className={`hub-bar ${tone}`} style={{ height: `${Math.max(8, (value / max) * 100)}%` }} />
+          </span>
+        );
+      })}
+      <span className="hub-chart-line" style={{ bottom: `${linePct}%` }} />
+    </div>
   );
 }
 
-function slateGames(rows) {
-  const seen = new Map();
-  for (const row of rows) {
-    if (!row?.team) continue;
-    const key = `${row.team}|${row.opponent || ''}`;
-    if (!seen.has(key)) seen.set(key, { team: row.team, opponent: row.opponent || '', start: row.start || null });
-  }
-  return [...seen.values()];
-}
-
-function todayLabel(now = new Date()) {
-  return now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/New_York' });
+function useRecap() {
+  const [recap, setRecap] = useState(null);
+  useEffect(() => {
+    fetch(`/member-recap.json?v=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setRecap(j?.sports || {}))
+      .catch(() => setRecap({}));
+  }, []);
+  return recap;
 }
 
 function useBoards(access, nbaOpen) {
@@ -191,7 +217,10 @@ function useBoards(access, nbaOpen) {
       fetchApiDataset(sport.ds, { devStaticPath: sport.dev })
         .then((snap) => {
           if (!alive) return;
-          setBoards((b) => ({ ...b, [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview } }));
+          setBoards((b) => ({
+            ...b,
+            [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
+          }));
         })
         .catch(() => { if (alive) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
     });
@@ -202,32 +231,23 @@ function useBoards(access, nbaOpen) {
     const out = {};
     SPORTS.forEach((sport) => {
       const b = boards[sport.id];
-      if (!b) { out[sport.id] = { status: 'loading', rows: [], count: 0 }; return; }
-      if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], count: 0 }; return; }
+      if (!b) { out[sport.id] = { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] }; return; }
+      if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
       const raw = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
       const all = playableRows(raw, unavailableFromLineups(sport.id, lineups[sport.id]));
-      const rows = topHubRows(all, 5);
+      const shown = countPlayable(all);
       out[sport.id] = {
-        status: rows.length ? 'ready' : 'empty',
-        rows,
-        games: slateGames(all),
-        count: countPlayable(all),
+        status: all.length ? 'ready' : 'empty',
+        rows: topHubRows(all, 12),
+        all,
+        games: hubGames(sport.id, all, lineups[sport.id]),
+        count: shown + (b.preview ? Number(b.lockedCount) || 0 : 0),
         updatedAt: b.updatedAt,
+        lineups: lineups[sport.id] || [],
       };
     });
     return out;
   }, [boards, photos, rosters, lineups]);
-}
-
-function useRecap() {
-  const [recap, setRecap] = useState(null);
-  useEffect(() => {
-    fetch(`/member-recap.json?v=${Date.now()}`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setRecap(j?.sports || {}))
-      .catch(() => setRecap({}));
-  }, []);
-  return recap;
 }
 
 function emptyCopy(status, sport) {
@@ -235,7 +255,25 @@ function emptyCopy(status, sport) {
   if (status === 'locked') return `${sport.name} isn't in your plan. Add it from Manage plan.`;
   if (status === 'closed') return 'The NBA board opens soon. No lines are posted for members yet.';
   if (status === 'error') return `Couldn't load the ${sport.name} board. Open it directly or try again shortly.`;
-  return `No standard ${sport.name} lines on the board right now. Check back when the next slate posts.`;
+  return `No standard ${sport.name} lines on the board right now.`;
+}
+
+function sportStatus(sport, board, nbaOpen) {
+  if (!board || board.status === 'loading') return 'Loading';
+  if (board.status === 'locked') return 'Locked';
+  if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'Opens soon';
+  if (board.status === 'error') return 'Unavailable';
+  if (board.status === 'empty' || !board.count) return 'No lines';
+  const games = board.games?.length ? `${board.games.length} game${board.games.length === 1 ? '' : 's'}` : null;
+  return games ? `${games} · ${board.count} props` : `${board.count} props`;
+}
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="hub-icon">
+      <path fill="currentColor" d="M12 22a2.4 2.4 0 0 0 2.35-1.9h-4.7A2.4 2.4 0 0 0 12 22Zm7-6.2V11a7 7 0 0 0-5-6.7V3.5a2 2 0 1 0-4 0v.8A7 7 0 0 0 5 11v4.8L3.3 17.5a1 1 0 0 0 .7 1.7h16a1 1 0 0 0 .7-1.7L19 15.8Z" />
+    </svg>
+  );
 }
 
 export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
@@ -246,149 +284,281 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const recap = useRecap();
   const firstReady = SPORTS.find((s) => boards[s.id]?.status === 'ready');
   const [picked, setPicked] = useState(null);
+  const [matchup, setMatchup] = useState('');
+  const [focus, setFocus] = useState(null);
+  const [panel, setPanel] = useState('today');
+  const [bellOpen, setBellOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const selected = SPORTS.find((s) => s.id === picked) || firstReady || SPORTS[0];
-  const state = boards[selected.id];
-  const isAllAccess = access.kbo && access.wnba && access.nfl && access.nhl;
+  const [seenSport, setSeenSport] = useState(selected.id);
+  if (seenSport !== selected.id) {
+    setSeenSport(selected.id);
+    setMatchup('');
+    setFocus(null);
+  }
+  const state = boards[selected.id] || { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] };
 
-  const recapCells = SPORTS
-    .filter((s) => recap?.[s.id])
-    .map((s) => ({ sport: s, r: recap[s.id], label: recapLabel(recap[s.id].slate_date_iso) }))
-    .sort((a, b) => b.r.slate_date_iso.localeCompare(a.r.slate_date_iso))
-    .slice(0, 3);
-  const topToday = SPORTS
-    .flatMap((s) => (boards[s.id]?.rows || []).slice(0, 1).map((row) => ({ sport: s, row })))
-    .sort((a, b) => b.row.score - a.row.score)[0];
+  const games = state.games || [];
+  const activeGame = games.find((game) => gameKey(game) === matchup) || null;
+  const pool = activeGame ? (state.all || []).filter((row) => sameMatchup(row, activeGame)) : (state.all || []);
+  const ranked = topHubRows(pool, 7);
+  const top = ranked.slice(0, 3);
+  const preview = ranked.slice(3, 7);
+  const active = [...top, ...preview].find((row) => rowKey(row) === focus) || top[0] || null;
+  const shownGames = activeGame ? [activeGame] : games;
+  const timedStarts = shownGames
+    .filter((game) => game.start && !/^\d{4}-\d{2}-\d{2}$/.test(game.start))
+    .map((game) => parseWhen(game.start))
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+  const firstStart = timedStarts[0] || null;
+  const eyebrowWhen = shownGames.find((game) => game.start)?.start || firstStart?.toISOString() || null;
+  const chips = statusChips({
+    sport: selected.id,
+    rows: state.all || [],
+    lineups: state.lineups,
+    recap: recap?.[selected.id],
+    ready: state.status === 'ready' || state.status === 'empty',
+  });
+
+  const openSport = selected.id === 'nba' && !nbaOpen ? 'kbo' : selected.id;
+  const openSlip = (mode) => {
+    try { sessionStorage.setItem('cg_slip_mode', mode === 'auto' ? 'auto' : 'build'); } catch { /* ignore */ }
+    onEnterSport(openSport, { view: 'slip' });
+  };
+  const openLog = (row) => {
+    if (!row) return;
+    if (selected.id === 'nhl') onEnterSport('nhl', { view: 'player', item: row.detail || row });
+    else onEnterSport(selected.id, { view: 'player', player: row.player, prop: row.stat });
+  };
+
+  const userInitials = initials((user?.email || 'M').split('@')[0].replace(/[._-]+/g, ' ')) || 'M';
+  const notices = [
+    ...chips.map((chip) => chip.text),
+    state.updatedAt ? `Board updated ${updatedLabel(state.updatedAt)}` : null,
+  ].filter(Boolean);
 
   return (
-    <div className="mcc">
-      <header className="mcc-header">
-        <div className="mcc-wordmark">cg<span>propz</span></div>
-        <nav className="mcc-nav" aria-label="Member">
-          <button type="button" className="is-active">Today</button>
-          <button type="button" onClick={() => onEnterSport(selected.id === 'nba' && !nbaOpen ? 'kbo' : selected.id)}>Boards</button>
-          <a href="/guides/cg-score">CG Score</a>
-          <button type="button" onClick={() => onNavigate('pricing')}>Settings</button>
-          {user && <button type="button" className="mcc-signout" onClick={signOut} title={user.email}>Sign out</button>}
+    <div className="hub">
+      <header className="hub-top">
+        <button type="button" className="hub-brand" onClick={() => setPanel('today')}>cg<span>propz</span></button>
+        <nav className="hub-nav" aria-label="Member">
+          <button type="button" className={panel === 'today' ? 'is-active' : ''} onClick={() => setPanel('today')}>Today</button>
+          <button type="button" onClick={() => onEnterSport(openSport, { view: 'board' })}>Boards</button>
+          <button type="button" onClick={() => openSlip('build')}>Slip Builder</button>
+          <button type="button" onClick={() => openSlip('auto')}>Optimizer</button>
+          <button type="button" className={panel === 'results' ? 'is-active' : ''} onClick={() => setPanel('results')}>Results</button>
         </nav>
+        <div className="hub-tools">
+          <div className="hub-pop">
+            <button type="button" className="hub-icon-btn" aria-label="Alerts" aria-expanded={bellOpen} onClick={() => { setBellOpen((v) => !v); setAccountOpen(false); }}>
+              <BellIcon />
+            </button>
+            {bellOpen && (
+              <div className="hub-menu" role="status">
+                {notices.length ? notices.map((note) => <p key={note}>{note}</p>) : <p>No new alerts.</p>}
+              </div>
+            )}
+          </div>
+          <button type="button" className="hub-settings" onClick={() => onNavigate('pricing')}>Settings</button>
+          <div className="hub-pop">
+            <button type="button" className="hub-user" aria-label="Account" aria-expanded={accountOpen} onClick={() => { setAccountOpen((v) => !v); setBellOpen(false); }}>
+              {userInitials}
+            </button>
+            {accountOpen && (
+              <div className="hub-menu hub-menu-account">
+                {user?.email && <p>{user.email}</p>}
+                <button type="button" onClick={signOut}>Sign out</button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
-      <main className="mcc-main">
-        <div className="hub-hero">
-          <div>
-            <div className="mcc-kicker">{isAllAccess ? 'All Access' : 'Member'} · Sports Hub</div>
-            <h1>Today</h1>
-            <p className="hub-date">{todayLabel()}</p>
-          </div>
-          <button type="button" className="hub-feature" onClick={() => topToday && onEnterSport(topToday.sport.id)} disabled={!topToday}>
-            {topToday && <Avatar row={topToday.row} sport={topToday.sport} size={44} />}
-            <div>
-              <span>Top CG today</span>
-              <strong>{topToday ? Math.round(topToday.row.score) : '—'}</strong>
-              <small>{topToday ? `${topToday.row.player} · ${topToday.sport.name}` : 'Waiting on today\'s lines'}</small>
-            </div>
-          </button>
-        </div>
-
-        <div className="hub-rail" role="group" aria-label="Sports">
-          {SPORTS.map((s) => {
-            const b = boards[s.id];
-            const record = recap?.[s.id] ? formatRecord(recap[s.id]) : null;
-            const badge = b?.status === 'ready' ? `${b.count} lines`
-              : b?.status === 'empty' ? 'No lines'
-                : b?.status === 'locked' ? 'Locked'
-                  : b?.status === 'closed' ? 'Soon'
-                    : b?.status === 'error' ? 'Retry' : '…';
-            return (
-              <button key={s.id} type="button" className={`hub-sport ${s.id === selected.id ? 'is-active' : ''}`} onClick={() => setPicked(s.id)} aria-pressed={s.id === selected.id}>
-                <span className="hub-sport-top">
-                  <span className="hub-sport-name">{s.name}</span>
-                  <span className="mcc-badge">{badge}</span>
-                </span>
-                <span className="hub-sport-full">{s.full}</span>
-                <span className="hub-sport-foot">
-                  {b?.rows?.length > 0 && (
-                    <span className="mcc-sport-faces" aria-hidden="true">
-                      {b.rows.slice(0, 3).map((row) => <Avatar key={row.player} row={row} size={26} badge={false} />)}
-                    </span>
-                  )}
-                  <span className="hub-record">{record || (s.id === 'nba' && !nbaOpen ? 'Opens soon' : '—')}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <section className="mcc-strip" aria-label="Graded record">
-          {recapCells.map(({ sport, r, label }) => (
-            <div key={sport.id} className="mcc-strip-cell">
-              <span>{label} · {sport.name}</span>
-              <strong>{formatRecord(r)}</strong>
-              <small>Standard lines graded (W-L{r.pushes ? '-P' : ''})</small>
-            </div>
+      <div className="hub-sportbar">
+        <div className="hub-pills" role="group" aria-label="Sports">
+          {SPORTS.map((sport) => (
+            <button
+              key={sport.id}
+              type="button"
+              className={sport.id === selected.id ? 'is-active' : ''}
+              aria-pressed={sport.id === selected.id}
+              onClick={() => { setPicked(sport.id); setPanel('today'); }}
+            >
+              {sport.name}
+            </button>
           ))}
-          {recap && recapCells.length === 0 && (
-            <div className="mcc-strip-cell"><span>Graded record</span><strong>—</strong><small>No graded slate yet</small></div>
-          )}
-        </section>
-
-        {state?.games?.length > 0 && (
-          <div className="hub-games" aria-label={`${selected.name} games`}>
-            {state.games.map((game) => (
-              <div key={`${game.team}-${game.opponent}`} className="hub-game">
-                <TeamLogo src={selected.logo(game.team)} size={22} title={game.team} />
-                <span>{game.team}</span>
-                {game.opponent && (
-                  <>
-                    <span className="mcc-vs">vs</span>
-                    <TeamLogo src={selected.logo(game.opponent)} size={22} title={game.opponent} />
-                    <span>{game.opponent}</span>
-                  </>
-                )}
-                {startLabel(game.start) && <span className="hub-game-time">{startLabel(game.start)}</span>}
-              </div>
+        </div>
+        <label className="hub-matchup-filter">
+          <span>Matchup:</span>
+          <select value={matchup} onChange={(event) => { setMatchup(event.target.value); setFocus(null); }} disabled={!games.length}>
+            <option value="">{games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
+            {games.map((game) => (
+              <option key={gameKey(game)} value={gameKey(game)}>
+                {game.opponent ? `${game.team} vs ${game.opponent}` : game.team}
+              </option>
             ))}
-          </div>
-        )}
+          </select>
+        </label>
+      </div>
 
-        <div className="mcc-grid">
-          <section className="mcc-panel mcc-plays" aria-label={`Top ${selected.name} plays`}>
-            <div className="mcc-panel-head">
-              <h2>Top plays · {selected.name}</h2>
-              <span className="mcc-chip">Standard lines</span>
+      {panel === 'results' ? (
+        <main className="hub-main">
+          <Results />
+        </main>
+      ) : (
+        <main className="hub-main">
+          <div className="hub-heading">
+            <div>
+              <p className="hub-eyebrow">{selected.name} · {dayLabel(eyebrowWhen)}</p>
+              <h1>Tonight&apos;s {selected.name} top 3</h1>
             </div>
-            {state?.status === 'ready' ? (
-              <div className="mcc-rows">
-                {state.rows.map((row) => <PlayRow key={`${row.player}-${row.stat}`} row={row} sport={selected} onOpen={onEnterSport} />)}
-              </div>
-            ) : (
-              <p className="mcc-empty">{emptyCopy(state?.status, selected)}</p>
-            )}
-            {(selected.id !== 'nba' || nbaOpen) && state?.status !== 'locked' && (
-              <button type="button" className="mcc-open" onClick={() => onEnterSport(selected.id)}>Open full {selected.name} board →</button>
-            )}
-            <a className="mcc-explain" href="/guides/cg-score">What's in a CG Score?</a>
-          </section>
-
-          <section className="mcc-panel mcc-news" aria-label="News">
-            <div className="mcc-panel-head">
-              <h2>{selected.name} news</h2>
-              <span className="mcc-chip is-placeholder">Placeholder</span>
-            </div>
-            <p className="mcc-empty">
-              News isn't connected yet. cgpropz doesn't have a headline source today, so nothing here is real reporting.
-              Injury and lineup notes still show on each sport's board.
+            <p className="hub-slate">
+              {shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
+              {firstStart && <> · First start {clockLabel(firstStart.toISOString())}</>}
+              {state.updatedAt && <> · Board updated {updatedLabel(state.updatedAt)}</>}
             </p>
-          </section>
-        </div>
-      </main>
+          </div>
 
-      <footer className="mcc-footer">
-        <div className="mcc-wordmark">cg<span>propz</span></div>
-        <p className="mcc-rg">21+ · Play responsibly</p>
-        <div className="site-footer"><ResponsibleGamblingCopy /></div>
-        <div className="mcc-footer-links">
-          <button type="button" onClick={() => onNavigate('pricing')}>Settings · Discord · Manage plan</button>
-        </div>
+          {chips.length > 0 && (
+            <div className="hub-status" aria-label="Board status">
+              {chips.map((chip) => chip.action === 'results' ? (
+                <button key={chip.text} type="button" className={`hub-status-chip is-${chip.tone}`} onClick={() => setPanel('results')}>{chip.text}</button>
+              ) : (
+                <span key={chip.text} className={`hub-status-chip is-${chip.tone}`}>{chip.text}</span>
+              ))}
+            </div>
+          )}
+
+          <div className="hub-columns">
+            <div className="hub-col">
+              {state.status === 'ready' && top.length > 0 ? top.map((row, index) => (
+                <button
+                  key={rowKey(row)}
+                  type="button"
+                  className={`hub-card ${active && rowKey(active) === rowKey(row) ? 'is-open' : ''}`}
+                  onClick={() => setFocus(rowKey(row))}
+                >
+                  <span className="hub-rank hub-num">{index + 1}</span>
+                  <Avatar row={row} sport={selected} size={52} />
+                  <span className="hub-card-copy">
+                    <span className="hub-name">{row.player}</span>
+                    <Matchup row={row} sport={selected} />
+                    <span className="hub-chips">
+                      <span className="hub-mini">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                      {row.hitRate != null && <span className="hub-mini hub-num">L10 {Math.round(row.hitRate)}%</span>}
+                      <span className="hub-mini is-status">{row.statusLabel || (row.side === 'UNDER' ? 'Under' : 'Over')}</span>
+                    </span>
+                  </span>
+                  <span className="hub-score" aria-label={`CG Score ${Math.round(row.score)}`}>
+                    <strong className="hub-num">{Math.round(row.score)}</strong>
+                    <span>CG</span>
+                  </span>
+                </button>
+              )) : (
+                <section className="hub-card hub-card-empty"><p>{emptyCopy(state.status, selected)}</p></section>
+              )}
+
+              <section className="hub-card hub-preview">
+                <div className="hub-card-head">
+                  <h2>Board preview</h2>
+                  <a href="/guides/cg-score">What&apos;s in a CG Score</a>
+                </div>
+                {preview.length > 0 ? preview.map((row) => (
+                  <button key={rowKey(row)} type="button" className="hub-preview-row" onClick={() => setFocus(rowKey(row))}>
+                    <Avatar row={row} sport={selected} size={36} />
+                    <span>
+                      <span className="hub-name">{row.player}</span>
+                      <span className="hub-preview-meta">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                    </span>
+                    <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
+                  </button>
+                )) : (
+                  <p className="hub-chart-empty">{state.count > ranked.length ? 'The next props are on the full board.' : 'Those are the standard lines on this slate.'}</p>
+                )}
+                {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (
+                  <button type="button" className="hub-open" onClick={() => onEnterSport(selected.id, { view: 'board' })}>
+                    Open full board ({state.count} props) →
+                  </button>
+                )}
+              </section>
+            </div>
+
+            <div className="hub-col">
+              <section className="hub-card hub-drill" aria-label="Player drilldown">
+                <div className="hub-card-head">
+                  <h2>Player drilldown</h2>
+                  {active && <span className="hub-mini">{active.player}</span>}
+                </div>
+                {active ? (
+                  <>
+                    <div className="hub-drill-player">
+                      <Avatar row={active} sport={selected} size={56} />
+                      <div>
+                        <div className="hub-name">{active.player}</div>
+                        <Matchup row={active} sport={selected} />
+                      </div>
+                    </div>
+                    <L10Chart values={active.recent} line={active.line} side={active.side} />
+                    <div className="hub-stats">
+                      <div><span>L10</span><strong className="hub-num">{active.hitRate == null ? '—' : `${Math.round(active.hitRate)}%`}</strong></div>
+                      <div><span>Opp rank</span><strong className="hub-num">{active.oppRank == null ? '—' : ordinal(active.oppRank)}</strong></div>
+                      <div><span>Projection</span><strong className="hub-num">{fmt(active.projection)}</strong></div>
+                    </div>
+                    <p className="hub-note">What&apos;s in a CG Score: projection vs line · recent hit rate · matchup · market. Not a guarantee.</p>
+                    <div className="hub-actions">
+                      <button type="button" className="hub-primary" onClick={() => openSlip('build')}>Add to slip</button>
+                      <button type="button" className="hub-ghost" onClick={() => openLog(active)}>Full game log</button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="hub-chart-empty">Pick a play to see the last 10 games against the line.</p>
+                )}
+              </section>
+
+              <section className="mcc-panel mcc-news" aria-label="News">
+                <div className="mcc-panel-head">
+                  <h2>{selected.name} news</h2>
+                  <span className="mcc-chip is-placeholder">Placeholder</span>
+                </div>
+                <p className="mcc-empty">
+                  News isn&apos;t connected yet. cgpropz doesn&apos;t have a headline source today, so nothing here is real reporting.
+                  Injury and lineup notes still show on each sport&apos;s board.
+                </p>
+              </section>
+
+              <section className="hub-card" aria-label="Other sports today">
+                <div className="hub-card-head"><h2>Other sports today</h2></div>
+                <div className="hub-tiles">
+                  {SPORTS.map((sport) => (
+                    <button
+                      key={sport.id}
+                      type="button"
+                      className={`hub-tile ${sport.id === selected.id ? 'is-active' : ''}`}
+                      onClick={() => { setPicked(sport.id); setPanel('today'); }}
+                    >
+                      <strong>{sport.name}</strong>
+                      <span>{sportStatus(sport, boards[sport.id], nbaOpen)}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      )}
+
+      <footer className="hub-footer">
+        <div className="hub-brand">cg<span>propz</span></div>
+        <p>21+ · Play responsibly · Entertainment only</p>
+        <p><a href="tel:18004262537">1-800-GAMBLER</a></p>
+        <p>Not affiliated with PrizePicks or Underdog</p>
+        <nav aria-label="Footer">
+          <button type="button" onClick={() => onNavigate('pricing')}>Settings</button>
+          <button type="button" onClick={() => onNavigate('pricing')}>Discord &amp; integrations</button>
+          <button type="button" onClick={() => onNavigate('pricing')}>Manage plan</button>
+          <a href="/guides/start-here">Help</a>
+        </nav>
       </footer>
     </div>
   );
