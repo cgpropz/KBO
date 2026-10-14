@@ -253,7 +253,7 @@ class ModelTests(unittest.TestCase):
     def test_memory_grade_and_shadow_read_the_frozen_slate(self):
         root = Path(__file__).resolve().parent
         grade = (root / ".github/workflows/nhl-memory.yml").read_text(encoding="utf-8")
-        self.assertIn('cron: "41 14 * * *"', grade)
+        self.assertIn("cron: '30 11 * * *'", grade)
         self.assertIn("python pipeline/memory/grade_nhl_day.py", grade)
         self.assertIn('bash pipeline/memory/commit_memory.sh "chore: nhl memory grade"', grade)
         self.assertIn("github.ref == 'refs/heads/main'", grade)
