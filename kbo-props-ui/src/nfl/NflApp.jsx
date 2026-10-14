@@ -26,12 +26,12 @@ const NAV_ITEMS = [
 
 const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
-export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
+export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState('dashboard')
+  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'player' : 'dashboard')
   const [previousView, setPreviousView] = useState('dashboard')
-  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' && entry.player ? { player: entry.player, prop: entry.prop || null } : null)
 
   const openPlayer = (player, prop) => {
     setPreviousView(view)

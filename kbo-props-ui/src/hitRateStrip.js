@@ -68,6 +68,12 @@ export function wnbaLoggedValues(games, stat) {
   return (games || []).map((game) => getValue(game))
 }
 
+export function kboLoggedValues(games, stat) {
+  const getValue = KBO_VALUE[stat]
+  if (!getValue) return []
+  return (games || []).map((game) => getValue(game))
+}
+
 function numericRate(rate) {
   if (typeof rate === 'boolean' || rate == null || rate === '') return null
   const value = Number(rate)

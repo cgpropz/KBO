@@ -37,12 +37,13 @@ const SlipOptimizer = lazy(() => import('./SlipOptimizer'))
    matching the WNBA and NFL dashboards. */
 const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
-export default function KboApp({ sport, setSport, onNavigateHome, initialView }) {
+export default function KboApp({ sport, setSport, onNavigateHome, initialView, entry }) {
   const { signOut, user, tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board')
+  const opened = entry?.view === 'slip' ? 'optimizer' : entry?.view === 'player' && entry.player ? 'player' : null
+  const [view, setView] = useState(opened || (NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board'))
   const [previousView, setPreviousView] = useState('board')
-  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' ? entry.player : null)
   const isPaid = hasAnyPaidAccess(tier)
 
   const openPlayer = (name) => {

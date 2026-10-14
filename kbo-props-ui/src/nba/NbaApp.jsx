@@ -70,11 +70,15 @@ function EmptyTab({ title, body }) {
   )
 }
 
-export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
+export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(readLinkedNbaView)
-  const [playerName, setPlayerName] = useState('')
+  const [view, setView] = useState(() => {
+    if (entry?.view === 'slip') return 'slip'
+    if (entry?.view === 'player' && entry.player) return 'players'
+    return readLinkedNbaView()
+  })
+  const [playerName, setPlayerName] = useState(entry?.player || '')
   const openView = (next) => {
     if (next !== 'players') setPlayerName('')
     setView(resolveNbaView(next))

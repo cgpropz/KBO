@@ -38,12 +38,12 @@ function ComingSoon({ label }) {
   )
 }
 
-export default function WnbaApp({ sport, setSport, onNavigateKbo }) {
+export default function WnbaApp({ sport, setSport, onNavigateKbo, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState('dashboard')
+  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'playerDetail' : 'dashboard')
   const [teamFilter, setTeamFilter] = useState('All')
-  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(entry?.player || null)
   const [returnView, setReturnView] = useState('players')
 
   const handleSelectPlayer = name => {

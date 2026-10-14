@@ -28,13 +28,13 @@ const NAV = [
 
 const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
 
-export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing }) {
+export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
-  const [view, setView] = useState('dashboard')
-  const [selected, setSelected] = useState(null)
+  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.item ? 'player' : 'dashboard')
+  const [selected, setSelected] = useState(entry?.item || null)
 
   const openPlayer = (item) => {
     setSelected(item)
