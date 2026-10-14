@@ -191,3 +191,51 @@
 }
 .nfl-history-bars span.push { background: #3f3f46; }
 .nfl-history-bars span.push i { color: #a1a1aa; }
+/* Admin-only CG odds hero (draft). Only rendered when the viewer can see CG odds. */
+.nfl-sharp-table.has-cg { min-width: 0; }
+.nfl-sharp-table.has-cg th, .nfl-sharp-table.has-cg td { padding-left: 10px; padding-right: 10px; }
+.nfl-sharp-table.has-cg .nfl-sharp-edge { min-width: 112px; }
+.nfl-sharp-table.has-cg .nfl-sharp-cg-th { color: #7fff68; }
+.nfl-sharp-cg { min-width: 196px; vertical-align: middle; }
+.nfl-sharp-cg .cgo-hero { box-sizing: border-box; padding: 9px 11px 8px; border: 1px solid #23443d; border-left: 3px solid #4c6b63; border-radius: 8px; background: linear-gradient(180deg, #0d211d, #091714); }
+.nfl-sharp-cg.tone-pos .cgo-hero { border-color: rgba(127,255,104,.35); border-left-color: #7fff68; box-shadow: 0 0 16px rgba(127,255,104,.07); }
+.nfl-sharp-cg.tone-neg .cgo-hero { border-color: rgba(255,92,87,.3); border-left-color: #ff5c57; }
+.nfl-sharp-cg .cgo-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.nfl-sharp-cg .cgo-label { color: #54e0bf; font: 800 9px monospace; letter-spacing: .12em; }
+.nfl-sharp-cg .cgo-draft { color: #78918a; font: 9px monospace; letter-spacing: .06em; }
+.nfl-sharp-cg .cgo-edge { padding: 2px 7px; border-radius: 999px; font: 800 11px monospace; white-space: nowrap; }
+.nfl-sharp-cg .cgo-edge small { font: 700 8px monospace; opacity: .75; text-transform: uppercase; }
+.nfl-sharp-cg .cgo-edge.pos { color: #06210f; background: #7fff68; }
+.nfl-sharp-cg .cgo-edge.neg { color: #2a0908; background: #ff5c57; }
+.nfl-sharp-cg .cgo-edge.even { color: #b7cac3; background: #1a3c36; }
+.nfl-sharp-cg .cgo-main { display: flex; align-items: baseline; gap: 10px; margin-top: 5px; }
+.nfl-sharp-cg .cgo-price { color: #e8f4e6; font: 800 24px/1 monospace; letter-spacing: -.02em; }
+.nfl-sharp-cg .cgo-prob { display: flex; flex-direction: column; line-height: 1.1; }
+.nfl-sharp-cg .cgo-prob strong { color: #e8f4e6; font: 800 14px monospace; }
+.nfl-sharp-cg.tone-pos .cgo-prob strong { color: #7fff68; }
+.nfl-sharp-cg.tone-neg .cgo-prob strong { color: #ff7b79; }
+.nfl-sharp-cg .cgo-prob small { color: #78918a; font: 9px monospace; }
+.nfl-sharp-cg .cgo-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.nfl-sharp-cg .cgo-tag { padding: 1px 6px; border: 1px solid #23443d; border-radius: 999px; color: #8ba39c; font: 9px monospace; cursor: help; }
+.nfl-sharp-cg .cgo-tag.adj { border-color: rgba(246,195,95,.55); color: #f6c35f; }
+.nfl-sharp-cg .cgo-none { margin-top: 6px; color: #78918a; font: 10px monospace; }
+.nfl-sharp-cg .cgo-who { display: none; }
+@media (max-width: 760px) {
+  .nfl-root .nfl-sharp-row.has-cg > .nfl-sharp-cg { order: -1; min-width: 0 !important; padding: 0 0 4px !important; background: transparent !important; }
+  .nfl-sharp-cg .cgo-hero { padding: 12px 14px 11px; border-radius: 14px; }
+  .nfl-sharp-cg .cgo-label, .nfl-sharp-cg .cgo-draft, .nfl-sharp-cg .cgo-tag, .nfl-sharp-cg .cgo-prob small, .nfl-sharp-cg .cgo-edge small { font-size: 12px !important; }
+  .nfl-sharp-cg .cgo-who { display: block; margin-top: 8px; overflow: hidden; color: #e8f4e6; font: 800 13px monospace; font-size: 13px !important; text-overflow: ellipsis; white-space: nowrap; }
+  .nfl-sharp-cg .cgo-who span { font-weight: 400; }
+  .nfl-sharp-cg .cgo-main { gap: 14px; margin-top: 6px; }
+  .nfl-sharp-cg .cgo-price { font-size: 36px !important; line-height: 1 !important; }
+  .nfl-sharp-cg .cgo-main, .nfl-sharp-cg .cgo-main * { line-height: 1.15 !important; margin-bottom: 0 !important; }
+  .nfl-sharp-cg .cgo-prob strong { font-size: 20px !important; }
+  .nfl-sharp-cg .cgo-edge { padding: 4px 10px; font-size: 14px !important; }
+  .nfl-sharp-cg .cgo-tags { margin-top: 9px; gap: 6px; }
+}
+/* Admin view: tighten the secondary columns so CG odds fits at 1440 with no sideways scroll. */
+.nfl-sharp-table.has-cg td { white-space: normal; }
+.nfl-sharp-table.has-cg .nfl-lines-player { white-space: nowrap; }
+.nfl-sharp-table.has-cg .nfl-sharp-quote-logo { height: 20px; }
+.nfl-sharp-table.has-cg .nfl-sharp-quote-book { max-width: 150px; flex-wrap: wrap; }
+.nfl-sharp-table.has-cg .nfl-sharp-edge { min-width: 0; max-width: 150px; }
