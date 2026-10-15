@@ -5,6 +5,8 @@ import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
 import { fitImage } from '../fitImage.js'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -67,7 +69,6 @@ export default function NflProjections({ onSelectPlayer }) {
   const [query, setQuery] = useState('')
   const [position, setPosition] = useState('ALL')
   const [prop, setProp] = useState('All props')
-  const [matchup, setMatchup] = useState('All matchups')
   const [sort, setSort] = useState('Best score')
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -88,17 +89,15 @@ export default function NflProjections({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
-  const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(projections)
   const props = useMemo(() => ['All props', ...new Set(projections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [projections])
-  const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
-  const rows = useMemo(() => projections
+  const rows = useMemo(() => boardRows
     .filter((item) => lineMatchesStat(item.prop, item.line))
     .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0 }))
     .filter((item) => position === 'ALL' || item.position === position)
     .filter((item) => prop === 'All props' || item.prop === prop)
-    .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
     .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => sort === 'Best score' ? b.score - a.score : b.hitRate - a.hitRate), [matchup, position, projections, prop, query, sort])
+    .sort((a, b) => sort === 'Best score' ? b.score - a.score : b.hitRate - a.hitRate), [boardRows, position, prop, query, sort])
 
   return (
     <section className="nfl-edge-board">
@@ -107,7 +106,7 @@ export default function NflProjections({ onSelectPlayer }) {
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
         <label><span>SORT</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option>Best score</option><option>Best hit rate</option></select></label>
         <label><span>PROP</span><select value={prop} onChange={(event) => setProp(event.target.value)}>{props.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label><span>MATCHUP</span><select value={matchup} onChange={(event) => setMatchup(event.target.value)}>{matchups.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <GameSelect games={games} value={gameId} onChange={setGameId} />
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>

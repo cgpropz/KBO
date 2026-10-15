@@ -11,6 +11,8 @@ import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
 import { BoardSkeleton } from './BootScreen.jsx'
 import './KboPropBoard.css'
 import { fitImage } from './fitImage.js'
+import GameSelect from './GameSelect.jsx'
+import { useGameFilter } from './useGameFilter.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -195,10 +197,11 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     direction: directionFor(prop),
     hitPills: kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent }),
   }))), [snapshot])
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(allRows)
   const propTabs = useMemo(() => ['All Props', ...[...new Set(allRows.map(({ prop }) => prop.stat))].sort()], [allRows])
   const rows = useMemo(() => {
     const minimumScore = filters.minScore === '' ? -Infinity : Number(filters.minScore)
-    const visible = allRows
+    const visible = boardRows
       .filter(({ prop }) => propTab === 'All Props' || prop.stat === propTab)
       .filter(({ card }) => filters.playerType === 'All' || card.type === (filters.playerType === 'Pitchers' ? 'pitcher' : 'batter'))
       .filter(({ direction }) => filters.direction === 'All' || direction === (filters.direction === 'Overs' ? 'over' : 'under'))
@@ -211,7 +214,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       if (filters.sortBy === 'Player Name') return left.card.name.localeCompare(right.card.name)
       return rank(right) - rank(left)
     })
-  }, [allRows, filters, propTab])
+  }, [boardRows, filters, propTab])
 
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
@@ -238,7 +241,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       </nav>
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
-        <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
+        <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><GameSelect games={games} value={gameId} onChange={setGameId} /><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>
       </section>
       {error && <p className="kbo-notice">{error}</p>}
       {!error && !snapshot && (

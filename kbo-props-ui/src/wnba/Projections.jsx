@@ -5,8 +5,10 @@ import { fmtDvpRank } from './utils/formatters'
 import { wnbaCgScore } from './wnbaScore'
 import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
-import { slateDateLabel } from '../wnbaBoard'
 import { fitImage } from '../fitImage.js'
+import GameSelect from '../GameSelect.jsx'
+import { matchesGame } from '../gameFilter.js'
+import { useGameFilter } from '../useGameFilter.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const LINE_TYPES = ['standard', 'demon', 'goblin']
@@ -127,7 +129,6 @@ export default function Projections({ onSelectPlayer }) {
   const [viewMode, setViewMode] = useState('cards')
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('All')
-  const [matchupFilter, setMatchupFilter] = useState('All')
   const [minMinutes, setMinMinutes] = useState(30)
   const [hitRateSort, setHitRateSort] = useState('score')
 
@@ -162,37 +163,8 @@ export default function Projections({ onSelectPlayer }) {
     return ['All', ...[...set].sort((a, b) => a.localeCompare(b))]
   }, [data])
 
-  // Build sorted matchup options. A future slate keeps its calendar date.
-  const matchups = useMemo(() => {
-    if (!data) return []
-
-    const seen = new Map() // canonicalKey -> { label, dateLabel, dateStr }
-    data.forEach(player => {
-      const teamA = (player.team || '').toUpperCase()
-      if (!teamA) return
-      ;(player.ppAllProps || []).forEach(prop => {
-        const teamB = (prop.opponent || '').toUpperCase()
-        if (!teamB) return
-        // Canonical pair — sort so LVA+LAS and LAS+LVA map to the same key
-        const [t1, t2] = [teamA, teamB].sort()
-        const key = `${t1}_${t2}`
-        if (seen.has(key)) return
-        // Date label
-        const gd = prop.gameDate || ''
-        const dateLabel = slateDateLabel(gd)
-        seen.set(key, { label: `${t1} vs ${t2}`, dateLabel, dateStr: gd || '9999' })
-      })
-    })
-    // Sort: active slate first, then by date string, then alphabetical
-    const order = { "Today's slate": 0 }
-    return [...seen.values()].sort((a, b) => {
-      const oa = order[a.dateLabel] ?? 2
-      const ob = order[b.dateLabel] ?? 2
-      if (oa !== ob) return oa - ob
-      if (a.dateStr !== b.dateStr) return a.dateStr.localeCompare(b.dateStr)
-      return a.label.localeCompare(b.label)
-    })
-  }, [data])
+  const boardSource = useMemo(() => data || [], [data])
+  const { games, selected: gameId, setSelected: setGameId } = useGameFilter(boardSource)
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -203,23 +175,17 @@ export default function Projections({ onSelectPlayer }) {
       const propMatch = propType === 'All'
         ? true
         : (p.ppAllProps || []).some(prop => prop?.stat === propType && !EXCLUDED_PROP_LABELS.has(prop.stat))
-      // Matchup filter: include player if their team is one of the two in the selected matchup
-      let matchupMatch = true
-      if (matchupFilter !== 'All') {
-        const [t1, t2] = matchupFilter.split(' vs ')
-        const teamUp = (p.team || '').toUpperCase()
-        matchupMatch = teamUp === t1 || teamUp === t2
-      }
-      return nameMatch && posMatch && minMinutesMatch && propMatch && matchupMatch
+      return nameMatch && posMatch && minMinutesMatch && propMatch && matchesGame(p, gameId)
     })
-  }, [data, search, posFilter, matchupFilter, minMinutes, propType])
+  }, [data, search, posFilter, gameId, minMinutes, propType])
 
   const cards = useMemo(() => {
     const rows = []
     filtered.forEach(player => {
-      const props = propType === 'All'
+      const props = (propType === 'All'
         ? (player.ppAllProps || []).filter(prop => !EXCLUDED_PROP_LABELS.has(prop?.stat))
         : (player.ppAllProps || []).filter(prop => prop.stat === propType && !EXCLUDED_PROP_LABELS.has(prop?.stat))
+      ).filter(prop => matchesGame({ team: player.team, opponent: prop.opponent, versus: prop.versus, gameDate: prop.gameDate }, gameId))
 
       props.forEach(prop => {
         const line = Number(prop.line)
@@ -274,7 +240,7 @@ export default function Projections({ onSelectPlayer }) {
     })
 
     return rows
-  }, [filtered, propType, hitRateSort])
+  }, [filtered, propType, hitRateSort, gameId])
 
   return (
     <div className="fade-in edge-board-wrap">
@@ -317,14 +283,7 @@ export default function Projections({ onSelectPlayer }) {
           {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
         </select>
 
-        <select className="edge-select" value={matchupFilter} onChange={e => setMatchupFilter(e.target.value)}>
-          <option value="All">All Matchups</option>
-          {matchups.map(m => (
-            <option key={m.label} value={m.label}>
-              {m.dateLabel ? `${m.dateLabel} · ${m.label}` : m.label}
-            </option>
-          ))}
-        </select>
+        <GameSelect games={games} value={gameId} onChange={setGameId} />
 
         <select className="edge-select" value={lineType} onChange={e => setLineType(e.target.value)}>
           {LINE_TYPES.map(type => (

@@ -4,6 +4,8 @@ import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
 import { cgScore, lineMatchesStat } from '../cgScore'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -83,11 +85,12 @@ export default function NhlProjections({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(projections)
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
+    const filtered = boardRows.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
     return sortBoard(filtered, 'CG Score')
-  }, [projections, tab, query])
+  }, [boardRows, tab, query])
 
   return (
     <section>
@@ -96,6 +99,7 @@ export default function NhlProjections({ onSelectPlayer }) {
       </div>
       <p className="nhl-note">One card per player and prop. Standard lines are preferred. A demon or goblin is shown only when that is the line PrizePicks posted. Probable goalies are tagged and sorted to the bottom.</p>
       <div className="nfl-edge-controls">
+        <GameSelect games={games} value={gameId} onChange={setGameId} />
         <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
         <div className="nfl-position-tabs">
           {TABS.map((name) => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name === 'ALL' ? 'ALL' : name.split(' ')[0]}</button>)}

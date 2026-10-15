@@ -8,6 +8,8 @@ import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLo
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import { freeTop3SectionState } from './freePreviewCopy';
+import { previewRows } from './gameFilter';
+import { useGameParam } from './useGameFilter';
 import './FreeFunnel.css';
 import './bootScreen.css';
 
@@ -37,6 +39,11 @@ function kboRows(data) {
     const cg = num(prop?.cg_projection ?? prop?.rating);
     rows.push({
       player: card.name,
+      team: card.team,
+      opponent: card.opponent,
+      awayTeam: card.awayTeam,
+      homeTeam: card.homeTeam,
+      versus: card.versus,
       matchup: [card.team, card.opponent].filter(Boolean).join(' vs '),
       stat: prop.stat,
       line: prop.line,
@@ -61,6 +68,16 @@ function kboRows(data) {
 function projectionRows(data, pillsFor) {
   return (Array.isArray(data) ? data : []).map((row) => ({
     player: row.player,
+    team: row.team,
+    opponent: row.opponent,
+    awayTeam: row.awayTeam,
+    homeTeam: row.homeTeam,
+    home: row.home,
+    versus: row.versus,
+    gameDate: row.gameDate || row.gameday,
+    gameday: row.gameday,
+    start_time: row.start_time,
+    gametime: row.gametime,
     matchup: [row.team, row.opponent].filter(Boolean).join(' vs '),
     stat: row.prop,
     line: row.line,
@@ -93,6 +110,10 @@ function wnbaRows(data) {
     const line = prop.line;
     rows.push({
       player: player.name,
+      team: player.team,
+      opponent: prop.opponent || prop.versus,
+      versus: prop.versus,
+      gameDate: prop.gameDate,
       matchup: [player.team, prop.opponent || prop.versus].filter(Boolean).join(' vs '),
       stat: prop.stat,
       line,
@@ -147,6 +168,7 @@ function updatedLabel(iso) {
 export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) {
   const [boards, setBoards] = useState({});
   const [selected, setSelected] = useState(null);
+  const gameParam = useGameParam();
 
   useEffect(() => {
     let active = true;
@@ -156,8 +178,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
           if (!active) return;
           const rows = board.toRows(snap.data)
             .filter((r) => r.player && r.stat && Number.isFinite(r.score) && r.score !== -Infinity)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3);
+            .sort((a, b) => b.score - a.score);
           setBoards((prev) => ({ ...prev, [board.id]: { status: rows.length ? 'ready' : 'empty', rows, lockedCount: snap.lockedCount || 0, updatedAt: snap.updatedAt } }));
         })
         .catch(() => {
@@ -186,6 +207,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
 
   const activeBoard = available.find((b) => b.id === selected) || available[0] || null;
   const state = activeBoard ? boards[activeBoard.id] : null;
+  const visibleRows = state ? previewRows(state.rows, gameParam) : [];
 
   return (
     <section className="ff-picks" id={anchorId} aria-labelledby="free-picks">
@@ -234,7 +256,8 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
               {updatedLabel(state.updatedAt) && <span>{updatedLabel(state.updatedAt)}</span>}
             </div>
             <ol className="ff-pick-list">
-              {state.rows.map((row, i) => {
+              {!visibleRows.length && <li className="ff-pick">No free lines for this game.</li>}
+              {visibleRows.map((row, i) => {
                 const over = num(row.projection) >= num(row.line);
                 const note = buildCgScoreExplainer(row.note);
                 return (

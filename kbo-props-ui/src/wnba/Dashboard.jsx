@@ -13,6 +13,8 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
 import { fitImage } from '../fitImage.js'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -482,6 +484,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           position: player.position,
           imageUrl: player.image || null,
           opponent: prop.opponent ?? null,
+          versus: prop.versus || null,
           gameDate: prop.gameDate || null,
           prop: prop.stat,
           line,
@@ -502,6 +505,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     return rows
   }, [projections])
 
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(allRows)
+
   const lineBounds = useMemo(() => {
     const lines = allRows.map(item => item.line).filter(value => typeof value === 'number')
     if (!lines.length) return { min: 0, max: 0 }
@@ -514,7 +519,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)
     const lineMax = filters.lineMax === '' ? Infinity : Number(filters.lineMax)
 
-    const filtered = allRows
+    const filtered = boardRows
       .filter(item => propTab === 'All Props' || item.prop === propTab)
       .filter(item => filters.side === 'All' || (filters.side === 'Overs' ? item.isOver : !item.isOver))
       .filter(item => item.hitRate >= filters.minHitRate)
@@ -529,7 +534,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       })
 
     return sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
-  }, [allRows, propTab, filters])
+  }, [boardRows, propTab, filters])
 
   // ── Bonus insight panels (kept from the previous board) ──────────────────
   // Free tier matches Prop Lines: top FREE_ROW_LIMIT; paid keeps full insight lists.
@@ -548,23 +553,23 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   }
 
   const hotStreaks = useMemo(() => {
-    return dedupePlayers(hotStreakRows(allRows), insightLimit)
-  }, [allRows, insightLimit])
+    return dedupePlayers(hotStreakRows(boardRows), insightLimit)
+  }, [boardRows, insightLimit])
 
   const bestValue = useMemo(() => {
-    const filtered = allRows
+    const filtered = boardRows
       .filter(r => r.isOver)
       .sort((a, b) => b._edgePct - a._edgePct)
     return dedupePlayers(filtered, insightLimit)
-  }, [allRows, insightLimit])
+  }, [boardRows, insightLimit])
 
-  const slate = useMemo(() => buildSlate(allRows), [allRows])
+  const slate = useMemo(() => buildSlate(boardRows), [boardRows])
 
   const avgTopScore = useMemo(() => {
-    if (!allRows.length) return null
-    const top = [...allRows].sort((a, b) => b.score - a.score).slice(0, 10)
+    if (!boardRows.length) return null
+    const top = [...boardRows].sort((a, b) => b.score - a.score).slice(0, 10)
     return top.reduce((s, r) => s + r.score, 0) / top.length
-  }, [allRows])
+  }, [boardRows])
 
   const goPlayer = name => onSelectPlayer?.(name)
   const goProjections = () => onNavigate?.('projections')
@@ -600,6 +605,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="wnba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+              <GameSelect games={games} value={gameId} onChange={setGameId} />
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
@@ -680,8 +686,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="combined 2025+2026" color="#3b82f6" />
         <KpiCard
           label="Props on Board"
-          value={projLoading ? '…' : propsOnBoardCount(allRows.length, isPaid ? 0 : lockedCount).toLocaleString()}
-          sub={!projLoading && !isPaid && lockedCount > 0 ? `${allRows.length} shown, ${lockedCount} locked` : 'scored & rated'}
+          value={projLoading ? '…' : (gameId ? boardRows.length : propsOnBoardCount(allRows.length, isPaid ? 0 : lockedCount)).toLocaleString()}
+          sub={!projLoading && !gameId && !isPaid && lockedCount > 0 ? `${allRows.length} shown, ${lockedCount} locked` : 'scored & rated'}
           color="#a855f7"
         />
         <KpiCard label="Avg Top Score" value={avgTopScore != null ? avgTopScore.toFixed(1) : '…'} sub="top 10 plays" color="#22c55e" />

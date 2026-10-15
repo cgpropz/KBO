@@ -14,6 +14,8 @@ import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import GameSelect from '../GameSelect.jsx'
+import { useGameFilter } from '../useGameFilter.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -300,8 +302,10 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
   }, [projections])
 
+  const { games, selected: gameId, setSelected: setGameId, filtered: boardRows } = useGameFilter(projections)
+
   const rows = useMemo(() => {
-    const withScore = projections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
+    const withScore = boardRows.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
       const pills = nflHitPills(item)
       const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
       return {
@@ -341,7 +345,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
       return b.hitRate - a.hitRate
     })
-  }, [projections, propTab, filters])
+  }, [boardRows, propTab, filters])
 
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
@@ -372,6 +376,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+          <GameSelect games={games} value={gameId} onChange={setGameId} />
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
