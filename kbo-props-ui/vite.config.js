@@ -86,20 +86,34 @@ function previewCleanUrls() {
   const map = {
     '/pricing': '/pricing.html',
     '/policies': '/policies.html',
+    '/terms': '/terms.html',
+    '/privacy': '/privacy.html',
+    '/responsible-gaming': '/responsible-gaming.html',
+    '/states-not-available': '/states-not-available.html',
     '/guides/start-here': '/guides/start-here.html',
     '/guides/cg-score': '/guides/cg-score.html',
   }
+  const rewriteCleanUrl = (req) => {
+    const raw = String(req.url || '')
+    const path = raw.split('?')[0]
+    if (!map[path]) return false
+    const query = raw.includes('?') ? `?${raw.split('?')[1]}` : ''
+    req.url = `${map[path]}${query}`
+    return true
+  }
   return {
     name: 'preview-clean-urls',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewriteCleanUrl(req)
+        next()
+      })
+    },
     configurePreviewServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        if (rewriteCleanUrl(req)) return next()
         const raw = String(req.url || '')
         const path = raw.split('?')[0]
-        if (map[path]) {
-          const query = raw.includes('?') ? `?${raw.split('?')[1]}` : ''
-          req.url = `${map[path]}${query}`
-          return next()
-        }
         if (path !== '/api/img') return next()
         try {
           const { default: handler } = await import('./api/img.js')

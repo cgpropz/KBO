@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { loadSupabase } from './supabaseClient';
 import { getAttribution } from './tracking';
+import { readAgeConfirmation } from './ageConfirmation';
+import { useAgeGate } from './ageGateContext';
 import './AuthPage.css';
 
 export default function AuthPage({ initialMode = 'login', onBack, notice = '' } = {}) {
@@ -10,6 +12,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const { requireAge } = useAgeGate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -38,13 +41,22 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) setError(err.message);
     } else {
-      // Keep marketing attribution (utm_* / twclid captured on landing) with the
-      // new account as Supabase user metadata.
+      const allowed = await requireAge();
+      if (!allowed) {
+        setLoading(false);
+        return;
+      }
+      // Keep marketing attribution (utm_* / twclid captured on landing) and the
+      // saved 21+ confirmation time with the new account as Supabase user metadata.
       const attribution = getAttribution();
+      const ageConfirmedAt = readAgeConfirmation()?.confirmedAt;
+      const data = {};
+      if (Object.keys(attribution).length) data.attribution = attribution;
+      if (ageConfirmedAt) data.age_confirmed_at = ageConfirmedAt;
       const { error: err } = await supabase.auth.signUp({
         email,
         password,
-        ...(Object.keys(attribution).length ? { options: { data: { attribution } } } : {}),
+        ...(Object.keys(data).length ? { options: { data } } : {}),
       });
       if (err) {
         setError(err.message);
@@ -78,7 +90,13 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
           </button>
           <button
             className={`auth-tab ${mode === 'signup' ? 'auth-tab-active' : ''}`}
-            onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
+            onClick={async () => {
+              const allowed = await requireAge();
+              if (!allowed) return;
+              setMode('signup');
+              setError('');
+              setMessage('');
+            }}
           >
             Sign Up Free
           </button>
@@ -134,7 +152,11 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
 
         <div className="auth-footer">
           {mode === 'login' ? (
-            <p>No account? <button className="auth-link" onClick={() => setMode('signup')}>Sign up free</button></p>
+            <p>No account? <button className="auth-link" onClick={async () => {
+              const allowed = await requireAge();
+              if (!allowed) return;
+              setMode('signup');
+            }}>Sign up free</button></p>
           ) : (
             <p>Already have an account? <button className="auth-link" onClick={() => setMode('login')}>Log in</button></p>
           )}

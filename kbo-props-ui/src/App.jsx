@@ -8,6 +8,7 @@ import RouteFallback from './RouteFallback'
 import { sportFromSearch } from './appSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
+import { useAgeGate } from './ageGateContext'
 import './FreeFunnel.css'
 import './App.css'
 
@@ -41,6 +42,7 @@ const SPORT_STORAGE_KEY = 'cg_sport';
 
 function App() {
   const { user, tier } = useAuth();
+  const { requireAge } = useAgeGate();
   const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
@@ -111,7 +113,12 @@ function App() {
   }
   const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? 'kbo' : sport;
 
-  const openSignUp = () => { setAuthMode('signup'); setPublicView('auth'); };
+  const openSignUp = async () => {
+    const allowed = await requireAge();
+    if (!allowed) return;
+    setAuthMode('signup');
+    setPublicView('auth');
+  };
   const openLogin = () => { setAuthMode('login'); setPublicView('auth'); };
   // Pops up after a Stripe Payment Link redirects back with ?checkout=success.
   // Stable key keeps it mounted if the page behind it switches branches.

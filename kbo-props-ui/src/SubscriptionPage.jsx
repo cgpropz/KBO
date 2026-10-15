@@ -4,6 +4,8 @@ import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { useAgeGate } from './ageGateContext';
+import AutoRenewalNote from './AutoRenewalNote';
 import { PAUSE_WEEK_ENABLED, PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
 import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
@@ -39,6 +41,7 @@ async function membershipAuthToken(user) {
 function SubscriptionPage() {
   const [selectedTier, setSelectedTier] = useState(null);
   const { user, tier, refreshTier } = useAuth();
+  const { requireAge } = useAgeGate();
   const pollRef = useRef(null);
   const [awaitingPayment, setAwaitingPayment] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -74,10 +77,18 @@ function SubscriptionPage() {
     }
   }, [tier, awaitingPayment]);
 
+  useEffect(() => {
+    const onCheckout = () => setAwaitingPayment(true);
+    window.addEventListener('cg-stripe-checkout', onCheckout);
+    return () => window.removeEventListener('cg-stripe-checkout', onCheckout);
+  }, []);
+
   // Weekly href is the Payment Link until the Checkout Session is ready, so the
   // click always navigates in this gesture. The session applies XWEEK when the
   // code is valid and otherwise charges the full weekly price.
   const [weeklyHref, setWeeklyHref] = useState(() => buildCheckoutUrl(STRIPE_LINKS.weekly, null));
+  const weeklyHrefRef = useRef(weeklyHref);
+  weeklyHrefRef.current = weeklyHref;
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -97,6 +108,7 @@ function SubscriptionPage() {
   const [offerBusy, setOfferBusy] = useState(false);
   const openOfferCheckout = async (plan) => {
     if (offerBusy) return;
+    if (!(await requireAge())) return;
     setOfferBusy(true);
     try {
       let token = '';
@@ -117,7 +129,8 @@ function SubscriptionPage() {
     }
   };
 
-  const handleSubscribe = (plan) => {
+  const handleSubscribe = async (plan) => {
+    if (!(await requireAge())) return;
     if (plan.checkout === 'session') {
       openOfferCheckout('lifetime');
       return;
@@ -128,7 +141,7 @@ function SubscriptionPage() {
     // matched to it when they sign up (webhook + /api/sync-subscription).
     // Every plan navigates in this click. Weekly uses the prefetched session
     // when it is ready, otherwise the weekly Payment Link.
-    const url = plan.id === 'weekly' ? weeklyHref : buildCheckoutUrl(plan.link, user);
+    const url = plan.id === 'weekly' ? weeklyHrefRef.current : buildCheckoutUrl(plan.link, user);
     if (!user) {
       window.location.assign(url);
       return;
@@ -288,6 +301,8 @@ function SubscriptionPage() {
           </div>
         </div>
       )}
+
+      <AutoRenewalNote />
 
       <div className="sub-grid">
         {TIERS.map((tier) => (

@@ -9,7 +9,7 @@ import {
 } from '../src/cgScoreExplainer.js'
 import { nflCgScore } from '../src/nfl/nflLineFloors.js'
 
-const DISCLAIMER = 'Projections are estimates, not guarantees. 21+ · Play responsibly · Entertainment only.'
+const DISCLAIMER = 'Projections are estimates, not guarantees. 21+ · Play responsibly · Entertainment only · 1-800-GAMBLER'
 
 function note(overrides = {}) {
   return buildCgScoreExplainer({
