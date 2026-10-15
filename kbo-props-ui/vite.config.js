@@ -101,37 +101,41 @@ function previewCleanUrls() {
     req.url = `${map[path]}${query}`
     return true
   }
+  // Board logos request /api/img. That file is the sharp resizer. If the dev
+  // server lets Vite transform it, the browser receives JavaScript, Vite
+  // prebundles sharp, and the full reload drops the board mid-check.
+  const serveResizedImage = async (req, res) => {
+    const raw = String(req.url || '')
+    try {
+      const { default: handler } = await import('./api/img.js')
+      const params = new URL(raw, 'http://127.0.0.1').searchParams
+      await handler(
+        { method: req.method || 'GET', query: { src: params.get('src') || '', w: params.get('w') || '' } },
+        {
+          setHeader(key, value) { res.setHeader(key, value) },
+          end(body) { res.end(body) },
+          get statusCode() { return res.statusCode },
+          set statusCode(code) { res.statusCode = code },
+        },
+      )
+    } catch {
+      res.statusCode = 502
+      res.end('Image unavailable')
+    }
+  }
+  const imageOrNext = async (req, res, next) => {
+    if (rewriteCleanUrl(req)) return next()
+    const path = String(req.url || '').split('?')[0]
+    if (path !== '/api/img') return next()
+    await serveResizedImage(req, res)
+  }
   return {
     name: 'preview-clean-urls',
     configureServer(server) {
-      server.middlewares.use((req, _res, next) => {
-        rewriteCleanUrl(req)
-        next()
-      })
+      server.middlewares.use(imageOrNext)
     },
     configurePreviewServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        if (rewriteCleanUrl(req)) return next()
-        const raw = String(req.url || '')
-        const path = raw.split('?')[0]
-        if (path !== '/api/img') return next()
-        try {
-          const { default: handler } = await import('./api/img.js')
-          const params = new URL(raw, 'http://127.0.0.1').searchParams
-          await handler(
-            { method: req.method || 'GET', query: { src: params.get('src') || '', w: params.get('w') || '' } },
-            {
-              setHeader(key, value) { res.setHeader(key, value) },
-              end(body) { res.end(body) },
-              get statusCode() { return res.statusCode },
-              set statusCode(code) { res.statusCode = code },
-            },
-          )
-        } catch (err) {
-          res.statusCode = 502
-          res.end('Image unavailable')
-        }
-      })
+      server.middlewares.use(imageOrNext)
     },
   }
 }

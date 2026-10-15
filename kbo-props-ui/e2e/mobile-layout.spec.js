@@ -106,6 +106,16 @@ async function installFixtures(page) {
       }),
     })
   })
+  // Logos go through /api/img. Leaving that to the Vite dev server serves
+  // api/img.js (sharp), which prebundles and reloads the page. The board
+  // check is the table, not the picture.
+  await page.route('**/api/img**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/webp',
+      body: Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AA/vuUAAA=', 'base64'),
+    })
+  })
 }
 
 async function tinyText(page) {
