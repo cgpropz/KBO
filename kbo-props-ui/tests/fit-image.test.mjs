@@ -16,6 +16,10 @@ test('espn and nhl headshots go through the same-origin resizer', () => {
   assert.equal(fitImage(headshot, 42), `/api/img?src=${encodeURIComponent(headshot)}&w=80`)
   assert.equal(fitImage(logo, 22), `/api/img?src=${encodeURIComponent(logo)}&w=48`)
   assert.equal(isRemoteHeadshotOrLogo('https://assets.nhle.com/mugs/nhl/edm/8478402.png'), true)
+  const prizepicks = 'https://static.prizepicks.com/images/players/NHL/Adam_Fox_NHL_player_abc.webp'
+  const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1628277.png'
+  assert.equal(fitImage(prizepicks, 44), `/api/img?src=${encodeURIComponent(prizepicks)}&w=80`)
+  assert.equal(fitImage(wnba, 44), `/api/img?src=${encodeURIComponent(wnba)}&w=80`)
 })
 
 test('the image route refuses anything that is not a public headshot or logo', () => {

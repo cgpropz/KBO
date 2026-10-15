@@ -10,6 +10,8 @@ const REMOTE_HOSTS = [
   /^https:\/\/assets\.nhle\.com\/mugs\/nhl\/[a-z0-9]+\/\d+\.png$/i,
   /^https:\/\/6ptotvmi5753\.edge\.naverncp\.com\/KBO_IMAGE\/person\/[a-z0-9/_-]+\.(?:png|jpe?g)$/i,
   /^https:\/\/mykbostats\.com\/system\/players\/photos\/\d{3}\/\d{3}\/\d{3}\/original\/\d+\.jpe?g$/i,
+  /^https:\/\/static\.prizepicks\.com\/images\/players\/[A-Za-z0-9/_-]+\.(?:png|jpe?g|webp)$/i,
+  /^https:\/\/cdn\.wnba\.com\/headshots\/wnba\/latest\/\d+x\d+\/\d+\.(?:png|jpe?g|webp)$/i,
 ]
 
 export function snapWidth(cssPx) {

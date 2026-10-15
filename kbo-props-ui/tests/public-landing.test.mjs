@@ -7,7 +7,9 @@ import {
   isGoalScorerStat,
   publicBoardRows,
   publicLandingIncludesReviews,
+  publicPhoneRows,
   publicTopHitRows,
+  publicTopL5Rows,
 } from '../src/publicBoard.js'
 
 const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url), 'utf8')
@@ -51,15 +53,38 @@ test('public rows reuse the board filters and do not apply a QA name allowlist',
   ])).length, 0)
 })
 
-test('the public landing has no reviews section', () => {
+test('the public landing uses v1 copy and does not invent reviews or stats', () => {
   assert.equal(publicLandingIncludesReviews(), false)
   assert.equal(landing.includes('Testimonials'), false)
   assert.equal(landing.includes('TestimonialForm'), false)
-  assert.equal(/What members say/i.test(landing), false)
-  assert.equal(landing.includes('data-c="reviews"'), false)
+  assert.match(landing, /What members say/)
+  assert.match(landing, /No invented reviews/)
+  assert.match(landing, /Every PrizePicks line/)
   assert.equal(/\bSAMPLE\b/.test(landing), false)
-  assert.equal(/PLACEHOLDER/.test(landing), false)
-  assert.equal(/PrizePicks/.test(landing), false)
+  assert.equal(landing.includes('[ # ]'), false)
+  assert.equal(landing.includes('Props scored daily'), false)
+  assert.equal(landing.includes('Avg. rating'), false)
+  assert.match(landing, /subscriber-count/)
+  assert.match(landing, /loading="lazy"/)
+  assert.match(landing, /fitImage\(/)
+})
+
+test('last-5 hit rates need a real five-game log', () => {
+  const rows = nflHubRows([
+    { player: 'Long', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(12, 8) },
+    { player: 'Five', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(5, 8) },
+    { player: 'Short', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(4, 8) },
+  ])
+  const leaders = publicTopL5Rows(rows)
+  assert.deepEqual(leaders.map((row) => row.player), ['Five', 'Long'])
+  const five = leaders.find((row) => row.player === 'Five')
+  const long = leaders.find((row) => row.player === 'Long')
+  assert.equal(five.l10, null)
+  assert.equal(five.l5.hits <= five.l5.games, true)
+  assert.ok(long.l10)
+  assert.equal(long.l10.hits <= long.l10.games, true)
+  assert.equal(publicPhoneRows(rows).some((row) => row.player === 'Short'), true)
+  assert.equal(publicPhoneRows(rows, 2).length, 2)
 })
 
 test('the public landing does not open a Stripe Checkout Session on load', () => {
