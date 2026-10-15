@@ -13,7 +13,7 @@ const uiRoot = fileURLToPath(new URL('..', import.meta.url))
 const config = JSON.parse(readFileSync(join(uiRoot, 'vercel.json'), 'utf8'))
 
 const PUBLIC_PAGES = [
-  ['/', 'CGPropz: Free PrizePicks prop picks daily', 'One edge. Every sport.'],
+  ['/', 'CGPropz: Every prop line, scored.', 'Every prop line, scored.'],
   ['/pricing', 'All-Access pricing | CGPropz', 'All-Access pricing'],
   ['/policies', 'Plans &amp; Policies | CGPropz', 'Plans &amp; Policies'],
   ['/terms', 'Terms | CGPropz', 'Terms'],
@@ -65,7 +65,11 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       assert.match(html, /21\+ only\. Gambling problem\? Call 1-800-GAMBLER\./, path)
       assert.match(html, /21\+ · Play responsibly · Entertainment only · 1-800-GAMBLER/, path)
       assert.match(html, /CGPropz is not a sportsbook or operator; projections are estimates, not guarantees\./, path)
-      assert.match(html, /CGPropz is not affiliated with PrizePicks or Underdog\. For entertainment only\./, path)
+      if (path === '/') {
+        assert.doesNotMatch(html, /PrizePicks/i, path)
+      } else {
+        assert.match(html, /CGPropz is not affiliated with PrizePicks or Underdog\. For entertainment only\./, path)
+      }
       assert.match(html, /https:\/\/www\.ncpgambling\.org/, path)
       assert.match(html, /"@type":"Organization"/, path)
       seenTitles.add(title)
@@ -77,7 +81,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     const missingHtml = await missing.text()
     assert.match(missingHtml, /<h1>Page not found<\/h1>/)
     assert.match(missingHtml, /noindex/)
-    assert.doesNotMatch(missingHtml, /<h1>One edge/)
+    assert.doesNotMatch(missingHtml, /<h1>Every prop line/)
 
     for (const [source, destination] of [
       ['/nfl', '/nfl-player-props'],
@@ -253,8 +257,9 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
 
   execFileSync('npx', ['vite', 'build'], { cwd: uiRoot, stdio: 'pipe' })
   const builtHome = readFileSync(join(uiRoot, 'dist/index.html'), 'utf8')
-  assert.match(builtHome, /<title>CGPropz: Free PrizePicks prop picks daily<\/title>/)
-  assert.match(builtHome, /<h1>One edge\. Every sport\.<\/h1>/)
+  assert.match(builtHome, /<title>CGPropz: Every prop line, scored\.<\/title>/)
+  assert.match(builtHome, /<h1>Every prop line, scored\.<\/h1>/)
+  assert.doesNotMatch(builtHome, /PrizePicks/i)
   assert.match(builtHome, /id="free-top-3"/)
   assert.equal(builtHome.includes('Loading KBO Player Props'), false)
   const builtPricing = readFileSync(join(uiRoot, 'dist/pricing.html'), 'utf8')
