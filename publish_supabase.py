@@ -534,6 +534,17 @@ def main():
             with open(file_path, "r", encoding="utf-8") as file_handle:
                 data = json.load(file_handle)
 
+            if table == "prizepicks_props":
+                from pipeline.kbo_board_cutoff import prepare_prizepicks_board
+                updated, note = prepare_prizepicks_board(data)
+                if note:
+                    print(f"  ℹ {note}")
+                if updated is not data:
+                    with open(file_path, "w", encoding="utf-8") as file_handle:
+                        json.dump(updated, file_handle, ensure_ascii=False, indent=2)
+                        file_handle.write("\n")
+                data = updated
+
             if table in NBA_LINE_TABLES and not should_publish_nba_lines(data):
                 print(f"  ! {table}: 0 lines; leaving the published board unchanged")
                 continue

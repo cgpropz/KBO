@@ -176,6 +176,38 @@ for (const [sport, path] of boards) {
   })
 }
 
+test('empty kbo board shows the next game in Eastern Time', async ({ page }) => {
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    const data = ds === 'prizepicks_props'
+      ? {
+        cards: [],
+        total_props: 0,
+        board_note: 'no_upcoming_games',
+        next_game: {
+          away: 'LG',
+          home: 'Kia',
+          start_time_utc: '2026-10-17T05:00:00+00:00',
+          label_et: 'Sat, Oct 17, 1:00 AM ET',
+        },
+      }
+      : (Object.prototype.hasOwnProperty.call(fixtures, ds) ? fixtures[ds] : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data, updatedAt: '2026-10-14T13:38:52-04:00', preview: false, lockedCount: 0, tier: 'owner' }),
+    })
+  })
+  await page.goto('/?sport=kbo&previewTier=owner')
+  const empty = page.getByTestId('kbo-board-empty')
+  await expect(empty).toBeVisible()
+  await expect(empty).toContainText('No upcoming props')
+  await expect(empty).toContainText('LG @ Kia')
+  await expect(empty).toContainText('Sat, Oct 17, 1:00 AM ET')
+  await expect(page.locator('.kbo-player-cell')).toHaveCount(0)
+  expect(await tinyText(page), 'empty kbo board has text under 12px').toEqual([])
+})
+
 test('desktop NFL board stays a wide table', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/?sport=nfl&previewTier=owner')
