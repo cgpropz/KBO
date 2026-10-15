@@ -55,7 +55,7 @@ jobs:
       - name: Deploy preview
         id: preview
         run: |
-          npm i -g vercel@latest
+          npm i -g vercel@64.2.0
           url=$(vercel deploy --token "$VERCEL_TOKEN" --yes)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
