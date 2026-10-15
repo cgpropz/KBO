@@ -45,9 +45,21 @@
       document.body.appendChild(script);
     }
     function cgArmTwitter() {
-      // Idle callbacks fire immediately on a quiet page. Wait until after the
-      // hero paint so uwt.js is not in the landing burst.
-      setTimeout(cgLoadTwitter, 4000);
+      // A short timer still runs while Lighthouse is waiting on the hero
+      // request. Load the pixel on the first real scroll, or well after load.
+      var armed = false;
+      function start() {
+        if (armed) return;
+        armed = true;
+        window.removeEventListener('scroll', onScroll);
+        cgLoadTwitter();
+      }
+      function onScroll() {
+        if (Math.abs(window.scrollY) < 24) return;
+        start();
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      setTimeout(start, 20000);
     }
     if (document.readyState === 'complete') cgArmTwitter();
     else window.addEventListener('load', cgArmTwitter, { once: true });

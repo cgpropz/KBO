@@ -12,6 +12,7 @@ import {
 
 const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url), 'utf8')
 const hub = readFileSync(new URL('../src/CgpropzLanding.jsx', import.meta.url), 'utf8')
+const gate = readFileSync(new URL('../src/whenVisibleOrIdle.js', import.meta.url), 'utf8')
 
 function log(length, value) {
   return Array.from({ length }, () => value)
@@ -65,6 +66,15 @@ test('the public landing does not open a Stripe Checkout Session on load', () =>
   assert.equal(landing.includes('prefetchWeeklyCheckoutUrl'), false)
   assert.match(landing, /requestWeeklyCheckoutUrl/)
   assert.match(landing, /HERO_LANDING_SPORT_ID|HERO_SPORT/)
+})
+
+test('other landing boards load on scroll, not on a timer', () => {
+  assert.match(landing, /whenVisible\(/)
+  assert.equal(/whenVisibleOrIdle\(/.test(landing), false)
+  assert.equal(gate.includes('onPageIdle'), false)
+  assert.equal(gate.includes('AFTER_LOAD'), false)
+  assert.match(gate, /scroll/)
+  assert.match(gate, /afterPaint/)
 })
 
 test('free visitors use the public landing and paid members keep the Sports Hub', () => {

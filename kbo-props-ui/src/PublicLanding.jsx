@@ -12,7 +12,7 @@ import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
-import { whenVisibleOrIdle } from './whenVisibleOrIdle';
+import { afterPaint, whenVisible } from './whenVisibleOrIdle';
 import './PublicLanding.css';
 
 const FAQS = publicFaqs();
@@ -167,25 +167,27 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     };
 
     // One /api/data call while the hero paints. Board code and every other
-    // dataset wait until a data section is scrolled into view, or until a
-    // gap after load so they are not part of the initial burst.
+    // dataset wait until a data section is scrolled into view, then run one
+    // at a time so their parses do not share a single long task.
     const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
 
-    const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
-      heroSnap.then((snap) => {
+    const jobs = [
+      () => heroSnap.then((snap) => {
         if (!active) return;
         if (snap === 'error') {
           setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
           return;
         }
-        publish(HERO_SPORT, snap, null);
-      });
-      LANDING_SPORTS.forEach((sport) => {
-        if (sport.id !== HERO_SPORT.id) loadSport(sport);
-      });
-      loadDataset('nfl_game_markets', 'nfl/game_markets.json')
+        return publish(HERO_SPORT, snap, null);
+      }),
+      ...LANDING_SPORTS.filter((sport) => sport.id !== HERO_SPORT.id).map((sport) => () => loadSport(sport)),
+      () => loadDataset('nfl_game_markets', 'nfl/game_markets.json')
         .then((snap) => { if (active && snap) setMarkets(snap); })
-        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
+        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); }),
+    ];
+
+    const stop = whenVisible(['free-top-3', 'matchup', 'boards'], () => {
+      jobs.reduce((chain, job) => chain.then(() => (active ? job() : null)).then(() => afterPaint()), Promise.resolve());
     });
 
     return () => {
