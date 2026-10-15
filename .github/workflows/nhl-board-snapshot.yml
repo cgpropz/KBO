@@ -49,7 +49,8 @@ jobs:
 
       - name: Publish the daily snapshot
         if: github.ref == 'refs/heads/main'
-        run: bash pipeline/memory/commit_memory.sh "chore: nhl board snapshot"
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: nhl board snapshot"
 
       - name: Upload the snapshot
         if: github.event_name != 'schedule'
