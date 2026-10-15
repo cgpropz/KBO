@@ -1,0 +1,65 @@
+name: Preview site
+
+# A pull request that changes the site gets a Vercel preview. Production
+# stays on the main deploy workflow. Do not pass --prod here.
+
+on:
+  pull_request:
+    paths:
+      - "kbo-props-ui/src/**"
+      - "kbo-props-ui/index.html"
+      - "kbo-props-ui/scripts/**"
+      - "kbo-props-ui/content/**"
+      - "kbo-props-ui/public/**"
+      - "kbo-props-ui/package*.json"
+      - "kbo-props-ui/vite.config.*"
+      - "kbo-props-ui/api/**"
+      - "kbo-props-ui/vercel.json"
+      - "kbo-props-ui/.vercelignore"
+      - "kbo-props-ui/.vercel/project.json"
+      - "kbo-props-ui/paidDataFiles.js"
+      - "kbo-props-ui/cssLayerPlugin.js"
+      - ".github/workflows/preview.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cgpropz-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: kbo-props-ui
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: kbo-props-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Vercel Hobby function limit
+        run: node scripts/check-function-limit.mjs
+
+      - name: Deploy preview
+        id: preview
+        run: |
+          npm i -g vercel@latest
+          url=$(vercel deploy --token "$VERCEL_TOKEN" --yes)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $url"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

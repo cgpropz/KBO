@@ -184,13 +184,14 @@ export function AuthProvider({ children }) {
         else unsubscribe = () => subscription.unsubscribe();
       }).catch(() => { /* a failed client download must not block the shell */ });
     };
-    // Anonymous visitors have nothing to refresh. Wait so the client download
-    // does not compete with the first board requests.
-    const delay = readCachedSession() ? 0 : 1200;
-    const timer = setTimeout(start, delay);
+    // Logged-out visitors have nothing to refresh. The Supabase client is a
+    // separate ~51KB chunk; downloading it on the landing page competes with
+    // the hero. Sign-in loads it from AuthPage. A cached session still
+    // refreshes immediately so a member reaches the Sports Hub.
+    if (!readCachedSession()) return undefined;
+    start();
     return () => {
       cancelled = true;
-      clearTimeout(timer);
       unsubscribe();
     };
   }, [fetchTier]);

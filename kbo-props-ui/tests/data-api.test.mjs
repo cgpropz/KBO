@@ -155,7 +155,7 @@ beforeEach(() => _clearCache())
 test('anonymous caller gets only the top 3 KBO board lines + locked count', async () => {
   const res = await call('prizepicks_props')
   assert.equal(res.statusCode, 200)
-  assert.equal(res.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300')
   assert.equal(res.body.preview, true)
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
@@ -165,6 +165,18 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   const kept = res.body.data.cards.flatMap((c) => c.props.map((p) => p.cg_projection)).sort((a, b) => b - a)
   assert.deepEqual(kept, [52, 51, 50])
   assert.equal(res.body.data.generated_at, NOW)
+})
+
+test('member snapshots and signed-in previews are not edge cached', async () => {
+  const paid = await call('prizepicks_props', 'tok-kbo')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.headers['cache-control'], 'private, no-store, max-age=0')
+  const authedFree = await call('prizepicks_props', 'tok-free')
+  assert.equal(authedFree.body.preview, true)
+  assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
+  const publicRankings = await call('pitcher_rankings')
+  assert.equal(publicRankings.body.preview, false)
+  assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300')
 })
 
 test('invalid token is treated as free', async () => {

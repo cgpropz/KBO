@@ -1,7 +1,10 @@
 import { cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
+import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
+
+export { NFL_FREE_PREVIEW_ENABLED };
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
@@ -14,11 +17,6 @@ import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 // this module decides how much of the snapshot the caller may see.
 
 export const FREE_ROW_LIMIT = 3;
-
-// Free NFL picks. Set this to true to restore the free top rows on
-// nfl_projections, nfl_sharp_odds, and nfl_game_markets. Paid NFL access
-// does not read this flag.
-export const NFL_FREE_PREVIEW_ENABLED = false;
 
 // Total-edge calls inside the free NFL game-markets preview. Paid
 // All-Access does not read this. NFL_FREE_TOTAL_EDGES_ENABLED=true sends
@@ -507,6 +505,11 @@ export const DATASETS = {
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_correlations: { table: 'nhl_correlations', sport: 'nhl', free: previewCorrelations },
 };
+
+export function datasetIsFullyPublic(ds) {
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  return !!spec && spec.free === FULL;
+}
 
 function countList(payload, key) {
   if (key) {

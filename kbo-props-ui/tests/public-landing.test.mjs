@@ -61,6 +61,12 @@ test('the public landing has no reviews section', () => {
   assert.equal(/PrizePicks/.test(landing), false)
 })
 
+test('the public landing does not open a Stripe Checkout Session on load', () => {
+  assert.equal(landing.includes('prefetchWeeklyCheckoutUrl'), false)
+  assert.match(landing, /requestWeeklyCheckoutUrl/)
+  assert.match(landing, /HERO_LANDING_SPORT_ID|HERO_SPORT/)
+})
+
 test('free visitors use the public landing and paid members keep the Sports Hub', () => {
   assert.match(hub, /MemberCommandCenter/)
   assert.match(hub, /if \(isPaid\)/)
