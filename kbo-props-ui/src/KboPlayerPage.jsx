@@ -443,7 +443,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
-        {showBreakEven && (
+        {showBreakEven && breakEvenWindows.length > 0 && (
           <div className="kbo-player-chart-meter">
             <BreakEvenMeter
               windows={breakEvenWindows}
