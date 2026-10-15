@@ -181,7 +181,7 @@
 .hub-plays { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 12px; }
 .hub-preview { grid-column: 1; grid-row: 2; }
 .hub-others { grid-column: 1; grid-row: 3; align-self: stretch; }
-.hub-drill { grid-column: 2; grid-row: 1 / span 2; }
+.hub-side { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .hub-news { grid-column: 2; grid-row: 3; align-self: stretch; }
 .hub-news h2 { margin: 0 0 6px; font-size: 15px; }
 
@@ -294,6 +294,30 @@ button.hub-card {
   border-top: 1px solid #1c1c20;
 }
 .hub-preview-meta { display: block; color: var(--hub-muted); font-size: 12px; margin-top: 2px; }
+.hub-hit-sample { display: block; margin-top: 2px; color: var(--hub-muted); font-size: 12px; font-weight: 650; }
+.hub-hit-kicker { color: var(--hub-muted); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
+.hub-hit-row {
+  width: 100%;
+  font: inherit;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 8px 0;
+  cursor: pointer;
+  border-top: 1px solid #1c1c20;
+}
+.hub-hit-rank { color: var(--hub-mint); font-size: 13px; font-weight: 700; width: 18px; }
+.hub-hit-copy { min-width: 0; }
+.hub-hit-copy .hub-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.hub-hit-rate { text-align: right; }
+.hub-hit-rate strong { display: block; font-size: 14px; line-height: 1.2; }
+.hub-hit-rate span { display: block; margin-top: 2px; color: var(--hub-muted); font-size: 12px; }
+.hub-hit-row.is-open .hub-name { color: var(--hub-mint); }
 .hub-preview-score { color: var(--hub-mint); font-weight: 700; }
 .hub-open, .hub-primary {
   border: 0;
@@ -381,7 +405,7 @@ button.hub-card {
   .hub-nav { display: none; }
   .hub-sportbar { flex-direction: column; align-items: stretch; top: 58px; }
   .hub-columns { grid-template-columns: 1fr; }
-  .hub-plays, .hub-preview, .hub-drill, .hub-news, .hub-others { grid-column: 1; grid-row: auto; }
+  .hub-plays, .hub-preview, .hub-side, .hub-news, .hub-others { grid-column: 1; grid-row: auto; }
   .hub-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hub-heading h1 { font-size: 22px; }
   .hub-updated { margin-top: 2px; font-size: 12px; }

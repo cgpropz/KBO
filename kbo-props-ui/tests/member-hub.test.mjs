@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { cgScore } from '../src/cgScore.js'
-import { formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
+import { formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
 import { standardRecord } from '../scripts/write-member-recap.mjs'
 
 test('hub rows keep standard lines only', () => {
@@ -85,6 +85,48 @@ test('hub rows carry the board hit rate and log without changing the score', () 
   assert.equal(wnba[0].oppRank, 6)
   assert.deepEqual(wnba[0].recent, [1, 4])
   assert.equal(wnba[0].hitRate, null)
+})
+
+test('NFL L10 uses the chart window, and a missing stored rate is not 0%', () => {
+  // Oldest-first, same order the board ships. Ty Johnson O15.5 receiving yards:
+  // the last 10 include several overs and one push. Number(null) used to turn
+  // the missing stored rate into L10 0% while the bars stayed green.
+  const recent = [4, 8, '22', 15.5, 40, 3, 18, 30, 12, 16, 9, 28]
+  const rows = nflHubRows([{
+    player: 'Ty Johnson', team: 'BUF', opponent: 'LV', prop: 'Receiving Yards',
+    line: '15.5', projection: 26.6, line_type: 'standard', recent,
+  }])
+  assert.equal(rows[0].side, 'OVER')
+  assert.equal(rows[0].hitRate, 67)
+  assert.equal(rows[0].hitHits, 6)
+  assert.equal(rows[0].hitGames, 9)
+  assert.notEqual(rows[0].hitRate, 0)
+
+  const under = nflHubRows([{
+    player: 'Ty Johnson', prop: 'Receiving Yards', line: 15.5, projection: 10,
+    line_type: 'standard', recent,
+  }])
+  assert.equal(under[0].side, 'UNDER')
+  assert.equal(under[0].hitRate, 33)
+  assert.equal(under[0].hitHits, 3)
+
+  const short = nflHubRows([{
+    player: 'Short Log', prop: 'Receptions', line: 4.5, projection: 5,
+    line_type: 'standard', recent: [6, 2, 7],
+  }])
+  assert.equal(short[0].hitRate, null)
+
+  const pushed = nflHubRows([{
+    player: 'All Push', prop: 'Receiving Yards', line: 15.5, projection: 20,
+    line_type: 'standard', recent: Array(12).fill(15.5),
+  }])
+  assert.equal(pushed[0].hitRate, null)
+
+  const leaders = topHitRateRows([...rows, ...under, ...short, ...pushed, rows[0]])
+  assert.deepEqual(leaders.map((row) => [row.player, row.side, row.hitRate, `${row.hitHits}/${row.hitGames}`]), [
+    ['Ty Johnson', 'OVER', 67, '6/9'],
+    ['Ty Johnson', 'UNDER', 33, '3/9'],
+  ])
 })
 
 test('status chips and matchups come from the lineup snapshot', () => {

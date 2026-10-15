@@ -179,6 +179,33 @@ export function overHitRate(values, line) {
   return { rate: Math.round((hits / decided) * 100), hits, games: decided }
 }
 
+// Same bar the Today chart paints. A push ties the line. An under play hits
+// when the result is under the line; every other side hits when it clears.
+// Strings and numbers share one comparison. A missing number is not a result.
+export function barResult(value, line, side) {
+  const actual = Number(value)
+  const target = Number(line)
+  if (!Number.isFinite(actual) || !Number.isFinite(target)) return null
+  if (actual === target) return 'push'
+  const under = String(side || '').toUpperCase() === 'UNDER'
+  return (under ? actual < target : actual > target) ? 'hit' : 'miss'
+}
+
+// Rate for the games the chart actually draws. Pushes leave both the
+// numerator and the denominator. Null when nothing was decided.
+export function chartWindowRate(values, line, side) {
+  let hits = 0
+  let decided = 0
+  for (const raw of values || []) {
+    const result = barResult(raw, line, side)
+    if (result == null || result === 'push') continue
+    decided += 1
+    if (result === 'hit') hits += 1
+  }
+  if (!decided) return null
+  return { rate: Math.round((hits / decided) * 100), hits, games: decided }
+}
+
 function finiteValues(values) {
   const out = []
   for (const raw of values || []) {
