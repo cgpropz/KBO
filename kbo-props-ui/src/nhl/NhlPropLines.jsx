@@ -7,6 +7,7 @@ import { fitImage } from '../fitImage.js'
 import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
+import { prepareBoardRows } from './pointsGate.js'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
@@ -167,7 +168,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   }, [])
 
   const rows = useMemo(() => {
-    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
+    const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
     return sortBoard(filtered, sortBy)
   }, [projections, tab, sortBy])
 

@@ -29,6 +29,8 @@ import re
 import unicodedata
 import urllib.request
 
+from nhl.model import apply_points_over_gate
+
 log = logging.getLogger(__name__)
 
 RIGHT_RAIL_URL = "https://api-web.nhle.com/v1/gamecenter/{game_id}/right-rail"
@@ -441,8 +443,13 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
 
 
 def finish_board(projections, lineups, games, fetch_json=_json) -> list:
-    """Filter, then rank. The saved board and the free top 3 both use this list."""
-    kept = drop_unavailable(projections, lineups, games, fetch_json=fetch_json)
+    """Filter, then rank. The saved board and the free top 3 both use this list.
+
+    Points overs under 0.69 are dropped here. Points overs from 0.69 up to
+    0.86 stay on the list with rankEligible false, so they are visible and
+    not promoted.
+    """
+    kept = apply_points_over_gate(drop_unavailable(projections, lineups, games, fetch_json=fetch_json))
     kept.sort(key=lambda row: (
         row.get("rankEligible") is False,
         -(row.get("score") or 0),

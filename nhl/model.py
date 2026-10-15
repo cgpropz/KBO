@@ -25,6 +25,17 @@ PROP_SAVES = "Goalie Saves"
 PROP_POINTS = "Points"
 PROP_PPP = "Power Play Points"
 
+# Points overs. A 2025-26 walk-forward lost money below 0.69 and was
+# comfortable only from 0.86 up. Overs under 0.69 leave the board. Overs
+# from 0.69 up to 0.86 stay visible and are not ranked. Overs at 0.86 and
+# up can be promoted. Unders are not this rule.
+POINTS_OVER_SHOW = 0.69
+POINTS_OVER_PROMOTE = 0.86
+
+# Hits. None means there is no rink term. The in-season rolling rink factor
+# and a prior-season arena factor both made the 2025-26 holdout worse.
+HITS_RINK_MULTIPLIER = None
+
 FULL_PROPS = (PROP_SOG, PROP_SAVES)
 SIMPLE_PROPS = (PROP_POINTS, PROP_PPP)
 LAUNCH_PROPS = FULL_PROPS + SIMPLE_PROPS
@@ -171,6 +182,63 @@ def home_shot_factor(home: bool | None) -> float:
     if home is False:
         return AWAY_SHOT_FACTOR
     return 1.0
+
+
+def hits_rink_multiplier(*_ignored, **_unused) -> float:
+    """Hits are not scaled by rink.
+
+    An in-season rolling rink factor and a prior-season arena factor were
+    both worse than the plain rate on the 2025-26 holdout. The arguments
+    are ignored. The multiplier is 1.
+    """
+    return 1.0
+
+
+def _hundredths(value) -> int | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number):
+        return None
+    return int(round(number * 100))
+
+
+def points_over_disposition(prop, projection, line) -> str:
+    """drop, hold, or rank for one board row.
+
+    Only a Points over is gated. 69 hundredths is 0.69 and 86 is 0.86.
+    """
+    if str(prop or "").strip().lower() != "points":
+        return "rank"
+    projected = _hundredths(projection)
+    posted = _hundredths(line)
+    if projected is None or posted is None or projected < posted:
+        return "rank"
+    show = _hundredths(POINTS_OVER_SHOW)
+    promote = _hundredths(POINTS_OVER_PROMOTE)
+    if projected < show:
+        return "drop"
+    if projected < promote:
+        return "hold"
+    return "rank"
+
+
+def apply_points_over_gate(rows) -> list:
+    """Drop Points overs under 0.69. Leave 0.69–0.86 on the board, unranked."""
+    kept = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        disposition = points_over_disposition(row.get("prop") or row.get("stat"), row.get("projection"), row.get("line"))
+        if disposition == "drop":
+            continue
+        if disposition == "hold":
+            row = dict(row)
+            row["rankEligible"] = False
+            row["rankScore"] = float("-inf")
+        kept.append(row)
+    return kept
 
 
 def adjust_pp_seconds(seconds: float, role: str | None) -> float:

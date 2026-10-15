@@ -329,7 +329,7 @@ def test_confirmed_starter_keeps_his_saves_and_drops_the_other_goalie():
     rows = [
         _saves("Ilya Sorokin", line=28.5),
         _saves("Semyon Varlamov", line=26.5),
-        {"player": "Bo Horvat", "team": "NYI", "position": "F", "prop": "Points", "line": 0.5, "projection": 0.8, "score": 80, "rankEligible": True, "awayTeam": "NYI", "homeTeam": "OTT", "gameday": "2026-10-15"},
+        {"player": "Bo Horvat", "team": "NYI", "position": "F", "prop": "Points", "line": 0.5, "projection": 0.9, "score": 80, "rankEligible": True, "awayTeam": "NYI", "homeTeam": "OTT", "gameday": "2026-10-15"},
         _saves("Linus Ullmark", team="OTT", line=22.5),
     ]
     lineups = _nyi_card({
