@@ -16,6 +16,8 @@ import {
   hitRatePillStyle,
   kboHitPills,
   l10Display,
+  barResult,
+  chartWindowRate,
   lineResult,
   nflHitPills,
   nhlHitPills,
@@ -64,6 +66,18 @@ test('format rounds the chart rate to a whole number', () => {
   assert.equal(formatHitRate(13.9), '14%')
   assert.equal(formatHitRate(33.3), '33%')
   assert.equal(formatHitRate(50.04), '50%')
+})
+
+test('the chart bar and the L10 rate share one count, including a string line', () => {
+  assert.equal(barResult('22', '15.5', 'OVER'), 'hit')
+  assert.equal(barResult(15.5, '15.5', 'OVER'), 'push')
+  assert.equal(barResult('3', 15.5, 'OVER'), 'miss')
+  assert.equal(barResult(3, 15.5, 'UNDER'), 'hit')
+  assert.equal(barResult('nope', 15.5, 'OVER'), null)
+  const window = ['22', 15.5, '40', 3, '18', 30, '12', 16, 9, '28']
+  assert.deepEqual(chartWindowRate(window, '15.5', 'OVER'), { rate: 67, hits: 6, games: 9 })
+  assert.deepEqual(chartWindowRate(window, 15.5, 'UNDER'), { rate: 33, hits: 3, games: 9 })
+  assert.equal(chartWindowRate([15.5, '15.5'], 15.5, 'OVER'), null)
 })
 
 test('a push is neither a hit nor a miss and leaves the sample', () => {

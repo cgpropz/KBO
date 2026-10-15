@@ -5,7 +5,7 @@
 import { cgScore, lineMatchesStat } from './cgScore.js'
 import { nflCgScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
-import { kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
+import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
 import { nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
 
 const num = (v) => {
@@ -124,6 +124,8 @@ export function unavailableFromLineups(sport, payload) {
 }
 
 function finiteOrNull(value) {
+  // Number(null) and Number('') are 0. A missing stored rate is not a 0% L10.
+  if (value == null || value === '') return null
   const n = num(value)
   return Number.isFinite(n) ? n : null
 }
@@ -148,7 +150,21 @@ function l10FromPills(pills, storedRate) {
   return {
     hitRate: stored != null ? stored : (pill ? pill.rate : null),
     hitGames: pill ? pill.games : null,
+    hitHits: pill && Number.isFinite(pill.hits) ? pill.hits : null,
   }
+}
+
+// The Today chart and the L10 pill share one count. A full 10-game window
+// uses the bars (side, numeric line, pushes left out). A shorter log does
+// not invent an L10; it keeps a stored rate when the board sent one.
+function l10ForRow(recent, line, side, pills, storedRate) {
+  const plotted = Array.isArray(recent) ? recent : []
+  if (plotted.length >= 10) {
+    const fromChart = chartWindowRate(plotted, line, side)
+    if (!fromChart) return { hitRate: null, hitGames: null, hitHits: null }
+    return { hitRate: fromChart.rate, hitGames: fromChart.games, hitHits: fromChart.hits }
+  }
+  return l10FromPills(pills, storedRate)
 }
 
 function availabilityLabel(source) {
@@ -175,6 +191,8 @@ export function kboHubRows(data, photos = {}) {
         ? prop.recent_values
         : kboLoggedValues(card.games, prop.stat)
       const pills = kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })
+      const recent = chartValues(logged, true)
+      const side = sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation)
       rows.push({
         player: card.name,
         team: card.team,
@@ -182,12 +200,12 @@ export function kboHubRows(data, photos = {}) {
         stat: prop.stat,
         line: prop.line,
         projection: prop.projection ?? prop.avg,
-        side: sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation),
+        side,
         score,
         image: photos?.[card.name] || lookup[normalizePlayerName(card.name)] || null,
         start: card.start_time || card.game_time || null,
-        recent: chartValues(logged, true),
-        ...l10FromPills(pills, prop.hit_rate_l10),
+        recent,
+        ...l10ForRow(recent, prop.line, side, pills, prop.hit_rate_l10),
         oppRank: null,
         statusLabel: availabilityLabel({ ...card, ...prop }),
         ...availabilityOf({ ...card, ...prop }),
@@ -200,48 +218,56 @@ export function kboHubRows(data, photos = {}) {
 export function nflHubRows(data) {
   return (Array.isArray(data) ? data : [])
     .filter((row) => isStandard(row?.line_type ?? row?.oddsType))
-    .map((row) => ({
-      player: row.player,
-      team: row.team,
-      opponent: row.opponent,
-      stat: row.prop ?? row.stat,
-      line: row.line,
-      projection: row.projection,
-      side: sideFor(row.projection, row.line),
-      score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
-      image: row.imageUrl || null,
-      start: row.start_time || null,
-      recent: chartValues(row.recent, false),
-      ...l10FromPills(nflHitPills(row), null),
-      oppRank: rankOrNull(row.dvpRank),
-      statusLabel: availabilityLabel(row),
-      ...availabilityOf(row),
-    }))
+    .map((row) => {
+      const recent = chartValues(row.recent, false)
+      const side = sideFor(row.projection, row.line)
+      return {
+        player: row.player,
+        team: row.team,
+        opponent: row.opponent,
+        stat: row.prop ?? row.stat,
+        line: row.line,
+        projection: row.projection,
+        side,
+        score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
+        image: row.imageUrl || null,
+        start: row.start_time || null,
+        recent,
+        ...l10ForRow(recent, row.line, side, nflHitPills(row), null),
+        oppRank: rankOrNull(row.dvpRank),
+        statusLabel: availabilityLabel(row),
+        ...availabilityOf(row),
+      }
+    })
 }
 
 export function nhlHubRows(data) {
   return (Array.isArray(data) ? data : [])
     .filter((row) => isStandard(row?.oddsType ?? row?.odds_type) && row?.rankEligible !== false)
-    .map((row) => ({
+    .map((row) => {
+      const recent = chartValues(row.recent, false)
+      const side = sideFor(row.projection, row.line)
+      return {
       player: row.player,
       team: row.team,
       opponent: row.opponent,
       stat: row.prop ?? row.stat,
       line: row.line,
       projection: row.projection,
-      side: sideFor(row.projection, row.line),
+      side,
       score: num(cgScore(row.projection, row.line, row.prop ?? row.stat)),
       image: row.imageUrl || null,
       playerId: row.playerId || null,
       start: row.start_time || null,
-      recent: chartValues(row.recent, false),
-      ...l10FromPills(nhlHitPills(row), row.hitRate),
+      recent,
+      ...l10ForRow(recent, row.line, side, nhlHitPills(row), row.hitRate),
       oppRank: rankOrNull(row.dvpRank),
       goalieStatus: row.goalieStatus || null,
       statusLabel: row.goalieStatus === 'confirmed' ? 'Confirmed' : row.goalieStatus === 'probable' ? 'Probable' : availabilityLabel(row),
       detail: row,
       ...availabilityOf(row),
-    }))
+      }
+    })
 }
 
 // Roster image first, then the board row's own image, same as nbaPropLines.buildPropRows.
@@ -276,6 +302,8 @@ function basketballRows(data, scoreFn, roster, sport) {
       const pills = wnba
         ? wnbaHitPills({ games, stat: prop.stat, line: prop.line, opponent: prop.opponent || prop.versus })
         : nbaHitPills(games, prop.stat, prop.line, prop.opponent || prop.versus, storedL10Values(prop))
+      const recent = chartValues(series, true)
+      const side = sideFor(prop.projection, prop.line)
       rows.push({
         player: player.name,
         team: player.team,
@@ -283,12 +311,12 @@ function basketballRows(data, scoreFn, roster, sport) {
         stat: prop.stat,
         line: prop.line,
         projection: prop.projection,
-        side: sideFor(prop.projection, prop.line),
+        side,
         score: num(scoreFn(prop)),
         image: imageFor(player) || player.image || null,
         start: prop.start_time || prop.gameDate || null,
-        recent: chartValues(series, true),
-        ...l10FromPills(pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
+        recent,
+        ...l10ForRow(recent, prop.line, side, pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
         statusLabel: availabilityLabel({ ...player, ...prop }),
         ...availabilityOf({ ...player, ...prop }),
@@ -319,6 +347,41 @@ export function topHubRows(rows, limit = 5) {
 
 export function countPlayable(rows) {
   return playableRows(rows).filter((r) => r.player && Number.isFinite(r.score)).length
+}
+
+// Highest L10 hit rate on the board. The sample is the chart's decided games
+// (pushes already left out). A log shorter than 10, or a window with no
+// decided game, is not an L10 and stays off the list.
+export function topHitRateRows(rows, limit = 10) {
+  const ranked = playableRows(rows)
+    .filter((row) => (
+      row?.player
+      && row?.stat
+      && Array.isArray(row.recent)
+      && row.recent.length >= 10
+      && Number.isFinite(num(row.line))
+      && Number.isFinite(row.hitRate)
+      && Number.isFinite(row.hitHits)
+      && Number.isFinite(row.hitGames)
+      && row.hitGames > 0
+    ))
+    .sort((a, b) => (
+      (b.hitRate - a.hitRate)
+      || (b.hitGames - a.hitGames)
+      || ((Number.isFinite(b.score) ? b.score : -Infinity) - (Number.isFinite(a.score) ? a.score : -Infinity))
+      || String(a.player).localeCompare(String(b.player))
+      || String(a.stat).localeCompare(String(b.stat))
+    ))
+  const seen = new Set()
+  const out = []
+  for (const row of ranked) {
+    const key = `${row.player}|${row.stat}|${row.line}|${row.side || ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(row)
+    if (out.length >= limit) break
+  }
+  return out
 }
 
 // "Yesterday" in ET. A slate older than that is shown as the last graded slate.

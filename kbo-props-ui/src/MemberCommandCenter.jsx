@@ -10,9 +10,10 @@ import { teamColor as wnbaTeamColor } from './wnba/utils/formatters';
 import { teamLogoUrl as nhlLogo, nhlHeadshotUrl } from './nhl/nhlTeams';
 import { nbaLogoUrl } from './nba/nbaPropLines';
 import Results from './Results';
+import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  playableRows, sameMatchup, statusChips, topHubRows, unavailableFromLineups, wnbaHubRows,
+  playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
 import './MemberCommandCenter.css';
 
@@ -181,9 +182,8 @@ function L10Chart({ values, line, side }) {
   return (
     <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
       {nums.map((value, index) => {
-        const push = value === target;
-        const hit = side === 'UNDER' ? value < target : value > target;
-        const color = push ? '#a1a1aa' : hit ? '#22c55e' : '#f87171';
+        const kind = barResult(value, target, side);
+        const color = kind === 'push' ? '#a1a1aa' : kind === 'hit' ? '#22c55e' : '#f87171';
         return (
           <span key={`${value}-${index}`} className="hub-bar-col">
             <span className="hub-bar" style={{ height: `${Math.max(8, (value / max) * 100)}%`, background: color }} />
@@ -326,7 +326,8 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const ranked = topHubRows(pool, 7);
   const top = ranked.slice(0, 3);
   const preview = ranked.slice(3, 7);
-  const active = [...top, ...preview].find((row) => rowKey(row) === focus) || top[0] || null;
+  const hitLeaders = topHitRateRows(pool, 10);
+  const active = [...top, ...preview, ...hitLeaders].find((row) => rowKey(row) === focus) || top[0] || null;
   const shownGames = activeGame ? [activeGame] : games;
   const timedStarts = shownGames
     .filter((game) => game.start && !/^\d{4}-\d{2}-\d{2}$/.test(game.start))
@@ -506,6 +507,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                 )}
               </section>
 
+              <div className="hub-side">
               <section className="hub-card hub-drill" aria-label="Player drilldown">
                 <div className="hub-card-head">
                   <h2>Player drilldown</h2>
@@ -522,7 +524,13 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     </div>
                     <L10Chart values={active.recent} line={active.line} side={active.side} />
                     <div className="hub-stats">
-                      <div><span>L10</span><strong className="hub-num">{active.hitRate == null ? '—' : `${Math.round(active.hitRate)}%`}</strong></div>
+                      <div>
+                        <span>L10</span>
+                        <strong className="hub-num">{active.hitRate == null ? '—' : `${Math.round(active.hitRate)}%`}</strong>
+                        {active.hitHits != null && active.hitGames != null && (
+                          <span className="hub-hit-sample hub-num">{active.hitHits}/{active.hitGames}</span>
+                        )}
+                      </div>
                       {active.oppRank != null && <div><span>Opp rank</span><strong className="hub-num">{ordinal(active.oppRank)}</strong></div>}
                       <div><span>Projection</span><strong className="hub-num">{fmt(active.projection)}</strong></div>
                     </div>
@@ -535,6 +543,29 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                   <p className="hub-chart-empty">Pick a play to see the last 10 games against the line.</p>
                 )}
               </section>
+
+              <section className="hub-card hub-hitrate" aria-label="Top 10 hit rate">
+                <div className="hub-card-head">
+                  <h2>Top 10 Hit Rate</h2>
+                  <span className="hub-hit-kicker">L10</span>
+                </div>
+                {hitLeaders.length > 0 ? hitLeaders.map((row, index) => (
+                  <button key={rowKey(row)} type="button" className={`hub-hit-row${active && rowKey(active) === rowKey(row) ? ' is-open' : ''}`} onClick={() => setFocus(rowKey(row))}>
+                    <span className="hub-hit-rank hub-num">{index + 1}</span>
+                    <span className="hub-hit-copy">
+                      <span className="hub-name">{row.player}</span>
+                      <span className="hub-preview-meta">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                    </span>
+                    <span className="hub-hit-rate">
+                      <strong className="hub-num" style={{ color: hitRatePillColor(row.hitRate) || undefined }}>{Math.round(row.hitRate)}%</strong>
+                      <span className="hub-num">{row.hitHits}/{row.hitGames}</span>
+                    </span>
+                  </button>
+                )) : (
+                  <p className="hub-chart-empty">No L10 hit rates on this board.</p>
+                )}
+              </section>
+              </div>
 
               <section className="mcc-panel mcc-news hub-news" aria-label="News">
                 <h2>{selected.name} news</h2>
