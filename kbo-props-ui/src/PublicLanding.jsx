@@ -105,9 +105,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const [boards, setBoards] = useState({});
   const [markets, setMarkets] = useState(null);
   const [boardApi, setBoardApi] = useState(null);
-  const [sportId, setSportId] = useState('nfl');
-  const [hitSportId, setHitSportId] = useState('nfl');
-  const [picked, setPicked] = useState(false);
+  const [sportId, setSportId] = useState(HERO_LANDING_SPORT_ID);
+  const [hitSportId, setHitSportId] = useState(HERO_LANDING_SPORT_ID);
   const [openFaq, setOpenFaq] = useState(null);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
@@ -172,13 +171,20 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
 
     const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
-      heroSnap.then((snap) => {
+      heroSnap.then(async (snap) => {
         if (!active) return;
         if (snap === 'error') {
           setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
           return;
         }
-        publish(HERO_SPORT, snap, null);
+        let lineupData = null;
+        if (HERO_SPORT.lineups) {
+          try {
+            const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev);
+            lineupData = lineupSnap?.data ?? null;
+          } catch { /* a missing injury report still shows the board */ }
+        }
+        publish(HERO_SPORT, snap, lineupData);
       });
       LANDING_SPORTS.forEach((sport) => {
         if (sport.id !== HERO_SPORT.id) loadSport(sport);
@@ -194,24 +200,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     };
   }, []);
 
-  useEffect(() => {
-    if (!boardApi || picked) return;
-    if (LANDING_SPORTS.some((sport) => !boards[sport.id])) return;
-    const withRows = LANDING_SPORTS.find((sport) => boards[sport.id]?.rows?.length);
-    const withHits = LANDING_SPORTS.find((sport) => boardApi.publicTopHitRows(boards[sport.id]?.rows || []).length);
-    if (withRows) setSportId(withRows.id);
-    if (withHits) setHitSportId(withHits.id);
-  }, [boardApi, boards, picked]);
-
   const sport = LANDING_SPORTS.find((item) => item.id === sportId) || LANDING_SPORTS[0];
   const hitSport = LANDING_SPORTS.find((item) => item.id === hitSportId) || LANDING_SPORTS[0];
   const sportState = boards[sport.id];
   const hitState = boards[hitSport.id];
   const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
   const hitRows = boardApi ? boardApi.publicTopHitRows(hitState?.rows || []) : [];
-  const phoneRows = boardApi
-    ? (switchRows.length ? switchRows : boardApi.publicSwitcherRows(Object.values(boards).flatMap((board) => board.rows || [])))
-    : [];
+  const phoneRows = switchRows;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
   const dvpRows = (gameRows.length ? gameRows : (boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 4) : [])).filter((row) => row.oppRank != null);
@@ -256,7 +251,6 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   };
 
   const chooseSport = (id) => {
-    setPicked(true);
     setSportId(id);
   };
 
@@ -316,7 +310,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                 role="tab"
                 aria-selected={item.id === hitSport.id}
                 className={item.id === hitSport.id ? 'on' : ''}
-                onClick={() => { setPicked(true); setHitSportId(item.id); }}
+                onClick={() => setHitSportId(item.id)}
               >
                 {item.name}
               </button>
