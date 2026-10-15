@@ -13,7 +13,7 @@ import Results from './Results';
 import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
+  confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
 import './MemberCommandCenter.css';
 
@@ -256,7 +256,11 @@ function useBoards(access, nbaOpen) {
       if (!b) { out[sport.id] = { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] }; return; }
       if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
       const raw = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
-      const all = playableRows(raw, unavailableFromLineups(sport.id, lineups[sport.id]));
+      const all = playableRows(
+        raw,
+        unavailableFromLineups(sport.id, lineups[sport.id]),
+        confirmedGoalieStarters(lineups[sport.id]),
+      );
       const shown = countPlayable(all);
       out[sport.id] = {
         status: all.length ? 'ready' : 'empty',
