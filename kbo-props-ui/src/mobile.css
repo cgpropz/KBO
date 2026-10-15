@@ -44,6 +44,36 @@
     letter-spacing: -0.03em;
   }
 
+  body .pl-landing :is(h2, .pl-close h2) {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.03em;
+  }
+
+  body .pl-landing :is(.pl-kick, .pl-sw-meta, .pl-foot, .pl-tick, .pl-tick em) {
+    font-size: 12px !important;
+  }
+
+  body .pl-landing :is(.pl-lead, .pl-price-note, .pl-checkout-note, .pl-faq-item p) {
+    font-size: 15px !important;
+  }
+
+  body .pl-landing :is(.pl-num, .pl-phone-row em, .pl-amount) {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  }
+
+  body .pl-landing .pl-num,
+  body .pl-landing .pl-phone-row em {
+    font-size: 14px !important;
+  }
+
+  body .pl-landing .pl-amount { font-size: 36px !important; }
+  body .pl-landing .pl-amount span,
+  body .pl-landing .pl-num small,
+  body .pl-landing .pl-player small,
+  body .pl-landing .pl-phone-row small { font-size: 12px !important; }
+
   body :is(
     .kbo-board-header p,
     .nfl-board-header p,

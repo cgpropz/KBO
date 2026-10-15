@@ -2,7 +2,6 @@
 // do not run JavaScript still see the title, H1, nav, and footer.
 
 import {
-  AFFILIATION_LINE,
   AGE_LINE,
   GAMBLER_HELP_URL,
   OPERATOR_DISCLAIMER,
@@ -50,11 +49,11 @@ export function homeRootInner() {
       </nav>
     </header>
     <main>
-      <h1>One edge. Every sport.</h1>
-      <p>Data-driven projections, hit rates, and prop analysis across KBO baseball, WNBA basketball, NFL football, and NHL hockey — all under one login, one subscription.</p>
+      <h1>Every prop line, scored.</h1>
+      <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
       <section id="free-top-3">
-        <h2>Today's free top 3</h2>
-        <p>Three free props from today's board. The NFL free preview is off right now.</p>
+        <h2>Highest hit rates on the board</h2>
+        <p>Sorted by L10 hit rate vs today's standard line. The NFL free preview is off right now.</p>
       </section>
     </main>
     <footer>
@@ -62,7 +61,6 @@ export function homeRootInner() {
       <p>${escapeHtml(STANDARD_LINE)}</p>
       <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>
-      <p>${escapeHtml(AFFILIATION_LINE)}</p>
       <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
     </footer>
     </div>`;

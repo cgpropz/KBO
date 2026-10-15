@@ -1,312 +1,495 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { NBA_CARD, SPORTS } from './sportsMeta';
-import LandingSportCard from './LandingSportCard';
-import { useNbaOpen } from './useNbaOpen';
-import { landingFaqs } from './landingFaq';
-import { ResponsibleGamblingCopy } from './SiteFooter';
-import { STRIPE_LINKS, TIERS } from './pricingTiers';
-import TrustStrip from './TrustStrip';
-import FreePicksPreview from './FreePicksPreview';
-import StartHereBanner from './StartHereBanner';
-import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { useEffect, useState } from 'react';
+import { fetchApiDataset } from './apiData';
 import { useAgeGate } from './ageGateContext';
-import AutoRenewalNote from './AutoRenewalNote';
-import FoundersOffer from './FoundersOffer';
-import DiscordInviteLink from './DiscordInviteLink';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
-import SportSwitcher from './SportSwitcher';
+import { fitImage } from './fitImage';
+import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
+import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
+import { STRIPE_LINKS } from './pricingTiers';
+import {
+  featuredGame,
+  PUBLIC_SPORTS,
+  publicFaqs,
+  publicSwitcherRows,
+  publicTopHitRows,
+  rowsForGame,
+  slateLabel,
+  publicBoardRows,
+} from './publicBoard';
+import { unavailableFromLineups } from './memberHub';
+import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
+import { sessionAccessToken } from './supabaseClient';
+import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import './PublicLanding.css';
 
-const Results = lazy(() => import('./Results'));
-const Testimonials = lazy(() => import('./Testimonials'));
+const FAQS = publicFaqs();
 
-/*
- * cgpropz — public marketing landing page.
- * Shown to brand-new/anonymous visitors before they log in or sign up.
- * Props:
- *   onGetStarted() → reveal AuthPage in 'signup' mode
- *   onLogin()      → reveal AuthPage in 'login' mode
- *   onOpenBoard(s) → browse sport s ('kbo' | 'wnba' | 'nfl' | 'nhl') in free preview mode.
- *   The NBA card is visible but locked for logged-out visitors and does not open.
- *   NHL is live: logged-out visitors open it and see the same paywall as the other sports.
- */
+const fmt = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+};
 
-const TOOLS = [
-  {
-    id: 'projections',
-    kicker: 'PROJECTIONS',
-    title: 'Model projections for every board.',
-    text: 'Data-driven projections built from recent form, matchups, and historical trends — refreshed automatically across KBO, WNBA, NFL, and NHL.',
-    image: '/landing-screenshots/kbo-projections.png',
-    alt: 'KBO batter projection table with matchup and hit-rate context',
-  },
-  {
-    id: 'hitrates',
-    kicker: 'HIT RATES & PROP CARDS',
-    title: 'See how often it actually cashed.',
-    text: 'Every player page pairs the line and projection with L10 hit rates and a full game log, so you know the history before you build a slip.',
-    image: '/landing-screenshots/nfl-player-detail.png',
-    alt: 'NFL player detail page with hit rate and recent-form breakdown',
-  },
-  {
-    id: 'edge',
-    kicker: 'MATCHUP EDGE',
-    title: 'Spot the softest matchup on the board.',
-    text: 'Defense vs. position breakdowns and a PrizePicks edge board surface the mismatches — all under one login, one subscription.',
-    image: '/landing-screenshots/wnba-edge-board.png',
-    alt: 'WNBA PrizePicks edge board with L10 hit-rate charts',
-  },
-];
+const fmtScore = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return n.toFixed(1);
+};
 
-const FAQS = landingFaqs();
+function initials(name) {
+  return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
 
-export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
+function ordinal(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return '—';
+  const mod = n % 100;
+  const suffix = mod >= 11 && mod <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th';
+  return `${n}${suffix}`;
+}
+
+function Headshot({ row }) {
+  const src = row?.image ? fitImage(row.image, 38) : '';
+  if (!src) return <span className="pl-avatar" aria-hidden="true">{initials(row?.player)}</span>;
+  return <img className="pl-avatar" src={src} alt="" width="38" height="38" />;
+}
+
+function BoardTable({ rows, showHitRate }) {
+  if (!rows.length) return null;
+  return (
+    <div className="pl-table" role="table">
+      <div className="pl-tr pl-th" role="row">
+        <span>Player · prop</span>
+        <span>Line</span>
+        <span>Proj</span>
+        <span>L10</span>
+        <span>CG</span>
+      </div>
+      {rows.map((row) => (
+        <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}`}>
+          <span className="pl-player">
+            <Headshot row={row} />
+            <span>
+              <b>{row.player}</b>
+              <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}</small>
+            </span>
+          </span>
+          <span className="pl-num">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</span>
+          <span className="pl-num pl-proj">{fmt(row.projection)}</span>
+          <span className="pl-num">
+            {showHitRate && Number.isFinite(row.hitRate) ? `${Math.round(row.hitRate)}%` : (Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? `${row.hitHits}/${row.hitGames}` : '—')}
+            {showHitRate && Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? <small>{row.hitHits}/{row.hitGames}</small> : null}
+          </span>
+          <span className="pl-num pl-score">{fmtScore(row.score)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Phone({ rows }) {
+  return (
+    <div className="pl-phone" aria-hidden="true">
+      <div className="pl-phone-top"><i /><b>cgpropz</b><i /></div>
+      {rows.slice(0, 6).map((row) => (
+        <div className="pl-phone-row" key={`${row.player}|${row.stat}|${row.line}`}>
+          <span>
+            <b>{row.player}</b>
+            <small>{row.stat} · {row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</small>
+          </span>
+          <em>{fmtScore(row.score)}</em>
+        </div>
+      ))}
+      {!rows.length && <p className="pl-phone-empty">Board preview</p>}
+    </div>
+  );
+}
+
+export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSignOut, user }) {
   const menu = usePageMenu();
   const { requireAge } = useAgeGate();
-  const { open: nbaOpen } = useNbaOpen();
-  const [planId, setPlanId] = useState('weekly');
-  const paidTiers = TIERS.filter((t) => t.id !== 'free');
-  const activeTier = paidTiers.find((t) => t.id === planId) || paidTiers[0];
-  const scrollToPricing = () => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // The weekly href starts as the Payment Link so the click navigates even if
-  // the Checkout Session request hasn't returned. Once it has, the href is the
-  // session (XWEEK applied for a new buyer).
+  const [boards, setBoards] = useState({});
+  const [markets, setMarkets] = useState(null);
+  const [sportId, setSportId] = useState('nfl');
+  const [hitSportId, setHitSportId] = useState('nfl');
+  const [picked, setPicked] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
   const [weeklyHref, setWeeklyHref] = useState(() => buildCheckoutUrl(STRIPE_LINKS.weekly, null));
+  const [lifetimeBusy, setLifetimeBusy] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
-    prefetchWeeklyCheckoutUrl().then((url) => {
-      if (!cancelled && url) setWeeklyHref(url);
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-  // Logged-out checkout: Stripe collects the email; access is matched to it
-  // when the buyer signs up with the same email (webhook + sync-subscription).
-  // Monthly and yearly stay on their Payment Links. Lifetime and Founders
-  // open a Checkout Session. A closed Founders offer is refused; the card
-  // shows Sold out or Ended instead of starting Lifetime checkout.
-  const checkout = async (tier) => {
-    if (!(await requireAge())) return;
-    if (tier?.checkout === 'session' || tier?.id === 'lifetime') {
+    (async () => {
+      let token = '';
+      if (user) {
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
+      }
+      if (!cancelled) setWeeklyHref(buildCheckoutUrl(STRIPE_LINKS.weekly, user || null));
       try {
-        const result = await requestOfferCheckoutUrl({ plan: 'lifetime' });
-        window.location.assign(result.url);
-      } catch { /* button stays put; they can retry */ }
-      return;
-    }
-    if (!tier?.link) return;
-    window.location.assign(buildCheckoutUrl(tier.link, null));
+        const url = await prefetchWeeklyCheckoutUrl(token ? { token } : {});
+        if (!cancelled && url) setWeeklyHref(url);
+      } catch { /* keep the payment link */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    PUBLIC_SPORTS.forEach((sport) => {
+      const board = fetchApiDataset(sport.ds, { devStaticPath: sport.dev });
+      const lineups = sport.lineups
+        ? fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev }).catch(() => null)
+        : Promise.resolve(null);
+      Promise.all([board, lineups])
+        .then(([snap, lineupSnap]) => {
+          if (!active) return;
+          const names = unavailableFromLineups(sport.id, lineupSnap?.data);
+          const rows = publicBoardRows(sport.toRows(snap.data), names);
+          setBoards((prev) => ({
+            ...prev,
+            [sport.id]: {
+              status: 'ready',
+              rows,
+              updatedAt: snap.updatedAt,
+              preview: !!snap.preview,
+              lockedCount: Number(snap.lockedCount) || 0,
+            },
+          }));
+        })
+        .catch(() => {
+          if (active) setBoards((prev) => ({ ...prev, [sport.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
+        });
+    });
+    fetchApiDataset('nfl_game_markets', { devStaticPath: 'nfl/game_markets.json' })
+      .then((snap) => { if (active) setMarkets(snap); })
+      .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (picked) return;
+    if (PUBLIC_SPORTS.some((sport) => !boards[sport.id])) return;
+    const withRows = PUBLIC_SPORTS.find((sport) => boards[sport.id]?.rows?.length);
+    const withHits = PUBLIC_SPORTS.find((sport) => publicTopHitRows(boards[sport.id]?.rows || []).length);
+    if (withRows) setSportId(withRows.id);
+    if (withHits) setHitSportId(withHits.id);
+  }, [boards, picked]);
+
+  const sport = PUBLIC_SPORTS.find((item) => item.id === sportId) || PUBLIC_SPORTS[0];
+  const hitSport = PUBLIC_SPORTS.find((item) => item.id === hitSportId) || PUBLIC_SPORTS[0];
+  const sportState = boards[sport.id];
+  const hitState = boards[hitSport.id];
+  const switchRows = publicSwitcherRows(sportState?.rows || []);
+  const hitRows = publicTopHitRows(hitState?.rows || []);
+  const phoneRows = switchRows.length ? switchRows : publicSwitcherRows(Object.values(boards).flatMap((board) => board.rows || []));
+  const game = featuredGame(markets?.data);
+  const gameRows = rowsForGame(boards.nfl?.rows || [], game);
+  const dvpRows = (gameRows.length ? gameRows : publicSwitcherRows(boards.nfl?.rows || [], 4)).filter((row) => row.oppRank != null);
+  const settled = PUBLIC_SPORTS.every((item) => boards[item.id]);
+
+  const scrollTo = (id) => {
+    menu.close();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-  const claimFounders = async () => {
+
+  const buyLifetime = async () => {
+    if (lifetimeBusy) return;
     if (!(await requireAge())) return;
+    setLifetimeBusy(true);
     try {
-      const result = await requestOfferCheckoutUrl({ plan: 'founders' });
+      let token = '';
+      if (user) {
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
+      }
+      const result = await requestOfferCheckoutUrl(token ? { plan: 'lifetime', token } : { plan: 'lifetime' });
       window.location.assign(result.url);
-    } catch (err) {
-      if (err?.reason === 'sold_out' || err?.reason === 'expired') throw err;
-    }
+    } catch { /* button stays put; they can retry */ }
+    finally { setLifetimeBusy(false); }
+  };
+
+  const chooseSport = (id) => {
+    setPicked(true);
+    setSportId(id);
   };
 
   return (
-    <div className="pl-landing">
-      <div className="pl-bg" />
-
-      <header className="pl-header" onClick={(event) => { if (event.target.closest('#cg-page-menu button, #cg-page-menu a')) menu.close(); }}>
-        <div className="pl-wordmark">
-          cg<span className="pl-wordmark-accent">propz</span>
-        </div>
+    <div className="pl-landing" id="top">
+      <div className="pl-glow" />
+      <header className="pl-header" onClick={(event) => { if (event.target.closest('#cg-page-menu a, #cg-page-menu button')) menu.close(); }}>
+        <a className="pl-wordmark" href="#top">cg<span>propz</span></a>
         <PageMenuButton open={menu.open} onToggle={menu.toggle} />
-        <SportSwitcher sport="" setSport={onOpenBoard} />
         <PageMenu open={menu.open}>
-          <nav className="pl-nav">
-            <a href="#free-picks">Free Picks</a>
-            <a href="#sports">Sports</a>
-            <a href="/kbo-player-props">KBO</a>
-            <a href="/nfl-player-props">NFL</a>
-            <a href="/wnba-player-props">WNBA</a>
-            <a href="/nba-player-props">NBA</a>
-            <a href="/nhl-player-props">NHL</a>
-            <a href="/pricing">Pricing</a>
-            <a href="/guides/start-here">Start Here</a>
-            <a href="/guides/cg-score">How CG Score works</a>
-            <a href="#faq">FAQ</a>
+          <nav className="pl-nav" aria-label="Page">
+            <a href="#boards" onClick={(event) => { event.preventDefault(); scrollTo('boards'); }}>Boards</a>
+            <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
+            <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
+            <a href="#pricing" onClick={(event) => { event.preventDefault(); scrollTo('pricing'); }}>Pricing</a>
+            <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
           </nav>
           <div className="pl-header-actions">
-            <button className="pl-link-btn" onClick={onLogin}>Log In</button>
-            <button className="pl-cta-primary pl-cta-small" onClick={onGetStarted}>Get Started</button>
+            {user ? (
+              <button type="button" className="pl-text" onClick={onSignOut}>Sign out</button>
+            ) : (
+              <button type="button" className="pl-text" onClick={onLogin}>Log in</button>
+            )}
+            <button type="button" className="pl-cta pl-cta-small" onClick={() => scrollTo('pricing')}>Get the board</button>
           </div>
         </PageMenu>
       </header>
 
       <main className="pl-main">
         <section className="pl-hero">
-          <div className="pl-hero-copy">
-            <div className="pl-hero-badge">HAND-CRAFTED PROPS</div>
-            <h1 className="pl-hero-title">
-              One edge. <span className="pl-hero-grad">Every sport.</span>
-            </h1>
-            <p className="pl-hero-sub">
-              Data-driven projections, hit rates, and prop analysis across KBO baseball,
-              WNBA basketball, NFL football, and NHL hockey — all under one login, one subscription.
-            </p>
-            <div className="pl-sport-icons" aria-hidden="true">
-              <span>⚾</span><span>🏀</span><span>🏈</span><span>🏒</span>
+          <div>
+            <p className="pl-kick">KBO · NFL · NHL · WNBA</p>
+            <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
+            <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
+            <div className="pl-cta-row">
+              <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
+              <button type="button" className="pl-ghost" onClick={() => scrollTo('boards')}>See today's board</button>
             </div>
-            <div className="pl-hero-cta">
-              <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
-              <a className="pl-cta-ghost" href="#free-picks">See today's free picks</a>
-            </div>
-            <TrustStrip />
-          </div>
-          <div className="pl-hero-visual">
-            <div className="pl-hero-visual-bg" />
-            <div className="pl-mockup pl-mockup-1">
-              <img src="/landing-screenshots/wnba-edge-board.png" alt="WNBA PrizePicks edge board" />
-            </div>
-            <div className="pl-mockup pl-mockup-2">
-              <img src="/landing-screenshots/kbo-projections.png" alt="KBO batter projections" />
-            </div>
-          </div>
-        </section>
-
-        <StartHereBanner />
-        <FreePicksPreview
-          onSignUp={onGetStarted}
-          onOpenBoard={(sport) => onOpenBoard?.(sport)}
-          onSeePlans={scrollToPricing}
-        />
-
-        <section className="pl-tools" id="features">
-          <div className="pl-section-heading">
-            <span className="pl-section-kicker">The tools</span>
-            <h2>Everything you need in one place.</h2>
-          </div>
-          {TOOLS.map((tool, i) => (
-            <div className={`pl-tool-row${i % 2 ? ' reverse' : ''}`} key={tool.id}>
-              <div className="pl-tool-visual">
-                <img src={tool.image} alt={tool.alt} loading="lazy" />
-              </div>
-              <div className="pl-tool-copy">
-                <span className="pl-tool-kicker">{tool.kicker}</span>
-                <h3>{tool.title}</h3>
-                <p>{tool.text}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className="pl-sports" id="sports">
-          <div className="pl-section-heading">
-            <span className="pl-section-kicker">All major sports</span>
-            <h2>One subscription. Every sport.</h2>
-          </div>
-          <div className="pl-sports-grid">
-            {[...SPORTS, NBA_CARD].map((s) => (
-              <LandingSportCard
-                key={s.id}
-                variant="public"
-                sport={s}
-                nbaOpen={nbaOpen}
-                onOpen={(id) => (onOpenBoard ? onOpenBoard(id) : onGetStarted())}
-              />
-            ))}
-          </div>
-        </section>
-
-        <Suspense fallback={null}>
-          <Results />
-        </Suspense>
-
-        <section className="pl-pricing" id="pricing">
-          <div className="pl-section-heading">
-            <span className="pl-section-kicker">Pricing</span>
-            <h2>Upgrade when it pays for itself.</h2>
-          </div>
-          <div className="pl-pricing-toggle" role="tablist" aria-label="Billing plan">
-            {paidTiers.map((t) => (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={activeTier.id === t.id}
-                className={`pl-pricing-tab${activeTier.id === t.id ? ' active' : ''}`}
-                onClick={() => setPlanId(t.id)}
-              >
-                {t.name.replace(' All-Access', '')}
-              </button>
-            ))}
-          </div>
-          <div className="pl-pricing-card">
-            {activeTier.badge && <span className="pl-pricing-badge">{activeTier.badge}</span>}
-            <h3>{activeTier.name}</h3>
-            <div className="pl-pricing-price">{activeTier.price}<span>{activeTier.period}</span></div>
-            <ul className="pl-pricing-features">
-              {activeTier.features.map((f) => <li key={f}>{f}</li>)}
+            <ul className="pl-trust">
+              <li><i />Standard lines</li>
+              <li><i />CG Score on every row</li>
+              <li><i />One login, every league</li>
             </ul>
-            <AutoRenewalNote />
-            {activeTier.id === 'lifetime' && <FoundersOffer onClaim={claimFounders} />}
-            {activeTier.id === 'weekly' ? (
-              <a className="pl-cta-primary pl-pricing-cta" href={weeklyHref}>
-                {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
-              </a>
-            ) : (
-              <button className="pl-cta-primary pl-pricing-cta" onClick={() => checkout(activeTier)}>
-                {activeTier.cta} · {activeTier.price}{activeTier.period && activeTier.period !== 'once' ? ` ${activeTier.period}` : ''}
-              </button>
-            )}
-            <p className="pl-pricing-alt">{activeTier.description}</p>
-            <p className="ff-checkout-note">
-              No account needed to check out. Afterwards, sign up with the <strong>same email</strong> you
-              used at checkout and your plan unlocks automatically. Not ready?{' '}
-              <button type="button" onClick={onGetStarted}>Start free</button>
-            </p>
           </div>
-          <DiscordOnlyPlans variant="public" />
+          <Phone rows={phoneRows} />
         </section>
 
-        <Suspense fallback={null}>
-          <Testimonials />
-        </Suspense>
-
-        <section className="pl-faq" id="faq">
-          <div className="pl-section-heading">
-            <span className="pl-section-kicker">Questions</span>
-            <h2>Frequently asked questions.</h2>
+        <section id="free-top-3">
+          <p className="pl-kick">{hitRows.length >= 10 ? 'Top 10 tonight' : 'L10 hit rates'}</p>
+          <h2>Highest hit rates on the board</h2>
+          <p className="pl-lead">Sorted by L10 hit rate vs today's standard line. A log shorter than 10 games stays off this list.</p>
+          <div className="pl-seg" role="tablist" aria-label="Hit-rate sport">
+            {PUBLIC_SPORTS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={item.id === hitSport.id}
+                className={item.id === hitSport.id ? 'on' : ''}
+                onClick={() => { setPicked(true); setHitSportId(item.id); }}
+              >
+                {item.name}
+              </button>
+            ))}
           </div>
-          <div className="pl-faq-grid">
-            {FAQS.map((item) => (
-              <FaqItem key={item.q} q={item.q} a={item.a} />
+          <div className="pl-card">
+            {hitRows.length ? <BoardTable rows={hitRows} showHitRate /> : (
+              <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
+            )}
+            {hitState?.preview && hitState.lockedCount > 0 && (
+              <p className="pl-foot">Public preview · {hitState.lockedCount} more lines on All-Access</p>
+            )}
+          </div>
+        </section>
+
+        <section id="matchup">
+          <p className="pl-kick">Matchup sheets</p>
+          <h2>The whole game on one card</h2>
+          <div className="pl-two">
+            <div className="pl-card pl-match">
+              {game ? (
+                <>
+                  <div className="pl-match-top">
+                    <TeamMark team={game.awayTeam} name={game.awayName} />
+                    <div>
+                      <b>{game.awayName || game.awayTeam} vs {game.homeName || game.homeTeam}</b>
+                      <small>{kickoffLabel(game)}</small>
+                    </div>
+                    <TeamMark team={game.homeTeam} name={game.homeName} />
+                  </div>
+                  <div className="pl-markets">
+                    <Market label="Spread" line={game.spread?.line} projection={game.spread?.projection} />
+                    <Market label="Total" line={game.total?.line} projection={game.total?.projection} />
+                  </div>
+                  {gameRows.length ? <BoardTable rows={gameRows} /> : (
+                    <p className="pl-empty">Player props for this game are on the full board.</p>
+                  )}
+                </>
+              ) : (
+                <p className="pl-empty">
+                  {!markets
+                    ? 'Loading the game card…'
+                    : (markets.preview && Number(markets.lockedCount) > 0
+                      ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
+                      : 'No game card is posted right now.')}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="pl-lead">CG model vs the posted number, defense vs position, snap and usage trends, and the injury report, ready before kickoff.</p>
+              {dvpRows.length > 0 && (
+                <div className="pl-card pl-dvp">
+                  {dvpRows.map((row) => (
+                    <div key={`${row.player}|${row.stat}`} className="pl-dvp-row">
+                      <span><b>{row.player}</b><small>{row.stat}</small></span>
+                      <span className="pl-dvp-bar" aria-hidden="true"><i style={{ width: `${Math.max(8, (Number(row.oppRank) / 32) * 100)}%` }} /></span>
+                      <span className="pl-num">{ordinal(row.oppRank)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button type="button" className="pl-ghost" onClick={() => onOpenBoard?.('nfl')}>Open the NFL board</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="boards">
+          <p className="pl-kick">Leagues</p>
+          <h2>Switch sports, keep the board</h2>
+          <div className="pl-card pl-sw">
+            <div className="pl-sw-top">
+              <div className="pl-seg" role="tablist" aria-label="League">
+                {PUBLIC_SPORTS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={item.id === sport.id}
+                    className={item.id === sport.id ? 'on' : ''}
+                    onClick={() => chooseSport(item.id)}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+              <p className="pl-sw-meta"><b>{sport.sportName}</b> · {slateLabel(sportState?.rows || [])} · {sport.props}</p>
+            </div>
+            {switchRows.length ? <BoardTable rows={switchRows} /> : (
+              <p className="pl-empty">
+                {settled
+                  ? (sport.id === 'nfl' && !sportState?.rows?.length
+                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} lines are on the full board.` : ''}`
+                    : `No scored standard lines in the ${sport.name} public preview right now.`)
+                  : 'Loading the board…'}
+              </p>
+            )}
+            <div className="pl-foot">
+              <span>Standard lines · CG Score is the board score</span>
+              {sportState?.rows?.length > 0 && (
+                <button type="button" className="pl-text" onClick={() => onOpenBoard?.(sport.id)}>Open {sport.name}</button>
+              )}
+            </div>
+          </div>
+          <div className="pl-tick">
+            {PUBLIC_SPORTS.map((item) => (
+              <button key={item.id} type="button" className={item.id === sport.id ? 'on' : ''} onClick={() => chooseSport(item.id)}>
+                <i />{item.name} <em>{slateLabel(boards[item.id]?.rows || [])}</em>
+              </button>
             ))}
           </div>
         </section>
 
-        <section className="pl-final-cta">
-          <h2>Ready to find your edge?</h2>
-          <p className="pl-final-cta-sub">No credit card required for the free tier — upgrade anytime for full access.</p>
-          <button className="pl-cta-primary" onClick={onGetStarted}>Get Started Free</button>
-          <TrustStrip align="center" />
+        <section id="pricing">
+          <p className="pl-kick">Pricing</p>
+          <h2>One login. Every league.</h2>
+          <div className="pl-prices">
+            <article className="pl-price is-on">
+              <p className="pl-kick">Weekly</p>
+              <p className="pl-amount">$4.99 <span>first week</span></p>
+              <p className="pl-price-note">Then $9.99/week. Code XWEEK is applied at checkout when it is valid for this buyer.</p>
+              <ul>
+                <li>KBO, WNBA, NFL, and NHL boards</li>
+                <li>CG Score on every standard line</li>
+                <li>Hit rates and game logs</li>
+                <li>Cancel anytime</li>
+              </ul>
+              <a className="pl-cta" href={weeklyHref}>Start weekly</a>
+            </article>
+            <article className="pl-price">
+              <p className="pl-kick">Monthly</p>
+              <p className="pl-amount">$29.99 <span>/ month</span></p>
+              <p className="pl-price-note">Every board, billed monthly.</p>
+              <ul>
+                <li>Same boards as weekly</li>
+                <li>Billed once a month</li>
+                <li>Cancel anytime</li>
+              </ul>
+              <a className="pl-ghost" href={buildCheckoutUrl(STRIPE_LINKS.monthly, user || null)}>Get monthly</a>
+            </article>
+            <article className="pl-price">
+              <p className="pl-kick">Lifetime</p>
+              <p className="pl-amount">$249.99 <span>once</span></p>
+              <p className="pl-price-note">Pay once. No renewal.</p>
+              <ul>
+                <li>Same boards as weekly</li>
+                <li>One-time payment</li>
+                <li>No renewal</li>
+              </ul>
+              <button type="button" className="pl-ghost" disabled={lifetimeBusy} onClick={buyLifetime}>
+                {lifetimeBusy ? 'Opening checkout…' : 'Buy lifetime'}
+              </button>
+            </article>
+          </div>
+          <p className="pl-checkout-note">
+            No account needed to check out. Afterwards, sign up with the same email you used at checkout and the plan unlocks.
+            {!user && onGetStarted && (
+              <> <button type="button" className="pl-text" onClick={onGetStarted}>Create an account</button></>
+            )}
+            {' '}<a href="/pricing">Yearly and account plans</a>
+          </p>
+          <DiscordOnlyPlans variant="public" user={user} />
+        </section>
+
+        <section id="faq">
+          <p className="pl-kick">FAQ</p>
+          <h2>Questions, answered</h2>
+          <div className="pl-faq">
+            {FAQS.map((item) => {
+              const open = openFaq === item.q;
+              return (
+                <div key={item.q} className={open ? 'pl-faq-item is-open' : 'pl-faq-item'}>
+                  <button type="button" aria-expanded={open} onClick={() => setOpenFaq(open ? null : item.q)}>
+                    <span>{item.q}</span>
+                    <span aria-hidden="true">{open ? '−' : '+'}</span>
+                  </button>
+                  {open && <p>{item.a}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="pl-close">
+          <h2>Score tonight's board in seconds.</h2>
+          <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
         </section>
       </main>
 
       <footer className="pl-footer">
-        <span>© {new Date().getFullYear()} cgpropz</span>
-        <DiscordInviteLink />
-        <div className="site-footer">
-          <ResponsibleGamblingCopy />
-        </div>
+        <a className="pl-wordmark" href="#top">cg<span>propz</span></a>
+        <p className="pl-footer-links">
+          <a href="/guides/start-here">Start Here</a>
+          <a href="/guides/cg-score">How CG Score works</a>
+          <a href="/policies">Plans & Policies</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/responsible-gaming">Responsible Gaming</a>
+          <a href="/states-not-available">Where CGPropz isn't available</a>
+        </p>
+        <p>{STANDARD_LINE}</p>
+        <p>{OPERATOR_DISCLAIMER}</p>
+        <p>© {new Date().getFullYear()} cgpropz</p>
       </footer>
     </div>
   );
 }
 
-function FaqItem({ q, a }) {
-  const [open, setOpen] = useState(false);
+function TeamMark({ team, name }) {
+  const src = teamLogoUrl(team);
+  return src
+    ? <img src={fitImage(src, 36)} alt={name || team} width="36" height="36" />
+    : <span className="pl-avatar" aria-hidden="true">{initials(name || team)}</span>;
+}
+
+function Market({ label, line, projection }) {
   return (
-    <div className={`pl-faq-item ${open ? 'pl-faq-open' : ''}`} onClick={() => setOpen(!open)}>
-      <div className="pl-faq-q">
-        <span>{q}</span>
-        <span className="pl-faq-toggle">{open ? '−' : '+'}</span>
-      </div>
-      {open && <div className="pl-faq-a">{a}</div>}
+    <div>
+      <span>{label}</span>
+      <b className="pl-num">{formatPoints(line)}</b>
+      <small>CG {formatPoints(projection)}</small>
     </div>
   );
 }
