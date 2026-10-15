@@ -8,9 +8,26 @@ import {
   isNhlDataset,
   nbaAccessDecision,
   nhlAccessDecision,
+  datasetIsFullyPublic,
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
+
+export const PRIVATE_DATA_CACHE = 'private, no-store, max-age=0';
+export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300';
+
+// Anonymous public previews (and fully public datasets) can sit on the edge.
+// A request with Authorization, or a full member snapshot, must not.
+export function dataCacheControl(req, { memberGated = false } = {}) {
+  const authorization = String(req?.headers?.authorization || '').trim();
+  if (authorization || memberGated) return PRIVATE_DATA_CACHE;
+  return PUBLIC_DATA_CACHE;
+}
+
+function sendData(req, res, body, memberGated) {
+  res.setHeader('Cache-Control', dataCacheControl(req, { memberGated }));
+  return res.status(200).json(body);
+}
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -295,14 +312,14 @@ async function handleNbaRequest(req, res, client, ds) {
   const shaped = decision === 'full'
     ? { data: row.data, preview: false, lockedCount: 0 }
     : shapeForTier(ds, row.data, 'free');
-  return res.status(200).json({
+  return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tier,
     access: sportAccess(caller.tier),
-  });
+  }, decision === 'full');
 }
 
 // Landing-card bit only. Same decision as handleNbaRequest, and never a snapshot.
@@ -388,14 +405,14 @@ async function handleNhlRequest(req, res, client, ds) {
   const shaped = decision === 'full'
     ? { data: row.data, preview: false, lockedCount: 0 }
     : shapeForTier(ds, row.data, 'free');
-  return res.status(200).json({
+  return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tierResolved === true ? caller.tier : 'free',
     access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
-  });
+  }, decision === 'full');
 }
 
 export async function nhlSectionOpen(req, client) {
@@ -514,14 +531,15 @@ export async function handleDataRequest(req, res, client) {
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
   const shaped = shapeForTier(ds, row.data, tier);
-  return res.status(200).json({
+  const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
+  return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier,
     access: sportAccess(tier),
-  });
+  }, memberGated);
 }
 
 export function _clearCache() {

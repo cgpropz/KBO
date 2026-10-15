@@ -56,13 +56,14 @@ async function readErrorDetail(res) {
   }
 }
 
-export async function fetchApiDataset(ds, { devStaticPath } = {}) {
+export async function fetchApiDataset(ds, { devStaticPath, priority } = {}) {
   try {
     const token = await accessToken();
     const res = await fetch(`/api/data?ds=${encodeURIComponent(ds)}`, {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      ...(priority ? { priority } : {}),
     });
     const type = res.headers.get('content-type') || '';
     if (!res.ok || !type.includes('application/json')) {

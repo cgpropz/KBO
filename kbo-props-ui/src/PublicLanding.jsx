@@ -7,23 +7,16 @@ import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { STRIPE_LINKS } from './pricingTiers';
-import {
-  featuredGame,
-  PUBLIC_SPORTS,
-  publicFaqs,
-  publicSwitcherRows,
-  publicTopHitRows,
-  rowsForGame,
-  slateLabel,
-  publicBoardRows,
-} from './publicBoard';
-import { confirmedGoalieStarters, unavailableFromLineups } from './memberHub';
+import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
+import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
-import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
+import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import './PublicLanding.css';
 
 const FAQS = publicFaqs();
+const HERO_SPORT = LANDING_SPORTS.find((sport) => sport.id === HERO_LANDING_SPORT_ID) || LANDING_SPORTS[0];
 
 const fmt = (value) => {
   const n = Number(value);
@@ -111,87 +104,140 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const { requireAge } = useAgeGate();
   const [boards, setBoards] = useState({});
   const [markets, setMarkets] = useState(null);
+  const [boardApi, setBoardApi] = useState(null);
   const [sportId, setSportId] = useState('nfl');
   const [hitSportId, setHitSportId] = useState('nfl');
   const [picked, setPicked] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const [weeklyHref, setWeeklyHref] = useState(() => buildCheckoutUrl(STRIPE_LINKS.weekly, null));
+  const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let token = '';
-      if (user) {
-        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
-      }
-      if (!cancelled) setWeeklyHref(buildCheckoutUrl(STRIPE_LINKS.weekly, user || null));
-      try {
-        const url = await prefetchWeeklyCheckoutUrl(token ? { token } : {});
-        if (!cancelled && url) setWeeklyHref(url);
-      } catch { /* keep the payment link */ }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  useEffect(() => {
     let active = true;
-    PUBLIC_SPORTS.forEach((sport) => {
-      const board = fetchApiDataset(sport.ds, { devStaticPath: sport.dev });
-      const lineups = sport.lineups
-        ? fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev }).catch(() => null)
-        : Promise.resolve(null);
-      Promise.all([board, lineups])
-        .then(([snap, lineupSnap]) => {
-          if (!active) return;
-          const names = unavailableFromLineups(sport.id, lineupSnap?.data);
-          const starters = confirmedGoalieStarters(lineupSnap?.data);
-          const rows = publicBoardRows(sport.toRows(snap.data), names, starters);
-          setBoards((prev) => ({
-            ...prev,
-            [sport.id]: {
-              status: 'ready',
-              rows,
-              updatedAt: snap.updatedAt,
-              preview: !!snap.preview,
-              lockedCount: Number(snap.lockedCount) || 0,
-            },
-          }));
-        })
-        .catch(() => {
-          if (active) setBoards((prev) => ({ ...prev, [sport.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
+    const started = new Set();
+    let boardPromise = null;
+    const loadBoard = () => {
+      if (!boardPromise) {
+        boardPromise = import('./publicBoard.js').then((mod) => {
+          if (active) setBoardApi(mod);
+          return mod;
         });
+      }
+      return boardPromise;
+    };
+
+    const loadDataset = (ds, dev, priority) => {
+      if (!ds || started.has(ds)) return Promise.resolve(null);
+      started.add(ds);
+      return fetchApiDataset(ds, { devStaticPath: dev, priority });
+    };
+
+    const publish = async (sport, snap, lineupData) => {
+      const mod = await loadBoard();
+      if (!active || !snap) return;
+      setBoards((prev) => ({
+        ...prev,
+        [sport.id]: {
+          status: 'ready',
+          rows: mod.rowsFromSnapshot(sport.id, snap.data, lineupData),
+          updatedAt: snap.updatedAt,
+          preview: !!snap.preview,
+          lockedCount: Number(snap.lockedCount) || 0,
+        },
+      }));
+    };
+
+    const loadSport = async (sport, priority) => {
+      let snap = null;
+      try {
+        snap = await loadDataset(sport.ds, sport.dev, priority);
+      } catch {
+        if (active) setBoards((prev) => ({ ...prev, [sport.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
+        return;
+      }
+      if (!snap) return;
+      let lineupData = null;
+      if (sport.lineups) {
+        try {
+          const lineupSnap = await loadDataset(sport.lineups, sport.lineupsDev, priority);
+          lineupData = lineupSnap?.data ?? null;
+        } catch { /* a missing injury report still shows the board */ }
+      }
+      await publish(sport, snap, lineupData);
+    };
+
+    // One /api/data call while the hero paints. Board code and every other
+    // dataset wait until a data section is scrolled into view, or until a
+    // gap after load so they are not part of the initial burst.
+    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
+
+    const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
+      heroSnap.then((snap) => {
+        if (!active) return;
+        if (snap === 'error') {
+          setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
+          return;
+        }
+        publish(HERO_SPORT, snap, null);
+      });
+      LANDING_SPORTS.forEach((sport) => {
+        if (sport.id !== HERO_SPORT.id) loadSport(sport);
+      });
+      loadDataset('nfl_game_markets', 'nfl/game_markets.json')
+        .then((snap) => { if (active && snap) setMarkets(snap); })
+        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
     });
-    fetchApiDataset('nfl_game_markets', { devStaticPath: 'nfl/game_markets.json' })
-      .then((snap) => { if (active) setMarkets(snap); })
-      .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+      stop();
+    };
   }, []);
 
   useEffect(() => {
-    if (picked) return;
-    if (PUBLIC_SPORTS.some((sport) => !boards[sport.id])) return;
-    const withRows = PUBLIC_SPORTS.find((sport) => boards[sport.id]?.rows?.length);
-    const withHits = PUBLIC_SPORTS.find((sport) => publicTopHitRows(boards[sport.id]?.rows || []).length);
+    if (!boardApi || picked) return;
+    if (LANDING_SPORTS.some((sport) => !boards[sport.id])) return;
+    const withRows = LANDING_SPORTS.find((sport) => boards[sport.id]?.rows?.length);
+    const withHits = LANDING_SPORTS.find((sport) => boardApi.publicTopHitRows(boards[sport.id]?.rows || []).length);
     if (withRows) setSportId(withRows.id);
     if (withHits) setHitSportId(withHits.id);
-  }, [boards, picked]);
+  }, [boardApi, boards, picked]);
 
-  const sport = PUBLIC_SPORTS.find((item) => item.id === sportId) || PUBLIC_SPORTS[0];
-  const hitSport = PUBLIC_SPORTS.find((item) => item.id === hitSportId) || PUBLIC_SPORTS[0];
+  const sport = LANDING_SPORTS.find((item) => item.id === sportId) || LANDING_SPORTS[0];
+  const hitSport = LANDING_SPORTS.find((item) => item.id === hitSportId) || LANDING_SPORTS[0];
   const sportState = boards[sport.id];
   const hitState = boards[hitSport.id];
-  const switchRows = publicSwitcherRows(sportState?.rows || []);
-  const hitRows = publicTopHitRows(hitState?.rows || []);
-  const phoneRows = switchRows.length ? switchRows : publicSwitcherRows(Object.values(boards).flatMap((board) => board.rows || []));
-  const game = featuredGame(markets?.data);
-  const gameRows = rowsForGame(boards.nfl?.rows || [], game);
-  const dvpRows = (gameRows.length ? gameRows : publicSwitcherRows(boards.nfl?.rows || [], 4)).filter((row) => row.oppRank != null);
-  const settled = PUBLIC_SPORTS.every((item) => boards[item.id]);
+  const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
+  const hitRows = boardApi ? boardApi.publicTopHitRows(hitState?.rows || []) : [];
+  const phoneRows = boardApi
+    ? (switchRows.length ? switchRows : boardApi.publicSwitcherRows(Object.values(boards).flatMap((board) => board.rows || [])))
+    : [];
+  const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
+  const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
+  const dvpRows = (gameRows.length ? gameRows : (boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 4) : [])).filter((row) => row.oppRank != null);
+  const settled = LANDING_SPORTS.every((item) => boards[item.id]);
 
   const scrollTo = (id) => {
     menu.close();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const startWeekly = async () => {
+    if (weeklyBusy) return;
+    if (!(await requireAge())) return;
+    setWeeklyBusy(true);
+    try {
+      let token = '';
+      if (user) {
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
+      }
+      const url = await requestWeeklyCheckoutUrl(token ? { token } : {});
+      window.location.assign(url);
+    } catch {
+      window.location.assign(buildCheckoutUrl(STRIPE_LINKS.weekly, user || null));
+    } finally {
+      setWeeklyBusy(false);
+    }
   };
 
   const buyLifetime = async () => {
@@ -263,7 +309,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           <h2>Highest hit rates on the board</h2>
           <p className="pl-lead">Sorted by L10 hit rate vs today's standard line. A log shorter than 10 games stays off this list.</p>
           <div className="pl-seg" role="tablist" aria-label="Hit-rate sport">
-            {PUBLIC_SPORTS.map((item) => (
+            {LANDING_SPORTS.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -343,7 +389,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           <div className="pl-card pl-sw">
             <div className="pl-sw-top">
               <div className="pl-seg" role="tablist" aria-label="League">
-                {PUBLIC_SPORTS.map((item) => (
+                {LANDING_SPORTS.map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -356,7 +402,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                   </button>
                 ))}
               </div>
-              <p className="pl-sw-meta"><b>{sport.sportName}</b> · {slateLabel(sportState?.rows || [])} · {sport.props}</p>
+              <p className="pl-sw-meta"><b>{sport.sportName}</b> · {boardApi ? boardApi.slateLabel(sportState?.rows || []) : 'Board'} · {sport.props}</p>
             </div>
             {switchRows.length ? <BoardTable rows={switchRows} /> : (
               <p className="pl-empty">
@@ -375,9 +421,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             </div>
           </div>
           <div className="pl-tick">
-            {PUBLIC_SPORTS.map((item) => (
+            {LANDING_SPORTS.map((item) => (
               <button key={item.id} type="button" className={item.id === sport.id ? 'on' : ''} onClick={() => chooseSport(item.id)}>
-                <i />{item.name} <em>{slateLabel(boards[item.id]?.rows || [])}</em>
+                <i />{item.name} <em>{boardApi ? boardApi.slateLabel(boards[item.id]?.rows || []) : 'Board'}</em>
               </button>
             ))}
           </div>
@@ -397,7 +443,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                 <li>Hit rates and game logs</li>
                 <li>Cancel anytime</li>
               </ul>
-              <a className="pl-cta" href={weeklyHref}>Start weekly</a>
+              <button type="button" className="pl-cta" disabled={weeklyBusy} onClick={startWeekly}>
+                {weeklyBusy ? 'Opening checkout…' : 'Start weekly'}
+              </button>
             </article>
             <article className="pl-price">
               <p className="pl-kick">Monthly</p>

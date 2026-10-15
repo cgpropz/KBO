@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap');
-
 .pl-landing {
   --ink: #f4f4f5;
   --muted: #a1a1aa;
@@ -13,7 +11,7 @@
   min-height: 100vh;
   background: #070a08;
   color: var(--ink);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: Inter, "Inter Fallback", system-ui, sans-serif;
   overflow-x: clip;
 }
 
@@ -204,6 +202,7 @@
 .pl-phone {
   justify-self: end;
   width: min(320px, 100%);
+  min-height: 276px;
   padding: 14px 12px 18px;
   border-radius: 36px;
   background: #050806;
@@ -249,6 +248,16 @@
   border: 1px solid var(--line);
   border-radius: 22px;
   overflow: hidden;
+}
+
+/* Hold the public-preview height (three scored rows, or the short matchup
+   note) so those blocks do not jump when data arrives. */
+#free-top-3 .pl-card { min-height: 276px; }
+#boards .pl-card { min-height: 344px; }
+#matchup .pl-match { min-height: 88px; }
+
+@media (max-width: 720px) {
+  #boards .pl-card { min-height: 380px; }
 }
 
 .pl-seg {

@@ -12,6 +12,8 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // The public landing creates a Checkout Session on click, not on load.
+    if (variant === 'public') return undefined;
     let cancelled = false;
     (async () => {
       let token = '';
@@ -26,7 +28,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, variant]);
 
   async function start(plan) {
     if (!(await requireAge())) return;
@@ -86,7 +88,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
               </a>
             ) : (
               <button type="button" className="discord-btn discord-btn-primary discord-plan-cta" onClick={() => start(plan.plan)}>
-                {plan.cta}
+                {plan.cta}{plan.price ? ` · ${plan.price}` : ''}
               </button>
             )}
           </article>
