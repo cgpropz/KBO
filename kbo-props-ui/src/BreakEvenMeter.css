@@ -153,8 +153,21 @@
 
 .be-meter-legend li {
   display: flex;
-  align-items: center;
-  gap: 0;
+  align-items: flex-start;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.be-meter-legend li > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.be-meter-legend small {
+  color: #8ba39c;
+  font: 11px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-wrap: anywhere;
 }
 
 .be-meter-swatch {

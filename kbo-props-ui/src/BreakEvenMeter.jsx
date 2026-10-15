@@ -90,15 +90,19 @@ export default function BreakEvenMeter({ windows, side = 'over', lineText = '', 
         {power && (
           <li>
             <i className="be-meter-swatch be-meter-swatch-power" aria-hidden="true" />
-            Power {formatBreakEvenRate(power.rate)}
-            <span>standard {power.payout}</span>
+            <span>
+              <b>Power {formatBreakEvenRate(power.rate)}</b>
+              <small>standard {power.payout}</small>
+            </span>
           </li>
         )}
         {flex && (
           <li>
             <i className="be-meter-swatch be-meter-swatch-flex" aria-hidden="true" />
-            Flex {formatBreakEvenRate(flex.rate)}
-            <span>standard {flex.payout}</span>
+            <span>
+              <b>Flex {formatBreakEvenRate(flex.rate)}</b>
+              <small>standard {flex.payout}</small>
+            </span>
           </li>
         )}
       </ul>
