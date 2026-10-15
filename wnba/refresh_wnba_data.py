@@ -5,6 +5,11 @@ The stats.wnba.com gateway intermittently hangs on CI runners. This script uses
 the WNBA game scoreboard and summary API instead, then writes the normalized
 boxscore CSV consumed by the bundled Express backend.
 
+Some completed games stay on the scoreboard after ESPN drops their site summary
+(HTTP 404). Those box scores are read from the ESPN core API. A historical game
+missing from both sources keeps the rows already stored for that date so one
+scrubbed game cannot fail the refresh.
+
 Usage:
     python wnba/refresh_wnba_data.py                # seasons 2025 + 2026
     python wnba/refresh_wnba_data.py --seasons 2026 # a single season
@@ -33,13 +38,18 @@ POSTSEASON_BOX_SCORE_CSV = ROOT / "wnba_boxscores_postseason.csv"
 POSITIONS_JSON = ROOT / "mappings" / "player_positions.json"
 SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 SUMMARY_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
-# site.api.espn.com is what CI uses. site.web.api.espn.com is a fallback when
-# the primary host rejects the request. Postseason fetches try both; the
-# regular-season refresh stays on SCOREBOARD_URL / SUMMARY_URL.
+# site.api.espn.com is the primary host. site.web.api.espn.com is a fallback
+# when the primary host rejects the request. Box-score loads try both, then
+# the core API when every site summary returns 404.
 ESPN_API_ROOTS = (
     "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba",
     "https://site.web.api.espn.com/apis/site/v2/sports/basketball/wnba",
 )
+CORE_API = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba"
+# A handful of scrubbed historical games can be kept from the existing CSV.
+# More than this means the live API is broadly down, and --strict should fail
+# instead of republishing a stale file.
+MAX_KEPT_GAMES = 5
 POSTSEASON_SLUGS = {"post-season", "postseason", "playoffs"}
 TEAMS_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams"
 ROSTER_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/{team_id}/roster"
@@ -51,12 +61,22 @@ OUTPUT_COLUMNS = [
 ]
 
 
+class WnbaNotFound(RuntimeError):
+    """ESPN has no document for this URL (HTTP 404)."""
+
+
 def fetch_json(url: str, params: dict[str, object], max_retries: int = 3) -> dict:
     for attempt in range(1, max_retries + 1):
         try:
             response = requests.get(url, params=params, timeout=30)
+            # A missing game summary will not appear on retry. Fail immediately
+            # so one scrubbed event does not burn the retry budget.
+            if response.status_code == 404:
+                raise WnbaNotFound(f"WNBA API returned 404: {response.url}")
             response.raise_for_status()
             return response.json()
+        except WnbaNotFound:
+            raise
         except requests.RequestException as exc:
             if attempt == max_retries:
                 raise RuntimeError(f"WNBA API request failed: {url}") from exc
@@ -75,6 +95,53 @@ def parse_made_attempted(value: object) -> tuple[int, int]:
 
 def percentage(made: int, attempted: int) -> float:
     return round((made / attempted) * 100, 1) if attempted else 0.0
+
+
+def eastern_game_date(event: dict) -> str:
+    return (
+        datetime.fromisoformat(event["date"].replace("Z", "+00:00"))
+        .astimezone(ZoneInfo("America/New_York"))
+        .strftime("%m/%d/%Y")
+    )
+
+
+def _https(url: str) -> str:
+    if url.startswith("http://"):
+        return "https://" + url[len("http://"):]
+    return url
+
+
+def _core_stat_map(payload: dict) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for category in (payload.get("splits") or {}).get("categories") or []:
+        for stat in category.get("stats") or []:
+            name = stat.get("name")
+            if name:
+                values[str(name)] = str(stat.get("displayValue") or "")
+    return values
+
+
+def _stat_int(value: str) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _minutes_played(value: str) -> bool:
+    text = (value or "").strip()
+    if not text or text.upper() == "DNP":
+        return False
+    if ":" in text:
+        minutes, seconds = text.split(":", maxsplit=1)
+        try:
+            return int(minutes) > 0 or int(seconds) > 0
+        except ValueError:
+            return False
+    try:
+        return float(text) > 0
+    except ValueError:
+        return False
 
 
 def fetch_espn(path: str, params: dict[str, object]) -> dict:
@@ -102,11 +169,7 @@ def event_to_rows(
         for entry in teams
     }
     summary = fetch_json(summary_url, {"event": event["id"]})
-    game_date = (
-        datetime.fromisoformat(event["date"].replace("Z", "+00:00"))
-        .astimezone(ZoneInfo("America/New_York"))
-        .strftime("%m/%d/%Y")
-    )
+    game_date = eastern_game_date(event)
     rows = []
     positions: dict[str, str] = {}
 
@@ -152,6 +215,203 @@ def event_to_rows(
     return rows, positions
 
 
+def _team_context(event: dict) -> tuple[dict[str, dict[str, object]], str]:
+    competition = event["competitions"][0]
+    team_details = {
+        entry["team"]["abbreviation"]: {
+            "home_away": entry["homeAway"],
+            "winner": entry.get("winner", False),
+            "id": entry["team"]["id"],
+        }
+        for entry in competition["competitors"]
+    }
+    return team_details, eastern_game_date(event)
+
+
+def event_to_rows_from_core(event: dict, season: int) -> tuple[list[dict], dict[str, str]]:
+    """Player rows from the ESPN core roster stats when the site summary 404s."""
+    team_details, game_date = _team_context(event)
+    competition_id = event["competitions"][0].get("id") or event["id"]
+    rows: list[dict] = []
+    positions: dict[str, str] = {}
+
+    for team, details in team_details.items():
+        opponent = next((abbr for abbr in team_details if abbr != team), "")
+        matchup = f"{team} vs. {opponent}" if details["home_away"] == "home" else f"{team} @ {opponent}"
+        win_loss = "W" if details["winner"] else "L"
+        roster_url = (
+            f"{CORE_API}/events/{event['id']}/competitions/{competition_id}"
+            f"/competitors/{details['id']}/roster"
+        )
+        roster = fetch_json(roster_url, {})
+        for athlete_entry in roster.get("entries") or []:
+            if athlete_entry.get("didNotPlay"):
+                continue
+            stats_ref = (athlete_entry.get("statistics") or {}).get("$ref")
+            athlete_ref = (athlete_entry.get("athlete") or {}).get("$ref")
+            if not stats_ref or not athlete_ref:
+                continue
+            raw = _core_stat_map(fetch_json(_https(stats_ref), {}))
+            minutes = raw.get("minutes", "")
+            if not _minutes_played(minutes):
+                continue
+            athlete = fetch_json(_https(athlete_ref), {})
+            name = str(athlete.get("displayName") or "").strip()
+            if not name:
+                continue
+            position_info = athlete.get("position") or {}
+            position = ""
+            if isinstance(position_info, dict):
+                position = str(position_info.get("displayName") or position_info.get("name") or "").strip()
+            if position in {"Guard", "Forward", "Center"}:
+                positions[name] = position
+            fgm = _stat_int(raw.get("fieldGoalsMade", ""))
+            fga = _stat_int(raw.get("fieldGoalsAttempted", ""))
+            fg3m = _stat_int(raw.get("threePointFieldGoalsMade", ""))
+            fg3a = _stat_int(raw.get("threePointFieldGoalsAttempted", ""))
+            ftm = _stat_int(raw.get("freeThrowsMade", ""))
+            fta = _stat_int(raw.get("freeThrowsAttempted", ""))
+            rows.append({
+                "Player": name, "Team": team,
+                "Match Up": matchup, "Game Date": game_date, "Season": season,
+                "W/L": win_loss, "MIN": minutes, "PTS": _stat_int(raw.get("points", "")),
+                "FGM": fgm, "FGA": fga, "FG%": percentage(fgm, fga),
+                "3PM": fg3m, "3PA": fg3a, "3P%": percentage(fg3m, fg3a),
+                "FTM": ftm, "FTA": fta, "FT%": percentage(ftm, fta),
+                "OREB": _stat_int(raw.get("offensiveRebounds", "")),
+                "DREB": _stat_int(raw.get("defensiveRebounds", "")),
+                "REB": _stat_int(raw.get("rebounds", "")),
+                "AST": _stat_int(raw.get("assists", "")),
+                "STL": _stat_int(raw.get("steals", "")),
+                "BLK": _stat_int(raw.get("blocks", "")),
+                "TOV": _stat_int(raw.get("turnovers", "")),
+                "PF": _stat_int(raw.get("fouls", "")),
+                "+/-": raw.get("plusMinus", "0"),
+            })
+    return rows, positions
+
+
+def preserved_rows_for_event(event: dict, season: int, backup_csv: Path) -> list[dict]:
+    """Rows already stored for this game, used when ESPN no longer serves it."""
+    if not backup_csv.exists():
+        return []
+    abbreviations = {
+        entry.get("team", {}).get("abbreviation")
+        for entry in event.get("competitions", [{}])[0].get("competitors", [])
+    }
+    abbreviations.discard(None)
+    abbreviations.discard("")
+    if len(abbreviations) < 2:
+        return []
+    game_date = eastern_game_date(event)
+    frame = pd.read_csv(backup_csv, dtype=str).fillna("")
+    if not set(OUTPUT_COLUMNS).issubset(frame.columns):
+        return []
+
+    def matchup_has_both_teams(value: str) -> bool:
+        tokens = set(value.replace("@", " ").replace("vs.", " ").replace("VS", " ").split())
+        return abbreviations <= tokens
+
+    kept = frame[
+        (frame["Game Date"] == game_date)
+        & (frame["Season"] == str(season))
+        & frame["Team"].isin(abbreviations)
+        & frame["Match Up"].map(matchup_has_both_teams)
+    ]
+    if kept.empty:
+        return []
+    return kept[OUTPUT_COLUMNS].to_dict("records")
+
+
+def load_event_boxscore(
+    event: dict, season: int, backup_csv: Path
+) -> tuple[list[dict], dict[str, str], str]:
+    """Box score for one event.
+
+    Returns rows, positions, and a source tag: ``site``, ``core``, or ``kept``.
+    Timeouts and non-404 HTTP errors still propagate. A 404 from every site
+    host falls through to the core API, then to rows already on disk.
+    """
+    not_found: list[Exception] = []
+    other: list[Exception] = []
+    for root in ESPN_API_ROOTS:
+        try:
+            rows, positions = event_to_rows(event, season, summary_url=f"{root}/summary")
+            return rows, positions, "site"
+        except WnbaNotFound as exc:
+            not_found.append(exc)
+            print(f"  [summary] event {event.get('id')} 404 on {root}")
+        except Exception as exc:  # noqa: BLE001 - try the other site host
+            other.append(exc)
+            print(f"  [summary] event {event.get('id')} failed on {root}: {exc}")
+    if len(not_found) == len(ESPN_API_ROOTS):
+        core_rows: list[dict] = []
+        core_positions: dict[str, str] = {}
+        try:
+            core_rows, core_positions = event_to_rows_from_core(event, season)
+        except Exception as exc:  # noqa: BLE001 - historical rows are the last resort
+            print(f"  [core] event {event.get('id')} failed: {exc}")
+        kept = preserved_rows_for_event(event, season, backup_csv)
+        if core_rows and kept and len(core_rows) < max(8, len(kept) // 2):
+            print(
+                f"  [core] event {event.get('id')} returned {len(core_rows)} rows; "
+                f"keeping {len(kept)} existing rows"
+            )
+            core_rows = []
+        if core_rows:
+            print(
+                f"  [core] event {event.get('id')} {event.get('shortName')}: "
+                f"{len(core_rows)} rows"
+            )
+            return core_rows, core_positions, "core"
+        if kept:
+            print(
+                f"  [keep] event {event.get('id')} {event.get('shortName')}: "
+                f"kept {len(kept)} existing rows"
+            )
+            return kept, {}, "kept"
+        event_id = event.get("id")
+        raise RuntimeError(f"WNBA box score missing for event {event_id}") from not_found[-1]
+    if other:
+        raise other[-1]
+    raise not_found[-1]
+
+
+def _collect_event_rows(
+    events: list[dict], season: int, backup_csv: Path
+) -> tuple[list[dict], dict[str, Counter[str]], int, int]:
+    rows: list[dict] = []
+    positions: dict[str, Counter[str]] = {}
+    core_games = 0
+    kept_games = 0
+    if not events:
+        return rows, positions, core_games, kept_games
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [
+            executor.submit(load_event_boxscore, event, season, backup_csv)
+            for event in events
+        ]
+        for future in as_completed(futures):
+            event_rows, event_positions, source = future.result()
+            rows.extend(event_rows)
+            for name, position in event_positions.items():
+                positions.setdefault(name, Counter())[position] += 1
+            if source == "core":
+                core_games += 1
+            elif source == "kept":
+                kept_games += 1
+    if kept_games > MAX_KEPT_GAMES:
+        raise RuntimeError(
+            f"{kept_games} WNBA games had no live box score; "
+            "refusing to refresh from the old file"
+        )
+    if core_games:
+        print(f"  Rebuilt {core_games} games from the ESPN core API")
+    if kept_games:
+        print(f"  Kept existing rows for {kept_games} games with no live box score")
+    return rows, positions, core_games, kept_games
+
+
 def fetch_player_gamelogs(
     season: int, official_teams: set[str]
 ) -> tuple[pd.DataFrame, dict[str, str]]:
@@ -166,15 +426,9 @@ def fetch_player_gamelogs(
         }.issubset(official_teams)
     ]
     print(f"  Fetching {len(events)} completed regular-season games for {season}")
-    rows = []
-    positions: dict[str, Counter[str]] = {}
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(event_to_rows, event, season) for event in events]
-        for future in as_completed(futures):
-            event_rows, event_positions = future.result()
-            rows.extend(event_rows)
-            for name, position in event_positions.items():
-                positions.setdefault(name, Counter())[position] += 1
+    rows, positions, _core_games, _kept_games = _collect_event_rows(
+        events, season, BOX_SCORE_CSV
+    )
     if not rows:
         raise RuntimeError(f"WNBA API returned no gamelog rows for {season}")
     return (
@@ -198,14 +452,9 @@ def fetch_postseason_gamelogs(seasons: list[int], official_teams: set[str]) -> p
             }.issubset(official_teams)
         ]
         print(f"  Fetching {len(events)} completed postseason games for {season}")
-        rows: list[dict] = []
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            futures = []
-            for event in events:
-                # summary host follows whichever scoreboard host answered
-                futures.append(executor.submit(_postseason_event_rows, event, season))
-            for future in as_completed(futures):
-                rows.extend(future.result())
+        rows, _positions, _core_games, _kept_games = _collect_event_rows(
+            events, season, POSTSEASON_BOX_SCORE_CSV
+        )
         if rows:
             frames.append(pd.DataFrame(rows, columns=OUTPUT_COLUMNS))
     if not frames:
@@ -217,20 +466,6 @@ def fetch_postseason_gamelogs(seasons: list[int], official_teams: set[str]) -> p
         .drop(columns=["_sort"])
         .reset_index(drop=True)
     )
-
-
-def _postseason_event_rows(event: dict, season: int) -> list[dict]:
-    """Box score rows for one postseason event, trying each ESPN host."""
-    last: Exception | None = None
-    for root in ESPN_API_ROOTS:
-        try:
-            rows, _positions = event_to_rows(event, season, summary_url=f"{root}/summary")
-            return rows
-        except Exception as exc:  # noqa: BLE001
-            last = exc
-    if last:
-        raise last
-    return []
 
 
 def fetch_current_roster_positions() -> tuple[dict[str, str], set[str]]:
