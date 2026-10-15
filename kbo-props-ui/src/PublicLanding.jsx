@@ -29,7 +29,8 @@ const FAQS = [
   ['Can I cancel anytime?', 'Yes. Access runs to the end of your billing period. Lifetime has nothing to cancel.'],
 ];
 
-const REVIEW_SLOTS = [1, 2, 3];
+// Approved member quotes only. An empty list hides the reviews section.
+const REVIEWS = [];
 
 function finite(value) {
   const n = Number(value);
@@ -93,11 +94,11 @@ function Headshot({ row, size = 44 }) {
   );
 }
 
-function Brand({ small = false }) {
+function Brand({ small = false, mark = false }) {
   const size = small ? 30 : 40;
   return (
     <span className="pl-wordmark v1-brand">
-      <img src="/favicon.svg" alt="" width={size} height={size} />
+      {mark ? <img src="/favicon.svg" alt="" width={size} height={size} /> : null}
       cg<span>propz</span>
     </span>
   );
@@ -108,7 +109,6 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
   const [boards, setBoards] = useState({});
   const [markets, setMarkets] = useState(null);
   const [boardApi, setBoardApi] = useState(null);
-  const [members, setMembers] = useState(null);
   const [league, setLeague] = useState('NFL');
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
@@ -196,20 +196,6 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    afterPaint().then(() => {
-      if (!active) return;
-      fetch('/api/subscriber-count')
-        .then((response) => (response.ok ? response.json() : null))
-        .then((data) => {
-          if (active && Number.isFinite(data?.count)) setMembers(data.count);
-        })
-        .catch(() => {});
-    });
-    return () => { active = false; };
-  }, []);
-
   const heroState = boards[HERO_SPORT.id];
   const allRows = LANDING_SPORTS.flatMap((sport) => boards[sport.id]?.rows || []);
   const phoneRows = boardApi ? boardApi.publicPhoneRows(heroState?.rows || []) : [];
@@ -265,7 +251,7 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
     <div className="pl-landing" id="top">
       <div className="v1-glow" />
       <header className="pl-header v1-nav">
-        <a className="v1-brand-link" href="#top"><Brand /></a>
+        <a className="v1-brand-link" href="#top"><Brand mark /></a>
         <nav className="pl-nav v1-links" aria-label="Page">
           <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Boards</a>
           <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
@@ -282,8 +268,8 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
         <section className="pl-hero v1-hero">
           <div>
             <p className="pl-kick v1-kick">KBO · NFL · NHL · WNBA</p>
-            <h1>Every PrizePicks line, <span className="v1-grad">scored.</span></h1>
-            <p className="pl-lead v1-lead">CG Score rates every standard PrizePicks line with our projection, recent hit rates and defense vs position, on one board.</p>
+            <h1>Every prop line, <span className="v1-grad">scored.</span></h1>
+            <p className="pl-lead v1-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
             <div className="v1-cta-row">
               <button type="button" className="v1-btn" disabled={weeklyBusy} onClick={startWeekly}>
                 {weeklyBusy ? 'Opening checkout…' : 'Start for $4.99 with XWEEK'} →
@@ -296,15 +282,9 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
                 <b className="pl-num">{LANDING_SPORTS.length}</b>
                 <span>Leagues covered</span>
               </div>
-              {members != null && (
-                <div className="v1-trust-item">
-                  <b className="pl-num">{members.toLocaleString()}</b>
-                  <span>Members</span>
-                </div>
-              )}
             </div>
           </div>
-          <Phone rows={phoneRows} title={phoneTitle} ready={!!heroState} />
+          <Phone rows={phoneRows} title={phoneTitle} ready={!!heroState} lockedCount={heroState?.preview ? heroState.lockedCount : 0} sportName={HERO_SPORT.name} />
         </section>
 
         <section id="free-top-3">
@@ -469,19 +449,19 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
           </p>
         </section>
 
-        <section id="reviews">
-          <p className="pl-kick v1-kick">Reviews</p>
-          <h2>What members say</h2>
-          <p className="pl-lead v1-lead">Placeholder until real, approved reviews are collected.</p>
-          <div className="v1-rv">
-            {REVIEW_SLOTS.map((slot) => (
-              <div className="v1-rv-card" key={slot}>
-                <span className="v1-phl">PLACEHOLDER · REAL REVIEW {slot}</span>
-                <p>Real customer quote goes here once collected and approved. No invented reviews.</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {REVIEWS.length > 0 && (
+          <section id="reviews">
+            <p className="pl-kick v1-kick">Reviews</p>
+            <h2>What members say</h2>
+            <div className="v1-rv">
+              {REVIEWS.map((review) => (
+                <div className="v1-rv-card" key={review.id}>
+                  <p>{review.quote}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section id="faq">
           <p className="pl-kick v1-kick">FAQ</p>
@@ -542,13 +522,17 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
   );
 }
 
-function Phone({ rows, title, ready }) {
+function Phone({ rows, title, ready, lockedCount = 0, sportName = '' }) {
+  const empty = !ready
+    ? 'Loading the board…'
+    : (lockedCount > 0
+      ? `${sportName} free preview is off. ${lockedCount} lines are on the full board.`
+      : 'No scored lines in this preview right now.');
   return (
     <div className="v1-phone">
       <div className="v1-scr">
         <div className="v1-notch" />
         <div className="v1-ab">
-          <img src="/favicon.svg" alt="" width="26" height="26" />
           <b>cg<span>propz</span></b>
           <span className="v1-ab-tag">{title}</span>
         </div>
@@ -571,7 +555,7 @@ function Phone({ rows, title, ready }) {
             </div>
           ))}
           {!rows.length && (
-            <p className="v1-empty">{ready ? 'No scored lines in this preview right now.' : 'Loading the board…'}</p>
+            <p className="v1-empty">{empty}</p>
           )}
         </div>
       </div>
