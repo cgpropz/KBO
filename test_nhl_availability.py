@@ -294,3 +294,99 @@ def test_partial_lineup_does_not_drop():
     rows = [{"player": "Anyone", "team": "MTL", "position": "F"}]
     kept = _av.drop_unavailable(rows, _lineup("MTL", ["X", "Y"]), [], fetch_json=_fetch())
     assert len(kept) == 1
+
+
+def _saves(player, team="NYI", line=27.5, odds="standard"):
+    return {
+        "player": player,
+        "team": team,
+        "opponent": "OTT" if team == "NYI" else "NYI",
+        "position": "G",
+        "prop": "Goalie Saves",
+        "line": line,
+        "projection": line + 1,
+        "score": 60,
+        "oddsType": odds,
+        "rankEligible": True,
+        "awayTeam": "NYI",
+        "homeTeam": "OTT",
+        "gameday": "2026-10-15",
+    }
+
+
+def _nyi_card(goalies):
+    return [{
+        "date": "2026-10-15",
+        "awayTeam": "NYI",
+        "homeTeam": "OTT",
+        "goalies": goalies,
+        "lineups": {},
+    }]
+
+
+def test_confirmed_starter_keeps_his_saves_and_drops_the_other_goalie():
+    # Daily Faceoff Confirmed: Varlamov starts, Sorokin's standard line voids.
+    rows = [
+        _saves("Ilya Sorokin", line=28.5),
+        _saves("Semyon Varlamov", line=26.5),
+        {"player": "Bo Horvat", "team": "NYI", "position": "F", "prop": "Points", "line": 0.5, "projection": 0.8, "score": 80, "rankEligible": True, "awayTeam": "NYI", "homeTeam": "OTT", "gameday": "2026-10-15"},
+        _saves("Linus Ullmark", team="OTT", line=22.5),
+    ]
+    lineups = _nyi_card({
+        "NYI": {"name": "Semyon Varlamov", "confirmed": True, "status": "confirmed", "note": "Varlamov will start in Ottawa on Thursday."},
+        "OTT": {"name": "Linus Ullmark", "confirmed": False, "status": "probable", "note": "Ullmark is in the starter's crease."},
+    })
+    kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
+    assert kept == ["Semyon Varlamov", "Bo Horvat", "Linus Ullmark"]
+    board = _av.finish_board(rows, lineups, [], fetch_json=_fetch())
+    assert [row["player"] for row in board] == ["Bo Horvat", "Linus Ullmark", "Semyon Varlamov"]
+    assert "Ilya Sorokin" not in [row["player"] for row in board]
+
+
+def test_starter_first_name_spelling_still_keeps_his_prop():
+    rows = [_saves("Semyon Varlamov"), _saves("Ilya Sorokin")]
+    lineups = _nyi_card({"NYI": {"name": "S. Varlamov", "confirmed": True, "status": "confirmed"}})
+    kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
+    assert kept == ["Semyon Varlamov"]
+
+
+def test_confirmed_lineup_tag_drops_a_non_starter_demon_line():
+    rows = [
+        _saves("Ilya Sorokin", odds="demon"),
+        _saves("Semyon Varlamov"),
+    ]
+    lineups = [{
+        "date": "2026-10-15",
+        "awayTeam": "NYI",
+        "homeTeam": "OTT",
+        "goalies": {},
+        "lineups": {"NYI": [{"name": "Semyon Varlamov", "position": "G", "status": "CONFIRMED"}]},
+    }]
+    kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
+    assert kept == ["Semyon Varlamov"]
+
+
+def test_unknown_or_probable_starter_does_not_invent_one():
+    # Likely / probable is not Confirmed. Both goalie lines stay, which is
+    # the behavior from before this filter. A missing goalie is the same.
+    rows = [_saves("Ilya Sorokin"), _saves("Semyon Varlamov"), _saves("Linus Ullmark", team="OTT")]
+    probable = _nyi_card({
+        "NYI": {"name": "Semyon Varlamov", "confirmed": False, "status": "probable", "note": ""},
+        "OTT": None,
+    })
+    kept = [row["player"] for row in _av.drop_unavailable(rows, probable, [], fetch_json=_fetch())]
+    assert kept == ["Ilya Sorokin", "Semyon Varlamov", "Linus Ullmark"]
+    assert [row["player"] for row in _av.drop_unavailable(rows, [], [], fetch_json=_fetch())] == kept
+
+
+def test_two_confirmations_and_no_game_do_not_pick_a_starter():
+    rows = [
+        {"player": "Ilya Sorokin", "team": "NYI", "position": "G", "prop": "Goalie Saves"},
+        {"player": "Semyon Varlamov", "team": "NYI", "position": "G", "prop": "Goalie Saves"},
+    ]
+    lineups = [
+        {"date": "2026-10-15", "awayTeam": "NYI", "homeTeam": "OTT", "goalies": {"NYI": {"name": "Semyon Varlamov", "confirmed": True}}},
+        {"date": "2026-10-17", "awayTeam": "NYI", "homeTeam": "BOS", "goalies": {"NYI": {"name": "Ilya Sorokin", "confirmed": True}}},
+    ]
+    kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
+    assert kept == ["Ilya Sorokin", "Semyon Varlamov"]

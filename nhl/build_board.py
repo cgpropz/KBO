@@ -888,7 +888,8 @@ def build(root: Path, out_dir: Path) -> int:
 
     lineups = build_lineups(games, goalies, lines)
     # OUT, IR, LTIR, and scratched players come off before the file is saved
-    # and before this list is ranked for the free top 3.
+    # and before this list is ranked for the free top 3. A confirmed Daily
+    # Faceoff starter drops the other goalies on that team in the same pass.
     if projections_ready:
         before = len(projections)
         projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]

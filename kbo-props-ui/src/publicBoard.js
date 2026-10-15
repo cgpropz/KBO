@@ -28,8 +28,8 @@ export function isGoalScorerStat(stat) {
 
 // Playable standard-line rows with a real CG Score. Goal-scorer stats are out.
 // `unavailableNames` is the lineup set the hub already uses.
-export function publicBoardRows(rows, unavailableNames) {
-  return playableRows(rows, unavailableNames).filter((row) => (
+export function publicBoardRows(rows, unavailableNames, starters) {
+  return playableRows(rows, unavailableNames, starters).filter((row) => (
     row?.player
     && row?.stat
     && !isGoalScorerStat(row.stat)

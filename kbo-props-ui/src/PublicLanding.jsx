@@ -17,7 +17,7 @@ import {
   slateLabel,
   publicBoardRows,
 } from './publicBoard';
-import { unavailableFromLineups } from './memberHub';
+import { confirmedGoalieStarters, unavailableFromLineups } from './memberHub';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
@@ -145,7 +145,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         .then(([snap, lineupSnap]) => {
           if (!active) return;
           const names = unavailableFromLineups(sport.id, lineupSnap?.data);
-          const rows = publicBoardRows(sport.toRows(snap.data), names);
+          const starters = confirmedGoalieStarters(lineupSnap?.data);
+          const rows = publicBoardRows(sport.toRows(snap.data), names, starters);
           setBoards((prev) => ({
             ...prev,
             [sport.id]: {

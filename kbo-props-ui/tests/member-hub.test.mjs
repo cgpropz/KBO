@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { cgScore } from '../src/cgScore.js'
-import { formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
+import { confirmedGoalieStarters, formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
 import { standardRecord } from '../scripts/write-member-recap.mjs'
 
 test('hub rows keep standard lines only', () => {
@@ -127,6 +127,33 @@ test('NFL L10 uses the chart window, and a missing stored rate is not 0%', () =>
     ['Ty Johnson', 'OVER', 67, '6/9'],
     ['Ty Johnson', 'UNDER', 33, '3/9'],
   ])
+})
+
+test('a confirmed starter stays and the other goalie leaves the preview', () => {
+  const lineups = [{
+    date: '2026-10-15',
+    awayTeam: 'NYI',
+    homeTeam: 'OTT',
+    goalies: {
+      NYI: { name: 'Semyon Varlamov', confirmed: true, status: 'confirmed' },
+      OTT: { name: 'Linus Ullmark', confirmed: false, status: 'probable' },
+    },
+  }]
+  const starters = confirmedGoalieStarters(lineups)
+  const rows = [
+    { player: 'Ilya Sorokin', team: 'NYI', stat: 'Goalie Saves', line: 28.5, score: 70, position: 'G' },
+    { player: 'Semyon Varlamov', team: 'NYI', stat: 'Goalie Saves', line: 26.5, score: 62, position: 'G' },
+    { player: 'Bo Horvat', team: 'NYI', stat: 'Points', line: 0.5, score: 80 },
+    { player: 'Linus Ullmark', team: 'OTT', stat: 'Goalie Saves', line: 22.5, score: 55, position: 'G' },
+  ]
+  assert.deepEqual(playableRows(rows, new Set(), starters).map((row) => row.player), [
+    'Semyon Varlamov', 'Bo Horvat', 'Linus Ullmark',
+  ])
+  const probable = confirmedGoalieStarters([{
+    goalies: { NYI: { name: 'Semyon Varlamov', status: 'probable', confirmed: false } },
+  }])
+  assert.equal(probable.size, 0)
+  assert.deepEqual(playableRows(rows, new Set(), probable).map((row) => row.player), rows.map((row) => row.player))
 })
 
 test('status chips and matchups come from the lineup snapshot', () => {

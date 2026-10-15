@@ -151,7 +151,8 @@ def main() -> int:
         print(f"Unabated failed, leaving the previous odds file: {exc}")
         return 0
     pp_rows = load_pp_rows(PROJECTIONS) or []
-    # Drop unconfirmed goalies from the ranked odds list. They stay on the prop board with a tag.
+    # A goalie who is not the confirmed starter is already off projections.
+    # When no starter is confirmed, rankEligible false still keeps that goalie off this list.
     ranked = []
     projections = json.loads(PROJECTIONS.read_text(encoding="utf-8")) if PROJECTIONS.exists() else []
     eligible = {

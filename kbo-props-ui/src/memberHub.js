@@ -77,11 +77,89 @@ export function rowIsHeldOrOut(row) {
   return false
 }
 
-export function playableRows(rows, unavailableNames) {
+// Daily Faceoff "Confirmed" on the lineup snapshot. Likely / probable is not
+// a confirmed starter, and a missing goalie is not one either.
+export function confirmedGoalieStarters(payload) {
+  const starters = new Map()
+  const games = Array.isArray(payload) ? payload : []
+  for (const game of games) {
+    const away = String(game?.awayTeam || game?.away || '').toUpperCase()
+    const home = String(game?.homeTeam || game?.home || '').toUpperCase()
+    const date = String(game?.date || game?.gameday || '').slice(0, 10)
+    for (const [team, goalie] of Object.entries(game?.goalies || {})) {
+      if (!goalie || typeof goalie !== 'object' || !goalie.name) continue
+      const confirmed = goalie.confirmed === true || String(goalie.status || '').toLowerCase() === 'confirmed'
+      if (!confirmed) continue
+      const key = `${away}|${home}|${date}|${String(team).toUpperCase()}`
+      starters.set(key, normalizePlayerName(goalie.name))
+    }
+    for (const [team, players] of Object.entries(game?.lineups || {})) {
+      const teamKey = String(team).toUpperCase()
+      const key = `${away}|${home}|${date}|${teamKey}`
+      if (starters.has(key) || !Array.isArray(players)) continue
+      for (const player of players) {
+        if (String(player?.position || '').toUpperCase() !== 'G') continue
+        if (String(player?.status || '').toUpperCase() !== 'CONFIRMED' || !player?.name) continue
+        starters.set(key, normalizePlayerName(player.name))
+        break
+      }
+    }
+  }
+  return starters
+}
+
+function goalieProp(row) {
+  if (String(row?.position || '').toUpperCase() === 'G') return true
+  const prop = String(row?.stat || row?.prop || '').trim().toLowerCase()
+  return prop === 'goalie saves' || prop === 'saves'
+}
+
+function sameGoalie(player, starter) {
+  const name = normalizePlayerName(player)
+  if (!name || !starter) return false
+  if (name === starter) return true
+  const last = name.split(' ').filter(Boolean).pop()
+  const starterLast = starter.split(' ').filter(Boolean).pop()
+  return Boolean(last && last === starterLast)
+}
+
+// Confirmed starter for this row's team. No game on the row matches only
+// when every listing for that team names the same goalie.
+export function confirmedStarterFor(row, starters) {
+  if (!(starters instanceof Map) || starters.size === 0) return null
+  const team = String(row?.team || '').toUpperCase()
+  if (!team) return null
+  const away = String(row?.awayTeam || row?.away || '').toUpperCase()
+  const home = String(row?.homeTeam || row?.home || '').toUpperCase()
+  const date = String(row?.gameday || row?.date || '').slice(0, 10)
+  if (away && home) {
+    if (date && starters.has(`${away}|${home}|${date}|${team}`)) {
+      return starters.get(`${away}|${home}|${date}|${team}`)
+    }
+    const matches = []
+    for (const [key, name] of starters) {
+      const [gameAway, gameHome, , gameTeam] = key.split('|')
+      if (gameAway === away && gameHome === home && gameTeam === team) matches.push(name)
+    }
+    if (matches.length === 1) return matches[0]
+    if (matches.length > 1 && matches.every((name) => name === matches[0])) return matches[0]
+    if (matches.length) return null
+  }
+  const named = []
+  for (const [key, name] of starters) {
+    if (key.endsWith(`|${team}`)) named.push(name)
+  }
+  if (named.length && named.every((name) => name === named[0])) return named[0]
+  return null
+}
+
+export function playableRows(rows, unavailableNames, starters) {
   const blocked = unavailableNames instanceof Set ? unavailableNames : new Set()
   return (Array.isArray(rows) ? rows : []).filter((row) => {
     if (rowIsHeldOrOut(row)) return false
     if (row?.player && blocked.has(normalizePlayerName(row.player))) return false
+    const starter = confirmedStarterFor(row, starters)
+    if (starter && goalieProp(row) && !sameGoalie(row.player, starter)) return false
     return true
   })
 }

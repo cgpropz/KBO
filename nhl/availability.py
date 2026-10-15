@@ -13,6 +13,13 @@ api-web.nhle.com active roster (AHL assignments), and the projected
 lineup (a skater missing from a complete 18-skater lineup is a scratch).
 Each source fails on its own; the manual EXCLUDED_PLAYER_IDS list in
 build_board.py stays as a fallback.
+
+Goalie saves use that same filter. Daily Faceoff's starting-goalies page
+is already stored on the lineup snapshot (goalies[team].confirmed, or a
+goalie row tagged CONFIRMED). News Wire writes the same Confirmed rows
+to news_log; the board does not read that table. When a starter is
+confirmed, other goalies on that team come off. A probable starter, or
+no starter at all, is not treated as confirmed.
 """
 from __future__ import annotations
 
@@ -263,6 +270,122 @@ def _last_key(name) -> str:
     return name_key(parts[-1]) if parts else ""
 
 
+def _goalie_confirmed(info) -> bool:
+    """True only for Daily Faceoff's Confirmed strength. Likely stays probable."""
+    if not isinstance(info, dict):
+        return False
+    if info.get("confirmed") is True:
+        return True
+    return str(info.get("status") or "").strip().lower() == "confirmed"
+
+
+def _starter_keys(name) -> dict[str, str] | None:
+    key = name_key(name)
+    last = _last_key(name)
+    if not key and not last:
+        return None
+    return {"name": key, "last": last}
+
+
+def confirmed_starters(lineups) -> dict[tuple[str, str, str], dict[str, dict[str, str]]]:
+    """Confirmed starter name keys, keyed by (away, home, date).
+
+    The value is team abbreviation -> {name, last}. A team with no
+    confirmed starter is left out. This does not turn a probable or
+    unnamed goalie into a starter.
+    """
+    found: dict[tuple[str, str, str], dict[str, dict[str, str]]] = {}
+    for game in lineups or []:
+        if not isinstance(game, dict):
+            continue
+        away = str(game.get("awayTeam") or game.get("away") or "").upper()
+        home = str(game.get("homeTeam") or game.get("home") or "").upper()
+        date = str(game.get("date") or game.get("gameday") or "")[:10]
+        teams = found.setdefault((away, home, date), {})
+        goalies = game.get("goalies") or {}
+        if isinstance(goalies, dict):
+            for team, info in goalies.items():
+                if not _goalie_confirmed(info):
+                    continue
+                keys = _starter_keys((info or {}).get("name"))
+                if keys:
+                    teams[str(team).upper()] = keys
+        for team, players in (game.get("lineups") or {}).items():
+            team_key = str(team).upper()
+            if team_key in teams or not isinstance(players, list):
+                continue
+            for player in players:
+                if not isinstance(player, dict):
+                    continue
+                if str(player.get("position") or "").upper() != "G":
+                    continue
+                if str(player.get("status") or "").strip().upper() != "CONFIRMED":
+                    continue
+                keys = _starter_keys(player.get("name"))
+                if keys:
+                    teams[team_key] = keys
+                    break
+        if not teams:
+            found.pop((away, home, date), None)
+    return found
+
+
+def _same_goalie(player, starter: dict[str, str]) -> bool:
+    key = name_key(player)
+    if key and key == starter.get("name"):
+        return True
+    last = _last_key(player)
+    return bool(last and last == starter.get("last"))
+
+
+def _goalie_prop(row) -> bool:
+    if str((row or {}).get("position") or "").upper() == "G":
+        return True
+    prop = str((row or {}).get("prop") or (row or {}).get("stat") or "").strip().lower()
+    return prop in {"goalie saves", "saves"}
+
+
+def starter_for_row(row, starters) -> dict[str, str] | None:
+    """The confirmed starter for this row's team and game, if there is one.
+
+    A row with no game is matched only when every slate listing for that
+    team names the same confirmed starter. Two different confirmations
+    and no game do not pick one.
+    """
+    if not starters:
+        return None
+    team = str((row or {}).get("team") or "").upper()
+    if not team:
+        return None
+    away = str((row or {}).get("awayTeam") or (row or {}).get("away") or "").upper()
+    home = str((row or {}).get("homeTeam") or (row or {}).get("home") or "").upper()
+    date = str((row or {}).get("gameday") or (row or {}).get("date") or "")[:10]
+    if away and home:
+        if date and (away, home, date) in starters:
+            return starters[(away, home, date)].get(team)
+        matches = [
+            teams for (game_away, game_home, _game_date), teams in starters.items()
+            if game_away == away and game_home == home
+        ]
+        if len(matches) == 1:
+            return matches[0].get(team)
+        picked = [teams[team] for teams in matches if team in teams]
+        keys = {item.get("name") for item in picked}
+        if len(keys) == 1:
+            return picked[0]
+        if matches:
+            return None
+    named = []
+    for teams in starters.values():
+        starter = teams.get(team)
+        if starter:
+            named.append(starter)
+    keys = {item.get("name") for item in named}
+    if len(keys) == 1:
+        return named[0]
+    return None
+
+
 def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
     """Remove players who will not dress. Each source fails on its own.
 
@@ -270,7 +393,10 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
     2. ESPN's public NHL injury report: Out, IR, LTIR, suspended.
     3. Not on the team's active NHL roster (AHL assignment, waived, traded).
     4. A skater missing from his team's complete projected lineup
-       (healthy scratch). Goalies are handled by the starter check.
+       (healthy scratch).
+    5. A goalie saves prop for someone other than the confirmed starter.
+       The starter is the Daily Faceoff name already on the lineup
+       snapshot. No confirmed starter means the goalie props stay.
     """
     rows = list(projections or [])
     try:
@@ -286,6 +412,7 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
     espn_names = {key for key, _team in espn}
     rosters = fetch_rosters({row.get("team") for row in rows}, fetch_json)
     dressed = projected_lineups(lineups)
+    starters = confirmed_starters(lineups)
     kept = []
     for row in rows:
         player_id = str(row.get("playerId") or "").strip()
@@ -306,6 +433,9 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
             # differently on the line sheet (Alex / Alexander).
             if "last:" + _last_key(row.get("player")) not in lineup:
                 continue
+        starter = starter_for_row(row, starters)
+        if starter and _goalie_prop(row) and not _same_goalie(row.get("player"), starter):
+            continue
         kept.append(row)
     return kept
 
