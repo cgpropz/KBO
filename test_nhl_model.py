@@ -6,9 +6,15 @@ from pathlib import Path
 from nhl.build_board import _chart, _history_for, _index_players, _line_label, build_lineups
 from nhl.closers import posted_half, saves_line
 from nhl.model import (
+    HITS_RINK_MULTIPLIER,
+    POINTS_OVER_PROMOTE,
+    POINTS_OVER_SHOW,
     adjust_pp_seconds,
+    apply_points_over_gate,
     cg_score,
     early_exit,
+    hits_rink_multiplier,
+    points_over_disposition,
     poisson_ge,
     project_saves,
     project_shots,
@@ -262,6 +268,46 @@ class ModelTests(unittest.TestCase):
         self.assertIn('sports="nfl nhl"', shadow)
         self.assertIn("python3 -m ml.shadow.score --sport", shadow)
         self.assertIn("python3 -m ml.shadow.grade --sport", shadow)
+
+    def test_points_overs_drop_below_0_69_and_hold_until_0_86(self):
+        self.assertEqual(POINTS_OVER_SHOW, 0.69)
+        self.assertEqual(POINTS_OVER_PROMOTE, 0.86)
+        self.assertEqual(points_over_disposition("Points", 0.68, 0.5), "drop")
+        self.assertEqual(points_over_disposition("Points", 0.69, 0.5), "hold")
+        self.assertEqual(points_over_disposition("Points", 0.85, 0.5), "hold")
+        self.assertEqual(points_over_disposition("Points", 0.86, 0.5), "rank")
+        self.assertEqual(points_over_disposition("Points", 0.4, 0.5), "rank")
+        self.assertEqual(points_over_disposition("Power Play Points", 0.5, 0.5), "rank")
+        self.assertEqual(points_over_disposition("Shots On Goal", 0.4, 1.5), "rank")
+        rows = apply_points_over_gate([
+            {"player": "Low", "prop": "Points", "projection": 0.50, "line": 0.5, "score": 50, "rankEligible": True},
+            {"player": "Mid", "prop": "Points", "projection": 0.74, "line": 0.5, "score": 74, "rankEligible": True},
+            {"player": "High", "prop": "Points", "projection": 0.90, "line": 0.5, "score": 90, "rankEligible": True},
+            {"player": "Under", "prop": "Points", "projection": 0.40, "line": 0.5, "score": 80, "rankEligible": True},
+            {"player": "Shots", "prop": "Shots On Goal", "projection": 1.2, "line": 1.5, "score": 40, "rankEligible": True},
+        ])
+        self.assertEqual([row["player"] for row in rows], ["Mid", "High", "Under", "Shots"])
+        held = rows[0]
+        self.assertIs(held["rankEligible"], False)
+        self.assertEqual(held["rankScore"], float("-inf"))
+        self.assertTrue(rows[1]["rankEligible"])
+        self.assertTrue(rows[2]["rankEligible"])
+
+    def test_hits_have_no_rink_multiplier(self):
+        self.assertIsNone(HITS_RINK_MULTIPLIER)
+        self.assertEqual(hits_rink_multiplier(), 1.0)
+        self.assertEqual(hits_rink_multiplier("TD Garden", home=True, season="2025-26"), 1.0)
+
+    def test_board_snapshot_workflow_saves_before_puck_drop_and_publishes_on_main(self):
+        text = (Path(__file__).resolve().parent / ".github/workflows/nhl-board-snapshot.yml").read_text(encoding="utf-8")
+        self.assertIn('cron: "30 22 * * *"', text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request:", text)
+        publish = text.index('bash pipeline/memory/commit_memory.sh "chore: nhl board snapshot"')
+        gate = text.rfind("github.ref == 'refs/heads/main'", 0, publish)
+        self.assertGreater(gate, text.index("name: Publish the daily snapshot"))
+        self.assertIn("python -m nhl.board_snapshot", text)
+        self.assertIn("cancel-in-progress: false", text)
 
     def test_unabated_labels_do_not_leak_hidden_props(self):
         self.assertEqual(prop_from_label("Shots on Goal", 86), "Shots On Goal")

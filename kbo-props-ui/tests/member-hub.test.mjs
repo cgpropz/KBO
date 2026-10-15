@@ -68,10 +68,10 @@ test('hub rows carry the board hit rate and log without changing the score', () 
   assert.equal(kbo[0].hitRate, 60)
   assert.deepEqual(kbo[0].recent, [2, 0, 3])
   const nhl = nhlHubRows([{
-    player: 'Alex Ovechkin', prop: 'Points', line: 0.5, projection: 0.68, oddsType: 'standard',
+    player: 'Alex Ovechkin', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard',
     hitRate: 70, gamesL10: 10, recent: [0, 1, 2], dvpRank: 28, score: 999,
   }])
-  assert.equal(nhl[0].score, cgScore(0.68, 0.5, 'Points'))
+  assert.equal(nhl[0].score, cgScore(0.9, 0.5, 'Points'))
   assert.equal(nhl[0].hitRate, 70)
   assert.deepEqual(nhl[0].recent, [0, 1, 2])
   assert.equal(nhl[0].oppRank, 28)

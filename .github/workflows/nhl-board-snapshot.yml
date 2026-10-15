@@ -1,0 +1,57 @@
+name: NHL Board Snapshot
+
+# One full board per day, saved before puck drop, so a later grade can use
+# the lines and projections that were up in the early evening.
+#
+# GitHub cron is UTC. 22:30 UTC is 6:30 PM Eastern during daylight time and
+# 5:30 PM Eastern during standard time. Both are before the early games.
+# The schedule runs only on the default branch. A manual run can target
+# another branch.
+
+on:
+  schedule:
+    - cron: "30 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-board-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download MoneyPuck game logs
+        run: python nhl/fetch_history.py
+
+      - name: Build the NHL board
+        run: python -m nhl.build_board --root /tmp/moneypuck
+
+      - name: Save the daily board snapshot
+        run: python -m nhl.board_snapshot --board nhl/projections.json --out memory/nhl/board
+
+      - name: Publish the daily snapshot
+        if: github.ref == 'refs/heads/main'
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: nhl board snapshot"
+
+      - name: Upload the snapshot
+        if: github.event_name != 'schedule'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-board-snapshot
+          path: memory/nhl/board/*.json
+          if-no-files-found: warn
