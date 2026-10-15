@@ -16,6 +16,10 @@ const PUBLIC_PAGES = [
   ['/', 'CGPropz: Free PrizePicks prop picks daily', 'One edge. Every sport.'],
   ['/pricing', 'All-Access pricing | CGPropz', 'All-Access pricing'],
   ['/policies', 'Plans &amp; Policies | CGPropz', 'Plans &amp; Policies'],
+  ['/terms', 'Terms | CGPropz', 'Terms'],
+  ['/privacy', 'Privacy | CGPropz', 'Privacy'],
+  ['/responsible-gaming', 'Responsible gaming | CGPropz', 'Responsible gaming'],
+  ['/states-not-available', 'Where CGPropz isn\'t available | CGPropz', 'Where CGPropz is not available'],
   ['/kbo-player-props', 'KBO player props and full-board results | CGPropz', 'KBO player props, with the full board.'],
   ['/nfl-player-props', 'NFL player props | CGPropz', 'NFL player props'],
   ['/wnba-player-props', 'WNBA player props | CGPropz', 'WNBA player props'],
@@ -59,7 +63,10 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
       assert.equal(count(html, '<h1'), 1, path)
       assert.equal(html.includes('{{'), false, path)
       assert.match(html, /21\+ only\. Gambling problem\? Call 1-800-GAMBLER\./, path)
+      assert.match(html, /21\+ · Play responsibly · Entertainment only · 1-800-GAMBLER/, path)
+      assert.match(html, /CGPropz is not a sportsbook or operator; projections are estimates, not guarantees\./, path)
       assert.match(html, /CGPropz is not affiliated with PrizePicks or Underdog\. For entertainment only\./, path)
+      assert.match(html, /https:\/\/www\.ncpgambling\.org/, path)
       assert.match(html, /"@type":"Organization"/, path)
       seenTitles.add(title)
     }
@@ -92,7 +99,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     const home = await (await fetch(server.url + '/')).text()
     assert.equal(home.includes('Loading KBO Player Props'), false)
     assert.match(home, /id="free-top-3"/)
-    for (const path of ['/pricing', '/policies', '/kbo-player-props', '/nfl-player-props', '/wnba-player-props', '/nba-player-props', '/nhl-player-props', '/guides/cg-score']) {
+    for (const path of ['/pricing', '/policies', '/terms', '/privacy', '/responsible-gaming', '/states-not-available', '/kbo-player-props', '/nfl-player-props', '/wnba-player-props', '/nba-player-props', '/nhl-player-props', '/guides/cg-score']) {
       assert.match(home, new RegExp(`href="https://www\\.cgpropz\\.com${path}"`))
     }
 
@@ -212,6 +219,30 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.equal(/grandfather/i.test(policies), false)
     const pricingPage = await (await fetch(`${server.url}/pricing`)).text()
     assert.match(pricingPage, /href="https:\/\/www\.cgpropz\.com\/policies"/)
+    assert.match(pricingPage, /Auto-renewal/)
+    assert.match(pricingPage, /renews automatically at \$9\.99 every week until you cancel/)
+    assert.match(pricingPage, /When the XWEEK code applies, the first week is \$4\.99/)
+
+    const terms = await (await fetch(`${server.url}/terms`)).text()
+    assert.match(terms, /\[LEGAL ENTITY NAME\]/)
+    assert.match(terms, /\[CONTACT ADDRESS\]/)
+    assert.match(terms, /renews automatically at \$29\.99 every month until you cancel/)
+
+    const privacy = await (await fetch(`${server.url}/privacy`)).text()
+    assert.match(privacy, /\[LEGAL ENTITY NAME\]/)
+    assert.match(privacy, /age confirmation stays in this browser/)
+
+    const responsible = await (await fetch(`${server.url}/responsible-gaming`)).text()
+    assert.match(responsible, /1-800-GAMBLER/)
+    assert.match(responsible, /href="https:\/\/www\.ncpgambling\.org"/)
+    assert.match(responsible, /How to cancel/)
+
+    const states = await (await fetch(`${server.url}/states-not-available`)).text()
+    for (const code of ['WA', 'NV', 'ID', 'HI', 'MT', 'CA', 'FL', 'MI', 'NY', 'AZ', 'OH', 'WY', 'AR']) {
+      assert.match(states, new RegExp(`\\(${code}\\)`))
+    }
+    assert.match(states, /Under review/)
+    assert.match(states, /does not check your location and does not block/)
 
     const robots = await (await fetch(`${server.url}/robots.txt`)).text()
     assert.match(robots, /Sitemap: https:\/\/www\.cgpropz\.com\/sitemap\.xml/)

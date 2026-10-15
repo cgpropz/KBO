@@ -64,6 +64,12 @@
       color: #a1a1aa;
       font-size: 14px;
     }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .footer-links a { font-weight: 700; }
+    .state-list { margin: 0; padding-left: 1.3em; }
+    @media (min-width: 640px) {
+      .state-list { columns: 2; max-width: 520px; }
+    }
     .plans { display: grid; gap: 12px; }
     .plan { padding: 14px 16px; border: 1px solid #27272a; border-radius: 12px; }
     .plan h3 { margin-top: 0; }
@@ -100,13 +106,28 @@
         <li><a href="https://www.cgpropz.com/nba-player-props">NBA player props</a></li>
         <li><a href="https://www.cgpropz.com/nhl-player-props">NHL player props</a></li>
         <li><a href="https://www.cgpropz.com/guides/cg-score">How CG Score works</a></li>
+        <li><a href="https://www.cgpropz.com/terms">Terms</a></li>
+        <li><a href="https://www.cgpropz.com/privacy">Privacy</a></li>
+        <li><a href="https://www.cgpropz.com/responsible-gaming">Responsible Gaming</a></li>
+        <li><a href="https://www.cgpropz.com/states-not-available">Where CGPropz isn't available</a></li>
       </ul>
     
     </main>
     <footer class="site-footer">
-      <p><a href="https://www.cgpropz.com/policies">Plans &amp; Policies</a></p>
+      <p class="footer-links">
+        <a href="https://www.cgpropz.com/guides/start-here">Start Here</a>
+        <a href="https://www.cgpropz.com/guides/cg-score">How CG Score works</a>
+        <a href="https://www.cgpropz.com/policies">Plans &amp; Policies</a>
+        <a href="https://www.cgpropz.com/terms">Terms</a>
+        <a href="https://www.cgpropz.com/privacy">Privacy</a>
+        <a href="https://www.cgpropz.com/responsible-gaming">Responsible Gaming</a>
+        <a href="https://www.cgpropz.com/states-not-available">Where CGPropz isn't available</a>
+      </p>
+      <p>21+ · Play responsibly · Entertainment only · 1-800-GAMBLER</p>
+      <p>CGPropz is not a sportsbook or operator; projections are estimates, not guarantees.</p>
       <p>21+ only. Gambling problem? Call 1-800-GAMBLER.</p>
       <p>CGPropz is not affiliated with PrizePicks or Underdog. For entertainment only.</p>
+      <p><a href="https://www.ncpgambling.org">ncpgambling.org</a></p>
     </footer>
   </div>
 </body>

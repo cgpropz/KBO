@@ -1,7 +1,13 @@
 // Shared pieces for the static public pages (home shell, sport hubs, pricing,
 // guides, 404). The React app is not rendered here.
 
-import { AFFILIATION_LINE, AGE_LINE } from '../src/responsibleGambling.js';
+import {
+  AFFILIATION_LINE,
+  AGE_LINE,
+  GAMBLER_HELP_URL,
+  OPERATOR_DISCLAIMER,
+  STANDARD_LINE,
+} from '../src/responsibleGambling.js';
 
 export const SITE = 'https://www.cgpropz.com';
 export const PUBLISHED_ON = '2026-10-11';
@@ -117,11 +123,27 @@ export function renderHeader() {
     </header>`;
 }
 
+const FOOTER_LINKS = [
+  ['/guides/start-here', 'Start Here'],
+  ['/guides/cg-score', 'How CG Score works'],
+  ['/policies', 'Plans & Policies'],
+  ['/terms', 'Terms'],
+  ['/privacy', 'Privacy'],
+  ['/responsible-gaming', 'Responsible Gaming'],
+  ['/states-not-available', "Where CGPropz isn't available"],
+];
+
 export function renderFooter() {
+  const links = FOOTER_LINKS.map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
   return `<footer class="site-footer">
-      <p><a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
+      <p class="footer-links">
+        ${links}
+      </p>
+      <p>${escapeHtml(STANDARD_LINE)}</p>
+      <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
+      <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
     </footer>`;
 }
 
@@ -168,6 +190,12 @@ const PAGE_CSS = `
       border-radius: 12px;
       color: #a1a1aa;
       font-size: 14px;
+    }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .footer-links a { font-weight: 700; }
+    .state-list { margin: 0; padding-left: 1.3em; }
+    @media (min-width: 640px) {
+      .state-list { columns: 2; max-width: 520px; }
     }
     .plans { display: grid; gap: 12px; }
     .plan { padding: 14px 16px; border: 1px solid #27272a; border-radius: 12px; }

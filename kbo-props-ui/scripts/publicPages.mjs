@@ -6,7 +6,19 @@ import { fileURLToPath } from 'node:url';
 import { DISCORD_INVITE_URL } from '../src/discordInvite.js';
 import { landingFaqs } from '../src/landingFaq.js';
 import { discordPlanCards, TIERS } from '../src/pricingTiers.js';
-import { AFFILIATION_LINE, AGE_LINE } from '../src/responsibleGambling.js';
+import { autoRenewalStatement } from '../src/autoRenewal.js';
+import {
+  AFFILIATION_LINE,
+  AGE_LINE,
+  CONTACT_ADDRESS,
+  GAMBLER_HELP_URL,
+  GAMBLER_PHONE,
+  LEGAL_ENTITY_NAME,
+  OPERATOR_DISCLAIMER,
+  STANDARD_LINE,
+  UNAVAILABLE_STATES,
+  UNDER_REVIEW_STATES,
+} from '../src/responsibleGambling.js';
 import { appBoardPath } from '../src/appSport.js';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
 import {
@@ -177,6 +189,8 @@ export function renderPricingPage() {
       <p class="lede">Plans</p>
       <h1>All-Access pricing</h1>
       <p>These are the published CGPropz plan prices. Checkout stays in the app, which opens the current Stripe session. This page does not list prop rows.</p>
+      <h2>Auto-renewal</h2>
+      <p>${escapeHtml(autoRenewalStatement())}</p>
       <div class="actions">
         <a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a>
         <a class="btn btn-ghost" href="${pageUrl('/policies')}">Plans &amp; Policies</a>
@@ -301,6 +315,151 @@ export function renderSportPages() {
   }));
 }
 
+function stateItems(states) {
+  return states.map(([code, name]) => `<li>${escapeHtml(name)} (${escapeHtml(code)})</li>`).join('');
+}
+
+function complianceDocument({ path, file, title, description, h1, bodyHtml }) {
+  return {
+    path,
+    file,
+    title,
+    description,
+    lastmod: PUBLISHED_ON,
+    html: renderDocument({
+      title,
+      description,
+      path,
+      bodyHtml,
+      schemas: [
+        breadcrumbNode([
+          { name: 'Home', url: pageUrl('/') },
+          { name: h1, url: pageUrl(path) },
+        ]),
+      ],
+    }),
+  };
+}
+
+export function renderResponsibleGamingPage() {
+  const path = '/responsible-gaming';
+  const h1 = 'Responsible gaming';
+  const bodyHtml = `
+      <p class="lede">Help</p>
+      <h1>${h1}</h1>
+      <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
+      <p>${escapeHtml(STANDARD_LINE)}</p>
+      <h2>Get help</h2>
+      <p>If you or someone you know has a gambling problem, call or text <strong>${escapeHtml(GAMBLER_PHONE)}</strong>.</p>
+      <p><a href="${GAMBLER_HELP_URL}">National Council on Problem Gambling</a> (${GAMBLER_HELP_URL}).</p>
+      <h2>Limits you can set</h2>
+      <p>Only risk money you can afford to lose. Set a budget before you play and stop when you reach it. CGPropz publishes projections for information and entertainment. A projection is an estimate, not a promise that a result will happen.</p>
+      <h2>How to cancel</h2>
+      <p>Sign in and open the subscription page from Upgrade, Manage, or View Plans. A renewing plan shows Cancel Subscription. Choose it, then confirm Yes, Cancel. CGPropz tells Stripe to end that subscription at the close of the current billing period, and the page shows the date full access lasts through. The same steps are written on <a href="${pageUrl('/policies')}">Plans &amp; Policies</a>.</p>
+      <p>This page is also linked from the site footer. Availability by state is listed on <a href="${pageUrl('/states-not-available')}">where CGPropz isn't available</a>. That list does not check or block your location.</p>
+    `;
+  return complianceDocument({
+    path,
+    file: 'responsible-gaming.html',
+    title: 'Responsible gaming | CGPropz',
+    description: 'Responsible gaming help for CGPropz, including 1-800-GAMBLER and the National Council on Problem Gambling.',
+    h1,
+    bodyHtml,
+  });
+}
+
+export function renderStatesPage() {
+  const path = '/states-not-available';
+  const h1 = 'Where CGPropz is not available';
+  const bodyHtml = `
+      <p class="lede">States</p>
+      <h1>${h1}</h1>
+      <p>This page lists where CGPropz is not available. It is informational. CGPropz does not check your location and does not block the site or checkout from here.</p>
+      <h2>Not available</h2>
+      <ul class="state-list">
+        ${stateItems(UNAVAILABLE_STATES)}
+      </ul>
+      <h2>Under review</h2>
+      <ul class="state-list">
+        ${stateItems(UNDER_REVIEW_STATES)}
+      </ul>
+      <p>Wyoming and Arkansas are under review. Their availability is not confirmed on this page.</p>
+      <p>${escapeHtml(OPERATOR_DISCLAIMER)} ${escapeHtml(STANDARD_LINE)}</p>
+      <p>Help is on the <a href="${pageUrl('/responsible-gaming')}">responsible gaming</a> page. Call or text <strong>${escapeHtml(GAMBLER_PHONE)}</strong>, or visit <a href="${GAMBLER_HELP_URL}">ncpgambling.org</a>.</p>
+    `;
+  return complianceDocument({
+    path,
+    file: 'states-not-available.html',
+    title: "Where CGPropz isn't available | CGPropz",
+    description: 'States where CGPropz is not available, plus Wyoming and Arkansas under review. This page does not block access by location.',
+    h1,
+    bodyHtml,
+  });
+}
+
+export function renderTermsPage() {
+  const path = '/terms';
+  const h1 = 'Terms';
+  const bodyHtml = `
+      <p class="lede">Terms</p>
+      <h1>${h1}</h1>
+      <p>These terms are published by <strong>${escapeHtml(LEGAL_ENTITY_NAME)}</strong>. Mailing address: <strong>${escapeHtml(CONTACT_ADDRESS)}</strong>. The name and address are placeholders until they are supplied. This page does not add legal terms beyond what CGPropz already states on the site.</p>
+      <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
+      <p>CGPropz sells subscription access to statistical projections and analysis. It does not accept wagers, and it is not a sportsbook or operator. ${escapeHtml(AFFILIATION_LINE)}</p>
+      <p>${escapeHtml(STANDARD_LINE)} You must be 21 or older to sign up or check out.</p>
+      <h2>Auto-renewal</h2>
+      <p>${escapeHtml(autoRenewalStatement())}</p>
+      <h2>Refunds, cancellation, pause, and price changes</h2>
+      <p>Those terms are on <a href="${pageUrl('/policies')}">Plans &amp; Policies</a>. Weekly plans: no refunds once a weekly period has started. Monthly, Yearly and Lifetime: 7-day refund window on the first payment. All plans: cancel anytime. If a plan price changes, CGPropz will announce the new price before it applies. A one-week pause, when offered, skips that week of billing and billing resumes automatically.</p>
+      <p>Questions about a plan go to the <a href="${escapeHtml(DISCORD_INVITE_URL)}">CGPropz Discord</a>.</p>
+      <p>See also <a href="${pageUrl('/privacy')}">Privacy</a>, <a href="${pageUrl('/responsible-gaming')}">Responsible gaming</a>, and <a href="${pageUrl('/states-not-available')}">where CGPropz isn't available</a>.</p>
+    `;
+  return complianceDocument({
+    path,
+    file: 'terms.html',
+    title: 'Terms | CGPropz',
+    description: 'CGPropz terms, including automatic renewal. The legal entity name is a placeholder.',
+    h1,
+    bodyHtml,
+  });
+}
+
+export function renderPrivacyPage() {
+  const path = '/privacy';
+  const h1 = 'Privacy';
+  const bodyHtml = `
+      <p class="lede">Privacy</p>
+      <h1>${h1}</h1>
+      <p>This notice is published by <strong>${escapeHtml(LEGAL_ENTITY_NAME)}</strong>. Mailing address: <strong>${escapeHtml(CONTACT_ADDRESS)}</strong>. The name and address are placeholders until they are supplied. This page describes how the site works today. It does not add a retention period or other privacy terms that are not already part of the product.</p>
+      <h2>Account</h2>
+      <p>Sign-in uses an email and password through Supabase. When you create an account, marketing codes from the link you arrived on (such as utm tags) and the time you confirmed you are 21 or older can be saved with that account.</p>
+      <h2>Payments</h2>
+      <p>Card checkout is handled by Stripe. If you are signed in, checkout can send your account id and email so the payment can be matched to the account. If you are not signed in, Stripe collects the email and access is matched when you later sign up with that email.</p>
+      <h2>What this browser stores</h2>
+      <p>This browser can store the marketing codes from your visit, the time you confirmed you are 21 or older, and a note of purchase events already sent. That age confirmation stays in this browser so you are not asked again on this device.</p>
+      <h2>Advertising measurement</h2>
+      <p>An X (Twitter) pixel can record a sign-up and a purchase.</p>
+      <p>Questions can go to the <a href="${escapeHtml(DISCORD_INVITE_URL)}">CGPropz Discord</a>. The terms are on <a href="${pageUrl('/terms')}">Terms</a>.</p>
+    `;
+  return complianceDocument({
+    path,
+    file: 'privacy.html',
+    title: 'Privacy | CGPropz',
+    description: 'What CGPropz stores for an account, checkout, and this browser. The legal entity name is a placeholder.',
+    h1,
+    bodyHtml,
+  });
+}
+
+export function renderCompliancePages() {
+  return [
+    renderResponsibleGamingPage(),
+    renderStatesPage(),
+    renderTermsPage(),
+    renderPrivacyPage(),
+  ];
+}
+
 export function renderNotFoundPage() {
   const title = 'Page not found | CGPropz';
   const description = 'That URL is not a CGPropz page.';
@@ -317,6 +476,10 @@ export function renderNotFoundPage() {
         <li><a href="${pageUrl('/nba-player-props')}">NBA player props</a></li>
         <li><a href="${pageUrl('/nhl-player-props')}">NHL player props</a></li>
         <li><a href="${pageUrl('/guides/cg-score')}">How CG Score works</a></li>
+        <li><a href="${pageUrl('/terms')}">Terms</a></li>
+        <li><a href="${pageUrl('/privacy')}">Privacy</a></li>
+        <li><a href="${pageUrl('/responsible-gaming')}">Responsible Gaming</a></li>
+        <li><a href="${pageUrl('/states-not-available')}">Where CGPropz isn't available</a></li>
       </ul>
     `;
   return renderDocument({

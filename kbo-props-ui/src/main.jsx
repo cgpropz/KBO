@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { AuthProvider } from './AuthContext.jsx'
+import { AgeGateProvider } from './AgeGate.jsx'
 import App from './App.jsx'
 import './stadiumBackground.css'
 import './mobile.css'
@@ -13,7 +14,9 @@ captureAttribution()
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      <AgeGateProvider>
+        <App />
+      </AgeGateProvider>
     </AuthProvider>
   </StrictMode>,
 )

@@ -1,0 +1,122 @@
+.age-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.age-gate-card {
+  width: min(440px, 100%);
+  max-height: min(92vh, 720px);
+  overflow: auto;
+  margin: 0;
+  padding: 22px 20px 18px;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  background: #12121a;
+  color: #e2e8f0;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.age-gate-kicker {
+  margin: 0 0 6px;
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.age-gate-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.age-gate-card p {
+  margin: 0 0 12px;
+  color: #d4d4d8;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.age-gate-standard {
+  color: #fff;
+  font-weight: 700;
+}
+
+.age-gate-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.age-gate-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 2px;
+  accent-color: #22c55e;
+}
+
+.age-gate-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.age-gate-links a {
+  color: #86efac;
+  font-weight: 700;
+}
+
+.age-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.age-gate-continue,
+.age-gate-dismiss {
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.age-gate-continue {
+  border: none;
+  background: #22c55e;
+  color: #04140a;
+}
+
+.age-gate-continue:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.age-gate-dismiss {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #fff;
+}
+
+.age-gate-note {
+  margin-bottom: 0;
+  color: #a1a1aa;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 720px) {
+  .age-gate {
+    align-items: center;
+  }
+}

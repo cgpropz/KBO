@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { DISCORD_ONLY_NOTE, discordPlanCards } from './pricingTiers';
 import { requestDiscordCheckoutUrl } from './tracking';
+import { useAgeGate } from './ageGateContext';
 import { sessionAccessToken } from './supabaseClient';
 import './Discord.css';
 
 export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutStart }) {
   const plans = discordPlanCards(import.meta.env || {});
+  const { requireAge } = useAgeGate();
   const [hrefs, setHrefs] = useState({ weekly: '', monthly: '' });
   const [error, setError] = useState('');
 
@@ -27,6 +29,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
   }, [user]);
 
   async function start(plan) {
+    if (!(await requireAge())) return;
     setError('');
     const open = (url) => {
       onCheckoutStart?.();

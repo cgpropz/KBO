@@ -1,7 +1,13 @@
 // Prerendered homepage body. React replaces #root on mount; crawlers that
 // do not run JavaScript still see the title, H1, nav, and footer.
 
-import { AFFILIATION_LINE, AGE_LINE } from '../src/responsibleGambling.js';
+import {
+  AFFILIATION_LINE,
+  AGE_LINE,
+  GAMBLER_HELP_URL,
+  OPERATOR_DISCLAIMER,
+  STANDARD_LINE,
+} from '../src/responsibleGambling.js';
 import { escapeHtml, jsonLdScript, organizationNode, pageUrl, websiteNode } from './seoShared.mjs';
 
 const NAV = [
@@ -52,9 +58,12 @@ export function homeRootInner() {
       </section>
     </main>
     <footer>
-      <p><a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a></p>
+      <p><a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a> · <a href="${pageUrl('/terms')}">Terms</a> · <a href="${pageUrl('/privacy')}">Privacy</a> · <a href="${pageUrl('/responsible-gaming')}">Responsible Gaming</a> · <a href="${pageUrl('/states-not-available')}">Where CGPropz isn't available</a></p>
+      <p>${escapeHtml(STANDARD_LINE)}</p>
+      <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
+      <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
     </footer>
     </div>`;
 }

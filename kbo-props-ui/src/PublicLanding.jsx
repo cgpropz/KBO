@@ -9,6 +9,8 @@ import TrustStrip from './TrustStrip';
 import FreePicksPreview from './FreePicksPreview';
 import StartHereBanner from './StartHereBanner';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { useAgeGate } from './ageGateContext';
+import AutoRenewalNote from './AutoRenewalNote';
 import FoundersOffer from './FoundersOffer';
 import DiscordInviteLink from './DiscordInviteLink';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
@@ -61,6 +63,7 @@ const FAQS = landingFaqs();
 
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   const menu = usePageMenu();
+  const { requireAge } = useAgeGate();
   const { open: nbaOpen } = useNbaOpen();
   const [planId, setPlanId] = useState('weekly');
   const paidTiers = TIERS.filter((t) => t.id !== 'free');
@@ -83,6 +86,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
   // open a Checkout Session. A closed Founders offer is refused; the card
   // shows Sold out or Ended instead of starting Lifetime checkout.
   const checkout = async (tier) => {
+    if (!(await requireAge())) return;
     if (tier?.checkout === 'session' || tier?.id === 'lifetime') {
       try {
         const result = await requestOfferCheckoutUrl({ plan: 'lifetime' });
@@ -94,6 +98,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
     window.location.assign(buildCheckoutUrl(tier.link, null));
   };
   const claimFounders = async () => {
+    if (!(await requireAge())) return;
     try {
       const result = await requestOfferCheckoutUrl({ plan: 'founders' });
       window.location.assign(result.url);
@@ -237,6 +242,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard }) {
             <ul className="pl-pricing-features">
               {activeTier.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
+            <AutoRenewalNote />
             {activeTier.id === 'lifetime' && <FoundersOffer onClaim={claimFounders} />}
             {activeTier.id === 'weekly' ? (
               <a className="pl-cta-primary pl-pricing-cta" href={weeklyHref}>

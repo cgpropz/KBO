@@ -9,7 +9,7 @@ const RECENT_WINDOW = 10
 const NAME_SUFFIX = /^(jr|sr|ii|iii|iv|v)\.?$/i
 const MIDDLE_CAP_STATS = new Set(['Receiving Yards', 'Rush Yards'])
 
-const DISCLAIMER = 'Projections are estimates, not guarantees. 21+ · Play responsibly · Entertainment only.'
+const DISCLAIMER = 'Projections are estimates, not guarantees. 21+ · Play responsibly · Entertainment only · 1-800-GAMBLER'
 
 export function formatStatNumber(value) {
   const number = Number(value)

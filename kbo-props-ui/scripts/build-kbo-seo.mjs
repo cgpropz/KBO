@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { patchIndexHtml } from './homeShell.mjs';
 import { buildResultDays, discoverSummaryFiles, renderKboPage, renderSitemap, sitemapEntries } from './kboSeoPage.mjs';
 import { assertNoCurlyPlaceholders, listGuides } from './markdownGuide.mjs';
-import { renderGuidePages, renderNotFoundPage, renderPoliciesPage, renderPricingPage, renderSportPages } from './publicPages.mjs';
+import { renderCompliancePages, renderGuidePages, renderNotFoundPage, renderPoliciesPage, renderPricingPage, renderSportPages } from './publicPages.mjs';
 import { renderRobots } from './seoShared.mjs';
 
 const uiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,6 +58,7 @@ export function writeSeoSite({
   });
   writePage(publicDir, renderPricingPage());
   writePage(publicDir, renderPoliciesPage());
+  for (const page of renderCompliancePages()) writePage(publicDir, page);
   for (const page of renderSportPages()) writePage(publicDir, page);
   const guides = renderGuidePages(guidesDir);
   for (const guide of guides) writePage(publicDir, guide);
