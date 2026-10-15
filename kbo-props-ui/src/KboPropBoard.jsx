@@ -8,6 +8,8 @@ import { kboHitPills } from './hitRateStrip'
 import { directionFor, scoreFor } from './kboBoardScore'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
+import BreakEvenMeter from './BreakEvenMeter'
+import { kboBreakEvenWindows } from './prizepicksBreakeven'
 import { BoardSkeleton } from './BootScreen.jsx'
 import './KboPropBoard.css'
 import { fitImage } from './fitImage.js'
@@ -129,7 +131,7 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
-function KboBoardRow({ card, prop, score, direction, hitPills, photo, locked, rowRef, onSelectPlayer, onExpand }) {
+function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand }) {
   const [whyOpen, setWhyOpen] = useState(false)
   const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
   const scoreNote = buildCgScoreExplainer({
@@ -169,6 +171,17 @@ function KboBoardRow({ card, prop, score, direction, hitPills, photo, locked, ro
         <td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td>
         <td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td>
       </tr>
+      {showBreakEven && breakEvenWindows.length > 0 && (
+        <tr className="be-meter-row">
+          <td colSpan={5}>
+            <BreakEvenMeter
+              windows={breakEvenWindows}
+              side={direction === 'under' ? 'under' : 'over'}
+              chartCountsOvers={direction === 'under'}
+            />
+          </td>
+        </tr>
+      )}
       {whyOpen && !locked && scoreNote && (
         <tr className="cg-score-note-row" ref={rowRef}>
           <td colSpan={5}>
@@ -230,6 +243,12 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     score: scoreFor(prop),
     direction: directionFor(prop),
     hitPills: kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent }),
+    breakEvenWindows: kboBreakEvenWindows({
+      games: card.games,
+      stat: prop.stat,
+      line: prop.line,
+      side: directionFor(prop) === 'under' ? 'under' : 'over',
+    }),
   }))), [snapshot])
   const propTabs = useMemo(() => ['All Props', ...[...new Set(allRows.map(({ prop }) => prop.stat))].sort()], [allRows])
   const rows = useMemo(() => {
@@ -285,7 +304,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         </div>
       )}
       {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table hit-rate-board"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></tr></thead><tbody>
-        {rows.map(({ card, prop, score, direction, hitPills }, index) => (
+        {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows }, index) => (
           <KboBoardRow
             key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
             card={card}
@@ -293,6 +312,8 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
             score={score}
             direction={direction}
             hitPills={hitPills}
+            breakEvenWindows={breakEvenWindows}
+            showBreakEven={isPaid}
             photo={photoLookup[String(card.name || '').toLowerCase()]}
             locked={!isPaid && index >= FREE_ROW_LIMIT}
             rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
