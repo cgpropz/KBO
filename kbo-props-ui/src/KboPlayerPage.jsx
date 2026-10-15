@@ -9,9 +9,13 @@ import { rowsFromBookPrices } from './playerOdds'
 import { fetchDataSnapshot } from './dataUrl'
 import { lineResult, overHitRate } from './hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from './lineSlider'
-import { playerHeaderBadge, scoreFor } from './kboBoardScore'
+import { directionFor, playerHeaderBadge, scoreFor } from './kboBoardScore'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreNote } from './CgScoreExplainer'
+import BreakEvenMeter from './BreakEvenMeter'
+import { kboBreakEvenWindows } from './prizepicksBreakeven'
+import { useAuth } from './AuthContext'
+import { sportAccess } from './entitlements'
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
@@ -129,6 +133,8 @@ function ChartFilterChip({ label, valueLabel, open, onToggle, children }) {
 }
 
 export default function KboPlayerPage({ playerName, onBack }) {
+  const { tier } = useAuth()
+  const showBreakEven = sportAccess(tier).kbo
   const [cards, setCards] = useState([])
   const [error, setError] = useState('')
   const [matchups, setMatchups] = useState([])
@@ -254,6 +260,14 @@ export default function KboPlayerPage({ playerName, onBack }) {
     offeredLines: chartInput.offered,
     resetKey: `${player?.name || ''}|${currentProp?.stat || ''}`,
   })
+
+  const breakEvenSide = directionFor(currentProp) === 'under' ? 'under' : 'over'
+  const breakEvenWindows = useMemo(() => kboBreakEvenWindows({
+    games: player?.games,
+    stat: currentProp?.stat,
+    line: slider.line ?? currentProp?.line,
+    side: breakEvenSide,
+  }), [player, currentProp, slider.line, breakEvenSide])
 
   if (error) return <div className="kbo-notice">Unable to load player data: {error}</div>
   if (!cards.length) return <div className="kbo-notice">Loading player data for {playerName}.</div>
@@ -429,6 +443,16 @@ export default function KboPlayerPage({ playerName, onBack }) {
             </span>
           ))}
         </div>
+        {showBreakEven && (
+          <div className="kbo-player-chart-meter">
+            <BreakEvenMeter
+              windows={breakEvenWindows}
+              side={breakEvenSide}
+              lineText={slider.moved ? formatLineValue(slider.line) : ''}
+              chartCountsOvers={breakEvenSide === 'under'}
+            />
+          </div>
+        )}
         <div className="cg-score-open">
           <CgScoreNote note={buildCgScoreExplainer({
             player: player.name,

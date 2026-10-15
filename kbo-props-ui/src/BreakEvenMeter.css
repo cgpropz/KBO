@@ -1,0 +1,244 @@
+.be-meter {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin: 2px 0 6px;
+  padding: 12px 14px 14px;
+  border: 1px solid #1e3f38;
+  border-radius: 12px;
+  background: #0c1a17;
+  color: #d5e4de;
+  white-space: normal;
+}
+
+.be-meter-title {
+  margin: 0;
+  color: #e8f4e6;
+  font: 800 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.be-meter-side {
+  margin: 4px 0 0;
+  color: #8ba39c;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.be-meter-picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.be-meter-picks span {
+  margin-right: 2px;
+  color: #8ba39c;
+  font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.be-meter-picks button {
+  min-width: 34px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid #1a3c36;
+  border-radius: 999px;
+  color: #c5d6cf;
+  background: #0a1615;
+  font: 800 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  cursor: pointer;
+}
+
+.be-meter-picks button[aria-pressed='true'] {
+  color: #06100f;
+  background: #7fff68;
+  border-color: #7fff68;
+}
+
+.be-meter-picks button:focus-visible {
+  outline: 2px solid #7fff68;
+  outline-offset: 2px;
+}
+
+.be-meter-rates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.be-meter-rates li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font: 13px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.be-meter-rates b {
+  color: #8ba39c;
+  font: 800 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.be-meter-rates strong {
+  color: #e8f4e6;
+  font: 800 16px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.be-meter-rates span,
+.be-meter-legend span {
+  color: #8ba39c;
+}
+
+.be-meter-scale {
+  margin: 16px 6px 0;
+}
+
+.be-meter-rail {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1a2e2a, #23443d 50%, #1a2e2a);
+}
+
+.be-meter-mark {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #06100f;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.be-meter-mark-l10 { background: #7fff68; }
+.be-meter-mark-season { background: #54e0bf; }
+
+.be-meter-tick {
+  position: absolute;
+  top: -7px;
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+}
+
+.be-meter-tick-power { background: #e4a743; }
+.be-meter-tick-flex { background: #9eb6ff; }
+
+.be-meter-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: #6b8781;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.be-meter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #e8f4e6;
+  font: 12px/1.35 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.be-meter-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.be-meter-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.be-meter-swatch-l10 { background: #7fff68; }
+.be-meter-swatch-season { background: #54e0bf; }
+.be-meter-swatch-power,
+.be-meter-swatch-flex {
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+}
+.be-meter-swatch-power { background: #e4a743; }
+.be-meter-swatch-flex { background: #9eb6ff; }
+
+.be-meter-explainer {
+  margin: 10px 0 0;
+  color: #d5e4de;
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.be-meter-note {
+  margin: 6px 0 0;
+  color: #8aa399;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.be-meter-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+table.hit-rate-board > tbody > tr.be-meter-row > td {
+  padding: 0 14px 14px;
+  background: #071311;
+  white-space: normal;
+}
+
+.kbo-player-chart-meter {
+  margin: 16px 0 8px;
+}
+
+.kbo-player-chart-meter .be-meter {
+  max-width: none;
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .be-meter {
+    max-width: none;
+    padding: 10px 12px 12px;
+  }
+
+  table.hit-rate-board > tbody > tr.be-meter-row {
+    margin-top: -12px;
+    padding-top: 0;
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  table.hit-rate-board > tbody > tr.be-meter-row > td {
+    padding: 0;
+    background: transparent;
+  }
+
+  table.hit-rate-board > tbody > tr:has(+ tr.be-meter-row) {
+    margin-bottom: 0;
+    border-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
