@@ -92,6 +92,17 @@ SHOW_STATS = {
     "goalie saves": PROP_SAVES,
 }
 ODDS_RANK = {"standard": 0, "demon": 1, "goblin": 2}
+# PrizePicks marks a line it took down with one of these statuses. The slip
+# builder already drops removed / suspended / held rows.
+PULLED_STATUSES = {"removed", "suspended", "held", "hold", "onhold"}
+
+
+def prizepicks_pulled_status(status) -> str | None:
+    """Compact PrizePicks status when the line was pulled, else None."""
+    compact = re.sub(r"[^a-z]", "", str(status or "").strip().lower())
+    if compact in PULLED_STATUSES:
+        return compact
+    return None
 FINAL_STATES = {"OFF", "FINAL", "OVER"}
 UPCOMING_STATES = {"FUT", "PRE"}
 
@@ -261,7 +272,10 @@ def _this_slate(games: list[dict]) -> list[dict]:
 
 
 def fetch_prizepicks():
-    payload = _json(PRIZEPICKS_URL)
+    return prizepicks_cards(_json(PRIZEPICKS_URL))
+
+
+def prizepicks_cards(payload):
     included = {}
     for item in payload.get("included") or []:
         included[(item.get("type"), str(item.get("id")))] = item.get("attributes") or {}
@@ -277,7 +291,9 @@ def fetch_prizepicks():
         duration = ((relations.get("duration") or {}).get("data") or {}).get("id")
         if str(duration) != "11":
             continue
-        if attrs.get("in_game") or str(attrs.get("status") or "") not in {"pre_game", "pregame"}:
+        status = str(attrs.get("status") or "")
+        pulled = prizepicks_pulled_status(status)
+        if not pulled and (attrs.get("in_game") or status.lower() not in {"pre_game", "pregame"}):
             continue
         player_id = ((relations.get("new_player") or {}).get("data") or {}).get("id")
         player = included.get(("new_player", str(player_id))) or {}
@@ -305,6 +321,8 @@ def fetch_prizepicks():
             "imageUrl": player.get("image_url") or "",
             "rank": attrs.get("rank") or 9999,
             "start": attrs.get("start_time"),
+            "removed": pulled is not None,
+            "pp_status": pulled,
         })
     return _one_card(rows)
 
@@ -314,7 +332,14 @@ def _one_card(rows: list[dict]) -> list[dict]:
     for row in rows:
         key = (_name_key(row["player"]), row["team"], row["prop"])
         current = best.get(key)
-        order = (ODDS_RANK[row["oddsType"]], int(row["rank"]) if str(row["rank"]).isdigit() else 9999, row["line"])
+        # A live card beats a pulled one. A pulled standard stays only when
+        # PrizePicks left no live line for that player and prop.
+        order = (
+            1 if row.get("removed") else 0,
+            ODDS_RANK[row["oddsType"]],
+            int(row["rank"]) if str(row["rank"]).isdigit() else 9999,
+            row["line"],
+        )
         if current is None or order < current[0]:
             best[key] = (order, row)
     return [item[1] for item in best.values()]
@@ -923,6 +948,7 @@ def build(root: Path, out_dir: Path) -> int:
                     "start_time": game["start"],
                     "awayTeam": game["away"],
                     "homeTeam": game["home"],
+                    **({"removed": True, "pp_status": card["pp_status"]} if card.get("removed") else {}),
                     "ppRole": role,
                     "usage": None if is_goalie else _usage(card["player"], lines.get(card["team"])),
                     "profile": attach_baseline(

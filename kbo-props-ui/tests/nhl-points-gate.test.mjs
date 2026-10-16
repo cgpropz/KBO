@@ -26,6 +26,15 @@ test('points overs under 0.69 leave the board and 0.69 to 0.86 stay unranked', (
   assert.equal(rows[1].rankEligible, true)
 })
 
+test('a PrizePicks pulled line leaves the NHL board list', () => {
+  const rows = prepareBoardRows([
+    ...board,
+    { player: 'Pulled', prop: 'Shots On Goal', line: 2.5, projection: 4, oddsType: 'standard', removed: true, pp_status: 'removed', rankEligible: true },
+  ])
+  assert.equal(rows.some((row) => row.player === 'Pulled'), false)
+  assert.equal(nhlHubRows([{ player: 'Pulled', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', pp_status: 'suspended', rankEligible: true }]).length, 0)
+})
+
 test('free top lists and hub highlights skip held points overs', () => {
   const free = shapeForTier('nhl_projections', board, 'free')
   assert.equal(free.preview, true)

@@ -349,6 +349,18 @@ SUPPORTED_PROPS = {
     'Receiving Yards', 'Receptions', 'Rec Targets',
 }
 BOARD_ODDS_TYPES = {'standard', 'demon', 'goblin'}
+# PrizePicks marks a line it took down with one of these statuses. The slip
+# builder already drops removed / suspended / held rows. A pre-game line is
+# not pulled.
+PULLED_STATUSES = {'removed', 'suspended', 'held', 'hold', 'onhold'}
+
+
+def prizepicks_pulled_status(status):
+    """Compact PrizePicks status when the line was pulled, else None."""
+    compact = re.sub(r'[^a-z]', '', str(status or '').strip().lower())
+    if compact in PULLED_STATUSES:
+        return compact
+    return None
 # Yardage markets only. A counting stat (Receptions, Rush Attempts, Pass TDs)
 # can legitimately be 0.5. These cannot.
 YARDAGE_PROPS = {
@@ -447,19 +459,27 @@ def slate_records(payload):
             'line': line, 'odds_type': odds_type, 'trending': _trending_count(attrs.get('trending_count')),
             'start_time': text_or_empty(attrs.get('start_time')),
             'image_url': text_or_empty(player.get('image_url')),
+            'status': attrs.get('status'),
         })
     records = []
     for candidates in grouped.values():
         chosen = choose_published_line(candidates)
         if chosen is None:
             continue
-        records.append({
+        record = {
             'player': chosen['player'], 'team': chosen['team'], 'opponent': chosen['opponent'],
             'prop': chosen['prop'], 'line': chosen['line'],
             'odds_type': chosen.get('odds_type') or '',
             'start_time': chosen.get('start_time') or '',
             'image_url': chosen.get('image_url') or '',
-        })
+        }
+        pulled = prizepicks_pulled_status(chosen.get('status'))
+        if pulled:
+            # Keep the standard card. Do not promote a demon in its place.
+            # The slip builder drops the row from these two flags.
+            record['removed'] = True
+            record['pp_status'] = pulled
+        records.append(record)
     return records
 
 
@@ -706,6 +726,25 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'recentDvpRanks': recent_dvp_ranks, 'recentSnapPercents': recent_snap_pcts,
         'recentUsage': recent_usage, 'usageLabel': usage_label, 'targetsPerGame': targets_per_game,
         'teammates': teammates, 'teammateOn': teammate_on,
+        **_pulled_fields(row),
+    }
+
+
+def _pulled_fields(row):
+    """Copy a pulled PrizePicks flag onto the published projection row."""
+    status = prizepicks_pulled_status(getattr(row, 'pp_status', None))
+    removed = getattr(row, 'removed', False)
+    try:
+        removed_missing = pd.isna(removed)
+    except TypeError:
+        removed_missing = False
+    if removed_missing:
+        removed = False
+    if not status and removed is not True:
+        return {}
+    return {
+        'removed': True,
+        'pp_status': status or 'removed',
     }
 
 

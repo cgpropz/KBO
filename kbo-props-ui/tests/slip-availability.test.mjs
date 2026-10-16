@@ -11,6 +11,17 @@ import {
 
 const NOW = new Date('2026-10-16T22:00:00Z')
 
+test('PrizePicks pulled lines stay out of the slip', () => {
+  const live = { player: 'A', prop: 'Shots On Goal', line: 2.5, projection: 3, pp_status: 'pre_game' }
+  assert.equal(keepSlipRow(live, { now: NOW }), true)
+  assert.equal(keepSlipRow({ ...live, removed: true }, { now: NOW }), false)
+  assert.equal(keepSlipRow({ player: 'A', prop: 'Rush Yards', line: 2.5, pp_status: 'removed' }, { now: NOW }), false)
+  assert.equal(keepSlipRow({ player: 'A', prop: 'Rush Yards', line: 2.5, ppStatus: 'suspended' }, { now: NOW }), false)
+  assert.equal(keepSlipRow({ ...live, status: 'held' }, { now: NOW }), false)
+  assert.equal(keepSlipRow({ ...live, injury: 'OUT' }, { now: NOW }), false)
+  assert.equal(keepSlipRow({ ...live, held: true }, { now: NOW }), false)
+})
+
 test('started, locked, and scratched rows stay out of the slip', () => {
   assert.equal(keepSlipRow({ player: 'A', prop: 'Shots On Goal', line: 2.5, started: true }, { now: NOW }), false)
   assert.equal(keepSlipRow({ player: 'A', prop: 'Shots On Goal', line: 2.5, locked: true }, { now: NOW }), false)

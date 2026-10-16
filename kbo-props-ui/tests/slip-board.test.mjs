@@ -2,16 +2,20 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { breakevenFor } from '../src/prizepicksBreakeven.js'
+import { nflCgScore } from '../src/nfl/nflLineFloors.js'
 import {
   PAYOUT_ENTRY,
   addLeg,
   boardRows,
   cardAverage,
+  compareSlipRows,
   estimateFor,
   headshotFor,
   ladderFor,
   l10Text,
   logoFor,
+  naturalSide,
+  shownCg,
 } from '../src/slipBoardModel.js'
 import { legCg, payoutDollars, payoutFor, playersRepeat } from '../src/slipRank.js'
 
@@ -49,6 +53,54 @@ test('a demon on the slip marks the payout altered and blocks a second player pr
   assert.equal(legs.length, 2)
   assert.equal(estimateFor('power', legs.length, true).altered, true)
   assert.equal(payoutFor('power', 2, { altered: true }).altered, true)
+})
+
+test('NFL slip scores use the board floors so short rush and receiving lines do not lead', () => {
+  const mccarthy = { name: 'J.J. McCarthy', prop: 'Rush Yards', line: 2.5, projection: 15.9, odds_type: 'standard', sport: 'nfl' }
+  const cousins = { name: 'Kirk Cousins', prop: 'Rush Yards', line: 1.5, projection: 6.2, odds_type: 'standard', sport: 'nfl' }
+  const penix = { name: 'Michael Penix Jr.', prop: 'Rush Yards', line: 2.5, projection: 8.6, odds_type: 'standard', sport: 'nfl' }
+  const hutchinson = { name: 'Xavier Hutchinson', prop: 'Receiving Yards', line: 14.5, projection: 35.9, odds_type: 'standard', sport: 'nfl' }
+  const atFloor = { name: 'Keaton Mitchell', prop: 'Rush Yards', line: 18.5, projection: 30.3, odds_type: 'standard', sport: 'nfl' }
+  const missingType = { name: 'No Type', prop: 'Rush Yards', line: 1.5, projection: 40, sport: 'nfl' }
+  assert.equal(shownCg(mccarthy), nflCgScore(15.9, 2.5, 'Rush Yards'))
+  assert.equal(shownCg(mccarthy), (15.9 / 18.5) * 50)
+  assert.equal(shownCg(cousins), (6.2 / 18.5) * 50)
+  assert.equal(shownCg(penix), (8.6 / 18.5) * 50)
+  assert.equal(shownCg(hutchinson), (35.9 / 15.5) * 50)
+  assert.equal(shownCg(atFloor), (30.3 / 18.5) * 50)
+  assert.notEqual(shownCg(mccarthy), (15.9 / 2.5) * 50)
+  assert.equal(naturalSide(mccarthy), 'MORE')
+  const board = boardRows([penix, mccarthy, missingType, cousins, hutchinson, atFloor], { standardOnly: true, sortDesc: true })
+  assert.deepEqual(board.map((row) => row.name), [
+    'Xavier Hutchinson',
+    'Keaton Mitchell',
+    'J.J. McCarthy',
+    'Michael Penix Jr.',
+    'Kirk Cousins',
+  ])
+})
+
+test('equal CG scores break ties by name, prop, and line', () => {
+  const zed = { name: 'Zed', prop: 'Receptions', line: 4.5, projection: 4.5, odds_type: 'standard' }
+  const amy = { name: 'Amy', prop: 'Receptions', line: 4.5, projection: 4.5, odds_type: 'standard' }
+  const amyRush = { name: 'Amy', prop: 'Rush Attempts', line: 4.5, projection: 4.5, odds_type: 'standard' }
+  const amyShort = { name: 'Amy', prop: 'Receptions', line: 3.5, projection: 3.5, odds_type: 'standard' }
+  assert.equal(shownCg(zed), shownCg(amy))
+  assert.equal(shownCg(amyRush), shownCg(amy))
+  const forward = boardRows([zed, amyRush, amy, amyShort], { sortDesc: true })
+  const backward = boardRows([amyShort, amy, amyRush, zed], { sortDesc: true })
+  const expected = ['Amy', 'Amy', 'Amy', 'Zed']
+  assert.deepEqual(forward.map((row) => row.name), expected)
+  assert.deepEqual(backward.map((row) => row.name), expected)
+  assert.deepEqual(forward.map((row) => `${row.prop}|${row.line}`), [
+    'Receptions|3.5',
+    'Receptions|4.5',
+    'Rush Attempts|4.5',
+    'Receptions|4.5',
+  ])
+  const low = boardRows([zed, amy], { sortDesc: false })
+  assert.deepEqual(low.map((row) => row.name), ['Amy', 'Zed'])
+  assert.ok(compareSlipRows(zed, amy, true) > 0)
 })
 
 test('the board sorts by CG Score and keeps a yardage floor unscored', () => {

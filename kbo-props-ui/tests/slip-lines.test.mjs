@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { cgScore } from '../src/cgScore.js'
+import { compareSlipRows } from '../src/slipBoardModel.js'
 import { isPromoLine, isStandardLine, matchImportedPick, oddsTypeOf, standardSlipRows } from '../src/slipLines.js'
 
 // slipSports.js is a Vite module (extensionless imports). Load the pure
 // basketball builder from source so this test still runs under node --test.
+// byCg calls compareSlipRows after the NFL floors change, so pass it in.
 function loadBasketRows() {
   const source = readFileSync(new URL('../src/slipSports.js', import.meta.url), 'utf8')
   const start = source.indexOf('function lineTypePresent')
@@ -15,11 +16,11 @@ function loadBasketRows() {
     const n = Number(value)
     return Number.isFinite(n) ? n : null
   }
-  return new Function('isStandardLine', 'oddsTypeOf', 'num', 'cgScore', 'keepSlipRow', 'BASKET_SHORT', `${helpers}\n${source.slice(start, end)}\nreturn basketRows`)(
+  return new Function('isStandardLine', 'oddsTypeOf', 'num', 'compareSlipRows', 'keepSlipRow', 'BASKET_SHORT', `${helpers}\n${source.slice(start, end)}\nreturn basketRows`)(
     isStandardLine,
     oddsTypeOf,
     num,
-    cgScore,
+    compareSlipRows,
     () => true,
     { Points: 'PTS', Rebounds: 'REB', Assists: 'AST', '3-PT Made': '3PM', Steals: 'STL', Blocks: 'BLK', Turnovers: 'TOV', 'Fantasy Score': 'FANT' },
   )
