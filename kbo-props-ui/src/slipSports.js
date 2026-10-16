@@ -95,6 +95,7 @@ function basketRows(players) {
         edge,
         rating: num(prop?.rating),
         odds_type: prop?.odds_type || 'standard',
+        playerId: prop?.playerId || player?.playerId || player?.id || null,
       })
     }
   }
@@ -129,6 +130,7 @@ function flatRows(rows, shorts) {
       rating: num(row.rating),
       odds_type: row.odds_type || 'standard',
       position: row.position || '',
+      playerId: row.playerId || row.player_id || null,
     })
   }
   props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge))
