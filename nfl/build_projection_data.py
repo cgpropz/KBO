@@ -361,6 +361,100 @@ def prizepicks_pulled_status(status):
     if compact in PULLED_STATUSES:
         return compact
     return None
+
+
+def prizepicks_projection_ids(payload):
+    """Projection ids in a PrizePicks body. Empty when the body has none."""
+    if not isinstance(payload, dict):
+        return []
+    data = payload.get('data')
+    if not isinstance(data, list):
+        return []
+    ids = []
+    for item in data:
+        if not isinstance(item, dict) or item.get('id') is None:
+            continue
+        text = str(item.get('id')).strip()
+        if text:
+            ids.append(text)
+    return ids
+
+
+def prizepicks_fetch_is_usable(status, payload, error=None):
+    """False for a 403, any other error, or a body with no projection ids.
+
+    An unusable fetch must not be treated as "every saved id disappeared."
+    """
+    if error is not None or status is None:
+        return False
+    try:
+        code = int(status)
+    except (TypeError, ValueError):
+        return False
+    if code >= 400:
+        return False
+    return bool(prizepicks_projection_ids(payload))
+
+
+def projection_id_of(row):
+    """PrizePicks projection id stored on a board row.
+
+    The NFL board's own id is a player-prop slug. Only an explicit
+    projection_id, or a numeric id (the NHL card id), counts as one we have seen.
+    """
+    if not isinstance(row, dict):
+        return ''
+    explicit = row.get('projection_id')
+    if explicit is not None and not (isinstance(explicit, float) and pd.isna(explicit)):
+        text = str(explicit).strip()
+        if text and text.lower() != 'nan':
+            return text
+    raw = row.get('id')
+    text = '' if raw is None else str(raw).strip()
+    return text if text.isdigit() else ''
+
+
+def flag_missing_seen_projections(previous, current, fetched_ids, *, fetch_ok):
+    """Keep a previously seen projection a good fetch no longer returns.
+
+    The carried row is marked removed so the slip scratch check fires.
+    A 403, a raised error, or an empty id list marks nothing. An id that
+    is back in the fetch is not carried, so a relist drops the flag.
+    """
+    current_rows = [dict(row) for row in current or [] if isinstance(row, dict)]
+    if not fetch_ok:
+        return current_rows
+    fetched = {str(item).strip() for item in fetched_ids or [] if str(item).strip()}
+    if not fetched:
+        return current_rows
+    present = set()
+    merged = []
+    for row in current_rows:
+        pid = projection_id_of(row)
+        # A row already on this board (including one restored from the last
+        # file) whose PrizePicks id is gone is the same missing line.
+        if pid and pid not in fetched:
+            row['removed'] = True
+            row['pp_status'] = 'removed'
+            row['projection_id'] = pid
+        if pid:
+            present.add(pid)
+        merged.append(row)
+    for prev in previous or []:
+        if not isinstance(prev, dict):
+            continue
+        pid = projection_id_of(prev)
+        if not pid or pid in fetched or pid in present:
+            continue
+        carried = dict(prev)
+        carried['removed'] = True
+        carried['pp_status'] = 'removed'
+        carried['projection_id'] = pid
+        merged.append(carried)
+        present.add(pid)
+    return merged
+
+
 # Yardage markets only. A counting stat (Receptions, Rush Attempts, Pass TDs)
 # can legitimately be 0.5. These cannot.
 YARDAGE_PROPS = {
@@ -460,6 +554,7 @@ def slate_records(payload):
             'start_time': text_or_empty(attrs.get('start_time')),
             'image_url': text_or_empty(player.get('image_url')),
             'status': attrs.get('status'),
+            'projection_id': str(item.get('id') or '').strip(),
         })
     records = []
     for candidates in grouped.values():
@@ -473,6 +568,8 @@ def slate_records(payload):
             'start_time': chosen.get('start_time') or '',
             'image_url': chosen.get('image_url') or '',
         }
+        if chosen.get('projection_id'):
+            record['projection_id'] = chosen['projection_id']
         pulled = prizepicks_pulled_status(chosen.get('status'))
         if pulled:
             # Keep the standard card. Do not promote a demon in its place.
@@ -580,11 +677,37 @@ def _choose_schedule_game(matches, start_time, today):
     return min(pool, key=lambda game: (game['gameday'], game['gametime'] or ''))
 
 
+def load_prizepicks_payload():
+    """Return (payload, usable, error). A 403, error, or empty body is not usable."""
+    try:
+        response = requests.get(PRIZEPICKS_URL, timeout=30)
+        payload = response.json()
+        status = response.status_code
+        error = None
+    except (requests.RequestException, ValueError) as exc:
+        return None, False, exc
+    return payload, prizepicks_fetch_is_usable(status, payload, error), None
+
+
 def load_slate():
-    response = requests.get(PRIZEPICKS_URL, timeout=30)
-    response.raise_for_status()
-    records = slate_records(response.json())
-    return pd.DataFrame(records).drop_duplicates(['player', 'prop'])
+    payload, usable, failure = load_prizepicks_payload()
+    if not usable:
+        raise RuntimeError(
+            f'PrizePicks fetch failed or was empty ({failure or "empty"}); not marking lines removed.'
+        )
+    records = slate_records(payload)
+    frame = pd.DataFrame(records).drop_duplicates(['player', 'prop'])
+    return frame, prizepicks_projection_ids(payload)
+
+
+def _previous_projections(path=OUTPUT_PATH):
+    if not path.is_file():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return []
+    return payload if isinstance(payload, list) else []
 
 
 def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, participation=None):
@@ -726,6 +849,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'recentDvpRanks': recent_dvp_ranks, 'recentSnapPercents': recent_snap_pcts,
         'recentUsage': recent_usage, 'usageLabel': usage_label, 'targetsPerGame': targets_per_game,
         'teammates': teammates, 'teammateOn': teammate_on,
+        **({'projection_id': text_or_empty(getattr(row, 'projection_id', '')).strip()} if text_or_empty(getattr(row, 'projection_id', '')).strip() else {}),
         **_pulled_fields(row),
     }
 
@@ -821,7 +945,7 @@ def load_schedule_games():
 
 def main():
     history = load_history()
-    slate = load_slate()
+    slate, fetched_ids = load_slate()
     try:
         schedule = load_schedule_games()
     except Exception as exc:
@@ -834,6 +958,9 @@ def main():
     records = [make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, participation) for row in slate.itertuples(index=False)]
     if not records:
         raise RuntimeError('Refusing to publish an empty NFL PrizePicks slate.')
+    records = flag_missing_seen_projections(
+        _previous_projections(), records, fetched_ids, fetch_ok=True,
+    )
     OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')
     lineups = build_lineups()
     LINEUPS_OUTPUT_PATH.write_text(json.dumps(lineups, indent=2, allow_nan=False) + '\n')

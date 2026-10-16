@@ -216,6 +216,56 @@ class DvpRankTests(unittest.TestCase):
         self.assertEqual(copied, {'removed': True, 'pp_status': 'removed'})
         self.assertEqual(nfl._pulled_fields(type('Row', (), live)), {})
 
+    def test_a_missing_projection_id_is_marked_removed_only_after_a_good_fetch(self):
+        previous = [{
+            'id': 'jj-mccarthy-rush-yards',
+            'projection_id': '9001',
+            'player': 'J.J. McCarthy',
+            'prop': 'Rush Yards',
+            'line': 2.5,
+        }]
+        # The board slug is not a PrizePicks id, so it must not be marked on its own.
+        slug_only = [{'id': 'jj-mccarthy-rush-yards', 'player': 'J.J. McCarthy', 'prop': 'Rush Yards'}]
+        self.assertEqual(
+            nfl.flag_missing_seen_projections(slug_only, [], ['1'], fetch_ok=True),
+            [],
+        )
+        marked = nfl.flag_missing_seen_projections(previous, [], ['1'], fetch_ok=True)
+        self.assertIs(marked[0]['removed'], True)
+        self.assertEqual(marked[0]['pp_status'], 'removed')
+        self.assertEqual(marked[0]['projection_id'], '9001')
+        kept = nfl.flag_missing_seen_projections(previous, previous, [], fetch_ok=False)
+        self.assertNotIn('removed', kept[0])
+        empty = nfl.flag_missing_seen_projections(previous, previous, [], fetch_ok=True)
+        self.assertNotIn('removed', empty[0])
+        self.assertFalse(nfl.prizepicks_fetch_is_usable(403, {'data': [{'id': '9001'}]}))
+        self.assertFalse(nfl.prizepicks_fetch_is_usable(500, {'data': [{'id': '9001'}]}))
+        self.assertFalse(nfl.prizepicks_fetch_is_usable(200, {'data': []}))
+        self.assertFalse(nfl.prizepicks_fetch_is_usable(None, {'data': [{'id': '9001'}]}, error=OSError('down')))
+
+    def test_a_relisted_projection_clears_the_removed_flag(self):
+        previous = [{
+            'id': 'kadri-shots',
+            'projection_id': '15830428',
+            'player': 'Nazem Kadri',
+            'prop': 'Shots On Goal',
+            'line': 2.5,
+            'removed': True,
+            'pp_status': 'removed',
+        }]
+        current = [{
+            'id': 'kadri-shots',
+            'projection_id': '15830428',
+            'player': 'Nazem Kadri',
+            'prop': 'Shots On Goal',
+            'line': 2.5,
+        }]
+        merged = nfl.flag_missing_seen_projections(previous, current, ['15830428'], fetch_ok=True)
+        self.assertEqual(len(merged), 1)
+        self.assertNotIn('removed', merged[0])
+        self.assertNotIn('pp_status', merged[0])
+        self.assertEqual(merged[0]['line'], 2.5)
+
     def test_slate_keeps_prizepicks_image_url(self):
         payload = {
             'included': [

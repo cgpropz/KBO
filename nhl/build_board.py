@@ -103,6 +103,100 @@ def prizepicks_pulled_status(status) -> str | None:
     if compact in PULLED_STATUSES:
         return compact
     return None
+
+
+def prizepicks_projection_ids(payload) -> list[str]:
+    """Projection ids in a PrizePicks body. Empty when the body has none."""
+    if not isinstance(payload, dict):
+        return []
+    data = payload.get("data")
+    if not isinstance(data, list):
+        return []
+    ids = []
+    for item in data:
+        if not isinstance(item, dict) or item.get("id") is None:
+            continue
+        text = str(item.get("id")).strip()
+        if text:
+            ids.append(text)
+    return ids
+
+
+def prizepicks_fetch_is_usable(status, payload, error=None) -> bool:
+    """False for a 403, any other error, or a body with no projection ids.
+
+    An unusable fetch must not be treated as "every saved id disappeared."
+    """
+    if error is not None or status is None:
+        return False
+    try:
+        code = int(status)
+    except (TypeError, ValueError):
+        return False
+    if code >= 400:
+        return False
+    return bool(prizepicks_projection_ids(payload))
+
+
+def projection_id_of(row) -> str:
+    """PrizePicks projection id stored on a board row.
+
+    A numeric id is the PrizePicks card id this writer already publishes.
+    A player-prop slug is not.
+    """
+    if not isinstance(row, dict):
+        return ""
+    explicit = row.get("projection_id")
+    if explicit is not None:
+        text = str(explicit).strip()
+        if text and text.lower() != "nan":
+            return text
+    raw = row.get("id")
+    text = "" if raw is None else str(raw).strip()
+    return text if text.isdigit() else ""
+
+
+def flag_missing_seen_projections(previous, current, fetched_ids, *, fetch_ok) -> list:
+    """Keep a previously seen projection a good fetch no longer returns.
+
+    The carried row is marked removed so the slip scratch check fires.
+    A 403, a raised error, or an empty id list marks nothing. An id that
+    is back in the fetch is not carried, so a relist drops the flag.
+    """
+    current_rows = [dict(row) for row in current or [] if isinstance(row, dict)]
+    if not fetch_ok:
+        return current_rows
+    fetched = {str(item).strip() for item in fetched_ids or [] if str(item).strip()}
+    if not fetched:
+        return current_rows
+    present = set()
+    merged = []
+    for row in current_rows:
+        pid = projection_id_of(row)
+        # A row already on this board (including one restored from the last
+        # file) whose PrizePicks id is gone is the same missing line.
+        if pid and pid not in fetched:
+            row["removed"] = True
+            row["pp_status"] = "removed"
+            row["projection_id"] = pid
+        if pid:
+            present.add(pid)
+        merged.append(row)
+    for prev in previous or []:
+        if not isinstance(prev, dict):
+            continue
+        pid = projection_id_of(prev)
+        if not pid or pid in fetched or pid in present:
+            continue
+        carried = dict(prev)
+        carried["removed"] = True
+        carried["pp_status"] = "removed"
+        carried["projection_id"] = pid
+        merged.append(carried)
+        present.add(pid)
+    return merged
+
+
 FINAL_STATES = {"OFF", "FINAL", "OVER"}
 UPCOMING_STATES = {"FUT", "PRE"}
 
@@ -272,7 +366,20 @@ def _this_slate(games: list[dict]) -> list[dict]:
 
 
 def fetch_prizepicks():
-    return prizepicks_cards(_json(PRIZEPICKS_URL))
+    """Return (cards, projection ids) for a usable body, else (None, []).
+
+    A 403, a transport error, or an empty body leaves the previous board
+    alone and does not mark any projection removed.
+    """
+    try:
+        payload = _json(PRIZEPICKS_URL)
+    except Exception as exc:  # noqa: BLE001
+        print(f"PrizePicks failed, skipping projections: {exc}")
+        return None, []
+    if not prizepicks_fetch_is_usable(200, payload):
+        print("PrizePicks fetch was empty; leaving projections unmarked")
+        return None, []
+    return prizepicks_cards(payload), prizepicks_projection_ids(payload)
 
 
 def prizepicks_cards(payload):
@@ -854,11 +961,7 @@ def build(root: Path, out_dir: Path) -> int:
         for team in (game["away"], game["home"]):
             by_team_game.setdefault(team, game)
 
-    try:
-        cards = fetch_prizepicks()
-    except Exception as exc:  # noqa: BLE001
-        print(f"PrizePicks failed, skipping projections: {exc}")
-        cards = None
+    cards, fetched_ids = fetch_prizepicks()
     try:
         goalies, slugs = fetch_goalies()
     except Exception as exc:  # noqa: BLE001
@@ -928,6 +1031,7 @@ def build(root: Path, out_dir: Path) -> int:
                 projections.append({
                     **chart,
                     "id": card["id"],
+                    "projection_id": card["id"],
                     "player": card["player"],
                     "playerId": str(history[-1]["player_id"]) if history else None,
                     "team": card["team"],
@@ -974,6 +1078,10 @@ def build(root: Path, out_dir: Path) -> int:
         if blocked and not projections:
             print("ERROR: no current-season logs and no previous board; leaving the last file")
             projections_ready = False
+        else:
+            projections = flag_missing_seen_projections(
+                previous, projections, fetched_ids, fetch_ok=True,
+            )
     else:
         removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)
