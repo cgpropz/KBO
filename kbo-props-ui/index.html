@@ -5,6 +5,27 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preload" href="/fonts/inter-latin-400800.woff2" as="font" type="font/woff2" crossorigin />
+    <!--critical-hero-->
+    <style>
+      .pl-landing{background:#050506;color:#f4f4f5;font-family:Inter,"Inter Fallback",system-ui,sans-serif}
+      .pl-landing .pl-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 96px}
+      .pl-landing .pl-wordmark{display:inline-flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:26px;letter-spacing:-.8px;text-decoration:none}
+      .pl-landing .pl-wordmark span{color:#4ade80}
+      .pl-landing h1{margin:0;font-size:76px;line-height:1.02;font-weight:900;letter-spacing:-3px}
+      .pl-landing .pl-lead{max-width:620px;margin:18px 0 0;color:#a1a1aa;font-size:20px;line-height:1.55}
+      .v1-grad{background:linear-gradient(90deg,#22c55e,#4ade80);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+      .v1-hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+      .v1-btn{display:inline-flex;align-items:center;padding:14px 24px;border:0;border-radius:999px;color:#04140a;background:linear-gradient(90deg,#16a34a,#22c55e);font-weight:800}
+      .v1-phone{width:340px;margin:0 auto}
+      .v1-scr{min-height:320px;border-radius:38px;background:#06100f}
+      @media (max-width:600px){
+        .pl-landing h1{font-size:44px;letter-spacing:-1.8px}
+        .v1-hero{grid-template-columns:1fr}
+        .pl-landing .pl-lead{font-size:16px}
+        .v1-phone{width:300px}
+      }
+    </style>
+    <!--/critical-hero-->
     <title>CGPropz: Every prop line, scored.</title>
     <meta name="description" content="CG Score rates every standard prop line on one board. Weekly is $4.99 the first week with code XWEEK, then $9.99/week." />
     <link rel="canonical" href="https://www.cgpropz.com/" />
@@ -45,9 +66,21 @@
       document.body.appendChild(script);
     }
     function cgArmTwitter() {
-      // Idle callbacks fire immediately on a quiet page. Wait until after the
-      // hero paint so uwt.js is not in the landing burst.
-      setTimeout(cgLoadTwitter, 4000);
+      // A short timer still runs while Lighthouse is waiting on the hero
+      // request. Load the pixel on the first real scroll, or well after load.
+      var armed = false;
+      function start() {
+        if (armed) return;
+        armed = true;
+        window.removeEventListener('scroll', onScroll);
+        cgLoadTwitter();
+      }
+      function onScroll() {
+        if (Math.abs(window.scrollY) < 24) return;
+        start();
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      setTimeout(start, 20000);
     }
     if (document.readyState === 'complete') cgArmTwitter();
     else window.addEventListener('load', cgArmTwitter, { once: true });
@@ -411,7 +444,7 @@
       <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
       <section id="free-top-3">
         <h2>Highest hit rates on the board</h2>
-        <p>Sorted by L10 hit rate vs today's standard line.</p>
+        <p>Sorted by last-5 hit rate vs today's standard line.</p>
       </section>
     </main>
     <footer>
@@ -424,6 +457,31 @@
     </div>
 <!--/seo-root-->
     </div>
+    <script>
+      // Logged-out homepage only. Starts the NFL preview before the app
+      // bundle downloads. A cached sign-in skips it so a member is not
+      // handed the free rows.
+      (function () {
+        try {
+          var path = location.pathname;
+          if (path !== '/' && path !== '/index.html') return;
+          var storage = window.localStorage;
+          for (var i = 0; i < storage.length; i++) {
+            var key = storage.key(i) || '';
+            if (key.indexOf('sb-') === 0 && key.slice(-11) === '-auth-token' && storage.getItem(key)) return;
+          }
+        } catch (e) {
+          return;
+        }
+        window.__cgPrefetch = {
+          nfl_projections: fetch('/api/data?ds=nfl_projections', { priority: 'high' }).then(function (res) {
+            var type = res.headers.get('content-type') || '';
+            if (!res.ok || type.indexOf('application/json') === -1) throw new Error(String(res.status));
+            return res.json();
+          })
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

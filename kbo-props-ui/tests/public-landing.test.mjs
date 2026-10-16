@@ -8,11 +8,16 @@ import {
   isGoalScorerStat,
   publicBoardRows,
   publicLandingIncludesReviews,
+  publicPhoneRows,
   publicTopHitRows,
+  publicTopL5Rows,
 } from '../src/publicBoard.js'
 
 const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url), 'utf8')
+const sports = readFileSync(new URL('../src/landingSports.js', import.meta.url), 'utf8')
 const hub = readFileSync(new URL('../src/CgpropzLanding.jsx', import.meta.url), 'utf8')
+const gate = readFileSync(new URL('../src/whenVisibleOrIdle.js', import.meta.url), 'utf8')
+const hero = landing.slice(landing.indexOf('className="pl-hero'), landing.indexOf('id="free-top-3"'))
 
 function log(length, value) {
   return Array.from({ length }, () => value)
@@ -51,20 +56,60 @@ test('public rows reuse the board filters and do not apply a QA name allowlist',
   ])).length, 0)
 })
 
-test('the public landing has no reviews section', () => {
+test('the public landing uses v1 copy and does not invent reviews or stats', () => {
   assert.equal(publicLandingIncludesReviews(), false)
   assert.equal(landing.includes('Testimonials'), false)
   assert.equal(landing.includes('TestimonialForm'), false)
-  assert.equal(/What members say/i.test(landing), false)
-  assert.equal(landing.includes('data-c="reviews"'), false)
+  assert.match(landing, /What members say/)
+  assert.match(landing, /REVIEWS\.length > 0/)
+  assert.equal(landing.includes('PLACEHOLDER'), false)
+  assert.equal(landing.includes('No invented reviews'), false)
+  assert.match(hero, /Every prop line/)
+  assert.equal(/PrizePicks|DraftKings|FanDuel|Underdog|sportsbook/i.test(hero), false)
   assert.equal(/\bSAMPLE\b/.test(landing), false)
-  assert.equal(/PLACEHOLDER/.test(landing), false)
-  assert.equal(/PrizePicks/.test(landing), false)
+  assert.equal(landing.includes('[ # ]'), false)
+  assert.equal(landing.includes('Props scored daily'), false)
+  assert.equal(landing.includes('Avg. rating'), false)
+  assert.equal(landing.includes('subscriber-count'), false)
+  assert.equal(landing.includes('>Members<'), false)
+  assert.equal((landing.match(/src="\/favicon\.svg"/g) || []).length, 1)
+  assert.match(landing, /useState\(HERO_SPORT\.name\)/)
+  assert.match(landing, /loading="lazy"/)
+  assert.match(landing, /fitImage\(/)
+})
+
+test('last-5 hit rates need a real five-game log', () => {
+  const rows = nflHubRows([
+    { player: 'Long', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(12, 8) },
+    { player: 'Five', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(5, 8) },
+    { player: 'Short', prop: 'Receptions', line: 5.5, projection: 7, line_type: 'standard', recent: log(4, 8) },
+  ])
+  const leaders = publicTopL5Rows(rows)
+  assert.deepEqual(leaders.map((row) => row.player), ['Five', 'Long'])
+  const five = leaders.find((row) => row.player === 'Five')
+  const long = leaders.find((row) => row.player === 'Long')
+  assert.equal(five.l10, null)
+  assert.equal(five.l5.hits <= five.l5.games, true)
+  assert.ok(long.l10)
+  assert.equal(long.l10.hits <= long.l10.games, true)
+  assert.equal(publicPhoneRows(rows).some((row) => row.player === 'Short'), true)
+  assert.equal(publicPhoneRows(rows, 2).length, 2)
 })
 
 test('the public landing features NFL on the hero, phone, and sport tabs', () => {
   assert.equal(HERO_LANDING_SPORT_ID, 'nfl')
-  assert.match(landing, /useState\(HERO_LANDING_SPORT_ID\)/)
+  assert.match(sports, /HERO_LANDING_SPORT_ID = 'nfl'/)
+  assert.match(landing, /useState\(HERO_SPORT\.name\)/)
+  assert.match(landing, /publicPhoneRows\(heroState\?\.rows/)
+  assert.equal(/publish\(HERO_SPORT, snap, null\)/.test(landing), false)
+  assert.match(landing, /HERO_SPORT\.lineups/)
+  assert.match(landing, /'high'/)
+  assert.equal(landing.includes("'low'"), false)
+  assert.match(landing, /!NFL_FREE_PREVIEW_ENABLED && lockedCount/)
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+  assert.match(html, /__cgPrefetch/)
+  assert.match(html, /\/api\/data\?ds=nfl_projections/)
+  assert.equal(html.includes('NFL free preview is off right now'), false)
   assert.equal(/setSportId\(withRows\.id\)/.test(landing), false)
   assert.equal(/setHitSportId\(withHits\.id\)/.test(landing), false)
 })
@@ -73,6 +118,15 @@ test('the public landing does not open a Stripe Checkout Session on load', () =>
   assert.equal(landing.includes('prefetchWeeklyCheckoutUrl'), false)
   assert.match(landing, /requestWeeklyCheckoutUrl/)
   assert.match(landing, /HERO_LANDING_SPORT_ID|HERO_SPORT/)
+})
+
+test('other landing boards load on scroll, not on a timer', () => {
+  assert.match(landing, /whenVisible\(/)
+  assert.equal(/whenVisibleOrIdle\(/.test(landing), false)
+  assert.equal(gate.includes('onPageIdle'), false)
+  assert.equal(gate.includes('AFTER_LOAD'), false)
+  assert.match(gate, /scroll/)
+  assert.match(gate, /afterPaint/)
 })
 
 test('free visitors use the public landing and paid members keep the Sports Hub', () => {

@@ -1,34 +1,17 @@
-// Run work after the visitor scrolls a section into view, or once the hero
-// has had time to paint. requestIdleCallback on a quiet page runs in the same
-// turn as `load`, which still starts every deferred /api/data call inside the
-// initial burst. A gap after `load` leaves the hero request as the only data
-// fetch while the largest text paints.
+// Deferred landing work starts only after the visitor scrolls a data section
+// into view. A timer fetches the other boards while a slow hero request is
+// still open, and parsing those payloads is one long main-thread task.
 
-export const AFTER_LOAD_MS = 3000
-
-export function onPageIdle(cb, timeout = AFTER_LOAD_MS) {
-  if (typeof window === 'undefined') return () => {}
-  let cancelInner = () => {}
-  let finished = false
-  const run = () => {
-    if (finished) return
-    finished = true
-    cb()
-  }
-  const arm = () => {
-    const id = setTimeout(run, timeout)
-    cancelInner = () => clearTimeout(id)
-  }
-  if (document.readyState === 'complete') arm()
-  else window.addEventListener('load', arm, { once: true })
-  return () => {
-    finished = true
-    cancelInner()
-    window.removeEventListener('load', arm)
-  }
+export function afterPaint() {
+  return new Promise((resolve) => {
+    const finish = () => setTimeout(resolve, 0)
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(finish)
+    else finish()
+  })
 }
 
-export function whenVisibleOrIdle(ids, cb) {
+export function whenVisible(ids, cb) {
+  if (typeof window === 'undefined') return () => {}
   let ran = false
   let observer = null
   const nodes = () => ids.map((id) => document.getElementById(id)).filter(Boolean)
@@ -39,7 +22,6 @@ export function whenVisibleOrIdle(ids, cb) {
   const cleanup = () => {
     observer?.disconnect()
     window.removeEventListener('scroll', onScroll)
-    cancelIdle()
   }
   const run = () => {
     if (ran) return
@@ -47,9 +29,8 @@ export function whenVisibleOrIdle(ids, cb) {
     cleanup()
     cb()
   }
-  // A section already on screen still waits out the hero. A real scroll
-  // starts the work immediately. Ignore the scroll event some browsers emit
-  // while the first layout settles, or every dataset starts on load.
+  // Ignore the scroll event some browsers emit while the first layout
+  // settles. A real scroll of a data section starts the work.
   let scrolled = false
   const originY = window.scrollY
   function onScroll() {
@@ -65,6 +46,5 @@ export function whenVisibleOrIdle(ids, cb) {
     nodes().forEach((node) => observer.observe(node))
   }
   window.addEventListener('scroll', onScroll, { passive: true })
-  const cancelIdle = onPageIdle(run)
   return cleanup
 }

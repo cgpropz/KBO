@@ -6,6 +6,7 @@
 // same filters as every other player. NHL goal-scorer props are not a board
 // stat; a row whose stat says "goal scorer" is still left off.
 
+import { chartWindowRate } from './hitRateStrip.js'
 import { confirmedGoalieStarters, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
 import { kickoffInstant, statusPill } from './nfl/gameCardModel.js'
@@ -61,6 +62,57 @@ export function publicTopHitRows(rows, limit = 10) {
 
 export function publicSwitcherRows(rows, limit = 6) {
   return topHubRows(publicBoardRows(rows), limit)
+}
+
+// Last `size` logged games. Recent values are oldest → newest. A shorter log
+// is not that window. Pushes leave both the hit count and the denominator.
+export function hitWindow(row, size) {
+  const recent = Array.isArray(row?.recent) ? row.recent : []
+  if (recent.length < size) return null
+  const rated = chartWindowRate(recent.slice(-size), row?.line, row?.side)
+  if (!rated || !rated.games) return null
+  return rated
+}
+
+// Highest last-5 hit rate. L10 is attached only when that log is real.
+export function publicTopL5Rows(rows, limit = 10) {
+  const ranked = publicBoardRows(rows)
+    .map((row) => {
+      const l5 = hitWindow(row, 5)
+      if (!l5) return null
+      return { ...row, l5, l10: hitWindow(row, 10) }
+    })
+    .filter(Boolean)
+    .sort((a, b) => (
+      (b.l5.rate - a.l5.rate)
+      || (b.l5.hits - a.l5.hits)
+      || (b.l5.games - a.l5.games)
+      || ((Number.isFinite(b.score) ? b.score : -Infinity) - (Number.isFinite(a.score) ? a.score : -Infinity))
+      || String(a.player).localeCompare(String(b.player))
+      || String(a.stat).localeCompare(String(b.stat))
+    ))
+  const seen = new Set()
+  const out = []
+  for (const row of ranked) {
+    const key = `${row.player}|${row.stat}|${row.line}|${row.side || ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(row)
+    if (out.length >= limit) break
+  }
+  return out
+}
+
+// Highest CG Score on the hero board. Same player can appear on two props.
+export function publicPhoneRows(rows, limit = 7) {
+  return publicBoardRows(rows)
+    .filter((row) => Number.isFinite(Number(row.line)) && Number.isFinite(row.score))
+    .sort((a, b) => (
+      b.score - a.score
+      || String(a.player).localeCompare(String(b.player))
+      || String(a.stat).localeCompare(String(b.stat))
+    ))
+    .slice(0, limit)
 }
 
 export function publicLandingIncludesReviews() {

@@ -1,35 +1,54 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
 import { useAgeGate } from './ageGateContext';
-import DiscordOnlyPlans from './DiscordOnlyPlans';
 import { fitImage } from './fitImage';
 import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
-import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { STRIPE_LINKS } from './pricingTiers';
 import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
-import { publicFaqs } from './publicFaqs';
-import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
+import { AFFILIATION_LINE, AGE_LINE, GAMBLER_HELP_URL, OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
-import { whenVisibleOrIdle } from './whenVisibleOrIdle';
+import { afterPaint, whenVisible } from './whenVisibleOrIdle';
 import './PublicLanding.css';
 
-const FAQS = publicFaqs();
 const HERO_SPORT = LANDING_SPORTS.find((sport) => sport.id === HERO_LANDING_SPORT_ID) || LANDING_SPORTS[0];
 
-const fmt = (value) => {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return '—';
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-};
+const LEAGUES = [
+  ['KBO', 'Korean baseball', 'Hits, runs, RBIs, strikeouts. Daily boards and cheat sheets.'],
+  ['NFL', 'Football', 'Matchup sheets, DVP, snap and usage trends.'],
+  ['NHL', 'Hockey', 'Shots, points, saves. Nightly boards and recaps.'],
+  ['WNBA', 'Basketball', 'Points, boards, assists, PRA.'],
+];
 
-const fmtScore = (value) => {
+const FAQS = [
+  ['What is CG Score?', 'Our model\'s rating for each prop: CG projection vs the PrizePicks line, plus recent hit rates and defense vs position. It\'s research, not a guarantee.'],
+  ['Which leagues are covered?', 'KBO, NFL, NHL and WNBA, all under one All-Access login.'],
+  ['What does XWEEK do?', 'First-time customers pay $4.99 for the first week, then $9.99/week. Cancel anytime.'],
+  ['Is CGPropz affiliated with PrizePicks?', 'No. CGPropz is an independent data and analysis site. It is not a sportsbook and takes no wagers.'],
+  ['Can I cancel anytime?', 'Yes. Access runs to the end of your billing period. Lifetime has nothing to cancel.'],
+];
+
+// Approved member quotes only. An empty list hides the reviews section.
+const REVIEWS = [];
+
+function finite(value) {
   const n = Number(value);
-  if (!Number.isFinite(n)) return '—';
+  return Number.isFinite(n) ? n : null;
+}
+
+function fmt(value) {
+  const n = finite(value);
+  if (n == null) return '';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function fmtScore(value) {
+  const n = finite(value);
+  if (n == null) return '';
   return n.toFixed(1);
-};
+}
 
 function initials(name) {
   return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
@@ -37,78 +56,61 @@ function initials(name) {
 
 function ordinal(value) {
   const n = Math.round(Number(value));
-  if (!Number.isFinite(n)) return '—';
+  if (!Number.isFinite(n)) return '';
   const mod = n % 100;
   const suffix = mod >= 11 && mod <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th';
   return `${n}${suffix}`;
 }
 
-function Headshot({ row }) {
-  const src = row?.image ? fitImage(row.image, 38) : '';
-  if (!src) return <span className="pl-avatar" aria-hidden="true">{initials(row?.player)}</span>;
-  return <img className="pl-avatar" src={src} alt="" width="38" height="38" />;
+function projTone(row) {
+  const proj = finite(row?.projection);
+  const line = finite(row?.line);
+  if (proj == null || line == null) return '';
+  const under = String(row?.side || '').toUpperCase() === 'UNDER';
+  return (under ? proj < line : proj > line) ? 'v1-up' : 'v1-down';
 }
 
-function BoardTable({ rows, showHitRate }) {
-  if (!rows.length) return null;
+function rowKey(row) {
+  return `${row.player}|${row.stat}|${row.line}|${row.side || ''}`;
+}
+
+function Headshot({ row, size = 44 }) {
+  const [failed, setFailed] = useState(false);
+  const src = !failed && row?.image ? fitImage(row.image, size) : '';
+  if (!src) {
+    return <span className="v1-hs v1-hs-fallback" style={{ width: size, height: size }} aria-hidden="true">{initials(row?.player)}</span>;
+  }
   return (
-    <div className="pl-table" role="table">
-      <div className="pl-tr pl-th" role="row">
-        <span>Player · prop</span>
-        <span>Line</span>
-        <span>Proj</span>
-        <span>L10</span>
-        <span>CG</span>
-      </div>
-      {rows.map((row) => (
-        <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}`}>
-          <span className="pl-player">
-            <Headshot row={row} />
-            <span>
-              <b>{row.player}</b>
-              <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}</small>
-            </span>
-          </span>
-          <span className="pl-num">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</span>
-          <span className="pl-num pl-proj">{fmt(row.projection)}</span>
-          <span className="pl-num">
-            {showHitRate && Number.isFinite(row.hitRate) ? `${Math.round(row.hitRate)}%` : (Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? `${row.hitHits}/${row.hitGames}` : '—')}
-            {showHitRate && Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? <small>{row.hitHits}/{row.hitGames}</small> : null}
-          </span>
-          <span className="pl-num pl-score">{fmtScore(row.score)}</span>
-        </div>
-      ))}
-    </div>
+    <img
+      className="v1-hs"
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
-function Phone({ rows }) {
+function Brand({ small = false, mark = false }) {
+  const size = small ? 30 : 40;
   return (
-    <div className="pl-phone" aria-hidden="true">
-      <div className="pl-phone-top"><i /><b>cgpropz</b><i /></div>
-      {rows.slice(0, 6).map((row) => (
-        <div className="pl-phone-row" key={`${row.player}|${row.stat}|${row.line}`}>
-          <span>
-            <b>{row.player}</b>
-            <small>{row.stat} · {row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</small>
-          </span>
-          <em>{fmtScore(row.score)}</em>
-        </div>
-      ))}
-      {!rows.length && <p className="pl-phone-empty">Board preview</p>}
-    </div>
+    <span className="pl-wordmark v1-brand">
+      {mark ? <img src="/favicon.svg" alt="" width={size} height={size} /> : null}
+      cg<span>propz</span>
+    </span>
   );
 }
 
-export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSignOut, user }) {
-  const menu = usePageMenu();
+export default function PublicLanding({ onLogin, onSignOut, user }) {
   const { requireAge } = useAgeGate();
   const [boards, setBoards] = useState({});
   const [markets, setMarkets] = useState(null);
   const [boardApi, setBoardApi] = useState(null);
-  const [sportId, setSportId] = useState(HERO_LANDING_SPORT_ID);
-  const [hitSportId, setHitSportId] = useState(HERO_LANDING_SPORT_ID);
-  const [openFaq, setOpenFaq] = useState(null);
+  const [league, setLeague] = useState(HERO_SPORT.name);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
 
@@ -132,8 +134,10 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       return fetchApiDataset(ds, { devStaticPath: dev, priority });
     };
 
+    const boardReady = loadBoard();
+
     const publish = async (sport, snap, lineupData) => {
-      const mod = await loadBoard();
+      const mod = await boardReady;
       if (!active || !snap) return;
       setBoards((prev) => ({
         ...prev,
@@ -166,33 +170,46 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       await publish(sport, snap, lineupData);
     };
 
-    // One /api/data call while the hero paints. Board code and every other
-    // dataset wait until a data section is scrolled into view, or until a
-    // gap after load so they are not part of the initial burst.
-    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
+    // The featured sport starts with the page. Projections and lineups run
+    // together, and the phone paints as soon as the projections are in.
+    // A late injury report updates those rows. Every other board waits
+    // until a data section is scrolled into view.
+    const lineupPromise = HERO_SPORT.lineups
+      ? loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev).then((snap) => snap?.data ?? null).catch(() => null)
+      : Promise.resolve(null);
+    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'high').catch(() => 'error');
+    heroSnap.then(async (snap) => {
+      if (!active) return null;
+      if (snap === 'error') {
+        setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
+        return null;
+      }
+      let usedLineup = false;
+      const lineupData = await Promise.race([
+        lineupPromise.then((data) => {
+          usedLineup = true;
+          return data;
+        }),
+        new Promise((resolve) => { setTimeout(() => resolve(null), 0); }),
+      ]);
+      await publish(HERO_SPORT, snap, lineupData);
+      if (!usedLineup) {
+        lineupPromise.then((data) => {
+          if (active) publish(HERO_SPORT, snap, data);
+        });
+      }
+      return null;
+    });
 
-    const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
-      heroSnap.then(async (snap) => {
-        if (!active) return;
-        if (snap === 'error') {
-          setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
-          return;
-        }
-        let lineupData = null;
-        if (HERO_SPORT.lineups) {
-          try {
-            const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev);
-            lineupData = lineupSnap?.data ?? null;
-          } catch { /* a missing injury report still shows the board */ }
-        }
-        publish(HERO_SPORT, snap, lineupData);
-      });
-      LANDING_SPORTS.forEach((sport) => {
-        if (sport.id !== HERO_SPORT.id) loadSport(sport);
-      });
-      loadDataset('nfl_game_markets', 'nfl/game_markets.json')
+    const jobs = [
+      ...LANDING_SPORTS.filter((sport) => sport.id !== HERO_SPORT.id).map((sport) => () => loadSport(sport)),
+      () => loadDataset('nfl_game_markets', 'nfl/game_markets.json')
         .then((snap) => { if (active && snap) setMarkets(snap); })
-        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
+        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); }),
+    ];
+
+    const stop = whenVisible(['free-top-3', 'matchup', 'leagues'], () => {
+      jobs.reduce((chain, job) => chain.then(() => (active ? job() : null)).then(() => afterPaint()), Promise.resolve());
     });
 
     return () => {
@@ -201,20 +218,21 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     };
   }, []);
 
-  const sport = LANDING_SPORTS.find((item) => item.id === sportId) || LANDING_SPORTS[0];
-  const hitSport = LANDING_SPORTS.find((item) => item.id === hitSportId) || LANDING_SPORTS[0];
-  const sportState = boards[sport.id];
-  const hitState = boards[hitSport.id];
-  const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
-  const hitRows = boardApi ? boardApi.publicTopHitRows(hitState?.rows || []) : [];
-  const phoneRows = switchRows;
+  const heroState = boards[HERO_SPORT.id];
+  const allRows = LANDING_SPORTS.flatMap((sport) => boards[sport.id]?.rows || []);
+  const phoneRows = boardApi ? boardApi.publicPhoneRows(heroState?.rows || []) : [];
+  const hitRows = boardApi ? boardApi.publicTopL5Rows(allRows) : [];
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
-  const dvpRows = (gameRows.length ? gameRows : (boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 4) : [])).filter((row) => row.oppRank != null);
+  const dvpRows = (gameRows.length ? gameRows : []).filter((row) => row.oppRank != null);
   const settled = LANDING_SPORTS.every((item) => boards[item.id]);
+  const slate = boardApi ? boardApi.slateLabel(phoneRows) : '';
+  const phoneTitle = slate && slate !== 'Board' ? `${HERO_SPORT.name} · ${slate}` : HERO_SPORT.name;
+  const lockedPreview = hitRows.length
+    ? LANDING_SPORTS.map((sport) => boards[sport.id]).find((state) => state?.preview && state.lockedCount > 0)
+    : null;
 
   const scrollTo = (id) => {
-    menu.close();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -251,90 +269,90 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     finally { setLifetimeBusy(false); }
   };
 
-  const chooseSport = (id) => {
-    setSportId(id);
-  };
-
   return (
     <div className="pl-landing" id="top">
-      <div className="pl-glow" />
-      <header className="pl-header" onClick={(event) => { if (event.target.closest('#cg-page-menu a, #cg-page-menu button')) menu.close(); }}>
-        <a className="pl-wordmark" href="#top">cg<span>propz</span></a>
-        <PageMenuButton open={menu.open} onToggle={menu.toggle} />
-        <PageMenu open={menu.open}>
-          <nav className="pl-nav" aria-label="Page">
-            <a href="#boards" onClick={(event) => { event.preventDefault(); scrollTo('boards'); }}>Boards</a>
-            <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
-            <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
-            <a href="#pricing" onClick={(event) => { event.preventDefault(); scrollTo('pricing'); }}>Pricing</a>
-            <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
-          </nav>
-          <div className="pl-header-actions">
-            {user ? (
-              <button type="button" className="pl-text" onClick={onSignOut}>Sign out</button>
-            ) : (
-              <button type="button" className="pl-text" onClick={onLogin}>Log in</button>
-            )}
-            <button type="button" className="pl-cta pl-cta-small" onClick={() => scrollTo('pricing')}>Get the board</button>
-          </div>
-        </PageMenu>
+      <div className="v1-glow" />
+      <header className="pl-header v1-nav">
+        <a className="v1-brand-link" href="#top"><Brand mark /></a>
+        <nav className="pl-nav v1-links" aria-label="Page">
+          <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Boards</a>
+          <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
+          <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
+          <a href="#pricing" onClick={(event) => { event.preventDefault(); scrollTo('pricing'); }}>Pricing</a>
+          <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
+        </nav>
+        <button type="button" className="v1-btn v1-btn-sm" disabled={weeklyBusy} onClick={startWeekly}>
+          {weeklyBusy ? 'Opening checkout…' : 'Start for $4.99'}
+        </button>
       </header>
 
       <main className="pl-main">
-        <section className="pl-hero">
+        <section className="pl-hero v1-hero">
           <div>
-            <p className="pl-kick">KBO · NFL · NHL · WNBA</p>
-            <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
-            <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
-            <div className="pl-cta-row">
-              <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
-              <button type="button" className="pl-ghost" onClick={() => scrollTo('boards')}>See today's board</button>
+            <p className="pl-kick v1-kick">KBO · NFL · NHL · WNBA</p>
+            <h1>Every prop line, <span className="v1-grad">scored.</span></h1>
+            <p className="pl-lead v1-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
+            <div className="v1-cta-row">
+              <button type="button" className="v1-btn" disabled={weeklyBusy} onClick={startWeekly}>
+                {weeklyBusy ? 'Opening checkout…' : 'Start for $4.99 with XWEEK'} →
+              </button>
+              <button type="button" className="v1-btn v1-btn-ghost" onClick={() => scrollTo('free-top-3')}>See today's board</button>
             </div>
-            <ul className="pl-trust">
-              <li><i />Standard lines</li>
-              <li><i />CG Score on every row</li>
-              <li><i />One login, every league</li>
-            </ul>
+            <p className="v1-offer">Code <b>XWEEK</b> · $4.99 first week, then $9.99/wk · cancel anytime</p>
+            <div className="v1-trust">
+              <div className="v1-trust-item">
+                <b className="pl-num">{LANDING_SPORTS.length}</b>
+                <span>Leagues covered</span>
+              </div>
+            </div>
           </div>
-          <Phone rows={phoneRows} />
+          <Phone rows={phoneRows} title={phoneTitle} ready={!!heroState} lockedCount={heroState?.preview ? heroState.lockedCount : 0} sportName={HERO_SPORT.name} />
         </section>
 
         <section id="free-top-3">
-          <p className="pl-kick">{hitRows.length >= 10 ? 'Top 10 tonight' : 'L10 hit rates'}</p>
+          <p className="pl-kick v1-kick">{hitRows.length >= 10 ? 'Top 10 tonight' : 'Hit rates'}</p>
           <h2>Highest hit rates on the board</h2>
-          <p className="pl-lead">Sorted by L10 hit rate vs today's standard line. A log shorter than 10 games stays off this list.</p>
-          <div className="pl-seg" role="tablist" aria-label="Hit-rate sport">
-            {LANDING_SPORTS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={item.id === hitSport.id}
-                className={item.id === hitSport.id ? 'on' : ''}
-                onClick={() => setHitSportId(item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-          <div className="pl-card">
-            {hitRows.length ? <BoardTable rows={hitRows} showHitRate /> : (
-              <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
+          <p className="pl-lead v1-lead">Sorted by last-5 hit rate vs today's standard line.</p>
+          <div className="v1-card v1-t10">
+            {hitRows.length ? hitRows.map((row, index) => {
+              const width = row.l5.games > 0 ? Math.round((row.l5.hits / row.l5.games) * 100) : 0;
+              const who = [row.team, row.stat].filter(Boolean).join(' · ');
+              return (
+                <div className="v1-row" key={rowKey(row)}>
+                  <span className="v1-rk">{index + 1}</span>
+                  <Headshot row={row} />
+                  <div>
+                    <b>{row.player}</b>
+                    {who ? <small>{who}</small> : null}
+                  </div>
+                  {fmt(row.line) ? <span className="v1-ln pl-num">Line {fmt(row.line)}</span> : <span />}
+                  <div className="v1-hr pl-num">
+                    L5 {row.l5.hits}/{row.l5.games}
+                    {row.l10 ? ` · L10 ${row.l10.hits}/${row.l10.games}` : ''}
+                    <div className="v1-bar" aria-hidden="true"><i style={{ width: `${width}%` }} /></div>
+                  </div>
+                </div>
+              );
+            }) : (
+              <p className="v1-empty">{heroState ? (settled ? 'No last-5 sample on the public board right now.' : 'Loading the rest of the board…') : 'Loading the board…'}</p>
             )}
-            {hitState?.preview && hitState.lockedCount > 0 && (
-              <p className="pl-foot">Public preview · {hitState.lockedCount} more lines on All-Access</p>
+            {lockedPreview && (
+              <p className="v1-note">Public preview · {lockedPreview.lockedCount} more lines on All-Access</p>
+            )}
+            {hitRows.length > 0 && (
+              <p className="v1-note">Standard PrizePicks lines only · hit = cleared the line</p>
             )}
           </div>
         </section>
 
         <section id="matchup">
-          <p className="pl-kick">Matchup sheets</p>
+          <p className="pl-kick v1-kick">Matchup sheets</p>
           <h2>The whole game on one card</h2>
-          <div className="pl-two">
-            <div className="pl-card pl-match">
+          <div className="v1-two">
+            <div className="v1-card v1-match">
               {game ? (
                 <>
-                  <div className="pl-match-top">
+                  <div className="v1-match-top">
                     <TeamMark team={game.awayTeam} name={game.awayName} />
                     <div>
                       <b>{game.awayName || game.awayTeam} vs {game.homeName || game.homeTeam}</b>
@@ -342,18 +360,15 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                     </div>
                     <TeamMark team={game.homeTeam} name={game.homeName} />
                   </div>
-                  <div className="pl-markets">
+                  <div className="v1-markets">
                     <Market label="Spread" line={game.spread?.line} projection={game.spread?.projection} />
                     <Market label="Total" line={game.total?.line} projection={game.total?.projection} />
                   </div>
-                  {gameRows.length ? <BoardTable rows={gameRows} /> : (
-                    <p className="pl-empty">Player props for this game are on the full board.</p>
-                  )}
                 </>
               ) : (
-                <p className="pl-empty">
+                <p className="v1-empty">
                   {!markets
-                    ? 'Loading the game card…'
+                    ? 'The game card loads with the board.'
                     : (markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
                       ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
                       : 'No game card is posted right now.')}
@@ -361,179 +376,231 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               )}
             </div>
             <div>
-              <p className="pl-lead">CG model vs the posted number, defense vs position, snap and usage trends, and the injury report, ready before kickoff.</p>
+              <p className="pl-lead v1-lead">CG model vs market, defense vs position, snap and usage trends and the injury report, ready before kickoff.</p>
               {dvpRows.length > 0 && (
-                <div className="pl-card pl-dvp">
+                <div className="v1-card v1-dvp">
+                  <b>Defense vs position</b>
                   {dvpRows.map((row) => (
-                    <div key={`${row.player}|${row.stat}`} className="pl-dvp-row">
-                      <span><b>{row.player}</b><small>{row.stat}</small></span>
-                      <span className="pl-dvp-bar" aria-hidden="true"><i style={{ width: `${Math.max(8, (Number(row.oppRank) / 32) * 100)}%` }} /></span>
-                      <span className="pl-num">{ordinal(row.oppRank)}</span>
+                    <div className="v1-dvp-row" key={rowKey(row)}>
+                      <b>{row.player}</b>
+                      <span>{row.stat}</span>
+                      <span className="v1-x pl-num">{ordinal(row.oppRank)}</span>
                     </div>
                   ))}
                 </div>
               )}
-              <button type="button" className="pl-ghost" onClick={() => onOpenBoard?.('nfl')}>Open the NFL board</button>
             </div>
           </div>
         </section>
 
-        <section id="boards">
-          <p className="pl-kick">Leagues</p>
-          <h2>Switch sports, keep the board</h2>
-          <div className="pl-card pl-sw">
-            <div className="pl-sw-top">
-              <div className="pl-seg" role="tablist" aria-label="League">
-                {LANDING_SPORTS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={item.id === sport.id}
-                    className={item.id === sport.id ? 'on' : ''}
-                    onClick={() => chooseSport(item.id)}
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-              <p className="pl-sw-meta"><b>{sport.sportName}</b> · {boardApi ? boardApi.slateLabel(sportState?.rows || []) : 'Board'} · {sport.props}</p>
-            </div>
-            {switchRows.length ? <BoardTable rows={switchRows} /> : (
-              <p className="pl-empty">
-                {settled
-                  ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
-                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} lines are on the full board.` : ''}`
-                    : `No scored standard lines in the ${sport.name} public preview right now.`)
-                  : 'Loading the board…'}
-              </p>
-            )}
-            <div className="pl-foot">
-              <span>Standard lines · CG Score is the board score</span>
-              {sportState?.rows?.length > 0 && (
-                <button type="button" className="pl-text" onClick={() => onOpenBoard?.(sport.id)}>Open {sport.name}</button>
-              )}
-            </div>
-          </div>
-          <div className="pl-tick">
-            {LANDING_SPORTS.map((item) => (
-              <button key={item.id} type="button" className={item.id === sport.id ? 'on' : ''} onClick={() => chooseSport(item.id)}>
-                <i />{item.name} <em>{boardApi ? boardApi.slateLabel(boards[item.id]?.rows || []) : 'Board'}</em>
+        <section id="leagues">
+          <p className="pl-kick v1-kick">Leagues</p>
+          <h2>Four leagues, one board</h2>
+          <div className="v1-tabs" role="tablist" aria-label="League">
+            {LEAGUES.map(([id]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={id === league}
+                className={id === league ? 'v1-tab on' : 'v1-tab'}
+                onClick={() => setLeague(id)}
+              >
+                {id}
               </button>
+            ))}
+          </div>
+          <div className="v1-lg">
+            {LEAGUES.map(([id, title, copy]) => (
+              <div className={id === league ? 'v1-card v1-lg-card on' : 'v1-card v1-lg-card'} key={id}>
+                <p className="pl-kick v1-kick">{id}</p>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </div>
             ))}
           </div>
         </section>
 
         <section id="pricing">
-          <p className="pl-kick">Pricing</p>
+          <p className="pl-kick v1-kick">Pricing</p>
           <h2>One login. Every league.</h2>
-          <div className="pl-prices">
-            <article className="pl-price is-on">
-              <p className="pl-kick">Weekly</p>
-              <p className="pl-amount">$4.99 <span>first week</span></p>
-              <p className="pl-price-note">Then $9.99/week. Code XWEEK is applied at checkout when it is valid for this buyer.</p>
+          <div className="v1-prc">
+            <article className="v1-pc v1-hot">
+              <span className="v1-bd">FIRST WEEK $4.99</span>
+              <h3>Weekly All-Access</h3>
+              <p className="pl-amount v1-price">$4.99 <small>first week</small></p>
+              <p className="v1-then">then $9.99 / week</p>
+              <span className="v1-code">CODE: XWEEK</span>
               <ul>
-                <li>KBO, WNBA, NFL, and NHL boards</li>
-                <li>CG Score on every standard line</li>
-                <li>Hit rates and game logs</li>
-                <li>Cancel anytime</li>
+                <li>KBO, NFL, NHL &amp; WNBA boards</li>
+                <li>CG projections vs PrizePicks lines</li>
+                <li>Hit rates, DVP &amp; matchup sheets</li>
               </ul>
-              <button type="button" className="pl-cta" disabled={weeklyBusy} onClick={startWeekly}>
-                {weeklyBusy ? 'Opening checkout…' : 'Start weekly'}
+              <button type="button" className="v1-btn" disabled={weeklyBusy} onClick={startWeekly}>
+                {weeklyBusy ? 'Opening checkout…' : 'Start for $4.99'}
               </button>
             </article>
-            <article className="pl-price">
-              <p className="pl-kick">Monthly</p>
-              <p className="pl-amount">$29.99 <span>/ month</span></p>
-              <p className="pl-price-note">Every board, billed monthly.</p>
+            <article className="v1-pc">
+              <h3>Monthly All-Access</h3>
+              <p className="pl-amount v1-price">$29.99 <small>/ month</small></p>
+              <p className="v1-then">every sport, one login</p>
               <ul>
-                <li>Same boards as weekly</li>
-                <li>Billed once a month</li>
+                <li>Everything in Weekly</li>
+                <li>Slip builder &amp; prop tracker</li>
                 <li>Cancel anytime</li>
               </ul>
-              <a className="pl-ghost" href={buildCheckoutUrl(STRIPE_LINKS.monthly, user || null)}>Get monthly</a>
+              <a className="v1-btn v1-btn-ghost" href={buildCheckoutUrl(STRIPE_LINKS.monthly, user || null)}>Go monthly</a>
             </article>
-            <article className="pl-price">
-              <p className="pl-kick">Lifetime</p>
-              <p className="pl-amount">$249.99 <span>once</span></p>
-              <p className="pl-price-note">Pay once. No renewal.</p>
+            <article className="v1-pc">
+              <h3>Lifetime All-Access</h3>
+              <p className="pl-amount v1-price">$249.99 <small>once</small></p>
+              <p className="v1-then">no renewals</p>
               <ul>
-                <li>Same boards as weekly</li>
-                <li>One-time payment</li>
-                <li>No renewal</li>
+                <li>Everything in Monthly</li>
+                <li>All future features</li>
+                <li>One-time purchase</li>
               </ul>
-              <button type="button" className="pl-ghost" disabled={lifetimeBusy} onClick={buyLifetime}>
-                {lifetimeBusy ? 'Opening checkout…' : 'Buy lifetime'}
+              <button type="button" className="v1-btn v1-btn-ghost" disabled={lifetimeBusy} onClick={buyLifetime}>
+                {lifetimeBusy ? 'Opening checkout…' : 'Get lifetime'}
               </button>
             </article>
           </div>
-          <p className="pl-checkout-note">
-            No account needed to check out. Afterwards, sign up with the same email you used at checkout and the plan unlocks.
-            {!user && onGetStarted && (
-              <> <button type="button" className="pl-text" onClick={onGetStarted}>Create an account</button></>
-            )}
-            {' '}<a href="/pricing">Yearly and account plans</a>
+          <p className="v1-fine">
+            XWEEK: first-time customers only, $4.99 for week one, then $9.99/week until canceled. No free trial. Entertainment only.
+            {' '}<a href="/pricing">Prices on the pricing page</a>
           </p>
-          <DiscordOnlyPlans variant="public" user={user} />
         </section>
 
-        <section id="faq">
-          <p className="pl-kick">FAQ</p>
-          <h2>Questions, answered</h2>
-          <div className="pl-faq">
-            {FAQS.map((item) => {
-              const open = openFaq === item.q;
-              return (
-                <div key={item.q} className={open ? 'pl-faq-item is-open' : 'pl-faq-item'}>
-                  <button type="button" aria-expanded={open} onClick={() => setOpenFaq(open ? null : item.q)}>
-                    <span>{item.q}</span>
-                    <span aria-hidden="true">{open ? '−' : '+'}</span>
-                  </button>
-                  {open && <p>{item.a}</p>}
+        {REVIEWS.length > 0 && (
+          <section id="reviews">
+            <p className="pl-kick v1-kick">Reviews</p>
+            <h2>What members say</h2>
+            <div className="v1-rv">
+              {REVIEWS.map((review) => (
+                <div className="v1-rv-card" key={review.id}>
+                  <p>{review.quote}</p>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section id="faq">
+          <p className="pl-kick v1-kick">FAQ</p>
+          <h2>Questions, answered</h2>
+          <div className="v1-faq">
+            {FAQS.map(([q, a]) => (
+              <div className="v1-q" key={q}>
+                <b>{q}</b>
+                <p>{a}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         <section className="pl-close">
-          <h2>Score tonight's board in seconds.</h2>
-          <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
+          <div className="v1-close">
+            <p className="pl-kick v1-kick">Ready when the lines drop</p>
+            <h2>Score tonight's board in seconds.</h2>
+            <div className="v1-cta-row">
+              <button type="button" className="v1-btn" disabled={weeklyBusy} onClick={startWeekly}>
+                {weeklyBusy ? 'Opening checkout…' : 'Start for $4.99 with XWEEK'} →
+              </button>
+              <button type="button" className="v1-btn v1-btn-ghost" onClick={() => scrollTo('free-top-3')}>See today's board</button>
+            </div>
+            <p className="v1-offer">Code <b>XWEEK</b> · $4.99 first week, then $9.99/wk · cancel anytime</p>
+          </div>
         </section>
       </main>
 
-      <footer className="pl-footer">
-        <a className="pl-wordmark" href="#top">cg<span>propz</span></a>
-        <p className="pl-footer-links">
-          <a href="/guides/start-here">Start Here</a>
-          <a href="/guides/cg-score">How CG Score works</a>
-          <a href="/policies">Plans & Policies</a>
-          <a href="/terms">Terms</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/responsible-gaming">Responsible Gaming</a>
-          <a href="/states-not-available">Where CGPropz isn't available</a>
-        </p>
-        <p>{STANDARD_LINE}</p>
-        <p>{OPERATOR_DISCLAIMER}</p>
-        <p>© {new Date().getFullYear()} cgpropz</p>
+      <footer className="v1-footer">
+        <div>
+          <a className="v1-brand-link" href="#top"><Brand small /></a>
+          <p>Independent data &amp; analysis. Not a sportsbook. Not affiliated with PrizePicks.</p>
+          <p>{AFFILIATION_LINE}</p>
+          <p className="v1-footer-links">
+            <a href="/guides/start-here">Start Here</a>
+            <a href="/guides/cg-score">How CG Score works</a>
+            <a href="/policies">Plans &amp; Policies</a>
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/responsible-gaming">Responsible Gaming</a>
+            <a href="/states-not-available">Where CGPropz isn't available</a>
+            {user ? (
+              <button type="button" className="v1-text" onClick={onSignOut}>Sign out</button>
+            ) : (
+              <button type="button" className="v1-text" onClick={onLogin}>Log in</button>
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="v1-rg">{STANDARD_LINE}</p>
+          <p>{OPERATOR_DISCLAIMER}</p>
+          <p>{AGE_LINE}</p>
+          <p><a href={GAMBLER_HELP_URL}>ncpgambling.org</a></p>
+        </div>
       </footer>
+    </div>
+  );
+}
+
+function Phone({ rows, title, ready, lockedCount = 0, sportName = '' }) {
+  const empty = !ready
+    ? 'Loading the board…'
+    : (!NFL_FREE_PREVIEW_ENABLED && lockedCount > 0
+      ? `${sportName} free preview is off. ${lockedCount} lines are on the full board.`
+      : 'No scored lines in this preview right now.');
+  return (
+    <div className="v1-phone">
+      <div className="v1-scr">
+        <div className="v1-notch" />
+        <div className="v1-ab">
+          <b>cg<span>propz</span></b>
+          <span className="v1-ab-tag">{title}</span>
+        </div>
+        <div className="v1-cgt" role="table">
+          <div className="v1-hd" role="row">
+            <span>Player · prop</span>
+            <span>Line</span>
+            <span>Proj</span>
+            <span>CG</span>
+          </div>
+          {rows.map((row) => (
+            <div className="v1-cgt-row" role="row" key={rowKey(row)}>
+              <div>
+                <b>{row.player}</b>
+                <small>{[row.team, row.stat].filter(Boolean).join(' · ')}</small>
+              </div>
+              <span className="pl-num v1-n">{fmt(row.line)}</span>
+              <span className={`pl-num v1-n ${projTone(row)}`}>{fmt(row.projection)}</span>
+              <span className="pl-num v1-cg">{fmtScore(row.score)}</span>
+            </div>
+          ))}
+          {!rows.length && (
+            <p className="v1-empty">{empty}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 function TeamMark({ team, name }) {
   const src = teamLogoUrl(team);
-  return src
-    ? <img src={fitImage(src, 36)} alt={name || team} width="36" height="36" />
-    : <span className="pl-avatar" aria-hidden="true">{initials(name || team)}</span>;
+  const fitted = src ? fitImage(src, 36) : '';
+  if (!fitted) return <span className="v1-hs v1-hs-fallback" aria-hidden="true">{initials(name || team)}</span>;
+  return <img className="v1-logo" src={fitted} alt={name || team || ''} width="36" height="36" loading="lazy" decoding="async" fetchPriority="low" />;
 }
 
 function Market({ label, line, projection }) {
+  const lineN = finite(line);
+  const projN = finite(projection);
+  if (lineN == null && projN == null) return null;
   return (
     <div>
       <span>{label}</span>
-      <b className="pl-num">{formatPoints(line)}</b>
-      <small>CG {formatPoints(projection)}</small>
+      {lineN != null && <b className="pl-num">{formatPoints(lineN)}</b>}
+      {projN != null && <small>CG {formatPoints(projN)}</small>}
     </div>
   );
 }

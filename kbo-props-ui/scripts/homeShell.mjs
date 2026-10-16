@@ -53,7 +53,7 @@ export function homeRootInner() {
       <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
       <section id="free-top-3">
         <h2>Highest hit rates on the board</h2>
-        <p>Sorted by L10 hit rate vs today's standard line.</p>
+        <p>Sorted by last-5 hit rate vs today's standard line.</p>
       </section>
     </main>
     <footer>

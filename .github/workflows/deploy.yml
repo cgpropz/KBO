@@ -79,9 +79,15 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Bake the public NFL preview
+        run: node scripts/bake-landing-preview.mjs || echo "Landing bake skipped. The live API still serves the preview."
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Deploy to Vercel
         run: |
-          npm i -g vercel@latest
+          npm i -g vercel@64.2.0
           vercel --prod --token "$VERCEL_TOKEN" --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

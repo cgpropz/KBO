@@ -51,13 +51,43 @@
     letter-spacing: -0.03em;
   }
 
-  body .pl-landing :is(.pl-kick, .pl-sw-meta, .pl-foot, .pl-tick, .pl-tick em) {
+  body .pl-landing :is(.pl-kick, .v1-kick, .pl-sw-meta, .pl-foot, .pl-tick, .pl-tick em, .v1-note, .v1-empty, .v1-then, .v1-code, .v1-phl, .v1-ab-tag) {
     font-size: 12px !important;
   }
 
-  body .pl-landing :is(.pl-lead, .pl-price-note, .pl-checkout-note, .pl-faq-item p) {
-    font-size: 15px !important;
+  body .pl-landing :is(.pl-lead, .v1-lead, .pl-price-note, .pl-checkout-note, .pl-faq-item p, .v1-q p, .v1-rv-card p, .v1-fine) {
+    font-size: 16px !important;
   }
+
+  body .pl-landing h1 {
+    font-size: 44px !important;
+    font-weight: 900 !important;
+    line-height: 1.02 !important;
+    letter-spacing: -1.8px !important;
+  }
+
+  body .pl-landing h2 {
+    font-size: 30px !important;
+  }
+
+  body .pl-landing .v1-btn { font-size: 15px !important; }
+  body .pl-landing .v1-row b,
+  body .pl-landing .v1-cgt-row b { font-size: 14px !important; line-height: 1.2 !important; }
+  body .pl-landing .v1-cgt-row small { font-size: 12px !important; line-height: 1.2 !important; }
+  body .pl-landing .v1-trust-item b { font-size: 22px !important; }
+  body .pl-landing .v1-trust-item span,
+  body .pl-landing .v1-cgt-row small,
+  body .pl-landing .v1-row small { font-size: 12px !important; }
+  body .pl-landing .v1-hr { font-size: 12px !important; }
+  body .pl-landing .pl-main {
+    padding: 0 0 calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  body .pl-landing .pl-header {
+    flex-wrap: nowrap !important;
+    padding: 16px 20px !important;
+  }
+  body .pl-landing .v1-links { display: none !important; }
+  body .pl-landing .v1-brand img { width: 32px !important; height: 32px !important; }
 
   body .pl-landing :is(.pl-num, .pl-phone-row em, .pl-amount) {
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
