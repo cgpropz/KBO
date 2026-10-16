@@ -30,7 +30,7 @@ RETRY_STATUS = {429, 500, 502, 503, 504}
 
 def _read(url: str) -> bytes:
     request = urllib.request.Request(url, headers={"User-Agent": "CGPropz/1.0"})
-    with urllib.request.urlopen(request, timeout=60) as response:
+    with urllib.request.urlopen(request, timeout=READ_TIMEOUT) as response:
         return response.read()
 
 
@@ -60,31 +60,73 @@ def current_season_missing(results) -> list[str]:
 
 
 MAX_DELAY = 32.0
+READ_TIMEOUT = 20  # seconds per request
+FILE_CAP = 90.0  # seconds spent on one file, retries included
+TOTAL_BUDGET = 25 * 60.0  # seconds for the whole download step (job timeout is 45 min)
+RETRY_AFTER_CAP = 60.0
+FORBIDDEN_RETRIES = 3  # current-season 403s: total attempts
+FORBIDDEN_GAP = 45.0  # seconds between current-season 403 retries
 
 
-def _download(url: str, attempts: int = 7, sleep=time.sleep, retry_missing: bool = False, report=None):
+def _retry_after(exc) -> float | None:
+    """Seconds from a numeric Retry-After header on a 429/503, capped."""
+    if getattr(exc, "code", None) not in (429, 503):
+        return None
+    headers = getattr(exc, "headers", None)
+    value = headers.get("Retry-After") if headers is not None else None
+    try:
+        return min(max(float(value), 0.0), RETRY_AFTER_CAP)
+    except (TypeError, ValueError):
+        return None
+
+
+def _download(url: str, attempts: int = 7, sleep=time.sleep, retry_missing: bool = False, report=None,
+              clock=time.monotonic, deadline: float | None = None, file_cap: float = FILE_CAP):
     """Return the file body, or None.
 
-    Rate limits and dropped connections are retried (7 attempts, backoff
-    1-32s). A current-season file also retries an empty body, an HTML error
-    page, and a 404. When ``report`` is a dict, the last failure is recorded
-    in report["status"] (HTTP code, exception name, "empty" or "html").
+    Rate limits and dropped connections are retried (up to 7 attempts, backoff
+    1-32s, Retry-After honored on 429/503). A current-season file also retries
+    an empty body, an HTML error page, a 404, and a 403 (at most 3 attempts,
+    45s apart). One file never spends more than ``file_cap`` seconds, and no
+    attempt starts past ``deadline`` (a ``clock`` value). When ``report`` is a
+    dict, the last failure is recorded in report["status"].
     """
+    start = clock()
+    stop = start + file_cap
+    if deadline is not None:
+        stop = min(stop, deadline)
     delay = 1.0
+    forbidden = 0
     for attempt in range(attempts):
+        if clock() >= stop:
+            if report is not None and "status" not in report:
+                report["status"] = "budget"
+            return None
         try:
             data = _read(url)
         except urllib.error.HTTPError as exc:
             if report is not None:
                 report["status"] = f"HTTP {exc.code}"
-            retry = exc.code in RETRY_STATUS or (retry_missing and exc.code in {404, 408})
-            if not retry or attempt + 1 == attempts:
+            wait = delay
+            if exc.code == 403 and retry_missing:
+                forbidden += 1
+                if forbidden >= FORBIDDEN_RETRIES:
+                    return None
+                wait = FORBIDDEN_GAP
+            elif exc.code in RETRY_STATUS or (retry_missing and exc.code in {404, 408}):
+                after = _retry_after(exc)
+                if after is not None:
+                    wait = after
+            else:
+                return None
+            if attempt + 1 == attempts:
                 return None
         except Exception as exc:
             if report is not None:
                 report["status"] = type(exc).__name__ + (f": {exc}" if str(exc) else "")
             if attempt + 1 == attempts:
                 return None
+            wait = delay
         else:
             if data and data[:1] != b"<":
                 return data
@@ -92,7 +134,12 @@ def _download(url: str, attempts: int = 7, sleep=time.sleep, retry_missing: bool
                 report["status"] = "html" if data else "empty"
             if not retry_missing or attempt + 1 == attempts:
                 return None
-        sleep(delay)
+            wait = delay
+        if clock() + wait >= stop:
+            if report is not None:
+                report["status"] = report.get("status", "") + " (time cap)"
+            return None
+        sleep(wait)
         delay = min(delay * 2, MAX_DELAY)
     return None
 
@@ -104,6 +151,7 @@ def main() -> int:
         print("MoneyPuck team index was empty; skipping the night")
         return 0
     jobs = download_jobs(teams, ROOT)
+    deadline = time.monotonic() + TOTAL_BUDGET
 
     def fetch(job):
         url, dest = job
@@ -111,7 +159,7 @@ def main() -> int:
         if os.path.exists(dest) and os.path.getsize(dest) > 100:
             return "cached", dest
         report = {}
-        data = _download(url, retry_missing=is_current_season_path(dest), report=report)
+        data = _download(url, retry_missing=is_current_season_path(dest), report=report, deadline=deadline)
         if data is None:
             print(f"moneypuck missing {url} status={report.get('status', 'unknown')}", file=sys.stderr, flush=True)
             return "missing", dest
@@ -121,8 +169,8 @@ def main() -> int:
 
     ok = miss = 0
     results = []
-    # MoneyPuck intermittently refuses GitHub runners; one request at a time.
-    with ThreadPoolExecutor(max_workers=1) as pool:
+    # A wide burst was keeping only the first folder (~32 files) on GitHub runners.
+    with ThreadPoolExecutor(max_workers=2) as pool:
         for status, dest in pool.map(fetch, jobs):
             results.append((status, dest))
             if status == "missing":
