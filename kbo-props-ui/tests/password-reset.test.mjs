@@ -27,16 +27,22 @@ test('supabase rate limits become the friendly reset message', () => {
   assert.equal(authErrorMessage({ message: 'Invalid login credentials', status: 400 }), 'Invalid login credentials')
 })
 
-test('the recovery redirect lands on the set-new-password query', () => {
-  assert.equal(recoveryRedirectUrl('https://www.cgpropz.com'), 'https://www.cgpropz.com/?recovery=1')
-  assert.equal(recoveryRedirectUrl('https://www.cgpropz.com/'), 'https://www.cgpropz.com/?recovery=1')
-  assert.equal(recoveryRedirectUrl('http://localhost:5173'), 'http://localhost:5173/?recovery=1')
+test('resetPasswordForEmail redirectTo is the live origin plus /set-password', () => {
+  assert.equal(recoveryRedirectUrl('https://www.cgpropz.com'), 'https://www.cgpropz.com/set-password')
+  assert.equal(recoveryRedirectUrl('https://cgpropz.com'), 'https://cgpropz.com/set-password')
+  assert.equal(recoveryRedirectUrl('https://www.cgpropz.com/'), 'https://www.cgpropz.com/set-password')
+  assert.equal(recoveryRedirectUrl('http://localhost:5173'), 'http://localhost:5173/set-password')
+  assert.equal(isPasswordRecoveryLocation('', '', '/set-password'), true)
+  assert.equal(isPasswordRecoveryLocation('?previewTier=weekly', '', '/set-password'), true)
   assert.equal(isPasswordRecoveryLocation('?recovery=1'), true)
   assert.equal(isPasswordRecoveryLocation('?recovery=1&previewTier=weekly'), true)
   assert.equal(isPasswordRecoveryLocation('', '#access_token=abc&type=recovery'), true)
   assert.equal(isPasswordRecoveryLocation('?type=recovery'), true)
   assert.equal(isPasswordRecoveryLocation('?account=1', '#type=signup'), false)
   assert.equal(isPasswordRecoveryLocation(''), false)
+  const authPage = read('src/AuthPage.jsx')
+  assert.match(authPage, /redirectTo: recoveryRedirectUrl\(window\.location\.origin\)/)
+  assert.doesNotMatch(authPage, /redirectTo:[^\n]*localhost/)
 })
 
 test('saving a new password calls updateUser and stays signed in', async () => {

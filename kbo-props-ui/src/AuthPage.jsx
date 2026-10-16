@@ -32,6 +32,9 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
     if (mode === 'reset') {
       // Supabase Auth sends this mail. This app does not. Custom SMTP is a
       // project setting (smtp.resend.com:465, username resend), not app code.
+      // redirectTo is this page's origin plus /set-password. The Supabase
+      // Site URL is http://localhost:3000, so a missing redirectTo sends
+      // every recovery link there instead of the live site.
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: recoveryRedirectUrl(window.location.origin),
       });

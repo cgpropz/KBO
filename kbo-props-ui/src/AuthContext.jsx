@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
 import { loadSupabase, readCachedSession } from './supabaseClient';
-import { isPasswordRecoveryLocation } from './passwordRecovery';
+import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
 const TIER_CACHE_KEY = 'cg_tier';
@@ -33,7 +33,7 @@ function readDevPreview() {
 
 function recoveryFromWindow() {
   if (typeof window === 'undefined') return false;
-  return isPasswordRecoveryLocation(window.location.search, window.location.hash);
+  return isPasswordRecoveryLocation(window.location.search, window.location.hash, window.location.pathname);
 }
 
 function readCachedTier(userId) {
@@ -224,6 +224,7 @@ export function AuthProvider({ children }) {
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
     url.searchParams.delete('recovery');
+    if (url.pathname.replace(/\/+$/, '') === SET_PASSWORD_PATH) url.pathname = '/';
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
   }, []);
 
