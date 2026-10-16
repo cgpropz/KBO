@@ -24,9 +24,9 @@ const NAV_ITEMS = [
   { id: 'slip', label: 'Slip Builder' },
 ]
 
-const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
+const SlipBoard = lazy(() => import('../SlipBoard'))
 
-export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'player' : 'dashboard')
@@ -52,7 +52,7 @@ export default function NflApp({ sport, setSport, onNavigateHome, onNavigatePric
             : view === 'slip'
               ? (
                 <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-                  <SlipOptimizer sport="nfl" />
+                  <SlipBoard sport="nfl" onSport={onSlipSport} drawer={entry?.drawer === true} />
                 </Suspense>
               )
             : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />

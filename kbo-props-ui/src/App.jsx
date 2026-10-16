@@ -5,7 +5,7 @@ import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
-import { accountFromSearch, sportFromSearch } from './appSport'
+import { accountFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
@@ -57,7 +57,10 @@ function App() {
     return pauseTokenFromSearch(window.location.search) ? 'auth' : 'landing';
   }); // 'landing' | 'auth'
   const [authMode, setAuthMode] = useState('login');
-  const [entry, setEntry] = useState(null);
+  const [entry, setEntry] = useState(() => {
+    if (typeof window === 'undefined') return null
+    return slipLinkFromSearch(window.location.search)
+  });
   const [sport, setSportState] = useState(() => {
     if (typeof window === 'undefined') return 'nfl';
     // The account page lives on the KBO shell. This visit does not write
@@ -74,6 +77,11 @@ function App() {
   const chooseSport = (next) => {
     setSportState(next);
     rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, next);
+  };
+
+  const chooseSlipSport = (next) => {
+    chooseSport(next);
+    setEntry({ view: 'slip', drawer: false });
   };
 
   useEffect(() => {
@@ -206,6 +214,7 @@ function App() {
       <WnbaApp
         sport={visibleSport}
         setSport={chooseSport}
+        onSlipSport={chooseSlipSport}
         entry={entry}
         onNavigateKbo={(nextView) => { setSportState('kbo'); setView(nextView || 'pricing'); }}
       />
@@ -215,6 +224,7 @@ function App() {
       <NbaApp
         sport={visibleSport}
         setSport={chooseSport}
+        onSlipSport={chooseSlipSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
@@ -225,6 +235,7 @@ function App() {
       <NhlApp
         sport={visibleSport}
         setSport={chooseSport}
+        onSlipSport={chooseSlipSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
@@ -235,6 +246,7 @@ function App() {
       <NflApp
         sport={visibleSport}
         setSport={chooseSport}
+        onSlipSport={chooseSlipSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
@@ -246,6 +258,7 @@ function App() {
       <KboApp
         sport={visibleSport}
         setSport={chooseSport}
+        onSlipSport={chooseSlipSport}
         onNavigateHome={() => setView('hub')}
         initialView={view}
         entry={entry}

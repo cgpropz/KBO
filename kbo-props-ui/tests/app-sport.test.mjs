@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { accountFromSearch, appBoardPath, sportFromSearch } from '../src/appSport.js'
+import { accountFromSearch, appBoardPath, slipLinkFromSearch, sportFromSearch } from '../src/appSport.js'
 
 test('the app reads a sport query and ignores anything else', () => {
   assert.equal(sportFromSearch('?sport=kbo'), 'kbo')
@@ -8,6 +8,14 @@ test('the app reads a sport query and ignores anything else', () => {
   assert.equal(sportFromSearch('?sport=mlb'), null)
   assert.equal(sportFromSearch(''), null)
   assert.equal(appBoardPath('wnba'), '/?sport=wnba')
+})
+
+test('?s= opens the slip and d=1 opens the drawer', () => {
+  assert.equal(sportFromSearch('?s=NHL'), 'nhl')
+  assert.equal(sportFromSearch('?s=mlb'), null)
+  assert.deepEqual(slipLinkFromSearch('?s=NHL&d=1'), { sport: 'nhl', view: 'slip', drawer: true })
+  assert.deepEqual(slipLinkFromSearch('?s=nfl'), { sport: 'nfl', view: 'slip', drawer: false })
+  assert.equal(slipLinkFromSearch('?sport=nhl&d=1'), null)
 })
 
 test('the account query opens the member account page', () => {
