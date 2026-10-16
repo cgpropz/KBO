@@ -114,9 +114,14 @@ function basketRows(players) {
   return props
 }
 
-async function loadBasketProps(fetchDataFile) {
+async function loadBasketProps(fetchDataFile, { gate } = {}) {
   const doc = await fetchDataFile('projections_standard.json').catch(() => [])
-  return basketRows(Array.isArray(doc) ? doc : [])
+  const players = Array.isArray(doc) ? doc : []
+  if (gate) {
+    const empty = gate(players)
+    if (empty) return { props: [], empty }
+  }
+  return basketRows(players)
 }
 
 function flatRows(rows, shorts, { pointsGate = false, now = new Date() } = {}) {
@@ -185,14 +190,9 @@ export const SLIP_SPORTS = {
       chip('AST', 'AST', (row) => row.propShort === 'AST'),
       chip('PRA', 'PRA', (row) => row.propShort === 'PRA'),
     ],
-    loadProps: async () => {
-      const files = ['projections_standard.json', 'projections_demon.json', 'projections_goblin.json']
-      const docs = await Promise.all(files.map((file) => fetchWnbaData(`wnba/${file}`).catch(() => [])))
-      const players = docs.flatMap((doc) => (Array.isArray(doc) ? doc : []))
-      const today = sportDate('America/New_York')
-      if (!playsOnDay(players, today)) return { props: [], empty: wnbaEmptyState() }
-      return basketRows(players)
-    },
+    loadProps: () => loadBasketProps((file) => fetchWnbaData(`wnba/${file}`), {
+      gate: (players) => (playsOnDay(players, sportDate('America/New_York')) ? null : wnbaEmptyState()),
+    }),
   },
   nba: {
     id: 'nba',
