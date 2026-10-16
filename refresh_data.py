@@ -31,7 +31,7 @@ import time
 import shutil
 import json
 import csv
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -402,12 +402,81 @@ def evaluate_publish_gate(failed):
 
 def parse_any_date(value):
     text = str(value or "").replace('\\/', '/').strip()
-    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%Y%m%d"):
         try:
-            return datetime.strptime(text, fmt)
+            return datetime.strptime(text[:10] if fmt != "%Y%m%d" else text[:8], fmt)
         except ValueError:
             continue
     return None
+
+
+def kst_today(now=None):
+    """Calendar date in Korea. KBO slates are KST game days."""
+    moment = now or datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return (moment.astimezone(timezone.utc) + timedelta(hours=9)).date()
+
+
+def latest_kbo_slate_date(memory_root=None):
+    """Newest frozen KBO slate date, or None when no slate has been saved."""
+    root = memory_root or os.path.join(BASE, "memory", "kbo")
+    if not os.path.isdir(root):
+        return None
+    latest = None
+    for dirpath, _, filenames in os.walk(root):
+        if "slate.json" not in filenames:
+            continue
+        parsed = None
+        try:
+            with open(os.path.join(dirpath, "slate.json"), encoding="utf-8") as handle:
+                payload = json.load(handle)
+            parsed = parse_any_date(payload.get("slate_date_iso") or payload.get("slate_date"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            parsed = None
+        if parsed is None:
+            parts = os.path.normpath(dirpath).split(os.sep)
+            try:
+                year, day, month = int(parts[-1]), int(parts[-2]), int(parts[-3])
+                parsed = datetime(year, month, day)
+            except (ValueError, IndexError):
+                continue
+        if latest is None or parsed > latest:
+            latest = parsed
+    return latest
+
+
+def gamelog_slate_lag_errors(latest_dates, slate_date, today=None):
+    """Fail when a finished slate is newer than the game logs.
+
+    A slate dated today (or later) is still pregame or in progress, so the
+    refresh is warned and left to publish. A slate from a previous KST day
+    should already be in the logs; that case fails the refresh step.
+    """
+    if slate_date is None:
+        return []
+    slate_day = slate_date.date() if isinstance(slate_date, datetime) else slate_date
+    today = today or kst_today()
+    errors = []
+    for label, log_dt in latest_dates.items():
+        if log_dt is None:
+            continue
+        log_day = log_dt.date() if isinstance(log_dt, datetime) else log_dt
+        if log_day >= slate_day:
+            continue
+        message = (
+            f"GAMELOG STALE: {label} latest {log_day.isoformat()} is behind "
+            f"latest KBO slate {slate_day.isoformat()}"
+        )
+        print(f"⛔ {message}")
+        if slate_day < today:
+            errors.append(message)
+        else:
+            print(
+                f"⚠ {label} lags the slate, but {slate_day.isoformat()} is not over "
+                "in KST — not failing the refresh"
+            )
+    return errors
 
 
 def summarize_gamelogs():
@@ -451,6 +520,11 @@ def summarize_gamelogs():
         season_errors.append(
             f"Batter logs stale vs pitcher logs ({batter_latest.strftime('%Y-%m-%d')} < {pitcher_latest.strftime('%Y-%m-%d')})"
         )
+
+    slate_date = latest_kbo_slate_date()
+    if slate_date is not None:
+        print(f"  Latest KBO slate: {slate_date.strftime('%Y-%m-%d')}")
+    season_errors.extend(gamelog_slate_lag_errors(latest_dates, slate_date))
 
     return season_errors
 

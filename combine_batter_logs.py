@@ -66,6 +66,7 @@ def normalize_row(row):
     out["Team"] = (out.get("Team") or "").strip()
     out["OPP"] = (out.get("OPP") or "").strip()
     out["Home/Away"] = (out.get("Home/Away") or "").strip()
+    out["Series"] = (out.get("Series") or "").strip()
 
     dt = parse_date(out.get("DATE"))
     if dt:
@@ -128,7 +129,7 @@ def main():
     # Ensure all expected output columns are present, in known order.
     expected = [
         "Name", "DATE", "Team", "Home/Away", "OPP", "AB", "R", "H", "2B", "3B", "HR", "RBI", "Walks", "HBP",
-        "BA", "OBP", "SLG", "OPS", "SB", "CS", "GDP", "1B", "HRR", "TB", "Season",
+        "BA", "OBP", "SLG", "OPS", "SB", "CS", "GDP", "1B", "HRR", "TB", "Season", "Series",
     ]
     output_fields = [c for c in expected if c in set(fieldnames) | set(expected)]
 
