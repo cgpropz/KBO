@@ -4,7 +4,7 @@ import { fetchWnbaData } from './wnba/wnbaData'
 import { fetchNbaData } from './nba/nbaData'
 import { fetchNflProjections } from './nfl/nflData'
 import { fetchNhlProjections } from './nhl/nhlData'
-import { oddsTypeOf } from './slipLines'
+import { isStandardLine, oddsTypeOf, standardSlipRows } from './slipLines'
 import { keepSlipRow, kboBoardIsOpen, kboEmptyState, playsOnDay, wnbaEmptyState } from './slipAvailability.js'
 
 const KBO_TEAMS = {
@@ -64,7 +64,7 @@ async function loadKboProps() {
     fetchData('batter_projections.json').catch(() => null),
   ])
   const props = []
-  for (const row of pitchers?.projections || []) {
+  for (const row of standardSlipRows(pitchers?.projections)) {
     if (row.projection == null || row.edge == null) continue
     if (!keepSlipRow(row)) continue
     props.push({
@@ -79,7 +79,7 @@ async function loadKboProps() {
       recent: Array.isArray(row.recent) ? row.recent : [],
     })
   }
-  for (const row of batters?.projections || []) {
+  for (const row of standardSlipRows(batters?.projections)) {
     if (row.projection == null || row.edge == null) continue
     if (!keepSlipRow(row)) continue
     props.push({
@@ -110,6 +110,7 @@ function basketRows(players) {
       const line = num(prop?.line)
       if (!name || !stat || line == null) continue
       if (!keepSlipRow({ ...player, ...prop, prop: stat, line }, { player })) continue
+      if (!isStandardLine({ ...player, ...prop })) continue
       const key = `${name}|${stat}|${line}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -125,7 +126,7 @@ function basketRows(players) {
         projection,
         edge,
         rating: num(prop?.rating),
-        odds_type: oddsTypeOf(prop),
+        odds_type: oddsTypeOf({ ...player, ...prop }),
         playerId: prop?.playerId || player?.playerId || player?.player_id || null,
         position: player?.position || prop?.position || '',
         imageUrl: prop?.imageUrl || prop?.image_url || player?.imageUrl || player?.image_url || player?.image || '',
@@ -144,19 +145,19 @@ function basketRows(players) {
 }
 
 async function loadBasketProps(fetchDataFile) {
-  const files = ['projections_standard.json', 'projections_demon.json', 'projections_goblin.json']
-  const docs = await Promise.all(files.map((file) => fetchDataFile(file).catch(() => [])))
-  return basketRows(docs.flatMap((doc) => (Array.isArray(doc) ? doc : [])))
+  const doc = await fetchDataFile('projections_standard.json').catch(() => [])
+  return basketRows(Array.isArray(doc) ? doc : [])
 }
 
 function flatRows(rows, shorts, { pointsGate = false, now = new Date() } = {}) {
   const props = []
-  for (const row of Array.isArray(rows) ? rows : []) {
+  for (const row of standardSlipRows(rows)) {
     const name = row?.player || row?.name
     const stat = row?.prop || row?.stat
     const line = num(row?.line)
     if (!name || !stat || line == null) continue
     if (!keepSlipRow({ ...row, prop: stat, line }, { pointsGate, now })) continue
+    if (!isStandardLine(row)) continue
     const projection = num(row?.projection)
     const edge = num(row?.edge) ?? (projection == null ? 0 : Math.round((projection - line) * 100) / 100)
     props.push({
@@ -224,9 +225,8 @@ export const SLIP_SPORTS = {
       chip('PRA', 'PRA', (row) => row.propShort === 'PRA'),
     ],
     loadProps: async () => {
-      const files = ['projections_standard.json', 'projections_demon.json', 'projections_goblin.json']
-      const docs = await Promise.all(files.map((file) => fetchWnbaData(`wnba/${file}`).catch(() => [])))
-      const players = docs.flatMap((doc) => (Array.isArray(doc) ? doc : []))
+      const doc = await fetchWnbaData('wnba/projections_standard.json').catch(() => [])
+      const players = Array.isArray(doc) ? doc : []
       const today = sportDate('America/New_York')
       if (!playsOnDay(players, today)) return { props: [], empty: wnbaEmptyState() }
       return basketRows(players)
