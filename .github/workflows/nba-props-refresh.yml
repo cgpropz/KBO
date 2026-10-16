@@ -8,27 +8,44 @@ name: Refresh NBA PrizePicks Lines (30 min)
 # kbo-props-ui/public/status.json (clocks and prop counts, never the rows).
 #
 # A pull with zero lines skips publish. publish_supabase.py also refuses to
-# replace a projection table with a zero-line file. nba_public is not changed.
+# replace a projection table with a zero-line file, unless this run expired
+# every remaining game. nba_public is not changed.
+#
+# The :22/:52 cron is only a restart. GitHub was delivering it every 3-5
+# hours. A finished run waits 25 minutes, then queues the next one, and only
+# while an NBA tip is inside the window (5 hours before through 3 hours after).
+#
+# Billed minutes include that wait. One slate, about 16 links: work ~0.7 min
+# + 25 min wait ≈ 26 min/link ≈ 420 min/day billed, about 11 min/day of actual
+# work. Off days do not chain.
 
 on:
   schedule:
-    # Off the top and bottom of the hour. GitHub delays or drops :00/:30
-    # schedules under load. Same cadence as the WNBA props job.
+    # Restarts the chain if a run is killed before it can queue the next one.
     - cron: "22,52 * * * *" # every 30 minutes (UTC)
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nba-props-refresh.yml"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   # Share the full-refresh lock so a props job never publishes projections
   # built from an older checkout after a gamelog refresh has completed.
+  # Do not cancel an in-progress handoff. The queue script will not start a
+  # second chain while one is already active.
   group: nba-refresh-pipeline
   cancel-in-progress: false
 
 jobs:
   refresh-nba-props:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -108,3 +125,10 @@ jobs:
         continue-on-error: true
         run: |
           bash pipeline/commit_status.sh "chore: nba board status"
+
+      - name: Queue the next NBA props refresh
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/queue-next-refresh.sh nba-props-refresh.yml nba 1500

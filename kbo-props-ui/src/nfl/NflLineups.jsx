@@ -9,7 +9,7 @@ function statusClass(status) {
 }
 
 function TeamColumn({ team, record, lineup }) {
-  return <div className="nfl-lineup-team"><header><b>{team}</b><span>{TEAM_NAMES[team] || team}<small>{record}</small></span></header>{lineup.map((player) => <div className="nfl-lineup-player" key={`${team}-${player.position}-${player.name}`}><em>{player.position}</em><i>{player.imageUrl && <img src={fitImage(player.imageUrl, 40)} alt="" loading="lazy" />}</i><span>{player.name}</span>{player.status && <b className={`nfl-status ${statusClass(player.status)}`}>{player.status}</b>}</div>)}</div>
+  return <div className="nfl-lineup-team"><header><b>{team}</b><span>{TEAM_NAMES[team] || team}<small>{record}</small></span></header>{lineup.map((player) => <div className="nfl-lineup-player" key={`${team}-${player.position}-${player.name}`}><em>{player.position}</em><i>{player.imageUrl && <img src={fitImage(player.imageUrl, 40)} alt="" width={40} height={40} loading="lazy" />}</i><span>{player.name}</span>{player.status && <b className={`nfl-status ${statusClass(player.status)}`}>{player.status}</b>}</div>)}</div>
 }
 
 function InjuryColumn({ team, entries }) {

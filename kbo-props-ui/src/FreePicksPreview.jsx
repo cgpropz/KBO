@@ -8,6 +8,7 @@ import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLo
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore } from './nfl/nflLineFloors';
 import { freeTop3SectionState } from './freePreviewCopy';
+import { selectFreeTop3 } from './freeTopPicks';
 import './FreeFunnel.css';
 import './bootScreen.css';
 
@@ -44,6 +45,12 @@ function kboRows(data) {
       l10: l10Display(kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })),
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
       score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line, prop.stat)),
+      start_time: prop.start_time || card.start_time,
+      game_date: prop.game_date || card.game_date,
+      started: prop.started === true || card.started === true,
+      locked: prop.locked === true || card.locked === true,
+      removed: prop.removed === true || card.removed === true,
+      rankEligible: prop.rankEligible,
       note: {
         player: card.name,
         projection: prop.projection,
@@ -68,6 +75,12 @@ function projectionRows(data, pillsFor) {
     l10: l10Display(pillsFor(row)),
     tag: null,
     score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
+    start_time: row.start_time || row.start_time_utc || row.kickoff_at,
+    game_date: row.gameday || row.game_date || row.gameDate || row.game_date_iso,
+    started: row.started === true,
+    locked: row.locked === true,
+    removed: row.removed === true,
+    rankEligible: row.rankEligible,
     note: {
       player: row.player,
       projection: row.projection,
@@ -105,6 +118,12 @@ function wnbaRows(data) {
       })),
       tag: null,
       score: wnbaCgScore(prop.projection, prop) ?? -Infinity,
+      start_time: prop.start_time || player.start_time,
+      game_date: prop.gameDate || prop.game_date || player.gameDate,
+      started: prop.started === true || player.started === true,
+      locked: prop.locked === true || player.locked === true,
+      removed: prop.removed === true,
+      rankEligible: prop.rankEligible,
       note: {
         player: player.name,
         projection: prop.projection,
@@ -154,10 +173,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
       fetchApiDataset(board.ds, { devStaticPath: DEV_STATIC[board.ds] })
         .then((snap) => {
           if (!active) return;
-          const rows = board.toRows(snap.data)
-            .filter((r) => r.player && r.stat && Number.isFinite(r.score) && r.score !== -Infinity)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3);
+          const rows = selectFreeTop3(board.toRows(snap.data), board.id);
           setBoards((prev) => ({ ...prev, [board.id]: { status: rows.length ? 'ready' : 'empty', rows, lockedCount: snap.lockedCount || 0, updatedAt: snap.updatedAt } }));
         })
         .catch(() => {

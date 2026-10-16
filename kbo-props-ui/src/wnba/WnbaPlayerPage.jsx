@@ -193,7 +193,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   useEffect(() => {
     let active = true
     Promise.all([
-      fetchWnbaData('wnba/projections_standard.json'),
+      fetchWnbaData('wnba/projections_standard.json', { player: playerName }),
       fetchWnbaData('wnba/teams.json').catch(() => []),
       fetchWnbaData('wnba/dvp_guard.json').catch(() => null),
       fetchWnbaData('wnba/dvp_forward.json').catch(() => null),
@@ -211,7 +211,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
       setDvpByPosition(byPos)
     }).catch(err => active && setError(err.message))
     return () => { active = false }
-  }, [])
+  }, [playerName])
 
   const player = useMemo(() => players.find(p => p.name === playerName), [players, playerName])
   const teamColorLookup = useMemo(() => Object.fromEntries(teams.map(t => [t.abbr, t.color])), [teams])
@@ -366,7 +366,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
         <button className="wnba-player-back" onClick={onBack}>&larr; Back</button>
         <div className="wnba-player-header">
           <div className="wnba-player-avatar">
-            {player.image ? <img className="wnba-player-avatar-photo" src={fitImage(player.image, 68)} alt={player.name} /> : initials(player.name)}
+            {player.image ? <img className="wnba-player-avatar-photo" src={fitImage(player.image, 68)} alt={player.name} width={68} height={68} /> : initials(player.name)}
           </div>
           <div className="wnba-player-title">
             <h1>{player.name}<span>{player.position}</span></h1>

@@ -4,6 +4,7 @@ import {
   STALE_AFTER_HOURS,
   boardStatusLine,
   buildBoardStatus,
+  cheatsheetWarningLine,
   formatBoardClock,
   injuryCheckedAtFromPayload,
   isBoardStale,
@@ -94,4 +95,18 @@ test('status document is one entry per board and has no prop rows', () => {
   assert.equal(document.boards[2].prop_count, 40)
   assert.equal(document.boards[2].stale, false)
   assert.equal(propCountFor('nhl', [{}, {}, {}]), 3)
+})
+
+test('cheat sheet warning names the largest gap over 60 minutes', () => {
+  const payload = {
+    warnings: [
+      { sport: 'wnba', minutes_older: 75, message: 'old' },
+      { sport: 'wnba', minutes_older: 140, message: 'older' },
+      { sport: 'kbo', minutes_older: 200, message: 'other sport' },
+      { sport: 'nhl', minutes_older: 40, message: 'still fresh enough' },
+    ],
+  }
+  assert.equal(cheatsheetWarningLine(payload, 'wnba'), 'Cheat sheet is 140 min older than this board')
+  assert.equal(cheatsheetWarningLine(payload, 'nhl'), '')
+  assert.equal(cheatsheetWarningLine(null, 'kbo'), '')
 })

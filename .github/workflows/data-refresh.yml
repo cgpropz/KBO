@@ -1,29 +1,46 @@
 name: Intraday Odds Refresh
 
+# The :07/:37 cron is a backup, not the clock. GitHub drops most of those
+# ticks, so this job was landing every 3-5 hours. A finished run on main
+# waits, then queues the next one, same as the NFL Unabated and NHL jobs.
+# The chain continues only inside the KBO game window (5 hours before first
+# pitch through 3 hours after). Outside that window the backup cron still
+# runs and does not chain.
+#
+# Billed minutes include the 25-minute wait on the runner.
+# One slate, about 16 links: work ~2.5 min (measured 1.6-5.4) + 25 min wait
+# ≈ 28 min/link ≈ 450 min/day billed, about 40 min/day of actual work.
+# Off days stay on the backup cron, about 5 landings × ~2.5 min ≈ 12 min.
+
 on:
   schedule:
-    # Recalculate line-sensitive prop projections every 30 minutes.
-    # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
-    # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
-    # job actually ran only every ~3-6 h). Same 30-minute cadence.
+    # Restarts the chain if a run is killed before it can queue the next one.
     - cron: "7,37 * * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/data-refresh.yml"
+      - "pipeline/refresh_window.py"
 
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   # Separate group from the full deploy so odds refreshes don't queue
-  # behind a 14-minute pipeline run. cancel-in-progress: true means if a
-  # new odds refresh is triggered while one is already queued, the queued
-  # one is dropped and only the freshest run executes.
+  # behind a pipeline run. cancel-in-progress stays false so a backup cron
+  # tick cannot kill a publish that is waiting to hand off the chain.
+  # queue-next-refresh.sh refuses to start a second chain.
   group: kbo-odds-refresh
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh-odds:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 55
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -148,3 +165,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/notify-failure.sh "🚨 Intraday odds refresh FAILED"
+
+      - name: Queue the next KBO refresh
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/queue-next-refresh.sh data-refresh.yml kbo 1500

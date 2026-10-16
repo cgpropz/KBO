@@ -63,7 +63,7 @@ export default function PlayerCard({ player, ppLines = null, onSelect }) {
           overflow: 'hidden',
         }}>
           {image
-            ? <img src={fitImage(image, 52)} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+            ? <img src={fitImage(image, 52)} alt={name} width={52} height={52} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
             : FALLBACK_AVATAR(name)
           }
         </div>

@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -23,6 +23,8 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
     total_props: nCards * propsPerCard,
     cards: Array.from({ length: nCards }, (_, c) => ({
       name: `Player ${c}`, team: 'LG', opponent: 'KT', type: c % 2 ? 'batter' : 'pitcher',
+      games: [{ date: '2026-09-01', hrr: c }],
+      recent_values: [c, c + 1],
       props: Array.from({ length: propsPerCard }, (_, p) => {
         const confidence = c * 10 + p
         const row = {
@@ -58,10 +60,14 @@ const TABLES = {
   wnba_projections_standard: Array.from({ length: 5 }, (_, i) => ({
     name: `W${i}`, propProjectionByStat: { Points: 10 + i },
     ppAllProps: [{ stat: 'Points', line: 10, projection: 10 + i * 2 }, { stat: 'Rebounds', line: 5, projection: 4 }],
+    ...(i === 0 ? { recentGames: [{ date: '2026-09-01', points: 18 }] } : {}),
   })),
   wnba_players: Array.from({ length: 30 }, (_, i) => ({ name: `W${i}` })),
   wnba_lineups: Array.from({ length: 6 }, (_, i) => ({ game: i })),
-  nfl_projections: Array.from({ length: 15 }, (_, i) => ({ player: `N${i}`, line: 50, projection: 40 + i })),
+  nfl_projections: Array.from({ length: 15 }, (_, i) => ({
+    player: `N${i}`, line: 50, projection: 40 + i,
+    ...(i === 0 ? { recent: [11, 22, 33], gameDates: ['2026-09-07'], profile: { toi: 18 } } : {}),
+  })),
   nfl_lineups: Array.from({ length: 4 }, (_, i) => ({ game: i })),
   nfl_game_markets: {
     generated_at: NOW,
@@ -141,9 +147,9 @@ function mockRes() {
   }
 }
 
-async function call(ds, token, method = 'GET') {
+async function call(ds, token, method = 'GET', query = {}) {
   const res = mockRes()
-  const req = { method, query: { ds }, headers: token ? { authorization: `Bearer ${token}` } : {} }
+  const req = { method, query: { ds, ...query }, headers: token ? { authorization: `Bearer ${token}` } : {} }
   await handleDataRequest(req, res, mockClient())
   return res
 }
@@ -170,13 +176,45 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
 test('member snapshots and signed-in previews are not edge cached', async () => {
   const paid = await call('prizepicks_props', 'tok-kbo')
   assert.equal(paid.body.preview, false)
-  assert.equal(paid.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(paid.headers['cache-control'], PRIVATE_DATA_CACHE)
   const authedFree = await call('prizepicks_props', 'tok-free')
   assert.equal(authedFree.body.preview, true)
-  assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(authedFree.headers['cache-control'], PRIVATE_DATA_CACHE)
   const publicRankings = await call('pitcher_rankings')
   assert.equal(publicRankings.body.preview, false)
   assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300')
+})
+
+test('board payloads omit player history until that player page asks', async () => {
+  const board = await call('nfl_projections', 'tok-owner')
+  const n0 = board.body.data.find((row) => row.player === 'N0')
+  assert.equal(n0.recent, undefined)
+  assert.equal(n0.gameDates, undefined)
+  assert.equal(n0.profile, undefined)
+  const page = await call('nfl_projections', 'tok-owner', 'GET', { player: 'N0' })
+  assert.equal(page.body.data.length, 1)
+  assert.deepEqual(page.body.data[0].recent, [11, 22, 33])
+  assert.deepEqual(page.body.data[0].gameDates, ['2026-09-07'])
+  assert.equal(page.body.data[0].profile.toi, 18)
+  const hidden = await call('nfl_projections', undefined, 'GET', { player: 'N0' })
+  assert.deepEqual(hidden.body.data, [])
+
+  const kbo = await call('prizepicks_props', 'tok-kbo')
+  assert.ok(kbo.body.data.cards.every((card) => card.games === undefined && card.recent_values === undefined))
+  const kboPage = await call('prizepicks_props', 'tok-kbo', 'GET', { player: 'Player 0' })
+  assert.equal(kboPage.body.data.cards.length, 1)
+  assert.equal(kboPage.body.data.cards[0].games[0].hrr, 0)
+  const kboHidden = await call('prizepicks_props', undefined, 'GET', { player: 'Player 0' })
+  assert.deepEqual(kboHidden.body.data.cards, [])
+
+  const wnba = await call('wnba_projections_standard', 'tok-owner')
+  assert.equal(wnba.body.data.find((row) => row.name === 'W0').recentGames, undefined)
+  const wnbaPage = await call('wnba_projections_standard', 'tok-owner', 'GET', { player: 'W0' })
+  assert.equal(wnbaPage.body.data.length, 1)
+  assert.equal(wnbaPage.body.data[0].recentGames[0].points, 18)
+
+  const markets = await call('nfl_game_markets', 'tok-owner')
+  assert.equal(markets.body.data.games.length, 6)
 })
 
 test('invalid token is treated as free', async () => {

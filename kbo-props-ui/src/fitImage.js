@@ -17,6 +17,8 @@ const REMOTE_HOSTS = [
   /^https:\/\/6ptotvmi5753\.edge\.naverncp\.com\/KBO_IMAGE\/person\/[a-z0-9/_-]+\.(?:png|jpe?g)$/i,
   /^https:\/\/mykbostats\.com\/system\/players\/photos\/\d{3}\/\d{3}\/\d{3}\/original\/\d+\.jpe?g$/i,
   PRIZEPICKS_HEADSHOT,
+  /^https:\/\/static\.www\.nfl\.com\/image\/(?:private|upload)\/[a-z0-9,_./=-]+$/i,
+  /^https:\/\/cdn\.wnba\.com\/headshots\/wnba\/latest\/\d+x\d+\/\d+\.png$/i,
 ]
 
 export function isPrizePicksHeadshot(url) {

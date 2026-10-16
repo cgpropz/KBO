@@ -3,7 +3,8 @@ import PlayerOddsTable from '../PlayerOddsTable'
 import { AltLinesRow, LinePlot } from '../LineSlider'
 import { useChartLine } from '../useChartLine'
 import { nflOddsRows } from '../playerOdds'
-import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
+import { fetchApiDataset } from '../apiData'
+import { fetchNflSharpOdds } from './nflData'
 import { teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
@@ -143,11 +144,11 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections()
-      .then(({ projections: next }) => { if (!active) return; setProjections(next); setLoaded(true) })
+    fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json', player })
+      .then((snapshot) => { if (!active) return; setProjections(Array.isArray(snapshot.data) ? snapshot.data : []); setLoaded(true) })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
-  }, [])
+  }, [player])
 
   useEffect(() => {
     let active = true
@@ -284,7 +285,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       <button className="nfl-player-back" onClick={onBack}>&larr; Back</button>
       <div className="nfl-player-header">
         <div className="nfl-player-avatar">
-          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={fitImage(currentRow.imageUrl, 72)} alt={player} /> : initials(player)}
+          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={fitImage(currentRow.imageUrl, 72)} alt={player} width={72} height={72} /> : initials(player)}
         </div>
         <div className="nfl-player-title"><h1>{player}<span>{currentRow.position}</span></h1><p>{currentRow.team} vs {currentRow.opponent}</p></div>
         <div className="nfl-player-prop-pill">
