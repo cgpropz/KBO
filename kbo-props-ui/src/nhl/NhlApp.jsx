@@ -26,9 +26,9 @@ const NAV = [
   { id: 'slip', label: 'Slip Builder' },
 ]
 
-const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
+const SlipRail = lazy(() => import('../SlipRail'))
 
-export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry, onSlipSport }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
@@ -50,7 +50,7 @@ export default function NhlApp({ sport, setSport, onNavigateHome, onNavigatePric
   else if (view === 'slip') {
     content = (
       <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-        <SlipOptimizer sport="nhl" />
+        <SlipRail sport="nhl" onSport={onSlipSport} />
       </Suspense>
     )
   }

@@ -242,6 +242,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 .so-picker-title {
@@ -250,7 +252,19 @@
   color: #999;
   margin: 0;
 }
-.so-picker-filters { display: flex; gap: 0.3rem; }
+.so-picker-filters { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.so-side-fixed { cursor: default; }
+.so-odds-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: #fff;
+}
+.so-odds-badge.demon { background: #7f1d1d; }
+.so-odds-badge.goblin { background: #14532d; }
 .so-filter-chip {
   padding: 0.2rem 0.5rem;
   border: 1px solid #333;
@@ -710,6 +724,41 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.so-empty-slate {
+  max-width: 640px;
+  margin: 1.5rem auto;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  background: var(--so-card);
+  border: 1px solid var(--so-border);
+  border-radius: 12px;
+}
+.so-empty-slate h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+.so-empty-slate p { margin: 0; color: #9ca3af; line-height: 1.45; }
+.so-payout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+}
+.so-payout-modes { display: flex; }
+.so-payout-modes button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #333;
+  background: transparent;
+  color: #aaa;
+  font-weight: 700;
+  cursor: pointer;
+}
+.so-payout-modes button:first-child { border-radius: 8px 0 0 8px; }
+.so-payout-modes button:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.so-payout-modes button.active { background: var(--so-accent); border-color: var(--so-accent); color: var(--so-accent-text); }
+.so-payout-figures { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: baseline; font-size: 0.85rem; }
+.so-payout-figures strong { font-size: 1.05rem; }
+.so-payout-altered { color: #fbbf24; font-weight: 800; }
+.so-payout-wait { margin: 0; color: #777; font-size: 0.8rem; }
 
 .so-footer-note {
   text-align: center;

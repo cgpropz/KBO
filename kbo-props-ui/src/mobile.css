@@ -571,6 +571,52 @@
     max-width: 108px;
     white-space: normal !important;
   }
+
+  body .sr-title {
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  body .sr-name {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+  }
+
+  body .sr-cg,
+  body .sr-panel h2 {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+  }
+
+  body .sr-panel h2 {
+    font-size: 20px !important;
+    font-weight: 900 !important;
+  }
+
+  body .sr-stats b {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+  }
+
+  body .sr-actions button {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+  }
+
+  body :is(.sr-line, .sr-meta, .sr-sub, .sr-game, .sr-ladder b) {
+    font-size: 13px !important;
+  }
+
+  body :is(.sr-ladder small, .sr-stats span, .sr-cg small, .sr-stats small, .sr-badge, .sr-rg, .sr-note) {
+    font-size: 12px !important;
+  }
+}
+
+/* The slip rail is the sport control on this view, on every width. */
+body:has([data-testid="slip-rail"]) :is(.kbo-app-nav, .nfl-nav, .wnba-nav) > .sport-switcher {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

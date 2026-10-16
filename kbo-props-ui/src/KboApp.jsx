@@ -30,14 +30,14 @@ const NAV_ITEMS = [
 ]
 if (import.meta.env.DEV) NAV_ITEMS.push({ id: 'tutorial', label: 'Tutorial' })
 
-const SlipOptimizer = lazy(() => import('./SlipOptimizer'))
+const SlipRail = lazy(() => import('./SlipRail'))
 
 /* Views that require a paid subscription (mirrors the pre-redesign App.jsx gate).
    'board' is excluded: it self-gates with a top-3-free / rest-locked preview,
    matching the WNBA and NFL dashboards. */
 const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
-export default function KboApp({ sport, setSport, onNavigateHome, initialView, entry }) {
+export default function KboApp({ sport, setSport, onNavigateHome, initialView, entry, onSlipSport }) {
   const { signOut, user, tier } = useAuth()
   const menu = usePageMenu()
   const opened = entry?.view === 'slip' ? 'optimizer' : entry?.view === 'player' && entry.player ? 'player' : null
@@ -60,7 +60,7 @@ export default function KboApp({ sport, setSport, onNavigateHome, initialView, e
       case 'tracker':     return <PropTracker />
       case 'optimizer':   return (
         <Suspense fallback={<p style={{ color: '#888', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-          <SlipOptimizer sport="kbo" onNavigate={setView} />
+          <SlipRail sport="kbo" onSport={onSlipSport} />
         </Suspense>
       )
       case 'matchups':    return <MatchupDeepDive />
