@@ -41,6 +41,18 @@ export function applyPointsOverGate(row) {
   return row
 }
 
+const PULLED = new Set(['removed', 'suspended', 'held', 'hold', 'onhold'])
+
+function prizepicksPulled(row) {
+  if (!row || typeof row !== 'object') return false
+  if (row.removed === true) return true
+  const compact = String(row.pp_status ?? row.ppStatus ?? '').toLowerCase().replace(/[^a-z]/g, '')
+  return PULLED.has(compact)
+}
+
 export function prepareBoardRows(rows) {
-  return (Array.isArray(rows) ? rows : []).map(applyPointsOverGate).filter(Boolean)
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => !prizepicksPulled(row))
+    .map(applyPointsOverGate)
+    .filter(Boolean)
 }

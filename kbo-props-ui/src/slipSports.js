@@ -4,7 +4,7 @@ import { fetchWnbaData } from './wnba/wnbaData'
 import { fetchNbaData } from './nba/nbaData'
 import { fetchNflProjections } from './nfl/nflData'
 import { fetchNhlProjections } from './nhl/nhlData'
-import { cgScore } from './cgScore'
+import { compareSlipRows } from './slipBoardModel.js'
 import { isStandardLine, oddsTypeOf, standardSlipRows } from './slipLines'
 import {
   kboBoardIsOpen,
@@ -62,9 +62,7 @@ function kboShort(prop) {
 }
 
 function byCg(a, b) {
-  const left = cgScore(a.projection, a.line, a.prop) ?? -1
-  const right = cgScore(b.projection, b.line, b.prop) ?? -1
-  return right - left
+  return compareSlipRows(a, b, true)
 }
 
 function slipFields(row, extra = {}) {
@@ -95,6 +93,7 @@ function slipFields(row, extra = {}) {
     held: row?.held === true || extra.held === true,
     awayTeam: row?.awayTeam || extra.awayTeam || '',
     homeTeam: row?.homeTeam || extra.homeTeam || '',
+    sport: extra.sport || row?.sport || '',
   }
 }
 
@@ -215,7 +214,7 @@ async function loadBasketProps(fetchDataFile, { emptyWhenNoGame = false, timeZon
   return { props: basketRows(players, { source }), empty: null }
 }
 
-function flatRows(rows, shorts, { pointsGate = false } = {}) {
+function flatRows(rows, shorts, { pointsGate = false, sport = '' } = {}) {
   const props = []
   for (const row of standardSlipRows(rows)) {
     const name = row?.player || row?.name
@@ -234,6 +233,7 @@ function flatRows(rows, shorts, { pointsGate = false } = {}) {
       line,
       projection,
       edge,
+      sport,
     })
     if (!keepSlipRow(built, { pointsGate })) continue
     props.push(built)
@@ -316,7 +316,7 @@ export const SLIP_SPORTS = {
     ],
     loadProps: async () => {
       const snapshot = await fetchNflProjections()
-      return flatRows(snapshot.projections, NFL_SHORT)
+      return flatRows(snapshot.projections, NFL_SHORT, { sport: 'nfl' })
     },
   },
   nhl: {

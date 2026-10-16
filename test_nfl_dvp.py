@@ -7,12 +7,12 @@ import pandas as pd
 import nfl.build_projection_data as nfl
 
 
-def _pp(player_id, stat, odds_type, line, opponent, trending=None):
+def _pp(player_id, stat, odds_type, line, opponent, trending=None, status='pre_game'):
     return {
         'relationships': {'new_player': {'data': {'id': player_id}}},
         'attributes': {
             'stat_type': stat, 'odds_type': odds_type, 'line_score': line,
-            'description': opponent, 'trending_count': trending,
+            'description': opponent, 'trending_count': trending, 'status': status,
         },
     }
 
@@ -185,6 +185,36 @@ class DvpRankTests(unittest.TestCase):
         row = nfl.slate_records(payload)[0]
         self.assertEqual(row['start_time'], '2026-10-08T20:15:00.000-04:00')
         self.assertEqual(row['opponent'], 'TB')
+
+    def test_a_pulled_standard_line_keeps_its_card_and_is_flagged(self):
+        # PrizePicks took the standard down. The demon ladder is not the line.
+        # The slip builder drops the row from removed and pp_status.
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {'name': 'J.J. McCarthy', 'team': 'MIN', 'league': 'NFL'}},
+                {'id': '2', 'attributes': {'name': 'Xavier Hutchinson', 'team': 'HOU', 'league': 'NFL'}},
+            ],
+            'data': [
+                _pp('1', 'Rush Yards', 'standard', 2.5, 'NO', status='removed'),
+                _pp('1', 'Rush Yards', 'demon', 19.5, 'NO', status='pre_game'),
+                _pp('2', 'Receiving Yards', 'standard', 14.5, 'JAC', status='pre_game'),
+                _pp('2', 'Receiving Yards', 'demon', 24.5, 'JAC', status='suspended'),
+            ],
+        }
+        rows = {row['player']: row for row in nfl.slate_records(payload)}
+        pulled = rows['J.J. McCarthy']
+        self.assertEqual(pulled['line'], 2.5)
+        self.assertEqual(pulled['odds_type'], 'standard')
+        self.assertIs(pulled['removed'], True)
+        self.assertEqual(pulled['pp_status'], 'removed')
+        live = rows['Xavier Hutchinson']
+        self.assertEqual(live['line'], 14.5)
+        self.assertEqual(live['odds_type'], 'standard')
+        self.assertNotIn('removed', live)
+        self.assertNotIn('pp_status', live)
+        copied = nfl._pulled_fields(type('Row', (), pulled))
+        self.assertEqual(copied, {'removed': True, 'pp_status': 'removed'})
+        self.assertEqual(nfl._pulled_fields(type('Row', (), live)), {})
 
     def test_slate_keeps_prizepicks_image_url(self):
         payload = {

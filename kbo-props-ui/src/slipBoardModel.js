@@ -1,6 +1,7 @@
 import { cgScore } from './cgScore.js'
 import { fitImage } from './fitImage.js'
 import { inkOn, landingHeadshotUrl, landingTeamFill } from './playerMark.js'
+import { NFL_LINE_FLOORS, nflCgScore } from './nfl/nflLineFloors.js'
 import { teamLogoUrl as nflLogo } from './nfl/nflTeams.js'
 import { nhlHeadshotUrl, teamLogoUrl as nhlLogo } from './nhl/nhlTeams.js'
 import { nbaLogoUrl } from './nba/nbaPropLines.js'
@@ -40,16 +41,54 @@ export function rowKey(row) {
   return [row?.name, row?.team, row?.prop, row?.line, row?.odds_type].join('|')
 }
 
+function nflSlipRow(row) {
+  if (String(row?.sport || '').toLowerCase() === 'nfl') return true
+  const stat = row?.prop ?? row?.stat
+  return Object.hasOwn(NFL_LINE_FLOORS, stat)
+}
+
+// NFL uses the board floors (projection / max(line, floor) × 50). Other
+// sports stay on the plain line. The More/Less side is still projection
+// versus the posted line, so a short yardage over does not flip to Less.
+export function slipCg(row) {
+  const stat = row?.prop ?? row?.stat
+  return nflSlipRow(row)
+    ? nflCgScore(row?.projection, row?.line, stat)
+    : cgScore(row?.projection, row?.line, stat)
+}
+
 export function naturalSide(row) {
   if (isPromoLine(row)) return 'MORE'
-  const score = cgScore(row?.projection, row?.line, row?.prop)
+  const score = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
   if (score == null) return Number(row?.edge) >= 0 ? 'MORE' : 'LESS'
   return score >= 50 ? 'MORE' : 'LESS'
 }
 
 export function shownCg(row) {
-  const score = cgScore(row?.projection, row?.line, row?.prop)
+  const score = slipCg(row)
   return score == null || !Number.isFinite(score) ? null : score
+}
+
+function tieText(row, primary, fallback = '') {
+  return String(row?.[primary] || (fallback ? row?.[fallback] : '') || '')
+}
+
+// Equal CG scores sort by name, prop, line, then team. The secondary key
+// does not follow the high/low toggle, so a tie lands in the same place
+// either way and does not follow the feed order.
+export function compareSlipRows(a, b, sortDesc = true) {
+  const left = shownCg(a)
+  const right = shownCg(b)
+  const av = left == null ? (sortDesc ? -Infinity : Infinity) : left
+  const bv = right == null ? (sortDesc ? -Infinity : Infinity) : right
+  if (av !== bv) return sortDesc ? bv - av : av - bv
+  const name = tieText(a, 'name', 'player').localeCompare(tieText(b, 'name', 'player'))
+  if (name) return name
+  const prop = tieText(a, 'prop', 'stat').localeCompare(tieText(b, 'prop', 'stat'))
+  if (prop) return prop
+  const line = (Number(a?.line) || 0) - (Number(b?.line) || 0)
+  if (line) return line
+  return tieText(a, 'team').localeCompare(tieText(b, 'team'))
 }
 
 export function l10Text(row) {
@@ -89,13 +128,7 @@ export function boardRows(rows, { standardOnly = true, moreOnly = false, propId 
   if (standardOnly) list = list.filter(isStandardLine)
   if (typeof match === 'function' && propId !== 'all') list = list.filter(match)
   if (moreOnly) list = list.filter((row) => naturalSide(row) === 'MORE')
-  list.sort((a, b) => {
-    const left = shownCg(a)
-    const right = shownCg(b)
-    const av = left == null ? (sortDesc ? -Infinity : Infinity) : left
-    const bv = right == null ? (sortDesc ? -Infinity : Infinity) : right
-    return sortDesc ? bv - av : av - bv
-  })
+  list.sort((a, b) => compareSlipRows(a, b, sortDesc))
   return list
 }
 
