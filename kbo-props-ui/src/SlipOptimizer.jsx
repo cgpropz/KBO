@@ -34,6 +34,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const teams = config.teams;
   const { user } = useAuth();
   const [allProps, setAllProps] = useState([]);
+  const [emptySlate, setEmptySlate] = useState(null);
   const [selected, setSelected] = useState(new Set()); // Set of indices
   const [legs, setLegs] = useState(3); // target legs for auto-optimizer
   const [mode, setMode] = useState(() => {
@@ -189,10 +190,14 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   useEffect(() => {
     let cancelled = false;
     debugLog('Fetching projections for optimizer...', config.id);
-    config.loadProps().then((props) => {
+    setEmptySlate(null);
+    config.loadProps().then((result) => {
       if (cancelled) return;
-      debugLog('Data loaded:', { sport: config.id, totalProps: props.length });
+      const props = Array.isArray(result) ? result : (result?.props || []);
+      const empty = Array.isArray(result) ? null : (result?.empty || null);
+      debugLog('Data loaded:', { sport: config.id, totalProps: props.length, empty: !!empty });
       setAllProps(props);
+      setEmptySlate(empty);
       if (!config.importKey) return;
       try {
         const raw = localStorage.getItem(config.importKey);
@@ -409,7 +414,14 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
         </button>
       </div>
 
-      {mode === 'build' && (
+      {emptySlate && (
+        <section className="so-empty-slate" data-testid="slip-empty-slate">
+          <h2>{emptySlate.title}</h2>
+          <p>{emptySlate.detail}</p>
+        </section>
+      )}
+
+      {mode === 'build' && !emptySlate && (
         <>
           {/* Current slip summary */}
           <div className="so-slip-summary">
@@ -570,7 +582,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
         </>
       )}
 
-      {mode === 'auto' && (
+      {mode === 'auto' && !emptySlate && (
         <div className="so-auto">
           <div className="so-auto-controls">
             <div className="so-control-group">
