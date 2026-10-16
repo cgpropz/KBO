@@ -31,7 +31,7 @@ concurrency:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: kbo-props-ui
@@ -63,3 +63,20 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Screenshot and Lighthouse the preview
+        run: node scripts/preview-audit.mjs
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Save preview audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-audit
+          path: kbo-props-ui/preview-audit/*
+          if-no-files-found: ignore
