@@ -396,6 +396,15 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, p
     return card
 
 
+def _attach_image_url(card, props):
+    """PrizePicks new_player image_url. Not a projection field."""
+    for prop in props:
+        raw = str(prop.get("image_url") or "").strip()
+        if raw:
+            card["image_url"] = raw
+            return
+
+
 def _attach_start_time(card, props):
     """PrizePicks start, if the odds row had one. Not a projection field."""
     for prop in props:
@@ -570,6 +579,7 @@ def main():
                 # Not copied onto the published prop. The board cutoff uses it
                 # only when the official schedule has no matching game.
                 "start_time": str(o.get("Start Time") or "").strip(),
+                "image_url": str(o.get("Image URL") or "").strip(),
             })
 
     cards = []
@@ -620,6 +630,7 @@ def main():
             card = build_pitcher_card(log_name, pitcher_props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=player_name)
             card["name"] = player_name  # Use PP display name
             _attach_start_time(card, pitcher_props)
+            _attach_image_url(card, pitcher_props)
             cards.append(card)
 
         if is_batter:
@@ -643,6 +654,7 @@ def main():
             )
             card["name"] = player_name
             _attach_start_time(card, batter_props)
+            _attach_image_url(card, batter_props)
             cards.append(card)
 
     # Sort: pitchers first, then batters, each by highest hit rate
@@ -788,11 +800,19 @@ def lines_only():
         fresh[key] = {
             "line": float(o["Prizepicks"]),
             "odds_type": o.get("Odds Type", "standard").strip().lower(),
+            "image_url": str(o.get("Image URL") or "").strip(),
         }
 
     updated = 0
     for card in data.get("cards", []):
         nn = normalize(card["name"])
+        image_url = next(
+            (item["image_url"] for (name, _stat), item in fresh.items() if name == nn and item.get("image_url")),
+            "",
+        )
+        if image_url and card.get("image_url") != image_url:
+            card["image_url"] = image_url
+            updated += 1
         for prop in card.get("props", []):
             key = (nn, prop["stat"])
             if key in fresh:

@@ -6,6 +6,7 @@ import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlid
 import { cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
+import { fetchApiDataset } from '../apiData'
 import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
@@ -292,8 +293,34 @@ function RoleChip({ label, value, detail, color }) {
   )
 }
 
-export default function NhlPlayerPage({ item, onBack }) {
+function sameNhlRow(row, source) {
+  if (!row || !source) return false
+  if (String(row.player || '') !== String(source.player || '')) return false
+  const stat = row.prop || row.stat
+  if (stat !== source.prop && stat !== source.stat) return false
+  if (source.line == null || row.line == null) return true
+  return Number(row.line) === Number(source.line)
+}
+
+export default function NhlPlayerPage({ item: initialItem, onBack }) {
+  const [item, setItem] = useState(initialItem)
   const [range, setRange] = useState('l10')
+
+  useEffect(() => {
+    setItem(initialItem)
+    const name = initialItem?.player
+    if (!name) return undefined
+    let active = true
+    fetchApiDataset('nhl_projections', { devStaticPath: 'nhl/projections.json', player: name })
+      .then((snapshot) => {
+        if (!active) return
+        const rows = Array.isArray(snapshot.data) ? snapshot.data : []
+        const match = rows.find((row) => sameNhlRow(row, initialItem))
+        if (match) setItem({ ...initialItem, ...match })
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [initialItem])
   const [dvpState, setDvpState] = useState({ position: '', payload: null })
   const position = positionGroup(item)
   const dvp = dvpState.position === position ? dvpState.payload : null

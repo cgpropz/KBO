@@ -14,6 +14,8 @@ import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
+import PlayerMark from './PlayerMark';
+import { playerInitials } from './playerMark';
 import './PublicLanding.css';
 
 const FAQS = publicFaqs();
@@ -31,10 +33,6 @@ const fmtScore = (value) => {
   return n.toFixed(1);
 };
 
-function initials(name) {
-  return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-}
-
 function ordinal(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return '—';
@@ -43,13 +41,7 @@ function ordinal(value) {
   return `${n}${suffix}`;
 }
 
-function Headshot({ row }) {
-  const src = row?.image ? fitImage(row.image, 38) : '';
-  if (!src) return <span className="pl-avatar" aria-hidden="true">{initials(row?.player)}</span>;
-  return <img className="pl-avatar" src={src} alt="" width="38" height="38" />;
-}
-
-function BoardTable({ rows, showHitRate }) {
+function BoardTable({ rows, showHitRate, sport }) {
   if (!rows.length) return null;
   return (
     <div className="pl-table" role="table">
@@ -63,7 +55,7 @@ function BoardTable({ rows, showHitRate }) {
       {rows.map((row) => (
         <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}`}>
           <span className="pl-player">
-            <Headshot row={row} />
+            <PlayerMark name={row.player} team={row.team} sport={sport} image={row.ppImageUrl} />
             <span>
               <b>{row.player}</b>
               <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}</small>
@@ -82,15 +74,18 @@ function BoardTable({ rows, showHitRate }) {
   );
 }
 
-function Phone({ rows }) {
+function Phone({ rows, sport }) {
   return (
     <div className="pl-phone" aria-hidden="true">
       <div className="pl-phone-top"><i /><b>cgpropz</b><i /></div>
       {rows.slice(0, 6).map((row) => (
         <div className="pl-phone-row" key={`${row.player}|${row.stat}|${row.line}`}>
-          <span>
-            <b>{row.player}</b>
-            <small>{row.stat} · {row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</small>
+          <span className="pl-phone-id">
+            <PlayerMark name={row.player} team={row.team} sport={sport} size={28} photo={false} />
+            <span>
+              <b>{row.player}</b>
+              <small>{row.stat} · {row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</small>
+            </span>
           </span>
           <em>{fmtScore(row.score)}</em>
         </div>
@@ -296,7 +291,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <li><i />One login, every league</li>
             </ul>
           </div>
-          <Phone rows={phoneRows} />
+          <Phone rows={phoneRows} sport={sport.id} />
         </section>
 
         <section id="free-top-3">
@@ -318,7 +313,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             ))}
           </div>
           <div className="pl-card">
-            {hitRows.length ? <BoardTable rows={hitRows} showHitRate /> : (
+            {hitRows.length ? <BoardTable rows={hitRows} showHitRate sport={hitSport.id} /> : (
               <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
             )}
             {hitState?.preview && hitState.lockedCount > 0 && (
@@ -346,7 +341,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                     <Market label="Spread" line={game.spread?.line} projection={game.spread?.projection} />
                     <Market label="Total" line={game.total?.line} projection={game.total?.projection} />
                   </div>
-                  {gameRows.length ? <BoardTable rows={gameRows} /> : (
+                  {gameRows.length ? <BoardTable rows={gameRows} sport="nfl" /> : (
                     <p className="pl-empty">Player props for this game are on the full board.</p>
                   )}
                 </>
@@ -399,7 +394,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               </div>
               <p className="pl-sw-meta"><b>{sport.sportName}</b> · {boardApi ? boardApi.slateLabel(sportState?.rows || []) : 'Board'} · {sport.props}</p>
             </div>
-            {switchRows.length ? <BoardTable rows={switchRows} /> : (
+            {switchRows.length ? <BoardTable rows={switchRows} sport={sport.id} /> : (
               <p className="pl-empty">
                 {settled
                   ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
@@ -525,7 +520,7 @@ function TeamMark({ team, name }) {
   const src = teamLogoUrl(team);
   return src
     ? <img src={fitImage(src, 36)} alt={name || team} width="36" height="36" />
-    : <span className="pl-avatar" aria-hidden="true">{initials(name || team)}</span>;
+    : <span className="pl-avatar" aria-hidden="true">{playerInitials(name || team)}</span>;
 }
 
 function Market({ label, line, projection }) {

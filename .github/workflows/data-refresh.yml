@@ -1,29 +1,52 @@
 name: Intraday Odds Refresh
 
+# Hourly cron during the hours a KBO window can be open. A 60-minute sleep
+# would bill the wait (~8 links × ~63 min), and a chain with no sleep would
+# scrape again as soon as this job finished. The :17 tick avoids the crowded
+# :00/:30 minutes. The :07/:37 cron stays as the off-day backup.
+#
+# The first step after checkout exits unless this is a manual run, the live
+# schedule is inside the window (5 hours before first pitch through 3 hours
+# after), and no successful scrape finished in the last 50 minutes. That
+# keeps the backup from doubling the hourly run, and it skips pip and
+# Playwright on off days.
+#
+# One tip, about 8 scrapes × ~3 min of work (measured 1.6-5.4), plus about
+# one minute for every other tick (62 starts: 14 hourly hours + 48 backup).
+# Game day ≈ 80 billed minutes. Off day ≈ 62. The old 25-minute chain was
+# about 450.
+
 on:
   schedule:
-    # Recalculate line-sensitive prop projections every 30 minutes.
-    # Off the top/half of the hour on purpose: GitHub delays or drops scheduled
-    # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
-    # job actually ran only every ~3-6 h). Same 30-minute cadence.
+    # Game-window hours, UTC. First pitch is KST (UTC+9); the window can
+    # open around 23:00 UTC and close around 12:30 UTC.
+    - cron: "17 0-12,23 * * *"
+    # Off-day backup. A run inside 50 minutes of a real scrape exits early.
     - cron: "7,37 * * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/data-refresh.yml"
+      - "pipeline/refresh_window.py"
 
 permissions:
   contents: write
   issues: write
+  actions: read
 
 concurrency:
   # Separate group from the full deploy so odds refreshes don't queue
-  # behind a 14-minute pipeline run. cancel-in-progress: true means if a
-  # new odds refresh is triggered while one is already queued, the queued
-  # one is dropped and only the freshest run executes.
+  # behind a pipeline run. cancel-in-progress stays false so a backup tick
+  # waits, then the 50-minute guard skips it if this run already scraped.
   group: kbo-odds-refresh
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh-odds:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -31,13 +54,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
+      - name: Decide whether this run should refresh
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/refresh-due.sh data-refresh.yml kbo
+
       - name: Set up Python
+        if: steps.gate.outputs.due == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
       - name: Install Python dependencies
+        if: steps.gate.outputs.due == 'true'
         run: |
           pip install -r requirements.txt
           # Playwright is the fallback path for Baseball Reference (their CDN
@@ -47,12 +78,14 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Restore last published snapshots (paid data is not in git)
+        if: steps.gate.outputs.due == 'true'
         run: python pipeline/restore_snapshots.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Refresh odds-derived projection snapshots
+        if: steps.gate.outputs.due == 'true'
         run: |
           for attempt in 1 2 3; do
             echo "Refresh attempt ${attempt}/3"
@@ -75,11 +108,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Set up Node.js
+        if: steps.gate.outputs.due == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Commit refreshed odds-derived snapshots
+        if: steps.gate.outputs.due == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -107,16 +142,18 @@ jobs:
           fi
 
       - name: Publish public board status
-        if: success()
+        if: steps.gate.outputs.due == 'true' && success()
         continue-on-error: true
         run: |
           bash pipeline/commit_status.sh "chore: kbo board status"
 
       - name: Build KBO prop correlations
+        if: steps.gate.outputs.due == 'true'
         continue-on-error: true
         run: python pipeline/build_correlations.py --sport kbo
 
       - name: Publish KBO prop correlations
+        if: steps.gate.outputs.due == 'true'
         continue-on-error: true
         run: python publish_supabase.py
         env:
@@ -130,12 +167,12 @@ jobs:
       # is needed for an odds refresh.
 
       - name: Freeze KBO slate into memory/
-        if: success()
+        if: steps.gate.outputs.due == 'true' && success()
         continue-on-error: true
         run: python pipeline/memory/freeze_slate.py --sport kbo
 
       - name: Publish memory/ slate freeze
-        if: success()
+        if: steps.gate.outputs.due == 'true' && success()
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: kbo memory slate freeze"

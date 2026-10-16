@@ -8,6 +8,17 @@ test('local team logos become the small webp file', () => {
   assert.equal(fitImage('/team-logos/doosan.webp', 40), '/team-logos/doosan.webp')
 })
 
+test('PrizePicks headshots resize to a small webp through the image proxy', () => {
+  const headshot = 'https://static.prizepicks.com/images/players/NFL/Xavier_Hutchinson_NFL_player_abcDEF123.webp'
+  assert.equal(isRemoteHeadshotOrLogo(headshot), true)
+  assert.equal(fitImage(headshot, 32), `/api/img?src=${encodeURIComponent(headshot)}&w=64`)
+  assert.equal(fitImage(headshot, 48), `/api/img?src=${encodeURIComponent(headshot)}&w=96`)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NHL/Evgeni_Malkin__NHL_player_abc.webp'), true)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NHL/Jean-Gabriel_Pageau_NHL_player_abc.webp'), true)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NFL/../../secret.webp'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/other/a.webp'), false)
+})
+
 test('espn and nhl headshots go through the same-origin resizer', () => {
   const headshot = 'https://a.espncdn.com/i/headshots/nfl/players/full/15818.png'
   const logo = 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png'
@@ -16,6 +27,17 @@ test('espn and nhl headshots go through the same-origin resizer', () => {
   assert.equal(fitImage(headshot, 42), `/api/img?src=${encodeURIComponent(headshot)}&w=80`)
   assert.equal(fitImage(logo, 22), `/api/img?src=${encodeURIComponent(logo)}&w=48`)
   assert.equal(isRemoteHeadshotOrLogo('https://assets.nhle.com/mugs/nhl/edm/8478402.png'), true)
+})
+
+test('nfl and wnba board headshots go through the resizer at display size', () => {
+  const nfl = 'https://static.www.nfl.com/image/private/f_auto,q_auto/league/abc123'
+  const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1628273.png'
+  assert.equal(fitImage(nfl, 42), `/api/img?src=${encodeURIComponent(nfl)}&w=80`)
+  assert.equal(fitImage(wnba, 30), `/api/img?src=${encodeURIComponent(wnba)}&w=64`)
+  assert.equal(isRemoteHeadshotOrLogo(`${nfl}?x=1`), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.www.nfl.com/image/private/../../secret'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://cdn.wnba.com/headshots/wnba/latest/1040x760/../1.png'), false)
+  assert.equal(fitImage(`${nfl}?x=1`, 42), `${nfl}?x=1`)
 })
 
 test('the image route refuses anything that is not a public headshot or logo', () => {

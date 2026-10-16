@@ -66,6 +66,7 @@ def frame_from_payload(prizepicks):
                 "name": attrs.get("name"),
                 "team": attrs.get("team", "N/A"),
                 "league": attrs.get("league", "N/A"),
+                "image_url": attrs.get("image_url") or "",
             }
 
     rows = []
@@ -76,7 +77,7 @@ def frame_from_payload(prizepicks):
             .get("data", {})
             .get("id", "N/A")
         )
-        player = library.get(player_id, {"name": "Unknown", "team": "N/A", "league": "N/A"})
+        player = library.get(player_id, {"name": "Unknown", "team": "N/A", "league": "N/A", "image_url": ""})
         name = player["name"]
         if player["league"] != "KBO" or not name or "+" in str(name):
             continue
@@ -93,10 +94,11 @@ def frame_from_payload(prizepicks):
             attrs.get("line_score", "N/A"),
             attrs.get("odds_type", "N/A"),
             attrs.get("start_time") or attrs.get("board_time") or "",
+            player.get("image_url") or "",
         ))
 
     return pd.DataFrame(rows, columns=[
-        "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time",
+        "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time", "Image URL",
     ])
 
 

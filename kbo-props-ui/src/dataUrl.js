@@ -47,14 +47,14 @@ async function fetchStaticSnapshot(path) {
 }
 
 // Returns { data, updatedAt, source, preview, lockedCount }.
-export async function fetchDataSnapshot(path) {
+export async function fetchDataSnapshot(path, { player } = {}) {
   const ds = FILE_TO_DATASET[path];
-  if (ds) return fetchApiDataset(ds, { devStaticPath: path });
+  if (ds) return fetchApiDataset(ds, { devStaticPath: path, player });
   if (PUBLIC_STATIC_FILES.has(path)) return fetchStaticSnapshot(path);
   throw new Error(`Unknown data file: ${path}`);
 }
 
-export async function fetchData(path) {
-  const snapshot = await fetchDataSnapshot(path);
+export async function fetchData(path, options) {
+  const snapshot = await fetchDataSnapshot(path, options);
   return snapshot.data;
 }

@@ -98,6 +98,11 @@ class PublishFilterTests(unittest.TestCase):
 
         self.assertEqual(updated["cards"], [upcoming])
         self.assertIs(updated["cards"][0], upcoming)
+        self.assertEqual(updated["cards"][0]["start_time"], "2026-10-17T14:00:00+09:00")
+        self.assertEqual(updated["cards"][0]["game_date"], "2026-10-17")
+        self.assertIs(updated["cards"][0]["started"], False)
+        self.assertIs(updated["cards"][0]["locked"], False)
+        self.assertEqual(updated["generated_at"], "2026-10-14T13:38:00+00:00")
         self.assertEqual(updated["cards"][0]["props"][0]["projection"], 4.25)
         self.assertEqual(updated["cards"][0]["props"][0]["cg_projection"], 66)
         self.assertEqual(updated["total_props"], 1)
@@ -140,17 +145,39 @@ class PublishFilterTests(unittest.TestCase):
         self.assertEqual(updated["cards"], [])
 
     def test_a_naive_start_clock_is_not_read_as_eastern(self):
+        # NC at Hanwha is not on this schedule, so the card is dropped.
+        # The naive 18:30 is not treated as an Eastern start that would keep it.
         payload = {"cards": [card("NC", "Hanwha", start_time="2026-10-14T18:30:00")]}
-        updated, _note = prepare_prizepicks_board(payload, now=PUBLISH, games=[semi_playoff()])
+        updated, note = prepare_prizepicks_board(payload, now=PUBLISH, games=[semi_playoff()])
+        self.assertEqual(updated["cards"], [])
+        self.assertIn("could not be matched", note)
+
+    def test_a_matched_card_ignores_a_naive_clock_and_uses_the_schedule(self):
+        naive = card("LG", "Kia", start_time="2026-10-14T18:30:00")
+        updated, _note = prepare_prizepicks_board(
+            {"cards": [naive]},
+            now=PUBLISH,
+            games=[semi_playoff()],
+        )
         self.assertEqual(len(updated["cards"]), 1)
+        self.assertEqual(updated["cards"][0]["start_time"], "2026-10-17T14:00:00+09:00")
         self.assertEqual(updated["cards"][0]["props"][0]["projection"], 1.87)
 
-    def test_schedule_failure_leaves_the_cached_cards_in_place(self):
+    def test_schedule_failure_drops_unverified_cards_and_logs_it(self):
         payload = {"cards": [card("LG", "Doosan")], "total_props": 1}
         updated, note = prepare_prizepicks_board(payload, now=PUBLISH, games=None, post=lambda *_args: (500, "nope"))
-        self.assertIs(updated, payload)
-        self.assertEqual(len(updated["cards"]), 1)
+        self.assertIsNot(updated, payload)
+        self.assertEqual(updated["cards"], [])
+        self.assertEqual(updated["board_note"], "schedule_unavailable")
+        self.assertIn("fail-safe", note)
         self.assertIn("unavailable", note)
+
+    def test_schedule_failure_keeps_a_card_with_a_future_start(self):
+        later = card("LG", "Kia", start_time="2026-10-17T05:00:00+00:00")
+        payload = {"cards": [later, card("LG", "Doosan")], "total_props": 2}
+        updated, note = prepare_prizepicks_board(payload, now=PUBLISH, games=None, post=lambda *_args: (500, "nope"))
+        self.assertEqual(updated["cards"], [later])
+        self.assertIn("fail-safe dropped 1", note)
 
     def test_html_shell_is_not_an_empty_slate(self):
         def post(url, body, headers):

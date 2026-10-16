@@ -396,7 +396,7 @@ export default function Projections({ onSelectPlayer }) {
 
                 <div className="edge-player">
                   {player.image ? (
-                    <img src={fitImage(player.image, 68)} alt={player.name} className="edge-headshot" loading="lazy" />
+                    <img src={fitImage(player.image, 68)} alt={player.name} className="edge-headshot" width={68} height={68} loading="lazy" />
                   ) : (
                     <div className="edge-headshot" style={{
                       display: 'flex',

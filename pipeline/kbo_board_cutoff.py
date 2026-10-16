@@ -17,10 +17,13 @@ objects the model already wrote.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
+
+log = logging.getLogger("kbo_board_cutoff")
 
 KST = timezone(timedelta(hours=9))
 ET = ZoneInfo("America/New_York")
@@ -215,17 +218,42 @@ def _index_games(games: list[dict]) -> dict[tuple[str, str], list[dict]]:
     return indexed
 
 
-def card_still_upcoming(card: dict, games_by_pair: dict, now: datetime) -> bool:
+def upcoming_matches(card: dict, games_by_pair: dict, now: datetime) -> list[dict]:
     pair = team_pair(card.get("team"), card.get("opponent"))
     matched = games_by_pair.get(pair) if pair else None
-    if matched:
-        return any(not game_has_started_or_finished(game, now) for game in matched)
+    if not matched:
+        return []
+    return [game for game in matched if not game_has_started_or_finished(game, now)]
+
+
+def card_still_upcoming(card: dict, games_by_pair: dict, now: datetime) -> bool:
+    """Keep a card only when the schedule still has that matchup ahead.
+
+    A card the schedule does not list is dropped. Keeping it was how a
+    finished Wild Card game stayed on the board after the schedule window
+    had moved on to the next series.
+    """
+    return bool(upcoming_matches(card, games_by_pair, now))
+
+
+def stamp_card(card: dict, game: dict, generated_at: str) -> dict:
+    """Write first pitch onto the card. The card object itself is updated."""
+    start = kst_start(game)
+    if start is not None:
+        card["start_time"] = start.isoformat()
+        card["game_date"] = start.date().isoformat()
+    card["generated_at"] = generated_at
+    card["started"] = False
+    card["locked"] = False
+    return card
+
+
+def card_provably_upcoming(card: dict, now: datetime) -> bool:
+    """Schedule is down. Keep a card only when its own clock is still in the future."""
+    if not isinstance(card, dict) or card_status_closed(card):
+        return False
     start = card_start(card)
-    if start is not None and now >= start:
-        return False
-    if card_status_closed(card):
-        return False
-    return True
+    return start is not None and start > now
 
 
 def earliest_upcoming(games: list[dict], now: datetime) -> dict | None:
@@ -318,6 +346,58 @@ def load_schedule_games(now: datetime, post: Post | None = None) -> list[dict] |
     return unique
 
 
+def _finish_board(payload: dict, kept: list, upcoming: dict | None, generated_at: str, board_note: str | None) -> dict:
+    updated = dict(payload)
+    updated["cards"] = kept
+    updated["generated_at"] = generated_at
+    updated["total_props"] = sum(
+        len(card.get("props") or []) for card in kept if isinstance(card, dict)
+    )
+    if upcoming:
+        updated["next_game"] = upcoming
+    else:
+        updated.pop("next_game", None)
+    if board_note:
+        updated["board_note"] = board_note
+    elif kept:
+        updated.pop("board_note", None)
+    else:
+        updated["board_note"] = "no_upcoming_games"
+    return updated
+
+
+def _fail_safe_without_schedule(payload: dict, cards: list, now: datetime) -> tuple[dict, str]:
+    """Schedule fetch failed. Do not republish cards we cannot prove are upcoming."""
+    generated_at = now.astimezone(timezone.utc).replace(microsecond=0).isoformat()
+    kept = []
+    for card in cards:
+        if card_provably_upcoming(card, now):
+            card["generated_at"] = generated_at
+            card["started"] = False
+            card["locked"] = False
+            kept.append(card)
+    dropped = len(cards) - len(kept)
+    note = (
+        f"KBO schedule unavailable; fail-safe dropped {dropped} card(s) "
+        "that could not be verified as upcoming"
+    )
+    log.warning(note)
+    upcoming = None
+    if kept:
+        earliest = min(kept, key=lambda card: card_start(card) or now)
+        start = card_start(earliest)
+        if start is not None:
+            upcoming = {
+                "away": canonical_team(earliest.get("team")),
+                "home": canonical_team(earliest.get("opponent")),
+                "start_time_utc": start.astimezone(timezone.utc).replace(microsecond=0).isoformat(),
+                "start_time_et": start.astimezone(ET).replace(microsecond=0).isoformat(),
+                "label_et": format_et_label(start),
+            }
+    updated = _finish_board(payload, kept, upcoming, generated_at, "schedule_unavailable")
+    return updated, note
+
+
 def prepare_prizepicks_board(
     payload: Any,
     now: datetime | None = None,
@@ -326,8 +406,10 @@ def prepare_prizepicks_board(
 ) -> tuple[Any, str]:
     """Return the board payload with started and finished games removed.
 
-    When the schedule cannot be loaded, the payload object is returned
-    unchanged. Kept cards are not copied, so projection fields stay as written.
+    When the schedule cannot be loaded, cards without a future start time
+    are dropped and the failure is logged. The original payload is not returned.
+    Kept cards are not copied, so projection fields stay as written. First pitch
+    from the matched schedule game is stamped onto each kept card.
     """
     if not isinstance(payload, dict):
         return payload, ""
@@ -336,35 +418,28 @@ def prepare_prizepicks_board(
         return payload, ""
 
     now = _aware(now or datetime.now(timezone.utc))
+    generated_at = now.astimezone(timezone.utc).replace(microsecond=0).isoformat()
     if games is None:
         games = load_schedule_games(now, post=post)
     if games is None:
-        return payload, "KBO schedule unavailable; leaving board cards unchanged"
+        return _fail_safe_without_schedule(payload, cards, now)
 
     indexed = _index_games(games)
     kept = []
     for card in cards:
-        if isinstance(card, dict) and card_still_upcoming(card, indexed, now):
-            kept.append(card)
+        if not isinstance(card, dict):
+            continue
+        matches = upcoming_matches(card, indexed, now)
+        if not matches:
+            continue
+        chosen = min(matches, key=lambda game: kst_start(game) or now)
+        kept.append(stamp_card(card, chosen, generated_at))
     dropped = len(cards) - len(kept)
     upcoming = earliest_upcoming(games, now)
-
-    updated = dict(payload)
-    updated["cards"] = kept
-    updated["total_props"] = sum(
-        len(card.get("props") or []) for card in kept if isinstance(card, dict)
-    )
-    if upcoming:
-        updated["next_game"] = upcoming
-    else:
-        updated.pop("next_game", None)
-    if kept:
-        updated.pop("board_note", None)
-    else:
-        updated["board_note"] = "no_upcoming_games"
+    updated = _finish_board(payload, kept, upcoming, generated_at, None)
 
     if dropped:
-        note = f"Dropped {dropped} KBO card(s) whose games have started or finished"
+        note = f"Dropped {dropped} KBO card(s) whose games have started, finished, or could not be matched"
     else:
         note = "KBO board has no started or finished games to drop"
     if upcoming:

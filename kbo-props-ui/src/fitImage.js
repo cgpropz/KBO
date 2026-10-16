@@ -5,12 +5,26 @@
 
 export const IMAGE_WIDTHS = [48, 64, 80, 96, 128, 160]
 
+// PrizePicks new_player.image_url. League and player id are path segments.
+// Hyphens and repeated underscores show up in real filenames (Jean-Gabriel,
+// Evgeni_Malkin__NHL). Other hosts stay off the landing even when an older
+// board row still carries an ESPN, league, or team CDN headshot.
+export const PRIZEPICKS_HEADSHOT = /^https:\/\/static\.prizepicks\.com\/images\/players\/[A-Za-z0-9]+\/[A-Za-z0-9_-]+\.webp$/
+
 const REMOTE_HOSTS = [
   /^https:\/\/a\.espncdn\.com\/i\/(?:teamlogos|headshots)\/[a-z0-9/_-]+\.(?:png|jpe?g|webp)$/i,
   /^https:\/\/assets\.nhle\.com\/mugs\/nhl\/[a-z0-9]+\/\d+\.png$/i,
   /^https:\/\/6ptotvmi5753\.edge\.naverncp\.com\/KBO_IMAGE\/person\/[a-z0-9/_-]+\.(?:png|jpe?g)$/i,
   /^https:\/\/mykbostats\.com\/system\/players\/photos\/\d{3}\/\d{3}\/\d{3}\/original\/\d+\.jpe?g$/i,
+  PRIZEPICKS_HEADSHOT,
+  /^https:\/\/static\.www\.nfl\.com\/image\/(?:private|upload)\/[a-z0-9,_./=-]+$/i,
+  /^https:\/\/cdn\.wnba\.com\/headshots\/wnba\/latest\/\d+x\d+\/\d+\.png$/i,
 ]
+
+export function isPrizePicksHeadshot(url) {
+  if (typeof url !== 'string' || url.includes('..') || url.includes('\\') || url.includes('@')) return false
+  return PRIZEPICKS_HEADSHOT.test(url)
+}
 
 export function snapWidth(cssPx) {
   const wanted = Math.round(Number(cssPx) * 2)

@@ -77,6 +77,10 @@ kbo-props-ui/public/data/nfl/
 kbo-props-ui/public/data/nba/
 kbo-props-ui/public/data/nhl/
 
+# Baked at deploy time. The committed stub in api/_landingPreview.json stays empty.
+kbo-props-ui/public/landing/
+kbo-props-ui/preview-audit/
+
 # Vercel CLI local build output (.vercel/output contains build-time copies of
 # source and data). Only the project link file stays tracked so CI deploys keep
 # targeting the existing Vercel project.

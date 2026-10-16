@@ -124,6 +124,16 @@ export function isoWithEtOffset(iso) {
   return `${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}:${parts.second}${offset}`
 }
 
+export function cheatsheetWarningLine(payload, sport) {
+  const rows = (Array.isArray(payload?.warnings) ? payload.warnings : [])
+    .filter((row) => row?.sport === sport && Number(row.minutes_older) > 60)
+  if (!rows.length) return ''
+  const worst = rows.reduce((best, row) => (
+    Number(row.minutes_older) > Number(best.minutes_older) ? row : best
+  ))
+  return `Cheat sheet is ${Math.round(Number(worst.minutes_older))} min older than this board`
+}
+
 export function propCountFor(sport, data) {
   if (sport === 'kbo') {
     const cards = data && typeof data === 'object' ? data.cards : null

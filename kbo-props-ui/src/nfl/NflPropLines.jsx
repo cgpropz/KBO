@@ -117,7 +117,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
       >
         <td>
           <div className="nfl-lines-player">
-            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
+            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
               <span className="nfl-lines-tag">{item.team}, {item.position}</span>
