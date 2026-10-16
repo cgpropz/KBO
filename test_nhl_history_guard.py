@@ -46,6 +46,45 @@ class FetchHistoryTests(unittest.TestCase):
         self.assertIsNone(body)
         self.assertEqual(calls["n"], 1)
 
+    def test_seven_attempts_with_capped_backoff_and_status(self):
+        import nhl.fetch_history as fetch
+
+        calls = {"n": 0}
+        delays = []
+
+        def refused(url):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(url, 403, "refused", None, io.BytesIO(b""))
+
+        original_read, original_retry = fetch._read, fetch.RETRY_STATUS
+        fetch._read = refused
+        fetch.RETRY_STATUS = set(original_retry) | {403}
+        report = {}
+        try:
+            body = _download("https://moneypuck.example/2026/skaters/ANA.csv", sleep=delays.append, retry_missing=True, report=report)
+        finally:
+            fetch._read, fetch.RETRY_STATUS = original_read, original_retry
+        self.assertIsNone(body)
+        self.assertEqual(calls["n"], 7)
+        self.assertEqual(delays, [1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
+        self.assertEqual(report["status"], "HTTP 403")
+
+    def test_connection_error_status_is_reported(self):
+        import nhl.fetch_history as fetch
+
+        def boom(url):
+            raise ConnectionResetError("reset by peer")
+
+        original = fetch._read
+        fetch._read = boom
+        report = {}
+        try:
+            body = _download("https://moneypuck.example/2026/skaters/ANA.csv", sleep=lambda _d: None, report=report)
+        finally:
+            fetch._read = original
+        self.assertIsNone(body)
+        self.assertTrue(report["status"].startswith("ConnectionResetError"))
+
     def test_a_missing_current_season_file_is_loud(self):
         results = [
             ("ok", "/tmp/moneypuck/2026/skaters/BOS.csv"),

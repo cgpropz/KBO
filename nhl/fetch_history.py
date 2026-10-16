@@ -59,30 +59,41 @@ def current_season_missing(results) -> list[str]:
     return missing
 
 
-def _download(url: str, attempts: int = 4, sleep=time.sleep, retry_missing: bool = False):
+MAX_DELAY = 32.0
+
+
+def _download(url: str, attempts: int = 7, sleep=time.sleep, retry_missing: bool = False, report=None):
     """Return the file body, or None.
 
-    Rate limits and dropped connections are retried. A current-season file
-    also retries an empty body, an HTML error page, and a 404.
+    Rate limits and dropped connections are retried (7 attempts, backoff
+    1-32s). A current-season file also retries an empty body, an HTML error
+    page, and a 404. When ``report`` is a dict, the last failure is recorded
+    in report["status"] (HTTP code, exception name, "empty" or "html").
     """
     delay = 1.0
     for attempt in range(attempts):
         try:
             data = _read(url)
         except urllib.error.HTTPError as exc:
+            if report is not None:
+                report["status"] = f"HTTP {exc.code}"
             retry = exc.code in RETRY_STATUS or (retry_missing and exc.code in {404, 408})
             if not retry or attempt + 1 == attempts:
                 return None
-        except Exception:
+        except Exception as exc:
+            if report is not None:
+                report["status"] = type(exc).__name__ + (f": {exc}" if str(exc) else "")
             if attempt + 1 == attempts:
                 return None
         else:
             if data and data[:1] != b"<":
                 return data
+            if report is not None:
+                report["status"] = "html" if data else "empty"
             if not retry_missing or attempt + 1 == attempts:
                 return None
         sleep(delay)
-        delay *= 2
+        delay = min(delay * 2, MAX_DELAY)
     return None
 
 
@@ -99,8 +110,10 @@ def main() -> int:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         if os.path.exists(dest) and os.path.getsize(dest) > 100:
             return "cached", dest
-        data = _download(url, retry_missing=is_current_season_path(dest))
+        report = {}
+        data = _download(url, retry_missing=is_current_season_path(dest), report=report)
         if data is None:
+            print(f"moneypuck missing {url} status={report.get('status', 'unknown')}", file=sys.stderr, flush=True)
             return "missing", dest
         with open(dest, "wb") as handle:
             handle.write(data)
@@ -108,8 +121,8 @@ def main() -> int:
 
     ok = miss = 0
     results = []
-    # A wide burst was keeping only the first folder (~32 files) on GitHub runners.
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    # MoneyPuck intermittently refuses GitHub runners; one request at a time.
+    with ThreadPoolExecutor(max_workers=1) as pool:
         for status, dest in pool.map(fetch, jobs):
             results.append((status, dest))
             if status == "missing":
