@@ -135,7 +135,29 @@ async function loadKboProps() {
   return { props, empty: null }
 }
 
-function basketRows(players) {
+function lineTypePresent(row) {
+  if (!row || typeof row !== 'object') return false
+  return [row.odds_type, row.oddsType, row.line_type, row.lineType].some((value) => (
+    value != null && String(value).trim() !== ''
+  ))
+}
+
+// Only projections_standard.json may treat a missing line type as standard.
+// WNBA and NBA standard rows omit the field. Demon and goblin boards omit it
+// too, and those rows stay excluded. A row that already carries a type keeps
+// it, so a labeled demon or goblin is still dropped.
+function basketLine(player, prop, fillMissingStandard) {
+  const merged = { ...player, ...prop }
+  if (!fillMissingStandard || lineTypePresent(merged)) return merged
+  const cleaned = { ...merged }
+  for (const key of ['odds_type', 'oddsType', 'line_type', 'lineType']) {
+    if (cleaned[key] == null || String(cleaned[key]).trim() === '') delete cleaned[key]
+  }
+  return { odds_type: 'standard', ...cleaned }
+}
+
+function basketRows(players, { source = '' } = {}) {
+  const fillMissingStandard = source === 'projections_standard.json'
   const props = []
   const seen = new Set()
   for (const player of Array.isArray(players) ? players : []) {
@@ -146,13 +168,14 @@ function basketRows(players) {
       const stat = prop?.stat || prop?.prop
       const line = num(prop?.line)
       if (!name || !stat || line == null) continue
-      if (!isStandardLine({ ...player, ...prop })) continue
-      const key = `${name}|${stat}|${line}|${oddsTypeOf({ ...player, ...prop })}`
+      const lineRow = basketLine(player, prop, fillMissingStandard)
+      if (!isStandardLine(lineRow)) continue
+      const key = `${name}|${stat}|${line}|${oddsTypeOf(lineRow)}`
       if (seen.has(key)) continue
       seen.add(key)
       const projection = num(prop?.projection)
       const edge = projection == null ? 0 : Math.round((projection - line) * 100) / 100
-      const built = slipFields({ ...player, ...prop }, {
+      const built = slipFields(lineRow, {
         name,
         team,
         opponent: prop?.opponent || opponent,
@@ -183,12 +206,13 @@ function basketRows(players) {
 }
 
 async function loadBasketProps(fetchDataFile, { emptyWhenNoGame = false, timeZone = 'America/New_York' } = {}) {
-  const doc = await fetchDataFile('projections_standard.json').catch(() => [])
+  const source = 'projections_standard.json'
+  const doc = await fetchDataFile(source).catch(() => [])
   const players = Array.isArray(doc) ? doc : []
   if (emptyWhenNoGame && !playsOnDay(players, sportDate(timeZone), timeZone)) {
     return { props: [], empty: wnbaEmptyState() }
   }
-  return { props: basketRows(players), empty: null }
+  return { props: basketRows(players, { source }), empty: null }
 }
 
 function flatRows(rows, shorts, { pointsGate = false } = {}) {
