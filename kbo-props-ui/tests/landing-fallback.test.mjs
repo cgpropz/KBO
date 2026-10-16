@@ -10,6 +10,7 @@ test('the committed landing bake is empty', () => {
   assert.equal(landingFallbackBody('nfl_projections'), null);
   assert.equal(landingFallbackBody('nfl_game_markets'), null);
   assert.equal(landingFallbackBody('prizepicks_props'), null);
+  assert.equal(landingFallbackBody('nhl_projections'), null);
 });
 
 test('a signed-in request does not receive the baked preview', () => {
@@ -44,6 +45,18 @@ test('the baked NFL preview drops started games and refuses total edges', () => 
   });
   assert.equal(markets.data.games[0].id, 'g');
   assert.equal(Object.hasOwn(markets.data.games[0].total, 'edge'), false);
+
+  const nhl = acceptLandingFallback('nhl_projections', {
+    preview: true,
+    data: [{ player: 'Evgeni Malkin', imageUrl: 'https://static.prizepicks.com/images/players/NHL/Evgeni_Malkin__NHL_player_abc.webp' }],
+    lockedCount: 2,
+  });
+  assert.equal(nhl.data[0].player, 'Evgeni Malkin');
+  assert.equal(acceptLandingFallback('nhl_projections', {
+    preview: true,
+    data: [{ player: 'A' }, { player: 'B' }, { player: 'C' }, { player: 'D' }],
+  }), null);
+  assert.equal(acceptLandingFallback('nhl_projections', nhl, 'Bearer token'), null);
 });
 
 test('the bake keeps the free top 3 and strips total edges', () => {

@@ -22,6 +22,10 @@ export function acceptLandingFallback(ds, body, authorization = '') {
     if (games.some((game) => game?.total && Object.hasOwn(game.total, 'edge'))) return null;
     return body;
   }
+  if (ds === 'nhl_projections') {
+    if (!Array.isArray(body.data) || body.data.length > MAX_ROWS) return null;
+    return body;
+  }
   return null;
 }
 

@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { gameAlreadyStarted, shapeForTier, sportAccess } from '../api/_dataAccess.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DATASETS = ['nfl_projections', 'nfl_game_markets'];
+const DATASETS = ['nfl_projections', 'nfl_game_markets', 'nhl_projections'];
 
 function clean(value) {
   return String(value || '').replace(/\\n/g, '').trim();
@@ -28,6 +28,10 @@ export function landingPreviewBody(ds, row) {
     if (games.some((game) => game?.total && Object.hasOwn(game.total, 'edge'))) {
       throw new Error('NFL preview includes a total edge');
     }
+  }
+  if (ds === 'nhl_projections') {
+    const rows = Array.isArray(shaped.data) ? shaped.data : [];
+    if (rows.length > 3) throw new Error('NHL preview has more than 3 rows');
   }
   return {
     data: shaped.data,
@@ -52,7 +56,7 @@ async function main() {
   if (!url || !key) throw new Error('VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
   const started = Date.now();
   const client = createClient(url, key, { auth: { persistSession: false } });
-  const baked = { nfl_projections: null, nfl_game_markets: null };
+  const baked = { nfl_projections: null, nfl_game_markets: null, nhl_projections: null };
   for (const ds of DATASETS) {
     const row = await readSnapshot(client, ds);
     baked[ds] = landingPreviewBody(ds, row);
@@ -71,6 +75,7 @@ async function main() {
     `baked nfl preview rows=${Array.isArray(props.data) ? props.data.length : 0}`
     + ` locked=${props.lockedCount}`
     + ` games=${Array.isArray(markets.data?.games) ? markets.data.games.length : 0}`
+    + ` nhlRows=${Array.isArray(baked.nhl_projections?.data) ? baked.nhl_projections.data.length : 0}`
     + ` bytes=${bytes} ms=${Date.now() - started}`,
   );
 }

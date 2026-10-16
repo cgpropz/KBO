@@ -151,13 +151,19 @@ async function sampleNhl(secret) {
   const response = await fetch(`${previewUrl.replace(/\/$/, '')}/api/data?ds=nhl_projections`, {
     headers: { 'x-vercel-protection-bypass': secret },
   })
-  const body = await response.json().catch(() => ({}))
+  const text = await response.text()
+  let body = {}
+  try { body = JSON.parse(text) } catch { body = { error: 'not-json' } }
   const rows = Array.isArray(body?.data) ? body.data : []
-  return {
+  const summary = {
     status: response.status,
+    error: typeof body?.error === 'string' ? body.error.slice(0, 120) : null,
     rows: rows.length,
+    lockedCount: Number(body?.lockedCount) || 0,
     prizepicksImages: rows.filter((row) => String(row?.imageUrl || row?.ppImageUrl || '').includes('static.prizepicks.com')).length,
   }
+  console.log(`nhl preview ${JSON.stringify(summary)}`)
+  return summary
 }
 
 function lcpSelector(report) {
