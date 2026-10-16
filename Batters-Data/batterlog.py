@@ -529,21 +529,25 @@ def append_hitter_rows(path, df):
         print(f"No new hitter rows for {path}")
         return 0
 
-    raw = open(path, encoding="utf-8").read()
-    header, sep, rest = raw.partition("\n")
+    raw = open(path, "rb").read()
+    eol = b"\r\n" if b"\r\n" in raw else b"\n"
+    lines = raw.decode("utf-8").splitlines()
+    header = lines[0]
     columns = header.split(",")
     if "Series" not in columns:
         header = header + ",Series"
         columns = header.split(",")
-    lines = []
-    for row in fresh:
-        lines.append(",".join(_hitter_cell(column, row) for column in columns))
-    if rest and not rest.endswith("\n"):
-        rest += "\n"
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(header + sep + rest + "\n".join(lines) + "\n")
-    print(f"✅ Appended {len(lines)} hitter rows to {path}")
-    return len(lines)
+    rendered = [",".join(_hitter_cell(column, row) for column in columns) for row in fresh]
+    parts = [header.encode("utf-8")]
+    parts.extend(line.encode("utf-8") for line in lines[1:])
+    parts.extend(line.encode("utf-8") for line in rendered)
+    payload = eol.join(parts)
+    if raw.endswith(b"\n"):
+        payload += eol
+    with open(path, "wb") as handle:
+        handle.write(payload)
+    print(f"✅ Appended {len(rendered)} hitter rows to {path}")
+    return len(rendered)
 
 
 def _attach_postseason_logs(df, pcode, season):

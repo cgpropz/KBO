@@ -809,19 +809,25 @@ def append_pitcher_csv(path, records):
     if not fresh:
         print(f"No new pitcher rows for {path}")
         return 0
-    raw = open(path, encoding="utf-8").read()
-    header, sep, rest = raw.partition("\n")
+    raw = open(path, "rb").read()
+    eol = b"\r\n" if b"\r\n" in raw else b"\n"
+    lines = raw.decode("utf-8").splitlines()
+    header = lines[0]
     columns = header.split(",")
     if "Series" not in columns:
         header = header + ",Series"
         columns = header.split(",")
-    lines = [",".join(_csv_cell(record.get(column, "")) for column in columns) for record in fresh]
-    if rest and not rest.endswith("\n"):
-        rest += "\n"
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(header + sep + rest + "\n".join(lines) + "\n")
-    print(f"✅ Appended {len(lines)} pitcher rows to {path}")
-    return len(lines)
+    rendered = [",".join(_csv_cell(record.get(column, "")) for column in columns) for record in fresh]
+    parts = [header.encode("utf-8")]
+    parts.extend(line.encode("utf-8") for line in lines[1:])
+    parts.extend(line.encode("utf-8") for line in rendered)
+    payload = eol.join(parts)
+    if raw.endswith(b"\n"):
+        payload += eol
+    with open(path, "wb") as handle:
+        handle.write(payload)
+    print(f"✅ Appended {len(rendered)} pitcher rows to {path}")
+    return len(rendered)
 
 
 def append_pitcher_json(path, records):
@@ -845,6 +851,7 @@ def append_pitcher_json(path, records):
         print(f"No new pitcher rows for {path}")
         return 0
     with open(path, "w", encoding="utf-8") as handle:
+        # ensure_ascii keeps historical escapes (\ud328, \u00e1) byte-stable.
         handle.write(json.dumps(data, indent=2))
     print(f"✅ Appended {added} pitcher rows to {path}")
     return added
