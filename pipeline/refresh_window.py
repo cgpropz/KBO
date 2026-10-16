@@ -1,10 +1,10 @@
-"""Whether a props refresh should chain another run.
+"""Whether a props refresh is inside its game window.
 
-GitHub delivers a "every 30 minutes" cron every 3 to 5 hours. The NFL odds
-and NHL jobs stay on a half-hour clock by sleeping, then starting the next
-run. KBO, WNBA props, and NBA props do the same, but only inside a game
-window: from 5 hours before first pitch or tip through 3 hours after the
-last start. Outside that window the backup cron still runs and does not chain.
+KBO, WNBA props, and NBA props scrape on an hourly cron, and only from 5
+hours before first pitch or tip through 3 hours after the last start. The
+half-hour backup cron still runs. Outside the window, or when the schedule
+cannot be read, this check exits 2 so the job can stop before installing
+dependencies. NFL odds and NHL keep their own sleep-and-requeue clock.
 
 Exit 0 inside the window, exit 2 outside or when the schedule cannot be read.
 """
@@ -113,29 +113,29 @@ def in_refresh_window(
     if sport == "kbo":
         found = kbo_starts(now, games=games, post=post)
         if found is None:
-            print("KBO schedule unavailable; not chaining", file=sys.stderr)
+            print("KBO schedule unavailable; not refreshing", file=sys.stderr)
             return False
         return in_window(found, now)
     if sport in ESPN_SCOREBOARD:
         found = espn_starts(sport, fetch=fetch)
         if found is None:
-            print(f"{sport} scoreboard unavailable; not chaining", file=sys.stderr)
+            print(f"{sport} scoreboard unavailable; not refreshing", file=sys.stderr)
             return False
         return in_window(found, now)
-    print(f"No game window for {sport}; not chaining", file=sys.stderr)
+    print(f"No game window for {sport}; not refreshing", file=sys.stderr)
     return False
 
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Exit 0 when a props refresh should chain")
+    parser = argparse.ArgumentParser(description="Exit 0 when a props refresh is inside the game window")
     parser.add_argument("--sport", required=True, choices=("kbo", "wnba", "nba"))
     args = parser.parse_args(argv)
     try:
         inside = in_refresh_window(args.sport)
     except Exception as exc:
-        print(f"Window check failed ({exc}); not chaining", file=sys.stderr)
+        print(f"Window check failed ({exc}); not refreshing", file=sys.stderr)
         return 2
     if inside:
         print(f"{args.sport} is inside the game window")

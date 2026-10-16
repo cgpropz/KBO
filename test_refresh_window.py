@@ -1,4 +1,4 @@
-"""The props chain runs only inside the pregame window."""
+"""The props scrape runs only inside the pregame window."""
 import json
 import unittest
 from datetime import datetime, timezone
