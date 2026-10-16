@@ -48,7 +48,6 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
     }
   }); // 'build' | 'auto' | 'saved'
   const [filter, setFilter] = useState('all'); // all | K | HRR | TB
-  const [standardOnly, setStandardOnly] = useState(true);
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
   const [maxReuse, setMaxReuse] = useState(2); // max times a single prop can appear across slips
   const [importedPicks, setImportedPicks] = useState(null); // picks from Pitchers page
@@ -297,7 +296,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const autoSlips = useMemo(() => {
     if (mode !== 'auto' || allProps.length === 0) return [];
 
-    // Auto slips stay on standard lines. Demon and goblin payouts are altered.
+    // Auto mode uses the same standard-only board as the picker.
     const candidates = allProps
       .map((p, i) => ({ idx: i, edge: p.edge, absEdge: Math.abs(p.edge), standard: isStandardLine(p) }))
       .filter(c => c.standard && c.absEdge > 0.1)
@@ -370,7 +369,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   // Filtered props
   const activeFilter = (config.filters || []).find((item) => item.id === filter) || config.filters?.[0];
   const filteredProps = allProps.map((p, i) => ({ ...p, idx: i })).filter(p => (
-    (standardOnly ? isStandardLine(p) : true) && (activeFilter?.match ? activeFilter.match(p) : true)
+    isStandardLine(p) && (activeFilter?.match ? activeFilter.match(p) : true)
   ));
 
   const getConfidenceClass = (c) => {
@@ -513,14 +512,6 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
             <div className="so-picker-header">
               <h3 className="so-picker-title">Available Props</h3>
               <div className="so-picker-filters">
-                <button
-                  type="button"
-                  className={`so-filter-chip ${standardOnly ? 'active' : ''}`}
-                  aria-pressed={standardOnly}
-                  onClick={() => setStandardOnly((on) => !on)}
-                >
-                  Standard only
-                </button>
                 {(config.filters || []).map(f => (
                   <button
                     key={f.id}
