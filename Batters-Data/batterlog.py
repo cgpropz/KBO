@@ -1,6 +1,8 @@
 import asyncio
 import argparse
 import os
+import re
+import sys
 import json
 from datetime import datetime
 import requests
@@ -9,7 +11,22 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(BASE_DIR)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+from pipeline.kbo_series import (  # noqa: E402
+    REGULAR_SERIES_LABEL,
+    iter_series_targets,
+    load_series_pages,
+    postseason_labels_for_season,
+)
+
 HITTER_MAP_PATH = os.path.join(BASE_DIR, "mykbostats_hitter_map.json")
+HITTER_COLUMNS = [
+    "Name", "DATE", "Team", "Home/Away", "OPP", "AB", "R", "H", "2B", "3B", "HR", "RBI", "Walks",
+    "HBP", "BA", "OBP", "SLG", "OPS", "SB", "CS", "GDP", "1B", "HRR", "TB", "Season", "Series",
+]
+GAME_DATE_RE = re.compile(r"^\d{1,2}\.\d{1,2}$")
 
 # --- PLAYER DATA ---
 PLAYER_NAMES = {
@@ -226,6 +243,7 @@ def scrape_english_kbo_hitter_logs(pcode, season):
                     'Season': season
                 }
                 
+                game_data["Series"] = ""
                 game_data.update(calculate_stats(game_data))
                 all_data.append(game_data)
                 
@@ -234,11 +252,10 @@ def scrape_english_kbo_hitter_logs(pcode, season):
                 continue
     
     df = pd.DataFrame(all_data)
-    col_order = ['Name', 'DATE', 'Team', 'Home/Away', 'OPP', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI', 'Walks',
-                 'HBP', 'BA', 'OBP', 'SLG', 'OPS', 'SB', 'CS', 'GDP', '1B', 'HRR', 'TB', 'Season']
     if df.empty:
         print(f"⚠️ No data found for player {player_name} ({pcode})")
-    return df[col_order] if not df.empty else df
+        return df
+    return df[HITTER_COLUMNS]
 
 
 def calculate_stats(game_data):
@@ -294,7 +311,107 @@ async def read_selector_options(page, selector, expression, retries=3):
     return []
 
 
+def hitter_series_labels(season, series_label=REGULAR_SERIES_LABEL, include_postseason=None):
+    """Regular-season label plus, for 2026+, the postseason series on the Korean site."""
+    labels = [series_label or REGULAR_SERIES_LABEL]
+    if include_postseason is None:
+        include_postseason = bool(postseason_labels_for_season(season))
+    if include_postseason:
+        for label in postseason_labels_for_season(season) or ():
+            if label not in labels:
+                labels.append(label)
+    return labels
+
+
+def parse_hitter_daily_html(html, pcode, season, series_name):
+    """Parse every month table on a Korean hitter Daily.aspx page.
+
+    The page renders one table per month. The first table is not the full
+    series. Rows are tagged with the series option text (for example
+    ``KBO 와일드카드``).
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    all_data = []
+    for table in soup.find_all("table"):
+        tbody = table.find("tbody")
+        rows = tbody.find_all("tr") if tbody else []
+        for row in rows:
+            cols = row.find_all("td")
+            if len(cols) < 18:
+                continue
+            try:
+                date_text = cols[0].text.strip()
+                if not GAME_DATE_RE.match(date_text):
+                    continue
+                if "No Data" in date_text or "데이터" in date_text:
+                    continue
+
+                opp = cols[1].text.strip()
+                home_away = "@" if "@" in opp else ""
+                clean_opp = normalize_opp_name(opp.replace("@", "").strip())
+
+                game_data = {
+                    "Name": PLAYER_NAMES.get(pcode, f"Unknown_{pcode}"),
+                    "DATE": convert_date_for_season(date_text, season),
+                    "Team": PLAYER_TEAMS.get(pcode, "Unknown"),
+                    "Home/Away": home_away,
+                    "OPP": clean_opp,
+                    "AB": parse_int(cols[4].text),
+                    "R": parse_int(cols[5].text),
+                    "H": parse_int(cols[6].text),
+                    "2B": parse_int(cols[7].text),
+                    "3B": parse_int(cols[8].text),
+                    "HR": parse_int(cols[9].text),
+                    "RBI": parse_int(cols[10].text),
+                    "Walks": parse_int(cols[13].text),
+                    "HBP": parse_int(cols[14].text),
+                    "SB": parse_int(cols[11].text),
+                    "CS": parse_int(cols[12].text),
+                    "GDP": parse_int(cols[16].text),
+                    "Season": season,
+                    "Series": series_name,
+                }
+                game_data.update(calculate_stats(game_data))
+                all_data.append(game_data)
+            except Exception as e:
+                print(f"Error parsing row for {pcode}: {e}")
+    return all_data
+
+
+def hitter_frame(rows):
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    if "Series" not in df.columns:
+        df["Series"] = ""
+    df["Series"] = df["Series"].fillna("")
+    return df[HITTER_COLUMNS]
+
+
+def scrape_korean_hitter_logs(pcode, season, labels):
+    """Pull one or more Korean Daily.aspx series via the series dropdown."""
+    url = f"https://www.koreabaseball.com/Record/Player/HitterDetail/Daily.aspx?playerId={pcode}"
+    pages = load_series_pages(url, season, labels)
+    rows = []
+    for series_name, html in pages:
+        rows.extend(parse_hitter_daily_html(html, pcode, season, series_name))
+    df = hitter_frame(rows)
+    if df.empty:
+        print(f"⚠️ No Korean series rows for {PLAYER_NAMES.get(pcode, pcode)} ({pcode})")
+    else:
+        counts = df.groupby("Series").size().to_dict()
+        print(f"  Korean series rows for {PLAYER_NAMES.get(pcode, pcode)}: {counts}")
+    return df
+
+
 async def scrape_kbo_player_logs(pcode, page, season, series_label="KBO 정규시즌"):
+    """Scrape Korean daily logs for the requested series and 2026 postseason.
+
+    ``series_label`` still defaults to the regular season. For 2026 the
+    wildcard, semi-playoff, playoff, and Korean Series options are scraped
+    too. Each row is tagged with its series. Every month table on the page
+    is read.
+    """
     url = f"https://www.koreabaseball.com/Record/Player/HitterDetail/Daily.aspx?playerId={pcode}"
     await page.goto(url, wait_until="domcontentloaded")
     await safe_scroll(page)
@@ -307,72 +424,37 @@ async def scrape_kbo_player_logs(pcode, page, season, series_label="KBO 정규�
         await wait_for_postback(page)
         await safe_scroll(page)
 
+    labels = hitter_series_labels(season, series_label)
     series_selector = "select[id$='ddlSeries']"
+    targets = []
     if await selector_exists(page, series_selector):
         series_options = await read_selector_options(
             page,
             series_selector,
             "opts => opts.map(o => ({value: o.value, text: o.textContent.trim()}))"
         )
-        target_series = next((o["value"] for o in series_options if series_label in o["text"]), None)
-        if target_series is not None:
-            await page.select_option(series_selector, target_series)
+        targets = iter_series_targets(series_options, labels)
+
+    frames = []
+    if not targets:
+        await page.wait_for_selector("table tbody tr", timeout=10000)
+        frames.append(parse_hitter_daily_html(await page.content(), pcode, season, series_label))
+    else:
+        for target in targets:
+            await page.select_option(series_selector, target["value"])
             await wait_for_postback(page)
             await safe_scroll(page)
+            try:
+                await page.wait_for_selector("table tbody tr", timeout=10000)
+            except Exception:
+                pass
+            frames.append(parse_hitter_daily_html(await page.content(), pcode, season, target["text"]))
 
-    await page.wait_for_selector("table tbody tr", timeout=10000)
-    soup = BeautifulSoup(await page.content(), 'html.parser')
-
-    table = soup.select_one("table")
-    all_data = []
-
-    tbody = table.find('tbody') if table else None
-    rows = tbody.find_all('tr') if tbody else []
-
-    for row in rows:
-        cols = row.find_all('td')
-        if len(cols) < 18:
-            continue
-        try:
-            date_text = cols[0].text.strip()
-            if "No Data" in date_text or "데이터" in date_text:
-                continue
-
-            opp = cols[1].text.strip()
-            home_away = '@' if '@' in opp else ''
-            clean_opp = normalize_opp_name(opp.replace('@', '').strip())
-
-            game_data = {
-                'Name': PLAYER_NAMES.get(pcode, f"Unknown_{pcode}"),
-                'DATE': convert_date_for_season(date_text, season),
-                'Team': PLAYER_TEAMS.get(pcode, "Unknown"),
-                'Home/Away': home_away,
-                'OPP': clean_opp,
-                'AB': parse_int(cols[4].text),
-                'R': parse_int(cols[5].text),
-                'H': parse_int(cols[6].text),
-                '2B': parse_int(cols[7].text),
-                '3B': parse_int(cols[8].text),
-                'HR': parse_int(cols[9].text),
-                'RBI': parse_int(cols[10].text),
-                'Walks': parse_int(cols[13].text),
-                'HBP': parse_int(cols[14].text),
-                'SB': parse_int(cols[11].text),
-                'CS': parse_int(cols[12].text),
-                'GDP': parse_int(cols[16].text)
-            }
-            game_data.update(calculate_stats(game_data))
-            game_data['Season'] = season
-            all_data.append(game_data)
-        except Exception as e:
-            print(f"Error parsing row for {pcode}: {e}")
-
-    df = pd.DataFrame(all_data)
-    col_order = ['Name', 'DATE', 'Team', 'Home/Away', 'OPP', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI', 'Walks',
-                 'HBP', 'BA', 'OBP', 'SLG', 'OPS', 'SB', 'CS', 'GDP', '1B', 'HRR', 'TB', 'Season']
+    rows = [row for frame in frames for row in frame]
+    df = hitter_frame(rows)
     if df.empty:
         print(f"⚠️ No data found for player {PLAYER_NAMES.get(pcode, f'Unknown_{pcode}')} ({pcode})")
-    return df[col_order] if not df.empty else df
+    return df
 
 
 def merge_with_existing(df, output_path):
@@ -386,6 +468,12 @@ def merge_with_existing(df, output_path):
 
     if df.empty:
         return df
+
+    if "Series" not in df.columns:
+        df["Series"] = ""
+    df["Series"] = df["Series"].fillna("")
+    present = [col for col in HITTER_COLUMNS if col in df.columns]
+    df = df[present]
 
     return (
         df.drop_duplicates(subset=["Name", "DATE", "Team", "OPP"], keep="last")
@@ -401,17 +489,101 @@ def save_progress(df, output_path, label="Saved"):
     print(f"✅ {label} {len(df)} rows to {output_path}")
 
 
-async def scrape_multiple_players(player_codes, season, output_path=None, checkpoint_every=10):
+def _hitter_cell(column, row):
+    value = row.get(column, "")
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    if column in {"BA", "OBP", "SLG", "OPS"}:
+        number = float(value)
+        text = f"{number:.3f}".rstrip("0").rstrip(".")
+        return text if "." in text else f"{text}.0"
+    if column in {"AB", "R", "H", "2B", "3B", "HR", "RBI", "Walks", "HBP", "SB", "CS", "GDP", "1B", "HRR", "TB", "Season"}:
+        return str(int(float(value)))
+    return str(value)
+
+
+def append_hitter_rows(path, df):
+    """Append unseen hitter rows, keeping the existing file text intact.
+
+    The Series column is added to the header when it is missing. Older lines
+    stay as they were; readers fill a blank series for them.
+    """
+    if df is None or df.empty or not os.path.exists(path):
+        return 0
+    import csv
+    with open(path, newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        existing = {
+            (row.get("Name", ""), row.get("DATE", ""), row.get("Team", ""), row.get("OPP", ""))
+            for row in reader
+        }
+    fresh = []
+    seen = set(existing)
+    for row in df.to_dict(orient="records"):
+        key = (str(row.get("Name", "")), str(row.get("DATE", "")), str(row.get("Team", "")), str(row.get("OPP", "")))
+        if key in seen or not key[0] or not key[1]:
+            continue
+        seen.add(key)
+        fresh.append(row)
+    if not fresh:
+        print(f"No new hitter rows for {path}")
+        return 0
+
+    raw = open(path, encoding="utf-8").read()
+    header, sep, rest = raw.partition("\n")
+    columns = header.split(",")
+    if "Series" not in columns:
+        header = header + ",Series"
+        columns = header.split(",")
+    lines = []
+    for row in fresh:
+        lines.append(",".join(_hitter_cell(column, row) for column in columns))
+    if rest and not rest.endswith("\n"):
+        rest += "\n"
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(header + sep + rest + "\n".join(lines) + "\n")
+    print(f"✅ Appended {len(lines)} hitter rows to {path}")
+    return len(lines)
+
+
+def _attach_postseason_logs(df, pcode, season):
+    """Append Korean postseason series for 2026+ without replacing regular-season rows."""
+    labels = postseason_labels_for_season(season)
+    if not labels:
+        return df
+    try:
+        post = scrape_korean_hitter_logs(pcode, season, labels)
+    except Exception as exc:
+        print(f"⚠️ Postseason scrape failed for {PLAYER_NAMES.get(pcode, pcode)} ({pcode}): {exc}")
+        return df
+    if post.empty:
+        return df
+    if df is None or df.empty:
+        return post
+    return pd.concat([df, post], ignore_index=True)
+
+
+async def scrape_multiple_players(player_codes, season, output_path=None, checkpoint_every=10, postseason_only=False):
     all_data = pd.DataFrame()
-    
-    print(f"\nUsing English KBO endpoint (supports April+ data)\n")
-    
+
+    if postseason_only:
+        print(f"\nScraping Korean postseason series only for {season}\n")
+    else:
+        print(f"\nUsing English KBO endpoint for the regular season (April+ data)\n")
+        if postseason_labels_for_season(season):
+            print("Also scraping Korean postseason series: 와일드카드, 준플레이오프, 플레이오프, 한국시리즈\n")
+
     for index, pcode in enumerate(player_codes, 1):
         player_name = PLAYER_NAMES.get(pcode, pcode)
         print(f"[{index}/{len(player_codes)}] Scraping {player_name}")
         try:
-            # Use English KBO endpoint (no Playwright needed, faster, has April 2+ data)
-            df = scrape_english_kbo_hitter_logs(pcode, season)
+            if postseason_only:
+                df = scrape_korean_hitter_logs(pcode, season, postseason_labels_for_season(season))
+            else:
+                # English endpoint is the regular-season source. It has no series
+                # dropdown, so postseason games are appended from the Korean site.
+                df = scrape_english_kbo_hitter_logs(pcode, season)
+                df = _attach_postseason_logs(df, pcode, season)
             if not df.empty:
                 all_data = pd.concat([all_data, df], ignore_index=True)
                 if output_path and checkpoint_every and index % checkpoint_every == 0:
@@ -419,9 +591,8 @@ async def scrape_multiple_players(player_codes, season, output_path=None, checkp
                     save_progress(checkpoint_df, output_path, label=f"✅ Checkpointed after {index} players:")
         except Exception as exc:
             print(f"⚠️ Skipping {player_name} ({pcode}) — {exc}")
-        
-        # Small delay to be respectful to server
-        await asyncio.sleep(0.3)
+
+        await asyncio.sleep(0.2)
 
     if output_path:
         return merge_with_existing(all_data, output_path)
@@ -434,13 +605,20 @@ def parse_args():
                         help="Season year to scrape (default: current year)")
     parser.add_argument("--max-players", type=int, default=None,
                         help="Limit number of players for quick test runs")
+    parser.add_argument("--players", default=None,
+                        help="Comma-separated KBO player ids to scrape instead of the full roster")
+    parser.add_argument("--postseason-only", action="store_true",
+                        help="Only scrape 2026+ postseason series and merge them into the season file")
     return parser.parse_args()
 
 
 async def main():
     args = parse_args()
     load_mapped_hitters()
-    player_codes = sorted({str(x) for x in PLAYER_NAMES.keys() if str(x).isdigit()})
+    if args.players:
+        player_codes = [part.strip() for part in args.players.split(",") if part.strip()]
+    else:
+        player_codes = sorted({str(x) for x in PLAYER_NAMES.keys() if str(x).isdigit()})
     if args.max_players:
         player_codes = player_codes[:args.max_players]
 
@@ -448,7 +626,26 @@ async def main():
     output_path = os.path.join(BASE_DIR, output_name)
 
     print(f"Target season: {args.season}")
-    df = await scrape_multiple_players(player_codes, args.season, output_path=output_path)
+    if args.postseason_only:
+        df = await scrape_multiple_players(
+            player_codes,
+            args.season,
+            output_path=None,
+            postseason_only=True,
+        )
+        if df.empty:
+            print("⚠️ No postseason rows scraped.")
+            return
+        append_hitter_rows(output_path, df)
+        append_hitter_rows(os.path.join(BASE_DIR, "KBO_daily_batting_stats_combined.csv"), df)
+        return
+
+    df = await scrape_multiple_players(
+        player_codes,
+        args.season,
+        output_path=output_path,
+        postseason_only=False,
+    )
     if not df.empty:
         save_progress(df, output_path)
     else:

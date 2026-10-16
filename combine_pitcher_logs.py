@@ -32,7 +32,7 @@ OUT_JSON = os.path.join(PITCH_DIR, "pitcher_logs.json")
 
 FIELDS = [
     "Name", "Date", "Tm", "Home/Away", "Opp", "Role", "Dec", "ERA", "WHIP", "IP",
-    "R", "ER", "HA", "HR", "SO", "BB", "HBP", "PitOuts", "Season",
+    "R", "ER", "HA", "HR", "SO", "BB", "HBP", "PitOuts", "Season", "Series",
 ]
 
 # Name aliases: map legacy/reversed names to canonical form
@@ -128,6 +128,7 @@ def normalize_row(row):
     out["HR"] = to_int(out.get("HR", 0), 0)
     out["HBP"] = to_int(out.get("HBP", 0), 0)
     out["Season"] = to_int(out.get("Season", 0), 0)
+    out["Series"] = str(out.get("Series") or "").strip()
     out["WHIP"] = whip
     out["ERA"] = era
 

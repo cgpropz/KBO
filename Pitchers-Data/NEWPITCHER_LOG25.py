@@ -3,9 +3,11 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
+import re
 import sys
 import csv
 import json
+import argparse
 from playwright.sync_api import sync_playwright
 from datetime import datetime
 
@@ -14,6 +16,7 @@ REPO_ROOT = os.path.dirname(BASE_DIR)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 from pipeline.pitcher_identity import merge_roster_entries
+from pipeline.kbo_series import load_series_pages, postseason_labels_for_season
 
 PITCHER_MAP_PATH = os.path.join(BASE_DIR, "mykbostats_pitcher_map.json")
 SLATE_CSV_PATH = os.path.join(BASE_DIR, "player_names.csv")
@@ -401,6 +404,140 @@ def format_team_name(team):
     special_teams = {'NC', 'LG', 'SSG', 'KT'}
     return team.upper() if team.upper() in special_teams else team.capitalize()
 
+
+PITCHER_KOR_TEAM_MAP = {
+    "삼성": "Samsung",
+    "두산": "Doosan",
+    "한화": "Hanwha",
+    "KIA": "Kia",
+    "기아": "Kia",
+    "키움": "Kiwoom",
+    "KT": "KT",
+    "LG": "LG",
+    "롯데": "Lotte",
+    "NC": "NC",
+    "SSG": "SSG",
+}
+PITCHER_ROLE_MAP = {
+    "선발": "SP",
+    "구원": "RP",
+    "마무리": "RP",
+}
+PITCHER_DEC_MAP = {
+    "승": "W",
+    "패": "L",
+    "세": "S",
+    "홀": "H",
+    "홀드": "H",
+    "무": "",
+}
+PITCHER_COLUMNS = [
+    "Name", "Date", "Tm", "Home/Away", "Opp", "Role", "Dec", "ERA", "WHIP",
+    "IP", "R", "ER", "HA", "HR", "SO", "BB", "HBP", "PitOuts", "Season", "Series",
+]
+PITCHER_GAME_DATE_RE = re.compile(r"^\d{1,2}\.\d{1,2}$")
+
+
+def normalize_pitcher_opp(name):
+    raw = (name or "").replace("@", "").strip()
+    mapped = PITCHER_KOR_TEAM_MAP.get(raw)
+    if mapped:
+        return mapped
+    return format_team_name(raw)
+
+
+def parse_count(value):
+    text = str(value).strip().replace(",", "")
+    if text in {"", "-", "--"}:
+        return 0
+    return int(float(text))
+
+
+def parse_era(value):
+    text = str(value).strip()
+    if text in {"", "-", "--"}:
+        return 0.0
+    return float(text)
+
+
+def parse_korean_pitcher_daily(html, player_name, team_name, season, series_name):
+    """Parse every month table on the Korean pitcher Daily.aspx page.
+
+    Live columns (checked against the 2026 wildcard page): date, opponent,
+    role (선발/구원), decision, game ERA, batters faced, IP, H, HR, BB, HBP,
+    SO, R, ER, season ERA. Only 선발 is tagged SP so relief lines stay out of
+    starter grading.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    rows = []
+    for table in soup.find_all("table"):
+        tbody = table.find("tbody")
+        if not tbody:
+            continue
+        for tr in tbody.find_all("tr"):
+            cols = [cell.get_text(strip=True) for cell in tr.find_all("td")]
+            if len(cols) < 14 or not PITCHER_GAME_DATE_RE.match(cols[0]):
+                continue
+            try:
+                opp_raw = cols[1]
+                role_text = cols[2]
+                role = PITCHER_ROLE_MAP.get(role_text, "RP")
+                game_data = {
+                    "Name": player_name,
+                    "Date": convert_date(cols[0], default_year=season),
+                    "Tm": team_name,
+                    "Home/Away": "@" if "@" in opp_raw else "",
+                    "Opp": normalize_pitcher_opp(opp_raw),
+                    "Role": role,
+                    "Dec": PITCHER_DEC_MAP.get(cols[3], ""),
+                    "ERA": parse_era(cols[4]),
+                    "IP": parse_innings(cols[6]),
+                    "R": parse_count(cols[12]),
+                    "ER": parse_count(cols[13]),
+                    "HA": parse_count(cols[7]),
+                    "HR": parse_count(cols[8]),
+                    "SO": parse_count(cols[11]),
+                    "BB": parse_count(cols[9]),
+                    "HBP": parse_count(cols[10]),
+                    "PA": parse_count(cols[5]),
+                    "Season": int(season),
+                    "Series": series_name,
+                }
+                game_data.update(calculate_stats(game_data))
+                rows.append(game_data)
+            except Exception as exc:
+                print(f"⚠️ Error parsing Korean pitcher row for {player_name}: {exc}")
+    return rows
+
+
+def pitcher_frame(rows):
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    if "Series" not in df.columns:
+        df["Series"] = ""
+    df["Series"] = df["Series"].fillna("")
+    present = [col for col in PITCHER_COLUMNS if col in df.columns]
+    return df[present]
+
+
+def scrape_korean_pitcher_logs(pitcher, season, labels):
+    pcode = pitcher["pcode"]
+    url = f"https://www.koreabaseball.com/Record/Player/PitcherDetail/Daily.aspx?playerId={pcode}"
+    pages = load_series_pages(url, season, labels)
+    rows = []
+    for series_name, html in pages:
+        rows.extend(parse_korean_pitcher_daily(
+            html, pitcher["name"], pitcher["team"], season, series_name,
+        ))
+    df = pitcher_frame(rows)
+    if df.empty:
+        print(f"⚠️ No Korean series rows for {pitcher['name']} ({pcode})")
+    else:
+        counts = df.groupby("Series").size().to_dict()
+        print(f"  Korean series rows for {pitcher['name']}: {counts}")
+    return df
+
 def get_pitcher_list():
     load_mapped_pitchers()
     load_slate_pitchers()
@@ -412,10 +549,31 @@ def get_pitcher_list():
             data.append({'pcode': pcode, 'name': name, 'team': team})
     return data
 
-def scrape_kbo_pitcher_logs(pitcher):
+def _with_korean_postseason(df, pitcher, season):
+    """Append Korean postseason series. Regular-season rows stay on the English scrape."""
+    labels = postseason_labels_for_season(season)
+    if not labels:
+        return df
+    try:
+        post = scrape_korean_pitcher_logs(pitcher, season, labels)
+    except Exception as exc:
+        print(f"⚠️ Postseason scrape failed for {pitcher.get('name')} ({pitcher.get('pcode')}): {exc}")
+        return df
+    if post.empty:
+        return df
+    if df is None or df.empty:
+        return post
+    if "Series" not in df.columns:
+        df = df.copy()
+        df["Series"] = ""
+    return pd.concat([df, post], ignore_index=True)
+
+
+def scrape_kbo_pitcher_logs(pitcher, season=None):
     pcode = pitcher['pcode']
     player_name = pitcher['name']
     team_name = pitcher['team']
+    season = int(season or datetime.now().year)
     url = f"http://eng.koreabaseball.com/Teams/PlayerInfoPitcher/GameLogs.aspx?pcode={pcode}"
 
     try:
@@ -425,13 +583,13 @@ def scrape_kbo_pitcher_logs(pitcher):
         table = soup.find('div', class_='tbl_common')
         if not table:
             print(f"No data for {player_name} ({pcode})")
-            return pd.DataFrame()
+            return _with_korean_postseason(pd.DataFrame(), pitcher, season)
 
         # Find all inner tables with summary="Game logs"
         inner_tables = table.find_all('table', {'summary': 'Game logs'})
         if not inner_tables:
             print(f"No inner tables for {player_name} ({pcode})")
-            return pd.DataFrame()
+            return _with_korean_postseason(pd.DataFrame(), pitcher, season)
 
         data = []
         month_labels = {'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT'}
@@ -474,7 +632,8 @@ def scrape_kbo_pitcher_logs(pitcher):
                     'BB': int(cols[8].text.strip()),
                     'HBP': int(cols[9].text.strip()),
                     'PA': int(cols[4].text.strip()),
-                    'Season': __import__('datetime').datetime.now().year
+                    'Season': season,
+                    'Series': '',
                 }
 
                 stats = calculate_stats(game_data)
@@ -483,15 +642,13 @@ def scrape_kbo_pitcher_logs(pitcher):
 
         df = pd.DataFrame(data)
         print(f"Scraped data for {pitcher['name']}:\n", df)
-        if df.empty:
-            return df
-        column_order = ['Name', 'Date', 'Tm', 'Home/Away', 'Opp', 'Role', 'Dec', 'ERA', 'WHIP',
-                        'IP', 'R', 'ER', 'HA', 'HR', 'SO', 'BB', 'HBP', 'PitOuts', 'Season']
-        return df[column_order]
+        if not df.empty:
+            df = df[PITCHER_COLUMNS]
+        return _with_korean_postseason(df, pitcher, season)
 
     except Exception as e:
         print(f"❌ Error for {player_name} ({pcode}): {str(e)}")
-        return pd.DataFrame()
+        return _with_korean_postseason(pd.DataFrame(), pitcher, season)
 
 async def scrape_kbo_player_logs(pcode, page):
     url = f"http://eng.koreabaseball.com/Teams/PlayerInfoHitter/GameLogs.aspx?pcode={pcode}"
@@ -583,9 +740,177 @@ def scrape_game_logs():
         print("✅ Saved cleaned data to game_logs_2025.csv")
         print(df)
 
-def main():
+def _ip_from_outs(pitouts):
+    whole, rem = divmod(int(pitouts), 3)
+    if rem == 0:
+        return float(whole)
+    if rem == 1:
+        return float(f"{whole}.33")
+    return float(f"{whole}.67")
+
+
+def pitcher_record(row):
+    """One pitcher line in the same shape combine_pitcher_logs.py writes."""
+    pitouts = int(row.get("PitOuts") or 0)
+    ip_exact = pitouts / 3.0 if pitouts else float(row.get("IP") or 0)
+    ha = int(row.get("HA") or 0)
+    bb = int(row.get("BB") or 0)
+    er = int(row.get("ER") or 0)
+    return {
+        "Name": str(row.get("Name") or ""),
+        "Date": str(row.get("Date") or ""),
+        "Tm": str(row.get("Tm") or ""),
+        "Home/Away": "" if row.get("Home/Away") in (None, "") else str(row.get("Home/Away")),
+        "Opp": str(row.get("Opp") or ""),
+        "Role": str(row.get("Role") or "SP"),
+        "Dec": "" if row.get("Dec") in (None, "") else str(row.get("Dec")),
+        "ERA": round((er / ip_exact) * 9, 2) if ip_exact else 0.0,
+        "WHIP": round((ha + bb) / ip_exact, 3) if ip_exact else 0.0,
+        "IP": _ip_from_outs(pitouts) if pitouts else float(row.get("IP") or 0),
+        "R": int(row.get("R") or 0),
+        "ER": er,
+        "HA": ha,
+        "HR": int(row.get("HR") or 0),
+        "SO": int(row.get("SO") or 0),
+        "BB": bb,
+        "HBP": int(row.get("HBP") or 0),
+        "PitOuts": pitouts,
+        "Season": int(row.get("Season") or 0),
+        "Series": str(row.get("Series") or ""),
+    }
+
+
+def _csv_cell(value):
+    if value is None:
+        return ""
+    if isinstance(value, float):
+        return str(value)
+    return str(value)
+
+
+def append_pitcher_csv(path, records):
+    """Append unseen pitcher lines. Existing bytes stay put; Series is added to the header."""
+    if not records or not os.path.exists(path):
+        return 0
+    with open(path, newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        existing = {
+            (row.get("Name", ""), row.get("Date", ""), row.get("Tm", ""), row.get("Opp", ""), row.get("Role", ""))
+            for row in reader
+        }
+    fresh = []
+    seen = set(existing)
+    for record in records:
+        key = (record["Name"], record["Date"], record["Tm"], record["Opp"], record["Role"])
+        if key in seen or not record["Name"] or not record["Date"]:
+            continue
+        seen.add(key)
+        fresh.append(record)
+    if not fresh:
+        print(f"No new pitcher rows for {path}")
+        return 0
+    raw = open(path, encoding="utf-8").read()
+    header, sep, rest = raw.partition("\n")
+    columns = header.split(",")
+    if "Series" not in columns:
+        header = header + ",Series"
+        columns = header.split(",")
+    lines = [",".join(_csv_cell(record.get(column, "")) for column in columns) for record in fresh]
+    if rest and not rest.endswith("\n"):
+        rest += "\n"
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(header + sep + rest + "\n".join(lines) + "\n")
+    print(f"✅ Appended {len(lines)} pitcher rows to {path}")
+    return len(lines)
+
+
+def append_pitcher_json(path, records):
+    if not records or not os.path.exists(path):
+        return 0
+    with open(path, encoding="utf-8") as handle:
+        data = json.load(handle)
+    existing = {
+        (row.get("Name", ""), row.get("Date", ""), row.get("Tm", ""), row.get("Opp", ""), row.get("Role", ""))
+        for row in data
+    }
+    added = 0
+    for record in records:
+        key = (record["Name"], record["Date"], record["Tm"], record["Opp"], record["Role"])
+        if key in existing or not record["Name"] or not record["Date"]:
+            continue
+        existing.add(key)
+        data.append(record)
+        added += 1
+    if not added:
+        print(f"No new pitcher rows for {path}")
+        return 0
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(data, indent=2))
+    print(f"✅ Appended {added} pitcher rows to {path}")
+    return added
+
+
+def save_postseason_pitcher_rows(records, season):
+    """Merge postseason lines into the files grading and the next refresh read."""
+    season_csv = os.path.join(BASE_DIR, f"KBO_daily_pitching_stats_{season}.csv")
+    combined_csv = os.path.join(BASE_DIR, "KBO_daily_pitching_stats_combined.csv")
+    daily_csv = os.path.join(BASE_DIR, "KBO_daily_pitching_stats.csv")
+    root_csv = os.path.join(REPO_ROOT, "KBO_daily_pitching_stats.csv")
+    json_path = os.path.join(BASE_DIR, "pitcher_logs.json")
+    append_pitcher_csv(season_csv, records)
+    append_pitcher_csv(combined_csv, records)
+    append_pitcher_csv(daily_csv, records)
+    if os.path.abspath(root_csv) != os.path.abspath(daily_csv):
+        append_pitcher_csv(root_csv, records)
+    append_pitcher_json(json_path, records)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Scrape KBO pitcher daily logs")
+    parser.add_argument("--season", type=int, default=datetime.now().year)
+    parser.add_argument("--players", default=None,
+                        help="Comma-separated KBO player ids to scrape instead of the full roster")
+    parser.add_argument("--postseason-only", action="store_true",
+                        help="Only scrape 2026+ postseason series and merge them into the season file")
+    return parser.parse_args()
+
+
+def main(postseason_only=False, season=None, players=None):
+    season = int(season or datetime.now().year)
     pitchers = get_pitcher_list()
+    if players:
+        wanted = {part.strip() for part in players.split(",") if part.strip()}
+        pitchers = [pitcher for pitcher in pitchers if str(pitcher["pcode"]) in wanted]
     print(f"🔍 Found {len(pitchers)} pitchers to scrape...")
+    if postseason_only:
+        print(f"Korean postseason series only for {season}")
+        labels = postseason_labels_for_season(season)
+        frames = []
+        for pitcher in pitchers:
+            try:
+                frame = scrape_korean_pitcher_logs(pitcher, season, labels) if labels else pd.DataFrame()
+            except Exception as exc:
+                print(f"⚠️ Postseason scrape failed for {pitcher.get('name')}: {exc}")
+                frame = pd.DataFrame()
+            if not frame.empty:
+                frames.append(frame)
+            time.sleep(0.15)
+        if not frames:
+            print("⚠️ No postseason pitcher rows scraped.")
+            return
+        scraped = pd.concat(frames, ignore_index=True)
+        records = []
+        for row in scraped.to_dict(orient="records"):
+            record = pitcher_record(row)
+            outs = record["PitOuts"]
+            strikeouts = record["SO"]
+            if outs == 0 and strikeouts > 0:
+                continue
+            if outs > 0 and strikeouts > outs:
+                continue
+            records.append(record)
+        save_postseason_pitcher_rows(records, season)
+        return
 
     base_dir = BASE_DIR
     output_file = os.path.join(base_dir, '..', 'KBO_daily_pitching_stats.csv')
@@ -599,7 +924,7 @@ def main():
         all_data = pd.DataFrame()
 
     for pitcher in pitchers:
-        df = scrape_kbo_pitcher_logs(pitcher)
+        df = scrape_kbo_pitcher_logs(pitcher, season=season)
         all_data = pd.concat([all_data, df], ignore_index=True)
         print(f"Appended data for {pitcher['name']}:\n", df)
         time.sleep(2)
@@ -615,9 +940,9 @@ def main():
 
     all_data.to_csv(output_file, index=False)
     all_data.to_csv(pitch_data_dir_file, index=False)
-    # Also save a season-specific file for 2026
-    year_file = os.path.join(base_dir, f'KBO_daily_pitching_stats_{datetime.now().year}.csv')
-    current_year_data = all_data[all_data['Season'] == datetime.now().year]
+    # Also save a season-specific file for the scraped season.
+    year_file = os.path.join(base_dir, f'KBO_daily_pitching_stats_{season}.csv')
+    current_year_data = all_data[all_data['Season'] == season]
     if not current_year_data.empty:
         current_year_data.to_csv(year_file, index=False)
         print(f"✅ Saved {len(current_year_data)} rows to {year_file}")
@@ -635,5 +960,7 @@ def main():
     print(f"✅ Saved pitcher logs to {json_output}")
 
 if __name__ == "__main__":
-    main()
-    scrape_game_logs()
+    args = parse_args()
+    main(postseason_only=args.postseason_only, season=args.season, players=args.players)
+    if not args.postseason_only:
+        scrape_game_logs()
