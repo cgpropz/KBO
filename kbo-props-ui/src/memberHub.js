@@ -235,15 +235,22 @@ function l10FromPills(pills, storedRate) {
 
 // The Today chart and the L10 pill share one count. A full 10-game window
 // uses the bars (side, numeric line, pushes left out). A shorter log does
-// not invent an L10; it keeps a stored rate when the board sent one.
+// not invent an L10; it keeps a stored rate when the board sent one. The
+// hits/games fraction still follows those bars when the decided count is the
+// pill's sample, so a 7-game 57% reads 4/7.
 function l10ForRow(recent, line, side, pills, storedRate) {
   const plotted = Array.isArray(recent) ? recent : []
+  const fromChart = plotted.length ? chartWindowRate(plotted, line, side) : null
   if (plotted.length >= 10) {
-    const fromChart = chartWindowRate(plotted, line, side)
     if (!fromChart) return { hitRate: null, hitGames: null, hitHits: null }
     return { hitRate: fromChart.rate, hitGames: fromChart.games, hitHits: fromChart.hits }
   }
-  return l10FromPills(pills, storedRate)
+  const stored = l10FromPills(pills, storedRate)
+  if (stored.hitHits != null || !fromChart) return stored
+  if (stored.hitGames == null || stored.hitGames === fromChart.games) {
+    return { ...stored, hitHits: fromChart.hits, hitGames: fromChart.games }
+  }
+  return stored
 }
 
 function availabilityLabel(source) {

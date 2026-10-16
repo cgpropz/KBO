@@ -293,6 +293,13 @@ button.hub-card {
 }
 .hub-preview-meta { display: block; color: var(--hub-muted); font-size: 12px; margin-top: 2px; }
 .hub-hit-sample { display: block; margin-top: 2px; color: var(--hub-muted); font-size: 12px; font-weight: 650; }
+.hub-stats .hub-hit-sample {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hub-text);
+}
 .hub-hit-kicker { color: var(--hub-muted); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
 .hub-hit-row {
   width: 100%;

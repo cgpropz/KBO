@@ -185,10 +185,10 @@ test('member snapshots and signed-in previews are not edge cached', async () => 
   assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300')
 })
 
-test('board payloads omit player history until that player page asks', async () => {
+test('board payloads keep the last 10 chart games and omit the rest of the log', async () => {
   const board = await call('nfl_projections', 'tok-owner')
   const n0 = board.body.data.find((row) => row.player === 'N0')
-  assert.equal(n0.recent, undefined)
+  assert.deepEqual(n0.recent, [11, 22, 33])
   assert.equal(n0.gameDates, undefined)
   assert.equal(n0.profile, undefined)
   const page = await call('nfl_projections', 'tok-owner', 'GET', { player: 'N0' })
@@ -200,7 +200,8 @@ test('board payloads omit player history until that player page asks', async () 
   assert.deepEqual(hidden.body.data, [])
 
   const kbo = await call('prizepicks_props', 'tok-kbo')
-  assert.ok(kbo.body.data.cards.every((card) => card.games === undefined && card.recent_values === undefined))
+  assert.ok(kbo.body.data.cards.every((card) => card.games === undefined && Array.isArray(card.recent_values)))
+  assert.deepEqual(kbo.body.data.cards[0].recent_values, [0, 1])
   const kboPage = await call('prizepicks_props', 'tok-kbo', 'GET', { player: 'Player 0' })
   assert.equal(kboPage.body.data.cards.length, 1)
   assert.equal(kboPage.body.data.cards[0].games[0].hrr, 0)
@@ -208,7 +209,7 @@ test('board payloads omit player history until that player page asks', async () 
   assert.deepEqual(kboHidden.body.data.cards, [])
 
   const wnba = await call('wnba_projections_standard', 'tok-owner')
-  assert.equal(wnba.body.data.find((row) => row.name === 'W0').recentGames, undefined)
+  assert.equal(wnba.body.data.find((row) => row.name === 'W0').recentGames[0].points, 18)
   const wnbaPage = await call('wnba_projections_standard', 'tok-owner', 'GET', { player: 'W0' })
   assert.equal(wnbaPage.body.data.length, 1)
   assert.equal(wnbaPage.body.data[0].recentGames[0].points, 18)

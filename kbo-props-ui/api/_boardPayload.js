@@ -1,8 +1,22 @@
-// Board responses drop the long per-player logs. The player page asks for
-// one player and gets those arrays back. The stored snapshot is unchanged.
+// Board responses drop the long per-player logs. The chart only needs the last
+// 10 games, so those four arrays stay, trimmed. The player page asks for one
+// player and gets the full arrays back. The stored snapshot is unchanged.
+//
+// Order is the publisher's order, not the chart's. The chart later flips
+// newest-first logs so bars run oldest → newest.
+//   recent          NHL chart and the NFL 30-game window. Oldest → newest. Tail.
+//   recent_values   KBO props. Newest first. Head.
+//   recentGames     WNBA log (slice of a newest-first gamelog). Head.
+//   gameLogs        NBA roster log, sorted newest first. Head.
+
+export const L10_LIMIT = 10
+
+export const L10_TAIL_KEYS = ['recent']
+
+export const L10_HEAD_KEYS = ['recent_values', 'recentGames', 'gameLogs']
 
 export const HISTORY_KEYS = [
-  'recent',
+  ...L10_TAIL_KEYS,
   'gameDates',
   'gameOpponents',
   'gameSeasons',
@@ -16,12 +30,19 @@ export const HISTORY_KEYS = [
   'logSeasons',
   'logOpponents',
   'logTeams',
-  'recentGames',
-  'gameLogs',
-  'recent_values',
+  ...L10_HEAD_KEYS,
 ]
 
 const HISTORY = new Set(HISTORY_KEYS)
+const L10_TAIL = new Set(L10_TAIL_KEYS)
+const L10_HEAD = new Set(L10_HEAD_KEYS)
+
+function trimL10(key, value) {
+  if (!Array.isArray(value)) return undefined
+  if (L10_TAIL.has(key)) return value.slice(-L10_LIMIT)
+  if (L10_HEAD.has(key)) return value.slice(0, L10_LIMIT)
+  return undefined
+}
 
 function isKboCard(node) {
   return Array.isArray(node.props) || node.type === 'batter' || node.type === 'pitcher'
@@ -45,6 +66,11 @@ function stripNode(node) {
   if (!node || typeof node !== 'object') return node
   const out = {}
   for (const [key, value] of Object.entries(node)) {
+    if (L10_TAIL.has(key) || L10_HEAD.has(key)) {
+      const trimmed = trimL10(key, value)
+      if (trimmed) out[key] = trimmed.map((item) => stripNode(item))
+      continue
+    }
     if (HISTORY.has(key)) continue
     if (key === 'profile' && isBoardRow(node)) continue
     if (key === 'games' && isKboCard(node)) continue
