@@ -1,4 +1,4 @@
-name: Refresh NBA PrizePicks Lines (30 min)
+name: Refresh NBA PrizePicks Lines (hourly)
 
 # Lightweight refresh of NBA PrizePicks lines and the projections on them.
 #
@@ -8,49 +8,84 @@ name: Refresh NBA PrizePicks Lines (30 min)
 # kbo-props-ui/public/status.json (clocks and prop counts, never the rows).
 #
 # A pull with zero lines skips publish. publish_supabase.py also refuses to
-# replace a projection table with a zero-line file. nba_public is not changed.
+# replace a projection table with a zero-line file, unless this run expired
+# every remaining game. nba_public is not changed.
+#
+# Hourly cron, not a slept chain. A 60-minute sleep would bill the wait, and
+# a chain with no sleep would scrape again as soon as this job finished.
+# The :17 tick covers the UTC hours an NBA window can be open. The :22/:52
+# cron stays as the off-day backup. A run exits after checkout unless it is
+# a manual dispatch, the scoreboard is inside the window (5 hours before
+# through 3 hours after), and no successful scrape finished in the last 50
+# minutes.
+#
+# One tip, about 8 scrapes × ~1 min of work (measured 0.6-0.9), plus about
+# one minute for every other tick (71 starts: 23 hourly hours + 48 backup).
+# Game day ≈ 70 billed minutes. Off day ≈ 71. The old 25-minute chain was
+# about 420. A longer slate adds about one scrape per extra hour.
 
 on:
   schedule:
-    # Off the top and bottom of the hour. GitHub delays or drops :00/:30
-    # schedules under load. Same cadence as the WNBA props job.
+    # Early tips through west-coast finals, both EST and EDT.
+    - cron: "17 0-9,11-23 * * *"
+    # Off-day backup. A run inside 50 minutes of a real scrape exits early.
     - cron: "22,52 * * * *" # every 30 minutes (UTC)
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nba-props-refresh.yml"
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   # Share the full-refresh lock so a props job never publishes projections
   # built from an older checkout after a gamelog refresh has completed.
+  # Do not cancel an in-progress run. The next tick waits, then the 50-minute
+  # guard skips it if this run already scraped.
   group: nba-refresh-pipeline
   cancel-in-progress: false
 
 jobs:
   refresh-nba-props:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
+      - name: Decide whether this run should refresh
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/refresh-due.sh nba-props-refresh.yml nba
+
       - name: Set up Python
+        if: steps.gate.outputs.due == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
       - name: Install Python dependencies
+        if: steps.gate.outputs.due == 'true'
         run: pip install requests pandas
 
       - name: Generate five-position NBA DVP tables
+        if: steps.gate.outputs.due == 'true'
         run: python nba/generate_nba_dvp.py
 
       - name: Verify NBA DVP
+        if: steps.gate.outputs.due == 'true'
         run: python nba/verify_nba_dvp.py
 
       - name: Restore last published NBA snapshots (paid data is not in git)
+        if: steps.gate.outputs.due == 'true'
         run: python pipeline/restore_snapshots.py --prefix nba/
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
@@ -58,6 +93,7 @@ jobs:
 
       - name: Fetch NBA PrizePicks lines
         id: lines
+        if: steps.gate.outputs.due == 'true'
         run: |
           set -o pipefail
           python nba/nba-pp-odds.py | tee "$RUNNER_TEMP/nba-pp.txt"
@@ -76,6 +112,7 @@ jobs:
           fi
 
       - name: Fill NBA projections and edges
+        if: steps.gate.outputs.due == 'true'
         run: |
           set +e
           python nba/generate_nba_projections.py
@@ -91,12 +128,12 @@ jobs:
           exit "$status"
 
       - name: Build NBA prop correlations
-        if: steps.lines.outputs.has_lines == 'true'
+        if: steps.gate.outputs.due == 'true' && steps.lines.outputs.has_lines == 'true'
         continue-on-error: true
         run: python pipeline/build_correlations.py --sport nba
 
       - name: Publish NBA prop lines to Supabase
-        if: steps.lines.outputs.has_lines == 'true'
+        if: steps.gate.outputs.due == 'true' && steps.lines.outputs.has_lines == 'true'
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nba/projections"
@@ -104,7 +141,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Publish public board status
-        if: always()
+        if: steps.gate.outputs.due == 'true' && always()
         continue-on-error: true
         run: |
           bash pipeline/commit_status.sh "chore: nba board status"

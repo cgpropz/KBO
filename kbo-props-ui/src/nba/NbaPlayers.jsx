@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NBA_DVP_POSITIONS } from './positions'
-import { fetchNbaData } from './nbaData'
+import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import NbaPlayerChart from './NbaPlayerChart'
 
 const FILTERS = ['All', ...NBA_DVP_POSITIONS.map((position) => position.id), 'Unset']
@@ -79,6 +79,25 @@ export default function NbaPlayers({ initialName = '' }) {
   }, [players, search, posFilter, teamFilter])
 
   const selected = (players || []).find((player) => player.athleteId === selectedId) || null
+
+  useEffect(() => {
+    const name = selected?.name
+    const id = selected?.athleteId
+    if (!name) return undefined
+    let cancelled = false
+    fetchNbaSnapshot('nba/players.json', { player: name })
+      .then((snapshot) => {
+        if (cancelled) return
+        const rows = Array.isArray(snapshot.data) ? snapshot.data : []
+        const match = rows.find((row) => row.athleteId === id) || rows.find((row) => row.name === name)
+        if (!match || !Array.isArray(match.gameLogs)) return
+        setPlayers((current) => (current || []).map((player) => (
+          player.athleteId === id ? { ...player, gameLogs: match.gameLogs } : player
+        )))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [selected?.athleteId, selected?.name])
 
   if (selected) {
     const logs = Array.isArray(selected.gameLogs) ? selected.gameLogs : []

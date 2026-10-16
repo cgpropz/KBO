@@ -29,6 +29,17 @@ test('espn and nhl headshots go through the same-origin resizer', () => {
   assert.equal(isRemoteHeadshotOrLogo('https://assets.nhle.com/mugs/nhl/edm/8478402.png'), true)
 })
 
+test('nfl and wnba board headshots go through the resizer at display size', () => {
+  const nfl = 'https://static.www.nfl.com/image/private/f_auto,q_auto/league/abc123'
+  const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1628273.png'
+  assert.equal(fitImage(nfl, 42), `/api/img?src=${encodeURIComponent(nfl)}&w=80`)
+  assert.equal(fitImage(wnba, 30), `/api/img?src=${encodeURIComponent(wnba)}&w=64`)
+  assert.equal(isRemoteHeadshotOrLogo(`${nfl}?x=1`), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.www.nfl.com/image/private/../../secret'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://cdn.wnba.com/headshots/wnba/latest/1040x760/../1.png'), false)
+  assert.equal(fitImage(`${nfl}?x=1`, 42), `${nfl}?x=1`)
+})
+
 test('the image route refuses anything that is not a public headshot or logo', () => {
   const blocked = [
     'https://example.com/i/headshots/nfl/players/full/1.png',

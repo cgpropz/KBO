@@ -230,7 +230,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
         aria-controls={stripDomId(item)}
       >
         <td className="nfl-lines-player">
-          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
+          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
           <div className="nfl-lines-info">
             <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer?.(item.player, item.prop) }}>{item.player}</button>
             <span className="nfl-lines-tag">{[item.team, item.position].filter(Boolean).join(', ') || 'NFL'}</span>

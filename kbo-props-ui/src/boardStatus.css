@@ -32,3 +32,11 @@
 .nhl-root .nfl-board-header p.board-status.is-stale {
   color: #c4b07a;
 }
+
+p.board-status + p.board-status,
+.kbo-app-root .kbo-board-header p.board-status + p.board-status,
+.wnba-root .wnba-board-header p.board-status + p.board-status,
+.nfl-root .nfl-board-header p.board-status + p.board-status,
+.nhl-root .nfl-board-header p.board-status + p.board-status {
+  margin-top: 2px;
+}

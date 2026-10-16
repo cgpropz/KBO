@@ -180,7 +180,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
           <div className="wnba-lines-player">
             <div className="wnba-lines-avatar">
               {item.imageUrl
-                ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
+                ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
                 : initials(item.player)}
             </div>
             <div className="wnba-lines-info">
@@ -368,7 +368,7 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
         fontSize: 10, fontWeight: 800, color: '#7efc6a',
       }}>
         {player.image
-          ? <img src={fitImage(player.image, 68)} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
+          ? <img src={fitImage(player.image, 30)} alt={player.name} width={30} height={30} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
           : initials(player.name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>

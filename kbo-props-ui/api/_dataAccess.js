@@ -2,7 +2,7 @@ import { cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
-import { prepareBoardRows } from '../src/nhl/pointsGate.js';
+import { pointsOverDisposition, prepareBoardRows } from '../src/nhl/pointsGate.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -219,19 +219,38 @@ function previewNflProjections(payload) {
 // Kickoff has arrived. `now` is the server clock at the moment the preview
 // is built, which is the /api/data request. A missing or unparseable
 // start_time stays eligible: there is no kickoff that has passed.
+function etDayKey(now) {
+  const date = now instanceof Date ? now : new Date(now);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
 export function gameAlreadyStarted(row, now = new Date()) {
-  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc;
-  if (raw == null || String(raw).trim() === '') return false;
-  const kick = Date.parse(String(raw));
-  const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now));
-  if (!Number.isFinite(kick) || !Number.isFinite(nowMs)) return false;
-  return kick <= nowMs;
+  if (row?.started === true || row?.locked === true || row?.removed === true) return true;
+  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc ?? row?.kickoff_at;
+  if (raw != null && String(raw).trim() !== '') {
+    const kick = Date.parse(String(raw));
+    const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now));
+    if (Number.isFinite(kick) && Number.isFinite(nowMs)) return kick <= nowMs;
+  }
+  const day = row?.game_date || row?.gameDate || row?.gameday;
+  if (typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)) return day < etDayKey(now);
+  return false;
+}
+
+function propStillLive(player, prop) {
+  return !gameAlreadyStarted(prop) && !gameAlreadyStarted(player) && prop?.removed !== true && prop?.rankEligible !== false;
 }
 
 // Points overs under 0.69 are already gone. Held overs (0.69 up to 0.86)
 // and unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
-  if (row?.rankEligible === false) return -Infinity;
+  if (row?.rankEligible === false || gameAlreadyStarted(row)) return -Infinity;
+  if (pointsOverDisposition(row) !== 'rank') return -Infinity;
   return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
 }
 
@@ -276,14 +295,16 @@ export function previewNflGameMarkets(payload, options = {}) {
   const totalEdges = Object.hasOwn(options, 'totalEdges')
     ? options.totalEdges === true
     : nflFreeTotalEdgesEnabled();
+  const games = Array.isArray(payload?.games) ? payload.games.filter((game) => !gameAlreadyStarted(game)) : [];
+  const live = payload && typeof payload === 'object' && !Array.isArray(payload) ? { ...payload, games } : payload;
   const preview = previewObjectList(
     'games',
     totalEdges ? nflGameMarketScore : nflGameMarketSpreadScore,
-  )(payload);
+  )(live);
   if (totalEdges) return preview;
-  const games = Array.isArray(preview.data?.games) ? preview.data.games.map(withoutTotalEdge) : [];
+  const trimmed = Array.isArray(preview.data?.games) ? preview.data.games.map(withoutTotalEdge) : [];
   return {
-    data: { ...preview.data, games },
+    data: { ...preview.data, games: trimmed },
     lockedCount: preview.lockedCount,
   };
 }
@@ -346,7 +367,11 @@ function previewPrizepicks(payload) {
   const cards = Array.isArray(obj.cards) ? obj.cards : [];
   const flat = [];
   cards.forEach((card, cardIndex) => {
-    (Array.isArray(card?.props) ? card.props : []).forEach((prop) => flat.push({ cardIndex, prop }));
+    if (gameAlreadyStarted(card)) return;
+    (Array.isArray(card?.props) ? card.props : []).forEach((prop) => {
+      if (!propStillLive(card, prop)) return;
+      flat.push({ cardIndex, prop });
+    });
   });
   const kept = topN(flat, ({ prop }) => kboPropScore(prop));
   const byCard = new Map();
@@ -366,7 +391,11 @@ function previewPlayerProps(payload, scoreFn) {
   const players = Array.isArray(payload) ? payload : [];
   const flat = [];
   players.forEach((player, playerIndex) => {
-    (Array.isArray(player?.ppAllProps) ? player.ppAllProps : []).forEach((prop) => flat.push({ playerIndex, prop }));
+    if (gameAlreadyStarted(player)) return;
+    (Array.isArray(player?.ppAllProps) ? player.ppAllProps : []).forEach((prop) => {
+      if (!propStillLive(player, prop)) return;
+      flat.push({ playerIndex, prop });
+    });
   });
   if (!flat.length) {
     // No lines posted yet: expose at most FREE_ROW_LIMIT player rows.

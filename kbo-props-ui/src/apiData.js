@@ -56,11 +56,12 @@ async function readErrorDetail(res) {
   }
 }
 
-export async function fetchApiDataset(ds, { devStaticPath, priority } = {}) {
+export async function fetchApiDataset(ds, { devStaticPath, priority, player } = {}) {
   try {
     const token = await accessToken();
-    const res = await fetch(`/api/data?ds=${encodeURIComponent(ds)}`, {
-      cache: 'no-store',
+    const params = new URLSearchParams({ ds });
+    if (player) params.set('player', player);
+    const res = await fetch(`/api/data?${params}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       ...(priority ? { priority } : {}),

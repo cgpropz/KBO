@@ -154,12 +154,12 @@ export default function KboPlayerPage({ playerName, onBack }) {
 
   useEffect(() => {
     let active = true
-    fetchDataSnapshot('prizepicks_props.json').then(snapshot => {
+    fetchDataSnapshot('prizepicks_props.json', { player: playerName }).then(snapshot => {
       if (!active) return
       setCards(Array.isArray(snapshot.data?.cards) ? snapshot.data.cards : [])
     }).catch(err => active && setError(err.message))
     return () => { active = false }
-  }, [])
+  }, [playerName])
 
   const player = useMemo(() => cards.find(c => c.name === playerName), [cards, playerName])
   const isPitcher = player?.type === 'pitcher'

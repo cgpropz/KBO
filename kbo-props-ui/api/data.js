@@ -13,8 +13,11 @@ import {
   sportAccess,
 } from './_dataAccess.js';
 import { landingFallbackBody } from './_landingFallback.js';
+import { presentBoardPayload } from './_boardPayload.js';
 
-export const PRIVATE_DATA_CACHE = 'private, no-store, max-age=0';
+// Members may reuse a response for half a minute. It stays private, so the
+// edge never stores a paid board. Anonymous previews keep the public cache.
+export const PRIVATE_DATA_CACHE = 'private, max-age=30, stale-while-revalidate=60';
 export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300';
 
 // Anonymous public previews (and fully public datasets) can sit on the edge.
@@ -28,6 +31,13 @@ export function dataCacheControl(req, { memberGated = false } = {}) {
 function sendData(req, res, body, memberGated) {
   res.setHeader('Cache-Control', dataCacheControl(req, { memberGated }));
   return res.status(200).json(body);
+}
+
+function withPresentedData(req, shaped, fullData) {
+  return {
+    ...shaped,
+    data: presentBoardPayload(req.query?.player, shaped, fullData),
+  };
 }
 
 function cleanEnv(value) {
@@ -310,9 +320,13 @@ async function handleNbaRequest(req, res, client, ds) {
   // sportAccess() has no nba key and must stay that way. Full access returns
   // the snapshot directly. Preview (flag on, non-all-access tier) uses the
   // free trimmer. Unregistered nba_* names stay 400.
-  const shaped = decision === 'full'
-    ? { data: row.data, preview: false, lockedCount: 0 }
-    : shapeForTier(ds, row.data, 'free');
+  const shaped = withPresentedData(
+    req,
+    decision === 'full'
+      ? { data: row.data, preview: false, lockedCount: 0 }
+      : shapeForTier(ds, row.data, 'free'),
+    row.data,
+  );
   return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
@@ -409,9 +423,13 @@ async function handleNhlRequest(req, res, client, ds) {
     return res.status(404).json({ error: 'Dataset not published yet' });
   }
 
-  const shaped = decision === 'full'
-    ? { data: row.data, preview: false, lockedCount: 0 }
-    : shapeForTier(ds, row.data, 'free');
+  const shaped = withPresentedData(
+    req,
+    decision === 'full'
+      ? { data: row.data, preview: false, lockedCount: 0 }
+      : shapeForTier(ds, row.data, 'free'),
+    row.data,
+  );
   return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
@@ -558,7 +576,7 @@ export async function handleDataRequest(req, res, client) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
-  const shaped = shapeForTier(ds, row.data, tier);
+  const shaped = withPresentedData(req, shapeForTier(ds, row.data, tier), row.data);
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,

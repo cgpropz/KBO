@@ -12,6 +12,17 @@ import requests
 
 from pipeline.board_status import BOARD_TABLES, apply_published, record_from_payload
 
+# Boards that get a row in shared/board_freshness.json. Demon and goblin
+# copies follow the standard board and do not replace its prop count.
+FRESHNESS_KEYS = {
+    "prizepicks_props": "kbo",
+    "wnba_projections_standard": "wnba",
+    "nfl_projections": "nfl",
+    "nba_projections_standard": "nba",
+    "nhl_projections": "nhl",
+    "nfl_game_markets": "nfl_game_markets",
+}
+
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or "https://ocaqjkfdjqxszevtllew.supabase.co"
@@ -503,8 +514,10 @@ def main():
 
     failures = []
     status_updates = {}
+    freshness_rows = {}
     session = requests.Session()
-    published_at = datetime.now(timezone.utc).isoformat()
+    published_moment = datetime.now(timezone.utc)
+    published_at = published_moment.isoformat()
 
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
 
@@ -534,9 +547,24 @@ def main():
             with open(file_path, "r", encoding="utf-8") as file_handle:
                 data = json.load(file_handle)
 
+            dropped = 0
+            removals = None
             if table == "prizepicks_props":
                 from pipeline.kbo_board_cutoff import prepare_prizepicks_board
-                updated, note = prepare_prizepicks_board(data)
+                before = len(data.get("cards") or []) if isinstance(data, dict) else 0
+                updated, note = prepare_prizepicks_board(data, now=published_moment)
+                if note:
+                    print(f"  ℹ {note}")
+                after = len(updated.get("cards") or []) if isinstance(updated, dict) else before
+                dropped = max(0, before - after)
+                if updated is not data:
+                    with open(file_path, "w", encoding="utf-8") as file_handle:
+                        json.dump(updated, file_handle, ensure_ascii=False, indent=2)
+                        file_handle.write("\n")
+                data = updated
+            else:
+                from pipeline.board_expiry import expire_snapshot
+                updated, note, dropped = expire_snapshot(table, data, now=published_moment, generated_at=published_at)
                 if note:
                     print(f"  ℹ {note}")
                 if updated is not data:
@@ -545,7 +573,17 @@ def main():
                         file_handle.write("\n")
                 data = updated
 
-            if table in NBA_LINE_TABLES and not should_publish_nba_lines(data):
+            if table == "nhl_projections" and isinstance(data, list):
+                from pipeline.nhl_removal_diff import diff_against_memory
+                removals, diff_note = diff_against_memory(data, now=published_moment)
+                print(f"  ℹ {diff_note}")
+                for row in removals:
+                    print(f"    - {row['player']} {row['stat']} {row['line']}: {row['reason']}")
+
+            # A scrape that returned no lines must not wipe a good board.
+            # A board we just emptied because every game has started must publish,
+            # or the started games stay up.
+            if table in NBA_LINE_TABLES and not should_publish_nba_lines(data) and dropped == 0:
                 print(f"  ! {table}: 0 lines; leaving the published board unchanged")
                 continue
 
@@ -570,6 +608,9 @@ def main():
                 sport = BOARD_TABLES.get(table)
                 if sport:
                     status_updates[sport] = record_from_payload(sport, data, published_at)
+                freshness_key = FRESHNESS_KEYS.get(table)
+                if freshness_key:
+                    freshness_rows[freshness_key] = (data, dropped, removals)
             else:
                 body = response.text.strip().replace("\n", " ")
                 if optional_table_missing(table, response):
@@ -590,6 +631,54 @@ def main():
             print(f"  ✓ public/status.json ({', '.join(status_updates)})")
         except Exception as exc:
             print(f"  ! status.json: {exc}")
+
+    if freshness_rows:
+        try:
+            from pipeline.board_freshness_file import (
+                WARNINGS_PATH,
+                load_freshness,
+                record_sport,
+                write_freshness,
+                write_warning_file,
+            )
+            from pipeline.cheatsheet_age import board_clock, sheet_warnings
+
+            document = load_freshness()
+            published_sheet_sports = set()
+            fresh_warnings = []
+            for sport, (board_data, dropped_count, board_removals) in freshness_rows.items():
+                record_sport(
+                    document,
+                    sport,
+                    board_data,
+                    published_moment,
+                    dropped=dropped_count,
+                    removals=board_removals,
+                )
+                clock = board_clock(board_data, published_at)
+                sheet_sport = "nfl" if sport == "nfl_game_markets" else sport
+                published_sheet_sports.add(sheet_sport)
+                for warning in sheet_warnings(sheet_sport, clock):
+                    print(f"  ! cheat sheet: {warning['message']}")
+                    fresh_warnings.append(warning)
+            kept = [
+                row for row in (document.get("cheatsheet_warnings") or [])
+                if isinstance(row, dict) and row.get("sport") not in published_sheet_sports
+            ]
+            warnings = []
+            seen = set()
+            for row in kept + fresh_warnings:
+                key = (row.get("sport"), row.get("sheet"))
+                if key in seen:
+                    continue
+                seen.add(key)
+                warnings.append(row)
+            document["cheatsheet_warnings"] = warnings
+            write_freshness(document)
+            write_warning_file(warnings, document["checked_at"], WARNINGS_PATH)
+            print(f"  ✓ shared/board_freshness.json ({', '.join(freshness_rows)})")
+        except Exception as exc:
+            print(f"  ! board_freshness.json: {exc}")
 
     # The live site reads this row for /status.json. A missing table or a
     # failed write leaves the previous clocks in place. It is not a paid

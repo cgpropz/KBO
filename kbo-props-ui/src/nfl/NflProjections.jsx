@@ -44,7 +44,7 @@ function ProjectionCard({ item, onSelectPlayer }) {
     <article className="nfl-edge-card">
       <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {item.score.toFixed(1)}</b></div>
       <div className="nfl-card-player">
-        <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" /> : initials(item.player)}</div>
+        <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p></div>
       </div>
       <div className="nfl-card-prop">{item.prop}</div>

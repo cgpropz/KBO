@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Commit kbo-props-ui/public/status.json only.
+# Commit the public board clock, shared/board_freshness.json, and the
+# cheat-sheet age file. Paid snapshots stay out of this commit.
 #
 # Publishes from a clean worktree of origin/main so a sport job cannot push
 # paid snapshots or other dirty files. Per sport, the later publish clock
@@ -10,14 +11,16 @@ MSG="${1:-chore: board status}"
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 STATUS="kbo-props-ui/public/status.json"
+FRESHNESS="shared/board_freshness.json"
+WARNINGS="kbo-props-ui/public/cheatsheet_warnings.json"
 
 changed="$(
   {
-    git diff --name-only HEAD -- "$STATUS" 2>/dev/null
-    git ls-files --others --exclude-standard -- "$STATUS" 2>/dev/null
+    git diff --name-only HEAD -- "$STATUS" "$FRESHNESS" "$WARNINGS" 2>/dev/null
+    git ls-files --others --exclude-standard -- "$STATUS" "$FRESHNESS" "$WARNINGS" 2>/dev/null
   } | sort -u
 )"
-if [[ -z "$changed" || ! -f "$ROOT/$STATUS" ]]; then
+if [[ -z "$changed" ]]; then
   echo "No status.json change to commit"
   exit 0
 fi
@@ -39,6 +42,7 @@ if ! git worktree add --detach "$WT" origin/main >/dev/null 2>&1; then
   exit 0
 fi
 
+if [[ -f "$ROOT/$STATUS" ]]; then
 if ! ROOT="$ROOT" WT="$WT" STATUS="$STATUS" python - <<'PY'
 import json
 import os
@@ -64,11 +68,39 @@ then
   echo "Status publish failed (merge); will retry on next run"
   exit 0
 fi
+fi
+
+if ! ROOT="$ROOT" WT="$WT" FRESHNESS="$FRESHNESS" WARNINGS="$WARNINGS" python - <<'PY'
+import os
+import shutil
+from pathlib import Path
+
+from pipeline.board_freshness_file import load_freshness, merge_freshness, write_freshness
+
+root = Path(os.environ["ROOT"])
+work = Path(os.environ["WT"])
+fresh_rel = os.environ["FRESHNESS"]
+warn_rel = os.environ["WARNINGS"]
+local_fresh = root / fresh_rel
+remote_fresh = work / fresh_rel
+if local_fresh.is_file():
+    merged = merge_freshness(load_freshness(local_fresh), load_freshness(remote_fresh))
+    write_freshness(merged, remote_fresh)
+    print("freshness", ",".join(sorted(merged.get("boards") or {})))
+local_warn = root / warn_rel
+if local_warn.is_file():
+    dest = work / warn_rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(local_warn, dest)
+PY
+then
+  echo "Freshness publish failed (merge); status clocks may still commit"
+fi
 
 cd "$WT"
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
-git add -- "$STATUS"
+git add -- "$STATUS" "$FRESHNESS" "$WARNINGS"
 if git diff --cached --quiet; then
   echo "No status.json change to commit (already on origin/main)"
   exit 0
