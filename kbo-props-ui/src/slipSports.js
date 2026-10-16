@@ -142,13 +142,13 @@ function lineTypePresent(row) {
   ))
 }
 
-// projections_standard.json is a standard-only board. WNBA rows omit every
-// line-type field, and NBA uses this same loader. A missing type is standard.
-// A row that already carries a type keeps it, so a demon or goblin is dropped.
-// KBO, NFL, and NHL still exclude a missing type.
-function basketLine(player, prop) {
+// Only projections_standard.json may treat a missing line type as standard.
+// WNBA and NBA standard rows omit the field. Demon and goblin boards omit it
+// too, and those rows stay excluded. A row that already carries a type keeps
+// it, so a labeled demon or goblin is still dropped.
+function basketLine(player, prop, fillMissingStandard) {
   const merged = { ...player, ...prop }
-  if (lineTypePresent(merged)) return merged
+  if (!fillMissingStandard || lineTypePresent(merged)) return merged
   const cleaned = { ...merged }
   for (const key of ['odds_type', 'oddsType', 'line_type', 'lineType']) {
     if (cleaned[key] == null || String(cleaned[key]).trim() === '') delete cleaned[key]
@@ -156,7 +156,8 @@ function basketLine(player, prop) {
   return { odds_type: 'standard', ...cleaned }
 }
 
-function basketRows(players) {
+function basketRows(players, { source = '' } = {}) {
+  const fillMissingStandard = source === 'projections_standard.json'
   const props = []
   const seen = new Set()
   for (const player of Array.isArray(players) ? players : []) {
@@ -167,7 +168,7 @@ function basketRows(players) {
       const stat = prop?.stat || prop?.prop
       const line = num(prop?.line)
       if (!name || !stat || line == null) continue
-      const lineRow = basketLine(player, prop)
+      const lineRow = basketLine(player, prop, fillMissingStandard)
       if (!isStandardLine(lineRow)) continue
       const key = `${name}|${stat}|${line}|${oddsTypeOf(lineRow)}`
       if (seen.has(key)) continue
@@ -205,12 +206,13 @@ function basketRows(players) {
 }
 
 async function loadBasketProps(fetchDataFile, { emptyWhenNoGame = false, timeZone = 'America/New_York' } = {}) {
-  const doc = await fetchDataFile('projections_standard.json').catch(() => [])
+  const source = 'projections_standard.json'
+  const doc = await fetchDataFile(source).catch(() => [])
   const players = Array.isArray(doc) ? doc : []
   if (emptyWhenNoGame && !playsOnDay(players, sportDate(timeZone), timeZone)) {
     return { props: [], empty: wnbaEmptyState() }
   }
-  return { props: basketRows(players), empty: null }
+  return { props: basketRows(players, { source }), empty: null }
 }
 
 function flatRows(rows, shorts, { pointsGate = false } = {}) {

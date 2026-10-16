@@ -91,13 +91,15 @@ test('flat rows and the WNBA loader stay on the standard table', () => {
   const nba = source.slice(source.indexOf("id: 'nba'"), source.indexOf("id: 'nfl'"))
   assert.match(nba, /loadBasketProps/)
   const basket = source.slice(source.indexOf('function basketLine'), source.indexOf('function flatRows'))
+  assert.match(basket, /source === 'projections_standard\.json'/)
+  assert.match(basket, /if \(!fillMissingStandard \|\| lineTypePresent\(merged\)\) return merged/)
   assert.match(basket, /odds_type: 'standard'/)
   assert.doesNotMatch(flat, /odds_type: 'standard'/)
 })
 
 test('a missing line type on the standard basketball board is standard', () => {
   const basketRows = loadBasketRows()
-  const rows = basketRows([
+  const players = [
     {
       name: 'Allisha Gray',
       team: 'ATL',
@@ -113,11 +115,33 @@ test('a missing line type on the standard basketball board is standard', () => {
         { stat: 'Fantasy Score', line: 30.5, projection: 32, odds_type: '  ', opponent: 'GSV' },
       ],
     },
-  ])
+  ]
+  const rows = basketRows(players, { source: 'projections_standard.json' })
   assert.deepEqual(rows.map((row) => [row.name, row.team, row.opponent, row.prop, row.odds_type]), [
     ['Allisha Gray', 'ATL', 'GSV', 'Points', 'standard'],
     ['Allisha Gray', 'ATL', 'GSV', 'Fantasy Score', 'standard'],
     ['Allisha Gray', 'ATL', 'GSV', '3-PT Made', 'standard'],
   ])
   assert.equal(isStandardLine({ odds_type: 'standard', stat: 'Points', line: 16.5 }), true)
+})
+
+test('demon and goblin boards drop rows that have no line type', () => {
+  const basketRows = loadBasketRows()
+  const players = [{
+    name: 'Allisha Gray',
+    team: 'ATL',
+    dvpOpponent: 'GSV',
+    ppAllProps: [
+      { stat: 'Points', line: 18.5, projection: 17.1, opponent: 'GSV' },
+      { stat: 'Rebounds', line: 4.5, projection: 5, opponent: 'GSV' },
+    ],
+  }]
+  assert.deepEqual(basketRows(players, { source: 'projections_demon.json' }), [])
+  assert.deepEqual(basketRows(players, { source: 'projections_goblin.json' }), [])
+  assert.deepEqual(basketRows(players), [])
+  const kept = basketRows(players, { source: 'projections_standard.json' })
+  assert.deepEqual(kept.map((row) => [row.prop, row.odds_type]), [
+    ['Points', 'standard'],
+    ['Rebounds', 'standard'],
+  ])
 })
