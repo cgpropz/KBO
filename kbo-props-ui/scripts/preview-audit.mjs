@@ -93,7 +93,7 @@ async function shoot(browser, secret, width, height, file) {
   try {
     const h1 = (await page.locator('h1').first().innerText()).replace(/\s+/g, ' ').trim()
     if (!h1.startsWith('Every prop line')) throw new Error(`unexpected h1: ${h1}`)
-    await page.locator('#free-top-3').scrollIntoViewIfNeeded()
+    await page.locator('#free-top-3').evaluate((node) => node.scrollIntoView({ block: 'start' }))
     const info = await readAvatars(page)
     assertAvatars(info)
     await page.screenshot({ path: file })
@@ -105,13 +105,21 @@ async function shoot(browser, secret, width, height, file) {
 
 async function shootNhl(browser, secret, width, height, file) {
   const page = await openLanding(browser, secret, width, height)
+  const imgStatuses = []
+  page.on('response', (response) => {
+    try {
+      if (new URL(response.url()).pathname === '/api/img') imgStatuses.push(response.status())
+    } catch { /* ignore a bad response url */ }
+  })
   try {
-    const tab = page.locator('#boards [role="tab"]', { hasText: 'NHL' })
-    if (await tab.count()) await tab.click()
-    const hit = page.locator('#free-top-3 [role="tab"]', { hasText: 'NHL' })
-    if (await hit.count()) await hit.click()
-    await page.waitForTimeout(800)
-    await page.locator('#boards').scrollIntoViewIfNeeded()
+    // Other leagues wait until scroll or a few seconds after load. A scroll
+    // starts that fetch, then the NHL tab has to wait for the rows.
+    await page.mouse.wheel(0, 600)
+    await page.locator('#boards [role="tab"]', { hasText: /^NHL$/ }).click()
+    await page.locator('#free-top-3 [role="tab"]', { hasText: /^NHL$/ }).click()
+    await page.waitForSelector('#boards .pl-tr', { timeout: 20000 })
+    await page.locator('#free-top-3').evaluate((node) => node.scrollIntoView({ block: 'start' }))
+    await page.waitForTimeout(1200)
     const info = await readAvatars(page)
     if (info.phoneImages !== 0) throw new Error(`hero phone has ${info.phoneImages} images`)
     for (const img of info.imgs) {
@@ -121,6 +129,8 @@ async function shootNhl(browser, secret, width, height, file) {
         throw new Error(`blocked headshot host: ${img.src}`)
       }
     }
+    const selected = await page.locator('#boards [role="tab"][aria-selected="true"]').innerText()
+    if (selected.trim() !== 'NHL') throw new Error(`board tab is ${selected}`)
     await page.screenshot({ path: file })
     return {
       width,
@@ -130,9 +140,23 @@ async function shootNhl(browser, secret, width, height, file) {
       imgs: info.imgs.length,
       boardRows: info.boardRows,
       phoneImages: info.phoneImages,
+      imgStatuses,
     }
   } finally {
     await page.close()
+  }
+}
+
+async function sampleNhl(secret) {
+  const response = await fetch(`${previewUrl.replace(/\/$/, '')}/api/data?ds=nhl_projections`, {
+    headers: { 'x-vercel-protection-bypass': secret },
+  })
+  const body = await response.json().catch(() => ({}))
+  const rows = Array.isArray(body?.data) ? body.data : []
+  return {
+    status: response.status,
+    rows: rows.length,
+    prizepicksImages: rows.filter((row) => String(row?.imageUrl || row?.ppImageUrl || '').includes('static.prizepicks.com')).length,
   }
 }
 
@@ -190,6 +214,9 @@ const headersFile = join(headersDir, 'headers.json')
 await writeFile(headersFile, JSON.stringify({ 'x-vercel-protection-bypass': secret }), { mode: 0o600 })
 await mkdir(outDir, { recursive: true })
 
+const nhlApi = await sampleNhl(secret)
+console.log(`nhl preview rows ${nhlApi.rows}, prizepicks images ${nhlApi.prizepicksImages}`)
+
 const browser = await chromium.launch({ args: ['--no-sandbox'] })
 const pages = []
 try {
@@ -224,6 +251,7 @@ function formMedian(form) {
 
 const summary = {
   url: previewUrl,
+  nhlApi,
   pages,
   runs,
   median: {
