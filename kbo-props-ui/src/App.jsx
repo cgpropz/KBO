@@ -5,7 +5,7 @@ import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
-import { sportFromSearch } from './appSport'
+import { accountFromSearch, sportFromSearch } from './appSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
 import { useAgeGate } from './ageGateContext'
@@ -47,7 +47,7 @@ function App() {
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
-    if (pauseTokenFromSearch(window.location.search)) return 'pricing';
+    if (pauseTokenFromSearch(window.location.search) || accountFromSearch(window.location.search)) return 'pricing';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
   });
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -60,6 +60,9 @@ function App() {
   const [entry, setEntry] = useState(null);
   const [sport, setSportState] = useState(() => {
     if (typeof window !== 'undefined') {
+      // The account page lives on the KBO shell. Don't overwrite the member's
+      // saved sport; this visit only opens subscription management.
+      if (accountFromSearch(window.location.search)) return 'kbo';
       const linked = sportFromSearch(window.location.search);
       if (linked) {
         try { localStorage.setItem(SPORT_STORAGE_KEY, linked); } catch { /* ignore */ }

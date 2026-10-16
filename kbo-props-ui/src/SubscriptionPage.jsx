@@ -51,6 +51,8 @@ function SubscriptionPage() {
   const [pausing, setPausing] = useState(false);
   const [pauseResult, setPauseResult] = useState(null);
   const [paused, setPaused] = useState(null);
+  const [managingPortal, setManagingPortal] = useState(false);
+  const [portalMessage, setPortalMessage] = useState(null);
 
   // After user clicks a payment link, poll for tier upgrade every 4s for up to 2 min
   useEffect(() => {
@@ -255,6 +257,48 @@ function SubscriptionPage() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    setManagingPortal(true);
+    setPortalMessage(null);
+    try {
+      const token = await membershipAuthToken(user);
+      if (!token) {
+        setPortalMessage('Please sign in again.');
+        return;
+      }
+      // The server reads the email from this session. Do not send an email
+      // or a Stripe customer id.
+      const resp = await fetch('/api/billing-portal', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.status === 404) {
+        setPortalMessage('No active plan on this email. DM @Cgpropz.');
+        return;
+      }
+      if (!resp.ok || !data.url) {
+        setPortalMessage(data.error || 'Could not open billing.');
+        return;
+      }
+      let destination;
+      try { destination = new URL(data.url); } catch { destination = null; }
+      if (!destination || destination.protocol !== 'https:') {
+        setPortalMessage('Could not open billing.');
+        return;
+      }
+      window.location.assign(destination.toString());
+    } catch {
+      setPortalMessage('Network error — please try again.');
+    } finally {
+      setManagingPortal(false);
+    }
+  };
+
   const handlePause = async () => {
     setPausing(true);
     setPauseResult(null);
@@ -284,6 +328,23 @@ function SubscriptionPage() {
           is a separate, cheaper option and does not unlock the site.
         </p>
       </div>
+
+      {user && (
+        <section className="sub-manage" aria-label="Manage subscription">
+          <button
+            type="button"
+            className="sub-manage-btn"
+            data-testid="manage-subscription"
+            onClick={handleManageSubscription}
+            disabled={managingPortal}
+          >
+            {managingPortal ? 'Opening billing…' : 'Manage subscription'}
+          </button>
+          {portalMessage && (
+            <p className="sub-manage-msg" role="status" data-testid="manage-subscription-message">{portalMessage}</p>
+          )}
+        </section>
+      )}
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀🏈</span>
