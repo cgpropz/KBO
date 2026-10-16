@@ -5,7 +5,8 @@ import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
-import { sportFromSearch } from './appSport'
+import { accountFromSearch, sportFromSearch } from './appSport'
+import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
 import { useAgeGate } from './ageGateContext'
@@ -38,8 +39,6 @@ const NflApp = lazy(() => loadSport('nfl'))
 const NbaApp = lazy(() => loadSport('nba'))
 const NhlApp = lazy(() => loadSport('nhl'))
 
-const SPORT_STORAGE_KEY = 'cg_sport';
-
 function App() {
   const { user, tier } = useAuth();
   const { requireAge } = useAgeGate();
@@ -47,7 +46,7 @@ function App() {
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
-    if (pauseTokenFromSearch(window.location.search)) return 'pricing';
+    if (pauseTokenFromSearch(window.location.search) || accountFromSearch(window.location.search)) return 'pricing';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
   });
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -59,20 +58,21 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [entry, setEntry] = useState(null);
   const [sport, setSportState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const linked = sportFromSearch(window.location.search);
-      if (linked) {
-        try { localStorage.setItem(SPORT_STORAGE_KEY, linked); } catch { /* ignore */ }
-        return linked;
-      }
-    }
-    if (typeof localStorage === 'undefined') return 'kbo';
-    return localStorage.getItem(SPORT_STORAGE_KEY) || 'kbo';
+    if (typeof window === 'undefined') return 'nfl';
+    // The account page lives on the KBO shell. This visit does not write
+    // cg_member_sport, so the saved member sport stays put.
+    if (accountFromSearch(window.location.search)) return 'kbo';
+    return resolveMemberSport({
+      search: window.location.search,
+      storage: typeof localStorage === 'undefined' ? null : localStorage,
+    });
   });
 
-  const setSport = (next) => {
+  // Sport switcher clicks only. Pricing hops and the closed-NBA fallback
+  // change the in-memory sport without becoming the saved choice.
+  const chooseSport = (next) => {
     setSportState(next);
-    try { localStorage.setItem(SPORT_STORAGE_KEY, next); } catch { /* ignore */ }
+    rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, next);
   };
 
   useEffect(() => {
@@ -95,9 +95,10 @@ function App() {
     };
   }, [previewNode]);
 
-  // Stored cg_sport=nba stays put until the access check finishes, so a later
-  // public flag does not wipe All-Access. Until then the NBA shell is not
-  // mounted. Adjusted during render (not in an effect) once the check is closed.
+  // A saved NBA choice stays in cg_member_sport until the access check
+  // finishes, so a later public flag does not wipe All-Access. Until then the
+  // NBA shell is not mounted. Adjusted during render (not in an effect) once
+  // the check is closed. A closed NBA falls back to NFL in memory only.
   // NHL is a live sport: logged-out and free visitors enter it and hit the
   // same paywall as KBO, WNBA, and NFL.
   if (sport === 'nba' && !nba.ready) {
@@ -109,9 +110,9 @@ function App() {
     );
   }
   if (sport === 'nba' && !nba.open) {
-    setSport('kbo');
+    setSportState(sportAfterNbaGate(sport, false));
   }
-  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? 'kbo' : sport;
+  const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? sportAfterNbaGate(sport, false) : sport;
 
   const openSignUp = async () => {
     const allowed = await requireAge();
@@ -150,15 +151,15 @@ function App() {
         {user ? (
           <Suspense fallback={<RouteFallback />}>
             <CgpropzLanding
-              onEnterSport={(s, next) => { setSport(s); setEntry(next || null); setView('home'); }}
-              onNavigate={(nextView) => { setSport('kbo'); setEntry(null); setView(nextView); }}
+              onEnterSport={(s, next) => { setSportState(s); setEntry(next || null); setView('home'); }}
+              onNavigate={(nextView) => { setSportState('kbo'); setEntry(null); setView(nextView); }}
             />
           </Suspense>
         ) : (
           <PublicLanding
             onGetStarted={openSignUp}
             onLogin={openLogin}
-            onOpenBoard={(s) => { setSport(s); setView('home'); window.scrollTo(0, 0); }}
+            onOpenBoard={(s) => { setSportState(s); setView('home'); window.scrollTo(0, 0); }}
           />
         )}
         {checkoutSuccess}
@@ -179,7 +180,7 @@ function App() {
         </>
       )}
       {user && (
-        <button className="ff-btn ff-btn-primary ff-btn-small" onClick={() => { setSport('kbo'); setView('pricing'); }}>View plans</button>
+        <button className="ff-btn ff-btn-primary ff-btn-small" onClick={() => { setSportState('kbo'); setView('pricing'); }}>View plans</button>
       )}
     </div>
   );
@@ -190,39 +191,39 @@ function App() {
     sportApp = (
       <WnbaApp
         sport={visibleSport}
-        setSport={setSport}
+        setSport={chooseSport}
         entry={entry}
-        onNavigateKbo={(nextView) => { setSport('kbo'); setView(nextView || 'pricing'); }}
+        onNavigateKbo={(nextView) => { setSportState('kbo'); setView(nextView || 'pricing'); }}
       />
     );
   } else if (visibleSport === 'nba') {
     sportApp = (
       <NbaApp
         sport={visibleSport}
-        setSport={setSport}
+        setSport={chooseSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
-        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
+        onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
     );
   } else if (visibleSport === 'nhl') {
     sportApp = (
       <NhlApp
         sport={visibleSport}
-        setSport={setSport}
+        setSport={chooseSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
-        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
+        onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
     );
   } else if (visibleSport === 'nfl') {
     sportApp = (
       <NflApp
         sport={visibleSport}
-        setSport={setSport}
+        setSport={chooseSport}
         entry={entry}
         onNavigateHome={() => setView('hub')}
-        onNavigatePricing={() => { setSport('kbo'); setView('pricing'); }}
+        onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
     );
   } else {
@@ -230,7 +231,7 @@ function App() {
     sportApp = (
       <KboApp
         sport={visibleSport}
-        setSport={setSport}
+        setSport={chooseSport}
         onNavigateHome={() => setView('hub')}
         initialView={view}
         entry={entry}

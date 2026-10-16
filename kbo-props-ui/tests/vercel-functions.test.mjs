@@ -31,6 +31,7 @@ const PUBLIC_ROUTES = [
   ['/api/nhl-access', '/api/league-access/nhl'],
   ['/api/checkout-session', '/api/checkout/session'],
   ['/api/weekly-checkout', '/api/checkout/weekly'],
+  ['/api/billing-portal', '/api/checkout/portal'],
 ]
 
 test('serverless function files stay within the Vercel Hobby limit', () => {
