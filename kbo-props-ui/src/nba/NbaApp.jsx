@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { id: 'slip', label: 'Slip Builder' },
 ]
 
-const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
+const SlipRail = lazy(() => import('../SlipRail'))
 
 const NAV_IDS = new Set(NAV_ITEMS.map((item) => item.id))
 
@@ -70,7 +70,7 @@ function EmptyTab({ title, body }) {
   )
 }
 
-export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePricing, entry, onSlipSport }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const [view, setView] = useState(() => {
@@ -103,7 +103,7 @@ export default function NbaApp({ sport, setSport, onNavigateHome, onNavigatePric
   else if (view === 'slip') {
     content = (
       <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-        <SlipOptimizer sport="nba" />
+        <SlipRail sport="nba" onSport={onSlipSport} />
       </Suspense>
     )
   }

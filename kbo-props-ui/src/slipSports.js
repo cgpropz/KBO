@@ -67,12 +67,32 @@ async function loadKboProps() {
   for (const row of pitchers?.projections || []) {
     if (row.projection == null || row.edge == null) continue
     if (!keepSlipRow(row)) continue
-    props.push({ ...row, propShort: kboShort(row.prop), odds_type: oddsTypeOf(row) })
+    props.push({
+      ...row,
+      name: row.name || row.player,
+      propShort: kboShort(row.prop),
+      odds_type: oddsTypeOf(row),
+      playerId: row.playerId || row.player_id || null,
+      imageUrl: row.imageUrl || row.image_url || row.image || '',
+      hitRate: num(row.hitRate),
+      gamesL10: num(row.gamesL10),
+      recent: Array.isArray(row.recent) ? row.recent : [],
+    })
   }
   for (const row of batters?.projections || []) {
     if (row.projection == null || row.edge == null) continue
     if (!keepSlipRow(row)) continue
-    props.push({ ...row, propShort: kboShort(row.prop), odds_type: oddsTypeOf(row) })
+    props.push({
+      ...row,
+      name: row.name || row.player,
+      propShort: kboShort(row.prop),
+      odds_type: oddsTypeOf(row),
+      playerId: row.playerId || row.player_id || null,
+      imageUrl: row.imageUrl || row.image_url || row.image || '',
+      hitRate: num(row.hitRate),
+      gamesL10: num(row.gamesL10),
+      recent: Array.isArray(row.recent) ? row.recent : [],
+    })
   }
   props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge))
   return { props, empty: null }
@@ -107,6 +127,15 @@ function basketRows(players) {
         rating: num(prop?.rating),
         odds_type: oddsTypeOf(prop),
         playerId: prop?.playerId || player?.playerId || player?.player_id || null,
+        position: player?.position || prop?.position || '',
+        imageUrl: prop?.imageUrl || prop?.image_url || player?.imageUrl || player?.image_url || player?.image || '',
+        hitRate: num(prop?.hitRate ?? player?.hitRate),
+        gamesL10: num(prop?.gamesL10 ?? player?.gamesL10),
+        recent: Array.isArray(prop?.recent) ? prop.recent : (Array.isArray(player?.recent) ? player.recent : []),
+        start_time: prop?.start_time || prop?.startTime || player?.start_time || player?.startTime || null,
+        gameday: prop?.gameday || prop?.gameDate || player?.gameday || player?.gameDate || player?.game_date || null,
+        awayTeam: prop?.awayTeam || player?.awayTeam || '',
+        homeTeam: prop?.homeTeam || player?.homeTeam || '',
       })
     }
   }
@@ -143,6 +172,14 @@ function flatRows(rows, shorts, { pointsGate = false, now = new Date() } = {}) {
       odds_type: oddsTypeOf(row),
       position: row.position || '',
       playerId: row.playerId || row.player_id || null,
+      imageUrl: row.imageUrl || row.image_url || row.image || '',
+      hitRate: num(row.hitRate),
+      gamesL10: num(row.gamesL10),
+      recent: Array.isArray(row.recent) ? row.recent : [],
+      awayTeam: row.awayTeam || '',
+      homeTeam: row.homeTeam || '',
+      start_time: row.start_time || row.startTime || null,
+      gameday: row.gameday || row.gameDate || row.game_date || null,
     })
   }
   props.sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge))

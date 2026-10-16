@@ -76,6 +76,12 @@ function App() {
     rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, next);
   };
 
+  // The slip rail switches sports without dropping the builder.
+  const chooseSlipSport = (next) => {
+    chooseSport(next);
+    setEntry({ view: 'slip' });
+  };
+
   useEffect(() => {
     if (!previewNode) {
       document.documentElement.style.removeProperty('--ff-preview-offset');
@@ -207,6 +213,7 @@ function App() {
         sport={visibleSport}
         setSport={chooseSport}
         entry={entry}
+        onSlipSport={chooseSlipSport}
         onNavigateKbo={(nextView) => { setSportState('kbo'); setView(nextView || 'pricing'); }}
       />
     );
@@ -216,6 +223,7 @@ function App() {
         sport={visibleSport}
         setSport={chooseSport}
         entry={entry}
+        onSlipSport={chooseSlipSport}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -226,6 +234,7 @@ function App() {
         sport={visibleSport}
         setSport={chooseSport}
         entry={entry}
+        onSlipSport={chooseSlipSport}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -236,6 +245,7 @@ function App() {
         sport={visibleSport}
         setSport={chooseSport}
         entry={entry}
+        onSlipSport={chooseSlipSport}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -249,6 +259,7 @@ function App() {
         onNavigateHome={() => setView('hub')}
         initialView={view}
         entry={entry}
+        onSlipSport={chooseSlipSport}
       />
     );
   }

@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { id: 'slip', label: 'Slip Builder' },
 ]
 
-const SlipOptimizer = lazy(() => import('../SlipOptimizer'))
+const SlipRail = lazy(() => import('../SlipRail'))
 
 // Paid WNBA views (mirrors KBO's PAID_VIEWS). Dashboard/Players/Teams stay free.
 const WNBA_PAID_VIEWS = new Set(['projections', 'lineups', 'slip'])
@@ -38,7 +38,7 @@ function ComingSoon({ label }) {
   )
 }
 
-export default function WnbaApp({ sport, setSport, onNavigateKbo, entry }) {
+export default function WnbaApp({ sport, setSport, onNavigateKbo, entry, onSlipSport }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'playerDetail' : 'dashboard')
@@ -67,7 +67,7 @@ export default function WnbaApp({ sport, setSport, onNavigateKbo, entry }) {
       case 'lineups':     return <Lineups />
       case 'slip':        return (
         <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-          <SlipOptimizer sport="wnba" />
+          <SlipRail sport="wnba" onSport={onSlipSport} />
         </Suspense>
       )
       case 'playerDetail': return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
