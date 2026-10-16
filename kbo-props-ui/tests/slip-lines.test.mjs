@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { cgScore } from '../src/cgScore.js'
 import { isPromoLine, isStandardLine, matchImportedPick, oddsTypeOf, standardSlipRows } from '../src/slipLines.js'
 
 // slipSports.js is a Vite module (extensionless imports). Load the pure
@@ -9,14 +10,17 @@ function loadBasketRows() {
   const source = readFileSync(new URL('../src/slipSports.js', import.meta.url), 'utf8')
   const start = source.indexOf('function lineTypePresent')
   const end = source.indexOf('async function loadBasketProps')
+  const helpers = source.slice(source.indexOf('function byCg'), source.indexOf('async function loadKboProps'))
   const num = (value) => {
     const n = Number(value)
     return Number.isFinite(n) ? n : null
   }
-  return new Function('isStandardLine', 'oddsTypeOf', 'num', 'BASKET_SHORT', `${source.slice(start, end)}\nreturn basketRows`)(
+  return new Function('isStandardLine', 'oddsTypeOf', 'num', 'cgScore', 'keepSlipRow', 'BASKET_SHORT', `${helpers}\n${source.slice(start, end)}\nreturn basketRows`)(
     isStandardLine,
     oddsTypeOf,
     num,
+    cgScore,
+    () => true,
     { Points: 'PTS', Rebounds: 'REB', Assists: 'AST', '3-PT Made': '3PM', Steals: 'STL', Blocks: 'BLK', Turnovers: 'TOV', 'Fantasy Score': 'FANT' },
   )
 }
@@ -117,10 +121,10 @@ test('a missing line type on the standard basketball board is standard', () => {
     },
   ]
   const rows = basketRows(players, { source: 'projections_standard.json' })
-  assert.deepEqual(rows.map((row) => [row.name, row.team, row.opponent, row.prop, row.odds_type]), [
-    ['Allisha Gray', 'ATL', 'GSV', 'Points', 'standard'],
-    ['Allisha Gray', 'ATL', 'GSV', 'Fantasy Score', 'standard'],
+  assert.deepEqual(rows.map((row) => [row.name, row.team, row.opponent, row.prop, row.odds_type]).sort((a, b) => a[3].localeCompare(b[3])), [
     ['Allisha Gray', 'ATL', 'GSV', '3-PT Made', 'standard'],
+    ['Allisha Gray', 'ATL', 'GSV', 'Fantasy Score', 'standard'],
+    ['Allisha Gray', 'ATL', 'GSV', 'Points', 'standard'],
   ])
   assert.equal(isStandardLine({ odds_type: 'standard', stat: 'Points', line: 16.5 }), true)
 })
@@ -140,7 +144,7 @@ test('demon and goblin boards drop rows that have no line type', () => {
   assert.deepEqual(basketRows(players, { source: 'projections_goblin.json' }), [])
   assert.deepEqual(basketRows(players), [])
   const kept = basketRows(players, { source: 'projections_standard.json' })
-  assert.deepEqual(kept.map((row) => [row.prop, row.odds_type]), [
+  assert.deepEqual(kept.map((row) => [row.prop, row.odds_type]).sort((a, b) => a[0].localeCompare(b[0])), [
     ['Points', 'standard'],
     ['Rebounds', 'standard'],
   ])
