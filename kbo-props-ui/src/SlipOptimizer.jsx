@@ -5,6 +5,8 @@ import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
+import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
+import { formatBreakEvenRate } from './prizepicksBreakeven';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 const SLIP_SPORT_KEY = 'cg_slip_sports';
@@ -49,6 +51,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
     }
   }); // 'build' | 'auto' | 'saved'
   const [filter, setFilter] = useState('all'); // all | K | HRR | TB
+  const [payoutMode, setPayoutMode] = useState('power');
   const [sideOverrides, setSideOverrides] = useState({}); // idx -> 'OVER' | 'UNDER'
   const [maxReuse, setMaxReuse] = useState(2); // max times a single prop can appear across slips
   const [importedPicks, setImportedPicks] = useState(null); // picks from Pitchers page
@@ -260,36 +263,36 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const toggleSelect = (idx) => {
     setSelected(prev => {
       const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
+      if (next.has(idx)) {
+        next.delete(idx);
+        return next;
+      }
+      const adding = allProps[idx];
+      const key = playerKey(adding);
+      if (key && [...next].some((i) => playerKey(allProps[i]) === key)) return prev;
+      next.add(idx);
       return next;
     });
   };
 
   // Compute slip confidence for a set of legs
   const computeSlipScore = (indices) => {
-    if (indices.length === 0) return { confidence: 0, avgEdge: 0, totalEdge: 0, legs: 0 };
+    if (indices.length === 0) return { confidence: 0, cg: 0, avgEdge: 0, totalEdge: 0, legs: 0, uniqueGames: 0 };
     let totalAbsEdge = 0;
-    let totalRating = 0;
-    let ratingCount = 0;
     const games = new Set();
     indices.forEach(idx => {
       const p = allProps[idx];
       const side = getSide(idx);
-      // Edge relative to the chosen side
       const sideEdge = side === 'OVER' ? p.edge : -p.edge;
       totalAbsEdge += sideEdge;
-      if (p.rating != null) { totalRating += p.rating; ratingCount++; }
       games.add(`${p.team}-${p.opponent}`);
     });
     const avgEdge = totalAbsEdge / indices.length;
-    const avgRating = ratingCount > 0 ? totalRating / ratingCount : 50;
-    // Game diversity bonus: more unique games = less correlated
-    const diversityMultiplier = 1 + (games.size - 1) * 0.05;
-    // Confidence: weighted combo of avg edge and avg rating, with diversity bonus
-    const confidence = ((avgEdge * 20) + ((avgRating - 50) * 1.5)) * diversityMultiplier;
+    const cg = averageCg(indices.map((idx) => ({ ...allProps[idx], side: getSide(idx) })));
+    const confidence = cg == null ? 0 : Math.round(cg * 10) / 10;
     return {
-      confidence: Math.round(confidence * 10) / 10,
+      cg: confidence,
+      confidence,
       avgEdge: Math.round(avgEdge * 100) / 100,
       totalEdge: Math.round(totalAbsEdge * 100) / 100,
       legs: indices.length,
@@ -303,9 +306,9 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
 
     // Auto mode uses the same standard-only board as the picker.
     const candidates = allProps
-      .map((p, i) => ({ idx: i, edge: p.edge, absEdge: Math.abs(p.edge), standard: isStandardLine(p) }))
-      .filter(c => c.standard && c.absEdge > 0.1)
-      .sort((a, b) => b.absEdge - a.absEdge);
+      .map((p, i) => ({ idx: i, cg: legCg(p, p.edge >= 0 ? 'OVER' : 'UNDER'), standard: isStandardLine(p) }))
+      .filter(c => c.standard && c.cg != null)
+      .sort((a, b) => b.cg - a.cg);
 
     if (candidates.length < legs) return [];
 
@@ -326,6 +329,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
     const allCombos = [];
     for (const combo of combinations(candidates.slice(0, n), legs)) {
       const indices = combo.map(c => c.idx);
+      if (playersRepeat(indices.map((idx) => allProps[idx]))) continue;
       const score = computeSlipScore(indices);
       allCombos.push({ indices, score });
     }
@@ -378,10 +382,36 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   ));
 
   const getConfidenceClass = (c) => {
-    if (c >= 15) return 'conf-elite';
-    if (c >= 8) return 'conf-high';
-    if (c >= 3) return 'conf-mid';
+    if (c >= 60) return 'conf-elite';
+    if (c >= 55) return 'conf-high';
+    if (c >= 50) return 'conf-mid';
     return 'conf-low';
+  };
+
+  const payoutAltered = (indices) => indices.some((idx) => {
+    const type = allProps[idx]?.odds_type;
+    return type === 'demon' || type === 'goblin';
+  });
+
+  const PayoutBar = ({ picks, altered }) => {
+    const payout = payoutFor(payoutMode, picks, { altered });
+    return (
+      <div className="so-payout" data-testid="slip-payout">
+        <div className="so-payout-modes" role="group" aria-label="Payout style">
+          <button type="button" className={payoutMode === 'power' ? 'active' : ''} onClick={() => setPayoutMode('power')}>Power</button>
+          <button type="button" className={payoutMode === 'flex' ? 'active' : ''} onClick={() => setPayoutMode('flex')}>Flex</button>
+        </div>
+        {payout ? (
+          <div className="so-payout-figures">
+            <strong>{payout.payout}</strong>
+            <span>Break-even {formatBreakEvenRate(payout.breakeven)}</span>
+            {payout.altered && <span className="so-payout-altered">Altered payout</span>}
+          </div>
+        ) : (
+          <p className="so-payout-wait">Add 2 to 6 legs to see the payout.</p>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -462,9 +492,10 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     );
                   })}
                 </div>
+                <PayoutBar picks={selectedArr.length} altered={payoutAltered(selectedArr)} />
                 <div className="so-slip-stats">
                   <div className="so-slip-stat">
-                    <span className="so-stat-label">Confidence</span>
+                    <span className="so-stat-label">CG</span>
                     <span className={`so-stat-val ${getConfidenceClass(slipScore.confidence)}`}>{slipScore.confidence}</span>
                   </div>
                   <div className="so-slip-stat">
@@ -645,7 +676,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <span className={`so-auto-conf ${getConfidenceClass(slip.score.confidence)}`}>
                       {slip.score.confidence}
                     </span>
-                    <span className="so-auto-conf-label">confidence</span>
+                    <span className="so-auto-conf-label">CG</span>
                   </div>
                   <div className="so-auto-legs">
                     {slip.indices.map(idx => {
@@ -671,6 +702,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                       );
                     })}
                   </div>
+                  <PayoutBar picks={slip.indices.length} altered={payoutAltered(slip.indices)} />
                   <div className="so-auto-stats">
                     <span>Avg Edge: <strong className={slip.score.avgEdge > 0 ? 'edge-pos' : ''}>{slip.score.avgEdge > 0 ? '+' : ''}{slip.score.avgEdge}</strong></span>
                     <span>Games: <strong>{slip.score.uniqueGames}</strong></span>
@@ -791,8 +823,8 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
       )}
 
       <div className="so-footer-note">
-        Confidence score combines edge magnitude, rating, and game diversity. Higher = stronger slip.
-        Click OVER/UNDER on any prop to flip the side. Max prop reuse limits how many slips share the same prop.
+        Slips are ranked by CG Score. Power and Flex show the standard payout and the break-even hit rate. A demon or goblin leg is an altered payout.
+        The same player is not used twice. Click OVER/UNDER on any prop to flip the side.
       </div>
     </div>
   );
