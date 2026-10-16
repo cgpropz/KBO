@@ -7,6 +7,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from pipeline.refresh_window import in_refresh_window
 from pipeline.refresh_due import HEAVY_STEP, candidate_run_ids, should_refresh
 
 ROOT = Path(__file__).resolve().parent
@@ -162,12 +163,14 @@ class RefreshDueScriptTests(unittest.TestCase):
         """Real schedules. A fake gh keeps the 50-minute guard from covering the window result."""
         for sport, command in GATE_COMMANDS.items():
             with self.subTest(sport=sport):
+                expected_inside = in_refresh_window(sport)
                 code, output, stdout, stderr = _run_gate(None, command=command, real_python=True)
                 detail = f"stdout={stdout}\nstderr={stderr}\noutput={output}"
                 self.assertEqual(code, 0, detail)
                 self.assertNotIn("ModuleNotFoundError", stdout + stderr, detail)
                 self.assertNotIn("exit 1", stdout, detail)
-                if "Inside the" in stdout:
+                # The in-process schedule read picks the one correct outcome.
+                if expected_inside:
                     self.assertIn("due=true", output, detail)
                 else:
                     self.assertIn(f"Outside the {sport} game window", stdout, detail)

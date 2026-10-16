@@ -7,7 +7,10 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pipeline.refresh_window import in_refresh_window, starts_from_events
+from unittest import mock
+
+from pipeline import refresh_window
+from pipeline.refresh_window import in_refresh_window, main, starts_from_events
 
 ROOT = Path(__file__).resolve().parent
 
@@ -51,6 +54,7 @@ class RefreshWindowTests(unittest.TestCase):
         env = os.environ.copy()
         env.pop("PYTHONPATH", None)
         for sport in ("wnba", "kbo", "nba"):
+            expected_inside = in_refresh_window(sport)
             result = subprocess.run(
                 [sys.executable, "-m", "pipeline.refresh_window", "--sport", sport],
                 cwd=ROOT,
@@ -65,11 +69,25 @@ class RefreshWindowTests(unittest.TestCase):
             self.assertNotIn("ModuleNotFoundError", result.stderr, detail)
             self.assertNotIn("Traceback", result.stderr, detail)
             self.assertNotIn("unavailable", result.stderr.lower(), detail)
-            if result.returncode == 0:
+            # The in-process read decides which single outcome is correct.
+            if expected_inside:
+                self.assertEqual(result.returncode, 0, detail)
                 self.assertEqual(decision, f"{sport} is inside the game window", detail)
             else:
                 self.assertEqual(result.returncode, 2, detail)
                 self.assertEqual(decision, f"{sport} is outside the game window", detail)
+
+    def test_main_exit_codes(self):
+        with mock.patch.object(refresh_window, "in_refresh_window", return_value=True):
+            self.assertEqual(main(["--sport", "wnba"]), 0)
+        with mock.patch.object(refresh_window, "in_refresh_window", return_value=False):
+            self.assertEqual(main(["--sport", "wnba"]), 2)
+
+    def test_a_runtime_exception_exits_1_not_2(self):
+        boom = mock.Mock(side_effect=RuntimeError("boom"))
+        for sport in ("wnba", "kbo", "nba"):
+            with self.subTest(sport=sport), mock.patch.object(refresh_window, "in_refresh_window", boom):
+                self.assertEqual(main(["--sport", sport]), 1)
 
 
 if __name__ == "__main__":
