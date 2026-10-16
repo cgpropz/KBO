@@ -242,6 +242,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 .so-picker-title {
@@ -250,7 +252,19 @@
   color: #999;
   margin: 0;
 }
-.so-picker-filters { display: flex; gap: 0.3rem; }
+.so-picker-filters { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.so-side-fixed { cursor: default; }
+.so-odds-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: #fff;
+}
+.so-odds-badge.demon { background: #7f1d1d; }
+.so-odds-badge.goblin { background: #14532d; }
 .so-filter-chip {
   padding: 0.2rem 0.5rem;
   border: 1px solid #333;
