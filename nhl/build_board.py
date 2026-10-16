@@ -153,6 +153,51 @@ EXCLUDED_PLAYER_IDS = {
     "8480848",  # Ty Dellandrea (SJS), scratched (2026-10-13)
 }
 
+def teams_with_current_logs(skaters, season: str = CURRENT_SEASON) -> set[str]:
+    """Teams that have at least one game in the current season."""
+    found = set()
+    for row in skaters or []:
+        if row.get("season") != season:
+            continue
+        abbr = team_abbr(row.get("team"))
+        if abbr:
+            found.add(abbr)
+    return found
+
+
+def restore_teams_without_current_logs(rows, skaters, previous) -> tuple[list, set[str]]:
+    """Drop a team with no current-season logs and put its last rows back.
+
+    A missing MoneyPuck file leaves prior-season games in place, so the new
+    rows would publish with zero current-season games. Those rows are not
+    written. The previous board's rows for that team stay.
+    """
+    live = teams_with_current_logs(skaters)
+    blocked = set()
+    for row in rows or []:
+        abbr = team_abbr(row.get("team"))
+        if abbr and abbr not in live:
+            blocked.add(abbr)
+    if not blocked:
+        return list(rows or []), blocked
+    kept = [row for row in rows or [] if team_abbr(row.get("team")) not in blocked]
+    prior = [row for row in previous or [] if team_abbr(row.get("team")) in blocked]
+    return kept + prior, blocked
+
+
+def _previous_projections(out_dir: Path) -> list:
+    for path in (out_dir / "projections.json", PUBLIC_DIR / "projections.json"):
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, list):
+            return payload
+    return []
+
+
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
     if not ready:
         print(f"skip write {path.name}: source failed, leaving the previous file")
@@ -895,6 +940,14 @@ def build(root: Path, out_dir: Path) -> int:
         projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
         projections = finish_board(projections, lineups, games)
         removed = before - len(projections)
+        previous = _previous_projections(out_dir)
+        projections, blocked = restore_teams_without_current_logs(projections, skaters, previous)
+        for team in sorted(blocked):
+            kept = sum(1 for row in projections if team_abbr(row.get("team")) == team)
+            print(f"ERROR: {team} has no {SEASON_LABEL} MoneyPuck logs; keeping {kept} previous row(s)")
+        if blocked and not projections:
+            print("ERROR: no current-season logs and no previous board; leaving the last file")
+            projections_ready = False
     else:
         removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)
