@@ -20,10 +20,10 @@ const PUBLIC_PAGES = [
   ['/privacy', 'Privacy | CGPropz', 'Privacy'],
   ['/responsible-gaming', 'Responsible gaming | CGPropz', 'Responsible gaming'],
   ['/states-not-available', 'Where CGPropz isn\'t available | CGPropz', 'Where CGPropz is not available'],
-  ['/kbo-player-props', 'KBO player props and full-board results | CGPropz', 'KBO player props, with the full board.'],
+  ['/kbo-player-props', 'KBO Playoffs Player Props &amp; PrizePicks Picks | CGPropz', 'KBO player props, with the full board.'],
   ['/nfl-player-props', 'NFL player props | CGPropz', 'NFL player props'],
   ['/wnba-player-props', 'WNBA player props | CGPropz', 'WNBA player props'],
-  ['/nba-player-props', 'NBA player props | CGPropz', 'NBA player props'],
+  ['/nba-player-props', 'NBA Player Props Today &amp; PrizePicks Picks | CGPropz', 'NBA player props, with the full board.'],
   ['/nhl-player-props', 'NHL player props | CGPropz', 'NHL player props'],
   ['/guides/cg-score', 'How CG Score Works: Projection vs Line | CGPropz', 'How CG Score Works'],
   ['/guides/start-here', 'Start Here: How to Read Player Props | CGPropz', 'Start Here: How to Read Player Props on CGPropz'],
@@ -273,6 +273,19 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
   const builtMissing = readFileSync(join(uiRoot, 'dist/404.html'), 'utf8')
   assert.match(builtMissing, /<h1>Page not found<\/h1>/)
   assert.equal(existsSync(join(uiRoot, 'dist/data/prizepicks_props.json')), false)
+
+  for (const file of ['dist/nba-player-props.html', 'dist/kbo-player-props.html']) {
+    const built = readFileSync(join(uiRoot, file), 'utf8')
+    assert.equal(built.includes('{{'), false, file)
+    assert.equal(built.includes('<!--'), false, file)
+    const json = built.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)
+    assert.ok(json, file)
+    const data = JSON.parse(json[1])
+    const faq = data['@graph'].find((node) => node['@type'] === 'FAQPage')
+    assert.ok(faq?.mainEntity?.length, file)
+    assert.equal(data['@graph'].some((node) => node['@type'] === 'Organization'), true, file)
+    assert.equal(data['@graph'].some((node) => node['@type'] === 'BreadcrumbList'), true, file)
+  }
 })
 
 async function brokenInternalLinks(html, origin, homeHtml) {

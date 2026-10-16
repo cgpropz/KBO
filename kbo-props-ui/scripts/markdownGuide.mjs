@@ -62,6 +62,8 @@ export function inlineMarkdown(raw) {
     const link = links[Number(index)];
     return `<a href="${escapeHtml(link.href)}">${inlineMarkdown(link.label)}</a>`;
   });
+  // A footnote mark sits on a number (21*). A doubled asterisk is still bold.
+  html = html.replace(/(\d)\*(?!\*)/g, '$1&#42;');
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   return html;
@@ -89,6 +91,11 @@ export function renderMarkdown(src) {
     const line = lines[i];
     if (!line.trim()) { i += 1; continue; }
     if (line.trim() === '---') { out.push('<hr />'); i += 1; continue; }
+    if (line.startsWith('\\* ')) {
+      out.push(`<p>* ${inlineMarkdown(line.slice(3))}</p>`);
+      i += 1;
+      continue;
+    }
     if (line.startsWith('```')) {
       i += 1;
       while (i < lines.length && !lines[i].startsWith('```')) i += 1;
@@ -144,7 +151,7 @@ export function renderMarkdown(src) {
       out.push(`<ol>\n${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('\n')}\n</ol>`);
       continue;
     }
-    const question = line.match(/^\*\*(.+)\*\*\s*$/);
+    const question = line.match(/^\*\*([^*]+)\*\*\s*$/);
     if (question) {
       out.push(`<h3>${inlineMarkdown(question[1])}</h3>`);
       i += 1;
@@ -169,7 +176,7 @@ export function extractFaqs(body) {
   let current = null;
   for (const line of lines.slice(start + 1)) {
     if (/^##\s+/.test(line)) break;
-    const question = line.match(/^\*\*(.+)\*\*\s*$/);
+    const question = line.match(/^\*\*([^*]+)\*\*\s*$/);
     if (question) {
       if (current) faqs.push(current);
       current = { q: question[1].trim(), a: '' };
@@ -196,8 +203,12 @@ function pushAndClose(faqs, current) {
   return null;
 }
 
+function faqJsonBlock() {
+  return /\*\*JSON-LD(?: \([^)]*\))?\*\*\s*```json\s*([\s\S]*?)```/;
+}
+
 export function extractFaqPage(text) {
-  const match = String(text).match(/\*\*JSON-LD \(FAQPage\)\*\*\s*```json\s*([\s\S]*?)```/);
+  const match = String(text).match(faqJsonBlock());
   if (!match) return null;
   const parsed = JSON.parse(match[1]);
   if (parsed['@type'] !== 'FAQPage' || !Array.isArray(parsed.mainEntity)) {
@@ -333,7 +344,7 @@ export function stripGuideSource(markdown) {
     }
   }
   const faqPage = extractFaqPage(text);
-  text = text.replace(/\*\*JSON-LD \(FAQPage\)\*\*\s*```json[\s\S]*?```/g, '').trim();
+  text = text.replace(faqJsonBlock(), '').trim();
   return { meta, body: text, faqPage };
 }
 
