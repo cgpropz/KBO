@@ -8,7 +8,6 @@ export const LANDING_SPORTS = [
   { id: 'nhl', name: 'NHL', sportName: 'Hockey', props: 'Shots · Points · Saves', ds: 'nhl_projections', dev: 'nhl/projections.json', lineups: 'nhl_lineups', lineupsDev: 'nhl/lineups.json' },
 ]
 
-// NFL is the default sport on this landing. The free preview is off, so the
-// phone can be empty. One dataset still loads with the hero; the other
-// boards wait for a scroll.
+// Featured sport on the public landing: the hero fetch, the phone, and the
+// default tabs. NFL lineups load with that fetch. KBO has no lineup file.
 export const HERO_LANDING_SPORT_ID = 'nfl'

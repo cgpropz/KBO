@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { HERO_LANDING_SPORT_ID } from '../src/landingSports.js'
 import { nflHubRows, nhlHubRows } from '../src/memberHub.js'
 import {
   BOARD_QA_ALLOWLIST,
@@ -72,8 +73,7 @@ test('the public landing uses v1 copy and does not invent reviews or stats', () 
   assert.equal(landing.includes('subscriber-count'), false)
   assert.equal(landing.includes('>Members<'), false)
   assert.equal((landing.match(/src="\/favicon\.svg"/g) || []).length, 1)
-  assert.match(landing, /useState\('NFL'\)/)
-  assert.match(sports, /HERO_LANDING_SPORT_ID = 'nfl'/)
+  assert.match(landing, /useState\(HERO_SPORT\.name\)/)
   assert.match(landing, /loading="lazy"/)
   assert.match(landing, /fitImage\(/)
 })
@@ -94,6 +94,17 @@ test('last-5 hit rates need a real five-game log', () => {
   assert.equal(long.l10.hits <= long.l10.games, true)
   assert.equal(publicPhoneRows(rows).some((row) => row.player === 'Short'), true)
   assert.equal(publicPhoneRows(rows, 2).length, 2)
+})
+
+test('the public landing features NFL on the hero, phone, and sport tabs', () => {
+  assert.equal(HERO_LANDING_SPORT_ID, 'nfl')
+  assert.match(sports, /HERO_LANDING_SPORT_ID = 'nfl'/)
+  assert.match(landing, /useState\(HERO_SPORT\.name\)/)
+  assert.match(landing, /publicPhoneRows\(heroState\?\.rows/)
+  assert.equal(/publish\(HERO_SPORT, snap, null\)/.test(landing), false)
+  assert.match(landing, /HERO_SPORT\.lineups/)
+  assert.equal(/setSportId\(withRows\.id\)/.test(landing), false)
+  assert.equal(/setHitSportId\(withHits\.id\)/.test(landing), false)
 })
 
 test('the public landing does not open a Stripe Checkout Session on load', () => {

@@ -109,7 +109,7 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
   const [boards, setBoards] = useState({});
   const [markets, setMarkets] = useState(null);
   const [boardApi, setBoardApi] = useState(null);
-  const [league, setLeague] = useState('NFL');
+  const [league, setLeague] = useState(HERO_SPORT.name);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
 
@@ -167,16 +167,24 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
       await publish(sport, snap, lineupData);
     };
 
-    // One /api/data call while the hero paints. Its rows fill the phone.
-    // Every other board waits until a data section is scrolled into view.
+    // The featured sport loads while the hero paints, lineups included.
+    // Its rows are the only ones on the phone. Every other board waits
+    // until a data section is scrolled into view.
     const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
-    heroSnap.then((snap) => {
+    heroSnap.then(async (snap) => {
       if (!active) return null;
       if (snap === 'error') {
         setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
         return null;
       }
-      return publish(HERO_SPORT, snap, null);
+      let lineupData = null;
+      if (HERO_SPORT.lineups) {
+        try {
+          const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev, 'low');
+          lineupData = lineupSnap?.data ?? null;
+        } catch { /* a missing injury report still shows the board */ }
+      }
+      return publish(HERO_SPORT, snap, lineupData);
     });
 
     const jobs = [
