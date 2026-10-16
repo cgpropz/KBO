@@ -224,6 +224,7 @@ class DvpRankTests(unittest.TestCase):
             'prop': 'Rush Yards',
             'line': 2.5,
             'start_time': '2026-10-18T17:00:00+00:00',
+            'prizepicks_fetch_count': 1,
         }]
         # The board slug is not a PrizePicks id, so it must not be marked on its own.
         slug_only = [{'id': 'jj-mccarthy-rush-yards', 'player': 'J.J. McCarthy', 'prop': 'Rush Yards'}]

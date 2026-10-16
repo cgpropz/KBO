@@ -34,7 +34,7 @@ class FutureAndSlateTests(unittest.TestCase):
     def test_a_started_game_is_never_marked_removed(self):
         current = [_row("15830428", start=STARTED)]
         merged = flag_missing_seen_projections(
-            [_row("15830428", start=STARTED)],
+            [_row("15830428", start=STARTED, prizepicks_fetch_count=1)],
             current,
             ["999"],
             fetch_ok=True,
@@ -44,9 +44,34 @@ class FutureAndSlateTests(unittest.TestCase):
         self.assertNotIn("removed", merged[0])
         self.assertNotIn("pp_status", merged[0])
 
-    def test_a_missing_future_id_on_this_slate_is_flagged(self):
+    def test_a_missing_previous_fetch_count_flags_nothing(self):
+        # The first run after merge has no stored count, so a missing id is
+        # not treated as pulled. The new count is stamped for the next run.
         merged = flag_missing_seen_projections(
             [_row("15830428")],
+            [_row("1")],
+            ["1"],
+            fetch_ok=True,
+            now=NOW,
+        )
+        self.assertEqual([row["projection_id"] for row in merged], ["1"])
+        self.assertNotIn("removed", merged[0])
+        self.assertNotIn("pp_status", merged[0])
+        self.assertEqual(merged[0]["prizepicks_fetch_count"], 1)
+
+        zeroed = flag_missing_seen_projections(
+            [_row("15830428", prizepicks_fetch_count=0)],
+            [_row("1")],
+            ["1"],
+            fetch_ok=True,
+            now=NOW,
+        )
+        self.assertFalse(any(row.get("removed") for row in zeroed))
+        self.assertEqual(zeroed[0]["prizepicks_fetch_count"], 1)
+
+    def test_a_missing_future_id_on_this_slate_is_flagged(self):
+        merged = flag_missing_seen_projections(
+            [_row("15830428", prizepicks_fetch_count=1)],
             [_row("1")],
             ["1"],
             fetch_ok=True,
@@ -58,7 +83,7 @@ class FutureAndSlateTests(unittest.TestCase):
 
     def test_carried_rows_leave_after_start_and_after_the_slate(self):
         started = flag_missing_seen_projections(
-            [_row("15830428", start=STARTED)],
+            [_row("15830428", start=STARTED, prizepicks_fetch_count=1)],
             [_row("1")],
             ["1"],
             fetch_ok=True,
@@ -68,7 +93,7 @@ class FutureAndSlateTests(unittest.TestCase):
 
         next_slate = "2026-10-20T01:00:00+00:00"
         pruned = flag_missing_seen_projections(
-            [_row("15830428", start=next_slate)],
+            [_row("15830428", start=next_slate, prizepicks_fetch_count=1)],
             [_row("1")],
             ["1"],
             fetch_ok=True,
@@ -97,7 +122,7 @@ class ShrinkAndRestoreTests(unittest.TestCase):
     def test_rows_restored_for_a_team_without_logs_are_not_flagged(self):
         ana = _row("42", team="ANA")
         merged = flag_missing_seen_projections(
-            [ana, _row("15830428")],
+            [ana, _row("15830428", prizepicks_fetch_count=1)],
             [ana, _row("1")],
             ["1"],
             fetch_ok=True,
@@ -181,13 +206,30 @@ class PagingTests(unittest.TestCase):
         self.assertIsInstance(error, RuntimeError)
 
 
+BUILD_STEPS = {
+    "nhl-refresh.yml": "Build the NHL board and lineups",
+    "nhl-board-snapshot.yml": "Build the NHL board",
+    "nfl-refresh.yml": "Build current NFL projections and starting lineups",
+    "nfl-odds-live.yml": "Build current NFL projections and starting lineups",
+}
+
+
+def _named_step(text: str, name: str) -> str:
+    marker = f"- name: {name}\n"
+    start = text.index(marker)
+    rest = text[start + len(marker):]
+    nxt = rest.find("\n      - ")
+    return rest if nxt < 0 else rest[:nxt]
+
+
 class PublishedBoardTests(unittest.TestCase):
-    def test_a_missing_local_file_reads_the_supabase_snapshot(self):
+    def test_a_missing_local_file_reads_with_the_anon_key(self):
         seen = {}
 
         def get(url, headers):
             seen["url"] = url
             seen["key"] = headers["apikey"]
+            seen["auth"] = headers["Authorization"]
             return [{"data": [_row("15830428")]}]
 
         rows = previous_board_rows(
@@ -195,23 +237,58 @@ class PublishedBoardTests(unittest.TestCase):
             "nhl_projections",
             env={
                 "SUPABASE_URL": "https://example.supabase.co",
+                "SUPABASE_ANON_KEY": "anon-key",
                 "SUPABASE_SERVICE_ROLE_KEY": "service-role",
             },
             get=get,
         )
         self.assertIn("/rest/v1/nhl_projections?id=eq.1&select=data", seen["url"])
-        self.assertEqual(seen["key"], "service-role")
+        self.assertEqual(seen["key"], "anon-key")
+        self.assertEqual(seen["auth"], "Bearer anon-key")
         self.assertEqual(rows[0]["projection_id"], "15830428")
 
-    def test_a_local_board_wins_and_the_checkout_does_not_keep_one(self):
+    def test_the_service_role_is_not_used_when_anon_is_denied(self):
+        called = {"n": 0}
+
+        def get(url, headers):
+            called["n"] += 1
+            raise PermissionError("401 permission denied for table nhl_projections")
+
+        denied = previous_board_rows(
+            Path("/tmp/cgpropz-no-such-projections.json"),
+            "nhl_projections",
+            env={
+                "VITE_SUPABASE_URL": "https://example.supabase.co",
+                "VITE_SUPABASE_ANON_KEY": "anon-key",
+                "SUPABASE_SERVICE_ROLE_KEY": "service-role",
+            },
+            get=get,
+        )
+        self.assertEqual(denied, [])
+        self.assertEqual(called["n"], 1)
+
+        called["n"] = 0
+        no_anon = previous_board_rows(
+            Path("/tmp/cgpropz-no-such-projections.json"),
+            "nfl_projections",
+            env={
+                "SUPABASE_URL": "https://example.supabase.co",
+                "SUPABASE_SERVICE_ROLE_KEY": "service-role",
+            },
+            get=get,
+        )
+        self.assertEqual(no_anon, [])
+        self.assertEqual(called["n"], 0)
+
+    def test_a_local_board_wins_and_build_steps_do_not_get_the_service_key(self):
         gitignore = Path(".gitignore").read_text(encoding="utf-8")
         self.assertIn("nhl/projections.json", gitignore)
         self.assertIn("nfl/projections.json", gitignore)
-        for name in ("nhl-refresh.yml", "nfl-refresh.yml", "nfl-odds-live.yml", "nhl-board-snapshot.yml"):
+        for name, step in BUILD_STEPS.items():
             text = Path(".github/workflows", name).read_text(encoding="utf-8")
             self.assertIn("actions/checkout", text)
             self.assertNotIn("download-artifact", text)
-            self.assertIn("SUPABASE_SERVICE_ROLE_KEY", text)
+            self.assertNotIn("SUPABASE_SERVICE_ROLE_KEY", _named_step(text, step))
 
         folder = Path("/tmp/cgpropz-board-test")
         folder.mkdir(exist_ok=True)
@@ -226,7 +303,7 @@ class PublishedBoardTests(unittest.TestCase):
         rows = previous_board_rows(
             local,
             "nfl_projections",
-            env={"SUPABASE_URL": "https://example.supabase.co", "SUPABASE_SERVICE_ROLE_KEY": "k"},
+            env={"SUPABASE_URL": "https://example.supabase.co", "SUPABASE_ANON_KEY": "anon-key"},
             get=get,
         )
         self.assertEqual(rows[0]["projection_id"], "local")

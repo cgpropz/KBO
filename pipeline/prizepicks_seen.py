@@ -179,9 +179,10 @@ def flag_missing_seen_projections(
 
     Started or finished games are never marked removed. Carried rows leave
     after their start, and they leave when their slate date is no longer on
-    the board. A 403, an error, an empty id list, or a fetch more than about
-    30% smaller than the last one marks nothing. Rows restored for a team
-    with no current logs (exclude_teams) are not flagged.
+    the board. A 403, an error, an empty id list, a missing previous fetch
+    count, or a fetch more than about 30% smaller than the last one marks
+    nothing. Rows restored for a team with no current logs (exclude_teams)
+    are not flagged.
     """
     current_rows = [dict(row) for row in current or [] if isinstance(row, dict)]
     if not fetch_ok:
@@ -189,7 +190,10 @@ def flag_missing_seen_projections(
     fetched = {str(item).strip() for item in fetched_ids or [] if str(item).strip()}
     if not fetched:
         return current_rows
-    if fetch_shrunk(previous_fetch_count(previous), len(fetched)):
+    # No stored count means this is the first guarded run (or a board from
+    # before the count existed). Do not treat every absent id as pulled.
+    prior_count = previous_fetch_count(previous)
+    if prior_count <= 0 or fetch_shrunk(prior_count, len(fetched)):
         _stamp_fetch_count(current_rows, len(fetched))
         return current_rows
     moment = now or datetime.now(timezone.utc)
@@ -376,8 +380,9 @@ def rows_from_supabase_body(body) -> list:
     return []
 
 
-def _service_role_key(env) -> str:
-    for name in ("SUPABASE_SERVICE_ROLE_KEY", "VITE_SUPABASE_SERVICE_ROLE_KEY"):
+def _anon_key(env) -> str:
+    """Publishable client key. The service role is never used for this read."""
+    for name in ("VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"):
         text = str(env.get(name) or "").replace("\\n", "").strip().strip('"').strip("'")
         if text:
             return text
@@ -385,10 +390,14 @@ def _service_role_key(env) -> str:
 
 
 def load_published_board(table: str, *, env=None, get=None) -> list:
-    """Read the published board snapshot. Empty when the key or the row is missing."""
+    """GET the published board with the anon key.
+
+    Empty when the key is missing or Postgres denies the anon role. That
+    denial is not retried with the service role.
+    """
     env = os.environ if env is None else env
     base = str(env.get("SUPABASE_URL") or env.get("VITE_SUPABASE_URL") or "").strip()
-    key = _service_role_key(env)
+    key = _anon_key(env)
     if not base or not key:
         return []
     url = published_board_url(base, table)
@@ -415,8 +424,10 @@ def previous_board_rows(paths, table: str, *, env=None, get=None) -> list:
     """Local board file when this checkout has one, otherwise the Supabase snapshot.
 
     GitHub Actions checks out a clean tree. nfl/projections.json and
-    nhl/projections.json are gitignored and are not restored from an artifact,
-    so a workflow run has to read nhl_projections or nfl_projections (id = 1).
+    nhl/projections.json are gitignored and are not restored from an artifact.
+    The fallback is a GET of nhl_projections or nfl_projections (id = 1) with
+    the anon key. Row-level security currently denies that role, so a blocked
+    read leaves no previous board instead of using the service role.
     """
     if isinstance(paths, (str, Path)):
         paths = [paths]

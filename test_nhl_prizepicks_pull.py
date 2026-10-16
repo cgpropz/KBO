@@ -77,6 +77,7 @@ class PrizePicksPullTests(unittest.TestCase):
             "line": 2.5,
             "oddsType": "standard",
             "start_time": "2026-10-17T01:00:00+00:00",
+            "prizepicks_fetch_count": 1,
         }]
         other = [{
             "id": "15825520",
