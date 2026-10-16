@@ -119,7 +119,12 @@ def dfs_scraper(odds_type='standard'):
             PPname = included['attributes']['name']
             ppteam = included['attributes'].get('team', 'N/A')
             ppleague = included['attributes'].get('league', 'N/A')
-            library[PPname_id] = {'name': PPname, 'team': ppteam, 'league': ppleague}
+            library[PPname_id] = {
+                'name': PPname,
+                'team': ppteam,
+                'league': ppleague,
+                'image_url': included['attributes'].get('image_url') or '',
+            }
 
     for ppdata in prizepicks['data']:
         PPid = ppdata.get('relationships', {}).get('new_player', {}).get('data', {}).get('id', 'N/A')
@@ -137,14 +142,19 @@ def dfs_scraper(odds_type='standard'):
         pplist.append(ppinfo)
 
     for element in pplist:
-        player_data = library.get(element['name_id'], {"name": "Unknown", "team": "N/A", "league": "N/A"})
-        element.update({"Name": player_data['name'], "Team": player_data['team'], "League": player_data['league']})
+        player_data = library.get(element['name_id'], {"name": "Unknown", "team": "N/A", "league": "N/A", "image_url": ""})
+        element.update({
+            "Name": player_data['name'],
+            "Team": player_data['team'],
+            "League": player_data['league'],
+            "Image URL": player_data.get('image_url') or '',
+        })
         del element['name_id']
 
     df = pd.DataFrame([
-        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''))
+        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''), e.get('Image URL', ''))
         for e in pplist if e['League'] == 'WNBA' and '+' not in e['Name']
-    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate'])
+    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate', 'Image URL'])
 
     if not df.empty:
         parsed_dates = pd.to_datetime(df['GameDate'], errors='coerce').dropna()
@@ -184,7 +194,7 @@ def update_google_sheet(df):
         logging.debug("Worksheet PP_ODDS2 accessed")
 
         logging.debug("Clearing range A1:H")
-        worksheet.batch_clear(['A1:H'])
+        worksheet.batch_clear(['A1:I'])
 
         logging.debug("Uploading dataframe to Google Sheet")
         set_with_dataframe(worksheet, df)

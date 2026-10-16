@@ -12,6 +12,7 @@ import {
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
+import { landingFallbackBody } from './_landingFallback.js';
 
 export const PRIVATE_DATA_CACHE = 'private, no-store, max-age=0';
 export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300';
@@ -391,6 +392,8 @@ async function handleNhlRequest(req, res, client, ds) {
     row = await readSnapshot(client, spec.table);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    const fallback = landingFallbackBody(ds, req.headers?.authorization);
+    if (fallback) return sendData(req, res, fallback, false);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
       return res.status(503).json({
         error: 'Dataset temporarily unavailable',
@@ -400,7 +403,11 @@ async function handleNhlRequest(req, res, client, ds) {
     }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
+  if (!row) {
+    const fallback = landingFallbackBody(ds, req.headers?.authorization);
+    if (fallback) return sendData(req, res, fallback, false);
+    return res.status(404).json({ error: 'Dataset not published yet' });
+  }
 
   const shaped = decision === 'full'
     ? { data: row.data, preview: false, lockedCount: 0 }
@@ -495,12 +502,31 @@ export async function handleDataRequest(req, res, client) {
     return handleNbaRequest(req, res, client || getClient(), ds);
   }
   if (isNhlDataset(ds)) {
-    return handleNhlRequest(req, res, client || getClient(), ds);
+    if (!client) {
+      try {
+        client = getClient();
+      } catch (err) {
+        console.error('[api/data] client unavailable:', err.message);
+        const fallback = landingFallbackBody(ds, req.headers?.authorization);
+        if (fallback) return sendData(req, res, fallback, false);
+        return res.status(503).json({ error: 'Dataset unavailable' });
+      }
+    }
+    return handleNhlRequest(req, res, client, ds);
   }
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) return res.status(400).json({ error: 'Unknown dataset' });
 
-  client = client || getClient();
+  if (!client) {
+    try {
+      client = getClient();
+    } catch (err) {
+      console.error('[api/data] client unavailable:', err.message);
+      const fallback = landingFallbackBody(ds, req.headers?.authorization);
+      if (fallback) return sendData(req, res, fallback, false);
+      return res.status(503).json({ error: 'Dataset unavailable' });
+    }
+  }
 
   let tier = 'free';
   try {
@@ -519,6 +545,8 @@ export async function handleDataRequest(req, res, client) {
     row = await readSnapshot(client, spec.table);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    const fallback = landingFallbackBody(ds, req.headers?.authorization);
+    if (fallback) return sendData(req, res, fallback, false);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
       return res.status(503).json({
         error: 'Dataset temporarily unavailable',

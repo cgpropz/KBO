@@ -31,7 +31,7 @@ concurrency:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: kbo-props-ui
@@ -52,10 +52,16 @@ jobs:
       - name: Vercel Hobby function limit
         run: node scripts/check-function-limit.mjs
 
+      - name: Bake the public NFL preview
+        run: node scripts/bake-landing-preview.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Deploy preview
         id: preview
         run: |
-          npm i -g vercel@latest
+          npm i -g vercel@64.2.0
           url=$(vercel deploy --token "$VERCEL_TOKEN" --yes)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
@@ -63,3 +69,20 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Screenshot and Lighthouse the preview
+        run: node scripts/preview-audit.mjs
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Save preview audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-audit
+          path: kbo-props-ui/preview-audit/*
+          if-no-files-found: ignore

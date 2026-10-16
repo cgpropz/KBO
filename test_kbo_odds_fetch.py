@@ -87,7 +87,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(source, "fresh")
         self.assertEqual(len(frame), 1)
         self.assertEqual(list(frame.columns), [
-            "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time",
+            "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time", "Image URL",
         ])
         self.assertEqual(calls[0]["params"]["league_id"], odds.KBO_LEAGUE_ID)
         self.assertEqual(sleeps, [5])

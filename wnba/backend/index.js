@@ -374,6 +374,8 @@ function rowsToLines(rows) {
     if (EXCLUDED_PP_PROPS.has(statLabel)) return;
     const versus = String(row.Versus || '').trim() || null;
     const gameDate = String(row.GameDate || '').trim() || null;
+    const imageUrl = String(row['Image URL'] || row.image_url || row.imageUrl || '').trim();
+    if (imageUrl) lines[name].imageUrl = imageUrl;
     lines[name].__allProps[statLabel] = {
       line,
       versus,
@@ -980,6 +982,7 @@ app.get('/api/projections/v2', async (req, res) => {
           teamFull:  teamMappings[team]?.fullName || team,
           teamColor: teamMappings[team]?.color    || '#FF6900',
           position,  image: playerImages[name] || null,
+          ppImageUrl: ppPlayer.imageUrl || null,
           dvpOpponent,
           spread: spreads[team] ?? null,
           gp: 0, avgMins: 0, dvpFactor: DVP_RANK_NEUTRAL,
@@ -1028,6 +1031,7 @@ app.get('/api/projections/v2', async (req, res) => {
         teamFull:  teamMappings[team]?.fullName || team,
         teamColor: teamMappings[team]?.color    || '#FF6900',
         position,  image: playerImages[name] || null,
+        ppImageUrl: ppPlayer.imageUrl || null,
         gp:        games.length,
         avgMins:   parseFloat(avgMins.toFixed(1)),
         dvpOpponent,

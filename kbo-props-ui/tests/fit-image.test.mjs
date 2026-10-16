@@ -8,6 +8,17 @@ test('local team logos become the small webp file', () => {
   assert.equal(fitImage('/team-logos/doosan.webp', 40), '/team-logos/doosan.webp')
 })
 
+test('PrizePicks headshots resize to a small webp through the image proxy', () => {
+  const headshot = 'https://static.prizepicks.com/images/players/NFL/Xavier_Hutchinson_NFL_player_abcDEF123.webp'
+  assert.equal(isRemoteHeadshotOrLogo(headshot), true)
+  assert.equal(fitImage(headshot, 32), `/api/img?src=${encodeURIComponent(headshot)}&w=64`)
+  assert.equal(fitImage(headshot, 48), `/api/img?src=${encodeURIComponent(headshot)}&w=96`)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NHL/Evgeni_Malkin__NHL_player_abc.webp'), true)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NHL/Jean-Gabriel_Pageau_NHL_player_abc.webp'), true)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/players/NFL/../../secret.webp'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/other/a.webp'), false)
+})
+
 test('espn and nhl headshots go through the same-origin resizer', () => {
   const headshot = 'https://a.espncdn.com/i/headshots/nfl/players/full/15818.png'
   const logo = 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png'
