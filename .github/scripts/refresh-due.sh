@@ -5,6 +5,11 @@
 # workflow_dispatch always refreshes. This script does not sleep.
 set -uo pipefail
 
+# Repo root. `python3 -m pipeline...` puts this directory on sys.path.
+# Running the file as a script puts pipeline/ on sys.path instead, and
+# `import pipeline` crashes with ModuleNotFoundError.
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+
 WF="${1:?workflow file}"
 SPORT="${2:?sport}"
 
@@ -23,10 +28,17 @@ if [[ "${GITHUB_EVENT_NAME:-}" == "workflow_dispatch" ]]; then
 fi
 
 code=0
-python3 pipeline/refresh_window.py --sport "$SPORT" || code=$?
-if [[ "$code" -ne 0 ]]; then
-  write_due false "Outside the ${SPORT} game window (exit ${code}); not refreshing."
+python3 -m pipeline.refresh_window --sport "$SPORT" || code=$?
+# Exit 2 is the only outside-window signal (including an unreadable schedule).
+# Any other non-zero exit is a broken check and must fail the job. Treating
+# every failure as "not due" hid ModuleNotFoundError and left the run green.
+if [[ "$code" -eq 2 ]]; then
+  write_due false "Outside the ${SPORT} game window; not refreshing."
   exit 0
+fi
+if [[ "$code" -ne 0 ]]; then
+  echo "Window check failed for ${SPORT} (exit ${code})." >&2
+  exit "$code"
 fi
 
 STEP="$(python3 -c 'from pipeline.refresh_due import HEAVY_STEP; print(HEAVY_STEP)')"
@@ -44,9 +56,9 @@ while IFS= read -r id; do
     recent=1
     break
   fi
-done < <(printf '%s' "$runs_json" | python3 pipeline/refresh_due.py --candidates --current "${GITHUB_RUN_ID:-}")
+done < <(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --candidates --current "${GITHUB_RUN_ID:-}")
 
-decision="$(python3 pipeline/refresh_due.py --decide --forced 0 --inside 1 --recent-heavy "$recent")"
+decision="$(python3 -m pipeline.refresh_due --decide --forced 0 --inside 1 --recent-heavy "$recent")"
 if [[ "$decision" == "true" ]]; then
   write_due true "Inside the ${SPORT} window and no scrape in the last 50 minutes."
 else

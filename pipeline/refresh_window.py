@@ -135,8 +135,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         inside = in_refresh_window(args.sport)
     except Exception as exc:
-        print(f"Window check failed ({exc}); not refreshing", file=sys.stderr)
-        return 2
+        # A crash is not an answer. Only a real outside-window result returns 2.
+        print(f"Window check failed ({exc!r})", file=sys.stderr)
+        return 1
     if inside:
         print(f"{args.sport} is inside the game window")
         return 0

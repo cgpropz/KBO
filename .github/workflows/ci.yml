@@ -27,7 +27,9 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
-      - name: Run tests (offline; no network or secrets needed)
+      # The props window check reaches the public WNBA, NBA, and KBO schedules.
+      # Everything else is offline and uses no secrets.
+      - name: Run tests
         run: python -m pytest -q -p no:cacheprovider test_*.py pipeline/memory ml/tests
 
   frontend:
