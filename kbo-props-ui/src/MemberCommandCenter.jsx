@@ -15,6 +15,7 @@ import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
+import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
 
 /*
@@ -308,14 +309,20 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const { open: nbaOpen } = useNbaOpen();
   const boards = useBoards(access, nbaOpen);
   const recap = useRecap();
-  const firstReady = SPORTS.find((s) => boards[s.id]?.status === 'ready');
-  const [picked, setPicked] = useState(null);
+  const [picked, setPicked] = useState(() => (
+    readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
+  ));
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
   const [panel, setPanel] = useState('today');
   const [bellOpen, setBellOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const selected = SPORTS.find((s) => s.id === picked) || firstReady || SPORTS[0];
+  const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
+  const pickSport = (id) => {
+    setPicked(id);
+    rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, id);
+    setPanel('today');
+  };
   const [seenSport, setSeenSport] = useState(selected.id);
   if (seenSport !== selected.id) {
     setSeenSport(selected.id);
@@ -348,7 +355,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     ready: state.status === 'ready' || state.status === 'empty',
   });
 
-  const openSport = selected.id === 'nba' && !nbaOpen ? 'kbo' : selected.id;
+  const openSport = selected.id === 'nba' && !nbaOpen ? 'nfl' : selected.id;
   const openSlip = (mode) => {
     try { sessionStorage.setItem('cg_slip_mode', mode === 'auto' ? 'auto' : 'build'); } catch { /* ignore */ }
     onEnterSport(openSport, { view: 'slip' });
@@ -410,7 +417,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               type="button"
               className={sport.id === selected.id ? 'is-active' : ''}
               aria-pressed={sport.id === selected.id}
-              onClick={() => { setPicked(sport.id); setPanel('today'); }}
+              onClick={() => pickSport(sport.id)}
             >
               {sport.name}
             </button>
@@ -584,7 +591,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       key={sport.id}
                       type="button"
                       className={`hub-tile ${sport.id === selected.id ? 'is-active' : ''}`}
-                      onClick={() => { setPicked(sport.id); setPanel('today'); }}
+                      onClick={() => pickSport(sport.id)}
                     >
                       <strong>{sport.name}</strong>
                       <span>{sportStatus(sport, boards[sport.id], nbaOpen)}</span>

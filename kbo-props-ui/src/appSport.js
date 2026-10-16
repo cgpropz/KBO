@@ -1,7 +1,8 @@
-// Deep link from a static SEO page into the React app. Sport is stored in
-// localStorage (`cg_sport`), not the URL, and /kbo, /nfl, /wnba, /nba, /nhl
-// redirect to the public write-ups. `/?sport=` opens a board. `/?account=1`
-// opens the member account page (subscription management).
+// Deep link from a static SEO page into the React app. An explicit member
+// pick is stored in localStorage (`cg_member_sport`, see memberSport.js).
+// The old `cg_sport` key is ignored. /kbo, /nfl, /wnba, /nba, /nhl redirect
+// to the public write-ups. `/?sport=` applies to this visit only.
+// `/?account=1` opens the member account page (subscription management).
 
 export const APP_SPORTS = ['kbo', 'wnba', 'nfl', 'nhl', 'nba']
 
