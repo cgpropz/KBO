@@ -47,7 +47,7 @@ test('public rows reuse the board filters and do not apply a QA name allowlist',
 
   const nhl = publicBoardRows(nhlHubRows([
     { player: 'Goal Guy', prop: 'Goal Scorer', line: 0.5, projection: 0.4, oddsType: 'standard', recent: log(12, 1), rankEligible: true },
-    { player: 'Skater', prop: 'Points', line: 0.5, projection: 0.8, oddsType: 'standard', recent: [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0], rankEligible: true },
+    { player: 'Skater', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', recent: [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0], rankEligible: true },
     { player: 'Demon Skater', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'demon', recent: log(12, 1), rankEligible: true },
   ]))
   assert.deepEqual(nhl.map((row) => row.player), ['Skater'])

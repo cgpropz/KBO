@@ -2,6 +2,7 @@ import { cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
+import { prepareBoardRows } from '../src/nhl/pointsGate.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -227,10 +228,15 @@ export function gameAlreadyStarted(row, now = new Date()) {
   return kick <= nowMs;
 }
 
-// Unconfirmed goalies stay off the free top 3.
+// Points overs under 0.69 are already gone. Held overs (0.69 up to 0.86)
+// and unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
   if (row?.rankEligible === false) return -Infinity;
   return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
+}
+
+function nhlBoardPayload(payload) {
+  return Array.isArray(payload) ? prepareBoardRows(payload) : payload;
 }
 
 function nhlSharpScore(row) {
@@ -535,6 +541,10 @@ function hiddenNflPreview(ds, payload) {
 export function shapeForTier(ds, payload, tier) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
+  // Drop Points overs under 0.69 from the paid board and the free preview.
+  // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
+  // visible and not ranked into the free top 3.
+  if (ds === 'nhl_projections') payload = nhlBoardPayload(payload);
   const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };

@@ -3,6 +3,7 @@
 // Scores match the sport boards: KBO cg_projection (falls back to rating),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
+import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
 import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
@@ -320,7 +321,7 @@ export function nflHubRows(data) {
 }
 
 export function nhlHubRows(data) {
-  return (Array.isArray(data) ? data : [])
+  return prepareBoardRows(data)
     .filter((row) => isStandard(row?.oddsType ?? row?.odds_type) && row?.rankEligible !== false)
     .map((row) => {
       const recent = chartValues(row.recent, false)

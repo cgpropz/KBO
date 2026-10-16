@@ -1,5 +1,9 @@
 """Log NHL hits data for a future hits-prop model. Nothing here feeds the board.
 
+Hits are not scaled by rink. Venue is stored so a later grade can see where
+the game was played. There is no in-season rink factor and no rink multiplier
+(nhl.model.hits_rink_multiplier is 1).
+
 Writes, under memory/nhl_hits/ (committed by pipeline/memory/commit_memory.sh):
   lines/<YYYY-MM-DD>.json  PrizePicks NHL "Hits" full-game lines, standard
                            odds_type only (lines_alt/ holds goblin/demon for

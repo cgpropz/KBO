@@ -4,6 +4,7 @@ import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
 import { cgScore, lineMatchesStat } from '../cgScore'
+import { prepareBoardRows } from './pointsGate.js'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -85,7 +86,7 @@ export default function NhlProjections({ onSelectPlayer }) {
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const filtered = projections.filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
+    const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
     return sortBoard(filtered, 'CG Score')
   }, [projections, tab, query])
 
