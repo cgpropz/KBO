@@ -1,0 +1,680 @@
+{
+  "schema": 1,
+  "sport": "nhl",
+  "slate_date": "10/14/2026",
+  "slate_date_iso": "2026-10-14",
+  "period": "2026-10-14",
+  "graded_at": "2026-10-16T01:41:01+00:00",
+  "status": "graded",
+  "evaluation": {
+    "excluded": false
+  },
+  "sources": {
+    "shadow": "shadow.json",
+    "recap": "recap.json",
+    "recap_graded_at": "2026-10-15T15:40:28.836984+00:00"
+  },
+  "params": {
+    "sha256": "e3b0c44298fc1c14",
+    "files": 0,
+    "data_ref": [],
+    "generated_at": [],
+    "git_commit": null,
+    "git_tree": null
+  },
+  "definitions": {
+    "current": "recap.json model_result (the site's pick), same as summary.json",
+    "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
+    "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
+    "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
+    "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
+    "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
+    "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
+  },
+  "overall": {
+    "graded_props": 179,
+    "current": {
+      "hits": 150,
+      "misses": 28,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.842697,
+      "hit_rate_pct": 84.3
+    },
+    "shadow": {
+      "hits": 150,
+      "misses": 28,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.842697,
+      "hit_rate_pct": 84.3
+    },
+    "hit_rate_delta_pct_points": 0.0,
+    "paired": {
+      "n": 178,
+      "current_hits": 150,
+      "shadow_hits": 150,
+      "current_hit_rate_pct": 84.3,
+      "shadow_hit_rate_pct": 84.3
+    },
+    "current_edge": {
+      "hits": 150,
+      "misses": 28,
+      "pushes": 1,
+      "dnps": 2,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.842697,
+      "hit_rate_pct": 84.3
+    },
+    "mae": {
+      "n": 179,
+      "current": 0.8728,
+      "shadow": 0.8728,
+      "delta": 0.0,
+      "sum_abs_current": 156.23,
+      "sum_abs_shadow": 156.23
+    },
+    "mae_shadow_all": {
+      "n": 179,
+      "shadow": 0.8728,
+      "sum_abs": 156.23
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 6,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
+      },
+      "shadow": {
+        "hits": 6,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
+      }
+    }
+  },
+  "candidate_rows_only": {
+    "graded_props": 0,
+    "current": {
+      "hits": 0,
+      "misses": 0,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": null,
+      "hit_rate_pct": null
+    },
+    "shadow": {
+      "hits": 0,
+      "misses": 0,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": null,
+      "hit_rate_pct": null
+    },
+    "hit_rate_delta_pct_points": null,
+    "paired": {
+      "n": 0,
+      "current_hits": 0,
+      "shadow_hits": 0,
+      "current_hit_rate_pct": null,
+      "shadow_hit_rate_pct": null
+    },
+    "current_edge": {
+      "hits": 0,
+      "misses": 0,
+      "pushes": 0,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": null,
+      "hit_rate_pct": null
+    },
+    "mae": {
+      "n": 0,
+      "current": null,
+      "shadow": null,
+      "delta": null,
+      "sum_abs_current": 0.0,
+      "sum_abs_shadow": 0.0
+    },
+    "mae_shadow_all": {
+      "n": 0,
+      "shadow": null,
+      "sum_abs": 0.0
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 0,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": null,
+        "hit_rate_pct": null
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 0,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": null,
+        "hit_rate_pct": null
+      }
+    }
+  },
+  "per_stat": {
+    "Goalie Saves": {
+      "graded_props": 5,
+      "current": {
+        "hits": 4,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "shadow": {
+        "hits": 4,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 5,
+        "current_hits": 4,
+        "shadow_hits": 4,
+        "current_hit_rate_pct": 80.0,
+        "shadow_hit_rate_pct": 80.0
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 2,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.8,
+        "hit_rate_pct": 80.0
+      },
+      "mae": {
+        "n": 5,
+        "current": 3.55,
+        "shadow": 3.55,
+        "delta": 0.0,
+        "sum_abs_current": 17.75,
+        "sum_abs_shadow": 17.75
+      },
+      "mae_shadow_all": {
+        "n": 5,
+        "shadow": 3.55,
+        "sum_abs": 17.75
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Points": {
+      "graded_props": 73,
+      "current": {
+        "hits": 70,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.958904,
+        "hit_rate_pct": 95.9
+      },
+      "shadow": {
+        "hits": 70,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.958904,
+        "hit_rate_pct": 95.9
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 73,
+        "current_hits": 70,
+        "shadow_hits": 70,
+        "current_hit_rate_pct": 95.9,
+        "shadow_hit_rate_pct": 95.9
+      },
+      "current_edge": {
+        "hits": 70,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.958904,
+        "hit_rate_pct": 95.9
+      },
+      "mae": {
+        "n": 73,
+        "current": 0.6015,
+        "shadow": 0.6015,
+        "delta": 0.0,
+        "sum_abs_current": 43.91,
+        "sum_abs_shadow": 43.91
+      },
+      "mae_shadow_all": {
+        "n": 73,
+        "shadow": 0.6015,
+        "sum_abs": 43.91
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 4,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 4,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    },
+    "Power Play Points": {
+      "graded_props": 31,
+      "current": {
+        "hits": 30,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.967742,
+        "hit_rate_pct": 96.8
+      },
+      "shadow": {
+        "hits": 30,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.967742,
+        "hit_rate_pct": 96.8
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 31,
+        "current_hits": 30,
+        "shadow_hits": 30,
+        "current_hit_rate_pct": 96.8,
+        "shadow_hit_rate_pct": 96.8
+      },
+      "current_edge": {
+        "hits": 30,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.967742,
+        "hit_rate_pct": 96.8
+      },
+      "mae": {
+        "n": 31,
+        "current": 0.2652,
+        "shadow": 0.2652,
+        "delta": 0.0,
+        "sum_abs_current": 8.22,
+        "sum_abs_shadow": 8.22
+      },
+      "mae_shadow_all": {
+        "n": 31,
+        "shadow": 0.2652,
+        "sum_abs": 8.22
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Shots On Goal": {
+      "graded_props": 70,
+      "current": {
+        "hits": 46,
+        "misses": 23,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "shadow": {
+        "hits": 46,
+        "misses": 23,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 69,
+        "current_hits": 46,
+        "shadow_hits": 46,
+        "current_hit_rate_pct": 66.7,
+        "shadow_hit_rate_pct": 66.7
+      },
+      "current_edge": {
+        "hits": 46,
+        "misses": 23,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "mae": {
+        "n": 70,
+        "current": 1.2336,
+        "shadow": 1.2336,
+        "delta": 0.0,
+        "sum_abs_current": 86.35,
+        "sum_abs_shadow": 86.35
+      },
+      "mae_shadow_all": {
+        "n": 70,
+        "shadow": 1.2336,
+        "sum_abs": 86.35
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 2,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        },
+        "shadow": {
+          "hits": 2,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        }
+      }
+    }
+  },
+  "props": [
+    {"player":"Adam Engstrom","team":"MTL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.22,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.22,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.22,"abs_err_shadow":0.22},
+    {"player":"Alex Newhook","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.57,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.57,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.43,"abs_err_shadow":1.43},
+    {"player":"Alex Newhook","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.1,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.1,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.1,"abs_err_shadow":0.1},
+    {"player":"Alex Newhook","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.23,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.23,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.77,"abs_err_shadow":1.77},
+    {"player":"Alex Ovechkin","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.68,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.68,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.32,"abs_err_shadow":0.32},
+    {"player":"Alex Ovechkin","team":"WSH","stat":"Points","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.69,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.69,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.31,"abs_err_shadow":0.31},
+    {"player":"Alex Ovechkin","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.23,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.23,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.23,"abs_err_shadow":0.23},
+    {"player":"Alex Ovechkin","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":0.0,"result":"UNDER","current_projection":2.39,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.39,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.39,"abs_err_shadow":2.39},
+    {"player":"Alex Ovechkin","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":2.5,"actual":0.0,"result":"UNDER","current_projection":2.39,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.39,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.39,"abs_err_shadow":2.39},
+    {"player":"Alex Tuch","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":3.0,"result":"OVER","current_projection":0.79,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.79,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.21,"abs_err_shadow":2.21},
+    {"player":"Alex Tuch","team":"WSH","stat":"Points","odds_type":"standard","line":0.5,"actual":3.0,"result":"OVER","current_projection":0.78,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.78,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.22,"abs_err_shadow":2.22},
+    {"player":"Alex Tuch","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.08,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.08,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.08,"abs_err_shadow":0.08},
+    {"player":"Alex Tuch","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":6.5,"actual":3.0,"result":"UNDER","current_projection":1.93,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.93,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.07,"abs_err_shadow":1.07},
+    {"player":"Alexandre Carrier","team":"MTL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.31,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.31,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.31,"abs_err_shadow":0.31},
+    {"player":"Alexandre Texier","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.45,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.45,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.45,"abs_err_shadow":0.45},
+    {"player":"Alexandre Texier","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.07,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.07,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Alexandre Texier","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":2.0,"result":"OVER","current_projection":1.44,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.44,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.56,"abs_err_shadow":0.56},
+    {"player":"Aliaksei Protas","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.61,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.61,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.61,"abs_err_shadow":0.61},
+    {"player":"Aliaksei Protas","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":1.0,"result":"UNDER","current_projection":1.47,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.47,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.47,"abs_err_shadow":0.47},
+    {"player":"Aliaksei Protas","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.48,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.48,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Anthony Beauvillier","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.35,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.35,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.35,"abs_err_shadow":0.35},
+    {"player":"Anthony Beauvillier","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.47,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.47,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.47,"abs_err_shadow":1.47},
+    {"player":"Arber Xhekaj","team":"MTL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.12,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.12,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.12,"abs_err_shadow":0.12},
+    {"player":"Arttu Hyry","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.32,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.32,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.68,"abs_err_shadow":0.68},
+    {"player":"Artturi Lehkonen","team":"COL","stat":"Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.61,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.61,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.39,"abs_err_shadow":0.39},
+    {"player":"Artturi Lehkonen","team":"COL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.05,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.05,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.05,"abs_err_shadow":0.05},
+    {"player":"Artturi Lehkonen","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":3.5,"actual":1.0,"result":"UNDER","current_projection":1.75,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.75,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.75,"abs_err_shadow":0.75},
+    {"player":"Artturi Lehkonen","team":"COL","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.76,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.76,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.76,"abs_err_shadow":0.76},
+    {"player":"Artturi Lehkonen","team":"COL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.76,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.76,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":0.76,"abs_err_shadow":0.76},
+    {"player":"Boone Jenner","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.57,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.57,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.57,"abs_err_shadow":0.57},
+    {"player":"Boone Jenner","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":0.0,"result":"UNDER","current_projection":1.68,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.68,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.68,"abs_err_shadow":1.68},
+    {"player":"Boone Jenner","team":"WSH","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.67,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.67,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.67,"abs_err_shadow":1.67},
+    {"player":"Boone Jenner","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.68,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.68,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.68,"abs_err_shadow":1.68},
+    {"player":"Brent Burns","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.38,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.38,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Brent Burns","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":3.5,"actual":1.0,"result":"UNDER","current_projection":1.7,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.7,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.7,"abs_err_shadow":0.7},
+    {"player":"Brent Burns","team":"COL","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.68,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.68,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.68,"abs_err_shadow":0.68},
+    {"player":"Brent Burns","team":"COL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.69,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.69,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.69,"abs_err_shadow":0.69},
+    {"player":"Brett Kulak","team":"COL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.19,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.19,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.19,"abs_err_shadow":0.19},
+    {"player":"Brock Nelson","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.66,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.66,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.34,"abs_err_shadow":0.34},
+    {"player":"Brock Nelson","team":"COL","stat":"Points","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.66,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.66,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.34,"abs_err_shadow":0.34},
+    {"player":"Brock Nelson","team":"COL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.11,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.11,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.11,"abs_err_shadow":0.11},
+    {"player":"Brock Nelson","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":2.0,"result":"UNDER","current_projection":1.71,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.71,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.29,"abs_err_shadow":0.29},
+    {"player":"Casey DeSmith","team":"DAL","stat":"Goalie Saves","odds_type":"standard","line":26.0,"actual":25.0,"result":"UNDER","current_projection":25.52,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":25.52,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.52,"abs_err_shadow":0.52},
+    {"player":"Charlie Lindgren","team":"WSH","stat":"Goalie Saves","odds_type":"standard","line":23.5,"actual":26.0,"result":"OVER","current_projection":22.6,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":22.6,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.4,"abs_err_shadow":3.4},
+    {"player":"Chris Kreider","team":"MTL","stat":"Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.63,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.63,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.63,"abs_err_shadow":0.63},
+    {"player":"Chris Kreider","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.23,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.23,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.23,"abs_err_shadow":0.23},
+    {"player":"Chris Kreider","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":1.0,"result":"UNDER","current_projection":1.58,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.58,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.58,"abs_err_shadow":0.58},
+    {"player":"Chris Kreider","team":"MTL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.58,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.58,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.58,"abs_err_shadow":0.58},
+    {"player":"Cole Caufield","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":1.02,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.02,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.02,"abs_err_shadow":1.02},
+    {"player":"Cole Caufield","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.38,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.38,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Cole Caufield","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":6.5,"actual":0.0,"result":"UNDER","current_projection":2.83,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.83,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.83,"abs_err_shadow":2.83},
+    {"player":"Cole Caufield","team":"MTL","stat":"Shots On Goal","odds_type":"standard","line":3.5,"actual":0.0,"result":"UNDER","current_projection":2.85,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.85,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":2.85,"abs_err_shadow":2.85},
+    {"player":"Cole Hutson","team":"WSH","stat":"Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.55,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.55,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.45,"abs_err_shadow":0.45},
+    {"player":"Cole Hutson","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.13,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.13,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.13,"abs_err_shadow":0.13},
+    {"player":"Cole Hutson","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.4,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.4,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.6,"abs_err_shadow":1.6},
+    {"player":"Colin Blackwell","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.24,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.24,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.24,"abs_err_shadow":0.24},
+    {"player":"Colin Blackwell","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.79,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.79,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.21,"abs_err_shadow":0.21},
+    {"player":"Devon Toews","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.37,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.37,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.37,"abs_err_shadow":0.37},
+    {"player":"Devon Toews","team":"COL","stat":"Points","odds_type":"goblin","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.36,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.36,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.36,"abs_err_shadow":0.36},
+    {"player":"Devon Toews","team":"COL","stat":"Points","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.36,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.36,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.36,"abs_err_shadow":0.36},
+    {"player":"Devon Toews","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.48,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.48,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.48,"abs_err_shadow":1.48},
+    {"player":"Dylan Strome","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.7,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.7,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.7,"abs_err_shadow":0.7},
+    {"player":"Dylan Strome","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.28,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.28,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.28,"abs_err_shadow":0.28},
+    {"player":"Dylan Strome","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":1.0,"result":"UNDER","current_projection":1.66,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.66,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.66,"abs_err_shadow":0.66},
+    {"player":"Dylan Strome","team":"WSH","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.66,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.66,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.66,"abs_err_shadow":0.66},
+    {"player":"Esa Lindell","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.31,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.31,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.31,"abs_err_shadow":0.31},
+    {"player":"Ethen Frank","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":null,"result":"MISSING","current_projection":0.39,"current_side":"UNDER","current_result":"N/A","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.39,"shadow_side":"UNDER","shadow_result":"N/A","shadow_source":"current","p_over":null,"current_edge_result":"N/A","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Ethen Frank","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":null,"result":"MISSING","current_projection":0.07,"current_side":"UNDER","current_result":"N/A","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.07,"shadow_side":"UNDER","shadow_result":"N/A","shadow_source":"current","p_over":null,"current_edge_result":"N/A","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Gabriel Landeskog","team":"COL","stat":"Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.52,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.52,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Gabriel Landeskog","team":"COL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.07,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.07,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Gabriel Landeskog","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":2.0,"result":"UNDER","current_projection":1.81,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.81,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.19,"abs_err_shadow":0.19},
+    {"player":"Ilya Protas","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.6,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.6,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.4,"abs_err_shadow":1.4},
+    {"player":"Ilya Protas","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.1,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.1,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.9,"abs_err_shadow":0.9},
+    {"player":"Ilya Protas","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":0.0,"result":"UNDER","current_projection":1.24,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.24,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.24,"abs_err_shadow":1.24},
+    {"player":"Jaden Schwartz","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.5,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.5,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.5,"abs_err_shadow":0.5},
+    {"player":"Jaden Schwartz","team":"COL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.07,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.07,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Jaden Schwartz","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.41,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.41,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.59,"abs_err_shadow":1.59},
+    {"player":"Jake Evans","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.34,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.34,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.34,"abs_err_shadow":0.34},
+    {"player":"Jake Oettinger","team":"DAL","stat":"Goalie Saves","odds_type":"standard","line":23.5,"actual":null,"result":"DNP","current_projection":25.6,"current_side":"OVER","current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":25.6,"shadow_side":"OVER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Jakob Chychrun","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.71,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.71,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.71,"abs_err_shadow":0.71},
+    {"player":"Jakob Chychrun","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.23,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.23,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.23,"abs_err_shadow":0.23},
+    {"player":"Jakob Chychrun","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":6.5,"actual":2.0,"result":"UNDER","current_projection":2.42,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.42,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.42,"abs_err_shadow":0.42},
+    {"player":"Jakob Chychrun","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":2.25,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.25,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.25,"abs_err_shadow":0.25},
+    {"player":"Jakub Dobes","team":"MTL","stat":"Goalie Saves","odds_type":"demon","line":37.5,"actual":18.0,"result":"UNDER","current_projection":24.49,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":24.49,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":6.49,"abs_err_shadow":6.49},
+    {"player":"Jakub Dobes","team":"MTL","stat":"Goalie Saves","odds_type":"standard","line":25.0,"actual":18.0,"result":"UNDER","current_projection":24.53,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":24.53,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":6.53,"abs_err_shadow":6.53},
+    {"player":"Jamie Benn","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.5,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.5,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.5,"abs_err_shadow":0.5},
+    {"player":"Jamie Benn","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":3.5,"actual":2.0,"result":"UNDER","current_projection":1.2,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.2,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.8,"abs_err_shadow":0.8},
+    {"player":"Jamie Benn","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":2.0,"result":"OVER","current_projection":1.2,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.2,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":0.8,"abs_err_shadow":0.8},
+    {"player":"Jason Robertson","team":"DAL","stat":"Points","odds_type":"demon","line":3.5,"actual":0.0,"result":"UNDER","current_projection":0.9,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.9,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.9,"abs_err_shadow":0.9},
+    {"player":"Jason Robertson","team":"DAL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.41,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.41,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.41,"abs_err_shadow":0.41},
+    {"player":"Jason Robertson","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":6.5,"actual":3.0,"result":"UNDER","current_projection":2.93,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.93,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Jason Robertson","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":3.0,"actual":3.0,"result":"PUSH","current_projection":2.92,"current_side":"UNDER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.92,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"current","p_over":null,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.08,"abs_err_shadow":0.08},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.57,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.57,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.43,"abs_err_shadow":1.43},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Points","odds_type":"standard","line":0.5,"actual":2.0,"result":"OVER","current_projection":0.51,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.51,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.49,"abs_err_shadow":1.49},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.11,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.11,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.89,"abs_err_shadow":0.89},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":3.0,"result":"UNDER","current_projection":1.78,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.78,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.22,"abs_err_shadow":1.22},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.78,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.78,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.22,"abs_err_shadow":1.22},
+    {"player":"Jordan Kyrou","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.78,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.78,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":1.22,"abs_err_shadow":1.22},
+    {"player":"Josh Anderson","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.4,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.4,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.6,"abs_err_shadow":1.6},
+    {"player":"Josh Anderson","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.06,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.06,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.94,"abs_err_shadow":1.94},
+    {"player":"Josh Manson","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.37,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.37,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.37,"abs_err_shadow":0.37},
+    {"player":"Juraj Slafkovský","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.84,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.84,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.84,"abs_err_shadow":0.84},
+    {"player":"Juraj Slafkovský","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.02,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.02,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.02,"abs_err_shadow":0.02},
+    {"player":"Juraj Slafkovský","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":4.0,"result":"UNDER","current_projection":1.38,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.38,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.62,"abs_err_shadow":2.62},
+    {"player":"Justin Hryckowian","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.37,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.37,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.37,"abs_err_shadow":0.37},
+    {"player":"Justin Hryckowian","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":2.0,"result":"OVER","current_projection":1.12,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.12,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.88,"abs_err_shadow":0.88},
+    {"player":"Justin Sourdif","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.44,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.44,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.44,"abs_err_shadow":0.44},
+    {"player":"Justin Sourdif","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":2.0,"result":"OVER","current_projection":1.05,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.05,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.95,"abs_err_shadow":0.95},
+    {"player":"Kaiden Guhle","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.3,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.3,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.3,"abs_err_shadow":0.3},
+    {"player":"Kirby Dach","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.38,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.38,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Kirby Dach","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.07,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.07,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Lane Hutson","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.92,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.92,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.08,"abs_err_shadow":1.08},
+    {"player":"Lane Hutson","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.27,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.27,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.73,"abs_err_shadow":0.73},
+    {"player":"Lane Hutson","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":2.5,"actual":3.0,"result":"OVER","current_projection":1.51,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.51,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.49,"abs_err_shadow":1.49},
+    {"player":"Lane Hutson","team":"MTL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.51,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.51,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.49,"abs_err_shadow":1.49},
+    {"player":"Lian Bichsel","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.18,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.18,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.18,"abs_err_shadow":0.18},
+    {"player":"Mackenzie Blackwood","team":"COL","stat":"Goalie Saves","odds_type":"standard","line":21.5,"actual":null,"result":"DNP","current_projection":20.68,"current_side":"UNDER","current_result":"DNP","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":20.68,"shadow_side":"UNDER","shadow_result":"DNP","shadow_source":"current","p_over":null,"current_edge_result":"DNP","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Martin Necas","team":"COL","stat":"Points","odds_type":"demon","line":3.5,"actual":0.0,"result":"UNDER","current_projection":1.04,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.04,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.04,"abs_err_shadow":1.04},
+    {"player":"Martin Necas","team":"COL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.28,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.28,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.28,"abs_err_shadow":0.28},
+    {"player":"Martin Necas","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":0.0,"result":"UNDER","current_projection":2.39,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.39,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.39,"abs_err_shadow":2.39},
+    {"player":"Martin Necas","team":"COL","stat":"Shots On Goal","odds_type":"standard","line":2.5,"actual":0.0,"result":"UNDER","current_projection":2.41,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.41,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.41,"abs_err_shadow":2.41},
+    {"player":"Mikko Rantanen","team":"DAL","stat":"Points","odds_type":"demon","line":3.5,"actual":1.0,"result":"UNDER","current_projection":0.93,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.93,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.07,"abs_err_shadow":0.07},
+    {"player":"Mikko Rantanen","team":"DAL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.45,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.45,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.45,"abs_err_shadow":0.45},
+    {"player":"Mikko Rantanen","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":1.0,"result":"UNDER","current_projection":1.95,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.95,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.95,"abs_err_shadow":0.95},
+    {"player":"Mikko Rantanen","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":1.95,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.95,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.95,"abs_err_shadow":0.95},
+    {"player":"Miro Heiskanen","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.62,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.62,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Miro Heiskanen","team":"DAL","stat":"Points","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.62,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.62,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Miro Heiskanen","team":"DAL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.28,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.28,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.28,"abs_err_shadow":0.28},
+    {"player":"Miro Heiskanen","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":2.0,"result":"UNDER","current_projection":1.43,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.43,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.57,"abs_err_shadow":0.57},
+    {"player":"Miro Heiskanen","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":2.0,"result":"OVER","current_projection":1.43,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.43,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.57,"abs_err_shadow":0.57},
+    {"player":"Nathan MacKinnon","team":"COL","stat":"Points","odds_type":"demon","line":3.5,"actual":0.0,"result":"UNDER","current_projection":1.25,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.25,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.25,"abs_err_shadow":1.25},
+    {"player":"Nathan MacKinnon","team":"COL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.32,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.32,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.32,"abs_err_shadow":0.32},
+    {"player":"Nathan MacKinnon","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":7.5,"actual":4.0,"result":"UNDER","current_projection":3.52,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.52,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Nathan MacKinnon","team":"COL","stat":"Shots On Goal","odds_type":"standard","line":3.5,"actual":4.0,"result":"OVER","current_projection":3.52,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.52,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Nazem Kadri","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":2.0,"result":"UNDER","current_projection":0.56,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.56,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.44,"abs_err_shadow":1.44},
+    {"player":"Nazem Kadri","team":"COL","stat":"Points","odds_type":"standard","line":0.5,"actual":2.0,"result":"OVER","current_projection":0.56,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.56,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.44,"abs_err_shadow":1.44},
+    {"player":"Nazem Kadri","team":"COL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.22,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.22,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.22,"abs_err_shadow":0.22},
+    {"player":"Nazem Kadri","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":2.0,"result":"UNDER","current_projection":2.41,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.41,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.41,"abs_err_shadow":0.41},
+    {"player":"Nazem Kadri","team":"COL","stat":"Shots On Goal","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":2.4,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.4,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.4,"abs_err_shadow":0.4},
+    {"player":"Nick Suzuki","team":"MTL","stat":"Points","odds_type":"demon","line":3.5,"actual":1.0,"result":"UNDER","current_projection":1.16,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.16,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.16,"abs_err_shadow":0.16},
+    {"player":"Nick Suzuki","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.52,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.52,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Nick Suzuki","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":3.0,"result":"UNDER","current_projection":1.99,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.99,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.01,"abs_err_shadow":1.01},
+    {"player":"Nicolas Roy","team":"COL","stat":"Points","odds_type":"demon","line":0.5,"actual":null,"result":"MISSING","current_projection":0.35,"current_side":"UNDER","current_result":"N/A","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.35,"shadow_side":"UNDER","shadow_result":"N/A","shadow_source":"current","p_over":null,"current_edge_result":"N/A","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
+    {"player":"Nils Lundkvist","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.22,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.22,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.22,"abs_err_shadow":0.22},
+    {"player":"Noah Dobson","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.51,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.51,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.49,"abs_err_shadow":0.49},
+    {"player":"Noah Dobson","team":"MTL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.06,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.06,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.06,"abs_err_shadow":0.06},
+    {"player":"Noah Dobson","team":"MTL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":5.0,"result":"OVER","current_projection":1.55,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.55,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.45,"abs_err_shadow":3.45},
+    {"player":"Noah Juulsen","team":"COL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.22,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.22,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.22,"abs_err_shadow":0.22},
+    {"player":"Owen Beck","team":"MTL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.32,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.32,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.32,"abs_err_shadow":0.32},
+    {"player":"Parker Kelly","team":"COL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.45,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.45,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.45,"abs_err_shadow":0.45},
+    {"player":"Phillip Danault","team":"MTL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.27,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.27,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.27,"abs_err_shadow":0.27},
+    {"player":"Radek Faksa","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.29,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.29,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.29,"abs_err_shadow":0.29},
+    {"player":"Roope Hintz","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.64,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.64,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.64,"abs_err_shadow":0.64},
+    {"player":"Roope Hintz","team":"DAL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.31,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.31,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.31,"abs_err_shadow":0.31},
+    {"player":"Roope Hintz","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":1.0,"result":"UNDER","current_projection":1.94,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.94,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.94,"abs_err_shadow":0.94},
+    {"player":"Roope Hintz","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":1.94,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.94,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.94,"abs_err_shadow":0.94},
+    {"player":"Ryan Leonard","team":"WSH","stat":"Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.64,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.64,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.64,"abs_err_shadow":0.64},
+    {"player":"Ryan Leonard","team":"WSH","stat":"Points","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.64,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.64,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.64,"abs_err_shadow":0.64},
+    {"player":"Ryan Leonard","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.21,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.21,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.21,"abs_err_shadow":0.21},
+    {"player":"Ryan Leonard","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":1.0,"result":"UNDER","current_projection":1.77,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.77,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.77,"abs_err_shadow":0.77},
+    {"player":"Ryan Leonard","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":2.0,"actual":1.0,"result":"UNDER","current_projection":2.02,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.02,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.02,"abs_err_shadow":1.02},
+    {"player":"Sam Malinski","team":"COL","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.43,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.43,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.57,"abs_err_shadow":0.57},
+    {"player":"Sam Malinski","team":"COL","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":4.0,"result":"OVER","current_projection":1.9,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.9,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.1,"abs_err_shadow":2.1},
+    {"player":"Sam Steel","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.41,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.41,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.41,"abs_err_shadow":0.41},
+    {"player":"Sam Steel","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.12,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.12,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.12,"abs_err_shadow":1.12},
+    {"player":"Scott Wedgewood","team":"COL","stat":"Goalie Saves","odds_type":"standard","line":22.5,"actual":20.0,"result":"UNDER","current_projection":20.81,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":20.81,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.81,"abs_err_shadow":0.81},
+    {"player":"T.J. Hughes","team":"COL","stat":"Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.41,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.41,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.41,"abs_err_shadow":0.41},
+    {"player":"T.J. Hughes","team":"COL","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.24,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.24,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.24,"abs_err_shadow":0.24},
+    {"player":"T.J. Hughes","team":"COL","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":0.0,"result":"UNDER","current_projection":1.95,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.95,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.95,"abs_err_shadow":1.95},
+    {"player":"T.J. Hughes","team":"COL","stat":"Shots On Goal","odds_type":"goblin","line":1.5,"actual":0.0,"result":"UNDER","current_projection":1.94,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.94,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.94,"abs_err_shadow":1.94},
+    {"player":"Thomas Harley","team":"DAL","stat":"Points","odds_type":"demon","line":2.5,"actual":1.0,"result":"UNDER","current_projection":0.42,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.42,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.58,"abs_err_shadow":0.58},
+    {"player":"Thomas Harley","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":3.0,"result":"UNDER","current_projection":1.36,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.36,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.64,"abs_err_shadow":1.64},
+    {"player":"Thomas Harley","team":"DAL","stat":"Shots On Goal","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.35,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.35,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.65,"abs_err_shadow":1.65},
+    {"player":"Timothy Liljegren","team":"WSH","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.27,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.27,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.27,"abs_err_shadow":0.27},
+    {"player":"Tom Wilson","team":"WSH","stat":"Points","odds_type":"demon","line":2.5,"actual":0.0,"result":"UNDER","current_projection":0.82,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.82,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.82,"abs_err_shadow":0.82},
+    {"player":"Tom Wilson","team":"WSH","stat":"Power Play Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.17,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.17,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.17,"abs_err_shadow":0.17},
+    {"player":"Tom Wilson","team":"WSH","stat":"Shots On Goal","odds_type":"demon","line":5.5,"actual":5.0,"result":"UNDER","current_projection":1.76,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.76,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":3.24,"abs_err_shadow":3.24},
+    {"player":"Tom Wilson","team":"WSH","stat":"Shots On Goal","odds_type":"standard","line":2.0,"actual":5.0,"result":"OVER","current_projection":1.82,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.82,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.18,"abs_err_shadow":3.18},
+    {"player":"Tyler Myers","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.15,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.15,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.15,"abs_err_shadow":0.15},
+    {"player":"Tyler Seguin","team":"DAL","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.48,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.48,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Tyler Seguin","team":"DAL","stat":"Points","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.48,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.48,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.48,"abs_err_shadow":0.48},
+    {"player":"Tyler Seguin","team":"DAL","stat":"Power Play Points","odds_type":"demon","line":1.5,"actual":0.0,"result":"UNDER","current_projection":0.15,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.15,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.15,"abs_err_shadow":0.15},
+    {"player":"Tyler Seguin","team":"DAL","stat":"Shots On Goal","odds_type":"demon","line":4.5,"actual":3.0,"result":"UNDER","current_projection":1.39,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.39,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.61,"abs_err_shadow":1.61},
+    {"player":"Vincent Desharnais","team":"WSH","stat":"Points","odds_type":"demon","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.21,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.21,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.21,"abs_err_shadow":0.21},
+    {"player":"Zachary L'Heureux","team":"COL","stat":"Points","odds_type":"demon","line":0.5,"actual":null,"result":"MISSING","current_projection":0.31,"current_side":"UNDER","current_result":"N/A","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.31,"shadow_side":"UNDER","shadow_result":"N/A","shadow_source":"current","p_over":null,"current_edge_result":"N/A","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null}
+  ]
+}
