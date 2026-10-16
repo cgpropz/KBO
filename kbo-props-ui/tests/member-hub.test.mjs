@@ -115,6 +115,20 @@ test('NFL L10 uses the chart window, and a missing stored rate is not 0%', () =>
     line_type: 'standard', recent: [6, 2, 7],
   }])
   assert.equal(short[0].hitRate, null)
+  assert.equal(short[0].hitHits, 2)
+  assert.equal(short[0].hitGames, 3)
+
+  // T.J. Hughes SOG 1.5: seven games, four overs, stored L10 57.1%. The log is
+  // too short to invent an L10, and the drilldown still shows 4/7.
+  const hughes = nhlHubRows([{
+    player: 'T.J. Hughes', team: 'COL', opponent: 'PIT', prop: 'Shots On Goal',
+    line: 1.5, projection: 1.94, oddsType: 'standard', hitRate: 57.1, gamesL10: 7,
+    recent: [1, 0, 2, 3, 1, 4, 2],
+  }])
+  assert.equal(hughes[0].hitRate, 57.1)
+  assert.equal(hughes[0].hitHits, 4)
+  assert.equal(hughes[0].hitGames, 7)
+  assert.equal(topHitRateRows(hughes).length, 0)
 
   const pushed = nflHubRows([{
     player: 'All Push', prop: 'Receiving Yards', line: 15.5, projection: 20,
