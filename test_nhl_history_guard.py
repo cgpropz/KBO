@@ -46,6 +46,129 @@ class FetchHistoryTests(unittest.TestCase):
         self.assertIsNone(body)
         self.assertEqual(calls["n"], 1)
 
+    def _run(self, read, **kw):
+        import nhl.fetch_history as fetch
+
+        original = fetch._read
+        fetch._read = read
+        try:
+            return _download(kw.pop("url", "https://moneypuck.example/2026/skaters/ANA.csv"), **kw)
+        finally:
+            fetch._read = original
+
+    def _clock(self):
+        state = {"t": 0.0}
+        return state, (lambda: state["t"]), (lambda d: state.__setitem__("t", state["t"] + d))
+
+    def test_seven_attempts_with_capped_backoff_and_status(self):
+        calls = {"n": 0}
+        delays = []
+
+        def busy(url):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(url, 502, "bad gateway", None, io.BytesIO(b""))
+
+        report = {}
+        body = self._run(busy, sleep=delays.append, retry_missing=True, report=report,
+                         clock=lambda: 0.0)
+        self.assertIsNone(body)
+        self.assertEqual(calls["n"], 7)
+        self.assertEqual(delays, [1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
+        self.assertEqual(report["status"], "HTTP 502")
+
+    def test_per_file_cap_stops_retries(self):
+        state, clock, sleep = self._clock()
+        calls = {"n": 0}
+
+        def busy(url):
+            calls["n"] += 1
+            state["t"] += 20.0  # each request burns the full read timeout
+            raise urllib.error.HTTPError(url, 503, "busy", None, io.BytesIO(b""))
+
+        report = {}
+        self.assertIsNone(self._run(busy, sleep=sleep, clock=clock, report=report))
+        self.assertLessEqual(state["t"], 90.0 + 20.0)
+        self.assertLess(calls["n"], 7)
+        self.assertIn("time cap", report["status"])
+
+    def test_overall_deadline_skips_the_file(self):
+        calls = {"n": 0}
+
+        def ok(url):
+            calls["n"] += 1
+            return b"a,b\n"
+
+        report = {}
+        self.assertIsNone(self._run(ok, sleep=lambda d: None, clock=lambda: 100.0, deadline=50.0, report=report))
+        self.assertEqual(calls["n"], 0)
+        self.assertEqual(report["status"], "budget")
+
+    def test_retry_after_is_honored(self):
+        import email.message
+
+        calls = {"n": 0}
+        delays = []
+
+        def limited(url):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                headers = email.message.Message()
+                headers["Retry-After"] = "7"
+                raise urllib.error.HTTPError(url, 429, "slow down", headers, io.BytesIO(b""))
+            return b"a,b\n"
+
+        self.assertEqual(self._run(limited, sleep=delays.append, clock=lambda: 0.0), b"a,b\n")
+        self.assertEqual(delays, [7.0])
+
+    def test_current_season_403_retried_three_times_45s_apart(self):
+        calls = {"n": 0}
+        delays = []
+
+        def refused(url):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(url, 403, "refused", None, io.BytesIO(b""))
+
+        report = {}
+        body = self._run(refused, sleep=delays.append, retry_missing=True, report=report,
+                         clock=lambda: 0.0, file_cap=1000.0)
+        self.assertIsNone(body)
+        self.assertEqual(calls["n"], 3)
+        self.assertEqual(delays, [45.0, 45.0])
+        self.assertEqual(report["status"], "HTTP 403")
+
+    def test_prior_season_403_is_not_retried(self):
+        calls = {"n": 0}
+
+        def refused(url):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(url, 403, "refused", None, io.BytesIO(b""))
+
+        body = self._run(refused, url="https://moneypuck.example/2025/skaters/ANA.csv",
+                         sleep=lambda d: None, clock=lambda: 0.0)
+        self.assertIsNone(body)
+        self.assertEqual(calls["n"], 1)
+
+    def test_403_not_in_general_retry_list(self):
+        import nhl.fetch_history as fetch
+
+        self.assertNotIn(403, fetch.RETRY_STATUS)
+
+    def test_connection_error_status_is_reported(self):
+        import nhl.fetch_history as fetch
+
+        def boom(url):
+            raise ConnectionResetError("reset by peer")
+
+        original = fetch._read
+        fetch._read = boom
+        report = {}
+        try:
+            body = _download("https://moneypuck.example/2026/skaters/ANA.csv", sleep=lambda _d: None, report=report)
+        finally:
+            fetch._read = original
+        self.assertIsNone(body)
+        self.assertTrue(report["status"].startswith("ConnectionResetError"))
+
     def test_a_missing_current_season_file_is_loud(self):
         results = [
             ("ok", "/tmp/moneypuck/2026/skaters/BOS.csv"),
