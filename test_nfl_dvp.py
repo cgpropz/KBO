@@ -186,6 +186,27 @@ class DvpRankTests(unittest.TestCase):
         self.assertEqual(row['start_time'], '2026-10-08T20:15:00.000-04:00')
         self.assertEqual(row['opponent'], 'TB')
 
+    def test_slate_keeps_prizepicks_image_url(self):
+        payload = {
+            'included': [
+                {'id': '1', 'attributes': {
+                    'name': 'Dak Prescott', 'team': 'DAL', 'league': 'NFL',
+                    'image_url': 'https://static.prizepicks.com/images/players/NFL/Dak_Prescott_NFL_player_abc.webp',
+                }},
+            ],
+            'data': [
+                {
+                    'relationships': {'new_player': {'data': {'id': '1'}}},
+                    'attributes': {
+                        'stat_type': 'Pass TDs', 'odds_type': 'standard', 'line_score': 1.5,
+                        'description': 'TB', 'start_time': '2026-10-08T20:15:00.000-04:00',
+                    },
+                },
+            ],
+        }
+        row = nfl.slate_records(payload)[0]
+        self.assertEqual(row['image_url'], 'https://static.prizepicks.com/images/players/NFL/Dak_Prescott_NFL_player_abc.webp')
+
     def test_schedule_sets_away_at_home_and_picks_the_kickoff_nearest_the_prop(self):
         rows = [
             {'player': 'Dak Prescott', 'team': 'DAL', 'opponent': 'TB', 'prop': 'Pass TDs', 'line': 1.5, 'start_time': '2026-10-08T20:15:00.000-04:00'},

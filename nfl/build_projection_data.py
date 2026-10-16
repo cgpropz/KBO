@@ -446,6 +446,7 @@ def slate_records(payload):
             'player': player['name'], 'team': team, 'opponent': opponent, 'prop': stat,
             'line': line, 'odds_type': odds_type, 'trending': _trending_count(attrs.get('trending_count')),
             'start_time': text_or_empty(attrs.get('start_time')),
+            'image_url': text_or_empty(player.get('image_url')),
         })
     records = []
     for candidates in grouped.values():
@@ -457,6 +458,7 @@ def slate_records(payload):
             'prop': chosen['prop'], 'line': chosen['line'],
             'odds_type': chosen.get('odds_type') or '',
             'start_time': chosen.get('start_time') or '',
+            'image_url': chosen.get('image_url') or '',
         })
     return records
 
@@ -688,7 +690,9 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'formula_applied': tuned is not None,
         'formula_mode': formula_mode(),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
-        'imageUrl': text_or_empty(player.get('headshot')), 'recent': [round(value, 1) for value in recent],
+        'imageUrl': text_or_empty(player.get('headshot')),
+        'ppImageUrl': text_or_empty(getattr(row, 'image_url', '')),
+        'recent': [round(value, 1) for value in recent],
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,
         'hitRate': l10_rate,
         'gamesPlayed': l10_games, 'snapCount': round(float(snap_counts.get(key, 0)), 1),
