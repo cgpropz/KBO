@@ -571,6 +571,46 @@
     max-width: 108px;
     white-space: normal !important;
   }
+
+  body .b2-name {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+  }
+
+  body .b2-cg b,
+  body .b2-cg-num {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+    font-size: 26px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  body .b2-hd h1 {
+    font-size: 26px !important;
+  }
+
+  body .b2-ml button {
+    min-height: 48px;
+    min-width: 0;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+  }
+
+  body .b2-stat b,
+  body .b2-sum b,
+  body .b2-leg-score {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+  }
+
+  body .b2-save,
+  body .b2-cta button {
+    min-height: 48px;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

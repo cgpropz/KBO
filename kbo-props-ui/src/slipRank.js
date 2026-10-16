@@ -9,7 +9,7 @@ import { breakevenFor } from './prizepicksBreakeven.js'
 export function legCg(row, side) {
   const score = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
   if (score == null || !Number.isFinite(score)) return null
-  return side === 'UNDER' ? (100 - score) : score
+  return side === 'UNDER' || side === 'LESS' ? (100 - score) : score
 }
 
 export function averageCg(rows) {
@@ -49,3 +49,17 @@ export function payoutFor(mode, picks, { altered = false } = {}) {
     altered: altered === true,
   }
 }
+
+const ENTRY = 10
+
+export function payoutDollars(payout, entry = ENTRY) {
+  if (!payout) return ''
+  return String(payout).split('/').map((part) => {
+    const multiplier = Number(String(part).trim().replace(/x$/i, ''))
+    if (!Number.isFinite(multiplier)) return String(part).trim()
+    const dollars = multiplier * entry
+    return Number.isInteger(dollars) ? `$${dollars}` : `$${dollars.toFixed(2)}`
+  }).join(' / ')
+}
+
+export { ENTRY as PAYOUT_ENTRY }
