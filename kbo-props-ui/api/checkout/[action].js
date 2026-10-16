@@ -1,6 +1,7 @@
-// One Serverless Function for GET /api/checkout-session and POST /api/weekly-checkout.
-// vercel.json rewrites those public paths here. The handlers are unchanged.
+// One Serverless Function for checkout lookups and the member billing portal.
+// vercel.json rewrites the public paths here. The handlers are unchanged.
 
+import { handleBillingPortalRequest } from '../_billingPortal.js';
 import { handleCheckoutSessionRequest } from '../_checkoutSession.js';
 import { handleWeeklyCheckoutRequest } from '../_weeklyCheckout.js';
 import { handleOfferCheckoutRequest } from '../_offerCheckout.js';
@@ -13,11 +14,13 @@ export const CHECKOUT_ACTIONS = {
   // 18 Oct 2026 11:59 PM ET or once 25 Founders purchases exist.
   lifetime: (req, res) => handleOfferCheckoutRequest(req, res, { plan: 'lifetime' }),
   founders: (req, res) => handleOfferCheckoutRequest(req, res, { plan: 'founders' }),
+  portal: handleBillingPortalRequest,
 };
 
 const CHECKOUT_ALIASES = {
   'checkout-session': 'session',
   'weekly-checkout': 'weekly',
+  'billing-portal': 'portal',
 };
 
 export default function handler(req, res) {

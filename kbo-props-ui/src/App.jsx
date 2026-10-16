@@ -5,7 +5,7 @@ import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
-import { sportFromSearch } from './appSport'
+import { accountFromSearch, sportFromSearch } from './appSport'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
@@ -46,7 +46,7 @@ function App() {
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
-    if (pauseTokenFromSearch(window.location.search)) return 'pricing';
+    if (pauseTokenFromSearch(window.location.search) || accountFromSearch(window.location.search)) return 'pricing';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
   });
   // Pre-login flow: marketing page first, then the login/signup form.
@@ -59,6 +59,9 @@ function App() {
   const [entry, setEntry] = useState(null);
   const [sport, setSportState] = useState(() => {
     if (typeof window === 'undefined') return 'nfl';
+    // The account page lives on the KBO shell. This visit does not write
+    // cg_member_sport, so the saved member sport stays put.
+    if (accountFromSearch(window.location.search)) return 'kbo';
     return resolveMemberSport({
       search: window.location.search,
       storage: typeof localStorage === 'undefined' ? null : localStorage,
