@@ -35,7 +35,8 @@ function fmtCg(value) {
 
 function Mark({ sport, row, size = 52 }) {
   const sources = markSources(sport, row, size)
-  const [step, setStep] = useState(sources.head ? 'head' : sources.logo ? 'logo' : 'badge')
+  const initial = sources.head ? 'head' : sources.logo ? 'logo' : 'badge'
+  const [step, setStep] = useState(initial)
   if (step === 'head') {
     return (
       <img
@@ -44,19 +45,29 @@ function Mark({ sport, row, size = 52 }) {
         alt=""
         width={size}
         height={size}
+        loading="lazy"
+        decoding="async"
         onError={() => setStep(sources.logo ? 'logo' : 'badge')}
       />
     )
   }
   if (step === 'logo') {
     return (
-      <span className="b2-av">
-        <img src={sources.logo} alt="" onError={() => setStep('badge')} />
+      <span className="b2-av b2-logo" data-fallback="logo">
+        <img
+          src={sources.logo}
+          alt=""
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+          onError={() => setStep('badge')}
+        />
       </span>
     )
   }
   return (
-    <span className="b2-av b2-badge" style={{ background: sources.fill, color: sources.ink }}>
+    <span className="b2-av b2-badge" data-fallback="badge" style={{ background: sources.fill, color: sources.ink }}>
       {sources.abbr}
     </span>
   )

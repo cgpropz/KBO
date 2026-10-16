@@ -1,5 +1,5 @@
 import { cgScore } from './cgScore.js'
-import { fitImage } from './fitImage.js'
+import { fitImage, isPrizePicksHeadshot, isRemoteHeadshotOrLogo } from './fitImage.js'
 import { inkOn, landingHeadshotUrl, landingTeamFill } from './playerMark.js'
 import { NFL_LINE_FLOORS, nflCgScore } from './nfl/nflLineFloors.js'
 import { teamLogoUrl as nflLogo } from './nfl/nflTeams.js'
@@ -203,10 +203,47 @@ export function logoFor(sport, team) {
   return ''
 }
 
-// PrizePicks player photo, then the league headshot, then the caller uses the logo.
+const HEADSHOT_FIELDS = ['ppImageUrl', 'image_url', 'imageUrl', 'image', 'photoUrl']
+const NFL_HEADSHOT = /^https:\/\/static\.www\.nfl\.com\/image\/(private|upload)\/(.+)$/i
+
+// Full nfl.com headshots are about 3400×2450. Sharp refuses anything over 8
+// megapixels, so ask Cloudinary for a small file before the image proxy.
+function displayHeadshotUrl(url) {
+  const value = String(url || '').trim()
+  const match = value.match(NFL_HEADSHOT)
+  if (!match) return value
+  const [, kind, rest] = match
+  if (/(^|[/,])w_\d+/.test(rest)) return value
+  const parts = rest.split('/')
+  const first = parts[0]
+  if (first.includes(',') || /^(?:[fcgwqe]_|e_)/i.test(first)) parts[0] = `${first},w_200,c_limit`
+  else parts.unshift('w_200,c_limit')
+  const next = `https://static.www.nfl.com/image/${kind}/${parts.join('/')}`
+  return isRemoteHeadshotOrLogo(next) ? next : value
+}
+
+// A board headshot already allowed by the image proxy. Team logos and PrizePicks
+// team or manual art are not player photos.
+function leagueHeadshotUrl(url) {
+  const value = String(url || '').trim()
+  if (!value || !isRemoteHeadshotOrLogo(value)) return ''
+  if (/\/teamlogos\//i.test(value)) return ''
+  if (/static\.prizepicks\.com/i.test(value) && !isPrizePicksHeadshot(value)) return ''
+  return value
+}
+
+// PrizePicks player photo (the landing headshot), then the league photo already
+// stored on the row, then the NHL mug. The caller uses the team logo after that.
 export function headshotFor(sport, row) {
-  const photo = landingHeadshotUrl(row)
-  if (photo) return photo
+  const fields = HEADSHOT_FIELDS.map((key) => row?.[key])
+  for (const url of fields) {
+    const photo = landingHeadshotUrl({ ppImageUrl: url })
+    if (photo) return displayHeadshotUrl(photo)
+  }
+  for (const url of fields) {
+    const league = leagueHeadshotUrl(url)
+    if (league) return displayHeadshotUrl(league)
+  }
   if (String(sport || '').toLowerCase() === 'nhl') return nhlHeadshotUrl(row?.playerId) || ''
   return ''
 }

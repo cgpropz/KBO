@@ -6,6 +6,7 @@ import { fetchNflProjections } from './nfl/nflData'
 import { fetchNhlProjections } from './nhl/nhlData'
 import { compareSlipRows } from './slipBoardModel.js'
 import { isStandardLine, oddsTypeOf, standardSlipRows } from './slipLines'
+import { normalizePlayerName } from './memberHub.js'
 import {
   kboBoardIsOpen,
   kboEmptyState,
@@ -43,6 +44,14 @@ function num(value) {
   return Number.isFinite(n) ? n : null
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    const text = String(value ?? '').trim()
+    if (text) return text
+  }
+  return ''
+}
+
 export { isPromoLine, isStandardLine, matchImportedPick, oddsTypeOf } from './slipLines'
 
 function sportDate(timeZone) {
@@ -78,7 +87,8 @@ function slipFields(row, extra = {}) {
     position: row?.position || row?.pos || extra.position || '',
     odds_type: oddsTypeOf(row),
     playerId: row?.playerId || row?.player_id || extra.playerId || null,
-    imageUrl: row?.imageUrl || row?.image_url || row?.ppImageUrl || row?.image || extra.imageUrl || '',
+    imageUrl: firstText(extra.imageUrl, row?.imageUrl, row?.image, row?.photoUrl),
+    ppImageUrl: firstText(extra.ppImageUrl, row?.ppImageUrl, row?.image_url),
     hitRate: num(row?.hitRate),
     gamesL10: num(row?.gamesL10),
     recent: Array.isArray(row?.recent) ? row.recent : [],
@@ -107,16 +117,30 @@ async function loadKboProps() {
   if (!kboBoardIsOpen(board)) {
     return { props: [], empty: kboEmptyState(board?.next_game) }
   }
-  const [pitchers, batters] = await Promise.all([
+  const [pitchers, batters, photos] = await Promise.all([
     fetchData('strikeout_projections.json').catch(() => null),
     fetchData('batter_projections.json').catch(() => null),
+    fetchData('player_photos.json').catch(() => ({})),
   ])
+  const photoByName = new Map()
+  const photoTable = photos && typeof photos === 'object' && !Array.isArray(photos) ? photos : {}
+  for (const [name, url] of Object.entries(photoTable)) {
+    const key = normalizePlayerName(name)
+    if (key && typeof url === 'string' && url.trim()) photoByName.set(key, url.trim())
+  }
+  const ppByName = new Map()
+  for (const card of board?.cards || []) {
+    const key = normalizePlayerName(card?.name)
+    const url = firstText(card?.image_url, card?.ppImageUrl)
+    if (key && url) ppByName.set(key, url)
+  }
   const props = []
   for (const row of standardSlipRows([...(pitchers?.projections || []), ...(batters?.projections || [])])) {
     const line = num(row?.line)
     const projection = num(row?.projection)
     if (!row?.name && !row?.player) continue
     if (line == null || projection == null) continue
+    const key = normalizePlayerName(row.name || row.player)
     const built = slipFields(row, {
       name: row.name || row.player,
       team: row.team || '',
@@ -126,6 +150,8 @@ async function loadKboProps() {
       line,
       projection,
       edge: num(row.edge) ?? Math.round((projection - line) * 100) / 100,
+      imageUrl: photoByName.get(key) || '',
+      ppImageUrl: ppByName.get(key) || '',
     })
     if (!keepSlipRow(built)) continue
     props.push(built)
@@ -185,7 +211,8 @@ function basketRows(players, { source = '' } = {}) {
         edge,
         position: player?.position || '',
         playerId: player?.playerId || player?.player_id || null,
-        imageUrl: player?.imageUrl || player?.image_url || '',
+        imageUrl: player?.image || player?.imageUrl || '',
+        ppImageUrl: player?.ppImageUrl || '',
         start_time: player?.start_time || player?.startTime || null,
         gameday: player?.gameday || player?.gameDate || player?.game_date || null,
         started: player?.started,
