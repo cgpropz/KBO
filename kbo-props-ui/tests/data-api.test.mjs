@@ -221,26 +221,31 @@ test('single-sport KBO tier does not unlock WNBA or NFL', async () => {
   assert.equal(o.body.data.length, 15)
 })
 
-test('NFL free preview is off while NFL_FREE_PREVIEW_ENABLED is false', async () => {
-  assert.equal(NFL_FREE_PREVIEW_ENABLED, false)
+test('anonymous NFL free preview returns the top 3 lines and hides total edges', async () => {
+  assert.equal(NFL_FREE_PREVIEW_ENABLED, true)
   for (const token of [undefined, 'tok-free', 'tok-kbo']) {
     const props = await call('nfl_projections', token)
     assert.equal(props.statusCode, 200)
     assert.equal(props.body.preview, true)
-    assert.deepEqual(props.body.data, [])
-    assert.equal(props.body.lockedCount, 15)
+    if (!token) assert.equal(props.body.tier, 'free')
+    assert.deepEqual(props.body.data.map((row) => row.player), ['N14', 'N13', 'N12'])
+    assert.equal(props.body.lockedCount, 12)
     const odds = await call('nfl_sharp_odds', token)
     assert.equal(odds.statusCode, 200)
     assert.equal(odds.body.preview, true)
-    assert.deepEqual(odds.body.data.records, [])
+    assert.deepEqual(odds.body.data.records.map((row) => row.ev_pct), [7, 6, 5])
     assert.equal(odds.body.data.message, 'matched')
-    assert.equal(odds.body.lockedCount, 8)
+    assert.equal(odds.body.lockedCount, 5)
     const markets = await call('nfl_game_markets', token)
     assert.equal(markets.statusCode, 200)
     assert.equal(markets.body.preview, true)
-    assert.deepEqual(markets.body.data.games, [])
+    assert.deepEqual(markets.body.data.games.map((game) => game.spread.edge), [5, 4, 3])
     assert.equal(markets.body.data.provider, 'unabated')
-    assert.equal(markets.body.lockedCount, 6)
+    assert.equal(markets.body.lockedCount, 3)
+    for (const game of markets.body.data.games) {
+      assert.equal(Object.hasOwn(game.total, 'edge'), false)
+      assert.equal(game.spread.edge > 0, true)
+    }
   }
   const lineups = await call('nfl_lineups')
   assert.equal(lineups.body.preview, true)
@@ -254,6 +259,7 @@ test('NFL free preview is off while NFL_FREE_PREVIEW_ENABLED is false', async ()
   assert.equal(paidOdds.body.data.records.length, 8)
   const paidMarkets = await call('nfl_game_markets', 'tok-owner')
   assert.equal(paidMarkets.body.data.games.length, 6)
+  assert.equal(paidMarkets.body.data.games[0].total.edge, -1)
 })
 
 test('WNBA preview keeps top 3 prop lines across players', async () => {

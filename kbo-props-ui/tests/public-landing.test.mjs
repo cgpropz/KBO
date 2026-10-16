@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { HERO_LANDING_SPORT_ID } from '../src/landingSports.js'
 import { nflHubRows, nhlHubRows } from '../src/memberHub.js'
 import {
   BOARD_QA_ALLOWLIST,
@@ -59,6 +60,13 @@ test('the public landing has no reviews section', () => {
   assert.equal(/\bSAMPLE\b/.test(landing), false)
   assert.equal(/PLACEHOLDER/.test(landing), false)
   assert.equal(/PrizePicks/.test(landing), false)
+})
+
+test('the public landing features NFL on the hero, phone, and sport tabs', () => {
+  assert.equal(HERO_LANDING_SPORT_ID, 'nfl')
+  assert.match(landing, /useState\(HERO_LANDING_SPORT_ID\)/)
+  assert.equal(/setSportId\(withRows\.id\)/.test(landing), false)
+  assert.equal(/setHitSportId\(withHits\.id\)/.test(landing), false)
 })
 
 test('the public landing does not open a Stripe Checkout Session on load', () => {
