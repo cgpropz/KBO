@@ -112,7 +112,6 @@ def prizepicks_pulled_status(status) -> str | None:
     return None
 
 
-
 FINAL_STATES = {"OFF", "FINAL", "OVER"}
 UPCOMING_STATES = {"FUT", "PRE"}
 

@@ -370,7 +370,6 @@ def prizepicks_pulled_status(status):
     return None
 
 
-
 # Yardage markets only. A counting stat (Receptions, Rush Attempts, Pass TDs)
 # can legitimately be 0.5. These cannot.
 YARDAGE_PROPS = {
