@@ -736,6 +736,29 @@
 }
 .so-empty-slate h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
 .so-empty-slate p { margin: 0; color: #9ca3af; line-height: 1.45; }
+.so-payout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+}
+.so-payout-modes { display: flex; }
+.so-payout-modes button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #333;
+  background: transparent;
+  color: #aaa;
+  font-weight: 700;
+  cursor: pointer;
+}
+.so-payout-modes button:first-child { border-radius: 8px 0 0 8px; }
+.so-payout-modes button:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.so-payout-modes button.active { background: var(--so-accent); border-color: var(--so-accent); color: var(--so-accent-text); }
+.so-payout-figures { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: baseline; font-size: 0.85rem; }
+.so-payout-figures strong { font-size: 1.05rem; }
+.so-payout-altered { color: #fbbf24; font-weight: 800; }
+.so-payout-wait { margin: 0; color: #777; font-size: 0.8rem; }
 
 .so-footer-note {
   text-align: center;
