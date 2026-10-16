@@ -60,20 +60,6 @@ function boardLinks(path) {
 }
 
 function sportFaqs(id) {
-  if (id === 'nba') {
-    return [
-      {
-        q: 'Can I open the NBA board?',
-        a: 'The NBA card in the CGPropz app is locked and marked coming soon. This page does not list prop rows.',
-      },
-      {
-        q: 'Where is pricing?',
-        a: 'All-Access plans are on the pricing page. NBA access is not part of the open boards yet.',
-      },
-      SCORE_FAQ,
-      AFFILIATION_FAQ,
-    ];
-  }
   const name = sportById(id).name;
   const preview = id === 'nfl'
     ? 'This page does not list prop rows. NFL lines on the live board are part of All-Access. The free preview described on the pricing page does not include NFL.'
@@ -104,21 +90,16 @@ function renderSport(id, path) {
   const sport = sportById(id);
   const finals = id === 'wnba' ? wnbaFinalsSection() : null;
   const title = `${sport.name} player props | CGPropz`;
-  const description = id === 'nba'
-    ? 'NBA player props on CGPropz. The in-app NBA card is locked and marked coming soon. This page does not list prop rows.'
-    : id === 'wnba'
-      ? 'WNBA player props on CGPropz, including the 2026 Finals hub for Valkyries vs Dream. No prop rows on this page.'
-      : `${sport.name} player props on CGPropz: what the ${sport.full.toLowerCase()} board covers, how to read CG Score, and where pricing lives. No prop rows on this page.`;
+  const description = id === 'wnba'
+    ? 'WNBA player props on CGPropz, including the 2026 Finals hub for Valkyries vs Dream. No prop rows on this page.'
+    : `${sport.name} player props on CGPropz: what the ${sport.full.toLowerCase()} board covers, how to read CG Score, and where pricing lives. No prop rows on this page.`;
   const faqs = sportFaqs(id);
   const features = sport.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
-  const locked = id === 'nba'
-    ? '<p>The NBA card in the app is locked and marked coming soon. Nothing on this page is a live prop row.</p>'
-    : '';
   const bodyHtml = `
       <p class="lede">${escapeHtml(sport.full)} · player props</p>
       <h1>${escapeHtml(sport.name)} player props</h1>
       <p>${escapeHtml(sport.tagline)}</p>
-      ${locked}
+      
       ${boardLinks(path)}
       <div class="actions">
         <a class="btn btn-primary" href="${pageUrl(appBoardPath(id))}">Open the ${escapeHtml(sport.name)} board</a>
@@ -305,14 +286,51 @@ export function renderPoliciesPage() {
   };
 }
 
-export function renderSportPages() {
-  return SPORT_PAGES.map(([id, path, file]) => ({
+const NBA_GUIDE = join(dirname(fileURLToPath(import.meta.url)), '../content/nba-player-props.md');
+
+export function renderNbaPlayerPropsPage() {
+  const raw = readFileSync(NBA_GUIDE, 'utf8').replaceAll(
+    '{{NBA BOARD URL: CONFIRM WITH GIT BOT}}',
+    appBoardPath('nba'),
+  );
+  const { meta, body, faqPage } = stripGuideSource(raw);
+  const published = hideUnresolved(body);
+  assertNoCurlyPlaceholders(published, '/nba-player-props');
+  if (!faqPage?.mainEntity?.length) throw new Error('NBA guide is missing FAQPage JSON-LD');
+  const path = '/nba-player-props';
+  const title = meta.title_tag || 'NBA player props | CGPropz';
+  const description = meta.meta_description || '';
+  const html = renderDocument({
+    title,
+    description,
     path,
-    file,
-    title: `${sportById(id).name} player props | CGPropz`,
-    lastmod: PUBLISHED_ON,
-    html: renderSport(id, path),
-  }));
+    bodyHtml: renderMarkdown(published),
+    schemas: [
+      breadcrumbNode([
+        { name: 'Home', url: pageUrl('/') },
+        { name: 'NBA player props', url: pageUrl(path) },
+      ]),
+      faqPage,
+    ],
+  });
+  assertNoCurlyPlaceholders(html, '/nba-player-props html');
+  return { path, file: 'nba-player-props.html', title, description, html, faqPage };
+}
+
+export function renderSportPages() {
+  return SPORT_PAGES.map(([id, path, file]) => {
+    if (id === 'nba') {
+      const page = renderNbaPlayerPropsPage();
+      return { path, file, title: page.title, lastmod: PUBLISHED_ON, html: page.html };
+    }
+    return {
+      path,
+      file,
+      title: `${sportById(id).name} player props | CGPropz`,
+      lastmod: PUBLISHED_ON,
+      html: renderSport(id, path),
+    };
+  });
 }
 
 function stateItems(states) {

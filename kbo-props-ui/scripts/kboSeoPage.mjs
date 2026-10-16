@@ -3,20 +3,24 @@
 // and DNPs. Days inside the archive span with no summary stay on the page.
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   breadcrumbNode,
-  faqNode,
   pageUrl,
   PUBLISHED_ON,
   renderDocument,
-  renderFaqSection,
   renderSitemap as renderSitemapXml,
   SITE,
   SPORT_PATHS,
 } from './seoShared.mjs';
-import { listGuides } from './markdownGuide.mjs';
-import { appBoardPath } from '../src/appSport.js';
+import {
+  assertNoCurlyPlaceholders,
+  hideUnresolved,
+  listGuides,
+  renderMarkdown,
+  stripGuideSource,
+} from './markdownGuide.mjs';
 
 export { SITE };
 export const PAGE_PATH = '/kbo-player-props';
@@ -178,85 +182,63 @@ function propTable(day) {
   </details>`;
 }
 
-const KBO_FAQS = [
-  {
-    q: 'What is a full-board result?',
-    a: 'Every prop the model graded that day, including hits, misses, pushes, and DNPs. It is the whole graded board for that date, not a short list of winners.',
-  },
-  {
-    q: 'What time zone are these dates?',
-    a: 'The dates are the calendar dates stored with each KBO slate. Those are Korea game dates, not US Eastern Time.',
-  },
-  {
-    q: 'Where is pricing?',
-    a: 'All-Access plans are on the pricing page.',
-  },
-  {
-    q: 'What does CG Score mean?',
-    a: 'It compares the projection with the posted line. The guide explains the stated method. A higher score is not a probability and is not a claim that the prop hits more often.',
-  },
-  {
-    q: 'Is CGPropz affiliated with PrizePicks or Underdog?',
-    a: 'No. CGPropz is not affiliated with PrizePicks or Underdog.',
-  },
-];
+const KBO_GUIDE = join(dirname(fileURLToPath(import.meta.url)), '../content/kbo-player-props.md');
+
+// Schedule cells keep their published times. A {{CONFIRM}} note inside a cell
+// is removed; the results snapshot below is not this table and is generated
+// from the archive instead.
+function stripScheduleMarkers(markdown) {
+  return String(markdown).split('\n').map((line) => {
+    if (!line.trim().startsWith('|') || !line.includes('{{')) return line;
+    return line
+      .replace(/;\s*Game 7\s*\{\{CONFIRM\}\}/g, '')
+      .replace(/\{\{CONFIRM:[^}]*\}\}/g, '')
+      .replace(/\{\{CONFIRM\}\}/g, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\s+:/g, ':')
+      .replace(/[ \t]+\|/g, ' |');
+  }).join('\n');
+}
+
+export function kboGuideParts() {
+  const prepared = stripScheduleMarkers(readFileSync(KBO_GUIDE, 'utf8'));
+  const { meta, body, faqPage } = stripGuideSource(prepared);
+  const resultsAt = body.indexOf('## Recent full-board results');
+  const faqAt = body.indexOf('## FAQ');
+  if (resultsAt < 0 || faqAt < resultsAt) throw new Error('KBO guide is missing the results or FAQ section');
+  if (!faqPage?.mainEntity?.length) throw new Error('KBO guide is missing FAQPage JSON-LD');
+  const before = hideUnresolved(body.slice(0, resultsAt));
+  const after = hideUnresolved(body.slice(faqAt));
+  assertNoCurlyPlaceholders(before, '/kbo-player-props intro');
+  assertNoCurlyPlaceholders(after, '/kbo-player-props faq');
+  return { meta, before, after, faqPage };
+}
 
 export function renderKboPage(days) {
+  const { meta, before, after, faqPage } = kboGuideParts();
   const recorded = days.filter((day) => !day.missing).length;
   const missing = days.filter((day) => day.missing).length;
   const range = days.length
     ? `${formatDayLabel(days[0].iso)} through ${formatDayLabel(days[days.length - 1].iso)}`
     : 'the dates currently in the archive';
-  const title = 'KBO player props and full-board results | CGPropz';
-  const description = 'KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs.';
+  const title = meta.title_tag || 'KBO player props and full-board results | CGPropz';
+  const description = meta.meta_description
+    || 'KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs.';
 
   const bodyHtml = `
-      <p class="lede">Korea Baseball Organization · player props</p>
-      <h1>KBO player props, with the full board.</h1>
-      <p>
-        CGPropz tracks KBO player props for Korea Baseball Organization games: batter lines such as
-        hits, runs, and RBIs, and pitcher lines such as strikeouts. Each prop sits next to a model
-        number built from recent form, the matchup, and the posted line. The public write-up is the
-        <a href="${PAGE_URL}">KBO board</a>. All-Access plans that include KBO are listed on
-        <a href="${pageUrl('/pricing')}">pricing</a>.
-      </p>
-      <p>
-        The table below is the recent <strong>full-board results</strong> archive. A full-board result
-        is every prop the model graded that day, including hits, misses, pushes, and DNPs.
-        It is the whole graded board for that date. A day with no summary file is still listed.
-        These are graded results, not the live paid board.
-      </p>
-      <div class="actions">
-        <a class="btn btn-primary" href="${pageUrl(appBoardPath('kbo'))}">Open the KBO board</a>
-        <a class="btn btn-ghost" href="${pageUrl('/pricing')}">See pricing</a>
-      </div>
-
-      <h2>How the KBO board works</h2>
-      <p>
-        The live KBO board in the app lines a model number up with the posted prop. The free preview
-        shows the top 3 lines. The rest of that live board is All-Access, and those rows are not
-        printed here. Graded results for days already in the archive are listed below, including misses.
-      </p>
-
-      <h2>What CG Score means</h2>
-      <p>
-        CG Score compares the CGPropz projection with the posted line. The method stated on the site
-        is projection divided by the line, multiplied by 50. A score of 50 means the projection equals
-        the line. The score is not a probability, and a higher score is not a claim that the prop hits
-        more often. <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> is the full guide.
-      </p>
-
+      ${renderMarkdown(before)}
       <h2>Recent full-board results</h2>
       <p class="note">
         ${recorded} day${recorded === 1 ? '' : 's'} with a summary and ${missing} day${missing === 1 ? '' : 's'} with no summary,
-        from ${escapeHtml(range)}. Dates in this table are the calendar dates stored with each KBO slate (Korea game dates), not US Eastern Time.
-        Counts are hits, misses, pushes, DNPs, and voids. The hit count is the recorded grade for that day.
+        from ${escapeHtml(range)}. <strong>All dates in this table are Korea (KST) game dates, not US Eastern Time.</strong>
+        A KBO game on a Korea date usually starts the night before or early that morning in ET.
+        Counts are hits, misses, pushes, DNPs and voids. The hit count is the recorded grade for that day.
       </p>
       <div class="table-scroll">
       <table>
         <thead>
           <tr>
-            <th>Date</th>
+            <th>Date (KST)</th>
             <th>Hits</th>
             <th>Misses</th>
             <th>Pushes</th>
@@ -276,15 +258,10 @@ export function renderKboPage(days) {
       </p>
       ${days.map(propTable).join('\n')}
 
-      ${renderFaqSection(KBO_FAQS)}
-
-      <p class="rg">
-        Gambling involves risk. These full-board results are a record of past grades only. Future results can differ.
-        If you bet, only risk money you can afford to lose. If gambling is a problem, call 1-800-GAMBLER.
-      </p>
+      ${renderMarkdown(after)}
     `;
 
-  return renderDocument({
+  const html = renderDocument({
     title,
     description,
     path: PAGE_PATH,
@@ -294,9 +271,11 @@ export function renderKboPage(days) {
         { name: 'Home', url: pageUrl('/') },
         { name: 'KBO player props', url: PAGE_URL },
       ]),
-      faqNode(KBO_FAQS),
+      faqPage,
     ],
   });
+  assertNoCurlyPlaceholders(html, '/kbo-player-props html');
+  return html;
 }
 
 export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides() } = {}) {
