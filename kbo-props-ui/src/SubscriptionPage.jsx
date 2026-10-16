@@ -7,6 +7,7 @@ import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } 
 import { useAgeGate } from './ageGateContext';
 import AutoRenewalNote from './AutoRenewalNote';
 import { PAUSE_WEEK_ENABLED, PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
+import { noActivePlanNotice } from './manageSubscriptionCopy';
 import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
@@ -278,7 +279,7 @@ function SubscriptionPage() {
       });
       const data = await resp.json().catch(() => ({}));
       if (resp.status === 404) {
-        setPortalMessage('No active plan on this email. DM @Cgpropz.');
+        setPortalMessage(noActivePlanNotice(user?.email));
         return;
       }
       if (!resp.ok || !data.url) {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
 import { loadSupabase, readCachedSession } from './supabaseClient';
+import { isPasswordRecoveryLocation } from './passwordRecovery';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
 const TIER_CACHE_KEY = 'cg_tier';
@@ -12,6 +13,8 @@ const AuthContext = createContext({
   refreshTier: () => {},
   discord: EMPTY_DISCORD,
   refreshDiscord: () => {},
+  passwordRecovery: false,
+  clearPasswordRecovery: () => {},
 });
 
 export function useAuth() {
@@ -26,6 +29,11 @@ function readDevPreview() {
     user: { id: 'dev-tier-preview', email: tier === 'owner' ? NBA_OWNER_EMAIL : `${tier}@preview.local` },
     tier,
   };
+}
+
+function recoveryFromWindow() {
+  if (typeof window === 'undefined') return false;
+  return isPasswordRecoveryLocation(window.location.search, window.location.hash);
 }
 
 function readCachedTier(userId) {
@@ -55,6 +63,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
   const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? (CACHED_SESSION?.user ? readCachedTier(CACHED_SESSION.user.id) : 'free'));
   const [discord, setDiscord] = useState(EMPTY_DISCORD);
+  const [passwordRecovery, setPasswordRecovery] = useState(recoveryFromWindow);
   // Session is resolved from local storage before paint. Tier refresh and the
   // Supabase client download stay off the first render.
   const loading = false;
@@ -168,7 +177,8 @@ export function AuthProvider({ children }) {
             clearCachedTier();
           }
         });
-        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+          if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
           const u = session?.user ?? null;
           setUser(u);
           userRef.current = u;
@@ -187,14 +197,16 @@ export function AuthProvider({ children }) {
     // Logged-out visitors have nothing to refresh. The Supabase client is a
     // separate ~51KB chunk; downloading it on the landing page competes with
     // the hero. Sign-in loads it from AuthPage. A cached session still
-    // refreshes immediately so a member reaches the Sports Hub.
-    if (!readCachedSession()) return undefined;
+    // refreshes immediately so a member reaches the Sports Hub. A recovery
+    // link has no cached session yet; the client must start so the
+    // PASSWORD_RECOVERY event can establish one.
+    if (!readCachedSession() && !passwordRecovery) return undefined;
     start();
     return () => {
       cancelled = true;
       unsubscribe();
     };
-  }, [fetchTier]);
+  }, [fetchTier, passwordRecovery]);
 
   // Re-check tier when user returns to the tab (e.g. after paying in Stripe tab)
   useEffect(() => {
@@ -207,6 +219,14 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [fetchTier]);
 
+  const clearPasswordRecovery = useCallback(() => {
+    setPasswordRecovery(false);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('recovery');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
+  }, []);
+
   async function signOut() {
     const client = await loadSupabase();
     if (client) await client.auth.signOut();
@@ -218,7 +238,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier, discord, refreshDiscord }}>
+    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier, discord, refreshDiscord, passwordRecovery, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   );

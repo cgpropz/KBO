@@ -3,6 +3,8 @@ import { loadSupabase } from './supabaseClient';
 import { getAttribution } from './tracking';
 import { readAgeConfirmation } from './ageConfirmation';
 import { useAgeGate } from './ageGateContext';
+import { authErrorMessage } from './authErrors';
+import { recoveryRedirectUrl } from './passwordRecovery';
 import './AuthPage.css';
 
 export default function AuthPage({ initialMode = 'login', onBack, notice = '' } = {}) {
@@ -28,10 +30,12 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
     }
 
     if (mode === 'reset') {
+      // Supabase Auth sends this mail. This app does not. Custom SMTP is a
+      // project setting (smtp.resend.com:465, username resend), not app code.
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
+        redirectTo: recoveryRedirectUrl(window.location.origin),
       });
-      if (err) setError(err.message);
+      if (err) setError(authErrorMessage(err));
       else setMessage('Password reset email sent! Check your inbox.');
       setLoading(false);
       return;
@@ -39,7 +43,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
 
     if (mode === 'login') {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) setError(err.message);
+      if (err) setError(authErrorMessage(err));
     } else {
       const allowed = await requireAge();
       if (!allowed) {
@@ -59,7 +63,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
         ...(Object.keys(data).length ? { options: { data } } : {}),
       });
       if (err) {
-        setError(err.message);
+        setError(authErrorMessage(err));
       } else {
         setMessage('Check your email to confirm your account, then log in.');
         setMode('login');
@@ -131,7 +135,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
             </label>
           )}
 
-          {error && <div className="auth-error">{error}</div>}
+          {error && <div className="auth-error" data-testid="auth-error">{error}</div>}
           {message && <div className="auth-success">{message}</div>}
 
           <button className="auth-submit" type="submit" disabled={loading}>

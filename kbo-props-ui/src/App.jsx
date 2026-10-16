@@ -14,6 +14,7 @@ import './FreeFunnel.css'
 import './App.css'
 
 const AuthPage = lazy(() => import('./AuthPage'))
+const SetNewPassword = lazy(() => import('./SetNewPassword'))
 const CgpropzLanding = lazy(() => import('./CgpropzLanding'))
 
 const sportImporters = {
@@ -40,7 +41,7 @@ const NbaApp = lazy(() => loadSport('nba'))
 const NhlApp = lazy(() => loadSport('nhl'))
 
 function App() {
-  const { user, tier } = useAuth();
+  const { user, tier, passwordRecovery, clearPasswordRecovery } = useAuth();
   const { requireAge } = useAgeGate();
   const [previewNode, setPreviewNode] = useState(null);
   const nba = useNbaOpen();
@@ -94,6 +95,19 @@ function App() {
       document.documentElement.style.removeProperty('--ff-preview-offset');
     };
   }, [previewNode]);
+
+  // Recovery links land here with a session already. The form calls
+  // updateUser({password}) and Continue leaves that session in place.
+  if (passwordRecovery) {
+    return (
+      <>
+        <Suspense fallback={<RouteFallback />}>
+          <SetNewPassword onDone={clearPasswordRecovery} />
+        </Suspense>
+        <SiteFooter />
+      </>
+    );
+  }
 
   // A saved NBA choice stays in cg_member_sport until the access check
   // finishes, so a later public flag does not wipe All-Access. Until then the
