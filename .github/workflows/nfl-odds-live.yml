@@ -54,6 +54,10 @@ jobs:
       # sharp_odds.py skips the snapshot when that file is missing.
       - name: Build current NFL projections and starting lineups
         run: timeout 240 python nfl/build_projection_data.py
+        env:
+          # projections.json is not in git. The last board is nfl_projections id = 1.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Match NFL PrizePicks lines to Unabated sportsbook odds
         continue-on-error: true

@@ -39,6 +39,9 @@ jobs:
 
       - name: Build the NHL board
         run: python -m nhl.build_board --root /tmp/moneypuck
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Save the daily board snapshot
         run: python -m nhl.board_snapshot --board nhl/projections.json --out memory/nhl/board

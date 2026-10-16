@@ -76,6 +76,7 @@ class PrizePicksPullTests(unittest.TestCase):
             "prop": "Shots On Goal",
             "line": 2.5,
             "oddsType": "standard",
+            "start_time": "2026-10-17T01:00:00+00:00",
         }]
         other = [{
             "id": "15825520",
@@ -84,8 +85,12 @@ class PrizePicksPullTests(unittest.TestCase):
             "prop": "Shots On Goal",
             "line": 4.5,
             "oddsType": "demon",
+            "start_time": "2026-10-17T01:00:00+00:00",
         }]
-        missing = flag_missing_seen_projections(previous, other, ["15825520"], fetch_ok=True)
+        missing = flag_missing_seen_projections(
+            previous, other, ["15825520"], fetch_ok=True,
+            now=__import__("datetime").datetime(2026, 10, 16, 20, 0, tzinfo=__import__("datetime").timezone.utc),
+        )
         kadri = next(row for row in missing if row["id"] == "15830428")
         self.assertIs(kadri["removed"], True)
         self.assertEqual(kadri["pp_status"], "removed")

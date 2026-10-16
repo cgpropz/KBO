@@ -53,6 +53,11 @@ jobs:
       # This invocation puts nfl/ on sys.path[0], so the import needs that insert.
       - name: Build current NFL projections and starting lineups
         run: python nfl/build_projection_data.py
+        env:
+          # projections.json is gitignored and this checkout is fresh. The
+          # last board is the nfl_projections snapshot (id = 1).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build NFL prop correlations
         continue-on-error: true

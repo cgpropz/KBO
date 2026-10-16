@@ -54,6 +54,11 @@ jobs:
 
       - name: Build the NHL board and lineups
         run: python -m nhl.build_board --root /tmp/moneypuck
+        env:
+          # projections.json is gitignored and this checkout is fresh. The
+          # last board is the nhl_projections snapshot (id = 1).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Match PrizePicks lines to Unabated
         continue-on-error: true

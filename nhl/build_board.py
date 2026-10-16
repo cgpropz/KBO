@@ -36,6 +36,13 @@ from nhl.model import (
     rank_score,
 )
 from nhl.teams import name_to_abbr, team_abbr, team_name
+from pipeline.prizepicks_seen import (
+    collect_prizepicks_pages,
+    flag_missing_seen_projections,
+    previous_board_rows,
+    prizepicks_fetch_is_usable,
+    prizepicks_projection_ids,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "kbo-props-ui" / "public" / "data" / "nhl"
@@ -104,97 +111,6 @@ def prizepicks_pulled_status(status) -> str | None:
         return compact
     return None
 
-
-def prizepicks_projection_ids(payload) -> list[str]:
-    """Projection ids in a PrizePicks body. Empty when the body has none."""
-    if not isinstance(payload, dict):
-        return []
-    data = payload.get("data")
-    if not isinstance(data, list):
-        return []
-    ids = []
-    for item in data:
-        if not isinstance(item, dict) or item.get("id") is None:
-            continue
-        text = str(item.get("id")).strip()
-        if text:
-            ids.append(text)
-    return ids
-
-
-def prizepicks_fetch_is_usable(status, payload, error=None) -> bool:
-    """False for a 403, any other error, or a body with no projection ids.
-
-    An unusable fetch must not be treated as "every saved id disappeared."
-    """
-    if error is not None or status is None:
-        return False
-    try:
-        code = int(status)
-    except (TypeError, ValueError):
-        return False
-    if code >= 400:
-        return False
-    return bool(prizepicks_projection_ids(payload))
-
-
-def projection_id_of(row) -> str:
-    """PrizePicks projection id stored on a board row.
-
-    A numeric id is the PrizePicks card id this writer already publishes.
-    A player-prop slug is not.
-    """
-    if not isinstance(row, dict):
-        return ""
-    explicit = row.get("projection_id")
-    if explicit is not None:
-        text = str(explicit).strip()
-        if text and text.lower() != "nan":
-            return text
-    raw = row.get("id")
-    text = "" if raw is None else str(raw).strip()
-    return text if text.isdigit() else ""
-
-
-def flag_missing_seen_projections(previous, current, fetched_ids, *, fetch_ok) -> list:
-    """Keep a previously seen projection a good fetch no longer returns.
-
-    The carried row is marked removed so the slip scratch check fires.
-    A 403, a raised error, or an empty id list marks nothing. An id that
-    is back in the fetch is not carried, so a relist drops the flag.
-    """
-    current_rows = [dict(row) for row in current or [] if isinstance(row, dict)]
-    if not fetch_ok:
-        return current_rows
-    fetched = {str(item).strip() for item in fetched_ids or [] if str(item).strip()}
-    if not fetched:
-        return current_rows
-    present = set()
-    merged = []
-    for row in current_rows:
-        pid = projection_id_of(row)
-        # A row already on this board (including one restored from the last
-        # file) whose PrizePicks id is gone is the same missing line.
-        if pid and pid not in fetched:
-            row["removed"] = True
-            row["pp_status"] = "removed"
-            row["projection_id"] = pid
-        if pid:
-            present.add(pid)
-        merged.append(row)
-    for prev in previous or []:
-        if not isinstance(prev, dict):
-            continue
-        pid = projection_id_of(prev)
-        if not pid or pid in fetched or pid in present:
-            continue
-        carried = dict(prev)
-        carried["removed"] = True
-        carried["pp_status"] = "removed"
-        carried["projection_id"] = pid
-        merged.append(carried)
-        present.add(pid)
-    return merged
 
 
 FINAL_STATES = {"OFF", "FINAL", "OVER"}
@@ -291,16 +207,12 @@ def restore_teams_without_current_logs(rows, skaters, previous) -> tuple[list, s
 
 
 def _previous_projections(out_dir: Path) -> list:
-    for path in (out_dir / "projections.json", PUBLIC_DIR / "projections.json"):
-        if not path.is_file():
-            continue
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        if isinstance(payload, list):
-            return payload
-    return []
+    # The checkout does not keep projections.json between workflow runs.
+    # previous_board_rows reads the published nhl_projections snapshot.
+    return previous_board_rows(
+        (out_dir / "projections.json", PUBLIC_DIR / "projections.json"),
+        "nhl_projections",
+    )
 
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
@@ -368,16 +280,13 @@ def _this_slate(games: list[dict]) -> list[dict]:
 def fetch_prizepicks():
     """Return (cards, projection ids) for a usable body, else (None, []).
 
-    A 403, a transport error, or an empty body leaves the previous board
-    alone and does not mark any projection removed.
+    Pages follow links.next and meta current_page/total_pages. A 403, a
+    transport error, a later page error, or an empty body leaves the previous
+    board alone and does not mark any projection removed.
     """
-    try:
-        payload = _json(PRIZEPICKS_URL)
-    except Exception as exc:  # noqa: BLE001
-        print(f"PrizePicks failed, skipping projections: {exc}")
-        return None, []
-    if not prizepicks_fetch_is_usable(200, payload):
-        print("PrizePicks fetch was empty; leaving projections unmarked")
+    payload, error = collect_prizepicks_pages(PRIZEPICKS_URL, _json)
+    if error is not None or not prizepicks_fetch_is_usable(200, payload):
+        print(f"PrizePicks failed or was empty, skipping projections: {error or 'empty'}")
         return None, []
     return prizepicks_cards(payload), prizepicks_projection_ids(payload)
 
@@ -1080,7 +989,7 @@ def build(root: Path, out_dir: Path) -> int:
             projections_ready = False
         else:
             projections = flag_missing_seen_projections(
-                previous, projections, fetched_ids, fetch_ok=True,
+                previous, projections, fetched_ids, fetch_ok=True, exclude_teams=blocked,
             )
     else:
         removed = 0

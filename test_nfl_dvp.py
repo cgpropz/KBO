@@ -223,6 +223,7 @@ class DvpRankTests(unittest.TestCase):
             'player': 'J.J. McCarthy',
             'prop': 'Rush Yards',
             'line': 2.5,
+            'start_time': '2026-10-18T17:00:00+00:00',
         }]
         # The board slug is not a PrizePicks id, so it must not be marked on its own.
         slug_only = [{'id': 'jj-mccarthy-rush-yards', 'player': 'J.J. McCarthy', 'prop': 'Rush Yards'}]
@@ -230,10 +231,17 @@ class DvpRankTests(unittest.TestCase):
             nfl.flag_missing_seen_projections(slug_only, [], ['1'], fetch_ok=True),
             [],
         )
-        marked = nfl.flag_missing_seen_projections(previous, [], ['1'], fetch_ok=True)
-        self.assertIs(marked[0]['removed'], True)
-        self.assertEqual(marked[0]['pp_status'], 'removed')
-        self.assertEqual(marked[0]['projection_id'], '9001')
+        # An empty current board has no slate date, so a missing id is not carried.
+        marked = nfl.flag_missing_seen_projections(
+            previous,
+            [{'id': 'other', 'projection_id': '1', 'player': 'Other', 'prop': 'Rush Yards', 'start_time': '2026-10-18T17:00:00+00:00'}],
+            ['1'],
+            fetch_ok=True,
+            now=datetime.datetime(2026, 10, 16, 20, 0, tzinfo=datetime.timezone.utc),
+        )
+        carried = next(row for row in marked if row['projection_id'] == '9001')
+        self.assertIs(carried['removed'], True)
+        self.assertEqual(carried['pp_status'], 'removed')
         kept = nfl.flag_missing_seen_projections(previous, previous, [], fetch_ok=False)
         self.assertNotIn('removed', kept[0])
         empty = nfl.flag_missing_seen_projections(previous, previous, [], fetch_ok=True)
