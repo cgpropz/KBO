@@ -8,6 +8,7 @@ import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { STRIPE_LINKS } from './pricingTiers';
 import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
+import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
@@ -353,7 +354,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                 <p className="pl-empty">
                   {!markets
                     ? 'Loading the game card…'
-                    : (markets.preview && Number(markets.lockedCount) > 0
+                    : (markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
                       ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
                       : 'No game card is posted right now.')}
                 </p>
@@ -401,7 +402,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             {switchRows.length ? <BoardTable rows={switchRows} /> : (
               <p className="pl-empty">
                 {settled
-                  ? (sport.id === 'nfl' && !sportState?.rows?.length
+                  ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
                     ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} lines are on the full board.` : ''}`
                     : `No scored standard lines in the ${sport.name} public preview right now.`)
                   : 'Loading the board…'}

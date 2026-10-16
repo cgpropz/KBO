@@ -45,8 +45,8 @@ test('the phone lock card is full width in the unlayered mobile sheet', () => {
   assert.match(rule, /box-sizing:\s*border-box/)
 })
 
-test('the free top 3 anchor stays when the NFL preview flag withholds NFL rows', () => {
-  assert.equal(NFL_FREE_PREVIEW_ENABLED, false)
+test('the free top 3 anchor stays mounted when a board has no rows', () => {
+  assert.equal(NFL_FREE_PREVIEW_ENABLED, true)
   const withOtherSports = freeTop3SectionState({
     kbo: { status: 'ready' },
     nfl: { status: 'empty' },
