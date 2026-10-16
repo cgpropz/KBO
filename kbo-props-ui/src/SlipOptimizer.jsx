@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
+import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 const SLIP_SPORT_KEY = 'cg_slip_sports';
@@ -203,14 +204,11 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
         const matched = new Set();
         const overrides = {};
         picks.forEach(pk => {
-          const idx = props.findIndex(p =>
-            p.name === pk.name && p.prop === pk.prop &&
-            p.team === pk.team && p.opponent === pk.opponent
-          );
+          const idx = matchImportedPick(props, pk);
           if (idx !== -1) {
             matched.add(idx);
             const p = props[idx];
-            const promo = p.odds_type === 'demon' || p.odds_type === 'goblin';
+            const promo = isPromoLine(p);
             if (!promo && pk.side && pk.side !== (p.edge >= 0 ? 'OVER' : 'UNDER')) {
               overrides[idx] = pk.side;
             }
@@ -230,7 +228,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   }, [config]);
 
   // Determine the natural side for a prop (demon/goblin are over-only)
-  const isPromo = (p) => p.odds_type === 'demon' || p.odds_type === 'goblin';
+  const isPromo = (p) => isPromoLine(p);
   const naturalSide = (p) => isPromo(p) ? 'OVER' : (p.edge >= 0 ? 'OVER' : 'UNDER');
   const getSide = (idx) => {
     const p = allProps[idx];
@@ -298,10 +296,10 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const autoSlips = useMemo(() => {
     if (mode !== 'auto' || allProps.length === 0) return [];
 
-    // Only consider props with positive edge on their natural side
+    // Auto mode uses the same standard-only board as the picker.
     const candidates = allProps
-      .map((p, i) => ({ idx: i, edge: p.edge, absEdge: Math.abs(p.edge) }))
-      .filter(c => c.absEdge > 0.1)
+      .map((p, i) => ({ idx: i, edge: p.edge, absEdge: Math.abs(p.edge), standard: isStandardLine(p) }))
+      .filter(c => c.standard && c.absEdge > 0.1)
       .sort((a, b) => b.absEdge - a.absEdge);
 
     if (candidates.length < legs) return [];
@@ -371,7 +369,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   // Filtered props
   const activeFilter = (config.filters || []).find((item) => item.id === filter) || config.filters?.[0];
   const filteredProps = allProps.map((p, i) => ({ ...p, idx: i })).filter(p => (
-    activeFilter?.match ? activeFilter.match(p) : true
+    isStandardLine(p) && (activeFilter?.match ? activeFilter.match(p) : true)
   ));
 
   const getConfidenceClass = (c) => {
@@ -438,9 +436,9 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                           <span className="pp-mini">P</span>{p.line}
                         </span>
                         <span
-                          className={`so-leg-side ${side === 'OVER' ? 'side-over' : 'side-under'}`}
+                          className={`so-leg-side ${side === 'OVER' ? 'side-over' : 'side-under'}${isPromo(p) ? ' so-side-fixed' : ''}`}
                           onClick={() => toggleSide(idx)}
-                          title="Click to flip"
+                          title={isPromo(p) ? 'More only' : 'Click to flip'}
                         >
                           {side}
                         </span>
@@ -550,12 +548,13 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                       </span>
                     </div>
                     <span className="so-prop-tag">{p.propShort}</span>
+                    {isPromo(p) && <span className={`so-odds-badge ${p.odds_type}`}>{p.odds_type}</span>}
                     <span className="so-prop-line"><span className="pp-mini">P</span>{p.line}</span>
                     <span className="so-prop-proj">{formatProjection(p.projection)}</span>
                     <span
-                      className={`so-prop-side ${side === 'OVER' ? 'side-over' : 'side-under'}`}
+                      className={`so-prop-side ${side === 'OVER' ? 'side-over' : 'side-under'}${isPromo(p) ? ' so-side-fixed' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggleSide(p.idx); }}
-                      title="Click to flip side"
+                      title={isPromo(p) ? 'More only' : 'Click to flip side'}
                     >
                       {side}
                     </span>
