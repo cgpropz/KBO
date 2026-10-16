@@ -52,6 +52,12 @@ jobs:
       - name: Vercel Hobby function limit
         run: node scripts/check-function-limit.mjs
 
+      - name: Bake the public NFL preview
+        run: node scripts/bake-landing-preview.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Deploy preview
         id: preview
         run: |

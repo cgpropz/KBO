@@ -6,6 +6,7 @@ import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
 import { STRIPE_LINKS } from './pricingTiers';
 import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
+import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { AFFILIATION_LINE, AGE_LINE, GAMBLER_HELP_URL, OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
@@ -133,8 +134,10 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
       return fetchApiDataset(ds, { devStaticPath: dev, priority });
     };
 
+    const boardReady = loadBoard();
+
     const publish = async (sport, snap, lineupData) => {
-      const mod = await loadBoard();
+      const mod = await boardReady;
       if (!active || !snap) return;
       setBoards((prev) => ({
         ...prev,
@@ -167,24 +170,35 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
       await publish(sport, snap, lineupData);
     };
 
-    // The featured sport loads while the hero paints, lineups included.
-    // Its rows are the only ones on the phone. Every other board waits
+    // The featured sport starts with the page. Projections and lineups run
+    // together, and the phone paints as soon as the projections are in.
+    // A late injury report updates those rows. Every other board waits
     // until a data section is scrolled into view.
-    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
+    const lineupPromise = HERO_SPORT.lineups
+      ? loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev).then((snap) => snap?.data ?? null).catch(() => null)
+      : Promise.resolve(null);
+    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'high').catch(() => 'error');
     heroSnap.then(async (snap) => {
       if (!active) return null;
       if (snap === 'error') {
         setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
         return null;
       }
-      let lineupData = null;
-      if (HERO_SPORT.lineups) {
-        try {
-          const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev, 'low');
-          lineupData = lineupSnap?.data ?? null;
-        } catch { /* a missing injury report still shows the board */ }
+      let usedLineup = false;
+      const lineupData = await Promise.race([
+        lineupPromise.then((data) => {
+          usedLineup = true;
+          return data;
+        }),
+        new Promise((resolve) => { setTimeout(() => resolve(null), 0); }),
+      ]);
+      await publish(HERO_SPORT, snap, lineupData);
+      if (!usedLineup) {
+        lineupPromise.then((data) => {
+          if (active) publish(HERO_SPORT, snap, data);
+        });
       }
-      return publish(HERO_SPORT, snap, lineupData);
+      return null;
     });
 
     const jobs = [
@@ -355,7 +369,7 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
                 <p className="v1-empty">
                   {!markets
                     ? 'The game card loads with the board.'
-                    : (markets.preview && Number(markets.lockedCount) > 0
+                    : (markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
                       ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
                       : 'No game card is posted right now.')}
                 </p>
@@ -533,7 +547,7 @@ export default function PublicLanding({ onLogin, onSignOut, user }) {
 function Phone({ rows, title, ready, lockedCount = 0, sportName = '' }) {
   const empty = !ready
     ? 'Loading the board…'
-    : (lockedCount > 0
+    : (!NFL_FREE_PREVIEW_ENABLED && lockedCount > 0
       ? `${sportName} free preview is off. ${lockedCount} lines are on the full board.`
       : 'No scored lines in this preview right now.');
   return (

@@ -12,6 +12,7 @@ import {
   shapeForTier,
   sportAccess,
 } from './_dataAccess.js';
+import { landingFallbackBody } from './_landingFallback.js';
 
 export const PRIVATE_DATA_CACHE = 'private, no-store, max-age=0';
 export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300';
@@ -25,7 +26,13 @@ export function dataCacheControl(req, { memberGated = false } = {}) {
 }
 
 function sendData(req, res, body, memberGated) {
-  res.setHeader('Cache-Control', dataCacheControl(req, { memberGated }));
+  const cacheControl = dataCacheControl(req, { memberGated });
+  res.setHeader('Cache-Control', cacheControl);
+  // Vercel keeps this header on the edge and does not pass it to the browser.
+  if (cacheControl === PUBLIC_DATA_CACHE) {
+    res.setHeader('CDN-Cache-Control', `public, ${PUBLIC_DATA_CACHE}`);
+    res.setHeader('Vercel-CDN-Cache-Control', `public, ${PUBLIC_DATA_CACHE}`);
+  }
   return res.status(200).json(body);
 }
 
@@ -500,7 +507,16 @@ export async function handleDataRequest(req, res, client) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) return res.status(400).json({ error: 'Unknown dataset' });
 
-  client = client || getClient();
+  if (!client) {
+    try {
+      client = getClient();
+    } catch (err) {
+      console.error('[api/data] client unavailable:', err.message);
+      const fallback = landingFallbackBody(ds, req.headers?.authorization);
+      if (fallback) return sendData(req, res, fallback, false);
+      return res.status(503).json({ error: 'Dataset unavailable' });
+    }
+  }
 
   let tier = 'free';
   try {
@@ -519,6 +535,8 @@ export async function handleDataRequest(req, res, client) {
     row = await readSnapshot(client, spec.table);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    const fallback = landingFallbackBody(ds, req.headers?.authorization);
+    if (fallback) return sendData(req, res, fallback, false);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
       return res.status(503).json({
         error: 'Dataset temporarily unavailable',

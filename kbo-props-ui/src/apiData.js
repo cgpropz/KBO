@@ -56,31 +56,85 @@ async function readErrorDetail(res) {
   }
 }
 
+// Deploy bakes these from the free preview. They are the fallback when the
+// live endpoint is down, not a second copy of the paid board.
+const BAKED_LANDING = {
+  nfl_projections: 'landing/nfl-projections.json',
+  nfl_game_markets: 'landing/nfl-game-markets.json',
+};
+
+function snapshotFromBody(body, source) {
+  return {
+    data: body.data,
+    updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
+    source,
+    preview: !!body.preview,
+    lockedCount: Number(body.lockedCount) || 0,
+  };
+}
+
+function takePrefetch(ds) {
+  const bag = globalThis.window?.__cgPrefetch;
+  const pending = bag?.[ds];
+  if (!pending) return null;
+  delete bag[ds];
+  return pending;
+}
+
+async function fetchBakedLanding(ds) {
+  const file = BAKED_LANDING[ds];
+  if (!file) return null;
+  const res = await fetch(`${import.meta.env.BASE_URL}${file}`, {
+    cache: 'default',
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
+  const type = res.headers.get('content-type') || '';
+  if (!res.ok || !type.includes('application/json')) return null;
+  const body = await res.json();
+  if (!body || body.preview !== true) return null;
+  return snapshotFromBody(body, 'landing');
+}
+
+async function fetchLiveDataset(ds, token, priority) {
+  const res = await fetch(`/api/data?ds=${encodeURIComponent(ds)}`, {
+    cache: token ? 'no-store' : 'default',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    ...(priority ? { priority } : {}),
+  });
+  const type = res.headers.get('content-type') || '';
+  if (!res.ok || !type.includes('application/json')) {
+    const detail = type.includes('application/json')
+      ? await readErrorDetail(res)
+      : String(res.status);
+    throw new Error(`Failed to load ${ds} (${detail})`);
+  }
+  return snapshotFromBody(await res.json(), 'api');
+}
+
 export async function fetchApiDataset(ds, { devStaticPath, priority } = {}) {
+  const token = await accessToken();
   try {
-    const token = await accessToken();
-    const res = await fetch(`/api/data?ds=${encodeURIComponent(ds)}`, {
-      cache: 'no-store',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      ...(priority ? { priority } : {}),
-    });
-    const type = res.headers.get('content-type') || '';
-    if (!res.ok || !type.includes('application/json')) {
-      const detail = type.includes('application/json')
-        ? await readErrorDetail(res)
-        : String(res.status);
-      throw new Error(`Failed to load ${ds} (${detail})`);
+    if (!token) {
+      const prefetched = takePrefetch(ds);
+      if (prefetched) {
+        try {
+          return snapshotFromBody(await prefetched, 'api');
+        } catch (err) {
+          const baked = await fetchBakedLanding(ds).catch(() => null);
+          if (baked) return baked;
+          throw err;
+        }
+      }
     }
-    const body = await res.json();
-    return {
-      data: body.data,
-      updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
-      source: 'api',
-      preview: !!body.preview,
-      lockedCount: Number(body.lockedCount) || 0,
-    };
+    return await fetchLiveDataset(ds, token, priority);
   } catch (err) {
+    if (!token) {
+      try {
+        const baked = await fetchBakedLanding(ds);
+        if (baked) return baked;
+      } catch { /* the dev static file is the last local fallback */ }
+    }
     if (import.meta.env.DEV && devStaticPath) {
       console.warn(`[data] ${ds} API unavailable in dev, using local static file`, err.message);
       return fetchDevStatic(devStaticPath);

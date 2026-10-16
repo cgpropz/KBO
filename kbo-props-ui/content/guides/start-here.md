@@ -26,7 +26,7 @@ New to player props? This page gets you from zero to your first informed pick in
 
 ## Quick links
 
-- **[Today's free top 3 →](/#free-top-3)** {{URL PENDING GIT BOT}}: three free props from today's board, on the homepage. (The NFL free preview is off right now.)
+- **[Today's free top 3 →](/#free-top-3)** {{URL PENDING GIT BOT}}: three free props from today's board, on the homepage.
 - **Highest hit rate today:** open a sport board and sort by the **L10** hit-rate pill: [KBO](/kbo-player-props) · [NFL](/nfl-player-props) {{URL PENDING GIT BOT}} · [WNBA](/wnba-player-props) {{URL PENDING GIT BOT}} · [NBA](/nba-player-props) {{URL PENDING GIT BOT}} · [NHL](/nhl-player-props) {{URL PENDING GIT BOT}}
 - **[How CG Score works →](/guides/cg-score)** {{URL PENDING GIT BOT}}
 - **Boards by sport:** [KBO](/kbo-player-props) · [NFL](/nfl-player-props) {{URL PENDING GIT BOT}} · [WNBA](/wnba-player-props) {{URL PENDING GIT BOT}} · [NBA](/nba-player-props) {{URL PENDING GIT BOT}} · [NHL](/nhl-player-props) {{URL PENDING GIT BOT}}

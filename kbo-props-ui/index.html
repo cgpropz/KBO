@@ -444,7 +444,7 @@
       <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
       <section id="free-top-3">
         <h2>Highest hit rates on the board</h2>
-        <p>Sorted by last-5 hit rate vs today's standard line. The NFL free preview is off right now.</p>
+        <p>Sorted by last-5 hit rate vs today's standard line.</p>
       </section>
     </main>
     <footer>
@@ -457,6 +457,31 @@
     </div>
 <!--/seo-root-->
     </div>
+    <script>
+      // Logged-out homepage only. Starts the NFL preview before the app
+      // bundle downloads. A cached sign-in skips it so a member is not
+      // handed the free rows.
+      (function () {
+        try {
+          var path = location.pathname;
+          if (path !== '/' && path !== '/index.html') return;
+          var storage = window.localStorage;
+          for (var i = 0; i < storage.length; i++) {
+            var key = storage.key(i) || '';
+            if (key.indexOf('sb-') === 0 && key.slice(-11) === '-auth-token' && storage.getItem(key)) return;
+          }
+        } catch (e) {
+          return;
+        }
+        window.__cgPrefetch = {
+          nfl_projections: fetch('/api/data?ds=nfl_projections', { priority: 'high' }).then(function (res) {
+            var type = res.headers.get('content-type') || '';
+            if (!res.ok || type.indexOf('application/json') === -1) throw new Error(String(res.status));
+            return res.json();
+          })
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

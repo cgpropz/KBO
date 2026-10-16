@@ -47,9 +47,37 @@ async function shoot(browser, secret, width, height, file) {
     viewport: { width, height },
     extraHTTPHeaders: { 'x-vercel-protection-bypass': secret },
   })
+  await page.addInitScript(() => {
+    window.__cgStats = { rowsAt: null }
+    const mark = () => {
+      if (window.__cgStats.rowsAt != null) return
+      if (document.querySelector('.v1-cgt-row')) window.__cgStats.rowsAt = performance.now()
+    }
+    new MutationObserver(mark).observe(document.documentElement, { childList: true, subtree: true })
+  })
+  const started = Date.now()
   await page.goto(previewUrl, { waitUntil: 'networkidle', timeout: 60000 })
   await page.waitForSelector('h1')
+  await page.waitForSelector('.v1-cgt-row', { timeout: 20000 })
   await page.screenshot({ path: file })
+  const stats = await page.evaluate(() => {
+    const resources = performance.getEntriesByType('resource').map((entry) => ({
+      name: entry.name.split('?')[0].slice(-80) + (entry.name.includes('?') ? entry.name.slice(entry.name.indexOf('?')) : ''),
+      startMs: Math.round(entry.startTime),
+      durationMs: Math.round(entry.duration),
+      size: entry.transferSize || entry.encodedBodySize || 0,
+    })).filter((entry) => /\/api\/data|\/landing\//.test(entry.name))
+    const players = [...document.querySelectorAll('.v1-cgt-row b')].map((node) => node.textContent.trim())
+    return {
+      rowsAtMs: window.__cgStats?.rowsAt == null ? null : Math.round(window.__cgStats.rowsAt),
+      players,
+      phone: document.querySelector('.v1-phone')?.innerText?.replace(/\s+/g, ' ').trim() || '',
+      resources,
+    }
+  })
+  stats.wallMs = Date.now() - started
+  if (!stats.players.length) throw new Error('NFL phone has no free-preview rows')
+  if (/free preview is off/i.test(stats.phone)) throw new Error('NFL phone still says the free preview is off')
   const hero = page.locator('.pl-hero')
   const h1 = (await page.locator('h1').first().innerText()).replace(/\s+/g, ' ').trim()
   const heroText = (await hero.innerText()).replace(/\s+/g, ' ')
@@ -68,6 +96,22 @@ async function shoot(browser, secret, width, height, file) {
   if (selected !== 'NFL') throw new Error(`selected sport is ${selected}`)
   if (!phone.startsWith('NFL')) throw new Error(`phone sport is ${phone}`)
   await page.close()
+  return { width, ...stats }
+}
+
+async function measureApi(secret, ds) {
+  const url = `${previewUrl.replace(/\/$/, '')}/api/data?ds=${ds}`
+  const started = Date.now()
+  const response = await fetch(url, { headers: { 'x-vercel-protection-bypass': secret } })
+  const bytes = Buffer.byteLength(await response.arrayBuffer())
+  return {
+    ds,
+    status: response.status,
+    ms: Date.now() - started,
+    bytes,
+    cache: response.headers.get('x-vercel-cache'),
+    cacheControl: response.headers.get('cache-control'),
+  }
 }
 
 async function lighthouse(chromePath, headersFile, index) {
@@ -110,11 +154,17 @@ await writeFile(headersFile, JSON.stringify({ 'x-vercel-protection-bypass': secr
 await mkdir(outDir, { recursive: true })
 
 const browser = await chromium.launch({ args: ['--no-sandbox'] })
+const pages = []
 try {
-  await shoot(browser, secret, 1440, 1100, new URL('desktop.png', outDir).pathname)
-  await shoot(browser, secret, 390, 844, new URL('phone-390.png', outDir).pathname)
+  pages.push(await shoot(browser, secret, 1440, 1100, new URL('desktop.png', outDir).pathname))
+  pages.push(await shoot(browser, secret, 390, 844, new URL('phone-390.png', outDir).pathname))
 } finally {
   await browser.close()
+}
+const api = []
+for (const ds of ['nfl_projections', 'nfl_game_markets']) {
+  api.push(await measureApi(secret, ds))
+  api.push(await measureApi(secret, ds))
 }
 
 const runs = []
@@ -126,6 +176,8 @@ await rm(headersDir, { recursive: true, force: true })
 
 const summary = {
   url: previewUrl,
+  pages,
+  api,
   runs,
   median: {
     performance: median(runs.map((run) => run.performance)),
