@@ -477,6 +477,57 @@ def test_will_not_play_news_holds_a_player_the_lineup_filter_left_in():
     assert by_day[("Auston Matthews", "2026-10-17")].get("removed") is not True
 
 
+def test_is_out_of_a_protocol_or_boot_is_not_an_out():
+    assert _av.news_out_status("Jones is out of the protocol.") is None
+    assert _av.news_out_status("Jones is out of the walking boot.") is None
+    assert _av.news_out_status("Jones is out.") == "OUT"
+    assert _av.news_out_status("Jones is out tonight.") == "OUT"
+
+
+def _note(name, team, details, created, nhl_id="1"):
+    return {
+        "playerName": name,
+        "teamAbbreviation": team,
+        "playerFiveVFiveId": nhl_id,
+        "newsCategoryName": "Injury",
+        "details": details,
+        "createdAt": created,
+    }
+
+
+def test_undated_out_notes_cover_one_day_and_remains_out_covers_two_weeks():
+    created = "2026-10-17T15:00:00Z"
+    news = [
+        _note("Will Play", "BUF", "Play (lower body) will not play.", created),
+        _note("Stay Out", "BUF", "Stay (lower body) remains out.", created),
+        _note("Week Long", "BUF", "Long (upper body) is out week to week.", created),
+        _note("Scratch Day", "BUF", "Day (undisclosed) was scratched.", created),
+        _note("Boot Guy", "BUF", "Guy is out of the walking boot.", created),
+    ]
+    rows = [
+        _skater("Will Play", team="BUF", gameday="2026-10-17"),
+        _skater("Will Play", team="BUF", gameday="2026-10-19"),
+        _skater("Stay Out", team="BUF", gameday="2026-10-27"),
+        _skater("Stay Out", team="BUF", gameday="2026-11-01"),
+        _skater("Week Long", team="BUF", gameday="2026-10-27"),
+        _skater("Week Long", team="BUF", gameday="2026-11-01"),
+        _skater("Scratch Day", team="BUF", gameday="2026-10-17"),
+        _skater("Scratch Day", team="BUF", gameday="2026-10-19"),
+        _skater("Boot Guy", team="BUF", gameday="2026-10-17"),
+    ]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=[], news=news)
+    by_day = {(row["player"], row["gameday"]): row for row in kept}
+    assert by_day[("Will Play", "2026-10-17")]["removed"] is True
+    assert by_day[("Will Play", "2026-10-19")].get("removed") is not True
+    assert by_day[("Stay Out", "2026-10-27")]["removed"] is True
+    assert by_day[("Stay Out", "2026-11-01")].get("removed") is not True
+    assert by_day[("Week Long", "2026-10-27")]["removed"] is True
+    assert by_day[("Week Long", "2026-11-01")].get("removed") is not True
+    assert by_day[("Scratch Day", "2026-10-17")]["removed"] is True
+    assert by_day[("Scratch Day", "2026-10-19")].get("removed") is not True
+    assert by_day[("Boot Guy", "2026-10-17")].get("removed") is not True
+
+
 def test_manual_out_list_pulls_tavares_for_that_date_only():
     rows = [
         _skater("John Tavares", gameday="2026-10-17"),
