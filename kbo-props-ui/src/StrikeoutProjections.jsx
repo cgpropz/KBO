@@ -11,6 +11,7 @@ import { opponentLabel } from './cardMark';
 import { CardTeamLogo } from './CardTeamLogo';
 import { kboLogoUrl } from './slipBoardModel.js';
 import { MemberBoardStatus } from './MemberBoardStatus';
+import { QuietMemberPreview } from './QuietMemberPreview';
 import { useMemberBoardPhase } from './useMemberBoardPhase';
 import { useFullBoardRefresh } from './useFullBoardRefresh';
 
@@ -85,6 +86,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [memberPreview, setMemberPreview] = useState(false);
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedProp, setSelectedProp] = useState('all');
@@ -140,6 +142,7 @@ function StrikeoutProjections({ onNavigate }) {
         setData(kSnap?.data || null);
         setUpdatedAt(kSnap?.updatedAt || null);
         setRefreshing(kSnap?.refreshing === true);
+        setMemberPreview(kSnap?.preview === true);
         setMatchupData(mData);
         setOpponentStatsData(oppData);
         setPrizepicksData(ppData);
@@ -166,6 +169,7 @@ function StrikeoutProjections({ onNavigate }) {
     setData(snapshot?.data || null);
     setUpdatedAt(snapshot?.updatedAt || null);
     setRefreshing(false);
+    setMemberPreview(false);
     setError(null);
     setLoading(false);
   });
@@ -599,6 +603,7 @@ function StrikeoutProjections({ onNavigate }) {
 
   return (
     <div className="so-container so-k-page">
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="so-error" />
       <header className="so-header">
         <div className="so-header-inner">
           <div>

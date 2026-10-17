@@ -5,6 +5,7 @@ import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
@@ -82,6 +83,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
 
   useEffect(() => {
@@ -92,6 +94,7 @@ export default function NflProjections({ onSelectPlayer }) {
         setProjections(next)
         setUpdatedAt(publishedAt || null)
         setLockedCount(previewLockedCount(preview, locked))
+        setMemberPreview(preview === true)
         setRefreshing(pendingRefresh === true)
         setError('')
         setLoaded(true)
@@ -105,6 +108,7 @@ export default function NflProjections({ onSelectPlayer }) {
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setError('')
     setLoaded(true)
   })
@@ -143,6 +147,7 @@ export default function NflProjections({ onSelectPlayer }) {
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span></div>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}

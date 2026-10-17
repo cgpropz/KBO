@@ -3,6 +3,7 @@ import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
@@ -163,6 +164,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   }
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [openId, setOpenId] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
@@ -176,6 +178,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         if (!active) return
         setProjections(next)
         setLockedCount(previewLockedCount(preview, locked))
+        setMemberPreview(preview === true)
         setRefreshing(pendingRefresh === true)
         setUpdatedAt(publishedAt || null)
         setError('')
@@ -189,6 +192,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setUpdatedAt(snapshot.updatedAt || null)
     setError('')
     setLoaded(true)
@@ -228,6 +232,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         </div>
       </div>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
       {!hold && !error && !loaded && (

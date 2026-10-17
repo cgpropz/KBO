@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
 import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { computeCgOdds } from './cgOdds'
@@ -285,6 +286,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [matchup, setMatchup] = useState(ALL_MATCHUPS)
@@ -309,6 +311,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
           setPayload(nextPayload)
           setRecords(nextRecords)
           setLockedCount(preview ? locked : 0)
+          setMemberPreview(preview === true)
           setRefreshing(pendingRefresh === true)
           setError('')
           setLoaded(true)
@@ -341,6 +344,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
     setRecords(Array.isArray(nextPayload.records) ? nextPayload.records : [])
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setError('')
     setLoaded(true)
   })
@@ -459,6 +463,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
         </label>
       </section>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
       {!hold && showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}

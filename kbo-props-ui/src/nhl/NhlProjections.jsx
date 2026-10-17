@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
@@ -133,6 +134,7 @@ export default function NhlProjections({ onSelectPlayer }) {
         </div>
       </div>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={showingPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the board:" onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice preview={showingPreview} exhausted={refreshExhausted} onRetry={retryLoad} />}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}

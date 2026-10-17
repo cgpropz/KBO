@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflGameMarkets } from './nflData'
 import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamColor, teamLogoUrl } from './nflTeams'
@@ -290,6 +291,7 @@ export default function NflGameMarkets() {
       </div>
       {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. CG NUMBER is each team's projected score. The total is those two scores added together.</p>}
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={previewMode} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
       {showPaywall && !error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}

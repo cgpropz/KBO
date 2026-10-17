@@ -15,6 +15,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
+import { QuietMemberPreview } from './QuietMemberPreview'
 import { MemberBoardStatus } from './MemberBoardStatus'
 import { useMemberBoardPhase } from './useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from './useFullBoardRefresh'
@@ -224,6 +225,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [whyRevision, setWhyRevision] = useState(0)
 
   const tableWrapRef = useRef(null)
@@ -243,6 +245,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         setUpdatedAt(props.updatedAt || null)
         setLockedCount(previewLockedCount(props.preview === true, props.lockedCount))
         setRefreshing(props.refreshing === true)
+        setMemberPreview(props.preview === true)
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
@@ -262,6 +265,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     setUpdatedAt(next.updatedAt || null)
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setError('')
   })
   const phase = useMemberBoardPhase('kbo', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
@@ -336,6 +340,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         {!boardEmpty && !hold && <div className="kbo-header-actions"><span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="kbo-notice" />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />
       {!hold && error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="kbo-notice" />}
       {!hold && !error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}

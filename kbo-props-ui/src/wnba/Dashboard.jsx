@@ -15,6 +15,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
@@ -412,6 +413,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
 
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(({ fresh = false } = {}) => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json', { fresh }).then((snapshot) => {
     const payload = snapshot?.data
@@ -445,6 +447,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         if (cancelled) return
         setLockedCount(previewLockedCount(pr?.preview === true, pr?.lockedCount))
         setRefreshing(pr?.refreshing === true)
+        setMemberPreview(pr?.preview === true)
         setUpdatedAt(pr?.updatedAt || null)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
@@ -465,6 +468,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setUpdatedAt(snapshot.updatedAt || null)
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLoadError('')
@@ -639,6 +643,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           </div>
 
           {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
+          <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="wnba-notice" />
           {!hold && projLoading && (
             <div role="status" aria-label="Loading WNBA prop lines">
               <BoardSkeleton />

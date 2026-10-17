@@ -8,6 +8,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
@@ -328,6 +329,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const phone = usePhoneBoard()
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
 
   const tableWrapRef = useRef(null)
@@ -356,6 +358,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
         if (cancelled) return
         setLockedCount(previewLockedCount(board?.preview === true, board?.lockedCount))
         setRefreshing(board?.refreshing === true)
+        setMemberPreview(board?.preview === true)
         setUpdatedAt(board?.updatedAt || null)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
@@ -376,6 +379,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nba_projections_standard', (snapshot) => {
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setUpdatedAt(snapshot.updatedAt || null)
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLoadError('')
@@ -482,6 +486,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           </div>
 
           {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
+          <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="wnba-notice" />
           {!hold && projLoading && <div className="wnba-notice">Loading NBA prop lines…</div>}
           {!hold && !projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load NBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
           {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />}

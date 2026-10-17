@@ -214,7 +214,7 @@ function useRecap() {
   return recap;
 }
 
-function useBoards(access, nbaOpen, selectedId, planPending) {
+function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
   const [rosters, setRosters] = useState({});
@@ -248,6 +248,10 @@ function useBoards(access, nbaOpen, selectedId, planPending) {
       const place = slot;
       slot += 1;
       const open = nbaOpenRef.current;
+      if (planFailed) {
+        setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } }));
+        return;
+      }
       if (planPending) {
         setBoards((b) => ({ ...b, [sport.id]: { status: 'loading', raw: null } }));
         return;
@@ -312,7 +316,7 @@ function useBoards(access, nbaOpen, selectedId, planPending) {
       generation.current += 1;
       retryTicket.current = {};
     };
-  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, planPending]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, planPending, planFailed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retrySport = (id) => {
     const sport = SPORTS.find((item) => item.id === id);
@@ -397,15 +401,23 @@ function BellIcon() {
 }
 
 export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
-  const { user, tier, tierConfirmed, signOut } = useAuth();
-  const planPending = Boolean(user) && tierConfirmed !== true;
+  const { user, tier, tierConfirmed, planCheckExhausted, retryPlanCheck, signOut } = useAuth();
+  const planFailed = Boolean(user) && planCheckExhausted === true;
+  const planPending = Boolean(user) && tierConfirmed !== true && !planFailed;
   const access = sportAccess(tier);
   const { open: nbaOpen } = useNbaOpen();
   const [picked, setPicked] = useState(() => (
     readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
   ));
   const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
-  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id, planPending);
+  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id, planPending, planFailed);
+  const retryHub = (id) => {
+    if (planFailed) {
+      retryPlanCheck();
+      return;
+    }
+    retrySport(id);
+  };
   const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
@@ -589,7 +601,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                 <section className="hub-card hub-card-empty">
                   <p>{state.status === 'loading' && <span className="board-spinner" aria-hidden="true" />}{emptyCopy(state.status, selected)}</p>
                   {state.status === 'error' && (
-                    <button type="button" className="hub-retry" onClick={() => retrySport(selected.id)}>Retry</button>
+                    <button type="button" className="hub-retry" onClick={() => retryHub(selected.id)}>Retry</button>
                   )}
                 </section>
               )}
@@ -692,7 +704,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       className={`hub-tile ${sport.id === selected.id ? 'is-active' : ''} ${boards[sport.id]?.status === 'error' ? 'is-error' : ''}`}
                       onClick={() => {
                         pickSport(sport.id);
-                        if (boards[sport.id]?.status === 'error') retrySport(sport.id);
+                        if (boards[sport.id]?.status === 'error') retryHub(sport.id);
                       }}
                     >
                       <strong>{sport.name}</strong>

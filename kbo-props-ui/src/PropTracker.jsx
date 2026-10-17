@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { fetchDataSnapshot } from './dataUrl';
 import { MemberBoardStatus } from './MemberBoardStatus';
+import { QuietMemberPreview } from './QuietMemberPreview';
 import { useMemberBoardPhase } from './useMemberBoardPhase';
 import { useFullBoardRefresh } from './useFullBoardRefresh';
 import './PropTracker.css';
@@ -23,6 +24,7 @@ function PropTracker() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [memberPreview, setMemberPreview] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [pendingLocked, setPendingLocked] = useState(0);
   const [tab, setTab] = useState('graded');
@@ -45,6 +47,7 @@ function PropTracker() {
         const d = snap.data;
         setPendingLocked(snap.preview ? snap.lockedCount : 0);
         setRefreshing(snap.refreshing === true);
+        setMemberPreview(snap.preview === true);
         debugLog('Data loaded:', { pending: d?.pending?.length || 0, graded: d?.graded?.length || 0, generatedAt: d?.generated_at });
         setData(d); setLoading(false);
       })
@@ -57,6 +60,7 @@ function PropTracker() {
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('graded_props_history', (snapshot) => {
     setPendingLocked(0);
     setRefreshing(false);
+    setMemberPreview(false);
     setData(snapshot.data);
     setLoading(false);
   });
@@ -179,6 +183,7 @@ function PropTracker() {
 
   return (
     <div className="gt-container">
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="gt-loading" />
       <header className="gt-header">
         <h1 className="gt-title">Model Results</h1>
         <span className="gt-subtitle">Automated prop grading &amp; analytics</span>

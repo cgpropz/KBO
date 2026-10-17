@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNflLineups } from './nflData'
 import { fitImage } from '../fitImage.js'
 import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 
@@ -34,6 +35,7 @@ export default function NflLineups() {
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   useEffect(() => {
     let active = true
@@ -42,6 +44,7 @@ export default function NflLineups() {
         if (!active) return
         setMatchups(next)
         setLockedCount(preview ? locked : 0)
+        setMemberPreview(preview === true)
         setRefreshing(pendingRefresh === true)
         setLoaded(true)
       })
@@ -52,6 +55,7 @@ export default function NflLineups() {
     setMatchups(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setError('')
     setLoaded(true)
   })
@@ -65,5 +69,5 @@ export default function NflLineups() {
     setLoadAttempt((current) => current + 1)
   }
   const week = useMemo(() => matchups[0]?.week, [matchups])
-  return <section className="nfl-lineups"><header className="nfl-lineups-header"><p>NFL / GAME DAY</p><h1>Week {week || '—'} Starting Lineups</h1><span><b className="nfl-status status-out">OUT</b> Ruled out <b className="nfl-status status-gtd">GTD</b> Questionable / doubtful <b className="nfl-status status-season">OUT (SEASON)</b> Injured reserve</span></header>{hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}{!hold && (error ? <div className="nfl-notice">Unable to load starting lineups: {error}</div> : !loaded ? <div className="nfl-notice">Loading the current starting lineups.</div> : !matchups.length ? <div className="nfl-notice">No starting lineups are posted yet. Check back closer to kickoff.</div> : <><div className="nfl-lineups-grid">{matchups.map((matchup) => <MatchupCard key={`${matchup.awayTeam}-${matchup.homeTeam}`} matchup={matchup} />)}</div>{showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: showing {matchups.length} game{matchups.length === 1 ? '' : 's'}. {lockedCount} more are locked. Upgrade to see every lineup.</div>}</>)}</section>
+  return <section className="nfl-lineups"><header className="nfl-lineups-header"><p>NFL / GAME DAY</p><h1>Week {week || '—'} Starting Lineups</h1><span><b className="nfl-status status-out">OUT</b> Ruled out <b className="nfl-status status-gtd">GTD</b> Questionable / doubtful <b className="nfl-status status-season">OUT (SEASON)</b> Injured reserve</span></header>{hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}<QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />{!hold && (error ? <div className="nfl-notice">Unable to load starting lineups: {error}</div> : !loaded ? <div className="nfl-notice">Loading the current starting lineups.</div> : !matchups.length ? <div className="nfl-notice">No starting lineups are posted yet. Check back closer to kickoff.</div> : <><div className="nfl-lineups-grid">{matchups.map((matchup) => <MatchupCard key={`${matchup.awayTeam}-${matchup.homeTeam}`} matchup={matchup} />)}</div>{showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: showing {matchups.length} game{matchups.length === 1 ? '' : 's'}. {lockedCount} more are locked. Upgrade to see every lineup.</div>}</>)}</section>
 }

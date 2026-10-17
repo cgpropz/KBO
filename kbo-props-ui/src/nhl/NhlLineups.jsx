@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchNhlLineups } from './nhlData'
 import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { TEAM_NAMES, teamLogoUrl } from './nhlTeams'
@@ -75,6 +76,7 @@ export default function NhlLineups() {
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
@@ -84,6 +86,7 @@ export default function NhlLineups() {
         if (!active) return
         setMatchups(next)
         setLockedCount(preview ? locked : 0)
+        setMemberPreview(preview === true)
         setRefreshing(pendingRefresh === true)
         setLoaded(true)
       })
@@ -94,6 +97,7 @@ export default function NhlLineups() {
     setMatchups(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLockedCount(0)
     setRefreshing(false)
+    setMemberPreview(false)
     setError('')
     setLoaded(true)
   })
@@ -115,6 +119,7 @@ export default function NhlLineups() {
         <span>Goalie tags come from Daily Faceoff. Skater lines are projected. If that page has no skaters, the list is the last game they actually played. A team with nothing posted stays empty.</span>
       </header>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <div className="nfl-notice">Unable to load lineups: {error}</div>}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading lines and starting goalies.</div>}
       {!hold && !error && loaded && !matchups.length && <div className="nfl-notice">No lineups are posted for tonight.</div>}

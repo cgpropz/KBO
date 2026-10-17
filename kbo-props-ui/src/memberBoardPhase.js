@@ -15,3 +15,9 @@ export function sportUnlockedFor(sport, tier, user) {
   if (sport === 'nba') return canSeeNba(user)
   return sportAccess(tier)[sport] === true
 }
+
+// A confirmed member still sitting on the preview, with the refresh finished
+// or never started, needs the free-preview label and a Retry.
+export function memberSeesQuietPreview(phase, preview, refreshing) {
+  return phase === 'member' && preview === true && refreshing !== true
+}

@@ -1,9 +1,7 @@
 <!--
 DRAFT, NOT FOR PUBLISH. Owner (Code Green) approval required. Git bot publishes.
-Formula status (updated Oct 11, 2:30 PM ET): per-sport formulas for NHL, WNBA, NFL and KBO now come from the
-Board QA README (/cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md), which QA confirmed against the site JS on 2026-10-11.
-NBA is not covered by the README and stays {{CONFIRM WITH BOARD QA}}. What KBO's stored score measures is also open.
 No performance claims: do not add any copy saying higher scores hit more often.
+Do not publish the scoring formula, weights, or line minimums.
 -->
 
 ---
@@ -14,7 +12,7 @@ canonical: "https://www.cgpropz.com/guides/cg-score"   # {{URL PENDING GIT BOT}}
 primary_keyword: "cg score"
 secondary_keywords: ["how cg score works", "cgpropz cg score", "what is cg score", "projection vs line player props"]
 schema: [Article, BreadcrumbList, FAQPage]
-featured_image: "{{GRAPHIC DESIGNER ASSET}}   # suggested: simple dial graphic, 50 in the middle labeled 'projection = line'"
+featured_image: "{{GRAPHIC DESIGNER ASSET}}   # diagram: projection vs line, adjusted for matchup"
 date_published: "{{ISO DATETIME ET AT PUBLISH}}"
 date_modified: "{{ISO DATETIME ET AT PUBLISH}}"
 status: draft
@@ -22,7 +20,7 @@ status: draft
 
 # How CG Score Works
 
-Every prop on a CGPropz board has a CG Score. It answers one question: **how far does our projection sit from the line?** This guide explains how the score is built, how to read it, and what it can't tell you.
+Every prop on a CGPropz board has a CG Score. It ranks that prop against the rest of the board, adjusted for the matchup and recent form. This guide explains how to read the score, and what it can't tell you.
 
 ## What CG Score measures
 
@@ -43,7 +41,7 @@ CG Score ranks every prop by how strongly our model's projection disagrees with 
 - **Check the side.** A higher score is a bigger model edge. Open the card to see whether the model is on the over or the under.
 - **Pair it with hit rates.** The board also shows how often the player cleared today's line over the last ten games, this season and against today's opponent. Always read those with their sample size.
 - **Check the news.** The projection is built before late news. If a player's role changes because of injuries, rest or lineup moves, the score may not reflect it yet.
-- **Watch for odd lines.** A very low line can make a modest projection look like a huge score. If a score looks extreme, check the line and the stat before acting on it.
+- **Check an extreme score.** If a score looks out of place, open the player card and check the latest news before you act on it.
 
 ## What CG Score does not tell you
 
@@ -133,11 +131,7 @@ No. CGPropz is an independent data and analysis site and is not affiliated with 
 
 <!--
 SOURCES / NOTES
-- Formula, per sport: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md, section "CG Score (site JS /assets/index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET after PR #112)". NHL, WNBA, NFL (incl. per-prop minimums) and KBO taken verbatim in meaning; side rule (projection >= line => over) from the same README. NBA: not in README, {{CONFIRM WITH BOARD QA}}.
-- Free-tier note (README, verified 2026-10-11 2:25 PM ET): NHL/WNBA free top 3 = top 3 of full board by the formulas; KBO chosen server-side, not the site formula; NFL none.
-- Demon/goblin lines on NHL and WNBA boards: verified by Board QA (relayed Oct 11, 2:27 PM ET). NFL/KBO unconfirmed.
-- "No claim that higher scores hit more often": guided by the internal lab review at /workspace/shared/lab/cg_score_check/results.md (found CG Score only weakly related to hit rate). Used ONLY to avoid performance claims; not cited as the formula source and no numbers taken from it.
-- "Odd lines" caution: internal lab log /workspace/shared/lab/lab_log.md (very small lines produced extreme scores). No numbers used.
-- Illustrative example (6.0 / 5.0 / 60 / 40) is arithmetic on made-up inputs, labeled as such. Owner may remove it.
-- The board fields mentioned (L10, season, H2H hit rate, DVP, slip builder) are taken from the CGPropz board UI.
+- No performance claims. Do not say higher scores hit more often.
+- Do not publish the scoring formula, weights, or line minimums.
+- The board fields mentioned (recent games, season, opponent history, defense versus position, slip builder) are taken from the CGPropz board UI.
 -->

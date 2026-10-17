@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
@@ -48,6 +49,7 @@ export default function NbaEdge() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState(null)
@@ -70,6 +72,7 @@ export default function NbaEdge() {
         setData(Array.isArray(snapshot?.data) ? snapshot.data : [])
         setUpdatedAt(snapshot?.updatedAt || null)
         setRefreshing(snapshot?.refreshing === true)
+        setMemberPreview(snapshot?.preview === true)
       } catch (err) {
         if (!cancelled) {
           setData(null)
@@ -87,6 +90,7 @@ export default function NbaEdge() {
     setData(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setRefreshing(false)
+    setMemberPreview(false)
     setError(null)
     setLoading(false)
   })
@@ -284,6 +288,7 @@ export default function NbaEdge() {
       </div>
 
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && (
         <div style={{ padding: '32px', textAlign: 'center', color: '#ef4444', background: '#1a0a0a', borderRadius: 12, border: '1px solid #3f1a1a' }}>
           NBA lines snapshot unavailable. Run <code style={{ color: '#f97316' }}>python nba/nba-pp-odds.py</code> to write the board.
