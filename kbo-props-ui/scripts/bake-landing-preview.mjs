@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { gameAlreadyStarted, shapeForTier, sportAccess } from '../api/_dataAccess.js';
+import { assembleSnapshotRows, snapshotChunkManifest } from '../api/_snapshotChunks.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DATASETS = ['nfl_projections', 'nfl_game_markets', 'nhl_projections'];
@@ -63,30 +64,71 @@ async function readLastGood(client, table) {
   try {
     const { data, error } = await client.storage.from('board-last-good').download(`${table}.json`);
     if (error || !data) return null;
-    return JSON.parse(await data.text());
+    const parsed = JSON.parse(await data.text());
+    // The bucket stores the full board. A manifest is not a preview source.
+    if (!parsed?.data || snapshotChunkManifest(parsed.data)) return null;
+    return parsed;
   } catch {
     return null;
   }
 }
 
+async function readChunk(client, table, id) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
+  try {
+    const { data, error } = await client.from(table).select('id, data, updated_at').eq('id', id)
+      .abortSignal(controller.signal).maybeSingle();
+    if (error) throw new Error(error.message || 'read error');
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Head is the id=1 row. extraRows are the chunks it names. A single-row
+// board is returned unchanged. A chunked board is joined back into that
+// same payload before the free preview is cut.
+export function completePublishedRow(head, extraRows) {
+  if (!snapshotChunkManifest(head?.data)) return head;
+  return assembleSnapshotRows(head, extraRows);
+}
+
 async function readSnapshot(client, table) {
-  let data = null;
+  let head = null;
   for (let attempt = 1; attempt <= READ_ATTEMPTS; attempt += 1) {
     try {
-      data = await readOnce(client, table);
+      head = await readOnce(client, table);
       break;
     } catch {
       console.warn(`${table} read attempt ${attempt}/${READ_ATTEMPTS} failed`);
       if (attempt < READ_ATTEMPTS) await new Promise((r) => setTimeout(r, 5_000 * attempt));
     }
   }
-  if (!data) {
-    data = await readLastGood(client, table);
-    if (data) console.warn(`${table} baked from last-good copy`);
+  if (!head) {
+    head = await readLastGood(client, table);
+    if (head) console.warn(`${table} baked from last-good copy`);
   }
-  if (!data) throw new Error(`${table} read failed`);
-  if (!data?.data) throw new Error(`${table} is not published`);
-  return data;
+  if (!head) throw new Error(`${table} read failed`);
+  if (!head?.data) throw new Error(`${table} is not published`);
+  if (!snapshotChunkManifest(head.data)) return head;
+  const ids = head.data.snapshotChunks.ids;
+  if (!Array.isArray(ids)) throw new Error(`${table} chunk manifest is invalid`);
+  try {
+    const extra = [];
+    for (const id of ids) {
+      const row = await readChunk(client, table, id);
+      if (row) extra.push(row);
+    }
+    return completePublishedRow(head, extra);
+  } catch (err) {
+    const fallback = await readLastGood(client, table);
+    if (fallback) {
+      console.warn(`${table} baked from last-good copy`);
+      return fallback;
+    }
+    throw err;
+  }
 }
 
 async function main() {

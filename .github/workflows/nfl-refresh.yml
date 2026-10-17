@@ -84,6 +84,7 @@ jobs:
           bash pipeline/memory/commit_memory.sh "chore: nfl game market archive"
 
       - name: Publish protected NFL snapshot
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nfl/"

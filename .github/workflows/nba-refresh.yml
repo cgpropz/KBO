@@ -90,6 +90,7 @@ jobs:
         run: python pipeline/build_correlations.py --sport nba
 
       - name: Publish NBA snapshots to Supabase
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nba/"

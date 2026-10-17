@@ -196,6 +196,7 @@ jobs:
 
       - name: Publish WNBA prop lines to Supabase
         if: steps.gate.outputs.due == 'true' && steps.check_lines.outputs.has_lines == 'true'
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "wnba/projections"

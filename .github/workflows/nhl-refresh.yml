@@ -73,6 +73,7 @@ jobs:
         run: python pipeline/build_correlations.py --sport nhl --root /tmp/moneypuck
 
       - name: Publish protected NHL snapshot
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nhl/"

@@ -74,6 +74,7 @@ jobs:
 
       - name: Publish KBO prop correlations
         continue-on-error: true
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: correlations_kbo.json
@@ -94,6 +95,7 @@ jobs:
         run: python nfl/sharp_odds.py
 
       - name: Publish protected NFL snapshot
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nfl/"
