@@ -16,6 +16,7 @@ import {
   logoFor,
   naturalSide,
   shownCg,
+  markSources,
 } from '../src/slipBoardModel.js'
 import { legCg, payoutDollars, payoutFor, playersRepeat } from '../src/slipRank.js'
 
@@ -119,24 +120,56 @@ test('L10, headshot, and logo fallbacks stay on the row', () => {
   assert.equal(l10Text({ hitRate: 50, gamesL10: 10 }), '5/10')
   assert.equal(l10Text({ recent: [1, 0, 2], line: 0.5 }), '2/3')
   const photo = 'https://static.prizepicks.com/images/players/nhl/Alex.webp'
+  const espn = 'https://a.espncdn.com/i/headshots/nfl/players/full/1.png'
+  const nfl = 'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/abc123'
+  const teamPhoto = 'https://static.prizepicks.com/images/teams/nfl/NFL_team_x/19.webp'
+  const manual = 'https://static.prizepicks.com/images/manual/Baseball-Asset.webp'
+  const kim = 'https://static.prizepicks.com/images/manual/Kim Do-yeong.png'
+  const naver = 'https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/person/middle/2026/79365.jpg'
+  const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1631007.png'
+  const wnbaPp = 'https://static.prizepicks.com/images/players/WNBA/Veronica_Burton_WNBA_player_abc.webp'
   assert.equal(headshotFor('nhl', { imageUrl: photo, playerId: '8471214' }), photo)
   assert.match(headshotFor('nhl', { playerId: '8471214' }), /8471214/)
-  assert.equal(headshotFor('nfl', { imageUrl: 'https://a.espncdn.com/i/headshots/nfl/players/full/1.png' }), '')
+  assert.equal(headshotFor('nfl', { ppImageUrl: photo, imageUrl: espn }), photo)
+  assert.equal(headshotFor('nfl', { ppImageUrl: teamPhoto, imageUrl: nfl }), nfl)
+  assert.equal(headshotFor('nfl', { imageUrl: 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_80/league/abc123' }), 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_80/league/abc123')
+  assert.equal(headshotFor('nfl', { imageUrl: espn }), espn)
+  assert.equal(headshotFor('nfl', { ppImageUrl: teamPhoto }), '')
+  assert.equal(headshotFor('kbo', { ppImageUrl: kim, imageUrl: naver }), kim)
+  assert.equal(headshotFor('kbo', { ppImageUrl: manual, imageUrl: naver }), naver)
+  assert.equal(headshotFor('kbo', { ppImageUrl: manual }), '')
+  assert.equal(headshotFor('wnba', { ppImageUrl: wnbaPp, image: wnba }), wnbaPp)
+  assert.equal(headshotFor('wnba', { image: wnba }), wnba)
+  assert.equal(headshotFor('nba', { image: 'https://a.espncdn.com/i/headshots/nba/players/full/2.png' }), 'https://a.espncdn.com/i/headshots/nba/players/full/2.png')
+  const sized = markSources('nfl', { imageUrl: nfl, team: 'DEN' }, 36)
+  assert.match(decodeURIComponent(sized.head), /c_thumb,w_200/)
+  assert.match(decodeURIComponent(sized.logo), /nfl\/500\/den/)
+  const logoOnly = markSources('nfl', { team: 'DEN', ppImageUrl: teamPhoto }, 36)
+  assert.equal(logoOnly.head, '')
+  assert.match(decodeURIComponent(logoOnly.logo), /nfl\/500\/den/)
   assert.match(logoFor('nfl', 'DEN'), /nfl\/500\/den/)
   assert.match(logoFor('nhl', 'WSH'), /nhl\/500\/wsh/)
   assert.match(logoFor('kbo', 'LG'), /team-logos\/lg\.webp/)
+  assert.match(logoFor('wnba', 'GSV'), /wnba\/500\/gs/)
+  assert.match(logoFor('nba', 'LAL'), /nba\/500\/lal/)
 })
 
 test('the slip screen does not ship sample rows, example payouts, or lock copy', () => {
   const src = readFileSync(new URL('../src/SlipBoard.jsx', import.meta.url), 'utf8')
   const css = readFileSync(new URL('../src/SlipBoard.css', import.meta.url), 'utf8')
+  const phone = readFileSync(new URL('../src/mobile.css', import.meta.url), 'utf8')
   const footer = readFileSync(new URL('../src/SiteFooter.jsx', import.meta.url), 'utf8')
   for (const banned of ['EXAMPLE', 'SAMPLE', 'Troy Franklin', 'x##', '$##', 'locked', 'PrizePicks']) {
     assert.equal(src.includes(banned), false, banned)
     assert.equal(css.includes(banned), false, banned)
   }
   assert.match(src, /min-height: 48px|b2-ml/)
+  assert.match(src, /loading="lazy"/)
+  assert.match(src, /decoding="async"/)
+  assert.match(src, /width=\{size\}/)
   assert.match(css, /min-height:\s*48px/)
   assert.match(css, /1fr 420px/)
+  assert.match(phone, /body \.b2-av \{[^}]*width: 36px/s)
+  assert.match(phone, /body \.b2-leg \.b2-av \{[^}]*width: 32px/s)
   assert.match(footer, /SiteFooter|STANDARD_LINE|footer/i)
 })

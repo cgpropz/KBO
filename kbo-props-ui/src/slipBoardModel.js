@@ -1,5 +1,5 @@
 import { cgScore } from './cgScore.js'
-import { fitImage } from './fitImage.js'
+import { fitImage, isPrizePicksHeadshot, isRemoteHeadshotOrLogo, manualPlayerPng } from './fitImage.js'
 import { inkOn, landingHeadshotUrl, landingTeamFill } from './playerMark.js'
 import { NFL_LINE_FLOORS, nflCgScore } from './nfl/nflLineFloors.js'
 import { teamLogoUrl as nflLogo } from './nfl/nflTeams.js'
@@ -203,10 +203,36 @@ export function logoFor(sport, team) {
   return ''
 }
 
-// PrizePicks player photo, then the league headshot, then the caller uses the logo.
+const HEADSHOT_FIELDS = ['ppImageUrl', 'image_url', 'imageUrl', 'image', 'photoUrl']
+
+// A board headshot already allowed by the image proxy. Team logos and PrizePicks
+// team jerseys or generic assets are not player photos. The image proxy turns
+// an unsized nfl.com file into a thumbnail before sharp sees it.
+function leagueHeadshotUrl(url) {
+  const value = String(url || '').trim()
+  if (!value || !isRemoteHeadshotOrLogo(value)) return ''
+  if (/\/teamlogos\//i.test(value)) return ''
+  if (/static\.prizepicks\.com/i.test(value) && !isPrizePicksHeadshot(value) && !manualPlayerPng(value)) return ''
+  return value
+}
+
+// PrizePicks player webp, then a hand-uploaded player PNG, then the league
+// photo already stored on the row, then the NHL mug. The caller uses the team
+// logo after that.
 export function headshotFor(sport, row) {
-  const photo = landingHeadshotUrl(row)
-  if (photo) return photo
+  const fields = HEADSHOT_FIELDS.map((key) => row?.[key])
+  for (const url of fields) {
+    const photo = landingHeadshotUrl({ ppImageUrl: url })
+    if (photo) return photo
+  }
+  for (const url of fields) {
+    const manual = manualPlayerPng(url)
+    if (manual) return manual
+  }
+  for (const url of fields) {
+    const league = leagueHeadshotUrl(url)
+    if (league) return league
+  }
   if (String(sport || '').toLowerCase() === 'nhl') return nhlHeadshotUrl(row?.playerId) || ''
   return ''
 }

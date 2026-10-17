@@ -4,6 +4,26 @@ import { cgScore } from '../src/cgScore.js'
 import { confirmedGoalieStarters, formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
 import { standardRecord } from '../scripts/write-member-recap.mjs'
 
+test('kbo hub prefers a manual player photo over the name lookup', () => {
+  const png = 'https://static.prizepicks.com/images/manual/Kim Do-yeong.png'
+  const naver = 'https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/person/middle/2026/1.jpg'
+  const asset = 'https://static.prizepicks.com/images/manual/Baseball-Asset.webp'
+  const kim = kboHubRows({ cards: [{
+    name: 'Kim Do-yeong',
+    image_url: png,
+    props: [{ stat: 'Hits', line: 0.5, odds_type: 'standard', cg_projection: 70, projection: 1.2 }],
+  }] }, { 'Kim Do-yeong': naver })
+  assert.equal(kim[0].image, png)
+  assert.equal(kim[0].ppImageUrl, png)
+  const generic = kboHubRows({ cards: [{
+    name: 'Dong Won Park',
+    image_url: asset,
+    props: [{ stat: 'Hits', line: 0.5, odds_type: 'standard', cg_projection: 70, projection: 1.2 }],
+  }] }, { 'Dong Won Park': naver })
+  assert.equal(generic[0].image, naver)
+  assert.equal(generic[0].ppImageUrl, asset)
+})
+
 test('hub rows keep standard lines only', () => {
   const kbo = kboHubRows({ cards: [{ name: 'A', props: [
     { stat: 'Hits', line: 0.5, odds_type: 'goblin', cg_projection: 90 },

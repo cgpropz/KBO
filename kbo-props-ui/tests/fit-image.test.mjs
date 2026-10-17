@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fitImage, isRemoteHeadshotOrLogo, parseImageQuery, snapWidth } from '../src/fitImage.js'
+import { fetchableImageUrl, fitImage, isRemoteHeadshotOrLogo, manualPlayerPng, parseImageQuery, snapWidth } from '../src/fitImage.js'
 
 test('local team logos become the small webp file', () => {
   assert.equal(fitImage('/team-logos/kt.svg', 22), '/team-logos/kt.webp')
@@ -31,13 +31,32 @@ test('espn and nhl headshots go through the same-origin resizer', () => {
 
 test('nfl and wnba board headshots go through the resizer at display size', () => {
   const nfl = 'https://static.www.nfl.com/image/private/f_auto,q_auto/league/abc123'
+  const thumb = 'https://static.www.nfl.com/image/private/f_auto,q_auto,c_thumb,w_200/league/abc123'
+  const sized = 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_80/league/abc123'
   const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1628273.png'
-  assert.equal(fitImage(nfl, 42), `/api/img?src=${encodeURIComponent(nfl)}&w=80`)
+  assert.equal(fetchableImageUrl(nfl), thumb)
+  assert.equal(fetchableImageUrl(sized), sized)
+  assert.equal(fitImage(nfl, 42), `/api/img?src=${encodeURIComponent(thumb)}&w=80`)
   assert.equal(fitImage(wnba, 30), `/api/img?src=${encodeURIComponent(wnba)}&w=64`)
   assert.equal(isRemoteHeadshotOrLogo(`${nfl}?x=1`), false)
   assert.equal(isRemoteHeadshotOrLogo('https://static.www.nfl.com/image/private/../../secret'), false)
   assert.equal(isRemoteHeadshotOrLogo('https://cdn.wnba.com/headshots/wnba/latest/1040x760/../1.png'), false)
   assert.equal(fitImage(`${nfl}?x=1`, 42), `${nfl}?x=1`)
+})
+
+test('prizepicks manual player pngs are allowed with spaces or percent encoding', () => {
+  const png = 'https://static.prizepicks.com/images/manual/Kim Do-yeong.png'
+  const encoded = 'https://static.prizepicks.com/images/manual/Kim%20Do-yeong.png'
+  assert.equal(manualPlayerPng(png), png)
+  assert.equal(manualPlayerPng(encoded), encoded)
+  assert.equal(isRemoteHeadshotOrLogo(png), true)
+  assert.equal(isRemoteHeadshotOrLogo(encoded), true)
+  assert.equal(fetchableImageUrl(png), encoded)
+  assert.equal(fitImage(png, 40), `/api/img?src=${encodeURIComponent(encoded)}&w=80`)
+  assert.equal(parseImageQuery(png, 80)?.src, png)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/manual/../secret.png'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/manual/Baseball-Asset.webp'), false)
+  assert.equal(isRemoteHeadshotOrLogo('https://static.prizepicks.com/images/teams/nfl/NFL_team_x/19.webp'), false)
 })
 
 test('the image route refuses anything that is not a public headshot or logo', () => {

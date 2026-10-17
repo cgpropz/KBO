@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { parseImageQuery } from '../src/fitImage.js'
+import { fetchableImageUrl, parseImageQuery } from '../src/fitImage.js'
 
 const MAX_BYTES = 2_000_000
 
@@ -8,7 +8,7 @@ function one(value) {
 }
 
 async function readUpstream(url) {
-  const response = await fetch(url, {
+  const response = await fetch(fetchableImageUrl(url), {
     redirect: 'manual',
     signal: AbortSignal.timeout(8000),
     headers: { Accept: 'image/png,image/jpeg,image/webp' },
