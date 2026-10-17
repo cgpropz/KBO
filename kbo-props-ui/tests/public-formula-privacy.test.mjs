@@ -17,6 +17,7 @@ const FORBIDDEN = [
   'max(line',
   '50 means',
   'per-stat floor',
+  'minimum',
   'L3 50%',
   'L9 25%',
   'L15 25%',
@@ -41,12 +42,24 @@ function walk(dir, out, { suffixes = null } = {}) {
   return out
 }
 
+function textForPhrase(path, text, phrase) {
+  if (phrase !== 'minimum') return text
+  // Intl.NumberFormat's option name is not a published line minimum.
+  let scan = text.replaceAll('minimumFractionDigits', '')
+  // The draft notes in cg-score.md tell the publisher not to print line minimums.
+  // Those HTML comments are not the page. The published copy still cannot say "minimum".
+  if (path.endsWith(join('content', 'guides', 'cg-score.md'))) {
+    scan = scan.replace(/<!--[\s\S]*?-->/g, '')
+  }
+  return scan
+}
+
 function formulaHits(files) {
   const hits = []
   for (const path of files) {
     const text = readFileSync(path, 'utf8')
     for (const phrase of FORBIDDEN) {
-      if (text.includes(phrase)) hits.push(`${relative(root, path)}: ${phrase}`)
+      if (textForPhrase(path, text, phrase).includes(phrase)) hits.push(`${relative(root, path)}: ${phrase}`)
     }
   }
   return hits
@@ -64,7 +77,7 @@ test('public pages, guides, and the page generator keep the score formula privat
   assert.match(guide, /adjusted for the matchup and recent form/)
   assert.match(guide, /Check an extreme score/)
   assert.match(guide, /under side of the projection vs the line/)
-  assert.match(guide, /adjusted by sport/)
+  assert.match(guide, /No\. It is tuned by sport\. It is still projection vs line, adjusted for matchup\./)
   assert.equal(guide.includes('how far does our projection sit from the line'), false)
   assert.equal(guide.includes('very low line'), false)
   assert.equal(guide.includes('smaller model edge'), false)

@@ -77,7 +77,7 @@ Not necessarily. The score measures how strongly the projection disagrees with t
 A lower score is the under side of the projection vs the line, adjusted for matchup. A+ through C grades are based on the score. It's a ranking tool, not a guarantee.
 
 **Is CG Score the same for every sport?**
-No. It is adjusted by sport. WNBA and NFL use per-stat minimums. It is still projection vs line, adjusted for matchup.
+No. It is tuned by sport. It is still projection vs line, adjusted for matchup.
 
 **Is CGPropz affiliated with PrizePicks or Underdog?**
 No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog.
@@ -111,7 +111,7 @@ No. CGPropz is an independent data and analysis site and is not affiliated with 
     {
       "@type": "Question",
       "name": "Is CG Score the same for every sport?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. It is adjusted by sport. WNBA and NFL use per-stat minimums. It is still projection vs line, adjusted for matchup." }
+      "acceptedAnswer": { "@type": "Answer", "text": "No. It is tuned by sport. It is still projection vs line, adjusted for matchup." }
     },
     {
       "@type": "Question",
