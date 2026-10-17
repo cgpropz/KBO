@@ -6,6 +6,7 @@ import { fetchDataSnapshot } from './dataUrl';
 import { cgScore } from './cgScore';
 import { pregameSide, scoreFor } from './kboBoardScore';
 import { fitImage } from './fitImage.js';
+import { lineWord } from './lineCount';
 
 const TEAM_COLORS = {
   Doosan: '#9595d3', Hanwha: '#ff8c00', Lotte: '#ff6666',
@@ -138,7 +139,7 @@ const PlayerPropsUI = () => {
     <div className="pp-container">
       <div className="pp-header">
         <h1 className="pp-title">Player Props</h1>
-        <p className="pp-subtitle">{data.total_props} PrizePicks lines with game log hit rates</p>
+        <p className="pp-subtitle">{data.total_props} PrizePicks {lineWord(data.total_props)} with game log hit rates</p>
         {lastUpdated && (
           <p className="pp-updated">Updated {formatUpdatedAt(lastUpdated)}</p>
         )}

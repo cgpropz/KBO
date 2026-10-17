@@ -21,6 +21,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard, usePhonePaintCount } from '../usePhoneBoard'
 import { BoardLoadError } from '../BoardLoadError'
+import { countedLines, lineClause, lineWord } from '../lineCount'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 
@@ -259,7 +260,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 
         <div className="nfl-filters-footer">
           <button className="nfl-filters-reset" onClick={resetFilters}>Reset</button>
-          <button className="nfl-filters-apply" onClick={onClose}>Show {resultCount} lines</button>
+          <button className="nfl-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
         </div>
       </div>
     </div>
@@ -407,7 +408,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       <div className="nfl-board-header">
         <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
-          <span>{hold ? '' : `${rows.length}${showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by ${filters.sortBy}`}</span>
+          <span>{hold ? '' : `${countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by ${filters.sortBy}`}</span>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
@@ -424,7 +425,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         <div className="nfl-lines-lock-card">
           <div className="nfl-lines-lock-icon">🔒</div>
           <h3>Unlock the Full Board</h3>
-          <p>{lockedCount} lines are locked. Upgrade to see every prop line.</p>
+          <p>{lockedCount} {lineClause(lockedCount)} locked. Upgrade to see every prop line.</p>
           <button onClick={onNavigatePricing}>View Plans</button>
         </div>
       )}

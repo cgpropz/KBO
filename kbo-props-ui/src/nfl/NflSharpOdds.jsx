@@ -15,6 +15,7 @@ import {
   priceColor,
   priceTone,
 } from './ppBoardColors'
+import { lineClause } from '../lineCount'
 
 const PROP_ORDER = ['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets']
 const GRADE_RANK = { 'A+': 5, A: 4, B: 3, C: 2, D: 1 }
@@ -469,7 +470,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {!hold && showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
       {!hold && !error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
       {!hold && !error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} lines are locked. Upgrade to see the full board.`}</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see the full board.`}</div>}
       {!hold && !!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className={`nfl-lines-table nfl-sharp-table${showCg ? ' has-cg' : ''}`}>

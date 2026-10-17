@@ -748,11 +748,26 @@
     font-weight: 900 !important;
   }
 
+  body .b2-cta {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   body .b2-save,
   body .b2-cta button {
     min-height: 48px;
     font-size: 16px !important;
     font-weight: 900 !important;
+  }
+
+  /* The 44px phone button floor would otherwise let "Open PrizePicks" paint
+     over "Copy picks" in the two-column slip row. */
+  body .b2-cta button {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   body .b2-pp-note-full { display: none !important; }

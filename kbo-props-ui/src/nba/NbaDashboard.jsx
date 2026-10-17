@@ -7,6 +7,7 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { countedLines, lineWord } from '../lineCount'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
@@ -247,7 +248,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 
         <div className="wnba-filters-footer">
           <button className="wnba-filters-reset" onClick={resetFilters}>Reset</button>
-          <button className="wnba-filters-apply" onClick={onClose}>Show {resultCount} lines</button>
+          <button className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
         </div>
       </div>
     </div>
@@ -480,7 +481,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           <div className="wnba-board-header">
             <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="nba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
-              <span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+              <span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>

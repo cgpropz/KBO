@@ -23,6 +23,7 @@ import { CardTeamLogo } from '../CardTeamLogo'
 import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { countedLines, lineClause } from '../lineCount'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SORT_OPTIONS = ['CG Score', 'Hit Rate', 'Season', 'H2H', 'DVP']
@@ -225,7 +226,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
-          <span>{hold ? 'lines' : `${rows.length}${showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines`}</span>
+          <span>{hold ? 'lines' : countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })}</span>
           <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
@@ -267,7 +268,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
           })}
         </BoardSurface>
       )}
-      {showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more lines are locked.</div>}
+      {showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more {lineClause(lockedCount)} locked.</div>}
     </section>
   )
 }

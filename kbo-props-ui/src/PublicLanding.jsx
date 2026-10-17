@@ -13,6 +13,7 @@ import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
+import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
@@ -317,7 +318,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
             )}
             {hitState?.preview && hitState.lockedCount > 0 && (
-              <p className="pl-foot">Public preview · {hitState.lockedCount} more lines on All-Access</p>
+              <p className="pl-foot">Public preview · {hitState.lockedCount} more {lineWord(hitState.lockedCount)} on All-Access</p>
             )}
           </div>
         </section>
@@ -398,7 +399,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <p className="pl-empty">
                 {settled
                   ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
-                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} lines are on the full board.` : ''}`
+                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} ${lineClause(sportState.lockedCount)} on the full board.` : ''}`
                     : `No scored standard lines in the ${sport.name} public preview right now.`)
                   : 'Loading the board…'}
               </p>

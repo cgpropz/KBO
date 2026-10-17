@@ -43,15 +43,15 @@ const fixtures = {
     line: 1.5,
     projection: 2.1,
     recent: [4, 5, 3, 2, 6, 4, 1, 5, 3, 4, 2, 3],
-    hitRateL5: 0.8,
+    hitRateL5: 100,
     gamesL5: 5,
-    hitRate: 0.7,
+    hitRate: 90,
     gamesL10: 10,
-    hitRateL20: 0.65,
+    hitRateL20: 85,
     gamesL20: 20,
-    h2hHitRate: 0.6,
+    h2hHitRate: 80,
     h2hGames: 5,
-    seasonHitRate: 0.72,
+    seasonHitRate: 75,
     seasonGames: 40,
     dvpRank: 3,
     oddsType: 'standard',
@@ -158,6 +158,7 @@ async function cardFit(page) {
         stripScroll: strip ? strip.scrollWidth : 0,
         stripClient: strip ? strip.clientWidth : 0,
         labels,
+        values: [...card.querySelectorAll('.hit-rate-pill-v')].map((node) => (node.textContent || '').trim()),
       }
     })
   })
@@ -258,6 +259,56 @@ test('slip filter chips wrap without overlapping', async ({ page }) => {
   }
 })
 
+test('Copy picks and Open PrizePicks stay apart on the slip sheet', async ({ page }) => {
+  await installFixtures(page, 'member')
+  await installMember(page)
+  for (const [sport] of slipBoards) {
+    await page.goto(`/?s=${sport}&d=1`, { waitUntil: 'domcontentloaded' })
+    const sheet = page.locator('.b2-sheet-pop')
+    await expect(sheet.getByTestId('open-prizepicks')).toBeVisible()
+    const fit = await sheet.locator('.b2-cta').evaluate((host) => {
+      const boxOf = (node) => {
+        const box = node.getBoundingClientRect()
+        const hostBox = host.getBoundingClientRect()
+        return {
+          text: (node.textContent || '').replace(/\s+/g, ' ').trim(),
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+          width: box.width,
+          height: box.height,
+          fits: node.scrollWidth <= node.clientWidth + 1,
+          inside: box.left >= hostBox.left - 1 && box.right <= hostBox.right + 1,
+        }
+      }
+      return {
+        buttons: [...host.querySelectorAll('button')].map(boxOf),
+        note: boxOf(host.querySelector('[data-testid="prizepicks-note"]')),
+        scrolls: host.scrollWidth > host.clientWidth + 1,
+      }
+    })
+    expect(fit.scrolls, `${sport} slip actions scroll`).toBe(false)
+    const labels = fit.buttons.map((button) => button.text)
+    expect(labels).toContain('Save slip')
+    expect(labels).toContain('Copy picks')
+    expect(labels).toContain('Open PrizePicks ↗')
+    const pieces = [...fit.buttons, fit.note]
+    for (const piece of pieces) {
+      expect(piece.fits, `${sport} ${piece.text} clips`).toBe(true)
+      expect(piece.inside, `${sport} ${piece.text} is outside the action row`).toBe(true)
+    }
+    for (let i = 0; i < pieces.length; i += 1) {
+      for (let j = i + 1; j < pieces.length; j += 1) {
+        expect(
+          overlaps(pieces[i], pieces[j]),
+          `${sport} ${pieces[i].text} overlaps ${pieces[j].text}`,
+        ).toBe(false)
+      }
+    }
+  }
+})
+
 for (const mode of ['free', 'member']) {
   test(`${mode} cards keep the name, tag, line, and odds button apart`, async ({ page }) => {
     await installFixtures(page, mode)
@@ -285,11 +336,18 @@ for (const mode of ['free', 'member']) {
             expect(label.visible, `${sport} ${mode} label ${label.text}`).toBe(true)
           }
           expect(card.labels.some((label) => label.text === 'Season'), `${sport} ${mode} Season`).toBe(true)
+          if (sport === 'nhl') {
+            expect(card.values, `${sport} ${mode} hit rates`).toEqual(['100%', '90%', '85%', '80%', '75%'])
+          }
         }
       }
       const shown = cards.find((card) => card.line.replace(/\s+/g, ' ').includes(lineText.replace(/\s+/g, ' ')) || card.line.replace(/\s+/g, '') === lineText.replace(/\s+/g, ''))
       expect(shown, `${sport} ${mode} line ${lineText}`).toBeTruthy()
       expect(shown.lineFits, `${sport} ${mode} ${lineText} scroll ${shown.lineScroll} client ${shown.lineClient} line "${shown.line}"`).toBe(true)
+      if (mode === 'member') {
+        const count = page.locator('.nfl-lines-header-actions span, .wnba-lines-header-actions span, .kbo-header-actions span').first()
+        await expect(count).toHaveText(/^1 line\b/)
+      }
     }
   })
 }
