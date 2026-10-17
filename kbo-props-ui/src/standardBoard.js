@@ -138,6 +138,85 @@ export function withStandardGradedHistory(payload) {
   return next
 }
 
+// #205's general walk: every dataset this file does not shape itself still
+// drops a present non-standard odds type (goblin, demon, blank, unknown) and
+// keeps a row that has no odds-type field. Nested props, records, and line
+// maps are walked the same way. An object is returned unchanged when nothing
+// was removed.
+function filterLineMap(value) {
+  if (Array.isArray(value)) return filterGeneralList(value)
+  if (!value || typeof value !== 'object') return value
+  let changed = false
+  const out = {}
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry && typeof entry === 'object' && !isStandardBoardLine(entry)) {
+      changed = true
+      continue
+    }
+    out[key] = entry
+  }
+  return changed ? out : value
+}
+
+function filterGeneralList(rows) {
+  if (!Array.isArray(rows)) return rows
+  let changed = false
+  const kept = []
+  for (const row of rows) {
+    if (!isStandardBoardLine(row)) {
+      changed = true
+      continue
+    }
+    const next = filterGeneralPayload(row)
+    if (next !== row) changed = true
+    kept.push(next)
+  }
+  return changed ? kept : rows
+}
+
+function filterGeneralPayload(payload) {
+  if (Array.isArray(payload)) return filterGeneralList(payload)
+  if (!payload || typeof payload !== 'object') return payload
+  let changed = false
+  const next = { ...payload }
+  for (const key of ['props', 'ppAllProps', 'projections', 'records', 'pending', 'graded']) {
+    if (!Array.isArray(payload[key])) continue
+    const filtered = filterGeneralList(payload[key])
+    if (filtered !== payload[key]) {
+      changed = true
+      next[key] = filtered
+    }
+  }
+  for (const key of ['ppLines', 'ppLinesStandard']) {
+    if (payload[key] == null) continue
+    const filtered = filterLineMap(payload[key])
+    if (filtered !== payload[key]) {
+      changed = true
+      next[key] = filtered
+    }
+  }
+  if (Array.isArray(payload.cards)) {
+    const filtered = filterGeneralList(payload.cards)
+    const nonempty = filtered.filter((card) => !Array.isArray(card?.props) || card.props.length > 0)
+    const finalCards = nonempty.length === filtered.length ? filtered : nonempty
+    if (finalCards !== payload.cards) {
+      changed = true
+      next.cards = finalCards
+    }
+  }
+  if (Array.isArray(payload.matchups)) {
+    const filtered = filterGeneralList(payload.matchups)
+    if (filtered !== payload.matchups) {
+      changed = true
+      next.matchups = filtered
+    }
+  }
+  if (changed && payload.summary && typeof payload.summary === 'object' && (next.graded || next.pending)) {
+    next.summary = summaryForGradedRows(next.graded ?? payload.graded, next.pending ?? payload.pending)
+  }
+  return changed ? next : payload
+}
+
 // Returns a new payload. The cached snapshot is left untouched.
 export function filterStandardBoard(ds, payload) {
   if (ROW_DATASETS.has(ds)) return withStandardGradedHistory(filterRows(payload))
@@ -172,7 +251,10 @@ export function filterStandardBoard(ds, payload) {
     for (const player of players) {
       const filtered = filterPlayer(player)
       if (filtered !== player) changed = true
-      if (Array.isArray(filtered?.ppAllProps) && filtered.ppAllProps.length === 0) {
+      // Drop only a player whose list the filter emptied. A player who already
+      // had no props (ppAllProps: []) stays, so a paid WNBA board keeps its count.
+      const hadProps = Array.isArray(player?.ppAllProps) && player.ppAllProps.length > 0
+      if (hadProps && Array.isArray(filtered?.ppAllProps) && filtered.ppAllProps.length === 0) {
         changed = true
         continue
       }
@@ -180,5 +262,5 @@ export function filterStandardBoard(ds, payload) {
     }
     return changed ? next : payload
   }
-  return withStandardGradedHistory(payload)
+  return filterGeneralPayload(payload)
 }
