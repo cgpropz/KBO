@@ -276,31 +276,63 @@ async function nhlOddsCounts(base, { bypass, accessToken }) {
   return { status: response.status, ...classifyOdds(rows) }
 }
 
+async function clientAuthStorageKeys(base, bypass) {
+  const headers = bypass ? { 'x-vercel-protection-bypass': bypass } : {}
+  const keys = new Set()
+  const envKey = supabaseStorageKey(supabaseUrl)
+  if (envKey) keys.add(envKey)
+  const seen = new Set()
+  const queue = [`${base}/`]
+  let foundInBundle = false
+  const take = (text) => {
+    for (const match of text.matchAll(/https:\/\/[a-z0-9-]+\.supabase\.co/gi)) {
+      const key = supabaseStorageKey(match[0])
+      if (key) keys.add(key)
+      foundInBundle = true
+    }
+    for (const match of text.matchAll(/\/assets\/[A-Za-z0-9_.-]+\.js/g)) {
+      const next = new URL(match[0], base).toString()
+      if (!seen.has(next)) queue.push(next)
+    }
+  }
+  let scanned = 0
+  while (queue.length && scanned < 12 && !foundInBundle) {
+    const url = queue.shift()
+    if (seen.has(url)) continue
+    seen.add(url)
+    scanned += 1
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20_000) }).catch(() => null)
+    if (!response?.ok) continue
+    take(await response.text())
+  }
+  return [...keys]
+}
+
 async function pageHint(page) {
   try {
     return await page.evaluate(() => {
       const heading = (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
       const paywall = Boolean(document.querySelector('.pw-title'))
-      const session = Object.keys(localStorage).some((key) => key.startsWith('sb-') && localStorage.getItem(key)?.includes('access_token'))
-      return ` h1=${heading || 'none'} paywall=${paywall} session=${session}`
+      const sessionKeys = Object.keys(localStorage).filter((key) => key.startsWith('sb-') && localStorage.getItem(key)?.includes('access_token'))
+      return ` h1=${heading || 'none'} paywall=${paywall} session=${sessionKeys.join(',') || 'none'}`
     })
   } catch {
     return ''
   }
 }
 
-async function timeColdPage(browser, { base, path, bypass, storageKey, storedSession, userId }) {
+async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSession, userId }) {
   const context = await browser.newContext({
     viewport: PHONE,
     extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
   })
   let page
   try {
-    await context.addInitScript(({ key, value, tierKey, tierValue }) => {
-      localStorage.setItem(key, value)
+    await context.addInitScript(({ keys, value, tierKey, tierValue }) => {
+      for (const key of keys) localStorage.setItem(key, value)
       sessionStorage.setItem(tierKey, tierValue)
     }, {
-      key: storageKey,
+      keys: storageKeys,
       value: storedSession,
       tierKey: 'cg_tier',
       tierValue: JSON.stringify({ userId, tier: 'combined' }),
@@ -342,13 +374,13 @@ async function timeColdPage(browser, { base, path, bypass, storageKey, storedSes
   }
 }
 
-async function timeHost(browser, { label, base, bypass, storageKey, storedSession, userId }) {
+async function timeHost(browser, { label, base, bypass, storageKeys, storedSession, userId }) {
   const pages = {}
   for (const [name, path] of PAGE_PATHS) {
     const runs = []
     for (let index = 0; index < 3; index += 1) {
       try {
-        runs.push(await timeColdPage(browser, { base, path, bypass, storageKey, storedSession, userId }))
+        runs.push(await timeColdPage(browser, { base, path, bypass, storageKeys, storedSession, userId }))
       } catch (err) {
         const message = err instanceof Error ? err.message : 'page failed'
         runs.push({ error: bypass ? message.split(bypass).join('[bypass]') : message })
@@ -411,8 +443,11 @@ async function main() {
       oneHub(bypass, session.access_token, groups),
       oneHub(bypass, session.access_token, groups),
     ])
-    const storageKey = supabaseStorageKey(supabaseUrl)
     const storedSession = sessionJson(session)
+    const [prodKeys, previewKeys] = await Promise.all([
+      clientAuthStorageKeys(prodUrl, null),
+      clientAuthStorageKeys(previewUrl, bypass),
+    ])
     const browser = await chromium.launch({ headless: true })
     let browserReport
     let goblin
@@ -422,8 +457,8 @@ async function main() {
         preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
       }
       browserReport = {
-        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKey, storedSession, userId }),
-        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKey, storedSession, userId }),
+        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKeys: prodKeys, storedSession, userId }),
+        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKeys: previewKeys, storedSession, userId }),
       }
     } finally {
       await browser.close()

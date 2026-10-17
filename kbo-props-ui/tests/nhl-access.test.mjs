@@ -119,6 +119,8 @@ const PROJECTION_ROWS = [
   { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
   { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true, oddsType: 'standard' },
   { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Goblin Skater', projection: 9, line: 0.5, rankEligible: true, oddsType: 'goblin' },
+  { player: 'Demon Skater', projection: 8, line: 0.5, rankEligible: true, oddsType: 'demon' },
 ]
 
 function mockClient({ flag = false } = {}) {
@@ -197,6 +199,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
     assert.equal(res.body.preview, false, token)
     assert.equal(res.body.lockedCount, 0, token)
     assert.equal(res.body.data.length, 4, token)
+    assert.equal(res.body.data.some((row) => row.player === 'Goblin Skater' || row.player === 'Demon Skater'), false, token)
     assert.equal(res.body.access.nhl, token === 'tok-owner' ? false : true, token)
   }
 

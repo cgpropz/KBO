@@ -783,11 +783,14 @@ async function handleNhlRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  // Full access still goes through shapeForTier so demon, goblin, and
+  // unlabeled lines are dropped. An admin whose stored tier does not unlock
+  // NHL still gets the full filtered board.
+  const tier = caller.tierResolved === true ? caller.tier : 'free';
+  const fullTier = sportAccess(tier).nhl ? tier : 'owner';
   const shaped = withPresentedData(
     req,
-    decision === 'full'
-      ? { data: board, preview: false, lockedCount: 0 }
-      : shapeForTier(ds, board, 'free'),
+    shapeForTier(ds, board, decision === 'full' ? fullTier : 'free'),
     board,
   );
   return sendData(req, res, {
