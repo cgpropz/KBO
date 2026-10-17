@@ -208,8 +208,10 @@ function pairEvents(game, events) {
 // Fill a lineup game's tip time from the schedule.
 // - No gameTime in the feed: take the next not-final schedule game for the pair.
 // - The feed's game is already final on the schedule (the listing is still the
-//   last game): move the time to the next scheduled game for the pair and flag
-//   that the listed players are from the finished game.
+//   last game): move the time to the next scheduled game for the pair and show
+//   no players. The listed players and statuses belong to the finished game,
+//   so they are not carried over; the next game shows no lineup until the
+//   feed posts one.
 // - Otherwise keep the feed's time and add startTime/gameDate when one schedule
 //   event matches it.
 // With no matching schedule event the game is returned unchanged.
@@ -238,13 +240,15 @@ function attachScheduleTimes(games, events, now = new Date()) {
     if (listed && eventIsOver(listed)) {
       const next = upcoming.find(event => event.startTime > listed.startTime);
       if (!next) return game;
+      const noPlayers = side => ({ ...(side || {}), players: [], inactive: [] });
       return {
         ...game,
         ...timeOf(next),
         gameTimeSource: 'schedule',
         listedGameTime: feedTime,
         listedGameDate: listed.gameDate,
-        lineupFromFinishedGame: true,
+        visitor: noPlayers(game.visitor),
+        home: noPlayers(game.home),
       };
     }
     if (listed) {

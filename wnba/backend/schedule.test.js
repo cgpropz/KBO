@@ -113,7 +113,7 @@ test('dropStartedProjectionProps keeps rows, drops finished props, leaves projec
 
 const LINEUP = (gameTime) => ({
   gameTime,
-  visitor: { abbr: 'ATL', players: [{ name: 'Rhyne Howard' }], inactive: [] },
+  visitor: { abbr: 'ATL', players: [{ name: 'Rhyne Howard' }], inactive: [{ name: 'Naz Hillmon', status: 'out' }] },
   home: { abbr: 'GSV', players: [{ name: 'Kate Martin' }], inactive: [] },
 });
 
@@ -125,14 +125,22 @@ test('lineup with no tip time gets the next scheduled game time', () => {
   assert.equal(game.gameTimeSource, 'schedule');
 });
 
-test('lineup still listing the finished game moves to the next scheduled game', () => {
+test('lineup still listing the finished game moves to the next game with no players', () => {
   const [game] = schedule.attachScheduleTimes([LINEUP('3:30 PM ET')], EVENTS, NOW);
   assert.equal(game.gameTime, '8:00 PM ET');
   assert.equal(game.gameDate, '2026-10-19');
+  assert.equal(game.startTime, '2026-10-20T00:00:00.000Z');
   assert.equal(game.gameTimeSource, 'schedule');
   assert.equal(game.listedGameTime, '3:30 PM ET');
-  assert.equal(game.lineupFromFinishedGame, true);
-  assert.deepEqual(game.visitor.players, [{ name: 'Rhyne Howard' }]);
+  assert.equal(game.listedGameDate, '2026-10-17');
+  assert.equal(game.lineupFromFinishedGame, undefined);
+  // The finished game's players and statuses are not carried to the next game.
+  assert.deepEqual(game.visitor.players, []);
+  assert.deepEqual(game.visitor.inactive, []);
+  assert.deepEqual(game.home.players, []);
+  assert.deepEqual(game.home.inactive, []);
+  assert.equal(game.visitor.abbr, 'ATL');
+  assert.equal(game.home.abbr, 'GSV');
 });
 
 test('lineup time is never invented without a schedule event', () => {
@@ -151,4 +159,6 @@ test('lineup feed time for the upcoming game is kept and dated', () => {
   assert.equal(game.gameTime, '8:00 PM ET');
   assert.equal(game.gameTimeSource, 'rotowire');
   assert.equal(game.startTime, '2026-10-20T00:00:00.000Z');
+  // A live listing for the upcoming game keeps its players.
+  assert.deepEqual(game.visitor.players, [{ name: 'Rhyne Howard' }]);
 });
