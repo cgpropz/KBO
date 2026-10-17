@@ -212,15 +212,29 @@ test('NHL sharp odds drop a standard id PrizePicks has pulled', () => {
     { id: 102, player: 'Low', prop: 'Points', line: 0.5, projection: 0.5, oddsType: 'standard' },
     { id: 103, player: 'Under', prop: 'Points', line: 0.5, projection: 0.4, oddsType: 'standard' },
     { id: 104, player: 'Held', prop: 'Points', line: 0.5, projection: 0.74, oddsType: 'standard' },
+    { id: 105, player: 'Goalie', prop: 'Goalie Saves', line: 28.5, projection: 30, oddsType: 'standard', rankEligible: false },
   ]
   const odds = {
     message: 'matched',
     records: projections.map((row) => ({ id: row.id, player: row.player, line_type: null, pp_edge_flex: 1 })),
   }
   const kept = filterNhlSharpOdds(odds, projections)
-  assert.deepEqual(kept.records.map((row) => row.id), [100, 103, 104])
-  assert.equal(kept.records.some((row) => row.id === 15863634), false)
-  assert.equal(odds.records.length, 6)
+  assert.deepEqual(kept.records.map((row) => row.id), [100, 103])
+  assert.equal(kept.records.some((row) => row.id === 15863634 || row.id === 104 || row.id === 105), false)
+  assert.equal(odds.records.length, 7)
+})
+
+test('NHL sharp odds apply the pulled and rankable checks to a Map of rows', () => {
+  const projections = new Map([
+    [100, { id: 100, player: 'Live', prop: 'Shots On Goal', line: 2.5, projection: 3.1, oddsType: 'standard' }],
+    [15863634, { player: 'Pulled', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', removed: true, pp_status: 'removed' }],
+    [104, { id: 104, player: 'Held', prop: 'Points', line: 0.5, projection: 0.74, oddsType: 'standard' }],
+    [105, { id: 105, player: 'Goalie', prop: 'Goalie Saves', line: 28.5, projection: 30, oddsType: 'standard', rankEligible: false }],
+  ])
+  const kept = filterNhlSharpOdds({
+    records: [100, 15863634, 104, 105].map((id) => ({ id, line_type: null })),
+  }, projections)
+  assert.deepEqual(kept.records.map((row) => row.id), [100])
 })
 
 test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds type', () => {

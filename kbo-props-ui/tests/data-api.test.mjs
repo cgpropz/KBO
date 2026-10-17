@@ -416,6 +416,8 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     { id: demonIds[1], player: 'Newhook', prop: 'Power Play Points', line: 0.5, projection: 0.7, oddsType: 'demon' },
     { id: demonIds[2], player: 'Texier', prop: 'Power Play Points', line: 0.5, projection: 0.6, oddsType: 'demon' },
     { id: 15863634, player: 'Pulled', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', removed: true, pp_status: 'removed' },
+    { id: 104, player: 'Held', prop: 'Points', line: 0.5, projection: 0.74, oddsType: 'standard' },
+    { id: 105, player: 'Goalie', prop: 'Goalie Saves', line: 28.5, projection: 30, oddsType: 'standard', rankEligible: false },
   ]
   TABLES.nhl_sharp_odds = {
     generated_at: NOW,
@@ -436,6 +438,8 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
       })),
       { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 20 },
       { id: 15863634, player: 'Pulled', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 80 },
+      { id: 104, player: 'Held', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 70 },
+      { id: 105, player: 'Goalie', prop: 'Goalie Saves', pp_line: 28.5, line_type: null, pp_edge_flex: 60 },
     ],
   }
   try {
@@ -448,11 +452,15 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     assert.equal(standardIds.has('101'), true)
     for (const id of demonIds) assert.equal(standardIds.has(String(id)), false)
     assert.equal(standardIds.has('15863634'), false)
+    assert.equal(standardIds.has('104'), true)
+    assert.equal(standardIds.has('105'), true)
 
     assert.equal(paid.body.preview, false)
     const paidIds = paid.body.data.records.map((row) => String(row.id))
     assert.deepEqual(paidIds, ['100', '101'])
     assert.equal(paidIds.includes('15863634'), false)
+    assert.equal(paidIds.includes('104'), false)
+    assert.equal(paidIds.includes('105'), false)
     for (const id of paidIds) assert.equal(standardIds.has(id), true, id)
 
     assert.equal(anon.body.preview, true)

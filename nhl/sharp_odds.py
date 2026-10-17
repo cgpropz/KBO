@@ -200,9 +200,9 @@ def _playable_projections(projections):
 def board_rows(pp_rows, projections):
     """Standard lines members can still play.
 
-    Pulled PrizePicks rows and Points overs under 0.69 stay out, matching the
-    member board. rankEligible false (held Points overs, unconfirmed goalies)
-    stays off this ranked list.
+    The ranked ids are the standard rows members can still rank: pulled lines,
+    Points overs under 0.69, and rankEligible false rows stay out. The API
+    sharp-odds filter uses that same id set.
     """
     playable = _playable_projections(projections)
     known_ids = {
@@ -221,13 +221,15 @@ def board_rows(pp_rows, projections):
         live_pp.append(row)
     stamped = stamp_nhl_line_types(live_pp, playable)
     standard, line_type_filter = filter_standard_lines(stamped)
-    eligible = {}
+    rankable_ids = set()
     for row in playable:
+        if row.get("id") is None or row.get("rankEligible") is False:
+            continue
         odds = _odds_text(row)
         if odds not in (None, "standard"):
             continue
-        eligible[(name_key(row.get("player")), row.get("prop"))] = row.get("rankEligible") is not False
-    ranked = [row for row in standard if eligible.get((row.get("player_key"), row.get("prop")), True)]
+        rankable_ids.add(str(row.get("id")))
+    ranked = [row for row in standard if str(row.get("id")) in rankable_ids]
     return ranked, line_type_filter
 
 
