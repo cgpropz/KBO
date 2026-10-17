@@ -495,6 +495,7 @@ test('only a claim that unlocks a sport is trusted; free, discord, and a missing
   assert.equal(fallback.tier, 'kbo');
   assert.equal(missing.calls.profiles, 1);
 
+  clearMemberTierCache();
   const freeHung = profileClient(() => new Promise(() => {}));
   const hungFree = await lookupMemberTier(
     freeHung,
