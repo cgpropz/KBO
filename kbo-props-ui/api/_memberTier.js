@@ -10,11 +10,13 @@ import { createHmac, createPublicKey, timingSafeEqual, verify as cryptoVerify } 
 
 export const PAID_TIER_TTL_MS = 5 * 60 * 1000;
 const JWKS_TTL_MS = 10 * 60 * 1000;
+const JWKS_FORCE_REFRESH_MS = 60 * 1000;
 const SECRET_ENV_KEYS = ['SUPABASE_JWT_SECRET', 'JWT_SECRET'];
 
 const paidTiers = new Map();
 const inflightLookups = new Map();
-let jwksCache = { url: '', at: 0, keys: [] };
+let jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
+let jwksInflight = null;
 
 function envOf(options) {
   return options.env || process.env;
@@ -99,29 +101,64 @@ function verifyWithJwk(signingInput, signaturePart, jwk) {
   }
 }
 
-async function loadJwks(env, fetchImpl) {
+async function loadJwks(env, fetchImpl, { force = false, now = Date.now } = {}) {
   const issuer = expectedIssuer(env);
   if (!issuer) return [];
-  const now = Date.now();
-  if (jwksCache.url === issuer && jwksCache.keys.length && now - jwksCache.at < JWKS_TTL_MS) {
+  const clock = typeof now === 'function' ? now() : Date.now();
+  const sameUrl = jwksCache.url === issuer;
+  const fresh = sameUrl && jwksCache.keys.length && clock - jwksCache.at < JWKS_TTL_MS;
+  if (fresh && !force) return jwksCache.keys;
+  // The minute window has to hold when the last fetch stored no keys, and
+  // when a refetch fails after those keys have gone stale. A stale non-empty
+  // cache used to miss this check and fetch again on the next request.
+  // sameUrl is false until a result is cached, which is why a burst of
+  // unknown kids used to skip this check and refetch every time.
+  const withinForceWindow = sameUrl && clock - jwksCache.forcedAt < JWKS_FORCE_REFRESH_MS;
+  if (withinForceWindow && (force || !fresh)) return jwksCache.keys;
+  if (jwksInflight && jwksInflight.issuer === issuer) return jwksInflight.promise;
+
+  const promise = (async () => {
+    const anon = String(env?.VITE_SUPABASE_ANON_KEY || env?.SUPABASE_ANON_KEY || '').trim();
+    let keys = [];
+    try {
+      const response = await fetchImpl(`${issuer}/.well-known/jwks.json`, {
+        headers: anon ? { apikey: anon } : {},
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response?.ok) {
+        const body = await response.json();
+        if (Array.isArray(body?.keys)) keys = body.keys;
+      }
+    } catch {
+      keys = [];
+    }
+    const previous = jwksCache.url === issuer ? jwksCache : null;
+    const gotKeys = keys.length > 0;
+    jwksCache = {
+      url: issuer,
+      at: gotKeys ? clock : (previous?.keys?.length ? previous.at : clock),
+      keys: gotKeys ? keys : (previous?.keys?.length ? previous.keys : []),
+      // Stamp the window on a forced refresh and on an empty or failed body,
+      // so the next unknown kid does not open another fetch.
+      forcedAt: force || !gotKeys ? clock : (previous?.forcedAt || 0),
+    };
     return jwksCache.keys;
+  })();
+
+  const flight = { issuer, promise };
+  jwksInflight = flight;
+  try {
+    return await promise;
+  } finally {
+    if (jwksInflight === flight) jwksInflight = null;
   }
-  const anon = String(env?.VITE_SUPABASE_ANON_KEY || env?.SUPABASE_ANON_KEY || '').trim();
-  const response = await fetchImpl(`${issuer}/.well-known/jwks.json`, {
-    headers: anon ? { apikey: anon } : {},
-    signal: AbortSignal.timeout(2000),
-  });
-  if (!response?.ok) return [];
-  const body = await response.json();
-  const keys = Array.isArray(body?.keys) ? body.keys : [];
-  if (keys.length) jwksCache = { url: issuer, at: now, keys };
-  return keys;
 }
 
 export function clearMemberTierCache() {
   paidTiers.clear();
   inflightLookups.clear();
-  jwksCache = { url: '', at: 0, keys: [] };
+  jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
+  jwksInflight = null;
 }
 
 function prunePaidTiers(now) {
@@ -208,15 +245,21 @@ export async function verifyAccessToken(authorization, options = {}) {
   if (!header || !payload) return null;
   const signingInput = `${parts[0]}.${parts[1]}`;
   let signed = false;
+  if (header.alg === 'none' || header.alg == null) return null;
   if (header.alg === 'HS256') {
     const secret = options.secret ?? jwtSecret(envOf(options));
     if (!secret) return null;
     signed = verifyHs256(token, secret);
   } else if (header.alg === 'ES256' || header.alg === 'RS256') {
-    const keys = Array.isArray(options.jwks)
+    const fetchImpl = options.fetchImpl || globalThis.fetch;
+    let keys = Array.isArray(options.jwks)
       ? options.jwks
-      : await loadJwks(envOf(options), options.fetchImpl || globalThis.fetch).catch(() => []);
-    const jwk = keys.find((key) => key && key.kid === header.kid);
+      : await loadJwks(envOf(options), fetchImpl, { now: options.now }).catch(() => []);
+    let jwk = keys.find((key) => key && key.kid === header.kid);
+    if (!jwk && !Array.isArray(options.jwks)) {
+      keys = await loadJwks(envOf(options), fetchImpl, { force: true, now: options.now }).catch(() => keys);
+      jwk = keys.find((key) => key && key.kid === header.kid);
+    }
     if (!jwk) return null;
     signed = verifyWithJwk(signingInput, parts[2], jwk);
   }

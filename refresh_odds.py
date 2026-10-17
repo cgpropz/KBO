@@ -88,7 +88,70 @@ def fetch_odds():
     return True
 
 
-def _publish_snapshot(client, filename, table, dry_run=False, optional=False):
+KBO_LAST_GOOD_TABLES = {
+    "prizepicks_props",
+    "strikeout_projections",
+    "batter_projections",
+}
+_LAST_GOOD_ROW_KEYS = ("cards", "projections", "players", "rows", "matchups", "pairs", "records", "games")
+
+
+def _board_has_rows(payload):
+    """True when the published board has at least one row. Empty copies are not stored."""
+    if isinstance(payload, list):
+        return len(payload) > 0
+    if not isinstance(payload, dict) or "snapshotChunks" in payload:
+        return False
+    present = [key for key in _LAST_GOOD_ROW_KEYS if isinstance(payload.get(key), list)]
+    if present:
+        return any(payload[key] for key in present)
+    return False
+
+
+def _post_last_good(table, payload, updated_at):
+    """POST the full board to the private bucket. Raises on setup errors."""
+    import requests
+    import publish_supabase
+
+    url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or publish_supabase.SUPABASE_URL
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")
+        or ""
+    )
+    if not url or not key:
+        raise RuntimeError("missing Supabase credentials")
+    publish_supabase.SUPABASE_URL = url
+    session = requests.Session()
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    publish_supabase.upload_last_good(
+        session,
+        table,
+        {"data": payload, "updated_at": updated_at},
+        headers,
+    )
+
+
+def _upload_kbo_last_good(table, payload, updated_at):
+    """Copy a published KBO line board into the private board-last-good bucket.
+
+    Failure only warns. The table publish already succeeded, and a dry run
+    never reaches this helper.
+    """
+    if table not in KBO_LAST_GOOD_TABLES:
+        return False
+    if not _board_has_rows(payload):
+        print(f"  ! {table} last-good skipped: empty board")
+        return False
+    try:
+        _post_last_good(table, payload, updated_at)
+        return True
+    except Exception as exc:
+        print(f"  ! {table} last-good copy failed: {type(exc).__name__}")
+        return False
+
+
+def _publish_snapshot(client, filename, table, dry_run=False, optional=False, published_at=None):
     """Publish one JSON snapshot file to a Supabase table."""
     file_path = os.path.join(PUBLIC_DATA, filename)
 
@@ -121,6 +184,10 @@ def _publish_snapshot(client, filename, table, dry_run=False, optional=False):
         print(f"\n📡 Publishing {filename} to Supabase table '{table}'...")
         client.table(table).upsert({"id": 1, "data": payload}).execute()
         print(f"  ✓ {table} table updated")
+        stamp = published_at
+        if isinstance(payload, dict):
+            stamp = published_at or payload.get("published_at") or payload.get("generated_at")
+        _upload_kbo_last_good(table, payload, stamp)
         return True
     except Exception as exc:
         if optional:
@@ -235,11 +302,16 @@ def publish_to_supabase(skip=False, dry_run=False):
         ok = True
         prizepicks_published = False
         for filename, table in targets:
-            published = _publish_snapshot(client, filename, table, dry_run=dry_run)
+            published = _publish_snapshot(
+                client, filename, table, dry_run=dry_run, published_at=published_at,
+            )
             ok = published and ok
             if filename == "prizepicks_props.json" and published:
                 prizepicks_published = True
-        _publish_snapshot(client, "correlations_kbo.json", "correlations_kbo", dry_run=dry_run, optional=True)
+        _publish_snapshot(
+            client, "correlations_kbo.json", "correlations_kbo",
+            dry_run=dry_run, optional=True, published_at=published_at,
+        )
         if prizepicks_published and not dry_run:
             _record_kbo_board_status(_load_public_json("prizepicks_props.json"), published_at)
         return ok
