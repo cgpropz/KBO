@@ -173,21 +173,26 @@ class NhlBoardMoveTests(_Memory):
             },
         })
         self.assertEqual(result["status"], "complete")
-        self.assertEqual(result["props_total"], 1)
-        self.assertEqual(result["props_graded"], 1)
+        self.assertEqual(result["props_total"], 2)
+        self.assertEqual(result["props_graded"], 2)
         self.assertEqual(result["hits"], 0)
         self.assertEqual(result["misses"], 1)
+        self.assertEqual(result["voids"], 1)
 
         recap = json.loads((common.memory_dir("nhl", DAY) / "recap.json").read_text())
-        self.assertEqual([p["player"] for p in recap["props"]], ["John Tavares"])
-        self.assertEqual(recap["props"][0]["odds_type"], "standard")
-        self.assertEqual(recap["props"][0]["model_result"], "MISS")
+        by_player = {p["player"]: p for p in recap["props"]}
+        self.assertEqual(set(by_player), {"John Tavares", "Auston Matthews"})
+        self.assertEqual(by_player["John Tavares"]["odds_type"], "standard")
+        self.assertEqual(by_player["John Tavares"]["model_result"], "MISS")
+        self.assertEqual(by_player["Auston Matthews"]["result"], "VOID")
+        self.assertEqual(by_player["Auston Matthews"]["model_result"], "N/A")
 
         summary = json.loads((common.memory_dir("nhl", DAY) / "summary.json").read_text())
-        self.assertEqual(summary["props_total"], 1)
-        self.assertEqual(summary["props_graded"], 1)
+        self.assertEqual(summary["props_total"], 2)
+        self.assertEqual(summary["props_graded"], 2)
         self.assertEqual(summary["hits"], 0)
         self.assertEqual(summary["misses"], 1)
+        self.assertEqual(summary["voids"], 1)
         self.assertEqual(summary["props_miss"][0]["player"], "John Tavares")
         self.assertEqual(summary["props_miss"][0]["odds_type"], "standard")
         self.assertEqual(summary["props_hit"], [])
@@ -295,8 +300,10 @@ class SummaryFilterTests(_Memory):
         summary = common.build_day_summary("nhl", DAY, props, status="complete")
         self.assertEqual(summary["hits"], 1)
         self.assertEqual(summary["misses"], 0)
-        self.assertEqual(summary["props_graded"], 1)
+        self.assertEqual(summary["voids"], 1)
+        self.assertEqual(summary["props_graded"], 2)
         self.assertEqual([row["player"] for row in summary["props_hit"]], ["Live"])
+        self.assertEqual(summary["props_miss"], [])
 
 
 if __name__ == "__main__":

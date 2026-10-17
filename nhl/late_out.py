@@ -7,7 +7,8 @@ about 25 minutes, which was after puck drop, so the frozen rows voided.
 
 This pass does not rebuild the model and does not re-apply the lineup
 filter. It only holds rows the manual list or that news fallback names,
-then drops the matching pregame slate props.
+then marks the matching pregame slate props removed so grading can void
+them. The rows stay on the slate.
 """
 from __future__ import annotations
 
@@ -50,7 +51,12 @@ def _started(start, now: datetime) -> bool:
 
 
 def retract_slate_props(props, held_rows, now: datetime | None = None) -> tuple[list, int]:
-    """Drop not-yet-started slate props for players this pass just held."""
+    """Mark not-yet-started slate props removed for players this pass just held.
+
+    The prop stays on the slate with ``removed`` true and ``pp_status``
+    ``removed``. Grading voids that row. Deleting it would drop the prop
+    before a void could be recorded. Freeze times are left as they were.
+    """
     now = now or datetime.now(timezone.utc)
     keys = set()
     for row in held_rows or []:
@@ -76,6 +82,14 @@ def retract_slate_props(props, held_rows, now: datetime | None = None) -> tuple[
         )
         start = prop.get("start_time_utc") or prop.get("start_time")
         if key in keys and key[0] and not _started(start, now):
+            status = str(prop.get("pp_status") or "").strip().lower()
+            if prop.get("removed") and status == "removed":
+                kept.append(prop)
+                continue
+            marked = dict(prop)
+            marked["removed"] = True
+            marked["pp_status"] = "removed"
+            kept.append(marked)
             removed += 1
             continue
         kept.append(prop)
@@ -147,7 +161,7 @@ def recheck(board_path: Path, memory_root: Path, *, news=None, manual=None, now=
             continue
         payload["props"] = props
         path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        log.warning("Pulled %s pregame slate prop(s) from %s", dropped, path)
+        log.warning("Marked %s pregame slate prop(s) removed on %s", dropped, path)
     log.warning("Held %s late NHL out row(s) on %s", held, board_path)
     return held
 

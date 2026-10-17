@@ -586,6 +586,29 @@ def postponed_matchups(sport: str, d: date) -> set[frozenset[str]]:
     return out
 
 
+def _summary_row(sport: str, prop: dict) -> dict | None:
+    """Row that belongs in an NHL or WNBA summary, or None to leave it out.
+
+    NHL removed standard lines are kept as Void. WNBA pulled lines are
+    skipped. Superseded and non-standard rows are excluded for both.
+    """
+    if not isinstance(prop, dict):
+        return None
+    odds = str(prop.get("odds_type") or "standard").strip().lower()
+    if odds != "standard":
+        return None
+    if pulled_status(prop):
+        if sport != "nhl":
+            return None
+        voided = dict(prop)
+        voided["result"] = RESULT_VOID
+        voided["model_result"] = MODEL_NA
+        return voided
+    if prop.get("superseded_at"):
+        return None
+    return prop
+
+
 def build_day_summary(
     sport: str,
     d: date,
@@ -602,10 +625,11 @@ def build_day_summary(
         raise ValueError(f"summary status must be complete|partial, got {status!r}")
 
     graded = list(props or [])
-    # Demon/goblin and pulled or superseded cards stay out of the NHL and
-    # WNBA hit rate. KBO and NFL keep every graded row they were given.
+    # Demon/goblin and superseded cards stay out of the NHL and WNBA hit
+    # rate. An NHL standard line marked removed is Void, not a hit or a
+    # miss. WNBA still skips pulled rows. KBO and NFL keep every graded row.
     if sport in ("nhl", "wnba"):
-        graded = [prop for prop in graded if gradeable_slate_prop(prop)]
+        graded = [row for row in (_summary_row(sport, prop) for prop in graded) if row]
     stats = compute_hit_rate_stats(graded)
     total = props_total if props_total is not None else len(graded)
     return {

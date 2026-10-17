@@ -21,17 +21,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pipeline.memory.common import (  # noqa: E402
+    MODEL_NA,
     RESULT_DNP,
     RESULT_MISSING,
+    RESULT_VOID,
     compute_hit_rate_stats,
     format_iso,
     format_mmddyyyy,
     grade_line,
-    gradeable_slate_prop,
     load_json,
     memory_dir,
     model_result,
     parse_cli_date,
+    pulled_status,
     today_et,
     utc_now_iso,
     write_meta,
@@ -120,8 +122,44 @@ def _counts(graded: list[dict], ungraded: list) -> dict:
         "misses": stats["misses"],
         "pushes": stats["pushes"],
         "dnps": stats["dnps"],
+        "voids": stats["voids"],
         "missing": stats["missing"],
         "ungraded": len(ungraded),
+    }
+
+
+def _standard_rows(props: list) -> tuple[list[dict], list[dict]]:
+    """Split a slate into live standard rows and removed standard rows.
+
+    Demon, goblin, and superseded rows stay out. A removed standard row is
+    voided rather than dropped, so a late scratch still has a grade.
+    """
+    live: list[dict] = []
+    voids: list[dict] = []
+    for prop in props or []:
+        if not isinstance(prop, dict):
+            continue
+        odds = str(prop.get("odds_type") or "standard").strip().lower()
+        if odds != "standard":
+            continue
+        # A removed line is Void even when the freeze also stamped
+        # superseded_at. A superseded line that was not removed is history.
+        if pulled_status(prop):
+            voids.append(prop)
+        elif prop.get("superseded_at"):
+            continue
+        else:
+            live.append(prop)
+    return live, voids
+
+
+def _void_row(prop: dict) -> dict:
+    return {
+        **prop,
+        "actual": None,
+        "result": RESULT_VOID,
+        "model_result": MODEL_NA,
+        "graded_at": utc_now_iso(),
     }
 
 
@@ -231,10 +269,10 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
         if not dry_run:
             write_meta("nhl", d, status="waiting", props_total=0, props_graded=0, missing=["no slate.json — freeze the board first"])
         return {"status": "waiting", "reason": "no slate", "slate_date": format_mmddyyyy(d)}
-    # Standard lines still on the board. Demon/goblin are research-only.
-    # Pulled and superseded cards are not scored and do not block the day.
-    props = [prop for prop in slate["props"] if gradeable_slate_prop(prop)]
-    if not props:
+    # Live standard lines are scored. Demon/goblin are research-only.
+    # Superseded cards are not scored. A removed standard line is Void.
+    live, pulled = _standard_rows(slate["props"])
+    if not live and not pulled:
         if not dry_run:
             write_meta(
                 "nhl",
@@ -251,6 +289,31 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
             "props_total": 0,
             "props_graded": 0,
         }
+    voided = [_void_row(prop) for prop in pulled]
+    if not live:
+        graded = voided
+        missing: list = []
+        total = len(voided)
+        counts = _counts(graded, missing)
+        if dry_run:
+            return {
+                "status": "complete",
+                "slate_date": format_mmddyyyy(d),
+                "props_total": total,
+                "props_graded": len(graded),
+                **counts,
+                "dry_run": True,
+            }
+        path = write_recap("nhl", d, graded)
+        return {
+            "status": "complete",
+            "slate_date": format_mmddyyyy(d),
+            "props_total": total,
+            "props_graded": len(graded),
+            **counts,
+            "path": str(path),
+        }
+    props = live
     if actuals is None:
         try:
             actuals = load_actuals(d)
@@ -305,7 +368,8 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
             "graded_at": utc_now_iso(),
         })
 
-    total = len(props)
+    graded = voided + graded
+    total = len(live) + len(pulled)
     counts = _counts(graded, missing)
     if missing:
         if not dry_run:
