@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const safariUa = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+const macSafariUa = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15'
 
 const mobileUse = {
   viewport: { width: 390, height: 844 },
@@ -28,12 +29,12 @@ export default defineConfig({
       use: mobileUse,
     },
     {
-      // A 980px layout viewport on a 393px phone screen. That is the size
-      // iOS Safari grows to when anything overflows the device.
+      // Desktop-mode Safari: Mac UA, 980px layout viewport, iPhone 15 screen.
       name: 'webkit-member',
       testMatch: '**/webkit-member-scale.spec.js',
       use: {
         ...devices['iPhone 15'],
+        userAgent: macSafariUa,
         viewport: { width: 980, height: 852 },
         screen: { width: 393, height: 852 },
         isMobile: true,
