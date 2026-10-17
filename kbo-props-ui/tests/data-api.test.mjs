@@ -1517,6 +1517,52 @@ test('nfl sharp odds are saved as a last-good copy', async () => {
   _clearCache();
 });
 
+test('a last-good upload aborts so a large board cannot hold the function', async () => {
+  let uploads = 0
+  let signal
+  const client = mockClient()
+  client.storage = {
+    from() {
+      return {
+        upload() {
+          uploads += 1
+          return new Promise(() => {})
+        },
+      }
+    },
+  }
+  client.lastGoodFetch = (table, _body, options) => {
+    signal = options.signal
+    assert.equal(table, 'nfl_sharp_odds')
+    return new Promise((_resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('not aborted')), 1500)
+      options.signal.addEventListener('abort', () => {
+        clearTimeout(timer)
+        const err = new Error('aborted')
+        err.name = 'TimeoutError'
+        reject(err)
+      })
+    })
+  }
+  try {
+    const started = Date.now()
+    const res = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nfl_sharp_odds' }, headers: { authorization: bearer('tok-owner') } },
+      res,
+      client,
+    )
+    assert.equal(res.statusCode, 200)
+    assert.ok(Date.now() - started < 500)
+    await _lastGoodWrite('nfl_sharp_odds')
+    assert.ok(Date.now() - started < 1500)
+    assert.equal(signal.aborted, true)
+    assert.equal(uploads, 0)
+  } finally {
+    _clearCache()
+  }
+})
+
 test('an empty KBO board is not saved as a last-good copy', async () => {
   let uploads = 0
   const client = mockClient()

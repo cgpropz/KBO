@@ -332,8 +332,9 @@ async function boardAfterReadError(client, table, err, deadline, primed) {
 
 // These three are read in parallel with the board because the odds refresh
 // publishes them often. Every non-empty board, including sharp odds and the
-// joined nba_players list, is written here without waiting on Storage when
-// its version or updated_at changes. An empty board is never stored.
+// joined nba_players list, is written here when its version or updated_at
+// changes. The upload is aborted at 1s so a large board cannot hold the
+// function open. An empty board is never stored.
 const KBO_FALLBACK_TABLES = new Set([
   'prizepicks_props',
   'strikeout_projections',
@@ -375,14 +376,51 @@ function settleWithin(promise, ms) {
   });
 }
 
+function lastGoodStorageUrl(table) {
+  const base = cleanEnv(process.env.SUPABASE_URL) || cleanEnv(process.env.VITE_SUPABASE_URL);
+  const key = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY) || cleanEnv(process.env.VITE_SUPABASE_SERVICE_ROLE_KEY);
+  if (!base || !key) return null;
+  return {
+    key,
+    url: `${base.replace(/\/$/, '')}/storage/v1/object/${LAST_GOOD_BUCKET}/${table}.json`,
+  };
+}
+
 async function writeLastGood(client, table, row) {
   try {
-    const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
-    if (!storage || typeof storage.upload !== 'function') return false;
     const body = Buffer.from(JSON.stringify({
       data: row.data,
       updated_at: row.updated_at || null,
     }));
+    const signal = AbortSignal.timeout(LAST_GOOD_WRITE_MS);
+    if (typeof client?.lastGoodFetch === 'function') {
+      const response = await client.lastGoodFetch(table, body, { signal });
+      return response?.ok === true;
+    }
+    const target = lastGoodStorageUrl(table);
+    if (target) {
+      // Abort the socket. A timed-out race would leave the upload running and
+      // keep this instance from taking the next board read.
+      const response = await fetch(target.url, {
+        method: 'POST',
+        headers: {
+          apikey: target.key,
+          Authorization: `Bearer ${target.key}`,
+          'Content-Type': 'application/json',
+          'x-upsert': 'true',
+          'Cache-Control': 'no-store',
+        },
+        body,
+        signal,
+      });
+      if (!response.ok) {
+        console.warn(`[api/data] ${table} last-good write failed: HTTP ${response.status}`);
+        return false;
+      }
+      return true;
+    }
+    const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
+    if (!storage || typeof storage.upload !== 'function') return false;
     const { error } = await settleWithin(storage.upload(`${table}.json`, body, {
       contentType: 'application/json',
       upsert: true,
@@ -394,7 +432,7 @@ async function writeLastGood(client, table, row) {
     }
     return true;
   } catch (err) {
-    console.warn(`[api/data] ${table} last-good write failed:`, err.message);
+    console.warn(`[api/data] ${table} last-good write failed:`, err?.name === 'TimeoutError' ? 'aborted after 1s' : err.message);
     return false;
   }
 }
