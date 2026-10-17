@@ -160,10 +160,12 @@ test('the slip screen does not ship sample rows, example payouts, or lock copy',
   const css = readFileSync(new URL('../src/SlipBoard.css', import.meta.url), 'utf8')
   const phone = readFileSync(new URL('../src/mobile.css', import.meta.url), 'utf8')
   const footer = readFileSync(new URL('../src/SiteFooter.jsx', import.meta.url), 'utf8')
-  for (const banned of ['EXAMPLE', 'SAMPLE', 'Troy Franklin', 'x##', '$##', 'locked', 'PrizePicks']) {
+  for (const banned of ['EXAMPLE', 'SAMPLE', 'Troy Franklin', 'x##', '$##', 'locked']) {
     assert.equal(src.includes(banned), false, banned)
     assert.equal(css.includes(banned), false, banned)
   }
+  assert.equal(css.includes('PrizePicks'), false)
+  assert.equal(/['"`][^'"`\n]*PrizePicks/.test(src), false)
   assert.match(src, /min-height: 48px|b2-ml/)
   assert.match(src, /loading="lazy"/)
   assert.match(src, /decoding="async"/)

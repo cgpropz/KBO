@@ -87,6 +87,7 @@ function slipFields(row, extra = {}) {
     position: row?.position || row?.pos || extra.position || '',
     odds_type: oddsTypeOf(row),
     playerId: row?.playerId || row?.player_id || extra.playerId || null,
+    projection_id: firstText(row?.projection_id, row?.projectionId, extra.projection_id),
     imageUrl: firstText(extra.imageUrl, row?.imageUrl, row?.image, row?.photoUrl),
     ppImageUrl: firstText(extra.ppImageUrl, row?.ppImageUrl, row?.image_url),
     hitRate: num(row?.hitRate),
