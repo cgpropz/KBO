@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
@@ -78,11 +79,18 @@ export default function NhlProjections({ onSelectPlayer }) {
     let active = true
     fetchNhlProjections()
       .then(({ projections: next, updatedAt: publishedAt }) => {
-        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setLoaded(true) }
+        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setError(''); setLoaded(true) }
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
+
+  useFullBoardRefresh('nhl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setError('')
+    setLoaded(true)
+  })
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()

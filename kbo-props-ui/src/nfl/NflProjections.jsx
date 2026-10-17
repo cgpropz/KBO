@@ -4,6 +4,7 @@ import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
@@ -68,7 +69,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const [position, setPosition] = useState('ALL')
   const [prop, setProp] = useState('All props')
   const [matchup, setMatchup] = useState('All matchups')
-  const [sort, setSort] = useState('Best score')
+  const [sort, setSort] = useState('CG Score')
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
@@ -77,16 +78,25 @@ export default function NflProjections({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNflProjections()
-      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => {
+      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => {
         if (!active) return
         setProjections(next)
         setUpdatedAt(publishedAt || null)
-        setLockedCount(preview ? locked : 0)
+        setLockedCount(preview && !refreshing ? locked : 0)
+        setError('')
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
+
+  useFullBoardRefresh('nfl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setLockedCount(0)
+    setError('')
+    setLoaded(true)
+  })
 
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
   const props = useMemo(() => ['All props', ...new Set(projections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [projections])
@@ -98,15 +108,15 @@ export default function NflProjections({ onSelectPlayer }) {
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
     .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => sort === 'Best score' ? b.score - a.score : b.hitRate - a.hitRate), [matchup, position, projections, prop, query, sort])
+    .sort((a, b) => sort === 'CG Score' ? b.score - a.score : b.hitRate - a.hitRate), [matchup, position, projections, prop, query, sort])
 
   return (
     <section className="nfl-edge-board">
       <div className="nfl-board-header"><div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div><span>{rows.length} edges</span></div>
       <section className="nfl-edge-controls" aria-label="NFL projection filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
-        <label><span>SORT</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option>Best score</option><option>Best hit rate</option></select></label>
-        <label><span>PROP</span><select value={prop} onChange={(event) => setProp(event.target.value)}>{props.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><span>SORT</span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value)}><option>CG Score</option><option>Best hit rate</option></select></label>
+        <label><span>PROP</span><select aria-label="Prop" value={prop} onChange={(event) => setProp(event.target.value)}>{props.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label><span>MATCHUP</span><select value={matchup} onChange={(event) => setMatchup(event.target.value)}>{matchups.map((item) => <option key={item}>{item}</option>)}</select></label>
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>

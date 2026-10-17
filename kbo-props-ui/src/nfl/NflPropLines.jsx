@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
@@ -292,9 +293,17 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview ? locked : 0); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview && !refreshing ? locked : 0); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
+
+  useFullBoardRefresh('nfl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setLockedCount(0)
+    setError('')
+    setLoaded(true)
+  })
 
   const updateFilter = (key, value) => {
     setFilters((current) => ({ ...current, [key]: value }))

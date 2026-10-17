@@ -10,6 +10,7 @@ import {
   nbaAccessDecision,
   nhlAccessDecision,
   datasetIsFullyPublic,
+  FILTER_STANDARD_BEFORE_FREE_PREVIEW,
   shapeForTier,
   sportAccess,
   _resetTierShapeFilters,
@@ -100,6 +101,18 @@ let standardFilterRuns = 0;
 
 export function _standardFilterRuns() {
   return standardFilterRuns;
+}
+
+// Paid callers, and free or logged-out callers while the preview flag is on,
+// filter once per cache entry. The stored snapshot stays raw.
+function payloadForTier(ds, table, row, raw, tier) {
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  const paid = spec ? sportAccess(tier)[spec.sport] === true : false;
+  const filter = paid || FILTER_STANDARD_BEFORE_FREE_PREVIEW;
+  return {
+    payload: filter ? cachedStandardBoard(ds, table, row, raw) : raw,
+    alreadyStandard: filter,
+  };
 }
 
 // Filter after the cached read, once per cache entry. The stored snapshot
@@ -713,8 +726,13 @@ async function handleNbaRequest(req, res, client, ds) {
   const shaped = withPresentedData(
     req,
     decision === 'full'
-      ? { data: board, preview: false, lockedCount: 0 }
-      : shapeForTier(ds, cachedStandardBoard(ds, spec.table, row, board), 'free', { alreadyStandard: true }),
+      ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
+      : shapeForTier(
+        ds,
+        FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
+        'free',
+        { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
+      ),
     board,
   );
   return sendData(req, res, {
@@ -814,14 +832,11 @@ async function handleNhlRequest(req, res, client, ds) {
   // NHL still gets the full filtered board.
   const tier = caller.tierResolved === true ? caller.tier : 'free';
   const fullTier = sportAccess(tier).nhl ? tier : 'owner';
+  const shapingTier = decision === 'full' ? fullTier : 'free';
+  const tierPayload = payloadForTier(ds, spec.table, row, board, shapingTier);
   const shaped = withPresentedData(
     req,
-    shapeForTier(
-      ds,
-      cachedStandardBoard(ds, spec.table, row, board),
-      decision === 'full' ? fullTier : 'free',
-      { alreadyStandard: true },
-    ),
+    shapeForTier(ds, tierPayload.payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
     board,
   );
   return sendData(req, res, {
@@ -978,9 +993,10 @@ export async function handleDataRequest(req, res, client) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  const tierPayload = payloadForTier(ds, spec.table, row, board, tier);
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, cachedStandardBoard(ds, spec.table, row, board), tier, { alreadyStandard: true }),
+    shapeForTier(ds, tierPayload.payload, tier, { alreadyStandard: tierPayload.alreadyStandard }),
     board,
   );
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);

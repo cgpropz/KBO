@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { shapeForTier } from '../api/_dataAccess.js'
+import { FILTER_STANDARD_BEFORE_FREE_PREVIEW, shapeForTier } from '../api/_dataAccess.js'
 import { filterStandardBoard, isStandardBoardLine, rawOddsType } from '../src/standardBoard.js'
 
 test('raw odds type keeps unknown tokens and blank stays empty', () => {
@@ -88,7 +88,8 @@ test('WNBA and NBA standard feeds treat a missing type as standard and drop prom
   assert.deepEqual(demon.data, [])
 })
 
-test('the paid NHL board and the free preview both omit non-standard lines', () => {
+test('the paid NHL board and the free preview keep standard lines only', () => {
+  assert.equal(FILTER_STANDARD_BEFORE_FREE_PREVIEW, true)
   const rows = [
     { player: 'Goblin', prop: 'Points', line: 0.5, projection: 2, oddsType: 'goblin', rankEligible: true },
     { player: 'Standard', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', rankEligible: true },

@@ -282,7 +282,7 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
             const data = String(table).startsWith('nba_dvp_')
               ? { position: 'PG', leagueAvgOppPts: 26.21, teams: [{ team: 'WSH', oppPts: 29.1, dvpFactor: 30 }, { team: 'OKC', oppPts: 22.2, dvpFactor: 1 }] }
               : String(table).startsWith('nba_projections_')
-                ? [{ name: 'Jayson Tatum', team: 'BOS', athleteId: '4065648', projectionStatus: 'pending', ppAllProps: [{ stat: 'Points', line: 27.5, projection: null, opponent: 'DET' }] }]
+                ? [{ name: 'Jayson Tatum', team: 'BOS', athleteId: '4065648', projectionStatus: 'pending', ppAllProps: [{ stat: 'Points', line: 27.5, projection: null, opponent: 'DET', odds_type: 'standard' }] }]
                 : [{ name: 'Jaren Jackson Jr.', team: 'MEM', athleteId: '4277961' }]
             return Promise.resolve({
               data: { data, updated_at: '2026-04-12T00:00:00Z' },

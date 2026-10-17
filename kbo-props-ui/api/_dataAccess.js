@@ -665,6 +665,11 @@ function hiddenNflPreview(ds, payload) {
   return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
 }
 
+// Code Green, 7:53 AM ET on Oct 17, 2026: standard lines only for everyone,
+// including free and logged-out visitors. The filter runs before the
+// free-preview trim. Set this to false only to restore the old preview order.
+export const FILTER_STANDARD_BEFORE_FREE_PREVIEW = true;
+
 let tierShapeFilters = 0;
 
 export function _tierShapeFilters() {
@@ -681,9 +686,10 @@ export function _resetTierShapeFilters() {
 export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
-  // Standard lines only, before the preview trim and the NHL points gate,
-  // so goblin, demon, and unlabeled rows never count as locked or free.
-  if (!alreadyStandard) {
+  // Standard lines are removed before the trim on paid boards and, while
+  // FILTER_STANDARD_BEFORE_FREE_PREVIEW is on, on free and logged-out boards.
+  const paid = sportAccess(tier)[spec.sport] === true;
+  if (!alreadyStandard && (paid || FILTER_STANDARD_BEFORE_FREE_PREVIEW)) {
     tierShapeFilters += 1;
     payload = filterStandardBoard(ds, payload);
   }
@@ -691,7 +697,6 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
   // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
   // visible and not ranked into the free top 3.
   if (ds === 'nhl_projections') payload = nhlBoardPayload(payload);
-  const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }

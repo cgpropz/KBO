@@ -1,6 +1,7 @@
 import { publishedAtFromPayload } from './boardFreshness';
+import { memberPreviewIsDowngrade } from './memberPreview';
 import { filterStandardBoard } from './standardBoard';
-import { boundedAccessToken } from './supabaseClient';
+import { boundedAccessToken, readCachedSession } from './supabaseClient';
 
 /*
  * Client for the server-gated data endpoint (api/data.js).
@@ -31,15 +32,11 @@ function inflightKey(ds, { player, fresh = false } = {}) {
   return `${ds}\0${player || ''}\0${fresh ? '1' : '0'}`;
 }
 
-function paidMemberCached() {
-  if (typeof sessionStorage === 'undefined') return false;
-  try {
-    const parsed = JSON.parse(sessionStorage.getItem('cg_tier') || 'null');
-    const tier = parsed?.tier;
-    return typeof tier === 'string' && tier !== '' && tier !== 'free' && tier !== 'discord';
-  } catch {
-    return false;
-  }
+function cachedMemberPreviewIsDowngrade(ds, body) {
+  return memberPreviewIsDowngrade(ds, body, {
+    session: readCachedSession(),
+    tierCache: typeof sessionStorage === 'undefined' ? null : sessionStorage,
+  });
 }
 
 async function fetchDevStatic(ds, staticPath) {
@@ -69,17 +66,80 @@ async function readErrorDetail(res) {
 }
 
 function presentDataset(ds, body) {
+  const preview = !!body.preview;
   return {
-    data: filterStandardBoard(ds, body.data),
+    // A free preview is the production payload. Filtering it here would drop
+    // the same rows the server left in the top 3. Full responses are filtered.
+    data: preview ? body.data : filterStandardBoard(ds, body.data),
     updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
     source: 'api',
-    preview: !!body.preview,
+    preview,
     lockedCount: Number(body.lockedCount) || 0,
+    refreshing: false,
   };
 }
 
-function paidDowngrade(body) {
-  return paidMemberCached() && body?.preview === true;
+const REFRESH_DELAYS_MS = [1500, 4000, 8000];
+const datasetWatchers = new Map();
+const refreshListeners = new Set();
+const refreshingDatasets = new Set();
+
+export function watchDataset(ds, listener) {
+  let set = datasetWatchers.get(ds);
+  if (!set) {
+    set = new Set();
+    datasetWatchers.set(ds, set);
+  }
+  set.add(listener);
+  return () => set.delete(listener);
+}
+
+export function subscribeBoardRefreshing(listener) {
+  refreshListeners.add(listener);
+  listener(refreshingDatasets.size > 0);
+  return () => refreshListeners.delete(listener);
+}
+
+function notifyRefreshing() {
+  const active = refreshingDatasets.size > 0;
+  for (const listener of refreshListeners) listener(active);
+}
+
+function publishDataset(ds, presented) {
+  const set = datasetWatchers.get(ds);
+  if (!set) return;
+  for (const listener of set) listener(presented);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// The foreground retry already happened. Keep asking in the background and
+// publish the first full board. A later preview stays on screen.
+async function refreshFullBoard(ds, opts) {
+  if (refreshingDatasets.has(ds)) return;
+  refreshingDatasets.add(ds);
+  notifyRefreshing();
+  try {
+    for (const delay of REFRESH_DELAYS_MS) {
+      await sleep(delay);
+      try {
+        const body = await requestDataset(ds, { ...opts, fresh: true, retried: true, player: undefined });
+        const presented = presentDataset(ds, body);
+        if (!presented.preview) {
+          publishDataset(ds, presented);
+          return;
+        }
+        if (!cachedMemberPreviewIsDowngrade(ds, body)) return;
+      } catch {
+        // The preview cards stay up. The next delay tries again.
+      }
+    }
+  } finally {
+    refreshingDatasets.delete(ds);
+    notifyRefreshing();
+  }
 }
 
 async function requestDataset(ds, { priority, player, fresh = false, timeoutMs } = {}) {
@@ -110,17 +170,23 @@ async function loadDataset(ds, opts, managed) {
   let spent = opts.retried === true;
   try {
     let body = await requestDataset(ds, opts);
-    // The hub passes its own budget and retries. Sport boards do not: a paid
-    // member who received the free preview, or a timed-out read, tries once
-    // more and does not render the free rows.
-    if (!managed && !spent && paidDowngrade(body)) {
+    // The hub passes its own budget and retries. Sport boards retry once when
+    // this session's tier should have unlocked the dataset.
+    // The second answer is what we render, including a preview.
+    if (!managed && !spent && cachedMemberPreviewIsDowngrade(ds, body)) {
       spent = true;
-      body = await requestDataset(ds, { ...opts, fresh: true, retried: true });
+      try {
+        body = await requestDataset(ds, { ...opts, fresh: true, retried: true });
+      } catch (retryErr) {
+        if (!isTimeoutError(retryErr)) throw retryErr;
+      }
     }
-    if (!managed && paidDowngrade(body)) {
-      throw new Error(`Paid board for ${ds} was returned as the free preview.`);
+    const presented = presentDataset(ds, body);
+    if (!managed && !opts.player && presented.preview && cachedMemberPreviewIsDowngrade(ds, body)) {
+      presented.refreshing = true;
+      refreshFullBoard(ds, opts);
     }
-    return presentDataset(ds, body);
+    return presented;
   } catch (err) {
     if (!managed && !spent && isTimeoutError(err)) {
       return loadDataset(ds, { ...opts, fresh: true, retried: true }, managed);

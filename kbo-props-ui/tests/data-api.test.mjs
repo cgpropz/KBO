@@ -6,6 +6,7 @@ import { test, beforeEach } from 'node:test'
 import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
+  FILTER_STANDARD_BEFORE_FREE_PREVIEW,
   FREE_ROW_LIMIT,
   NFL_FREE_PREVIEW_ENABLED,
   isNbaDataset,
@@ -932,6 +933,70 @@ test('the standard-line filter runs once per cached board', async () => {
   assert.equal(_standardFilterRuns(), 1)
   assert.equal(_tierShapeFilters(), 0)
   assert.equal(second.body.data.length, first.body.data.length)
+})
+
+test('an anonymous strikeout preview is standard lines only', async () => {
+  const rows = {
+    projections: [
+      { name: 'Naile', line: 17.5, projection: 20, odds_type: 'goblin', prop: 'Strikeouts', rating: 200 },
+      { name: 'A', line: 5, projection: 4, odds_type: 'standard', prop: 'Strikeouts', rating: 40 },
+      { name: 'B', line: 5, projection: 3, odds_type: 'standard', prop: 'Strikeouts', rating: 30 },
+      { name: 'C', line: 5, projection: 2, odds_type: 'standard', prop: 'Strikeouts', rating: 20 },
+    ],
+  }
+  const req = { method: 'GET', query: { ds: 'strikeout_projections' }, headers: {} }
+  const free = mockRes()
+  await handleDataRequest(req, free, nflClient({ rows }))
+  assert.equal(FILTER_STANDARD_BEFORE_FREE_PREVIEW, true)
+  assert.equal(free.body.preview, true)
+  assert.equal(free.body.data.projections.some((row) => row.name === 'Naile'), false)
+  assert.deepEqual(free.body.data.projections.map((row) => row.name), ['A', 'B', 'C'])
+  assert.equal(_standardFilterRuns(), 1)
+  const paid = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'strikeout_projections' }, headers: { authorization: bearer('tok-owner') } },
+    paid,
+    nflClient({ rows }),
+  )
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.projections.some((row) => row.name === 'Naile'), false)
+  assert.equal(_standardFilterRuns(), 1)
+})
+
+test('the NBA full path drops non-standard props', async () => {
+  const players = [
+    { name: 'Std', ppAllProps: [{ stat: 'Points', odds_type: 'standard', line: 20, projection: 22 }] },
+    { name: 'Demon', ppAllProps: [{ stat: 'Points', odds_type: 'demon', line: 15, projection: 30 }] },
+  ]
+  const client = {
+    auth: {
+      async getUser() {
+        throw new Error('auth.getUser must not run')
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        async maybeSingle() {
+          if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+          if (table === 'app_flags') return { data: { value: false }, error: null }
+          return { data: { data: structuredClone(players), updated_at: NOW }, error: null }
+        },
+      }
+      return chain
+    },
+  }
+  const res = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nba_projections_standard' }, headers: { authorization: bearer('tok-owner') } },
+    res,
+    client,
+  )
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, false)
+  assert.deepEqual(res.body.data.map((row) => row.name), ['Std'])
 })
 
 test('a profile timeout with no paid cache returns the free preview', async () => {

@@ -214,6 +214,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
     assert.equal(preview.body.preview, true, token)
     assert.equal(preview.body.data.length, 3, token)
     assert.equal(preview.body.lockedCount, 1, token)
+    assert.equal(preview.body.data.some((row) => row.player === 'Goblin Skater'), false, token)
     assert.equal(preview.body.access.nhl, false, token)
   }
 

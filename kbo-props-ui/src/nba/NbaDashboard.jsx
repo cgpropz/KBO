@@ -7,6 +7,7 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import {
   DEFAULT_FILTERS,
   GAMES_OPTIONS,
@@ -352,9 +353,9 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           fetchNbaData('nba/players.json').catch(() => []),
         ])
         if (cancelled) return
-        setLockedCount(board?.preview ? board.lockedCount : 0)
+        setLockedCount(board?.preview && !board?.refreshing ? board.lockedCount : 0)
         setUpdatedAt(board?.updatedAt || null)
-        setIsPaid(board?.preview !== true)
+        setIsPaid(board?.preview !== true || board?.refreshing === true)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
       } catch (err) {
@@ -371,6 +372,15 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     load()
     return () => { cancelled = true }
   }, [])
+
+  useFullBoardRefresh('nba_projections_standard', (snapshot) => {
+    setLockedCount(0)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setIsPaid(true)
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLoadError('')
+    setProjLoading(false)
+  })
 
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0

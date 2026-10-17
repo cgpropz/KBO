@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 import HitRateStrip from '../HitRateStrip'
@@ -163,16 +164,25 @@ export default function NhlPropLines({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt }) => {
+      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt, refreshing }) => {
         if (!active) return
         setProjections(next)
-        setLockedCount(preview ? locked : 0)
+        setLockedCount(preview && !refreshing ? locked : 0)
         setUpdatedAt(publishedAt || null)
+        setError('')
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
+
+  useFullBoardRefresh('nhl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLockedCount(0)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setError('')
+    setLoaded(true)
+  })
 
   const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {

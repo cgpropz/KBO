@@ -22,6 +22,55 @@ export function sportAccess(tier) {
   return { kbo: tier === 'kbo', wnba: tier === 'wnba', nfl: false, nhl: false };
 }
 
+// Must match api/_dataAccess.js DATASETS[].sport. NBA is absent from
+// sportAccess on purpose, so a cached all-access tier does not retry it.
+const DATASET_SPORT = {
+  prizepicks_props: 'kbo',
+  strikeout_projections: 'kbo',
+  batter_projections: 'kbo',
+  matchup_data: 'kbo',
+  pitcher_rankings: 'kbo',
+  graded_props_history: 'kbo',
+  correlations_kbo: 'kbo',
+  wnba_projections_standard: 'wnba',
+  wnba_projections_demon: 'wnba',
+  wnba_projections_goblin: 'wnba',
+  wnba_lineups: 'wnba',
+  wnba_players: 'wnba',
+  wnba_dvp_guard: 'wnba',
+  wnba_dvp_forward: 'wnba',
+  wnba_dvp_center: 'wnba',
+  wnba_sharp_odds: 'wnba',
+  correlations_wnba: 'wnba',
+  nfl_projections: 'nfl',
+  nfl_lineups: 'nfl',
+  nfl_sharp_odds: 'nfl',
+  nfl_game_markets: 'nfl',
+  correlations_nfl: 'nfl',
+  nba_players: 'nba',
+  nba_teams: 'nba',
+  nba_dvp_pg: 'nba',
+  nba_dvp_sg: 'nba',
+  nba_dvp_sf: 'nba',
+  nba_dvp_pf: 'nba',
+  nba_dvp_c: 'nba',
+  nba_projections_standard: 'nba',
+  nba_projections_demon: 'nba',
+  nba_projections_goblin: 'nba',
+  nba_correlations: 'nba',
+  nhl_projections: 'nhl',
+  nhl_lineups: 'nhl',
+  nhl_sharp_odds: 'nhl',
+  nhl_dvp_f: 'nhl',
+  nhl_dvp_d: 'nhl',
+  nhl_dvp_g: 'nhl',
+  nhl_correlations: 'nhl',
+};
+
+export function datasetSport(ds) {
+  return Object.hasOwn(DATASET_SPORT, ds) ? DATASET_SPORT[ds] : '';
+}
+
 // Display shortcut for the owner email. The landing card, switcher, and stored
 // sport also follow GET /api/nba-access, which is full access from api/data.js
 // (owner always, all-access tiers only after nba_public). Paid rows stay on

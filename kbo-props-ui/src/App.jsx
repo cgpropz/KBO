@@ -10,6 +10,7 @@ import { slipTabSearch, sportTabSearch } from './memberNav'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
+import { subscribeBoardRefreshing } from './apiData'
 import { useAgeGate } from './ageGateContext'
 import './FreeFunnel.css'
 import './App.css'
@@ -45,6 +46,7 @@ function App() {
   const { user, tier, passwordRecovery, clearPasswordRecovery } = useAuth();
   const { requireAge } = useAgeGate();
   const [previewNode, setPreviewNode] = useState(null);
+  const [refreshingBoard, setRefreshingBoard] = useState(false);
   const nba = useNbaOpen();
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
@@ -104,6 +106,8 @@ function App() {
     setHomeTick((tick) => tick + 1);
     replaceSearch(slipTabSearch(next));
   };
+
+  useEffect(() => subscribeBoardRefreshing(setRefreshingBoard), []);
 
   useEffect(() => {
     if (!previewNode) {
@@ -299,6 +303,7 @@ function App() {
 
   return (
     <>
+      {refreshingBoard && <div className="board-refresh-note" role="status">Refreshing full board</div>}
       {previewBar}
       <Suspense fallback={<RouteFallback />}>
         {sportApp}

@@ -16,6 +16,7 @@ import { fitImage } from '../fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -444,7 +445,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           fetchWnbaData('wnba/players.json'),
         ])
         if (cancelled) return
-        setLockedCount(pr?.preview ? pr.lockedCount : 0)
+        setLockedCount(pr?.preview && !pr?.refreshing ? pr.lockedCount : 0)
         setUpdatedAt(pr?.updatedAt || null)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
@@ -461,6 +462,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     load()
     return () => { cancelled = true }
   }, [])
+
+  useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
+    setLockedCount(0)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLoadError('')
+    setProjLoading(false)
+  })
 
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0

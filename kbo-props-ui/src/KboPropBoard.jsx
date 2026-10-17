@@ -16,6 +16,7 @@ import { fitImage } from './fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
+import { useFullBoardRefresh } from './useFullBoardRefresh'
 
 const FREE_ROW_LIMIT = 3
 const SORT_OPTIONS = ['CG Score', 'L10 Hit Rate', 'Full Hit Rate', 'Player Name']
@@ -238,7 +239,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         if (!active) return
         setSnapshot(props.data)
         setUpdatedAt(props.updatedAt || null)
-        setLockedCount(props.preview ? props.lockedCount : 0)
+        setLockedCount(props.preview && !props.refreshing ? props.lockedCount : 0)
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
@@ -249,6 +250,13 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     const refresh = window.setInterval(load, 30 * 60 * 1000)
     return () => { active = false; window.clearInterval(refresh) }
   }, [])
+
+  useFullBoardRefresh('prizepicks_props', (snapshot) => {
+    setSnapshot(snapshot.data)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setLockedCount(0)
+    setError('')
+  })
 
   const photoLookup = useMemo(() => Object.fromEntries(Object.entries(photos).map(([name, url]) => [name.toLowerCase(), url])), [photos])
   const allRows = useMemo(() => (snapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({
