@@ -632,8 +632,8 @@ test('a slow head and an out-of-budget chunk read serve last-good or 503, never 
   _setTimeouts({ snapshotReadMs: 80, lastGoodReadMs: 80, tierLookupMs: 400 })
   const version = '2026-10-17T12:00:00Z'
   const stored = [
-    { player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: new Date().toISOString() },
-    { player: 'Second', projection: 3, line: 2.5, rankEligible: true },
+    { player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard', generated_at: new Date().toISOString() },
+    { player: 'Second', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
   ]
   const partial = [{ player: 'PartialOnly', projection: 9, line: 1, rankEligible: true }]
   function client({ storage }) {
@@ -1191,7 +1191,7 @@ test('a storage copy is not served from memory after its age limit', async (t) =
   const maxAge = lastGoodMaxAgeMs('nhl_projections')
   const left = 60_000
   const generatedAt = new Date(Date.now() - maxAge + left).toISOString()
-  const stored = [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: generatedAt }]
+  const stored = [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard', generated_at: generatedAt }]
   let downloads = 0
   const client = {
     auth: {

@@ -313,8 +313,12 @@ async function pageHint(page) {
     return await page.evaluate(() => {
       const heading = (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
       const paywall = Boolean(document.querySelector('.pw-title'))
-      const sessionKeys = Object.keys(localStorage).filter((key) => key.startsWith('sb-') && localStorage.getItem(key)?.includes('access_token'))
-      return ` h1=${heading || 'none'} paywall=${paywall} session=${sessionKeys.join(',') || 'none'}`
+      const sessionKeys = Object.keys(localStorage).filter((key) => key.startsWith('sb-'))
+      const parsed = sessionKeys.some((key) => {
+        try { return Boolean(JSON.parse(localStorage.getItem(key) || 'null')?.user?.id) } catch { return false }
+      })
+      const tier = (() => { try { return JSON.parse(sessionStorage.getItem('cg_tier') || 'null')?.tier || 'none' } catch { return 'bad' } })()
+      return ` h1=${heading || 'none'} paywall=${paywall} session=${parsed} tier=${tier}`
     })
   } catch {
     return ''
@@ -328,14 +332,31 @@ async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSe
   })
   let page
   try {
-    await context.addInitScript(({ keys, value, tierKey, tierValue }) => {
-      for (const key of keys) localStorage.setItem(key, value)
-      sessionStorage.setItem(tierKey, tierValue)
-    }, {
-      keys: storageKeys,
-      value: storedSession,
-      tierKey: 'cg_tier',
-      tierValue: JSON.stringify({ userId, tier: 'combined' }),
+    const tierValue = JSON.stringify({ userId, tier: 'combined' })
+    await context.addInitScript(({ keys, value, tierKey, tierJson }) => {
+      try {
+        for (const key of keys) localStorage.setItem(key, value)
+        sessionStorage.setItem(tierKey, tierJson)
+      } catch { /* ignore */ }
+    }, { keys: storageKeys, value: storedSession, tierKey: 'cg_tier', tierJson: tierValue })
+    const boot = `<script>(${function seed(keys, value, tierKey, tierJson) {
+      try {
+        for (const key of keys) localStorage.setItem(key, value)
+        sessionStorage.setItem(tierKey, tierJson)
+      } catch { /* the page still loads logged out */ }
+    }})(${JSON.stringify(storageKeys)},${JSON.stringify(storedSession)},${JSON.stringify('cg_tier')},${JSON.stringify(tierValue)})</script>`
+    await context.route('**/*', async (route) => {
+      if (route.request().resourceType() !== 'document') return route.continue()
+      const response = await route.fetch()
+      const headers = { ...response.headers() }
+      const type = headers['content-type'] || ''
+      if (!type.includes('text/html')) return route.fulfill({ response })
+      const body = await response.text()
+      delete headers['content-length']
+      const next = /<head[^>]*>/i.test(body)
+        ? body.replace(/<head[^>]*>/i, (head) => `${head}${boot}`)
+        : `${boot}${body}`
+      await route.fulfill({ status: response.status(), headers, body: next })
     })
     page = await context.newPage()
     const started = performance.now()
