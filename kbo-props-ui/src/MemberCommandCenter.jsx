@@ -265,9 +265,15 @@ function useBoards(access, nbaOpen, selectedId) {
         priority: mine === 0 ? 'high' : undefined,
       }).then((snap) => {
         if (!alive()) return;
+        // A preview is the free board. This hub only loads sports in the
+        // plan, so a preview is not the member board.
+        if (snap?.preview) {
+          setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null, preview: true } }));
+          return;
+        }
         setBoards((b) => ({
           ...b,
-          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
+          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: false, lockedCount: snap.lockedCount },
         }));
       }).catch(() => { if (alive()) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
       await Promise.all([board, ...extras]);
@@ -327,7 +333,7 @@ function emptyCopy(status, sport) {
   if (status === 'loading') return 'Loading today\'s board…';
   if (status === 'locked') return `${sport.name} isn't in your plan. Add it from Manage plan.`;
   if (status === 'closed') return 'The NBA board opens soon. No lines are posted for members yet.';
-  if (status === 'error') return `Couldn't load the ${sport.name} board. Open it directly or try again shortly.`;
+  if (status === 'error') return 'Couldn\'t load your member board';
   return `No standard ${sport.name} lines on the board right now.`;
 }
 
@@ -495,7 +501,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               <h1>Tonight&apos;s {selected.name} top 3</h1>
             </div>
             <p className="hub-slate">
-              {state.status === 'loading' ? 'Loading games…' : state.status === 'error' ? `Couldn't load ${selected.name}` : shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
+              {state.status === 'loading' ? 'Loading games…' : state.status === 'error' ? 'Couldn\'t load your member board' : shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
               {firstStart && <> · First start {clockLabel(firstStart.toISOString())}</>}
             </p>
           </div>

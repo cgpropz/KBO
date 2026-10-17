@@ -28,11 +28,26 @@ test('a preview for a member retries once with a fresh token and takes the full 
   assert.equal(calls[1].fresh, true);
 });
 
-test('a preview twice stays a preview (no loop, no fake data)', async () => {
+test('a preview is retried up to three times and then returned', async () => {
   let n = 0;
   const out = await loadMemberBoard(sport, async () => { n += 1; return preview; }, noWait);
   assert.equal(out, preview);
-  assert.equal(n, 2);
+  assert.equal(n, 3);
+});
+
+test('tier_pending is retried and a later full board is kept', async () => {
+  let n = 0;
+  const out = await loadMemberBoard(sport, async () => {
+    n += 1;
+    if (n < 3) {
+      const err = new Error('pending');
+      err.code = 'tier_pending';
+      throw err;
+    }
+    return full;
+  }, noWait);
+  assert.equal(out, full);
+  assert.equal(n, 3);
 });
 
 test('a failed request retries once', async () => {
@@ -165,6 +180,9 @@ test('an error tile shows a retry instead of staying on Loading', () => {
   assert.match(hubSource, /className="hub-retry"/);
   assert.match(hubSource, /Couldn\\'t load · Retry/);
   assert.match(hubSource, /retrySport\(sport\.id\)/);
+  assert.match(hubSource, /Couldn\\'t load your member board/);
+  assert.match(hubSource, /snap\?\.preview/);
+  assert.match(apiSource, /Free preview/);
 });
 
 test('a preview sent to a signed-in caller is never browser-cached', () => {

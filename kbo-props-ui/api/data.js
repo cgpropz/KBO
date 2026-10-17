@@ -568,7 +568,16 @@ export async function resolveNbaCaller(client, authorization) {
   }
   const result = await lookupMemberTier(client, authorization, { budgetMs: timeouts.tierLookupMs });
   if (!result.userId || !result.email) {
-    return { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
+    return { emailResolved: false, email: null, tierResolved: false, tier: 'free', pending: false };
+  }
+  if (result.pending) {
+    return {
+      emailResolved: true,
+      email: result.email,
+      tierResolved: false,
+      tier: 'free',
+      pending: true,
+    };
   }
   const tierResolved = result.source === 'profile' || result.source === 'cache';
   return {
@@ -576,7 +585,17 @@ export async function resolveNbaCaller(client, authorization) {
     email: result.email,
     tierResolved,
     tier: tierResolved ? result.tier : 'free',
+    pending: false,
   };
+}
+
+function sendTierPending(res) {
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+  return res.status(503).json({
+    error: 'Member tier is still loading',
+    code: 'tier_pending',
+    message: "Couldn't confirm your membership. Please retry.",
+  });
 }
 
 const NBA_FLAG_CACHE_KEY = `app_flags:${NBA_PUBLIC_FLAG}`;
@@ -628,6 +647,9 @@ async function handleNbaRequest(req, res, client, ds) {
     flagResolved,
     nbaPublic,
   });
+  // A valid token whose profile read did not finish is retryable. The owner
+  // email is already on the token, so that short-circuit still opens the board.
+  if (caller.pending && decision !== 'full') return sendTierPending(res);
   if (decision === 'deny') return forbid(res);
 
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
@@ -743,14 +765,16 @@ async function handleNhlRequest(req, res, client, ds) {
     return res.status(404).json({ error: 'Dataset not published yet' });
   }
 
-  // Same entitlement as KBO/WNBA/NFL, plus the admin email. Anything short of
-  // 'full' is the public preview, not a 403.
+  // Same entitlement as KBO/WNBA/NFL, plus the admin email. A valid token
+  // whose profile read timed out is retryable, not the free preview. The
+  // admin email is on the token and still opens the board.
   const decision = nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
     tierResolved: caller.tierResolved,
     tier: caller.tier,
   });
+  if (caller.pending && decision !== 'full') return sendTierPending(res);
 
   let board;
   try {
@@ -792,7 +816,12 @@ export async function nhlSectionOpen(req, client) {
 // rebase onto this helper instead of a second in-handler cache.
 export async function resolveTier(client, authorization) {
   const result = await lookupMemberTier(client, authorization, { budgetMs: timeouts.tierLookupMs });
-  return { tier: result.tier || 'free', userId: result.userId };
+  return {
+    tier: result.pending ? null : (result.tier || 'free'),
+    userId: result.userId,
+    pending: result.pending === true,
+    source: result.source,
+  };
 }
 
 /**
@@ -882,14 +911,14 @@ export async function handleDataRequest(req, res, client) {
 
   // The profile read starts with the snapshot. lookupMemberTier owns the 4s
   // cap, including one retry and a paid-tier cache used only on timeout.
-  const tierPromise = resolveTier(client, req.headers?.authorization)
-    .then((result) => result?.tier || 'free');
+  // A valid token with no resolved tier is not the free preview.
+  const tierPromise = resolveTier(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
 
-  let tier = 'free';
+  let tierResult = { tier: 'free', pending: false };
   let row;
   try {
-    [tier, row] = await Promise.all([tierPromise, rowPromise]);
+    [tierResult, row] = await Promise.all([tierPromise, rowPromise]);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
     const fallback = landingFallbackBody(ds, req.headers?.authorization);
@@ -904,6 +933,8 @@ export async function handleDataRequest(req, res, client) {
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
+  if (tierResult?.pending) return sendTierPending(res);
+  const tier = tierResult?.tier || 'free';
 
   let board;
   try {
