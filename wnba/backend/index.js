@@ -8,6 +8,7 @@ const http = require('http');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const { parseRotowireLineups } = require('./rotowireLineups');
+const schedule = require('./schedule');
 require('dotenv').config();
 
 const app = express();
@@ -21,20 +22,7 @@ app.use(express.json());
 const ROOT = path.join(__dirname, '..');
 
 // ── PrizePicks stat key mapping ───────────────────────────────────────────────
-const PP_STAT_MAP = {
-  'Points': 'pts', 'Rebounds': 'reb', 'Assists': 'ast',
-  '3-PT Made': 'fg3m', '3-PT Attempted': 'fg3a',
-  'Steals': 'stl', 'Blocks': 'blk', 'Blocked Shots': 'blk',
-  'FG Made': 'fgm', 'FG Attempted': 'fga',
-  'Two Pointers Made': 'fg2m', 'Two Pointers Attempted': 'fg2a',
-  'Free Throws Made': 'ftm', 'Free Throws Attempted': 'fta',
-  'Turnovers': 'tov', 'Offensive Rebounds': 'oreb', 'Defensive Rebounds': 'dreb',
-  'Fantasy Score': 'fantasy',
-  'Pts+Asts': 'ptsAst', 'Pts+Rebs': 'ptsReb', 'Pts+Rebs+Asts': 'ptsRebAst',
-  'Rebs+Asts': 'rebAst', 'Reb+Asts': 'rebAst',
-  'Blks+Stls': 'blkStl',
-  'Double-Double': 'doubleDouble', 'Triple-Double': 'tripleDouble',
-};
+const PP_STAT_MAP = require('./ppStatMap');
 
 // ── PrizePicks cache (5-min TTL) ──────────────────────────────────────────────
 const ppCache = new Map();
@@ -374,6 +362,7 @@ function rowsToLines(rows) {
     if (EXCLUDED_PP_PROPS.has(statLabel)) return;
     const versus = String(row.Versus || '').trim() || null;
     const gameDate = String(row.GameDate || '').trim() || null;
+    const startTime = String(row.StartTime || '').trim() || null;
     const imageUrl = String(row['Image URL'] || row.image_url || row.imageUrl || '').trim();
     if (imageUrl) lines[name].imageUrl = imageUrl;
     lines[name].__allProps[statLabel] = {
@@ -381,6 +370,7 @@ function rowsToLines(rows) {
       versus,
       opponent: parseOpponentFromVersus(versus),
       gameDate,
+      ...(startTime ? { start_time: startTime } : {}),
     };
 
     const statKey = PP_STAT_MAP[statLabel];
@@ -398,6 +388,7 @@ function rowsToLines(rows) {
         versus: info?.versus ?? null,
         opponent: info?.opponent ?? null,
         gameDate: info?.gameDate ?? null,
+        ...(info?.start_time ? { start_time: info.start_time } : {}),
       }))
       .sort((a, b) => a.stat.localeCompare(b.stat));
   });
@@ -911,7 +902,7 @@ app.get('/api/projections/v2', async (req, res) => {
     const lineType = normalizeOddsType(req.query.lineType);
     const ppLinesPromise = fetchPrizePicks(lineType);
     const ppStandardPromise = lineType === 'standard' ? ppLinesPromise : fetchPrizePicks('standard');
-    const [bio, logsWithPostseason, gDvp, fDvp, cDvp, ppLines, ppStandardLines] = await Promise.all([
+    const [bio, logsWithPostseason, gDvp, fDvp, cDvp, rawPpLines, rawPpStandardLines] = await Promise.all([
       readCsv(path.join(ROOT, 'wnba_bio_2025.csv')),
       getAllGamelogs({ includePostseason: true }),
       buildDvpMap('Guard'),
@@ -920,7 +911,15 @@ app.get('/api/projections/v2', async (req, res) => {
       ppLinesPromise,
       ppStandardPromise,
     ]);
-    const spreads = await fetchSpreads(propSlateDates(ppStandardLines));
+    const spreads = await fetchSpreads(propSlateDates(rawPpStandardLines));
+    // Drop props whose game is final, live, or past tip (same rule as the
+    // NFL/NHL boards). Projection math is unchanged; only finished props go.
+    const scheduleEvents = await fetchSchedule(propSlateDates(rawPpStandardLines));
+    const teamByName = teamByPlayerName(bio);
+    const ppLines = dropStartedBoardLines(rawPpLines, scheduleEvents, teamByName);
+    const ppStandardLines = rawPpStandardLines === rawPpLines
+      ? ppLines
+      : dropStartedBoardLines(rawPpStandardLines, scheduleEvents, teamByName);
     // Projection math stays on regular-season games only; the displayed game log
     // (recentGames: chart, L5/L10/L20/L30, hit rates) also includes playoff games.
     const all = logsWithPostseason.filter(g => !g.postseason);
@@ -1266,6 +1265,67 @@ async function fetchSpreads(slateDates = []) {
   return spreadMap;
 }
 
+// ── WNBA schedule (ESPN scoreboard) ─────────────────────────────────────────
+// Same ESPN scoreboard the spreads use. Read for game status and tip times so
+// finished games leave the board and lineups get a tip time when RotoWire has
+// none. A failed date is skipped; nothing is filled in without a schedule event.
+const scheduleCache = { events: null, key: '', ts: 0 };
+const SCHEDULE_LOOKAHEAD_DAYS = 4;
+
+async function fetchSchedule(extraDates = []) {
+  const todayET = schedule.etDate(new Date());
+  const dates = [...new Set([
+    ...schedule.espnDates(todayET, SCHEDULE_LOOKAHEAD_DAYS),
+    ...(extraDates || []).filter(Boolean),
+  ])].sort();
+  const key = dates.join(',');
+  const now = Date.now();
+  if (scheduleCache.events && scheduleCache.key === key && now - scheduleCache.ts < 5 * 60 * 1000) {
+    return scheduleCache.events;
+  }
+  const lists = [];
+  for (const date of dates) {
+    try {
+      const payload = await httpsGet(`https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=${date}`);
+      lists.push(schedule.parseScoreboard(payload, normalizeTeamAbbr));
+    } catch (err) {
+      console.error(`ESPN schedule ${date} failed:`, err.message);
+    }
+  }
+  const events = schedule.mergeEvents(lists);
+  scheduleCache.events = events;
+  scheduleCache.key = key;
+  scheduleCache.ts = now;
+  return events;
+}
+
+function teamByPlayerName(bio) {
+  const map = {};
+  for (const row of bio || []) {
+    const name = String(row.Player || row.player || '').trim();
+    const team = normalizeTeamAbbr(row.Team || row.team || '');
+    if (name && team) map[name] = team;
+  }
+  return map;
+}
+
+function dropStartedBoardLines(lines, events, teamByName) {
+  const { lines: kept, dropped } = schedule.dropStartedLines(lines, {
+    events, teamByName, statMap: PP_STAT_MAP, normalizeTeamAbbr, now: new Date(),
+  });
+  if (dropped) console.log(`Dropped ${dropped} WNBA prop(s) whose game is final, live or past tip`);
+  return kept;
+}
+
+// GET /api/schedule — parsed ESPN schedule (today ET + lookahead), used by the
+// snapshot exporter to drop finished games from lines it carries forward.
+app.get('/api/schedule', async (req, res) => {
+  try {
+    const extra = String(req.query.dates || '').split(',').map(v => v.trim()).filter(v => /^\d{8}$/.test(v));
+    res.json(await fetchSchedule(extra));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Hit-rate helpers ─────────────────────────────────────────────────────────
 const PP_STAT_TO_KEY = {
   'Points': 'pts', 'Rebounds': 'reb', 'Assists': 'ast',
@@ -1289,7 +1349,7 @@ function seasonAvg(games, statKey) {
 // GET /api/edge — all active PP lines flattened, with hit rates + ratings
 app.get('/api/edge', async (req, res) => {
   try {
-    const [bio, logsWithPostseason, gDvp, fDvp, cDvp, ppStandard] = await Promise.all([
+    const [bio, logsWithPostseason, gDvp, fDvp, cDvp, rawPpStandard] = await Promise.all([
       readCsv(path.join(ROOT, 'wnba_bio_2025.csv')),
       getAllGamelogs({ includePostseason: true }),
       buildDvpMap('Guard'),
@@ -1297,7 +1357,9 @@ app.get('/api/edge', async (req, res) => {
       buildDvpMap('Center'),
       fetchPrizePicks('standard'),
     ]);
-    const spreads = await fetchSpreads(propSlateDates(ppStandard));
+    const spreads = await fetchSpreads(propSlateDates(rawPpStandard));
+    const scheduleEvents = await fetchSchedule(propSlateDates(rawPpStandard));
+    const ppStandard = dropStartedBoardLines(rawPpStandard, scheduleEvents, teamByPlayerName(bio));
     // Projections use regular-season games; hit rates / season average use the
     // full game log including playoff games (same split as /api/projections/v2).
     const all = logsWithPostseason.filter(g => !g.postseason);
@@ -1327,7 +1389,7 @@ app.get('/api/edge', async (req, res) => {
       const avgMins   = last10.length ? last10.reduce((s, g) => s + g.min, 0) / last10.length : 0;
 
       for (const prop of props) {
-        const { stat: statLabel, line, opponent, gameDate } = prop;
+        const { stat: statLabel, line, opponent, gameDate, start_time: startTime } = prop;
         if (EXCLUDED_PP_PROPS.has(statLabel)) continue;
         if (line == null) continue;
 
@@ -1344,6 +1406,7 @@ app.get('/api/edge', async (req, res) => {
           name, team, teamFull, teamColor, image, position,
           opponent: dvpOpponent || opponent || '',
           gameDate: gameDate || null,
+          ...(startTime ? { start_time: startTime } : {}),
           stat: statLabel,
           line,
           spread: spreads[team] ?? null,
@@ -1436,7 +1499,13 @@ app.get('/api/lineups', async (req, res) => {
   }
   try {
     const html  = await fetchHtml('https://www.rotowire.com/wnba/lineups.php');
-    const games = readRotowireLineups(html);
+    const listed = readRotowireLineups(html);
+    let games = listed;
+    try {
+      games = schedule.attachScheduleTimes(listed, await fetchSchedule(), new Date());
+    } catch (err) {
+      console.error('Lineup schedule times skipped:', err.message);
+    }
     lineupsCache.data = games;
     lineupsCache.ts   = now;
     res.json(games);
