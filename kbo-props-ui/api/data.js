@@ -291,8 +291,8 @@ export const LAST_GOOD_MAX_AGE_MS = Object.fromEntries(
 );
 // KBO and WNBA publishes often land many hours apart, and a timed-out read
 // used to 503 because the 6h copy was already past the window. Serve the
-// stored board through the next slate (36h) instead of an empty hub.
-export const LAST_GOOD_KBO_WNBA_MAX_AGE_MS = 36 * 60 * 60 * 1000;
+// stored board for 12h instead of an empty hub.
+export const LAST_GOOD_KBO_WNBA_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 function datasetSport(table) {
   for (const spec of Object.values(DATASETS)) {

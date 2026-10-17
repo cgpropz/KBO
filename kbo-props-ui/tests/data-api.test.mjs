@@ -654,6 +654,57 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
+test('an auth timeout during the parallel read returns the preview', async () => {
+  const prev = { ...timeouts }
+  _setTimeouts({ tierLookupMs: 40 })
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  const nhl = Array.from({ length: 6 }, (_, i) => ({
+    player: `S${i}`, prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard', rankEligible: true,
+  }))
+  try {
+    for (const ds of ['prizepicks_props', 'nhl_projections']) {
+      const client = {
+        auth: {
+          async getUser() {
+            await gate
+            return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+          },
+        },
+        from(table) {
+          const chain = {
+            select() { return chain },
+            eq() { return chain },
+            abortSignal() { return chain },
+            async maybeSingle() {
+              if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+              const payload = table === 'nhl_projections' ? nhl : structuredClone(TABLES[table])
+              return { data: { data: payload, updated_at: NOW }, error: null }
+            },
+          }
+          return chain
+        },
+      }
+      _clearCache()
+      const res = mockRes()
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok-owner' } },
+        res,
+        client,
+      )
+      assert.equal(res.statusCode, 200, ds)
+      assert.equal(res.body.preview, true, ds)
+      assert.equal(res.body.tier, 'free', ds)
+      if (ds === 'prizepicks_props') assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
+      else assert.equal(res.body.data.length, FREE_ROW_LIMIT)
+    }
+  } finally {
+    release()
+    _setTimeouts(prev)
+    _clearCache()
+  }
+})
+
 test('one in-flight read serves a burst for the same table', async () => {
   _clearCache()
   let reads = 0

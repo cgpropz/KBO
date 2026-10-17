@@ -23,6 +23,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: cgpropz-preview-${{ github.event.pull_request.number }}
@@ -38,6 +39,17 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Delete public member hub proof artifacts
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ids=$(gh api --paginate repos/cgpropz/KBO/actions/artifacts --jq '.artifacts[] | select(.name=="member-hub-proof") | .id')
+          for id in $ids; do
+            gh api -X DELETE "/repos/cgpropz/KBO/actions/artifacts/${id}"
+            echo "deleted ${id}"
+          done
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -62,13 +74,17 @@ jobs:
         id: preview
         run: |
           npm i -g vercel@64.2.0
-          url=$(vercel deploy --token "$VERCEL_TOKEN" --yes)
+          url=$(vercel deploy --token "$VERCEL_TOKEN" --yes \
+            --env "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --env "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" \
+            --env "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -83,12 +99,21 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           MEMBER_EMAIL: sev1-hub-preview@example.com
 
+      - name: Remove the proof member
+        if: always()
+        run: node scripts/member-hub-proof.mjs --cleanup
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MEMBER_EMAIL: sev1-hub-preview@example.com
+
       - name: Save member hub proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: member-hub-proof
-          path: kbo-props-ui/member-hub-proof/*
+          path: kbo-props-ui/member-hub-proof/timings.json
           if-no-files-found: ignore
 
       - name: Screenshot and Lighthouse the preview

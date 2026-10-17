@@ -1,11 +1,9 @@
-// Signed-in timings and a 390x844 hub screenshot for a protected preview.
-// Tokens, the bypass secret, and the service key stay in memory. Never print them.
+// Cold signed-in timings for a protected preview. No screenshots.
+// Tokens and the service key stay in memory. Never print them.
 
 import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
-import { fileURLToPath } from 'node:url'
-import { chromium } from '@playwright/test'
 
 const previewUrl = (process.env.PREVIEW_URL || '').replace(/\/$/, '')
 const vercelToken = process.env.VERCEL_TOKEN
@@ -16,6 +14,7 @@ const email = process.env.MEMBER_EMAIL || 'sev1-hub-preview@example.com'
 const teamId = 'team_NsMEVaPP3l5Ouz0DWr1y9cxU'
 const projectId = 'prj_HgdvsekuqCfqzKYvGAUD6gQi36AW'
 const outDir = new URL('../member-hub-proof/', import.meta.url)
+const cleanupOnly = process.argv.includes('--cleanup')
 
 const HUB_GROUPS = [
   ['nfl_projections', 'nfl_lineups'],
@@ -23,6 +22,9 @@ const HUB_GROUPS = [
   ['wnba_projections_standard', 'wnba_players', 'wnba_lineups'],
   ['nhl_projections', 'nhl_lineups'],
 ]
+
+let userId = null
+let cleaning = null
 
 function required(name, value) {
   if (!value) throw new Error(`missing ${name}`)
@@ -58,6 +60,17 @@ async function errorCode(response) {
   }
 }
 
+async function findUserId() {
+  const url = new URL(`${supabaseUrl}/auth/v1/admin/users`)
+  url.searchParams.set('filter', email)
+  url.searchParams.set('per_page', '20')
+  const response = await fetch(url, { headers: serviceHeaders(), signal: AbortSignal.timeout(8_000) })
+  if (!response.ok) return null
+  const body = await response.json().catch(() => ({}))
+  const users = Array.isArray(body.users) ? body.users : []
+  return users.find((user) => user?.email === email)?.id || null
+}
+
 async function createUser() {
   const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
     method: 'POST',
@@ -68,8 +81,10 @@ async function createUser() {
       email_confirm: true,
     }),
   })
-  if (response.ok || response.status === 422) return
-  throw new Error(`create member failed (${response.status} ${await errorCode(response)})`)
+  const body = await response.json().catch(() => ({}))
+  if (response.ok && body.id) return body.id
+  if (response.status === 422) return findUserId()
+  throw new Error(`create member failed (${response.status} ${body.error_code || body.error || body.msg || response.status})`)
 }
 
 async function generateLink() {
@@ -104,29 +119,43 @@ async function verify(tokenHash) {
   return body
 }
 
-async function upsertTier(userId) {
+async function upsertTier(id) {
   const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?on_conflict=id`, {
     method: 'POST',
     headers: {
       ...serviceHeaders(),
       Prefer: 'resolution=merge-duplicates',
     },
-    body: JSON.stringify({ id: userId, tier: 'combined' }),
+    body: JSON.stringify({ id, tier: 'combined' }),
   })
   if (!response.ok) throw new Error(`tier upsert failed (${response.status} ${await errorCode(response)})`)
 }
 
-async function deleteMember(userId) {
-  if (!userId) return
-  await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${userId}`, {
+async function deleteMember(id) {
+  if (!id) return
+  await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${id}`, {
     method: 'DELETE',
     headers: serviceHeaders(),
-  })
-  await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+    signal: AbortSignal.timeout(8_000),
+  }).catch(() => {})
+  await fetch(`${supabaseUrl}/auth/v1/admin/users/${id}`, {
     method: 'DELETE',
     headers: serviceHeaders(),
-  })
+    signal: AbortSignal.timeout(8_000),
+  }).catch(() => {})
 }
+
+function cleanup() {
+  if (cleaning) return cleaning
+  cleaning = (async () => {
+    const id = userId || await findUserId()
+    await deleteMember(id)
+  })().catch(() => {})
+  return cleaning
+}
+
+process.on('SIGTERM', () => { cleanup().finally(() => process.exit(143)) })
+process.on('SIGINT', () => { cleanup().finally(() => process.exit(130)) })
 
 async function timedFetch(ds, { bypass, accessToken }) {
   const started = performance.now()
@@ -165,50 +194,25 @@ async function oneHub(bypass, accessToken, groups) {
   return { wallMs: Math.round(performance.now() - started), calls }
 }
 
-async function shootHub(bypass, session) {
-  const browser = await chromium.launch({ headless: true })
-  try {
-    const page = await browser.newPage({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 1,
-      extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass },
-    })
-    const storageKey = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
-    await page.addInitScript(({ storageKey: key, session: stored, tier }) => {
-      localStorage.setItem(key, JSON.stringify(stored))
-      sessionStorage.setItem('cg_tier', JSON.stringify({ userId: stored.user.id, tier }))
-    }, { storageKey, session, tier: 'combined' })
-    await page.goto(previewUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
-    await page.waitForSelector('.hub h1', { timeout: 25_000 })
-    await page.waitForFunction(() => {
-      const loading = document.querySelector('.hub-card-empty')
-      if (loading && /Loading/.test(loading.textContent || '')) return false
-      return Boolean(document.querySelector('.hub-name, .hub-card'))
-    }, { timeout: 25_000 })
-    const file = fileURLToPath(new URL('./member_hub_signed_in_390x844.png', outDir))
-    await page.screenshot({ path: file, fullPage: false })
-    const heading = await page.locator('.hub h1').innerText()
-    return { file, heading: heading.replace(/\s+/g, ' ').trim() }
-  } finally {
-    await browser.close()
-  }
-}
-
 async function main() {
+  required('VITE_SUPABASE_URL', supabaseUrl)
+  required('SUPABASE_SERVICE_ROLE_KEY', serviceKey)
+  if (cleanupOnly) {
+    await cleanup()
+    return
+  }
   required('PREVIEW_URL', previewUrl)
   required('VERCEL_TOKEN', vercelToken)
-  required('VITE_SUPABASE_URL', supabaseUrl)
   required('VITE_SUPABASE_ANON_KEY', anonKey)
-  required('SUPABASE_SERVICE_ROLE_KEY', serviceKey)
   await mkdir(outDir, { recursive: true })
 
-  const bypass = await automationBypass()
-  await createUser()
-  const tokenHash = await generateLink()
-  const session = await verify(tokenHash)
-  const userId = session.user.id
   try {
+    userId = await createUser()
+    const tokenHash = await generateLink()
+    const session = await verify(tokenHash)
+    userId = session.user.id || userId
     await upsertTier(userId)
+    const bypass = await automationBypass()
     const nhl = await timedFetch('nhl_projections', { bypass, accessToken: session.access_token })
     const nfl = await timedFetch('nfl_projections', { bypass, accessToken: session.access_token })
     const nba = await fetch(`${previewUrl}/api/nba-access`, {
@@ -234,14 +238,14 @@ async function main() {
         calls: hub.calls,
       })),
     }
-    const timingsFile = new URL('./timings.json', outDir)
-    await writeFile(timingsFile, `${JSON.stringify(report, null, 2)}\n`)
-    const shot = await shootHub(bypass, session)
-    report.screenshot = { heading: shot.heading }
-    await writeFile(timingsFile, `${JSON.stringify(report, null, 2)}\n`)
-    console.log(JSON.stringify(report))
+    await writeFile(new URL('./timings.json', outDir), `${JSON.stringify(report, null, 2)}\n`)
+    console.log(JSON.stringify({
+      cold: { nhl: { ms: nhl.ms, status: nhl.status, rows: nhl.rows, preview: nhl.preview }, nfl: { ms: nfl.ms, status: nfl.status, rows: nfl.rows, preview: nfl.preview } },
+      burst: report.burst.map((hub) => ({ wallMs: hub.wallMs, nflMs: hub.nflMs, nhlMs: hub.nhlMs })),
+    }))
+    if (nhl.status !== 200 || nfl.status !== 200) process.exitCode = 1
   } finally {
-    await deleteMember(userId)
+    await cleanup()
   }
 }
 

@@ -62,13 +62,13 @@ test('nfl_sharp_odds and nfl_game_markets use 6 h; other NFL boards 7 d', async 
   }
 });
 
-test('KBO and WNBA keep a last-good copy through the next slate', async () => {
+test('KBO and WNBA keep a last-good copy for 12 h', async () => {
   const h = (n) => new Date(Date.now() - n * 3600_000).toISOString();
   const mk = (iso) => ({ storage: { from: () => ({ download: async () => ({ data: blob({ data: [{ generated_at: iso }] }), error: null }) }) } });
-  assert.equal(LAST_GOOD_KBO_WNBA_MAX_AGE_MS, 36 * 3600_000);
+  assert.equal(LAST_GOOD_KBO_WNBA_MAX_AGE_MS, 12 * 3600_000);
   for (const t of ['prizepicks_props', 'wnba_projections_standard', 'wnba_players', 'wnba_lineups']) {
-    assert.ok(await readLastGood(mk(h(30)), t), t);
-    assert.equal(await readLastGood(mk(h(40)), t), null, t);
+    assert.ok(await readLastGood(mk(h(11)), t), t);
+    assert.equal(await readLastGood(mk(h(13)), t), null, t);
   }
   assert.equal(await readLastGood(mk(h(7)), 'nhl_projections'), null);
 });
