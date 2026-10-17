@@ -6,6 +6,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
 import { chromium } from '@playwright/test'
 import { supabaseStorageKey } from '../src/supabaseClient.js'
+import { proofShouldFail } from './memberHubProofExit.mjs'
 
 const previewUrl = (process.env.PREVIEW_URL || '').replace(/\/$/, '')
 const prodUrl = (process.env.PROD_URL || 'https://www.cgpropz.com').replace(/\/$/, '')
@@ -553,11 +554,18 @@ async function main() {
       goblin,
       strikeout,
     }
-    console.log(JSON.stringify(summary))
-    const pageFailed = Object.values(browserReport.preview.pages).some((page) => page.medianFirstCardMs == null)
-      || Object.values(browserReport.prod.pages).some((page) => page.medianFirstCardMs == null)
     const domPromo = Object.values(browserReport.preview.pages).some((page) => page.runs.some((run) => (run.dom?.goblin || 0) > 0 || (run.dom?.demon || 0) > 0))
-    if (nhl.status !== 200 || nfl.status !== 200 || pageFailed || domPromo || !previewOddsClean(goblin.preview) || !strikeoutClean(strikeout.preview)) process.exitCode = 1
+    const decision = proofShouldFail({
+      previewPages: browserReport.preview.pages,
+      prodPages: browserReport.prod.pages,
+      previewColdStatuses: [nhl.status, nfl.status],
+      domPromo,
+      oddsClean: previewOddsClean(goblin.preview),
+      strikeoutOk: strikeoutClean(strikeout.preview),
+    })
+    summary.prodFailed = decision.prodFailed
+    console.log(JSON.stringify(summary))
+    if (decision.fail) process.exitCode = 1
   } finally {
     await cleanup()
   }

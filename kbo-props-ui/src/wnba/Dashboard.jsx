@@ -17,6 +17,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { BoardLoadError } from '../BoardLoadError'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -401,6 +402,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [players, setPlayers] = useState(null)
   const [projLoading, setProjLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [loadAttempt, setLoadAttempt] = useState(0)
 
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -411,7 +413,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
 
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
-  const { index: oddsIndex, oddsState } = useBoardOdds(() => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json').then((snapshot) => {
+  const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(({ fresh = false } = {}) => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json', { fresh }).then((snapshot) => {
     const payload = snapshot?.data
     const records = Array.isArray(payload?.records) ? payload.records : []
     return { records: wnbaRecordsAsSharp(records), preview: !!snapshot?.preview }
@@ -453,7 +455,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         if (!cancelled) {
           setProjections([])
           setPlayers([])
-          setLoadError(err?.message || 'Request failed')
+          setLoadError(err?.message ? err : Object.assign(new Error('Request failed'), { code: err?.code }))
         }
       } finally {
         if (!cancelled) setProjLoading(false)
@@ -461,7 +463,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [loadAttempt])
 
   useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
     setLockedCount(0)
@@ -469,7 +471,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLoadError('')
     setProjLoading(false)
+    reloadOdds()
   })
+
+  const retryLoad = () => {
+    setLoadError('')
+    setProjLoading(true)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
@@ -631,7 +640,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
               <BoardSkeleton />
             </div>
           )}
-          {!projLoading && loadError && <div className="wnba-notice">Unable to load WNBA prop lines: {loadError}. Please refresh to try again.</div>}
+          {!projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load WNBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (

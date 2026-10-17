@@ -6,6 +6,7 @@ import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
 import { cgScore, lineMatchesStat } from '../cgScore'
 import { prepareBoardRows } from './pointsGate.js'
+import { BoardLoadError } from '../BoardLoadError'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -71,6 +72,7 @@ export default function NhlProjections({ onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [tab, setTab] = useState('ALL')
   const [query, setQuery] = useState('')
@@ -81,9 +83,15 @@ export default function NhlProjections({ onSelectPlayer }) {
       .then(({ projections: next, updatedAt: publishedAt }) => {
         if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setError(''); setLoaded(true) }
       })
-      .catch((loadError) => active && setError(loadError.message))
+      .catch((loadError) => active && setError(loadError))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
+
+  const retryLoad = () => {
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   useFullBoardRefresh('nhl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
@@ -110,7 +118,7 @@ export default function NhlProjections({ onSelectPlayer }) {
           {TABS.map((name) => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name === 'ALL' ? 'ALL' : name.split(' ')[0]}</button>)}
         </div>
       </div>
-      {error && <div className="nfl-notice">Unable to load the board: {error}</div>}
+      {error && <BoardLoadError error={error} prefix="Unable to load the board:" onRetry={retryLoad} />}
       {!error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}
       {!error && loaded && !rows.length && <div className="nfl-notice">No cards match.</div>}
       <div className="nfl-edge-grid">

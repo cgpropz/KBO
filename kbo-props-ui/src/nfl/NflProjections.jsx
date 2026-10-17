@@ -6,6 +6,7 @@ import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
+import { BoardLoadError } from '../BoardLoadError'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -72,6 +73,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const [sort, setSort] = useState('CG Score')
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
 
@@ -86,9 +88,15 @@ export default function NflProjections({ onSelectPlayer }) {
         setError('')
         setLoaded(true)
       })
-      .catch((loadError) => active && setError(loadError.message))
+      .catch((loadError) => active && setError(loadError))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
+
+  const retryLoad = () => {
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   useFullBoardRefresh('nfl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
@@ -121,7 +129,7 @@ export default function NflProjections({ onSelectPlayer }) {
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
-      {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
+      {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
       {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
       {!error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}

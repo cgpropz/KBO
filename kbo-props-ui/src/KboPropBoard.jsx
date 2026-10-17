@@ -17,6 +17,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
 import { useFullBoardRefresh } from './useFullBoardRefresh'
+import { BoardLoadError } from './BoardLoadError'
 
 const FREE_ROW_LIMIT = 3
 const SORT_OPTIONS = ['CG Score', 'L10 Hit Rate', 'Full Hit Rate', 'Player Name']
@@ -212,6 +213,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [updatedAt, setUpdatedAt] = useState(null)
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [propTab, setPropTab] = useState('All Props')
   const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'kbo', SORT_OPTIONS))
   const phone = usePhoneBoard()
@@ -243,13 +245,21 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
-        if (active) setError(loadError.message || 'Unable to load KBO prop lines.')
+        if (active) {
+          if (loadError && !loadError.message) loadError.message = 'Unable to load KBO prop lines.'
+          setError(loadError?.message ? loadError : new Error('Unable to load KBO prop lines.'))
+        }
       }
     }
     load()
     const refresh = window.setInterval(load, 30 * 60 * 1000)
     return () => { active = false; window.clearInterval(refresh) }
-  }, [])
+  }, [loadAttempt])
+
+  const retryLoad = () => {
+    setError('')
+    setLoadAttempt((current) => current + 1)
+  }
 
   useFullBoardRefresh('prizepicks_props', (snapshot) => {
     setSnapshot(snapshot.data)
@@ -318,7 +328,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
         {!boardEmpty && <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
-      {error && <p className="kbo-notice">{error}</p>}
+      {error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
       {!error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
       {!error && !snapshot && (
         <div role="status" aria-label="Loading KBO prop lines">
