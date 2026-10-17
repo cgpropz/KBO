@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { filterStandardBoard } from '../src/standardBoard.js';
+import { filterNhlSharpOdds, filterStandardBoard, standardProjectionIdSet } from '../src/standardBoard.js';
 import bundledStatus from '../public/status.json' with { type: 'json' };
 import { publicBoardStatus } from './_boardStatus.js';
 import {
@@ -774,6 +774,25 @@ export async function nbaSectionOpen(req, client) {
   }) === 'full';
 }
 
+// Ids on the board a member receives for nhl_projections. Sharp-odds rows
+// whose id is not in this set are unknown and are not returned.
+async function standardNhlProjectionIds(projectionsPromise) {
+  const projRow = await projectionsPromise;
+  if (!projRow || projRow.data == null) return new Set();
+  let projBoard;
+  try {
+    projBoard = boardForPresentation(projRow.data);
+  } catch (err) {
+    console.error(`[api/data] nhl_projections for sharp odds was not reassembled: ${err.message}`);
+    return new Set();
+  }
+  const tierPayload = payloadForTier('nhl_projections', 'nhl_projections', projRow, projBoard, 'owner');
+  const shaped = shapeForTier('nhl_projections', tierPayload.payload, 'owner', {
+    alreadyStandard: tierPayload.alreadyStandard,
+  });
+  return standardProjectionIdSet(shaped.data);
+}
+
 async function handleNhlRequest(req, res, client, ds) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
@@ -785,6 +804,17 @@ async function handleNhlRequest(req, res, client, ds) {
   // hold the read: the free preview is the fallback.
   const callerPromise = resolveNbaCaller(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
+  // Standard ids come from the member NHL board. The read starts with the
+  // sharp-odds snapshot so a paid caller is not waiting on a second serial fetch.
+  const projectionsPromise = ds === 'nhl_sharp_odds'
+    ? readSnapshot(client, 'nhl_projections').then(
+      (projRow) => projRow,
+      (err) => {
+        console.error(`[api/data] nhl_projections read for sharp odds failed: ${err?.message || err}`);
+        return null;
+      },
+    )
+    : null;
 
   let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   let row;
@@ -834,10 +864,17 @@ async function handleNhlRequest(req, res, client, ds) {
   const fullTier = sportAccess(tier).nhl ? tier : 'owner';
   const shapingTier = decision === 'full' ? fullTier : 'free';
   const tierPayload = payloadForTier(ds, spec.table, row, board, shapingTier);
+  let payload = tierPayload.payload;
+  let presented = board;
+  if (ds === 'nhl_sharp_odds') {
+    const standardIds = await standardNhlProjectionIds(projectionsPromise);
+    payload = filterNhlSharpOdds(payload, standardIds);
+    presented = payload;
+  }
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, tierPayload.payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
-    board,
+    shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
+    presented,
   );
   return sendData(req, res, {
     data: shaped.data,
