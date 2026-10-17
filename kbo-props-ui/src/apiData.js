@@ -20,6 +20,8 @@ import { boundedAccessToken, readCachedSession } from './supabaseClient';
 // hanging forever when /api/data (or upstream Supabase) stalls.
 export const FETCH_TIMEOUT_MS = 12_000;
 
+export const FREE_PREVIEW_LABEL = 'Free preview';
+
 function accessToken({ fresh = false } = {}) {
   // fresh asks the Supabase client first, then falls back to the cached
   // bearer. The wait is capped so a stuck auth lock cannot hold the board.
@@ -56,12 +58,11 @@ function isTimeoutError(err) {
   return err?.name === 'TimeoutError' || err?.name === 'AbortError';
 }
 
-async function readErrorDetail(res) {
+async function readErrorBody(res) {
   try {
-    const body = await res.json();
-    return body?.message || body?.error || String(res.status);
+    return await res.json();
   } catch {
-    return String(res.status);
+    return null;
   }
 }
 
@@ -74,6 +75,7 @@ function presentDataset(ds, body) {
     updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
     source: 'api',
     preview,
+    previewLabel: preview ? FREE_PREVIEW_LABEL : '',
     lockedCount: Number(body.lockedCount) || 0,
     refreshing: false,
   };
@@ -158,10 +160,12 @@ async function requestDataset(ds, { priority, player, fresh = false, timeoutMs }
   });
   const type = res.headers.get('content-type') || '';
   if (!res.ok || !type.includes('application/json')) {
-    const detail = type.includes('application/json')
-      ? await readErrorDetail(res)
-      : String(res.status);
-    throw new Error(`Failed to load ${ds} (${detail})`);
+    const body = type.includes('application/json') ? await readErrorBody(res) : null;
+    const detail = body?.message || body?.error || String(res.status);
+    const err = new Error(`Failed to load ${ds} (${detail})`);
+    err.status = res.status;
+    err.code = body?.code || '';
+    throw err;
   }
   return res.json();
 }
@@ -188,7 +192,7 @@ async function loadDataset(ds, opts, managed) {
     }
     return presented;
   } catch (err) {
-    if (!managed && !spent && isTimeoutError(err)) {
+    if (!managed && !spent && (isTimeoutError(err) || err?.code === 'tier_pending')) {
       return loadDataset(ds, { ...opts, fresh: true, retried: true }, managed);
     }
     if (import.meta.env.DEV && opts.devStaticPath) {
@@ -216,5 +220,3 @@ export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = f
   });
   return pending;
 }
-
-export const FREE_PREVIEW_LABEL = 'Free preview';

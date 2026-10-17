@@ -17,7 +17,7 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
-import { usePhoneBoard } from '../usePhoneBoard'
+import { usePhoneBoard, usePhonePaintCount } from '../usePhoneBoard'
 
 const FREE_ROW_LIMIT = 3
 
@@ -281,6 +281,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState } = useBoardOdds(
     () => fetchNflSharpOdds().then(({ records, preview }) => ({ records, preview })),
+    { enabled: loaded },
   )
 
   const { tier } = useAuth()
@@ -363,6 +364,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     })
   }, [projections, propTab, filters])
 
+  const paintCount = usePhonePaintCount(phone, rows.length)
+  const visibleRows = rows.slice(0, paintCount)
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
@@ -429,7 +432,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
             </div>
           )}
         >
-          {rows.map((item, index) => {
+          {visibleRows.map((item, index) => {
             const matched = boardOddsFor(oddsIndex, item)
             return (
               <PropRow

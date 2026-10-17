@@ -3,7 +3,7 @@ import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { pointsOverDisposition, prepareBoardRows } from '../src/nhl/pointsGate.js';
-import { filterStandardBoard } from '../src/standardBoard.js';
+import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -555,23 +555,8 @@ function countList(payload, key) {
   return Array.isArray(payload) ? payload.length : 0;
 }
 
-const ODDS_TYPE_KEYS = ['odds_type', 'oddsType', 'line_type', 'lineType'];
-
-// undefined: the row has no odds-type field (a ranking, a lineup, a total).
-// '' : the field is present and blank. Anything other than "standard" is out.
-function explicitOddsType(row) {
-  if (!row || typeof row !== 'object') return undefined;
-  for (const key of ODDS_TYPE_KEYS) {
-    if (!Object.hasOwn(row, key) || row[key] == null) continue;
-    return String(row[key]).trim().toLowerCase();
-  }
-  return undefined;
-}
-
 function isStandardProp(row) {
-  const type = explicitOddsType(row);
-  if (type === undefined) return true;
-  return type === 'standard';
+  return isStandardBoardLine(row);
 }
 
 function filterLineMap(value) {
@@ -645,6 +630,9 @@ function stripNonStandardLines(payload) {
       changed = true;
       next.matchups = filtered;
     }
+  }
+  if (changed && payload.summary && typeof payload.summary === 'object' && (next.graded || next.pending)) {
+    next.summary = summaryForGradedRows(next.graded ?? payload.graded, next.pending ?? payload.pending);
   }
   return changed ? next : payload;
 }

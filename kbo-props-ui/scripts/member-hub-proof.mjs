@@ -20,6 +20,8 @@ const outDir = new URL('../member-hub-proof/', import.meta.url)
 const cleanupOnly = process.argv.includes('--cleanup')
 
 const PHONE = { width: 390, height: 844 }
+const COLD_LOADS = 5
+
 const PAGE_PATHS = [
   ['nflDashboard', '/?sport=nfl'],
   ['nhlDashboard', '/?sport=nhl'],
@@ -277,6 +279,33 @@ async function nhlOddsCounts(base, { bypass, accessToken }) {
   return { status: response.status, ...classifyOdds(rows) }
 }
 
+// Logged out on purpose: no Authorization header. Goblin and demon must be
+// gone. A row with no odds-type field is kept, so missing may be above zero.
+async function strikeoutOddsCounts(base, { bypass } = {}) {
+  const headers = {}
+  if (bypass) headers['x-vercel-protection-bypass'] = bypass
+  const response = await fetch(`${base}/api/data?ds=strikeout_projections`, {
+    headers,
+    signal: AbortSignal.timeout(20_000),
+  })
+  const text = await response.text()
+  let body = {}
+  try { body = JSON.parse(text) } catch { body = {} }
+  const rows = Array.isArray(body.data?.projections) ? body.data.projections : []
+  return {
+    status: response.status,
+    preview: body.preview === true,
+    ...classifyOdds(rows),
+  }
+}
+
+function strikeoutClean(counts) {
+  return counts
+    && counts.status === 200
+    && counts.goblin === 0
+    && counts.demon === 0
+}
+
 async function clientAuthStorageKeys(base, bypass) {
   const headers = bypass ? { 'x-vercel-protection-bypass': bypass } : {}
   const keys = new Set()
@@ -405,7 +434,7 @@ async function timeHost(browser, { label, base, bypass, storageKeys, storedSessi
   const pages = {}
   for (const [name, path] of PAGE_PATHS) {
     const runs = []
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < COLD_LOADS; index += 1) {
       try {
         runs.push(await timeColdPage(browser, { base, path, bypass, storageKeys, storedSession }))
       } catch (err) {
@@ -478,10 +507,15 @@ async function main() {
     const browser = await chromium.launch({ headless: true })
     let browserReport
     let goblin
+    let strikeout
     try {
       goblin = {
         prod: await nhlOddsCounts(prodUrl, { accessToken: session.access_token }),
         preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
+      }
+      strikeout = {
+        prod: await strikeoutOddsCounts(prodUrl),
+        preview: await strikeoutOddsCounts(previewUrl, { bypass }),
       }
       browserReport = {
         prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKeys: prodAuth.keys, storedSession }),
@@ -502,9 +536,14 @@ async function main() {
       })),
       browser: browserReport,
       goblin,
+      strikeout,
+      coldLoads: COLD_LOADS,
     }
     await writeFile(new URL('./timings.json', outDir), `${JSON.stringify(report, null, 2)}\n`)
+    const previewFalse = [nhl, nfl].filter((call) => call.preview === false && call.status === 200).length
     const summary = {
+      coldLoads: COLD_LOADS,
+      previewFalse,
       cold: { nhl: { ms: nhl.ms, status: nhl.status, rows: nhl.rows, preview: nhl.preview }, nfl: { ms: nfl.ms, status: nfl.status, rows: nfl.rows, preview: nfl.preview } },
       burst: report.burst.map((hub) => ({ wallMs: hub.wallMs, nflMs: hub.nflMs, nhlMs: hub.nhlMs })),
       browser: {
@@ -512,12 +551,13 @@ async function main() {
         preview: Object.fromEntries(Object.entries(browserReport.preview.pages).map(([name, page]) => [name, page.medianFirstCardMs])),
       },
       goblin,
+      strikeout,
     }
     console.log(JSON.stringify(summary))
     const pageFailed = Object.values(browserReport.preview.pages).some((page) => page.medianFirstCardMs == null)
       || Object.values(browserReport.prod.pages).some((page) => page.medianFirstCardMs == null)
     const domPromo = Object.values(browserReport.preview.pages).some((page) => page.runs.some((run) => (run.dom?.goblin || 0) > 0 || (run.dom?.demon || 0) > 0))
-    if (nhl.status !== 200 || nfl.status !== 200 || pageFailed || domPromo || !previewOddsClean(goblin.preview)) process.exitCode = 1
+    if (nhl.status !== 200 || nfl.status !== 200 || pageFailed || domPromo || !previewOddsClean(goblin.preview) || !strikeoutClean(strikeout.preview)) process.exitCode = 1
   } finally {
     await cleanup()
   }

@@ -20,3 +20,19 @@ export function usePhoneBoard() {
   }, [])
   return phone
 }
+
+// First phone paint is a short window so the first card is not stuck behind
+// a commit of the whole board. The rest follow on the next frame. The count
+// only grows, so a later filter does not snap back to the window.
+export const PHONE_FIRST_PAINT = 12
+
+export function usePhonePaintCount(phone, total) {
+  const [shown, setShown] = useState(PHONE_FIRST_PAINT)
+  useEffect(() => {
+    if (!phone || total <= shown) return undefined
+    const frame = requestAnimationFrame(() => setShown(total))
+    return () => cancelAnimationFrame(frame)
+  }, [phone, total, shown])
+  if (!phone) return total
+  return Math.min(total, shown)
+}

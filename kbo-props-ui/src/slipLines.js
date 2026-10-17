@@ -1,6 +1,9 @@
 // Line identity for the slip builder. KBO, WNBA, and NBA rows use odds_type.
-// NHL rows use oddsType. NFL rows use line_type. Only an explicit standard
-// line stays. A demon, a goblin, a blank, or any other type is left out.
+// NHL rows use oddsType. NFL rows use line_type. A row with no odds-type
+// field stays. A present goblin or demon (or any other non-standard token)
+// is left out. That is the same rule the board API uses.
+
+import { isStandardBoardLine } from './standardBoard.js'
 
 const KNOWN_ODDS_TYPES = new Set(['standard', 'demon', 'goblin'])
 
@@ -21,11 +24,11 @@ export function isPromoLine(row) {
 }
 
 export function isStandardLine(row) {
-  return oddsTypeOf(row) === 'standard'
+  return isStandardBoardLine(row)
 }
 
-// Loaders pass every board row through this. Demon, goblin, missing, and
-// unknown types never become slip props.
+// Loaders pass every board row through this. A row with no odds-type field
+// stays. Demon, goblin, blank, and unknown types never become slip props.
 export function standardSlipRows(rows) {
   return (Array.isArray(rows) ? rows : []).filter((row) => isStandardLine(row))
 }

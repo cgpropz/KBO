@@ -26,7 +26,7 @@ function loadBasketRows() {
   )
 }
 
-test('each sport field keeps standard and drops demon, goblin, blank, and unknown', () => {
+test('each sport field keeps a row with no odds type and drops demon and goblin', () => {
   const kept = standardSlipRows([
     { name: 'KBO', prop: 'Strikeouts', odds_type: 'standard' },
     { name: 'KBO demon', prop: 'Strikeouts', odds_type: 'demon' },
@@ -41,7 +41,7 @@ test('each sport field keeps standard and drops demon, goblin, blank, and unknow
     { player: 'NFL unknown', prop: 'Rush Yards', line_type: 'boost' },
     { player: 'NFL blank type', prop: 'Receptions', line_type: '  ' },
   ])
-  assert.deepEqual(kept.map((row) => row.name || row.player), ['KBO', 'WNBA', 'NBA', 'NHL', 'NFL'])
+  assert.deepEqual(kept.map((row) => row.name || row.player), ['KBO', 'WNBA', 'NBA', 'NBA blank', 'NHL', 'NFL'])
   assert.equal(oddsTypeOf({ odds_type: 'demon' }), 'demon')
   assert.equal(oddsTypeOf({ oddsType: 'Demon' }), 'demon')
   assert.equal(oddsTypeOf({ line_type: 'goblin' }), 'goblin')
@@ -52,7 +52,10 @@ test('each sport field keeps standard and drops demon, goblin, blank, and unknow
   assert.equal(isStandardLine({ oddsType: 'standard' }), true)
   assert.equal(isStandardLine({ line_type: 'standard' }), true)
   assert.equal(isStandardLine({ lineType: 'standard' }), true)
-  assert.equal(isStandardLine({}), false)
+  assert.equal(isStandardLine({}), true)
+  assert.equal(isStandardLine({ odds_type: null }), true)
+  assert.equal(isStandardLine({ line_type: '  ' }), false)
+  assert.equal(isStandardLine({ line_type: 'boost' }), false)
   assert.equal(isStandardLine({ oddsType: 'goblin' }), false)
   assert.equal(isStandardLine({ line_type: 'demon' }), false)
   assert.equal(isPromoLine({ oddsType: 'demon' }), true)
@@ -130,9 +133,22 @@ test('a missing line type on the standard basketball board is standard', () => {
   assert.equal(isStandardLine({ odds_type: 'standard', stat: 'Points', line: 16.5 }), true)
 })
 
-test('demon and goblin boards drop rows that have no line type', () => {
+test('a row with no odds type stays on the slip and a goblin or demon does not', () => {
   const basketRows = loadBasketRows()
   const players = [{
+    name: 'Allisha Gray',
+    team: 'ATL',
+    dvpOpponent: 'GSV',
+    ppAllProps: [
+      { stat: 'Points', line: 18.5, projection: 17.1, opponent: 'GSV' },
+      { stat: 'Rebounds', line: 4.5, projection: 5, odds_type: 'goblin', opponent: 'GSV' },
+      { stat: 'Assists', line: 3.5, projection: 4, odds_type: 'demon', opponent: 'GSV' },
+    ],
+  }]
+  for (const source of ['projections_demon.json', 'projections_goblin.json', '']) {
+    assert.deepEqual(basketRows(players, { source }).map((row) => row.prop), ['Points'])
+  }
+  const unlabeled = [{
     name: 'Allisha Gray',
     team: 'ATL',
     dvpOpponent: 'GSV',
@@ -141,10 +157,7 @@ test('demon and goblin boards drop rows that have no line type', () => {
       { stat: 'Rebounds', line: 4.5, projection: 5, opponent: 'GSV' },
     ],
   }]
-  assert.deepEqual(basketRows(players, { source: 'projections_demon.json' }), [])
-  assert.deepEqual(basketRows(players, { source: 'projections_goblin.json' }), [])
-  assert.deepEqual(basketRows(players), [])
-  const kept = basketRows(players, { source: 'projections_standard.json' })
+  const kept = basketRows(unlabeled, { source: 'projections_standard.json' })
   assert.deepEqual(kept.map((row) => [row.prop, row.odds_type]).sort((a, b) => a[0].localeCompare(b[0])), [
     ['Points', 'standard'],
     ['Rebounds', 'standard'],

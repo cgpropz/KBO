@@ -74,6 +74,7 @@ test('NFL slip scores use the board floors so short rush and receiving lines do 
   const board = boardRows([penix, mccarthy, missingType, cousins, hutchinson, atFloor], { standardOnly: true, sortDesc: true })
   assert.deepEqual(board.map((row) => row.name), [
     'Xavier Hutchinson',
+    'No Type',
     'Keaton Mitchell',
     'J.J. McCarthy',
     'Michael Penix Jr.',
