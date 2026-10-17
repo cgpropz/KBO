@@ -11,6 +11,7 @@ const wnbaGames = Array.from({ length: 10 }, (_, index) => ({
   pts: 20 + index,
   reb: 8,
   ast: 3,
+  ftm: 4 + (index % 3),
 }))
 
 const fixtures = {
@@ -84,8 +85,20 @@ const fixtures = {
     projPts: 24,
     gp: 20,
     recentGames: wnbaGames,
-    ppAllProps: [{ stat: 'Points', line: 22.5, projection: 24, opponent: 'NYL' }],
+    ppAllProps: [
+      { stat: 'Points', line: 22.5, projection: 24, opponent: 'NYL' },
+      { stat: 'Free Throws Made', line: 4.5, projection: 5, opponent: 'NYL' },
+    ],
     image: 'https://a.espncdn.com/i/headshots/wnba/players/full/3149391.png',
+  }, {
+    name: 'No Log',
+    player: 'No Log',
+    team: 'NYL',
+    position: 'Guard',
+    projPts: 20,
+    gp: 0,
+    recentGames: [],
+    ppAllProps: [{ stat: 'Points', line: 18.5, projection: 20, opponent: 'LVA' }],
   }],
   wnba_players: [{ name: 'Aja Wilson', team: 'LVA', position: 'F' }],
   nba_projections_standard: [{
@@ -278,6 +291,67 @@ test('a desktop window from 768 to 1200 does not grow the page', async ({ browse
     await expect(page.getByTestId('prop-line-card')).toHaveCount(0)
     await context.close()
   }
+})
+
+test('WNBA phone cards match the other sports and chart the game log', async ({ page }) => {
+  async function cardWidth(path) {
+    await page.goto(path, { waitUntil: 'load' })
+    const card = page.getByTestId('prop-line-card').first()
+    await expect(card).toBeVisible()
+    return card.evaluate((el) => el.getBoundingClientRect().width)
+  }
+
+  const nfl = await cardWidth('/?sport=nfl')
+  const nhl = await cardWidth('/?sport=nhl')
+  const wnba = await cardWidth('/?sport=wnba')
+  expect(Math.abs(wnba - nfl)).toBeLessThanOrEqual(2)
+  expect(Math.abs(wnba - nhl)).toBeLessThanOrEqual(2)
+
+  const ftm = page.getByTestId('prop-line-card').filter({ hasText: 'Free Throws Made' })
+  await expect(ftm).toBeVisible()
+  const lineCount = await ftm.locator('.wnba-lines-line').evaluate((el) => {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size
+  })
+  expect(lineCount).toBeGreaterThan(0)
+  expect(lineCount).toBeLessThanOrEqual(2)
+  await expect(ftm.locator('.wnba-lines-chart span')).toHaveCount(10)
+  await expect(page.getByText('No data')).toHaveCount(0)
+  const empty = page.getByTestId('prop-line-card').filter({ hasText: 'No Log' })
+  await expect(empty.locator('.hit-rate-chart')).toHaveCount(0)
+
+  const clear = await page.evaluate(() => {
+    const overlaps = (a, b) => a.width > 0 && b.width > 0
+      && a.left < b.right - 1 && a.right > b.left + 1
+      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    return [...document.querySelectorAll('[data-testid="prop-line-card"]')].every((card) => {
+      const toggle = card.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
+      const why = card.querySelector('.cg-score-why')?.getBoundingClientRect()
+      return !toggle || !why || !overlaps(toggle, why)
+    })
+  })
+  expect(clear).toBe(true)
+
+  await page.getByRole('button', { name: 'Filters' }).click()
+  await page.getByRole('button', { name: /Sort By/ }).click()
+  const filterFit = await page.evaluate(() => {
+    const panel = document.querySelector('.wnba-filters-panel')
+    const select = panel.querySelector('select').getBoundingClientRect()
+    const apply = panel.querySelector('.wnba-filters-apply').getBoundingClientRect()
+    const toggle = document.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
+    const overlaps = toggle && select.width > 0
+      && toggle.left < select.right - 1 && toggle.right > select.left + 1
+      && toggle.top < select.bottom - 1 && toggle.bottom > select.top + 1
+    return {
+      selectInside: select.bottom <= window.innerHeight + 1,
+      applyInside: apply.bottom <= window.innerHeight + 1,
+      overlaps: Boolean(overlaps),
+    }
+  })
+  expect(filterFit.selectInside).toBe(true)
+  expect(filterFit.applyInside).toBe(true)
+  expect(filterFit.overlaps).toBe(false)
 })
 
 test('zoomed iPhone keeps a 780px layout and the phone board', async ({ page }, testInfo) => {

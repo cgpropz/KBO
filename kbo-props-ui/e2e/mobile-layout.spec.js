@@ -9,6 +9,7 @@ const wnbaGames = Array.from({ length: 10 }, (_, index) => ({
   pts: 20 + index,
   reb: 8,
   ast: 3,
+  ftm: 4 + (index % 3),
 }))
 
 const fixtures = {
@@ -92,7 +93,19 @@ const fixtures = {
     projPts: 24,
     gp: 20,
     recentGames: wnbaGames,
-    ppAllProps: [{ stat: 'Points', line: 22.5, projection: 24, opponent: 'NYL' }],
+    ppAllProps: [
+      { stat: 'Points', line: 22.5, projection: 24, opponent: 'NYL' },
+      { stat: 'Free Throws Made', line: 4.5, projection: 5, opponent: 'NYL' },
+    ],
+  }, {
+    name: 'No Log',
+    player: 'No Log',
+    team: 'NYL',
+    position: 'Guard',
+    projPts: 20,
+    gp: 0,
+    recentGames: [],
+    ppAllProps: [{ stat: 'Points', line: 18.5, projection: 20, opponent: 'LVA' }],
   }],
   wnba_players: [{ name: 'Aja Wilson', team: 'LVA', position: 'F' }],
   nba_projections_standard: [{
@@ -304,6 +317,107 @@ test('a sport tab opens that sport dashboard', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Prop Lines' })).toBeVisible()
   await expect(page.getByText('NHL / PRIZEPICKS')).toBeVisible()
   await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
+})
+
+test('WNBA phone cards match NFL width, chart logs, and keep the odds button clear', async ({ page }) => {
+  async function cardWidth(path) {
+    await page.goto(path)
+    const card = page.getByTestId('prop-line-card').first()
+    await expect(card).toBeVisible()
+    return card.evaluate((el) => el.getBoundingClientRect().width)
+  }
+
+  const nfl = await cardWidth('/?sport=nfl&previewTier=owner')
+  const nhl = await cardWidth('/?sport=nhl&previewTier=owner')
+  const wnba = await cardWidth('/?sport=wnba&previewTier=owner')
+  expect(Math.abs(wnba - nfl)).toBeLessThanOrEqual(2)
+  expect(Math.abs(wnba - nhl)).toBeLessThanOrEqual(2)
+  expect(wnba).toBeGreaterThan(340)
+
+  const panel = await page.locator('.wnba-propboard').evaluate((el) => {
+    const style = getComputedStyle(el)
+    return { paddingLeft: style.paddingLeft, borderLeft: style.borderLeftWidth }
+  })
+  expect(panel.paddingLeft).toBe('0px')
+  expect(panel.borderLeft).toBe('0px')
+
+  const ftm = page.getByTestId('prop-line-card').filter({ hasText: 'Free Throws Made' })
+  await expect(ftm).toBeVisible()
+  const lineCount = await ftm.locator('.wnba-lines-line').evaluate((el) => {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size
+  })
+  expect(lineCount).toBeGreaterThan(0)
+  expect(lineCount).toBeLessThanOrEqual(2)
+  await expect(ftm.locator('.wnba-lines-chart span')).toHaveCount(10)
+  await expect(page.getByText('No data')).toHaveCount(0)
+
+  const empty = page.getByTestId('prop-line-card').filter({ hasText: 'No Log' })
+  await expect(empty).toBeVisible()
+  await expect(empty.locator('.hit-rate-chart')).toHaveCount(0)
+  await expect(empty.locator('.wnba-lines-chart')).toHaveCount(0)
+
+  const covered = await page.evaluate(() => {
+    const overlaps = (a, b) => a.width > 0 && b.width > 0
+      && a.left < b.right - 1 && a.right > b.left + 1
+      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    const hits = []
+    for (const card of document.querySelectorAll('[data-testid="prop-line-card"]')) {
+      const toggle = card.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
+      const why = card.querySelector('.cg-score-why')?.getBoundingClientRect()
+      if (toggle && why && overlaps(toggle, why)) hits.push('why')
+    }
+    return hits
+  })
+  expect(covered).toEqual([])
+
+  await ftm.getByRole('button', { name: /sportsbook odds/ }).click()
+  await expect(ftm.locator('.nfl-sharp-baseline')).toBeVisible()
+  const oddsCovered = await ftm.evaluate((card) => {
+    const overlaps = (a, b) => a.width > 0 && b.width > 0
+      && a.left < b.right - 1 && a.right > b.left + 1
+      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    const toggle = card.querySelector('.nfl-odds-toggle').getBoundingClientRect()
+    const targets = [...card.querySelectorAll('.cg-score-why, .nfl-sharp-baseline, .nfl-sharp-baseline button')]
+    return targets.some((el) => overlaps(toggle, el.getBoundingClientRect()))
+  })
+  expect(oddsCovered).toBe(false)
+
+  await page.getByRole('button', { name: 'Filters' }).click()
+  await page.getByRole('button', { name: /Sort By/ }).click()
+  const sort = page.locator('.wnba-filters-panel select')
+  await expect(sort).toBeVisible()
+  const filterFit = await page.evaluate(() => {
+    const overlaps = (a, b) => a.width > 0 && b.width > 0
+      && a.left < b.right - 1 && a.right > b.left + 1
+      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    const panel = document.querySelector('.wnba-filters-panel')
+    const select = panel.querySelector('select').getBoundingClientRect()
+    const apply = panel.querySelector('.wnba-filters-apply').getBoundingClientRect()
+    const toggles = [...document.querySelectorAll('.nfl-odds-toggle')].map((el) => el.getBoundingClientRect())
+    let safeArea = false
+    const walk = (rules) => {
+      for (const rule of rules) {
+        if (rule.cssRules) walk(rule.cssRules)
+        if (String(rule.selectorText || '').includes('.wnba-filters-panel')
+          && String(rule.style?.paddingBottom || '').includes('safe-area-inset-bottom')) safeArea = true
+      }
+    }
+    for (const sheet of document.styleSheets) {
+      try { walk(sheet.cssRules) } catch { /* cross-origin sheet */ }
+    }
+    return {
+      safeArea,
+      selectInside: select.bottom <= window.innerHeight + 1 && select.top >= 0,
+      applyInside: apply.bottom <= window.innerHeight + 1 && apply.height > 0,
+      toggleCoversSelect: toggles.some((box) => overlaps(box, select)),
+    }
+  })
+  expect(filterFit.safeArea).toBe(true)
+  expect(filterFit.selectInside).toBe(true)
+  expect(filterFit.applyInside).toBe(true)
+  expect(filterFit.toggleCoversSelect).toBe(false)
 })
 
 test('phone layout is unlayered and sport min-width stays in a layer', async ({ page }) => {

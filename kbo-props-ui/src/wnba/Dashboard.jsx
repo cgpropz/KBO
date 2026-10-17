@@ -6,7 +6,7 @@ import { sportAccess } from '../entitlements'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
-import { pillById, wnbaHitPills } from '../hitRateStrip'
+import { pillById, wnbaHitPills, wnbaLoggedValues } from '../hitRateStrip'
 import { HOT_L10_GAMES, HOT_L10_RATE, buildSlate, hotStreakRows, propsOnBoardCount, sortWnbaRows } from '../wnbaBoard'
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -44,25 +44,6 @@ const PROP_PROJECTION = {
   'Pts+Rebs+Asts': p => (p.projPts ?? 0) + (p.projReb ?? 0) + (p.projAst ?? 0),
   'Double-Double': p => p.projDoubleDouble,
   'Triple-Double': p => p.projTripleDouble,
-}
-
-// Compute a game's actual value for a prop so we can derive hit rates client-side.
-const GAME_STAT_VALUE = {
-  Points: g => g.pts ?? 0,
-  Rebounds: g => g.reb ?? 0,
-  Assists: g => g.ast ?? 0,
-  '3-PT Made': g => g.fg3m ?? 0,
-  Steals: g => g.stl ?? 0,
-  Blocks: g => g.blk ?? 0,
-  Turnovers: g => g.tov ?? 0,
-  'Offensive Rebounds': g => g.oreb ?? 0,
-  'Defensive Rebounds': g => g.dreb ?? 0,
-  'Fantasy Score': g => g.fantasy ?? 0,
-  'Reb+Asts': g => (g.reb ?? 0) + (g.ast ?? 0),
-  'Rebs+Asts': g => (g.reb ?? 0) + (g.ast ?? 0),
-  'Pts+Rebs': g => (g.pts ?? 0) + (g.reb ?? 0),
-  'Pts+Asts': g => (g.pts ?? 0) + (g.ast ?? 0),
-  'Pts+Rebs+Asts': g => (g.pts ?? 0) + (g.reb ?? 0) + (g.ast ?? 0),
 }
 
 const SEASON_LABEL = String(new Date().getFullYear())
@@ -153,8 +134,8 @@ function FilterIcon() {
 }
 
 function MiniChart({ recent, line }) {
+  if (!recent.length) return null
   const maxValue = Math.max(line, ...recent, 1)
-  if (!recent.length) return <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span>
   return (
     <div className="wnba-lines-chart" aria-hidden="true">
       {recent.map((value, index) => (
@@ -199,7 +180,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
         ) },
-        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: phone && recent.length === 0 ? undefined : 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
         { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
@@ -499,10 +480,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         if (projection == null || !Number.isFinite(line) || line <= 0 || score == null) return
 
         const recentGames = player.recentGames || []
-        const getter = GAME_STAT_VALUE[prop.stat]
-        const recent = getter
-          ? recentGames.slice(0, 10).map(g => getter(g)).filter(v => v != null).reverse()
-          : []
+        const recent = wnbaLoggedValues(recentGames.slice(0, 10), prop.stat).reverse()
         const hitPills = wnbaHitPills({ games: recentGames, stat: prop.stat, line, opponent: prop.opponent ?? null })
         const l10 = pillById(hitPills, 'l10')
 
