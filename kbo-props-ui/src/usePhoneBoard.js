@@ -13,6 +13,7 @@ function phoneNow() {
 export function usePhoneBoard() {
   const [phone, setPhone] = useState(phoneNow)
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
     const media = window.matchMedia(PHONE_BOARD_QUERY)
     const apply = () => setPhone(media.matches)
     apply()

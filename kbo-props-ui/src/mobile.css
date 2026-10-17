@@ -9,8 +9,8 @@
  * The phone block is @media (--phone-board). The build rewrites that token
  * to PHONE_BOARD_QUERY in src/phoneBoardQuery.js, the same string
  * usePhoneBoard matches. A touch phone stays on cards when Safari requests
- * the desktop site or the page is zoomed. An iPad or touch laptop wider
- * than 932 device pixels does not.
+ * the desktop site or the page is zoomed. An iPad (device height over 1000px)
+ * or a touch laptop stays on the desktop table.
  *
  * Rules outside that query hide the menu control on a wide desktop and, from
  * 768px to 1200px, keep navs and headers from stretching the page.
