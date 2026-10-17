@@ -813,7 +813,12 @@ export async function nbaSectionOpen(req, client) {
   }) === 'full';
 }
 
-const WNBA_PROMO_DATASETS = new Set(['wnba_projections_goblin', 'wnba_projections_demon']);
+const UNSERVED_DATASETS = new Set([
+  'wnba_projections_goblin',
+  'wnba_projections_demon',
+  'nba_projections_goblin',
+  'nba_projections_demon',
+]);
 
 async function nhlProjectionRows(projectionsPromise) {
   const projRow = await projectionsPromise;
@@ -996,7 +1001,7 @@ export async function handleDataRequest(req, res, client) {
   }
 
   const ds = String(req.query?.ds || '');
-  if (WNBA_PROMO_DATASETS.has(ds)) {
+  if (UNSERVED_DATASETS.has(ds)) {
     return res.status(404).json({ error: 'Dataset not served' });
   }
   if (isNbaDataset(ds)) {

@@ -334,24 +334,26 @@ test('the owner is allowed when the flag is missing or the flag lookup fails', a
   }
 })
 
-test('the owner receives NBA lines while a combined tier and a forged token stay 403', async () => {
+test('the owner receives standard NBA lines and goblin and demon are not served', async () => {
   const owner = await call('nba_projections_standard', 'tok-owner', { flag: false })
   assert.equal(owner.res.statusCode, 200)
   assert.equal(owner.res.body.preview, false)
   assert.equal(owner.res.body.data[0].name, 'Jayson Tatum')
   assert.equal(owner.res.body.data[0].ppAllProps[0].line, 27.5)
   const missingFlag = await call('nba_projections_goblin', 'tok-owner', { flag: 'missing' })
-  assert.equal(missingFlag.res.statusCode, 200)
-  assert.equal(missingFlag.res.body.data[0].projectionStatus, 'pending')
+  assert.equal(missingFlag.res.statusCode, 404)
+  assert.equal(missingFlag.res.body.error, 'Dataset not served')
+  assert.equal(missingFlag.client.calls.some((entry) => entry.table === 'nba_projections_goblin'), false)
   const combined = await call('nba_projections_demon', 'tok-fan', { flag: false })
-  assert.equal(combined.res.statusCode, 403)
-  assert.equal(combined.res.body.data, undefined)
+  assert.equal(combined.res.statusCode, 404)
+  assert.equal(combined.res.body.error, 'Dataset not served')
   assert.equal(combined.client.calls.some((entry) => entry.table === 'nba_projections_demon'), false)
   const forged = await call('nba_projections_standard', 'forged-token')
   assert.equal(forged.res.statusCode, 403)
   assert.equal(forged.res.body.data, undefined)
   const flagError = await call('nba_projections_demon', 'tok-fan', { flag: 'error' })
-  assert.equal(flagError.res.statusCode, 403)
+  assert.equal(flagError.res.statusCode, 404)
+  assert.equal(flagError.res.body.error, 'Dataset not served')
 })
 
 test('a public flag lets all-access through the gate and still denies a failed tier lookup', async () => {
