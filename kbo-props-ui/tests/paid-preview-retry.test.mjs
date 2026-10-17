@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import { DATASETS } from '../api/_dataAccess.js'
 import { datasetSport } from '../src/entitlements.js'
 import { memberPreviewIsDowngrade } from '../src/memberPreview.js'
+import { previewLockedCount } from '../src/previewLockedCount.js'
+import { runRefreshAttempts } from '../src/refreshAttempts.mjs'
 
 const apiSource = readFileSync(new URL('../src/apiData.js', import.meta.url), 'utf8')
 const appSource = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
@@ -65,6 +67,54 @@ test('a full board is not retried', () => {
     session: session(),
     tierCache: tierCache({ userId: 'user-1', tier: 'combined' }),
   }), false)
+})
+
+test('a preview keeps its lock count while a paid refresh is in flight', () => {
+  assert.equal(previewLockedCount(true, 80), 80)
+  assert.equal(previewLockedCount(false, 80), 0)
+  assert.equal(previewLockedCount(true, 0), 0)
+  const boards = [
+    'src/KboPropBoard.jsx',
+    'src/nba/NbaDashboard.jsx',
+    'src/nfl/NflProjections.jsx',
+    'src/nfl/NflPropLines.jsx',
+    'src/nhl/NhlPropLines.jsx',
+    'src/wnba/Dashboard.jsx',
+  ]
+  for (const file of boards) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+    assert.equal(source.includes('preview && !refreshing'), false, file)
+    assert.match(source, /previewLockedCount/, file)
+    assert.match(source, /MemberPreviewNotice/, file)
+  }
+})
+
+test('a background refresh that never returns the full board asks for Retry', async () => {
+  const outcome = await runRefreshAttempts({
+    delays: [0, 0, 0],
+    sleepFn: async () => {},
+    attempt: async () => 'again',
+  })
+  assert.equal(outcome.gaveUp, true)
+  assert.equal(outcome.replaced, false)
+  const stopped = await runRefreshAttempts({
+    delays: [0, 0],
+    sleepFn: async () => {},
+    attempt: async () => 'stop',
+  })
+  assert.equal(stopped.gaveUp, false)
+  const full = await runRefreshAttempts({
+    delays: [0, 0],
+    sleepFn: async () => {},
+    attempt: async () => 'full',
+  })
+  assert.equal(full.replaced, true)
+  assert.equal(full.gaveUp, false)
+  assert.match(apiSource, /refreshExhausted: true/)
+  assert.match(apiSource, /Free preview|refreshExhausted/)
+  const notice = readFileSync(new URL('../src/MemberPreviewNotice.jsx', import.meta.url), 'utf8')
+  assert.match(notice, /Free preview/)
+  assert.match(notice, /Retry/)
 })
 
 test('a second preview is rendered instead of the raw downgrade error', () => {

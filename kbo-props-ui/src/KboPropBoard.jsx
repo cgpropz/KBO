@@ -16,7 +16,8 @@ import { fitImage } from './fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
-import { useFullBoardRefresh } from './useFullBoardRefresh'
+import { MemberPreviewNotice } from './MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from './useFullBoardRefresh'
 import { BoardLoadError } from './BoardLoadError'
 
 const FREE_ROW_LIMIT = 3
@@ -241,7 +242,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         if (!active) return
         setSnapshot(props.data)
         setUpdatedAt(props.updatedAt || null)
-        setLockedCount(props.preview && !props.refreshing ? props.lockedCount : 0)
+        setLockedCount(previewLockedCount(props.preview === true, props.lockedCount))
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
@@ -256,17 +257,18 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     return () => { active = false; window.clearInterval(refresh) }
   }, [loadAttempt])
 
-  const retryLoad = () => {
-    setError('')
-    setLoadAttempt((current) => current + 1)
-  }
-
-  useFullBoardRefresh('prizepicks_props', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('prizepicks_props', (snapshot) => {
     setSnapshot(snapshot.data)
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
     setError('')
   })
+
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError('')
+    setLoadAttempt((current) => current + 1)
+  }
 
   const photoLookup = useMemo(() => Object.fromEntries(Object.entries(photos).map(([name, url]) => [name.toLowerCase(), url])), [photos])
   const allRows = useMemo(() => (snapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({
@@ -329,6 +331,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         {!boardEmpty && <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
       {error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
+      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="kbo-notice" />
       {!error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
       {!error && !snapshot && (
         <div role="status" aria-label="Loading KBO prop lines">

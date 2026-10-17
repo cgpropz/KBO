@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
@@ -74,31 +75,34 @@ export default function NhlProjections({ onSelectPlayer }) {
   const [loaded, setLoaded] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
+  const [showingPreview, setShowingPreview] = useState(false)
   const [tab, setTab] = useState('ALL')
   const [query, setQuery] = useState('')
 
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, updatedAt: publishedAt }) => {
-        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setError(''); setLoaded(true) }
+      .then(({ projections: next, updatedAt: publishedAt, preview }) => {
+        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setShowingPreview(preview === true); setError(''); setLoaded(true) }
       })
       .catch((loadError) => active && setError(loadError))
     return () => { active = false }
   }, [loadAttempt])
 
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nhl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setShowingPreview(false)
+    setError('')
+    setLoaded(true)
+  })
+
   const retryLoad = () => {
+    clearRefreshExhausted()
     setError('')
     setLoaded(false)
     setLoadAttempt((current) => current + 1)
   }
-
-  useFullBoardRefresh('nhl_projections', (snapshot) => {
-    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
-    setUpdatedAt(snapshot.updatedAt || null)
-    setError('')
-    setLoaded(true)
-  })
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -119,6 +123,7 @@ export default function NhlProjections({ onSelectPlayer }) {
         </div>
       </div>
       {error && <BoardLoadError error={error} prefix="Unable to load the board:" onRetry={retryLoad} />}
+      <MemberPreviewNotice preview={showingPreview} exhausted={refreshExhausted} onRetry={retryLoad} />
       {!error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}
       {!error && loaded && !rows.length && <div className="nfl-notice">No cards match.</div>}
       <div className="nfl-edge-grid">

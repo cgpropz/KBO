@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
-import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
@@ -296,11 +297,11 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview && !refreshing ? locked : 0); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(previewLockedCount(preview, locked)); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
     return () => { active = false }
   }, [loadAttempt])
 
-  useFullBoardRefresh('nfl_projections', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nfl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
@@ -310,6 +311,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   })
 
   const retryLoad = () => {
+    clearRefreshExhausted()
     setError('')
     setLoaded(false)
     setLoadAttempt((current) => current + 1)
@@ -408,6 +410,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         </div>
       </div>
       {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
+      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
       {!error && !loaded && (
         <div role="status" aria-label="Loading NFL prop lines">
           <BoardSkeleton />

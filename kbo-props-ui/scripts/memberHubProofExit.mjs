@@ -12,7 +12,8 @@ export function proofShouldFail({
   const prodFailed = Object.entries(prodPages || {})
     .filter(([, page]) => page?.medianFirstCardMs == null)
     .map(([name]) => name)
-  const previewPageFailed = Object.values(previewPages || {}).some((page) => page?.medianFirstCardMs == null)
+  const previewList = Object.values(previewPages || {})
+  const previewPageFailed = previewList.length === 0 || previewList.some((page) => page?.medianFirstCardMs == null)
   const coldFailed = (previewColdStatuses || []).some((status) => status !== 200)
   const fail = previewPageFailed || coldFailed || !!domPromo || !oddsClean || !strikeoutOk
   return { fail, prodFailed }

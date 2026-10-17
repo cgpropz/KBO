@@ -21,6 +21,7 @@ from nfl.sharp_odds import (
     book_key,
     build_snapshot,
     extract_display_stat,
+    filter_standard_lines,
     load_pp_rows,
     name_key,
     normalize_line,
@@ -143,6 +144,53 @@ def fetch_unabated():
     return json.loads(raw)
 
 
+def _odds_text(row: dict) -> str | None:
+    for key in ("oddsType", "odds_type", "line_type", "lineType"):
+        raw = row.get(key)
+        if raw is None:
+            continue
+        text = str(raw).strip().lower()
+        if text:
+            return text
+    return None
+
+
+def stamp_nhl_line_types(pp_rows, projections):
+    """Copy PrizePicks oddsType onto line_type. NHL rows do not store line_type."""
+    odds_by_id = {}
+    for row in projections or []:
+        if not isinstance(row, dict) or row.get("id") is None:
+            continue
+        odds_by_id[str(row["id"])] = _odds_text(row)
+    stamped = []
+    for row in pp_rows or []:
+        nxt = dict(row)
+        current = str(nxt.get("line_type") or "").strip().lower()
+        if current:
+            nxt["line_type"] = current
+        else:
+            key = str(nxt["id"]) if nxt.get("id") is not None else ""
+            nxt["line_type"] = odds_by_id.get(key)
+        stamped.append(nxt)
+    return stamped
+
+
+def board_rows(pp_rows, projections):
+    """Standard lines only, same filter the NFL sharp-odds pipeline uses."""
+    stamped = stamp_nhl_line_types(pp_rows, projections)
+    standard, line_type_filter = filter_standard_lines(stamped)
+    eligible = {}
+    for row in projections or []:
+        if not isinstance(row, dict):
+            continue
+        odds = _odds_text(row)
+        if odds not in (None, "standard"):
+            continue
+        eligible[(name_key(row.get("player")), row.get("prop"))] = row.get("rankEligible") is not False
+    ranked = [row for row in standard if eligible.get((row.get("player_key"), row.get("prop")), True)]
+    return ranked, line_type_filter
+
+
 def main() -> int:
     try:
         payload = fetch_unabated()
@@ -153,16 +201,15 @@ def main() -> int:
     pp_rows = load_pp_rows(PROJECTIONS) or []
     # A goalie who is not the confirmed starter is already off projections.
     # When no starter is confirmed, rankEligible false still keeps that goalie off this list.
-    ranked = []
     projections = json.loads(PROJECTIONS.read_text(encoding="utf-8")) if PROJECTIONS.exists() else []
-    eligible = {
-        (name_key(row.get("player")), row.get("prop")): row.get("rankEligible") is not False
-        for row in projections if isinstance(row, dict)
-    }
-    for row in pp_rows:
-        if eligible.get((row["player_key"], row["prop"]), True):
-            ranked.append(row)
-    snapshot = build_snapshot(ranked, book_rows, provider="unabated", events_scanned=events)
+    ranked, line_type_filter = board_rows(pp_rows, projections)
+    snapshot = build_snapshot(
+        ranked,
+        book_rows,
+        provider="unabated",
+        events_scanned=events,
+        line_type_filter=line_type_filter,
+    )
     snapshot["league_id"] = NHL_LEAGUE_ID
     snapshot["sport"] = "nhl"
     snapshot["generated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()

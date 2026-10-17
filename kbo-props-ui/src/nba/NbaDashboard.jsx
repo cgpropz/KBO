@@ -7,7 +7,8 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
-import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
 import {
   DEFAULT_FILTERS,
@@ -355,9 +356,9 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           fetchNbaData('nba/players.json').catch(() => []),
         ])
         if (cancelled) return
-        setLockedCount(board?.preview && !board?.refreshing ? board.lockedCount : 0)
+        setLockedCount(previewLockedCount(board?.preview === true, board?.lockedCount))
         setUpdatedAt(board?.updatedAt || null)
-        setIsPaid(board?.preview !== true || board?.refreshing === true)
+        setIsPaid(board?.preview !== true)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
       } catch (err) {
@@ -375,13 +376,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     return () => { cancelled = true }
   }, [loadAttempt])
 
-  const retryLoad = () => {
-    setLoadError('')
-    setProjLoading(true)
-    setLoadAttempt((current) => current + 1)
-  }
-
-  useFullBoardRefresh('nba_projections_standard', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nba_projections_standard', (snapshot) => {
     setLockedCount(0)
     setUpdatedAt(snapshot.updatedAt || null)
     setIsPaid(true)
@@ -389,6 +384,13 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     setLoadError('')
     setProjLoading(false)
   })
+
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setLoadError('')
+    setProjLoading(true)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0
@@ -480,6 +482,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
 
           {projLoading && <div className="wnba-notice">Loading NBA prop lines…</div>}
           {!projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load NBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
+          <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (

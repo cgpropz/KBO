@@ -3,6 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
+import { readFileSync } from 'node:fs'
 import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
@@ -403,6 +404,82 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
     }
   } finally {
     TABLES.nfl_sharp_odds = original
+  }
+})
+
+test('member and logged-out NHL sharp odds stay on standard projection ids', async () => {
+  const demonIds = [15856898, 15857300, 15857317]
+  TABLES.nhl_projections = [
+    { id: 100, player: 'Standard', prop: 'Shots On Goal', line: 2.5, projection: 3.1, oddsType: 'standard' },
+    { id: 101, player: 'Plain', prop: 'Points', line: 1.5, projection: 1.1 },
+    { id: demonIds[0], player: 'Ekblad', prop: 'Power Play Points', line: 0.5, projection: 0.8, oddsType: 'demon' },
+    { id: demonIds[1], player: 'Newhook', prop: 'Power Play Points', line: 0.5, projection: 0.7, oddsType: 'demon' },
+    { id: demonIds[2], player: 'Texier', prop: 'Power Play Points', line: 0.5, projection: 0.6, oddsType: 'demon' },
+  ]
+  TABLES.nhl_sharp_odds = {
+    generated_at: NOW,
+    provider: 'unabated',
+    status: 'ok',
+    message: 'matched',
+    line_type_filter: null,
+    records: [
+      { id: 100, player: 'Standard', prop: 'Shots On Goal', pp_line: 2.5, line_type: null, pp_edge_flex: 1 },
+      { id: 101, player: 'Plain', prop: 'Points', pp_line: 1.5, line_type: null, pp_edge_flex: 1 },
+      ...demonIds.map((id, index) => ({
+        id,
+        player: ['Ekblad', 'Newhook', 'Texier'][index],
+        prop: 'Power Play Points',
+        pp_line: 0.5,
+        line_type: null,
+        pp_edge_flex: 50 - index,
+      })),
+      { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 20 },
+    ],
+  }
+  try {
+    const board = await call('nhl_projections', 'tok-owner')
+    const paid = await call('nhl_sharp_odds', 'tok-owner')
+    const anon = await call('nhl_sharp_odds')
+    assert.equal(board.body.preview, false)
+    const standardIds = new Set(board.body.data.map((row) => String(row.id)))
+    assert.equal(standardIds.has('100'), true)
+    assert.equal(standardIds.has('101'), true)
+    for (const id of demonIds) assert.equal(standardIds.has(String(id)), false)
+
+    assert.equal(paid.body.preview, false)
+    const paidIds = paid.body.data.records.map((row) => String(row.id))
+    assert.deepEqual(paidIds, ['100', '101'])
+    for (const id of paidIds) assert.equal(standardIds.has(id), true, id)
+
+    assert.equal(anon.body.preview, true)
+    const anonIds = anon.body.data.records.map((row) => String(row.id))
+    assert.deepEqual(anonIds, ['100', '101'])
+    assert.equal(anon.body.data.records.some((row) => demonIds.includes(row.id) || row.id === 999), false)
+  } finally {
+    delete TABLES.nhl_projections
+    delete TABLES.nhl_sharp_odds
+  }
+})
+
+test('wnba goblin and demon datasets are not served', async () => {
+  const wnba = readFileSync(new URL('../src/wnba/wnbaData.js', import.meta.url), 'utf8')
+  assert.equal(wnba.includes('wnba_projections_goblin'), false)
+  assert.equal(wnba.includes('wnba_projections_demon'), false)
+  assert.equal(wnba.includes('projections_goblin.json'), false)
+  assert.equal(wnba.includes('projections_demon.json'), false)
+  for (const ds of ['wnba_projections_goblin', 'wnba_projections_demon']) {
+    for (const token of [undefined, 'tok-owner']) {
+      const client = mockClient()
+      const res = mockRes()
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: token ? { authorization: bearer(token) } : {} },
+        res,
+        client,
+      )
+      assert.equal(res.statusCode, 404, `${ds} ${token || 'anon'}`)
+      assert.equal(res.body.error, 'Dataset not served')
+      assert.equal(client.calls.tables.includes(ds), false)
+    }
   }
 })
 

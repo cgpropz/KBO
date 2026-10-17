@@ -16,7 +16,8 @@ import { fitImage } from '../fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
-import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
@@ -447,7 +448,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           fetchWnbaData('wnba/players.json'),
         ])
         if (cancelled) return
-        setLockedCount(pr?.preview && !pr?.refreshing ? pr.lockedCount : 0)
+        setLockedCount(previewLockedCount(pr?.preview === true, pr?.lockedCount))
         setUpdatedAt(pr?.updatedAt || null)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
@@ -465,7 +466,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     return () => { cancelled = true }
   }, [loadAttempt])
 
-  useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
     setLockedCount(0)
     setUpdatedAt(snapshot.updatedAt || null)
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
@@ -475,6 +476,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   })
 
   const retryLoad = () => {
+    clearRefreshExhausted()
     setLoadError('')
     setProjLoading(true)
     setLoadAttempt((current) => current + 1)
@@ -641,6 +643,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             </div>
           )}
           {!projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load WNBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
+          <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (

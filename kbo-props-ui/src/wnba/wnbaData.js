@@ -8,8 +8,6 @@ import { fetchApiDataset } from '../apiData'
  */
 const FILE_TO_DATASET = {
   'wnba/projections_standard.json': 'wnba_projections_standard',
-  'wnba/projections_demon.json': 'wnba_projections_demon',
-  'wnba/projections_goblin.json': 'wnba_projections_goblin',
   'wnba/players.json': 'wnba_players',
   'wnba/lineups.json': 'wnba_lineups',
   'wnba/dvp_guard.json': 'wnba_dvp_guard',

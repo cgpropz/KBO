@@ -264,3 +264,50 @@ export function filterStandardBoard(ds, payload) {
   }
   return filterGeneralPayload(payload)
 }
+
+export function projectionRowId(row) {
+  const raw = row?.id ?? row?.projection_id
+  if (raw == null) return ''
+  return String(raw).trim()
+}
+
+// id -> odds type from the raw nhl_projections rows. undefined means the
+// projection has no type field, which the standard board keeps.
+export function nhlProjectionOddsById(rows) {
+  const map = new Map()
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const id = projectionRowId(row)
+    if (!id || map.has(id)) continue
+    map.set(id, explicitBoardOddsType(row))
+  }
+  return map
+}
+
+// After the id match: standard, a non-standard token, or unknown.
+// A projection with no type field counts as standard. No matching id is unknown.
+export function nhlSharpMatchedType(record, oddsById) {
+  const id = projectionRowId(record)
+  if (!id || !(oddsById instanceof Map) || !oddsById.has(id)) return 'unknown'
+  const type = oddsById.get(id)
+  if (type === undefined || type === 'standard') return 'standard'
+  return type || 'unknown'
+}
+
+// Safety net for a published sharp-odds snapshot whose line_type is null.
+// Only rows that match a standard projection stay. Unknown and non-standard
+// types are removed before the free top 3 is chosen.
+export function filterNhlSharpOdds(payload, projections) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
+  if (!Array.isArray(payload.records)) return payload
+  const oddsById = projections instanceof Map ? projections : nhlProjectionOddsById(projections)
+  let changed = false
+  const records = []
+  for (const row of payload.records) {
+    if (nhlSharpMatchedType(row, oddsById) !== 'standard') {
+      changed = true
+      continue
+    }
+    records.push(row)
+  }
+  return changed ? { ...payload, records } : payload
+}
