@@ -1,0 +1,42 @@
+# Member board check. No screenshots, no board payloads, no SQL.
+# Quiet from midnight through 5:59 AM America/New_York. Hour 6 runs.
+name: Site monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Run even between midnight and 6 AM ET
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: site-monitor
+  cancel-in-progress: false
+
+jobs:
+  member-boards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check member boards
+        env:
+          SITE_ORIGIN: https://www.cgpropz.com
+          SITE_MONITOR_EMAIL: ${{ secrets.SITE_MONITOR_EMAIL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MONITOR_FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+        run: node kbo-props-ui/scripts/site-monitor.mjs
