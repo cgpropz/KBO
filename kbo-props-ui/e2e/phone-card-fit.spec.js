@@ -163,6 +163,101 @@ async function cardFit(page) {
   })
 }
 
+const slipBoards = [
+  ['wnba', '/?s=wnba'],
+  ['nhl', '/?s=nhl'],
+  ['nfl', '/?s=nfl'],
+  ['kbo', '/?s=kbo'],
+]
+
+async function installMember(page) {
+  const user = { id: 'e2e-slip-member', email: 'member@preview.local', aud: 'authenticated', role: 'authenticated' }
+  const session = {
+    access_token: 'e2e-slip-token',
+    refresh_token: 'e2e-slip-refresh',
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    user,
+  }
+  await page.addInitScript((payload) => {
+    localStorage.setItem('sb-e2e-slip-auth-token', JSON.stringify(payload))
+    sessionStorage.setItem('cg_tier', JSON.stringify({ userId: payload.user.id, tier: 'combined' }))
+  }, session)
+  await page.route('**/*supabase.co/**', async (route) => {
+    const url = route.request().url()
+    if (url.includes('/rest/v1/user_profiles')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ tier: 'combined', discord_only: false }]),
+      })
+      return
+    }
+    if (url.includes('/auth/v1/')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(session) })
+      return
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+  })
+  await page.route('**/api/sync-subscription**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tier: 'combined' }),
+    })
+  })
+}
+
+test('slip filter chips wrap without overlapping', async ({ page }) => {
+  await installFixtures(page, 'member')
+  await installMember(page)
+  for (const [sport, path] of slipBoards) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' })
+    const chips = page.locator('.b2-chip')
+    await expect(chips).toHaveCount(4)
+    const fit = await page.locator('.b2-chips').evaluate((host) => {
+      const boxes = [...host.querySelectorAll('.b2-chip')].map((node) => {
+        const box = node.getBoundingClientRect()
+        const hostBox = host.getBoundingClientRect()
+        return {
+          text: (node.textContent || '').replace(/\s+/g, ' ').trim(),
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+          width: box.width,
+          height: box.height,
+          fits: node.scrollWidth <= node.clientWidth + 1,
+          inside: box.left >= hostBox.left - 1 && box.right <= hostBox.right + 1 && box.top >= hostBox.top - 1,
+        }
+      })
+      return {
+        boxes,
+        scrolls: host.scrollWidth > host.clientWidth + 1,
+      }
+    })
+    expect(fit.scrolls, `${sport} chip row scrolls`).toBe(false)
+    const labels = fit.boxes.map((chip) => chip.text)
+    expect(labels.some((text) => text.startsWith('CG: high'))).toBe(true)
+    expect(labels).toContain('All props ▾')
+    expect(labels).toContain('More only')
+    expect(labels).toContain('Standard lines')
+    for (const chip of fit.boxes) {
+      expect(chip.fits, `${sport} ${chip.text} clips`).toBe(true)
+      expect(chip.inside, `${sport} ${chip.text} is outside the chip row`).toBe(true)
+    }
+    for (let i = 0; i < fit.boxes.length; i += 1) {
+      for (let j = i + 1; j < fit.boxes.length; j += 1) {
+        expect(
+          overlaps(fit.boxes[i], fit.boxes[j]),
+          `${sport} ${fit.boxes[i].text} overlaps ${fit.boxes[j].text}`,
+        ).toBe(false)
+      }
+    }
+  }
+})
+
 for (const mode of ['free', 'member']) {
   test(`${mode} cards keep the name, tag, line, and odds button apart`, async ({ page }) => {
     await installFixtures(page, mode)

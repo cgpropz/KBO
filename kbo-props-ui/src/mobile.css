@@ -200,6 +200,22 @@
     min-width: 44px;
   }
 
+  /* Slip filters sit on one flex row. Phone min-width:0 lets the dropdown
+     wrappers shrink, and the labels then paint over each other. Keep each
+     chip at its text width and wrap the row. */
+  body .b2-chips {
+    flex-wrap: wrap;
+    overflow: visible;
+    row-gap: 8px;
+  }
+
+  body .b2-chips > *,
+  body .b2-chip {
+    flex: 0 0 auto;
+    min-width: max-content;
+    max-width: 100%;
+  }
+
   body :is(input, select, textarea) {
     min-height: 44px;
     max-width: 100%;
