@@ -415,6 +415,7 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     { id: demonIds[0], player: 'Ekblad', prop: 'Power Play Points', line: 0.5, projection: 0.8, oddsType: 'demon' },
     { id: demonIds[1], player: 'Newhook', prop: 'Power Play Points', line: 0.5, projection: 0.7, oddsType: 'demon' },
     { id: demonIds[2], player: 'Texier', prop: 'Power Play Points', line: 0.5, projection: 0.6, oddsType: 'demon' },
+    { id: 15863634, player: 'Pulled', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', removed: true, pp_status: 'removed' },
   ]
   TABLES.nhl_sharp_odds = {
     generated_at: NOW,
@@ -434,6 +435,7 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
         pp_edge_flex: 50 - index,
       })),
       { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 20 },
+      { id: 15863634, player: 'Pulled', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 80 },
     ],
   }
   try {
@@ -445,10 +447,12 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     assert.equal(standardIds.has('100'), true)
     assert.equal(standardIds.has('101'), true)
     for (const id of demonIds) assert.equal(standardIds.has(String(id)), false)
+    assert.equal(standardIds.has('15863634'), false)
 
     assert.equal(paid.body.preview, false)
     const paidIds = paid.body.data.records.map((row) => String(row.id))
     assert.deepEqual(paidIds, ['100', '101'])
+    assert.equal(paidIds.includes('15863634'), false)
     for (const id of paidIds) assert.equal(standardIds.has(id), true, id)
 
     assert.equal(anon.body.preview, true)

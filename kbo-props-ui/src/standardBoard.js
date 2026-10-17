@@ -3,6 +3,8 @@
 // present type stays only when it is exactly "standard", so goblin, demon,
 // blank, and unknown tokens are dropped.
 
+import { prepareBoardRows } from './nhl/pointsGate.js'
+
 const LABELS = ['odds_type', 'oddsType', 'line_type', 'lineType']
 
 export function rawOddsType(row) {
@@ -294,12 +296,15 @@ export function nhlSharpMatchedType(record, oddsById) {
 }
 
 // Safety net for a published sharp-odds snapshot whose line_type is null.
-// Only rows that match a standard projection stay. Unknown and non-standard
-// types are removed before the free top 3 is chosen.
+// Only rows that match a standard projection members can still play stay.
+// That is the same set prepareBoardRows keeps: PrizePicks pulled lines and
+// Points overs under 0.69 are out. Unknown and non-standard types are
+// removed before the free top 3 is chosen.
 export function filterNhlSharpOdds(payload, projections) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
   if (!Array.isArray(payload.records)) return payload
-  const oddsById = projections instanceof Map ? projections : nhlProjectionOddsById(projections)
+  const playable = projections instanceof Map ? projections : prepareBoardRows(projections)
+  const oddsById = playable instanceof Map ? playable : nhlProjectionOddsById(playable)
   let changed = false
   const records = []
   for (const row of payload.records) {

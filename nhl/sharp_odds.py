@@ -26,6 +26,7 @@ from nfl.sharp_odds import (
     name_key,
     normalize_line,
 )
+from nhl.model import apply_points_over_gate
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTIONS = ROOT / "nhl" / "projections.json"
@@ -175,14 +176,53 @@ def stamp_nhl_line_types(pp_rows, projections):
     return stamped
 
 
+# Same PrizePicks statuses the member board treats as pulled. Those rows stay
+# in projections.json on purpose and are not lines a member can play.
+_PULLED = {"removed", "suspended", "held", "hold", "onhold"}
+
+
+def _prizepicks_pulled(row) -> bool:
+    if not isinstance(row, dict):
+        return False
+    if row.get("removed") is True:
+        return True
+    raw = row.get("pp_status", row.get("ppStatus"))
+    compact = "".join(ch for ch in str(raw or "").lower() if ch.isalpha())
+    return compact in _PULLED
+
+
+def _playable_projections(projections):
+    """Rows prepareBoardRows would keep, before the rankEligible sharp cut."""
+    live = [row for row in (projections or []) if isinstance(row, dict) and not _prizepicks_pulled(row)]
+    return apply_points_over_gate(live)
+
+
 def board_rows(pp_rows, projections):
-    """Standard lines only, same filter the NFL sharp-odds pipeline uses."""
-    stamped = stamp_nhl_line_types(pp_rows, projections)
+    """Standard lines members can still play.
+
+    Pulled PrizePicks rows and Points overs under 0.69 stay out, matching the
+    member board. rankEligible false (held Points overs, unconfirmed goalies)
+    stays off this ranked list.
+    """
+    playable = _playable_projections(projections)
+    known_ids = {
+        str(row.get("id"))
+        for row in (projections or [])
+        if isinstance(row, dict) and row.get("id") is not None
+    }
+    playable_ids = {str(row.get("id")) for row in playable if row.get("id") is not None}
+    live_pp = []
+    for row in pp_rows or []:
+        if _prizepicks_pulled(row):
+            continue
+        key = str(row.get("id")) if isinstance(row, dict) and row.get("id") is not None else ""
+        if key and key in known_ids and key not in playable_ids:
+            continue
+        live_pp.append(row)
+    stamped = stamp_nhl_line_types(live_pp, playable)
     standard, line_type_filter = filter_standard_lines(stamped)
     eligible = {}
-    for row in projections or []:
-        if not isinstance(row, dict):
-            continue
+    for row in playable:
         odds = _odds_text(row)
         if odds not in (None, "standard"):
             continue

@@ -65,6 +65,38 @@ def test_board_rows_filter_like_nfl_and_drop_unknown():
     assert counts["before"] == 6
 
 
+def test_board_rows_drop_pulled_standard_id():
+    projections = [
+        _projection(100, "Live", "Shots On Goal", "standard"),
+        {
+            **_projection(15863634, "Pulled", "Points", "standard"),
+            "removed": True,
+            "pp_status": "removed",
+            "line": 0.5,
+            "projection": 0.9,
+        },
+        {
+            **_projection(101, "Status", "Shots On Goal", "standard"),
+            "pp_status": "removed",
+        },
+        {
+            **_projection(102, "Low", "Points", "standard"),
+            "line": 0.5,
+            "projection": 0.5,
+        },
+    ]
+    pp_rows = [
+        _pp(100, "Live", "Shots On Goal"),
+        _pp(15863634, "Pulled", "Points"),
+        _pp(101, "Status", "Shots On Goal"),
+        _pp(102, "Low", "Points"),
+    ]
+    ranked, counts = board_rows(pp_rows, projections)
+    assert [row["id"] for row in ranked] == [100]
+    assert 15863634 not in [row["id"] for row in ranked]
+    assert counts["after"] == 1
+
+
 def test_load_pp_rows_keeps_tavares_standard_when_goblin_is_first(tmp_path):
     raw = [
         {"id": 9, "player": "John Tavares", "prop": "Points", "line": 0.5, "oddsType": "goblin"},
