@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import './SlipBoard.css'
-import { formatBreakEvenRate } from './prizepicksBreakeven'
-import { STANDARD_LINE } from './responsibleGambling'
 import { sessionAccessToken } from './supabaseClient'
+import { correlationSuggestions } from './slipCorrelations'
 import { isPromoLine, matchImportedPick } from './slipLines'
-import { slipSport, sportDate } from './slipSports'
+import { loadCorrelations, slipSport, sportDate } from './slipSports'
 import { playerKey } from './slipRank'
+import {
+  FLEX_VARIANCE,
+  PAIRS_WELL_LABEL,
+  SAME_GAME_WARNING,
+  SLIP_BETA_FOOTER,
+  WORKS_AGAINST_LABEL,
+  correlationTooltip,
+  slipSharesTeamOrGame,
+} from './slipBetaCopy'
 import {
   PAYOUT_ENTRY,
   SLIP_RAIL,
@@ -17,10 +25,71 @@ import {
   l10Text,
   markSources,
   matchupLabel,
+  naturalSide,
   rowKey,
   shownCg,
   unpackSlipLoad,
 } from './slipBoardModel'
+
+function CorrRow({ item, onAdd }) {
+  const games = Number(item?.n)
+  return (
+    <button type="button" className="b2-corr-row" onClick={() => onAdd(item.idx)}>
+      <span className="b2-corr-name">
+        {item.name}
+        {item.propShort || item.prop ? <span className="b2-corr-prop">{item.propShort || item.prop}</span> : null}
+      </span>
+      <span className="b2-corr-meta">
+        {Number.isFinite(games) ? `${games} games` : null}
+        {item.smallSample ? <span className="b2-corr-sample">small sample</span> : null}
+      </span>
+      <span className="b2-corr-add">Add</span>
+    </button>
+  )
+}
+
+function CorrColumn({ title, rows, empty, onAdd, tooltip, testId }) {
+  return (
+    <div data-testid={testId}>
+      <h3 className="b2-corr-title" title={tooltip}>{title}</h3>
+      {rows.length === 0 ? <p className="b2-corr-empty">{empty}</p> : rows.map((item) => (
+        <CorrRow key={`${testId}-${item.idx}`} item={item} onAdd={onAdd} />
+      ))}
+    </div>
+  )
+}
+
+function CorrelationBlock({ sport, suggestions, mode, onAdd }) {
+  const tooltip = correlationTooltip(sport)
+  const pairs = suggestions?.pairsWell || []
+  const against = suggestions?.worksAgainst || []
+  const hasPairs = pairs.length > 0 || against.length > 0
+  return (
+    <section className="b2-corr" data-testid="slip-correlations" aria-label="Correlated props">
+      <p className="b2-corr-note">{tooltip}</p>
+      {hasPairs ? <p className="b2-corr-warn" data-testid="same-game-warning">{SAME_GAME_WARNING}</p> : null}
+      {mode === 'flex' && hasPairs ? <p className="b2-corr-flex">{FLEX_VARIANCE}</p> : null}
+      <div className="b2-corr-cols">
+        <CorrColumn
+          title={PAIRS_WELL_LABEL}
+          rows={pairs}
+          empty="No teammates or opponents on today's board hit with these legs often enough."
+          onAdd={onAdd}
+          tooltip={tooltip}
+          testId="slip-pairs-well"
+        />
+        <CorrColumn
+          title={WORKS_AGAINST_LABEL}
+          rows={against}
+          empty="Nothing on today's board disagrees with these legs often enough."
+          onAdd={onAdd}
+          tooltip={tooltip}
+          testId="slip-works-against"
+        />
+      </div>
+    </section>
+  )
+}
 
 function fmt(value, digits = 1) {
   const n = Number(value)
@@ -62,7 +131,7 @@ function Mark({ sport, row, size = 52 }) {
   )
 }
 
-function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice }) {
+function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice, suggestions, onAdd }) {
   const altered = legs.some((leg) => isPromoLine(leg))
   const ladder = ladderFor(mode, altered)
   const estimate = estimateFor(mode, legs.length, altered)
@@ -103,10 +172,12 @@ function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice 
         <div><span>AVG CG</span><b className="is-good">{avg == null ? '—' : avg.toFixed(1)}</b></div>
         <div><span>EST. PAY</span><b data-testid="slip-est-pay">{estimate.dollars}</b></div>
       </div>
-      <p className="b2-break">
-        {estimate.breakeven == null ? 'Pick 2 to 6 for a payout' : `Break-even ${formatBreakEvenRate(estimate.breakeven)}`}
-        {altered ? <em> · Altered payout</em> : null}
-      </p>
+      {estimate.breakeven == null ? <p className="b2-break">Pick 2 to 6 for a payout</p> : null}
+      {altered ? <p className="b2-break"><em>Altered payout</em></p> : null}
+      {slipSharesTeamOrGame(legs) ? <p className="b2-corr-warn" data-testid="slip-same-game">{SAME_GAME_WARNING}</p> : null}
+      {legs.length > 0 ? (
+        <CorrelationBlock sport={sport} suggestions={suggestions} mode={mode} onAdd={onAdd} />
+      ) : null}
       <div className="b2-cta">
         <button type="button" className="is-primary" onClick={onSave} disabled={saving || legs.length === 0}>
           {saving ? 'Saving…' : 'Save slip'}
@@ -114,7 +185,7 @@ function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice 
         <button type="button" className="is-secondary" onClick={onCopy} disabled={legs.length === 0}>Copy picks</button>
       </div>
       {notice ? <p className="b2-note">{notice}</p> : null}
-      <p className="b2-rg">{STANDARD_LINE}</p>
+      <p className="b2-rg">{SLIP_BETA_FOOTER}</p>
     </div>
   )
 }
@@ -135,6 +206,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
   const [standardOnly, setStandardOnly] = useState(true)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
+  const [correlations, setCorrelations] = useState({ pairs: [], minShared: config.minShared })
 
   useEffect(() => {
     let cancelled = false
@@ -175,6 +247,14 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
     return () => { cancelled = true }
   }, [config])
 
+  useEffect(() => {
+    let cancelled = false
+    loadCorrelations(config.id).then((doc) => {
+      if (!cancelled) setCorrelations(doc && typeof doc === 'object' ? doc : { pairs: [], minShared: config.minShared })
+    })
+    return () => { cancelled = true }
+  }, [config])
+
   const visible = useMemo(() => boardRows(props, {
     standardOnly,
     moreOnly,
@@ -184,6 +264,10 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
   }), [props, standardOnly, moreOnly, propId, config.filters, sortDesc])
 
   const selected = useMemo(() => new Set(legs.map((leg) => leg.key)), [legs])
+  const suggestions = useMemo(() => {
+    const board = props.map((row, idx) => ({ ...row, idx }))
+    return correlationSuggestions(legs, board, correlations)
+  }, [legs, props, correlations])
   const altered = legs.some((leg) => isPromoLine(leg))
   const estimate = estimateFor(mode, legs.length, altered)
   const avg = cardAverage(legs)
@@ -198,6 +282,11 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
     if (duplicate) setNotice('One prop per player.')
     else if (next !== legs) setNotice('')
     setLegs(next)
+  }
+
+  const addSuggestion = (idx) => {
+    const row = props[idx]
+    if (row) choose(row, naturalSide(row))
   }
 
   const copyPicks = async () => {
@@ -260,6 +349,8 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
       onCopy={copyPicks}
       saving={saving}
       notice={notice}
+      suggestions={suggestions}
+      onAdd={addSuggestion}
     />
   )
 
@@ -388,7 +479,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
               )
             })}
           </div>
-          <p className="b2-rg">{STANDARD_LINE}</p>
+          <p className="b2-rg">{SLIP_BETA_FOOTER}</p>
         </main>
         <aside className="b2-side">{sheet}</aside>
       </div>
