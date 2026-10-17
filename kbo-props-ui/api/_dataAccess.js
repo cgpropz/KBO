@@ -566,10 +566,109 @@ function hiddenNflPreview(ds, payload) {
   return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
 }
 
+const ODDS_TYPE_KEYS = ['odds_type', 'oddsType', 'line_type', 'lineType'];
+
+// undefined: the row has no odds-type field (a ranking, a lineup, a total).
+// '' : the field is present and blank. Anything other than "standard" is out.
+function explicitOddsType(row) {
+  if (!row || typeof row !== 'object') return undefined;
+  for (const key of ODDS_TYPE_KEYS) {
+    if (!Object.hasOwn(row, key) || row[key] == null) continue;
+    return String(row[key]).trim().toLowerCase();
+  }
+  return undefined;
+}
+
+function isStandardProp(row) {
+  const type = explicitOddsType(row);
+  if (type === undefined) return true;
+  return type === 'standard';
+}
+
+function filterLineMap(value) {
+  if (Array.isArray(value)) return filterPropList(value);
+  if (!value || typeof value !== 'object') return value;
+  let changed = false;
+  const out = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry && typeof entry === 'object' && !isStandardProp(entry)) {
+      changed = true;
+      continue;
+    }
+    out[key] = entry;
+  }
+  return changed ? out : value;
+}
+
+function filterPropList(rows) {
+  if (!Array.isArray(rows)) return rows;
+  let changed = false;
+  const kept = [];
+  for (const row of rows) {
+    if (!isStandardProp(row)) {
+      changed = true;
+      continue;
+    }
+    const next = stripNonStandardLines(row);
+    if (next !== row) changed = true;
+    kept.push(next);
+  }
+  return changed ? kept : rows;
+}
+
+// Standard PrizePicks lines only. Demon and goblin rows are removed before
+// the free trim and before a paid board is returned. Rows with no odds-type
+// field stay, so rankings, lineups, and NFL game totals keep their order and
+// their original object when nothing was removed.
+function stripNonStandardLines(payload) {
+  if (Array.isArray(payload)) return filterPropList(payload);
+  if (!payload || typeof payload !== 'object') return payload;
+  let changed = false;
+  const next = { ...payload };
+  for (const key of ['props', 'ppAllProps', 'projections', 'records', 'pending', 'graded']) {
+    if (!Array.isArray(payload[key])) continue;
+    const filtered = filterPropList(payload[key]);
+    if (filtered !== payload[key]) {
+      changed = true;
+      next[key] = filtered;
+    }
+  }
+  for (const key of ['ppLines', 'ppLinesStandard']) {
+    if (payload[key] == null) continue;
+    const filtered = filterLineMap(payload[key]);
+    if (filtered !== payload[key]) {
+      changed = true;
+      next[key] = filtered;
+    }
+  }
+  if (Array.isArray(payload.cards)) {
+    const filtered = filterPropList(payload.cards);
+    const nonempty = filtered.filter((card) => !Array.isArray(card?.props) || card.props.length > 0);
+    const finalCards = nonempty.length === filtered.length ? filtered : nonempty;
+    if (finalCards !== payload.cards) {
+      changed = true;
+      next.cards = finalCards;
+    }
+  }
+  if (Array.isArray(payload.matchups)) {
+    const filtered = filterPropList(payload.matchups);
+    if (filtered !== payload.matchups) {
+      changed = true;
+      next.matchups = filtered;
+    }
+  }
+  return changed ? next : payload;
+}
+
+export function standardLinesOnly(payload) {
+  return stripNonStandardLines(payload);
+}
+
 // Decide what the caller receives for one dataset snapshot.
 export function shapeForTier(ds, payload, tier) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
+  payload = standardLinesOnly(payload);
   // Drop Points overs under 0.69 from the paid board and the free preview.
   // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
   // visible and not ranked into the free top 3.

@@ -362,7 +362,8 @@ test('a public flag lets all-access through the gate and still denies a failed t
   assert.equal(weekly.res.statusCode, 200)
   assert.equal(weekly.res.body.data[0].team, 'MEM')
   const profileDown = await call('nba_players', 'tok-fan', { flag: true, profileErrorFor: 'u-fan' })
-  assert.equal(profileDown.res.statusCode, 403)
+  assert.equal(profileDown.res.statusCode, 503)
+  assert.equal(profileDown.res.body.code, 'tier_pending')
   assert.equal(profileDown.res.body.data, undefined)
 })
 

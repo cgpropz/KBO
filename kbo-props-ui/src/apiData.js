@@ -49,12 +49,13 @@ function isTimeoutError(err) {
   return err?.name === 'TimeoutError' || err?.name === 'AbortError';
 }
 
-async function readErrorDetail(res) {
+export const FREE_PREVIEW_LABEL = 'Free preview';
+
+async function readErrorBody(res) {
   try {
-    const body = await res.json();
-    return body?.message || body?.error || String(res.status);
+    return await res.json();
   } catch {
-    return String(res.status);
+    return null;
   }
 }
 
@@ -75,17 +76,21 @@ export async function fetchApiDataset(ds, { devStaticPath, priority, player, fre
     });
     const type = res.headers.get('content-type') || '';
     if (!res.ok || !type.includes('application/json')) {
-      const detail = type.includes('application/json')
-        ? await readErrorDetail(res)
-        : String(res.status);
-      throw new Error(`Failed to load ${ds} (${detail})`);
+      const body = type.includes('application/json') ? await readErrorBody(res) : null;
+      const detail = body?.message || body?.error || String(res.status);
+      const err = new Error(`Failed to load ${ds} (${detail})`);
+      err.status = res.status;
+      err.code = body?.code || '';
+      throw err;
     }
     const body = await res.json();
+    const preview = !!body.preview;
     return {
       data: body.data,
       updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
       source: 'api',
-      preview: !!body.preview,
+      preview,
+      previewLabel: preview ? FREE_PREVIEW_LABEL : '',
       lockedCount: Number(body.lockedCount) || 0,
     };
   } catch (err) {

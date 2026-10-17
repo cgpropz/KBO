@@ -3,11 +3,11 @@
 export const FETCH_BUDGET_MS = 12_000;
 
 // This page only asks for sports the plan includes, so a free preview here
-// means the server could not confirm the member (auth or tier lookup blip,
-// stale token). A preview, or a failed request, gets one retry with a fresh
-// session token and no browser cache before the hub settles on it.
-// The wait grows with the sport's place in line, and the retry is skipped
-// when it would run past the 12s fetch budget. A slow first answer is kept.
+// means the server could not confirm the member. A preview, a tier_pending
+// 503, or a failed request is retried up to three times with backoff. The
+// wait grows with the sport's place in line, and a try is skipped when it
+// would run past the 12s fetch budget. A slow first answer is kept.
+export const MEMBER_BOARD_ATTEMPTS = 3;
 export const BOARD_RETRY_MS = 800;
 const MIN_RETRY_SLICE_MS = 1_000;
 
@@ -52,6 +52,12 @@ async function fetchWithinBudget(fetcher, sport, attempt, ms) {
   }
 }
 
+function needsAnotherTry(snap) {
+  if (!snap || snap.error) return true;
+  if (snap.code === 'tier_pending') return true;
+  return snap.preview === true;
+}
+
 export async function loadMemberBoard(sport, fetcher, wait = defaultWait, options = {}) {
   const now = options.now || Date.now;
   const budgetMs = options.budgetMs || FETCH_BUDGET_MS;
@@ -65,27 +71,27 @@ export async function loadMemberBoard(sport, fetcher, wait = defaultWait, option
     timeoutMs: Math.max(1, budgetMs - elapsed()),
   });
 
-  let first;
-  try {
-    first = await fetchWithinBudget(fetcher, sport, attemptOptions(false), attemptOptions(false).timeoutMs);
-    if (!first?.preview) return first;
-  } catch (err) {
-    first = { error: err };
+  let last;
+  for (let attempt = 0; attempt < MEMBER_BOARD_ATTEMPTS; attempt += 1) {
+    try {
+      const snap = await fetchWithinBudget(
+        fetcher,
+        sport,
+        attemptOptions(attempt > 0),
+        attemptOptions(attempt > 0).timeoutMs,
+      );
+      if (!needsAnotherTry(snap)) return snap;
+      last = snap;
+    } catch (err) {
+      last = { error: err, code: err?.code || '' };
+    }
+    if (attempt === MEMBER_BOARD_ATTEMPTS - 1) break;
+    const delay = retryDelayWithin(slot + attempt, elapsed(), budgetMs);
+    if (delay == null) break;
+    await wait(delay);
   }
-  const delay = retryDelayWithin(slot, elapsed(), budgetMs);
-  if (delay == null) {
-    if (first.error) throw first.error;
-    return first;
-  }
-  await wait(delay);
-  try {
-    const again = await fetchWithinBudget(fetcher, sport, attemptOptions(true), attemptOptions(true).timeoutMs);
-    if (again && (!again.preview || first.error)) return again;
-  } catch (err) {
-    if (first.error) throw err;
-  }
-  if (first.error) throw first.error;
-  return first;
+  if (last?.error) throw last.error;
+  return last;
 }
 
 // Selected sport is started first. Every sport then loads on its own, so a

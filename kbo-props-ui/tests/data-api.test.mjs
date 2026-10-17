@@ -877,7 +877,7 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
-test('a profile timeout with no paid cache returns the free preview', async () => {
+test('a profile timeout with no paid cache is retryable and not a free preview', async () => {
   const prev = { ...timeouts }
   _setTimeouts({ tierLookupMs: 40 })
   const nhl = Array.from({ length: 6 }, (_, i) => ({
@@ -912,16 +912,127 @@ test('a profile timeout with no paid cache returns the free preview', async () =
         res,
         client,
       )
-      assert.equal(res.statusCode, 200, ds)
-      assert.equal(res.body.preview, true, ds)
-      assert.equal(res.body.tier, 'free', ds)
-      if (ds === 'prizepicks_props') assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
-      else assert.equal(res.body.data.length, FREE_ROW_LIMIT)
+      assert.equal(res.statusCode, 503, ds)
+      assert.equal(res.body.code, 'tier_pending', ds)
+      assert.equal(res.body.preview, undefined, ds)
+      assert.equal(res.body.data, undefined, ds)
     }
   } finally {
     _setTimeouts(prev)
     _clearCache()
   }
+})
+
+test('a burst of 8 concurrent requests shares one profile lookup and returns no previews', async () => {
+  _clearCache()
+  let profiles = 0
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  const client = {
+    auth: {
+      async getUser() {
+        throw new Error('auth.getUser must not run')
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') {
+            profiles += 1
+            return gate.then(() => ({ data: { tier: 'combined' }, error: null }))
+          }
+          return Promise.resolve({
+            data: { data: structuredClone(TABLES.prizepicks_props), updated_at: NOW },
+            error: null,
+          })
+        },
+      }
+      return chain
+    },
+  }
+  const pending = Array.from({ length: 8 }, () => {
+    const res = mockRes()
+    return handleDataRequest(
+      { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-fan') } },
+      res,
+      client,
+    ).then(() => res)
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(profiles, 1)
+  release()
+  const results = await Promise.all(pending)
+  assert.equal(profiles, 1)
+  for (const res of results) {
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.preview, false)
+    assert.equal(res.body.tier, 'combined')
+    assert.ok(countProps(res.body.data) > FREE_ROW_LIMIT)
+  }
+})
+
+test('standard PrizePicks lines are kept and goblin rows are dropped before the free trim', () => {
+  const strikeouts = {
+    generated_at: NOW,
+    projections: [
+      { name: 'James Naile', prop: 'Pitching Outs', line: 16.5, rating: 99, odds_type: 'goblin' },
+      { name: 'Standard A', prop: 'Strikeouts', line: 5.5, rating: 40, odds_type: 'standard' },
+      { name: 'Standard B', prop: 'Strikeouts', line: 4.5, rating: 30, odds_type: 'standard' },
+      { name: 'Standard C', prop: 'Strikeouts', line: 6.5, rating: 20, odds_type: 'standard' },
+      { name: 'Standard D', prop: 'Strikeouts', line: 3.5, rating: 10, odds_type: 'standard' },
+    ],
+  }
+  const free = shapeForTier('strikeout_projections', strikeouts, 'free')
+  const freeNames = free.data.projections.map((row) => row.name)
+  assert.equal(freeNames.includes('James Naile'), false)
+  assert.deepEqual(freeNames, ['Standard A', 'Standard B', 'Standard C'])
+  assert.equal(free.preview, true)
+  assert.equal(free.lockedCount, 1)
+  assert.equal(strikeouts.projections[0].name, 'James Naile')
+
+  const paid = shapeForTier('strikeout_projections', strikeouts, 'combined')
+  assert.equal(paid.preview, false)
+  assert.equal(paid.data.projections.some((row) => row.odds_type === 'goblin'), false)
+  assert.equal(paid.data.projections.length, 4)
+
+  const cards = {
+    generated_at: NOW,
+    cards: [{
+      name: 'Pitcher',
+      props: [
+        { stat: 'Pitching Outs', line: 16.5, projection: 20, cg_projection: 99, odds_type: 'goblin', recommendation: 'OVER' },
+        { stat: 'Strikeouts', line: 5.5, projection: 6, cg_projection: 40, odds_type: 'standard', recommendation: 'OVER' },
+      ],
+    }],
+  }
+  const kbo = shapeForTier('prizepicks_props', cards, 'free')
+  const props = kbo.data.cards.flatMap((card) => card.props)
+  assert.equal(props.some((prop) => prop.odds_type === 'goblin'), false)
+  assert.equal(props.length, 1)
+  assert.equal(props[0].stat, 'Strikeouts')
+
+  const nhl = shapeForTier('nhl_projections', [
+    { player: 'Goblin', prop: 'Points', line: 0.5, projection: 2, oddsType: 'goblin', rankEligible: true },
+    { player: 'Standard', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard', rankEligible: true },
+  ], 'free')
+  assert.equal(nhl.data.some((row) => row.oddsType === 'goblin'), false)
+  assert.equal(nhl.data[0].player, 'Standard')
+
+  const markets = {
+    generated_at: NOW,
+    games: [
+      { id: 'late', awayTeam: 'A', homeTeam: 'B', spread: { edge: 1 }, total: { edge: 9 }, moneyline: { edge: 0 } },
+      { id: 'early', awayTeam: 'C', homeTeam: 'D', spread: { edge: 4 }, total: { edge: 0.2 }, moneyline: { edge: 0 } },
+    ],
+  }
+  const ranked = shapeForTier('nfl_game_markets', markets, 'free')
+  const direct = previewNflGameMarkets(markets)
+  assert.deepEqual(ranked.data.games.map((game) => game.id), direct.data.games.map((game) => game.id))
+  const paidMarkets = shapeForTier('nfl_game_markets', markets, 'combined')
+  assert.equal(paidMarkets.data, markets)
 })
 
 test('one in-flight read serves a burst for the same table', async () => {

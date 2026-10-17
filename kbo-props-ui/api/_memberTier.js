@@ -13,6 +13,7 @@ const JWKS_TTL_MS = 10 * 60 * 1000;
 const SECRET_ENV_KEYS = ['SUPABASE_JWT_SECRET', 'JWT_SECRET'];
 
 const paidTiers = new Map();
+const inflightLookups = new Map();
 let jwksCache = { url: '', at: 0, keys: [] };
 
 function envOf(options) {
@@ -119,6 +120,7 @@ async function loadJwks(env, fetchImpl) {
 
 export function clearMemberTierCache() {
   paidTiers.clear();
+  inflightLookups.clear();
   jwksCache = { url: '', at: 0, keys: [] };
 }
 
@@ -225,17 +227,22 @@ export async function verifyAccessToken(authorization, options = {}) {
   };
 }
 
-// Always settles. One profile retry fits inside budgetMs. A cached paid tier
-// is returned only after a timeout, and only for this verified user id.
-export async function lookupMemberTier(client, authorization, options = {}) {
-  const now = nowMs(options);
-  prunePaidTiers(now);
-  const verified = options.verified || await verifyAccessToken(authorization, options);
-  if (!verified?.userId) {
-    return { tier: 'free', userId: null, email: '', source: 'invalid', timedOut: false };
-  }
+function pendingTier(verified, source, timedOut) {
+  return {
+    tier: null,
+    userId: verified.userId,
+    email: verified.email,
+    source,
+    timedOut,
+    pending: true,
+  };
+}
+
+// One profile read for this user. A resolved row is the only free-preview
+// path. A timeout with no paid cache stays pending so the handler can ask
+// the client to retry instead of serving the free board.
+async function lookupMemberTierOnce(client, verified, options, started) {
   const budgetMs = Number.isFinite(options.budgetMs) ? options.budgetMs : 4000;
-  const started = now;
   const clock = () => (typeof options.now === 'function' ? options.now() : Date.now());
   let sawTimeout = false;
   // Leave time for one retry. A single hung read must not spend the whole cap.
@@ -252,6 +259,7 @@ export async function lookupMemberTier(client, authorization, options = {}) {
         email: verified.email,
         source: 'profile',
         timedOut: false,
+        pending: false,
       };
     } catch (err) {
       if (isTimeout(err)) sawTimeout = true;
@@ -266,14 +274,29 @@ export async function lookupMemberTier(client, authorization, options = {}) {
         email: verified.email,
         source: 'cache',
         timedOut: true,
+        pending: false,
       };
     }
+    return pendingTier(verified, 'timeout', true);
   }
-  return {
-    tier: 'free',
-    userId: verified.userId,
-    email: verified.email,
-    source: 'fallback',
-    timedOut: sawTimeout,
-  };
+  return pendingTier(verified, 'fallback', false);
+}
+
+// Always settles. Concurrent callers for one verified user share the lookup
+// that is already in flight. A cached paid tier is returned only after a
+// timeout, and only for this verified user id.
+export async function lookupMemberTier(client, authorization, options = {}) {
+  const now = nowMs(options);
+  prunePaidTiers(now);
+  const verified = options.verified || await verifyAccessToken(authorization, options);
+  if (!verified?.userId) {
+    return { tier: 'free', userId: null, email: '', source: 'invalid', timedOut: false, pending: false };
+  }
+  const existing = inflightLookups.get(verified.userId);
+  if (existing) return existing;
+  const pending = lookupMemberTierOnce(client, verified, options, now).finally(() => {
+    if (inflightLookups.get(verified.userId) === pending) inflightLookups.delete(verified.userId);
+  });
+  inflightLookups.set(verified.userId, pending);
+  return pending;
 }

@@ -106,8 +106,9 @@ test('a resolved downgrade drops the cached paid tier', async () => {
 
   const hung = profileClient(() => new Promise(() => {}));
   const after = await lookupMemberTier(hung, `Bearer ${bearerFor('tok-monthly')}`, { budgetMs: 40 });
-  assert.equal(after.tier, 'free');
-  assert.equal(after.source, 'fallback');
+  assert.equal(after.pending, true);
+  assert.equal(after.source, 'timeout');
+  assert.equal(after.tier, null);
   clearMemberTierCache();
 });
 
@@ -126,8 +127,9 @@ test('an expired cache entry is pruned and cannot grant a paid tier', async () =
     budgetMs: 40,
     now: () => now,
   });
-  assert.equal(after.tier, 'free');
-  assert.equal(after.source, 'fallback');
+  assert.equal(after.pending, true);
+  assert.equal(after.source, 'timeout');
+  assert.notEqual(after.tier, 'weekly');
   clearMemberTierCache();
 });
 
