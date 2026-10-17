@@ -6,6 +6,7 @@ import { readOpenFlag } from '../src/openFlag.js';
 import { previewForSignedIn } from '../api/data.js';
 
 const apiSource = readFileSync(new URL('../src/apiData.js', import.meta.url), 'utf8');
+const hubSource = readFileSync(new URL('../src/MemberCommandCenter.jsx', import.meta.url), 'utf8');
 
 const sport = { ds: 'nhl_projections', dev: 'nhl/projections.json' };
 const noWait = async () => {};
@@ -96,19 +97,33 @@ test('the first retry still waits 800ms when the attempt was fast', async () => 
   assert.ok(calls[0].timeoutMs <= FETCH_BUDGET_MS);
 });
 
-test('the selected sport loads before the others, and a switch jumps the line', async () => {
+test('a slow or failed sport does not block the others', async () => {
   const sports = [{ id: 'kbo' }, { id: 'wnba' }, { id: 'nfl' }, { id: 'nhl' }];
-  const events = [];
-  await loadHubSports(sports, () => 'nfl', async (sport) => { events.push(sport.id); });
-  assert.deepEqual(events, ['nfl', 'kbo', 'wnba', 'nhl']);
-
-  let current = 'nfl';
-  const switched = [];
-  await loadHubSports(sports, () => current, async (sport) => {
-    switched.push(sport.id);
-    if (sport.id === 'nfl') current = 'wnba';
+  const finished = [];
+  await loadHubSports(sports, 'nhl', async (sport) => {
+    if (sport.id === 'kbo') await new Promise((resolve) => setTimeout(resolve, 40));
+    finished.push(sport.id);
   });
-  assert.deepEqual(switched, ['nfl', 'wnba', 'kbo', 'nhl']);
+  assert.equal(finished.length, 4);
+  assert.ok(finished.indexOf('nhl') < finished.indexOf('kbo'));
+  assert.ok(finished.includes('wnba'));
+  assert.ok(finished.includes('nfl'));
+
+  const settled = [];
+  await loadHubSports([{ id: 'kbo' }, { id: 'nhl' }], 'nhl', async (sport) => {
+    if (sport.id === 'kbo') throw new Error('503');
+    settled.push(sport.id);
+  });
+  assert.deepEqual(settled, ['nhl']);
+});
+
+test('a hung board request settles as an error inside the budget', async () => {
+  let calls = 0;
+  await assert.rejects(loadMemberBoard(sport, () => {
+    calls += 1;
+    return new Promise(() => {});
+  }, noWait, { budgetMs: 40 }), /timed out/);
+  assert.equal(calls, 1);
 });
 
 test('an open-hook retry fits after an 8s miss and a slow answer is kept', async () => {
@@ -144,6 +159,12 @@ test('an open-hook retry fits after an 8s miss and a slow answer is kept', async
   });
   assert.equal(kept, true);
   assert.equal(late, 1);
+});
+
+test('an error tile shows a retry instead of staying on Loading', () => {
+  assert.match(hubSource, /className="hub-retry"/);
+  assert.match(hubSource, /Couldn\\'t load · Retry/);
+  assert.match(hubSource, /retrySport\(sport\.id\)/);
 });
 
 test('a preview sent to a signed-in caller is never browser-cached', () => {

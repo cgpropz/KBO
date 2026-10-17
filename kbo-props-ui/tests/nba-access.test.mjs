@@ -16,6 +16,9 @@ import {
   sportAccess as clientAccess,
 } from '../src/entitlements.js'
 import { handleNbaAccessRequest } from '../api/_nbaAccess.js'
+import { bearerFor, installJwtSecret } from './access-token.mjs'
+
+installJwtSecret()
 
 const SPORT_ACCESS = {
   undefined: { kbo: false, wnba: false, nfl: false, nhl: false },
@@ -161,7 +164,7 @@ async function callAccess(token, options) {
   _clearCache()
   const res = mockRes()
   const client = mockClient(options)
-  const req = { method: 'GET', query: {}, headers: token ? { authorization: `Bearer ${token}` } : {} }
+  const req = { method: 'GET', query: {}, headers: token ? { authorization: `Bearer ${bearerFor(token)}` } : {} }
   await handleNbaAccessRequest(req, res, client)
   return { res, client }
 }
@@ -297,7 +300,7 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
 async function call(ds, token, options) {
   const res = mockRes()
   const client = mockClient(options)
-  const req = { method: 'GET', query: { ds }, headers: token ? { authorization: `Bearer ${token}` } : {} }
+  const req = { method: 'GET', query: { ds }, headers: token ? { authorization: `Bearer ${bearerFor(token)}` } : {} }
   await handleDataRequest(req, res, client)
   return { res, client }
 }
@@ -399,13 +402,19 @@ test('the owner receives NBA DVP while a combined tier and a forged token stay 4
   assert.equal(flagError.res.statusCode, 403)
 })
 
-test('an auth timeout denies NBA instead of falling open to a preview', async () => {
+test('a hung auth.getUser still opens NBA for a signed owner token', async () => {
   const prev = { ...timeouts }
   _setTimeouts({ snapshotReadMs: 40, tierLookupMs: 40 })
   try {
     const { res } = await call('nba_players', 'tok-owner', { hangAuth: true })
-    assert.equal(res.statusCode, 403)
-    assert.equal(res.body.data, undefined)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.preview, false)
+    assert.equal(res.body.data[0].name, 'Jaren Jackson Jr.')
+    const forged = await call('nba_players', 'forged-token', { hangAuth: true })
+    assert.equal(forged.res.statusCode, 403)
+    const expired = await call('nba_players', bearerFor('tok-owner', { exp: Math.floor(Date.now() / 1000) - 30 }))
+    assert.equal(expired.res.statusCode, 403)
+    assert.equal(expired.res.body.data, undefined)
   } finally {
     _setTimeouts(prev)
   }
