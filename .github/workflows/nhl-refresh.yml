@@ -108,14 +108,19 @@ jobs:
           bash pipeline/memory/commit_memory.sh "chore: nhl memory slate freeze"
 
       # Holds this runner until the next board is due, then starts it. The
-      # cron above only restarts the chain if this handoff dies.
+      # cron above only restarts the chain if this handoff dies. During the
+      # wait, recheck Daily Faceoff injury news and the manual out list so a
+      # "will not play" note that lands after the build still comes off
+      # before puck drop. The lineup OUT filter is not run again.
       - name: Queue the next NHL board
         if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           NHL_REFRESH_WAIT_SECONDS: "1500"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          echo "Next NHL board in ${NHL_REFRESH_WAIT_SECONDS}s"
-          sleep "${NHL_REFRESH_WAIT_SECONDS}"
+          echo "Next NHL board in ${NHL_REFRESH_WAIT_SECONDS}s (late scratch recheck during the wait)"
+          python -m nhl.late_out --wait "${NHL_REFRESH_WAIT_SECONDS}" --publish || true
           gh workflow run nhl-refresh.yml --ref main

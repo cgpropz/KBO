@@ -33,7 +33,7 @@ def _free_top3(rows):
     """Same order the free preview uses: projection / line, eligible rows only."""
 
     def score(row):
-        if row.get("rankEligible") is False:
+        if row.get("removed") or row.get("rankEligible") is False:
             return float("-inf")
         line = row.get("line") or 0
         if line <= 0:
@@ -254,6 +254,8 @@ def _fetch(espn=None, rosters=None):
 def test_suspension_is_blocked():
     assert _av.blocked_status("Suspension") == "SUSPENDED"
     assert _av.blocked_status("Day-To-Day") is None
+    assert _av.blocked_status("Week-To-Week") is None
+    assert _av.blocked_status("OUT week to week") == "OUT"
 
 
 def test_espn_out_and_suspended_dropped_day_to_day_kept():
@@ -269,13 +271,13 @@ def test_espn_out_and_suspended_dropped_day_to_day_kept():
         {"player": "Tage Thompson", "team": "BUF"},
         {"player": "Quinton Byfield", "team": "LAK"},
     ]
-    kept = [r["player"] for r in _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn))]
+    kept = [r["player"] for r in _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[], news=[])]
     assert kept == ["Tage Thompson"]
 
 
 def test_not_on_active_roster_dropped():
     rows = [{"playerId": "1", "player": "A", "team": "LAK"}, {"playerId": "2", "player": "B", "team": "LAK"}]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}))
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}), manual=[], news=[])
     assert [r["player"] for r in kept] == ["A"]
 
 
@@ -286,7 +288,7 @@ def test_missing_from_full_projected_lineup_dropped_accents_ok():
         {"player": "Healthy Scratch", "team": "MTL", "position": "F"},
         {"player": "Some Goalie", "team": "MTL", "position": "G"},
     ]
-    kept = [r["player"] for r in _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch())]
+    kept = [r["player"] for r in _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch(), manual=[], news=[])]
     assert kept == ["Juraj Slafkovský", "Some Goalie"]
 
 
@@ -390,3 +392,202 @@ def test_two_confirmations_and_no_game_do_not_pick_a_starter():
     ]
     kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
     assert kept == ["Ilya Sorokin", "Semyon Varlamov"]
+
+
+def _skater(player, team="TOR", gameday="2026-10-17", prop="Points", line=0.5, projection=0.9):
+    return {
+        "player": player,
+        "team": team,
+        "opponent": "NYI",
+        "prop": prop,
+        "line": line,
+        "projection": projection,
+        "score": 10,
+        "oddsType": "standard",
+        "gameday": gameday,
+        "awayTeam": "NYI",
+        "homeTeam": "TOR",
+        "rankEligible": True,
+    }
+
+
+def _chinakhov_news():
+    return [{
+        "playerName": "Egor Chinakhov",
+        "teamAbbreviation": "PIT",
+        "playerFiveVFiveId": 8482475,
+        "newsCategoryName": "Injury",
+        "details": "Chinakhov (lower-body) will not play Friday in Colorado.",
+        "createdAt": "2026-10-17T00:34:46.237Z",
+    }, {
+        "playerName": "John Tavares",
+        "teamAbbreviation": "TOR",
+        "playerFiveVFiveId": 8475166,
+        "newsCategoryName": "Injury",
+        "details": "Tavares (lower body) is out week to week.",
+        "createdAt": "2026-10-17T14:37:13.190Z",
+    }, {
+        "playerName": "Wyatt Johnston",
+        "teamAbbreviation": "DAL",
+        "playerFiveVFiveId": 8482740,
+        "newsCategoryName": "Injury",
+        "details": "Johnston (illness) will return to the lineup on Saturday.",
+        "createdAt": "2026-10-17T16:17:58.476Z",
+    }, {
+        "playerName": "Radko Gudas",
+        "teamAbbreviation": "FLA",
+        "playerFiveVFiveId": 8475462,
+        "newsCategoryName": "Injury",
+        "details": "Gudas (undisclosed) will remain out on Saturday, but could play on Wednesday.",
+        "createdAt": "2026-10-17T14:22:03.360Z",
+    }]
+
+
+def test_will_not_play_news_holds_a_player_the_lineup_filter_left_in():
+    # ESPN day-to-day is not an OUT. The lineup sheet still had Chinakhov.
+    # The news note is the gap: it posted after the 00:29Z build on Oct 16.
+    espn = {"injuries": [{"injuries": [
+        {"status": "Out", "athlete": {"displayName": "John Tavares", "team": {"abbreviation": "TOR"}}},
+        {"status": "Day-To-Day", "athlete": {"displayName": "Egor Chinakhov", "team": {"abbreviation": "PIT"}}},
+    ]}]}
+    rows = [
+        _skater("John Tavares", gameday="2026-10-17"),
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-16"),
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-17"),
+        _skater("Wyatt Johnston", team="DAL", gameday="2026-10-17"),
+        _skater("Radko Gudas", team="FLA", gameday="2026-10-17"),
+        _skater("Radko Gudas", team="FLA", gameday="2026-10-21"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
+    ]
+    kept = _av.drop_unavailable(
+        rows, [], [], fetch_json=_fetch(espn=espn), manual=[], news=_chinakhov_news(),
+    )
+    names = [row["player"] for row in kept]
+    assert "John Tavares" not in names
+    by_day = {(row["player"], row["gameday"]): row for row in kept}
+    friday = by_day[("Egor Chinakhov", "2026-10-16")]
+    assert friday["removed"] is True
+    assert friday["pp_status"] == "removed"
+    assert friday["injury"] == "OUT"
+    assert friday["injury_source"] == "dailyfaceoff_news"
+    assert by_day[("Egor Chinakhov", "2026-10-17")].get("removed") is not True
+    assert by_day[("Wyatt Johnston", "2026-10-17")].get("removed") is not True
+    assert by_day[("Radko Gudas", "2026-10-17")]["removed"] is True
+    assert by_day[("Radko Gudas", "2026-10-21")].get("removed") is not True
+    assert by_day[("Auston Matthews", "2026-10-17")].get("removed") is not True
+
+
+def test_manual_out_list_pulls_tavares_for_that_date_only():
+    rows = [
+        _skater("John Tavares", gameday="2026-10-17"),
+        _skater("John Tavares", gameday="2026-10-18"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
+    ]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=None, news=[])
+    tonight, later, matthews = kept
+    assert tonight["removed"] is True
+    assert tonight["pp_status"] == "removed"
+    assert tonight["injury"] == "OUT"
+    assert tonight["injury_source"] == "manual_out"
+    assert later.get("removed") is not True
+    assert matthews.get("removed") is not True
+
+
+def test_a_failed_injury_source_uses_the_override_and_does_not_crash():
+    import logging
+
+    rows = [
+        _skater("John Tavares"),
+        _skater("Auston Matthews"),
+        _skater("Rasmus Dahlin", team="BUF"),
+    ]
+
+    def fetch(url):
+        raise TimeoutError(f"offline {url}")
+
+    logged = []
+
+    class _Handler(logging.Handler):
+        def emit(self, record):
+            logged.append(record.getMessage())
+
+    handler = _Handler()
+    logger = logging.getLogger("nhl.availability")
+    previous_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    try:
+        kept = _av.finish_board(rows, [], [{"id": 2026020087}], fetch_json=fetch, news=None)
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+    assert any("manual out list" in message for message in logged)
+    by_name = {row["player"]: row for row in kept}
+    assert by_name["John Tavares"]["removed"] is True
+    assert by_name["Auston Matthews"].get("removed") is not True
+    assert by_name["Rasmus Dahlin"].get("removed") is not True
+    assert len(kept) == 3
+
+
+def test_late_recheck_retracts_a_pregame_slate_prop():
+    from datetime import datetime, timezone
+
+    from nhl.late_out import hold_published_rows, retract_slate_props
+
+    rows = [
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-16"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
+    ]
+    rows[0]["start_time"] = "2026-10-17T01:00:00Z"
+    updated, held = hold_published_rows(rows, _chinakhov_news(), [])
+    assert held == 1
+    assert updated[0]["removed"] is True
+    props = [
+        {
+            "player": "Egor Chinakhov",
+            "team": "PIT",
+            "game_date_iso": "2026-10-16",
+            "stat": "Shots On Goal",
+            "start_time_utc": "2026-10-17T01:00:00+00:00",
+        },
+        {
+            "player": "Auston Matthews",
+            "team": "TOR",
+            "game_date_iso": "2026-10-17",
+            "stat": "Points",
+            "start_time_utc": "2026-10-17T23:00:00+00:00",
+        },
+    ]
+    moment = datetime(2026, 10, 17, 0, 40, tzinfo=timezone.utc)
+    kept, dropped = retract_slate_props(props, updated, moment)
+    assert dropped == 1
+    assert [row["player"] for row in kept] == ["Auston Matthews"]
+    started = datetime(2026, 10, 17, 1, 5, tzinfo=timezone.utc)
+    _kept, dropped_late = retract_slate_props(props, updated, started)
+    assert dropped_late == 0
+
+
+def test_duplicate_projection_id_or_player_stat_line_game_collapses():
+    from nhl.build_board import dedupe_board_rows
+
+    same_id = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM"), "id": "15863634", "projection": 1.1},
+        {**_skater("Jake Walman", team="EDM"), "id": "15863634", "projection": 9.9, "oddsType": "goblin"},
+    ])
+    assert len(same_id) == 1
+    assert same_id[0]["id"] == "15863634"
+    assert same_id[0]["oddsType"] == "standard"
+
+    same_bet = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM"), "id": "1", "oddsType": "goblin"},
+        {**_skater("Jake Walman", team="EDM"), "id": "2", "oddsType": "standard", "projection_id": "2"},
+    ])
+    assert len(same_bet) == 1
+    assert same_bet[0]["oddsType"] == "standard"
+    assert same_bet[0]["id"] == "2"
+
+    different_line = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM", line=1.5), "id": "3"},
+        {**_skater("Jake Walman", team="EDM", line=2.5), "id": "4"},
+    ])
+    assert [row["id"] for row in different_line] == ["3", "4"]

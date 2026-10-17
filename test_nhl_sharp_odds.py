@@ -132,6 +132,25 @@ def test_board_rows_keep_the_rankable_id_set():
     assert [row["id"] for row in ranked] == [100, 107]
 
 
+def test_board_rows_drop_an_out_player_held_like_a_pulled_line():
+    projections = [
+        {
+            **_projection(15852321, "John Tavares", "Points", "standard"),
+            "removed": True,
+            "pp_status": "removed",
+            "injury": "OUT",
+            "line": 0.5,
+            "projection": 1.2,
+        },
+        _projection(200, "Auston Matthews", "Points", "standard"),
+    ]
+    ranked, _counts = board_rows([
+        _pp(15852321, "John Tavares", "Points"),
+        _pp(200, "Auston Matthews", "Points"),
+    ], projections)
+    assert [row["id"] for row in ranked] == [200]
+
+
 def test_load_pp_rows_keeps_tavares_standard_when_goblin_is_first(tmp_path):
     raw = [
         {"id": 9, "player": "John Tavares", "prop": "Points", "line": 0.5, "oddsType": "goblin"},
