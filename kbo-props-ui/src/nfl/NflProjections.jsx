@@ -4,7 +4,8 @@ import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
-import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
 import { BoardLoadError } from '../BoardLoadError'
 
@@ -80,11 +81,11 @@ export default function NflProjections({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNflProjections()
-      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => {
+      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => {
         if (!active) return
         setProjections(next)
         setUpdatedAt(publishedAt || null)
-        setLockedCount(preview && !refreshing ? locked : 0)
+        setLockedCount(previewLockedCount(preview, locked))
         setError('')
         setLoaded(true)
       })
@@ -92,19 +93,20 @@ export default function NflProjections({ onSelectPlayer }) {
     return () => { active = false }
   }, [loadAttempt])
 
-  const retryLoad = () => {
-    setError('')
-    setLoaded(false)
-    setLoadAttempt((current) => current + 1)
-  }
-
-  useFullBoardRefresh('nfl_projections', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nfl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
     setError('')
     setLoaded(true)
   })
+
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
   const props = useMemo(() => ['All props', ...new Set(projections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [projections])
@@ -130,6 +132,7 @@ export default function NflProjections({ onSelectPlayer }) {
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
       {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
+      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
       {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
       {!error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}

@@ -32,4 +32,5 @@ test('preview paint, cold status, promo rows, and odds checks still fail the pro
   assert.equal(proofShouldFail({ ...base, domPromo: true }).fail, true)
   assert.equal(proofShouldFail({ ...base, oddsClean: false }).fail, true)
   assert.equal(proofShouldFail({ ...base, strikeoutOk: false }).fail, true)
+  assert.equal(proofShouldFail({ ...base, previewPages: {} }).fail, true)
 })

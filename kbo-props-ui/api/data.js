@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { filterStandardBoard } from '../src/standardBoard.js';
+import { filterNhlSharpOdds, filterStandardBoard } from '../src/standardBoard.js';
 import bundledStatus from '../public/status.json' with { type: 'json' };
 import { publicBoardStatus } from './_boardStatus.js';
 import {
@@ -813,6 +813,20 @@ export async function nbaSectionOpen(req, client) {
   }) === 'full';
 }
 
+const WNBA_PROMO_DATASETS = new Set(['wnba_projections_goblin', 'wnba_projections_demon']);
+
+async function nhlProjectionRows(projectionsPromise) {
+  const projRow = await projectionsPromise;
+  if (!projRow || projRow.data == null) return [];
+  try {
+    const board = boardForPresentation(projRow.data);
+    return Array.isArray(board) ? board : [];
+  } catch (err) {
+    console.error(`[api/data] nhl_projections for sharp odds was not reassembled: ${err.message}`);
+    return [];
+  }
+}
+
 async function handleNhlRequest(req, res, client, ds) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
@@ -824,6 +838,15 @@ async function handleNhlRequest(req, res, client, ds) {
   // hold the read: the free preview is the fallback.
   const callerPromise = resolveNbaCaller(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
+  const projectionsPromise = ds === 'nhl_sharp_odds'
+    ? readSnapshot(client, 'nhl_projections').then(
+      (projRow) => projRow,
+      (err) => {
+        console.error(`[api/data] nhl_projections read for sharp odds failed: ${err?.message || err}`);
+        return null;
+      },
+    )
+    : null;
 
   let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   let row;
@@ -873,10 +896,16 @@ async function handleNhlRequest(req, res, client, ds) {
   const fullTier = sportAccess(tier).nhl ? tier : 'owner';
   const shapingTier = decision === 'full' ? fullTier : 'free';
   const tierPayload = payloadForTier(ds, spec.table, row, board, shapingTier);
+  let payload = tierPayload.payload;
+  let presented = board;
+  if (ds === 'nhl_sharp_odds') {
+    payload = filterNhlSharpOdds(payload, await nhlProjectionRows(projectionsPromise));
+    presented = payload;
+  }
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, tierPayload.payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
-    board,
+    shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
+    presented,
   );
   return sendData(req, res, {
     data: shaped.data,
@@ -967,6 +996,9 @@ export async function handleDataRequest(req, res, client) {
   }
 
   const ds = String(req.query?.ds || '');
+  if (WNBA_PROMO_DATASETS.has(ds)) {
+    return res.status(404).json({ error: 'Dataset not served' });
+  }
   if (isNbaDataset(ds)) {
     return handleNbaRequest(req, res, client || getClient(), ds);
   }

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
-import { useFullBoardRefresh } from '../useFullBoardRefresh'
+import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 import HitRateStrip from '../HitRateStrip'
@@ -166,10 +167,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt, refreshing }) => {
+      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt }) => {
         if (!active) return
         setProjections(next)
-        setLockedCount(preview && !refreshing ? locked : 0)
+        setLockedCount(previewLockedCount(preview, locked))
         setUpdatedAt(publishedAt || null)
         setError('')
         setLoaded(true)
@@ -178,7 +179,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
     return () => { active = false }
   }, [loadAttempt])
 
-  useFullBoardRefresh('nhl_projections', (snapshot) => {
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nhl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLockedCount(0)
     setUpdatedAt(snapshot.updatedAt || null)
@@ -188,6 +189,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   })
 
   const retryLoad = () => {
+    clearRefreshExhausted()
     setError('')
     setLoaded(false)
     setLoadAttempt((current) => current + 1)
@@ -216,6 +218,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         </div>
       </div>
       {error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}
+      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
       {!error && !loaded && (
         <div role="status" aria-label="Loading NHL prop lines">
           <BoardSkeleton />

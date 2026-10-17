@@ -1,4 +1,5 @@
 import { publishedAtFromPayload } from './boardFreshness';
+import { runRefreshAttempts } from './refreshAttempts.mjs';
 import { memberPreviewIsDowngrade } from './memberPreview';
 import { filterStandardBoard } from './standardBoard';
 import { boundedAccessToken, readCachedSession } from './supabaseClient';
@@ -118,29 +119,40 @@ function sleep(ms) {
 }
 
 // The foreground retry already happened. Keep asking in the background and
-// publish the first full board. A later preview stays on screen.
-async function refreshFullBoard(ds, opts) {
+// publish the first full board. A later preview stays on screen. When every
+// retry is still a preview, tell the board so it can label that preview and
+// offer Retry.
+export async function refreshFullBoard(ds, opts, {
+  sleepFn = sleep,
+  delays = REFRESH_DELAYS_MS,
+  request = requestDataset,
+  isDowngrade = cachedMemberPreviewIsDowngrade,
+} = {}) {
   if (refreshingDatasets.has(ds)) return;
   refreshingDatasets.add(ds);
   notifyRefreshing();
+  let outcome = { replaced: false, gaveUp: false };
   try {
-    for (const delay of REFRESH_DELAYS_MS) {
-      await sleep(delay);
-      try {
-        const body = await requestDataset(ds, { ...opts, fresh: true, retried: true, player: undefined });
+    outcome = await runRefreshAttempts({
+      delays,
+      sleepFn,
+      attempt: async () => {
+        const body = await request(ds, { ...opts, fresh: true, retried: true, player: undefined });
         const presented = presentDataset(ds, body);
         if (!presented.preview) {
           publishDataset(ds, presented);
-          return;
+          return 'full';
         }
-        if (!cachedMemberPreviewIsDowngrade(ds, body)) return;
-      } catch {
-        // The preview cards stay up. The next delay tries again.
-      }
-    }
+        if (!isDowngrade(ds, body)) return 'stop';
+        return 'again';
+      },
+    });
   } finally {
     refreshingDatasets.delete(ds);
     notifyRefreshing();
+    if (outcome.gaveUp && !outcome.replaced) {
+      publishDataset(ds, { refreshExhausted: true, preview: true, refreshing: false });
+    }
   }
 }
 
