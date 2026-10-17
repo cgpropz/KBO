@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs'
-import { expect, test, devices } from '@playwright/test'
+import { expect, test, devices, chromium } from '@playwright/test'
 import { PHONE_BOARD_QUERY } from '../src/phoneBoardQuery.js'
 
 const recent = [70, 80, 55, 90, 60, 75, 88, 40, 95, 62, 71, 83]
@@ -169,6 +169,48 @@ test('the free preview banner sits above the prop chips', async ({ page }) => {
     return bar.bottom > chipBox.top + 1 && bar.top < chipBox.bottom - 1
   })
   expect(overlap).toBe(false)
+})
+
+test('desktop chromium at the proof viewport paints member boards without zoom', async () => {
+  const desktop = await chromium.launch({ headless: true })
+  const context = await desktop.newContext({
+    viewport: { width: 390, height: 844 },
+    screen: { width: 390, height: 844 },
+    hasTouch: false,
+    isMobile: false,
+    deviceScaleFactor: 1,
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36',
+    baseURL: 'http://127.0.0.1:5173',
+  })
+  const page = await context.newPage()
+  await installFixtures(page)
+  for (const path of ['/?sport=nfl&page=projections&previewTier=owner', '/?sport=nhl&page=projections&previewTier=owner']) {
+    await page.goto(path)
+    await expect(page.locator('.nfl-edge-card').first()).toBeVisible()
+    const state = await page.evaluate(() => {
+      const root = document.getElementById('root')
+      const zoom = root ? getComputedStyle(root).zoom : '1'
+      return {
+        paywall: Boolean(document.querySelector('.pw-title')),
+        meta: document.querySelector('meta[name="viewport"]')?.getAttribute('content') || '',
+        zoom: zoom === 'normal' ? 1 : Number.parseFloat(zoom) || 1,
+        phoneVar: document.documentElement.style.getPropertyValue('--phone-screen'),
+        coarse: window.matchMedia('(hover: none) and (pointer: coarse)').matches,
+        touch: navigator.maxTouchPoints,
+        screen: [window.screen.width, window.screen.height],
+        inner: [window.innerWidth, window.innerHeight],
+        h1: document.querySelector('h1')?.textContent || '',
+      }
+    })
+    expect(state.paywall, path).toBe(false)
+    expect(state.coarse, path).toBe(false)
+    expect(state.touch, path).toBe(0)
+    expect(state.meta, path).toBe('width=device-width, initial-scale=1.0')
+    expect(state.zoom, path).toBeLessThan(1.05)
+    expect(state.phoneVar, path).toBe('')
+    expect(state.h1, path).not.toBe('')
+  }
+  await desktop.close()
 })
 
 test('an iPad and a mouse window stay on the desktop layout', async ({ browser }) => {
