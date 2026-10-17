@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { FETCH_BUDGET_MS, loadHubSports, loadMemberBoard, retryDelayWithin } from '../src/memberBoardLoad.js';
+import { BOARD_RETRY_WINDOW_MS, FETCH_BUDGET_MS, MEMBER_BOARD_ATTEMPTS, TILE_ATTEMPT_MS, loadHubSports, loadMemberBoard, memberBoardPatch, retryDelayWithin } from '../src/memberBoardLoad.js';
 import { readOpenFlag } from '../src/openFlag.js';
 import { previewForSignedIn } from '../api/data.js';
 
@@ -20,19 +20,20 @@ test('full board on the first try is not refetched', async () => {
   assert.equal(calls.length, 1);
 });
 
-test('a preview for a member retries once with a fresh token and takes the full board', async () => {
+test('a preview retries without refreshing the token and takes the full board', async () => {
   const calls = [];
   const out = await loadMemberBoard(sport, async (ds, o) => { calls.push(o); return calls.length === 1 ? preview : full; }, noWait);
   assert.equal(out, full);
   assert.equal(calls.length, 2);
-  assert.equal(calls[1].fresh, true);
+  assert.equal(calls[1].fresh, false);
+  assert.equal(calls[1].retried, true);
 });
 
-test('a preview is retried up to three times and then returned', async () => {
+test('a preview is retried until the attempt cap and then returned', async () => {
   let n = 0;
   const out = await loadMemberBoard(sport, async () => { n += 1; return preview; }, noWait);
   assert.equal(out, preview);
-  assert.equal(n, 3);
+  assert.equal(n, MEMBER_BOARD_ATTEMPTS);
 });
 
 test('tier_pending is retried and a later full board is kept', async () => {
@@ -76,24 +77,35 @@ test('retries back off and stay inside the 12s fetch budget', () => {
   assert.match(apiSource, /export const FETCH_TIMEOUT_MS = 12_000/);
 });
 
-test('a slow first answer is kept when a retry would miss the budget', async () => {
+test('the tile hears about the miss while a later attempt still recovers', async () => {
   let t = 0;
-  let calls = 0;
-  const out = await loadMemberBoard(sport, async () => {
-    calls += 1;
-    t = 11_000;
-    return preview;
-  }, async () => { throw new Error('should not retry'); }, { now: () => t });
-  assert.equal(out, preview);
-  assert.equal(calls, 1);
+  const notices = [];
+  const calls = [];
+  const out = await loadMemberBoard(sport, async (ds, opts) => {
+    calls.push(opts);
+    if (calls.length === 1) {
+      t = TILE_ATTEMPT_MS;
+      assert.equal(opts.timeoutMs, TILE_ATTEMPT_MS);
+      assert.equal(opts.fresh, false);
+      throw new Error('slow');
+    }
+    return full;
+  }, noWait, {
+    now: () => t,
+    onUnresolved: (snap) => notices.push(snap?.error?.message || snap),
+  });
+  assert.equal(out, full);
+  assert.deepEqual(notices, ['slow']);
+  assert.equal(calls[1].fresh, false);
+  assert.ok(t < BOARD_RETRY_WINDOW_MS);
 });
 
-test('a slow failure does not start a retry that cannot finish', async () => {
+test('a retry is skipped when it cannot finish inside the window', async () => {
   let t = 0;
   let calls = 0;
   await assert.rejects(loadMemberBoard(sport, async () => {
     calls += 1;
-    t = 11_000;
+    t = BOARD_RETRY_WINDOW_MS - 500;
     throw new Error('slow');
   }, async () => { throw new Error('should not retry'); }, { now: () => t }), /slow/);
   assert.equal(calls, 1);
@@ -108,8 +120,8 @@ test('the first retry still waits 800ms when the attempt was fast', async () => 
   }, async (ms) => { waits.push(ms); });
   assert.equal(out, full);
   assert.deepEqual(waits, [800]);
-  assert.equal(calls[1].fresh, true);
-  assert.ok(calls[0].timeoutMs <= FETCH_BUDGET_MS);
+  assert.equal(calls[1].fresh, false);
+  assert.equal(calls[0].timeoutMs, TILE_ATTEMPT_MS);
 });
 
 test('a slow or failed sport does not block the others', async () => {
@@ -181,8 +193,20 @@ test('an error tile shows a retry instead of staying on Loading', () => {
   assert.match(hubSource, /Couldn\\'t load · Retry/);
   assert.match(hubSource, /retrySport\(sport\.id\)/);
   assert.match(hubSource, /Couldn\\'t load your member board/);
-  assert.match(hubSource, /snap\?\.preview/);
+  assert.match(hubSource, /refreshedAccessToken\(/);
+  assert.match(hubSource, /onUnresolved/);
   assert.match(apiSource, /Free preview/);
+  assert.equal(hubSource.match(/refreshedAccessToken\(/g).length, 1);
+});
+
+test('a late preview does not replace a ready tile', () => {
+  const ready = { status: 'ready', raw: [1, 2], preview: false };
+  assert.equal(memberBoardPatch(ready, preview), null);
+  assert.equal(memberBoardPatch(ready, { error: new Error('late') }), null);
+  const next = memberBoardPatch({ status: 'loading' }, full);
+  assert.equal(next.status, 'ready');
+  assert.deepEqual(next.raw, full.data);
+  assert.equal(memberBoardPatch(undefined, preview).status, 'error');
 });
 
 test('a preview sent to a signed-in caller is never browser-cached', () => {

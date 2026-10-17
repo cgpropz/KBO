@@ -9,6 +9,9 @@ import { createHmac, createPublicKey, timingSafeEqual, verify as cryptoVerify } 
 // a second cache.
 
 export const PAID_TIER_TTL_MS = 5 * 60 * 1000;
+// A hung user_profiles read must not outlive this. The shared lookup is
+// removed when the read settles or when this cap expires, whichever is first.
+export const PROFILE_ABORT_MS = 3_000;
 const JWKS_TTL_MS = 10 * 60 * 1000;
 const JWKS_FORCE_REFRESH_MS = 60 * 1000;
 const SECRET_ENV_KEYS = ['SUPABASE_JWT_SECRET', 'JWT_SECRET'];
@@ -213,25 +216,29 @@ function withBudget(promise, ms, message) {
   }).finally(() => clearTimeout(timer));
 }
 
+function profileCap(options) {
+  const budget = Number.isFinite(options.budgetMs) ? options.budgetMs : 4_000;
+  const abort = Number.isFinite(options.profileAbortMs) ? options.profileAbortMs : PROFILE_ABORT_MS;
+  return Math.max(1, Math.min(budget, abort));
+}
+
 async function readProfileTier(client, userId, ms) {
+  const limit = Math.max(1, Math.min(PROFILE_ABORT_MS, Number(ms) || PROFILE_ABORT_MS));
+  const controller = new AbortController();
+  const killer = setTimeout(() => controller.abort(), limit);
   const run = async () => {
     let query = client.from('user_profiles').select('tier').eq('id', userId);
-    let killer;
-    if (typeof query.abortSignal === 'function') {
-      const controller = new AbortController();
-      killer = setTimeout(() => controller.abort(), Math.max(1, ms));
-      query = query.abortSignal(controller.signal);
-    }
-    try {
-      const result = typeof query.maybeSingle === 'function' ? await query.maybeSingle() : await query;
-      if (result?.error) throw new Error(result.error.message || 'profile read failed');
-      const tier = result?.data?.tier;
-      return typeof tier === 'string' && tier ? tier : 'free';
-    } finally {
-      clearTimeout(killer);
-    }
+    if (typeof query.abortSignal === 'function') query = query.abortSignal(controller.signal);
+    const result = typeof query.maybeSingle === 'function' ? await query.maybeSingle() : await query;
+    if (result?.error) throw new Error(result.error.message || 'profile read failed');
+    const tier = result?.data?.tier;
+    return typeof tier === 'string' && tier ? tier : 'free';
   };
-  return withBudget(run(), ms, 'Tier lookup timed out');
+  try {
+    return await withBudget(run(), limit, 'Tier lookup timed out');
+  } finally {
+    clearTimeout(killer);
+  }
 }
 
 // Local verification only. Returns null unless the signature, expiry,
@@ -325,9 +332,29 @@ async function lookupMemberTierOnce(client, verified, options, started) {
   return pendingTier(verified, 'fallback', false);
 }
 
+// The inner read can ignore abort. This still resolves, and it drops the
+// shared entry, so a later request cannot join a lookup that never finishes.
+function trackInflight(verified, run, capMs) {
+  let timer;
+  let settled = false;
+  const pending = new Promise((resolve) => {
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (inflightLookups.get(verified.userId) === pending) inflightLookups.delete(verified.userId);
+      resolve(value);
+    };
+    timer = setTimeout(() => finish(pendingTier(verified, 'timeout', true)), Math.max(1, capMs) + 50);
+    Promise.resolve().then(run).then(finish, () => finish(pendingTier(verified, 'fallback', false)));
+  });
+  return pending;
+}
+
 // Always settles. Concurrent callers for one verified user share the lookup
-// that is already in flight. A cached paid tier is returned only after a
-// timeout, and only for this verified user id.
+// that is already in flight, and that entry is gone as soon as it settles.
+// A cached paid tier is returned only after a timeout, and only for this
+// verified user id.
 export async function lookupMemberTier(client, authorization, options = {}) {
   const now = nowMs(options);
   prunePaidTiers(now);
@@ -337,9 +364,12 @@ export async function lookupMemberTier(client, authorization, options = {}) {
   }
   const existing = inflightLookups.get(verified.userId);
   if (existing) return existing;
-  const pending = lookupMemberTierOnce(client, verified, options, now).finally(() => {
-    if (inflightLookups.get(verified.userId) === pending) inflightLookups.delete(verified.userId);
-  });
+  const cap = profileCap(options);
+  const pending = trackInflight(
+    verified,
+    () => lookupMemberTierOnce(client, verified, { ...options, budgetMs: cap }, now),
+    cap,
+  );
   inflightLookups.set(verified.userId, pending);
   return pending;
 }

@@ -1,13 +1,17 @@
-// Same ceiling as FETCH_TIMEOUT_MS in apiData.js. Kept here so the retry
-// budget can be tested without loading the browser data client.
+// Same ceiling as FETCH_TIMEOUT_MS in apiData.js. The open-hook retry still
+// uses this 12s budget. A member tile does not: it shows the error once an
+// attempt misses, and keeps trying on its own for about a minute.
 export const FETCH_BUDGET_MS = 12_000;
+export const TILE_ATTEMPT_MS = 7_000;
+export const BOARD_RETRY_WINDOW_MS = 60_000;
 
 // This page only asks for sports the plan includes, so a free preview here
 // means the server could not confirm the member. A preview, a tier_pending
-// 503, or a failed request is retried up to three times with backoff. The
-// wait grows with the sport's place in line, and a try is skipped when it
-// would run past the 12s fetch budget. A slow first answer is kept.
-export const MEMBER_BOARD_ATTEMPTS = 3;
+// 503, or a failed request is retried with backoff. Each attempt is capped
+// near 7s so the tile can leave Loading, and retries continue until the
+// window is used or the board arrives. The access token is not refreshed
+// on those retries; the hub refreshes it once per load.
+export const MEMBER_BOARD_ATTEMPTS = 8;
 export const BOARD_RETRY_MS = 800;
 const MIN_RETRY_SLICE_MS = 1_000;
 
@@ -58,38 +62,66 @@ function needsAnotherTry(snap) {
   return snap.preview === true;
 }
 
+// A late preview or error must not replace a board the tile already showed.
+// null means leave the current tile alone.
+export function memberBoardPatch(current, snap) {
+  const failed = !snap || snap.preview === true || snap.error;
+  if (current?.status === 'ready' && failed) return null;
+  if (failed) return { status: 'error', raw: null, preview: snap?.preview === true };
+  return {
+    status: 'ready',
+    raw: snap.data,
+    updatedAt: snap.updatedAt ?? null,
+    preview: false,
+    lockedCount: snap.lockedCount,
+  };
+}
+
 export async function loadMemberBoard(sport, fetcher, wait = defaultWait, options = {}) {
   const now = options.now || Date.now;
-  const budgetMs = options.budgetMs || FETCH_BUDGET_MS;
+  const budgetMs = options.budgetMs || BOARD_RETRY_WINDOW_MS;
+  const attemptCap = options.attemptMs || TILE_ATTEMPT_MS;
   const slot = options.slot || 0;
   const started = now();
   const elapsed = () => now() - started;
-  const attemptOptions = (fresh) => ({
-    devStaticPath: sport.dev,
-    fresh,
-    priority: options.priority,
-    timeoutMs: Math.max(1, budgetMs - elapsed()),
-  });
+  let noticed = false;
+  const note = (snap) => {
+    if (noticed) return;
+    noticed = true;
+    if (typeof options.onUnresolved === 'function') options.onUnresolved(snap);
+  };
 
   let last;
   for (let attempt = 0; attempt < MEMBER_BOARD_ATTEMPTS; attempt += 1) {
+    if (typeof options.alive === 'function' && !options.alive()) break;
+    const remaining = budgetMs - elapsed();
+    if (remaining < 1) break;
+    const timeoutMs = Math.max(1, Math.min(attemptCap, remaining));
     try {
       const snap = await fetchWithinBudget(
         fetcher,
         sport,
-        attemptOptions(attempt > 0),
-        attemptOptions(attempt > 0).timeoutMs,
+        {
+          devStaticPath: sport.dev,
+          fresh: false,
+          retried: attempt > 0,
+          priority: options.priority,
+          timeoutMs,
+        },
+        timeoutMs,
       );
       if (!needsAnotherTry(snap)) return snap;
       last = snap;
     } catch (err) {
       last = { error: err, code: err?.code || '' };
     }
+    note(last);
     if (attempt === MEMBER_BOARD_ATTEMPTS - 1) break;
     const delay = retryDelayWithin(slot + attempt, elapsed(), budgetMs);
     if (delay == null) break;
     await wait(delay);
   }
+  note(last);
   if (last?.error) throw last.error;
   return last;
 }
