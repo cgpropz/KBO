@@ -1,13 +1,14 @@
-// Writes public/member-recap.json: the latest graded slate per sport, counted
+// Writes api/_memberRecap.json: the latest graded slate per sport, counted
 // from Board QA's grading files (memory/<sport>/MM/DD/YYYY/recap.json).
 // Only standard PrizePicks lines count (no goblin/demon), and rows marked
 // rank_eligible: false are skipped. Only counts and dates are written; no
 // player rows, lines, or projections leave the paid snapshots.
 //
-// Like write-status.mjs, a build without the parent repo (the Vercel CLI upload
-// of kbo-props-ui alone) has no memory/ folder, so the committed file is kept.
+// The file stays next to the API, not in public/ or dist. /api/data serves it
+// to paid members. A build without the parent repo (the Vercel rebuild of
+// kbo-props-ui alone) has no memory/ folder, so the uploaded file is kept.
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -73,8 +74,11 @@ export function buildMemberRecap(memoryRoot, now = new Date()) {
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isMain) {
   const memoryRoot = resolve(uiRoot, '..', 'memory')
-  const target = join(uiRoot, 'public', 'member-recap.json')
+  const target = join(uiRoot, 'api', '_memberRecap.json')
+  rmSync(join(uiRoot, 'public', 'member-recap.json'), { force: true })
+  mkdirSync(join(uiRoot, 'api'), { recursive: true })
   if (!existsSync(memoryRoot)) {
+    if (!existsSync(target)) writeFileSync(target, `${JSON.stringify({ generated_at: null, sports: {} }, null, 2)}\n`)
     console.log('member-recap: no memory/ folder here, keeping', target)
   } else {
     const recap = buildMemberRecap(memoryRoot)

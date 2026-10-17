@@ -27,6 +27,7 @@ function PropTracker() {
   const [memberPreview, setMemberPreview] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [pendingLocked, setPendingLocked] = useState(0);
+  const [hideRecord, setHideRecord] = useState(true);
   const [tab, setTab] = useState('graded');
   const [playerSearch, setPlayerSearch] = useState('');
   const [statFilter, setStatFilter] = useState('All');
@@ -45,11 +46,14 @@ function PropTracker() {
     fetchDataSnapshot('graded_props_history.json')
       .then(snap => {
         const d = snap.data;
+        const hidden = snap.preview !== false;
+        setHideRecord(hidden);
         setPendingLocked(snap.preview ? snap.lockedCount : 0);
         setRefreshing(snap.refreshing === true);
         setMemberPreview(snap.preview === true);
-        debugLog('Data loaded:', { pending: d?.pending?.length || 0, graded: d?.graded?.length || 0, generatedAt: d?.generated_at });
-        setData(d); setLoading(false);
+        const shown = hidden && d ? { ...d, graded: [] } : d;
+        debugLog('Data loaded:', { pending: shown?.pending?.length || 0, graded: shown?.graded?.length || 0, generatedAt: shown?.generated_at });
+        setData(shown); setLoading(false);
       })
       .catch((err) => {
         debugLog('Error loading data:', err.message);
@@ -61,6 +65,7 @@ function PropTracker() {
     setPendingLocked(0);
     setRefreshing(false);
     setMemberPreview(false);
+    setHideRecord(false);
     setData(snapshot.data);
     setLoading(false);
   });
@@ -193,11 +198,13 @@ function PropTracker() {
           Pending <span className="gt-tab-count">{pendingCount}</span>
         </button>
         <button className={'gt-tab ' + (tab === 'graded' ? 'active' : '')} onClick={() => setTab('graded')}>
-          Graded <span className="gt-tab-count">{gradedCount}</span>
+          Graded {!hideRecord && <span className="gt-tab-count">{gradedCount}</span>}
         </button>
-        <button className={'gt-tab ' + (tab === 'analytics' ? 'active' : '')} onClick={() => setTab('analytics')}>
-          Analytics
-        </button>
+        {!hideRecord && (
+          <button className={'gt-tab ' + (tab === 'analytics' ? 'active' : '')} onClick={() => setTab('analytics')}>
+            Analytics
+          </button>
+        )}
       </div>
       <div className="gt-date-bar">
         {DATE_RANGES.map(r => (
@@ -277,14 +284,16 @@ function PropTracker() {
       {tab === 'graded' && (
         <div className="gt-section">
           <div className="gt-section-header">
-            <span className="gt-section-count">{gradedCount} Graded Props</span>
-            <div className="gt-section-rate" aria-label={`Overall hit rate ${summary.overall}%`}>
-              <span className="gt-section-rate-label">Overall Hit Rate</span>
-              <strong className="gt-section-rate-value">{summary.overall}%</strong>
-              <span className="gt-section-detail">{summary.hits} HIT / {summary.misses} MISS</span>
-            </div>
+            <span className="gt-section-count">{hideRecord ? 'Graded props' : `${gradedCount} Graded Props`}</span>
+            {!hideRecord && (
+              <div className="gt-section-rate" aria-label={`Overall hit rate ${summary.overall}%`}>
+                <span className="gt-section-rate-label">Overall Hit Rate</span>
+                <strong className="gt-section-rate-value">{summary.overall}%</strong>
+                <span className="gt-section-detail">{summary.hits} HIT / {summary.misses} MISS</span>
+              </div>
+            )}
           </div>
-          <div className="gt-table-wrap">
+          {!hideRecord && <div className="gt-table-wrap">
             <table className="gt-table">
               <thead><tr>
                 <th onClick={() => handleSort('player')}>Player {sortIcon('player')}</th>
@@ -320,11 +329,11 @@ function PropTracker() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div>}
         </div>
       )}
 
-      {tab === 'analytics' && (
+      {tab === 'analytics' && !hideRecord && (
         <div className="gt-section">
           <div className="gt-summary-grid">
             <div className="gt-summary-card gt-card-overall">
