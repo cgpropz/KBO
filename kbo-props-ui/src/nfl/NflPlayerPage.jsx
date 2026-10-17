@@ -13,6 +13,7 @@ import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
+import { BoardSkeleton } from '../BootScreen'
 import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
@@ -223,7 +224,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   })
 
   if (error) return <div className="nfl-notice">Unable to load player data: {error}</div>
-  if (!loaded) return <div className="nfl-notice">Loading player data for {player}.</div>
+  if (!loaded) return <BoardSkeleton rows={6} label={`Loading player data for ${player}`} />
   if (!playerRows.length) {
     return (
       <div className="nfl-notice">

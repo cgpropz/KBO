@@ -6,6 +6,7 @@ import SportSwitcher from './SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu'
 import PlayerSearch from './PlayerSearch'
 import RouteFallback from './RouteFallback'
+import { sportViewFromEntry } from './appSport'
 import { GuideNavLinks } from './GuideLinks'
 import './KboPropBoard.css'
 
@@ -40,7 +41,7 @@ const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, initialView, entry }) {
   const { signOut, user, tier } = useAuth()
   const menu = usePageMenu()
-  const opened = entry?.view === 'slip' ? 'optimizer' : entry?.view === 'player' && entry.player ? 'player' : null
+  const opened = sportViewFromEntry(entry, { slipId: 'optimizer', boardId: 'board', oddsId: 'board' })
   const [view, setView] = useState(opened || (NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board'))
   const [previousView, setPreviousView] = useState('board')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' ? entry.player : null)

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
+import { BoardSkeleton } from '../BootScreen'
 import { fetchNhlSharpOdds } from './nhlData'
 
 function formatValue(value) {
@@ -57,7 +58,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
       </div>
       <p className="nhl-note">NHL prices come from the same public Unabated file as the NFL board. Hockey is league 6. Full game only. PP Edge compares the no-vig book price with PrizePicks Flex.</p>
       {error && <div className="nfl-notice">Unable to load odds: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading sportsbook prices.</div>}
+      {!error && !loaded && <BoardSkeleton rows={6} label="Loading sportsbook prices" />}
       {!error && loaded && !records.length && <div className="nfl-notice">{note || 'No matched NHL odds right now. The prop board is unchanged.'}</div>}
       {!!records.length && (
         <div className="nfl-lines-table-wrap">

@@ -71,6 +71,17 @@ OPTIONAL_TABLES = {
     # or a missing file must not fail the rest of the publish.
     "correlations_kbo", "correlations_wnba", "correlations_nfl",
     "nba_correlations", "nhl_correlations",
+    # Compact hub rows. sql/hub_snapshots.sql. A missing table must not fail
+    # the full board publish.
+    "kbo_hub", "nfl_hub", "nhl_hub", "wnba_hub", "nba_hub",
+}
+
+HUB_SOURCE = {
+    "prizepicks_props": ("kbo", "kbo_hub"),
+    "wnba_projections_standard": ("wnba", "wnba_hub"),
+    "nfl_projections": ("nfl", "nfl_hub"),
+    "nba_projections_standard": ("nba", "nba_hub"),
+    "nhl_projections": ("nhl", "nhl_hub"),
 }
 
 # Transient Supabase/PostgREST failures that are safe to retry. Every publish
@@ -498,10 +509,62 @@ def optional_table_missing(table, response):
     return "PGRST205" in body or "Could not find the table" in body
 
 
+def publish_hub_snapshot(session, source_table, data, headers, published_at):
+    """Store the trimmed hub rows next to a board. Never fails the board publish."""
+    spec = HUB_SOURCE.get(source_table)
+    if not spec:
+        return
+    sport, hub_table = spec
+    script = os.path.join(BASE, "kbo-props-ui", "scripts", "write-hub-snapshots.mjs")
+    try:
+        proc = subprocess.run(
+            ["node", script, sport],
+            input=json.dumps(data, ensure_ascii=False).encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"  ! {hub_table}: {exc}")
+        return
+    if proc.returncode != 0:
+        err = (proc.stderr or b"").decode("utf-8", "replace").strip().replace("\n", " ")[:200]
+        print(f"  ! {hub_table}: {err or proc.returncode}")
+        return
+    try:
+        hub = json.loads(proc.stdout.decode("utf-8"))
+    except Exception as exc:
+        print(f"  ! {hub_table}: bad hub json ({exc})")
+        return
+    try:
+        response = post_with_retry(
+            session,
+            f"{SUPABASE_URL}/rest/v1/{hub_table}",
+            params={"on_conflict": "id"},
+            json=snapshot_record(1, hub, published_at),
+            headers=headers,
+            timeout=60,
+        )
+    except Exception as exc:
+        print(f"  ! {hub_table}: {exc}")
+        return
+    if response.status_code in (200, 201, 204):
+        print(f"  ✓ {hub_table:30} updated")
+        return
+    if optional_table_missing(hub_table, response):
+        print(f"  ! {missing_table_message(hub_table)}")
+        return
+    body = response.text.strip().replace("\n", " ")[:200]
+    print(f"  ! {hub_table} HTTP {response.status_code}: {body}")
+
+
 def missing_table_message(table):
     hint = ""
     if table == "wnba_sharp_odds":
         hint = " Apply sql/wnba_sharp_odds.sql in the Supabase SQL editor."
+    elif table.endswith("_hub"):
+        hint = " Apply sql/hub_snapshots.sql in the Supabase SQL editor."
     return (
         f"{table} table does not exist (HTTP 404). "
         f"Skipping this snapshot so the rest of the publish can finish.{hint}"
@@ -1190,6 +1253,7 @@ def main():
                     snapshot_record(1, published_data, published_at),
                     headers,
                 )
+                publish_hub_snapshot(session, published_table, published_data, headers, published_at)
                 sport = BOARD_TABLES.get(published_table)
                 if sport:
                     status_updates[sport] = record_from_payload(sport, published_data, published_at)

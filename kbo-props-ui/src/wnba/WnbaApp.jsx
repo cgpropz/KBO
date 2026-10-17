@@ -6,6 +6,7 @@ import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import Paywall from '../Paywall'
 import RouteFallback from '../RouteFallback'
+import { sportViewFromEntry } from '../appSport'
 import { GuideNavLinks } from '../GuideLinks'
 
 const Projections = lazy(() => import('./Projections'))
@@ -41,7 +42,11 @@ function ComingSoon({ label }) {
 export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'playerDetail' : 'dashboard')
+  const [view, setView] = useState(() => {
+    const opened = sportViewFromEntry(entry, { oddsId: 'dashboard' })
+    if (opened === 'player') return 'playerDetail'
+    return opened || 'dashboard'
+  })
   const [teamFilter, setTeamFilter] = useState('All')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.player || null)
   const [returnView, setReturnView] = useState('players')

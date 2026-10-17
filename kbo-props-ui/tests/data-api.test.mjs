@@ -101,6 +101,8 @@ const TABLES = {
     sport: 'nfl', minShared: 8,
     pairs: [{ player: 'Q', stat: 'Pass Yards', partner: 'R', partnerStat: 'Receiving Yards', agreement: 0.81, n: 9 }],
   },
+  kbo_hub: { hub: true, rows: [{ player: 'SHOULD_NOT_LEAK', score: 99 }] },
+  nfl_hub: { hub: true, rows: [{ player: 'PRECOMPUTED', score: 9, stat: 'Receptions' }] },
   nfl_sharp_odds: {
     generated_at: NOW,
     provider: 'unabated',
@@ -167,6 +169,8 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   const res = await call('prizepicks_props')
   assert.equal(res.statusCode, 200)
   assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.headers['cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.headers['vercel-cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
   assert.equal(res.body.preview, true)
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
@@ -182,10 +186,14 @@ test('member snapshots and signed-in previews are not edge cached', async () => 
   const paid = await call('prizepicks_props', 'tok-kbo')
   assert.equal(paid.body.preview, false)
   assert.equal(paid.headers['cache-control'], PRIVATE_DATA_CACHE)
+  assert.equal(paid.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(paid.headers['vercel-cdn-cache-control'], 'private, no-store')
   const authedFree = await call('prizepicks_props', 'tok-free')
   assert.equal(authedFree.body.preview, true)
   // A preview to a signed-in caller may be a lookup blip; the browser must not keep it.
   assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(authedFree.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(authedFree.headers['vercel-cdn-cache-control'], 'private, no-store')
   const publicRankings = await call('pitcher_rankings')
   assert.equal(publicRankings.body.preview, false)
   assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
@@ -222,6 +230,40 @@ test('board payloads keep the last 10 chart games and omit the rest of the log',
 
   const markets = await call('nfl_game_markets', 'tok-owner')
   assert.equal(markets.body.data.games.length, 6)
+})
+
+test('hub view trims the board and never serves a member table to a free caller', async () => {
+  const member = await call('nfl_projections', 'tok-owner', 'GET', { view: 'hub' })
+  assert.equal(member.statusCode, 200)
+  assert.equal(member.body.preview, false)
+  assert.equal(member.headers['cache-control'], PRIVATE_DATA_CACHE)
+  assert.equal(member.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(member.body.data.hub, true)
+  assert.equal(member.body.data.rows[0].player, 'PRECOMPUTED')
+  assert.equal(member.body.data.rows[0].profile, undefined)
+  assert.equal(member.body.data.gameDates, undefined)
+
+  const anon = await call('prizepicks_props', undefined, 'GET', { view: 'hub' })
+  assert.equal(anon.body.preview, true)
+  assert.equal(anon.body.data.hub, true)
+  assert.equal(anon.body.data.cards, undefined)
+  assert.equal(anon.body.data.rows.length, FREE_ROW_LIMIT)
+  assert.equal(anon.body.data.rows.some((row) => row.player === 'SHOULD_NOT_LEAK'), false)
+  assert.deepEqual(anon.body.data.rows.map((row) => row.score).sort((a, b) => b - a), [52, 51, 50])
+  assert.equal(anon.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(anon.headers['cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(anon.headers['vercel-cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+
+  const signedIn = await call('prizepicks_props', 'tok-free', 'GET', { view: 'hub' })
+  assert.equal(signedIn.body.preview, true)
+  assert.equal(signedIn.body.data.hub, true)
+  assert.equal(signedIn.body.data.rows.some((row) => row.player === 'SHOULD_NOT_LEAK'), false)
+  assert.equal(signedIn.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(signedIn.headers['cdn-cache-control'], 'private, no-store')
+
+  const log = await call('nfl_projections', 'tok-owner', 'GET', { view: 'hub', player: 'N0' })
+  assert.equal(log.body.data.hub, undefined)
+  assert.equal(log.body.data[0].profile.toi, 18)
 })
 
 test('invalid token is treated as free', async () => {

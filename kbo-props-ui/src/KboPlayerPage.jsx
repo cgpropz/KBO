@@ -10,6 +10,7 @@ import { fetchDataSnapshot } from './dataUrl'
 import { lineResult, overHitRate } from './hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from './lineSlider'
 import { directionFor, playerHeaderBadge, scoreFor } from './kboBoardScore'
+import { BoardSkeleton } from './BootScreen'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreNote } from './CgScoreExplainer'
 import BreakEvenMeter from './BreakEvenMeter'
@@ -270,7 +271,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
   }), [player, currentProp, slider.line, breakEvenSide])
 
   if (error) return <div className="kbo-notice">Unable to load player data: {error}</div>
-  if (!cards.length) return <div className="kbo-notice">Loading player data for {playerName}.</div>
+  if (!cards.length) return <BoardSkeleton rows={6} label={`Loading player data for ${playerName}`} />
   if (!player || !propRows.length || !currentProp) {
     return <div className="kbo-notice">No active PrizePicks lines for {playerName}.</div>
   }

@@ -2,13 +2,16 @@ import sharp from 'sharp'
 import { fetchableImageUrl, parseImageQuery } from '../src/fitImage.js'
 
 const MAX_BYTES = 2_000_000
+// A 3400×2450 nfl.com original is just over sharp's default 8 megapixel cap.
+// The thumb request usually avoids that. If it does not, still downscale.
+const MAX_PIXELS = 16_000_000
 
 function one(value) {
   return Array.isArray(value) ? '' : String(value || '')
 }
 
-async function readUpstream(url) {
-  const response = await fetch(fetchableImageUrl(url), {
+async function fetchBytes(url) {
+  const response = await fetch(url, {
     redirect: 'manual',
     signal: AbortSignal.timeout(8000),
     headers: { Accept: 'image/png,image/jpeg,image/webp' },
@@ -17,6 +20,14 @@ async function readUpstream(url) {
   const bytes = Buffer.from(await response.arrayBuffer())
   if (bytes.length === 0 || bytes.length > MAX_BYTES) return null
   return bytes
+}
+
+async function readUpstream(url) {
+  const sized = fetchableImageUrl(url)
+  const primary = await fetchBytes(sized)
+  if (primary) return primary
+  if (sized && sized !== url) return fetchBytes(url)
+  return null
 }
 
 export default async function handler(req, res) {
@@ -42,7 +53,7 @@ export default async function handler(req, res) {
       return
     }
     const logo = /\/teamlogos\//i.test(target.src)
-    const webp = await sharp(original, { animated: false, limitInputPixels: 8_000_000 })
+    const webp = await sharp(original, { animated: false, limitInputPixels: MAX_PIXELS })
       .resize(target.width, target.width, {
         fit: logo ? 'inside' : 'cover',
         position: logo ? 'centre' : 'north',

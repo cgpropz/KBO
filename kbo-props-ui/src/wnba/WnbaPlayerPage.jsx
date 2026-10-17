@@ -13,6 +13,7 @@ import {
   resolveMinutesRange,
 } from './chartFilters'
 import MinutesRangeSlider from './components/MinutesRangeSlider'
+import { BoardSkeleton } from '../BootScreen'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -314,7 +315,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   })
 
   if (error) return <div className="wnba-notice">Unable to load player data: {error}</div>
-  if (!players.length) return <div className="wnba-notice">Loading player data for {playerName}.</div>
+  if (!players.length) return <BoardSkeleton rows={6} label={`Loading player data for ${playerName}`} />
   if (!player || !propRows.length || !currentProp) {
     return <div className="wnba-notice">No active PrizePicks lines for {playerName}.</div>
   }

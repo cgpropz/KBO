@@ -15,6 +15,7 @@ import {
 import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
+import { HUB_TABLE, hubPayload } from '../src/hubPayload.js';
 
 export { assembleSnapshotRows, snapshotChunkManifest };
 
@@ -39,7 +40,18 @@ export function previewForSignedIn(req, body) {
 }
 
 function sendData(req, res, body, memberGated) {
-  res.setHeader('Cache-Control', previewForSignedIn(req, body) ? 'private, no-store, max-age=0' : dataCacheControl(req, { memberGated }));
+  const signedInPreview = previewForSignedIn(req, body);
+  const authorization = String(req?.headers?.authorization || '').trim();
+  res.setHeader('Cache-Control', signedInPreview ? 'private, no-store, max-age=0' : dataCacheControl(req, { memberGated }));
+  res.setHeader('Vary', 'Authorization');
+  // The edge stores only anonymous responses. A member body and a signed-in
+  // free preview are no-store, so a cached preview can never be replayed as
+  // the member board (or the other way around).
+  const edge = signedInPreview || memberGated || authorization
+    ? 'private, no-store'
+    : `public, ${PUBLIC_DATA_CACHE}`;
+  res.setHeader('CDN-Cache-Control', edge);
+  res.setHeader('Vercel-CDN-Cache-Control', edge);
   return res.status(200).json(body);
 }
 
@@ -53,11 +65,49 @@ export function boardForPresentation(data) {
   return data;
 }
 
-function withPresentedData(req, shaped, fullData) {
+export function wantsHub(req) {
+  return String(req?.query?.view || '') === 'hub' && !String(req?.query?.player || '').trim();
+}
+
+// A missing hub table is remembered so the next request does not pay for
+// another 404 before reading the full board and trimming it.
+const hubMiss = new Map();
+const HUB_MISS_MS = 10 * 60 * 1000;
+
+async function readPrecomputedHub(client, ds) {
+  const table = HUB_TABLE[ds];
+  if (!table || !client) return null;
+  const missed = hubMiss.get(table);
+  if (missed && Date.now() - missed < HUB_MISS_MS) return null;
+  try {
+    const row = await readSnapshot(client, table);
+    if (row?.data?.hub === true && Array.isArray(row.data.rows)) return row;
+    hubMiss.set(table, Date.now());
+    return null;
+  } catch {
+    hubMiss.set(table, Date.now());
+    return null;
+  }
+}
+
+function presentForCaller(req, ds, tierShaped, fullData) {
+  if (wantsHub(req) && HUB_TABLE[ds]) {
+    return hubPayload(ds, tierShaped?.data);
+  }
+  return presentBoardPayload(req.query?.player, tierShaped, fullData);
+}
+
+function withPresentedData(req, ds, shaped, fullData) {
   return {
     ...shaped,
-    data: presentBoardPayload(req.query?.player, shaped, fullData),
+    data: presentForCaller(req, ds, shaped, fullData),
   };
+}
+
+function memberSeesFullBoard(ds, tier) {
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  if (!spec || !HUB_TABLE[ds]) return false;
+  return sportAccess(tier)?.[spec.sport] === true;
 }
 
 function cleanEnv(value) {
@@ -527,6 +577,20 @@ async function handleNbaRequest(req, res, client, ds) {
     return res.status(400).json({ error: 'Unknown dataset' });
   }
 
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: caller.tier,
+        access: sportAccess(caller.tier),
+      }, true);
+    }
+  }
+
   let row;
   try {
     row = ds === 'nba_players'
@@ -555,8 +619,22 @@ async function handleNbaRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: caller.tier,
+        access: sportAccess(caller.tier),
+      }, true);
+    }
+  }
   const shaped = withPresentedData(
     req,
+    ds,
     decision === 'full'
       ? { data: board, preview: false, lockedCount: 0 }
       : shapeForTier(ds, board, 'free'),
@@ -656,6 +734,7 @@ async function handleNhlRequest(req, res, client, ds) {
     tierResolved: caller.tierResolved,
     tier: caller.tier,
   });
+  const tierName = caller.tierResolved === true ? caller.tier : 'free';
 
   let board;
   try {
@@ -664,8 +743,22 @@ async function handleNhlRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: tierName,
+        access: sportAccess(tierName),
+      }, true);
+    }
+  }
   const shaped = withPresentedData(
     req,
+    ds,
     decision === 'full'
       ? { data: board, preview: false, lockedCount: 0 }
       : shapeForTier(ds, board, 'free'),
@@ -676,8 +769,8 @@ async function handleNhlRequest(req, res, client, ds) {
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
-    tier: caller.tierResolved === true ? caller.tier : 'free',
-    access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
+    tier: tierName,
+    access: sportAccess(tierName),
   }, decision === 'full');
 }
 
@@ -829,6 +922,19 @@ export async function handleDataRequest(req, res, client) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
+  if (wantsHub(req) && memberSeesFullBoard(ds, tier)) {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier,
+        access: sportAccess(tier),
+      }, true);
+    }
+  }
   let board;
   try {
     board = boardForPresentation(row.data);
@@ -836,7 +942,7 @@ export async function handleDataRequest(req, res, client) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const shaped = withPresentedData(req, shapeForTier(ds, board, tier), board);
+  const shaped = withPresentedData(req, ds, shapeForTier(ds, board, tier), board);
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,
@@ -852,6 +958,7 @@ export function _clearCache() {
   cache.clear();
   latestVersion.clear();
   inflight.clear();
+  hubMiss.clear();
 }
 
 export default function handler(req, res) {

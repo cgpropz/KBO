@@ -6,6 +6,7 @@ import { sessionAccessToken } from './supabaseClient'
 import { isPromoLine, matchImportedPick } from './slipLines'
 import { slipSport, sportDate } from './slipSports'
 import { playerKey } from './slipRank'
+import { BoardSkeleton } from './BootScreen'
 import {
   PAYOUT_ENTRY,
   SLIP_RAIL,
@@ -332,7 +333,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
             <h1>{config.id.toUpperCase()} <span>slip</span></h1>
             {games ? <small>{games}</small> : null}
           </div>
-          {loading ? <p className="b2-loading">Loading the board…</p> : null}
+          {loading ? <BoardSkeleton rows={6} label="Loading the slip board" /> : null}
           {!loading && empty ? (
             <section className="b2-empty" data-testid="slip-empty-slate">
               <h2>{empty.title}</h2>

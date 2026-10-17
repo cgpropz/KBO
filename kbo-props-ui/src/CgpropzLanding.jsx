@@ -13,13 +13,13 @@ import PublicLanding from './PublicLanding';
  *   onNavigate(view)     → e.g. 'pricing'
  */
 
-export default function CgpropzLanding({ onEnterSport, onNavigate }) {
+export default function CgpropzLanding({ onEnterSport, onNavigate, initialPanel = 'today' }) {
   const { user, tier, signOut } = useAuth();
   const access = sportAccess(tier);
   const isPaid = access.kbo || access.wnba || access.nfl || access.nhl;
 
   if (isPaid) {
-    return <MemberCommandCenter onEnterSport={onEnterSport} onNavigate={onNavigate} />;
+    return <MemberCommandCenter onEnterSport={onEnterSport} onNavigate={onNavigate} initialPanel={initialPanel} />;
   }
 
   return (

@@ -37,6 +37,7 @@ export async function loadMemberBoard(sport, fetcher, wait = defaultWait, option
     devStaticPath: sport.dev,
     fresh,
     priority: options.priority,
+    view: options.view,
     timeoutMs: Math.max(1, budgetMs - elapsed()),
   });
 
