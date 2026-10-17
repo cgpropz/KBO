@@ -229,6 +229,46 @@ class NhlBoardMoveTests(_Memory):
         self.assertEqual(goblin["last_pregame_frozen_at"], T1_ISO)
 
 
+class ThinFreezeTests(_Memory):
+    def _points(self, name, stamp):
+        return {
+            "player": name,
+            "stat": "Points",
+            "odds_type": "standard",
+            "line": 0.5,
+            "recommendation": "OVER",
+            "start_time_utc": START,
+            "first_frozen_at": stamp,
+            "last_pregame_frozen_at": stamp,
+        }
+
+    def test_thin_freeze_skips_supersede_and_half_still_runs(self):
+        rows = [self._points(f"P{i}", T1_ISO) for i in range(4)]
+        common.write_slate("nhl", DAY, rows, now=T1)
+        fresh = dict(rows[0])
+        fresh["last_pregame_frozen_at"] = T2_ISO
+        with self.assertLogs("pipeline.memory.common", level="WARNING") as logged:
+            common.write_slate("nhl", DAY, [fresh], now=T2)
+        self.assertTrue(any("Skipping superseded pass" in line for line in logged.output))
+        kept = {prop["player"]: prop for prop in self._slate("nhl")["props"]}
+        self.assertEqual(set(kept), {"P0", "P1", "P2", "P3"})
+        for prop in kept.values():
+            self.assertNotIn("superseded_at", prop)
+        self.assertEqual(kept["P0"]["last_pregame_frozen_at"], T2_ISO)
+        self.assertEqual(kept["P0"]["first_frozen_at"], T1_ISO)
+        self.assertEqual(kept["P1"]["last_pregame_frozen_at"], T1_ISO)
+
+        half_rows = [self._points("P0", T2_ISO), self._points("P1", T2_ISO)]
+        common.write_slate("nhl", DAY, half_rows, now=T2)
+        half = {prop["player"]: prop for prop in self._slate("nhl")["props"]}
+        self.assertNotIn("superseded_at", half["P0"])
+        self.assertNotIn("superseded_at", half["P1"])
+        self.assertTrue(half["P2"].get("superseded_at"))
+        self.assertTrue(half["P3"].get("superseded_at"))
+        self.assertEqual(half["P2"]["last_pregame_frozen_at"], T1_ISO)
+        self.assertEqual(half["P2"]["first_frozen_at"], T1_ISO)
+
+
 class WnbaBoardMoveTests(_Memory):
     def test_goblin_swap_and_pulled_standard_summary_is_standard_only(self):
         (self.root / "public" / "wnba" / "lineups.json").write_text(json.dumps([

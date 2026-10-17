@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -9,6 +10,8 @@ import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
+
+LOGGER = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MEMORY_ROOT = REPO_ROOT / "memory"
@@ -831,6 +834,20 @@ def _apply_pull_flags(
             target["superseded_at"] = now_iso
 
 
+def _open_pregame_count(rows: list, now: datetime | None) -> int:
+    """Pregame rows that are still live on the slate."""
+    count = 0
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        if row.get("superseded_at"):
+            continue
+        if prop_game_started(row, now):
+            continue
+        count += 1
+    return count
+
+
 def write_slate(
     sport: str,
     d: date,
@@ -866,17 +883,30 @@ def write_slate(
                 pid = projection_id_of(prop)
                 if pid and pid not in live_by_id:
                     live_by_id[pid] = prop
-        for row in merged:
-            if _row_still_on_board(sport, row, live_keys, live_by_id):
-                row.pop("superseded_at", None)
-                if pulled_status(row):
-                    row.pop("pp_status", None)
-                    row.pop("removed", None)
-                continue
-            if prop_game_started(row, now):
-                continue
-            if not row.get("superseded_at"):
-                row["superseded_at"] = now_iso
+        # A partial board read must not mark the rest of the day superseded.
+        # Under half of the day's current non-superseded pregame rows is thin.
+        current_open = _open_pregame_count(existing.get("props") or [], now)
+        thin = current_open > 0 and len(live_incoming) * 2 < current_open
+        if thin:
+            LOGGER.warning(
+                "Skipping superseded pass for %s %s: incoming live rows %s are under half of %s non-superseded pregame rows",
+                sport,
+                format_iso(d),
+                len(live_incoming),
+                current_open,
+            )
+        else:
+            for row in merged:
+                if _row_still_on_board(sport, row, live_keys, live_by_id):
+                    row.pop("superseded_at", None)
+                    if pulled_status(row):
+                        row.pop("pp_status", None)
+                        row.pop("removed", None)
+                    continue
+                if prop_game_started(row, now):
+                    continue
+                if not row.get("superseded_at"):
+                    row["superseded_at"] = now_iso
         if pulled_rows:
             _apply_pull_flags(sport, merged, pulled_rows, live_keys, now_iso, now)
     payload = {
