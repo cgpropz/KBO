@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readLastGood, PUBLIC_DATA_CACHE, LAST_GOOD_KBO_WNBA_MAX_AGE_MS } from '../api/data.js';
+import { readLastGood, PUBLIC_DATA_CACHE, LAST_GOOD_KBO_WNBA_MAX_AGE_MS, lastGoodMaxAgeMs, lastGoodMemoryAt, cacheWindows } from '../api/data.js';
 
 const NOW = new Date().toISOString();
 const blob = (obj) => ({ text: async () => JSON.stringify(obj) });
@@ -61,6 +61,22 @@ test('nfl_sharp_odds and nfl_game_markets use 6 h; other NFL boards 7 d', async 
     assert.ok(await readLastGood(mk(h(72)), t));
   }
 });
+
+test('a storage copy stays cached only for the time left under its age limit', () => {
+  const now = Date.parse('2026-10-17T12:00:00Z')
+  const maxAge = lastGoodMaxAgeMs('nhl_projections')
+  const left = 5 * 60 * 1000
+  const row = { data: [{ generated_at: new Date(now - maxAge + left).toISOString() }], updated_at: new Date(now - maxAge).toISOString() }
+  const until = lastGoodMemoryAt('nhl_projections', row, now) + cacheWindows.staleMs
+  assert.ok(until > now)
+  assert.ok(until <= now + left)
+  assert.ok(until < now + cacheWindows.staleMs)
+
+  const fresh = { data: [{ generated_at: new Date(now).toISOString() }] }
+  const freshUntil = lastGoodMemoryAt('nhl_projections', fresh, now) + cacheWindows.staleMs
+  assert.ok(freshUntil <= now + cacheWindows.staleMs)
+  assert.ok(freshUntil > now + cacheWindows.staleMs - cacheWindows.freshMs)
+})
 
 test('KBO and WNBA keep a last-good copy for 12 h', async () => {
   const h = (n) => new Date(Date.now() - n * 3600_000).toISOString();
