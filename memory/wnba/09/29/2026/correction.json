@@ -1,0 +1,4996 @@
+{
+  "sport": "wnba",
+  "slate_date": "09/29/2026",
+  "slate_date_iso": "2026-09-29",
+  "timezone_basis": "ET",
+  "status": "partial",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a pulled standard line is excluded rather than voided, matching the WNBA grader. Excluded 506 non-standard lines, 25 superseded standard lines, and 0 pulled standard lines.",
+  "hits": 105,
+  "misses": 112,
+  "pushes": 10,
+  "voids": 0,
+  "dnps": 0,
+  "missing": 0,
+  "hit_rate": 0.483871,
+  "hit_rate_pct": 48.4,
+  "props_total": 231,
+  "props_graded": 227,
+  "ungraded_live": 4,
+  "graded_at": "2026-10-17T21:30:00+00:00",
+  "updated_at": "2026-10-17T21:30:00+00:00",
+  "before": {
+    "hits": 411,
+    "misses": 302,
+    "pushes": 10,
+    "voids": 0,
+    "hit_rate": 0.576438,
+    "hit_rate_pct": 57.6,
+    "props_graded": 723,
+    "props_total": 762
+  },
+  "excluded_research": 506,
+  "excluded_superseded": 25,
+  "pulled_standard": 0,
+  "rows_changed": [
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Blocked Shots",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 21.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 17.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 59,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 47.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Offensive Rebounds",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 30.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 21.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 34.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 44.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 44.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 34.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 11.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 11.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Steals",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "A'ja Wilson",
+      "team": "LVA",
+      "stat": "Turnovers",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Blocked Shots",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 10.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 40,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Offensive Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 17.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 5.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 12.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliyah Boston",
+      "team": "IND",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Blocked Shots",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 19,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 15,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 52,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 40,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Free Throws Attempted",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Free Throws Attempted",
+      "odds_type": "standard",
+      "line": 7,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 23.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 16.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 34.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 37.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Steals",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Breanna Stewart",
+      "team": "NYL",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brianna Turner",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brianna Turner",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brianna Turner",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 11.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 15.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 43.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 32.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 15.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 32.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 38.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Caitlin Clark",
+      "team": "IND",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 11.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 12.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 8.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 33.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 23.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Free Throws Attempted",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Free Throws Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 13.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chelsea Gray",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cheyenne Parker-Tyus",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Free Throws Attempted",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Free Throws Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 13.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 22.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 18.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Two Pointers Made",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Courtney Williams",
+      "team": "MIN",
+      "stat": "Two Pointers Made",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 16.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 43,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 31,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 22.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 34.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "standard",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 11.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackie Young",
+      "team": "LVA",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jewell Loyd",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "standard",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Blocked Shots",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Double-Double",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 8,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 36,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 25.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Free Throws Attempted",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Free Throws Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 8.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 26.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Steals",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonquel Jones",
+      "team": "NYL",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "standard",
+      "line": 7,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 15,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 11,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 31.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 21.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 18.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 11.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kayla McBride",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 15.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 37.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 27.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 26.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 18.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 31.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kelsey Mitchell",
+      "team": "IND",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 24,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 15,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 17.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 13.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leonie Fiebich",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lexie Hull",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mai Yamamoto",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mai Yamamoto",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 21.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Offensive Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Makayla Timpson",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "standard",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marine Johannes",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Blks+Stls",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Blocked Shots",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 16.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 40.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 30.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Steals",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Napheesa Collier",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Blocked Shots",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 32.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 22.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 11.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 21.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 10.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Steals",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Natasha Howard",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Nia Brodie",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "3-PT Made",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 16.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 41,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 30,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Free Throws Attempted",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Free Throws Attempted",
+      "odds_type": "standard",
+      "line": 4,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Free Throws Made",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Free Throws Made",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 29.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 31.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 11.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olivia Miles",
+      "team": "MIN",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 24,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 14,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 8.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 15.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 13.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pauline Astier",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Raven Johnson",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Raven Johnson",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rebekah Gardner",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rebekah Gardner",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rebekah Gardner",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rebekah Gardner",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rebekah Gardner",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "3-PT Attempted",
+      "odds_type": "goblin",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Assists",
+      "odds_type": "goblin",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Blks+Stls",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Double-Double",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "demon",
+      "line": 15.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "FG Attempted",
+      "odds_type": "goblin",
+      "line": 11.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "FG Made",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "FG Made",
+      "odds_type": "standard",
+      "line": 5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 33.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 23.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Free Throws Attempted",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Free Throws Attempted",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Free Throws Made",
+      "odds_type": "demon",
+      "line": 3,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Free Throws Made",
+      "odds_type": "standard",
+      "line": 3,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Offensive Rebounds",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 16.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 10.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 24.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 14.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 25.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 19.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Turnovers",
+      "odds_type": "goblin",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sabrina Ionescu",
+      "team": "NYL",
+      "stat": "Two Pointers Made",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "3-PT Made",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sophie Cunningham",
+      "team": "IND",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "3-PT Made",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Assists",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "demon",
+      "line": 18.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Fantasy Score",
+      "odds_type": "goblin",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Asts",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "demon",
+      "line": 9.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Rebs",
+      "odds_type": "goblin",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "demon",
+      "line": 12.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Pts+Rebs+Asts",
+      "odds_type": "goblin",
+      "line": 8.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephanie Talbot",
+      "team": "LVA",
+      "stat": "Rebounds",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    }
+  ]
+}

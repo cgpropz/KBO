@@ -1,0 +1,1586 @@
+{
+  "sport": "nhl",
+  "slate_date": "10/16/2026",
+  "slate_date_iso": "2026-10-16",
+  "timezone_basis": "ET",
+  "status": "complete",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 141 non-standard lines and 12 superseded standard lines. 2 pulled standard lines count as Void.",
+  "hits": 10,
+  "misses": 14,
+  "pushes": 5,
+  "voids": 2,
+  "dnps": 0,
+  "missing": 1,
+  "hit_rate": 0.416667,
+  "hit_rate_pct": 41.7,
+  "props_total": 32,
+  "props_graded": 32,
+  "ungraded_live": 0,
+  "graded_at": "2026-10-17T21:30:00+00:00",
+  "updated_at": "2026-10-17T21:30:00+00:00",
+  "before": {
+    "hits": 135,
+    "misses": 40,
+    "pushes": 5,
+    "voids": 0,
+    "hit_rate": 0.771429,
+    "hit_rate_pct": 77.1,
+    "props_graded": 185,
+    "props_total": 185
+  },
+  "excluded_research": 141,
+  "excluded_superseded": 12,
+  "pulled_standard": 2,
+  "rows_changed": [
+    {
+      "player": "A.J. Greer",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Killorn",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Killorn",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Killorn",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "pulled"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Beckett Sennecke",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Beckett Sennecke",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Beckett Sennecke",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Beckett Sennecke",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Ben Kindel",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ben Kindel",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ben Kindel",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ben Kindel",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Blake Lizotte",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brent Burns",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Kulak",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bryan Rust",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bryan Rust",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "pulled"
+    },
+    {
+      "player": "Bryan Rust",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bryan Rust",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Casey Mittelstadt",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Casey Mittelstadt",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Casey Mittelstadt",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Charlie McAvoy",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Charlie McAvoy",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Charlie McAvoy",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Connor Dewar",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cutter Gauthier",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cutter Gauthier",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "David Pastrnak",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "David Pastrnak",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "David Pastrnak",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "David Pastrnak",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Declan Carlile",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Elias Lindholm",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Elias Lindholm",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Elias Lindholm",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Elmer Soderblom",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Erik Karlsson",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Erik Karlsson",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Erik Karlsson",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Frank Vatrano",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Frank Vatrano",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Frank Vatrano",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Fraser Minten",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Fraser Minten",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Fraser Minten",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Frederic Brunet",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Frederic Brunet",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gavin Brindley",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Hampus Lindholm",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Hampus Lindholm",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Hampus Lindholm",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "JJ Peterka",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "JJ Peterka",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "JJ Peterka",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackson LaCombe",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackson LaCombe",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jackson LaCombe",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackson LaCombe",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jackson LaCombe",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "James Hagens",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "James Hagens",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "James Hagens",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jeff Malott",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Manson",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Judd Caulfield",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Judd Caulfield",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Judd Caulfield",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Judd Caulfield",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kaedan Korczak",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kris Letang",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kris Letang",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kris Letang",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leo Carlsson",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leo Carlsson",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Leo Carlsson",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marat Khusnutdinov",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mark Kastelic",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mason Lohrei",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Morgan Geekie",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Morgan Geekie",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Morgan Geekie",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nick Robertson",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikita Nesterenko",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikita Nesterenko",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikita Zadorov",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikita Zadorov",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikita Zadorov",
+      "team": "BOS",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Noah Warren",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Parker Kelly",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pavel Mintyukov",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pavel Zacha",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Pavel Zacha",
+      "team": "BOS",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rickard Rakell",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rickard Rakell",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rickard Rakell",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sam Malinski",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Malinski",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Malinski",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Samuel Girard",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sidney Crosby",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sidney Crosby",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sidney Crosby",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Spencer Stastney",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Tanner Jeannot",
+      "team": "BOS",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tim Washe",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tommy Novak",
+      "team": "PIT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tommy Novak",
+      "team": "PIT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tommy Novak",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tommy Novak",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Tristan Luneau",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tristan Luneau",
+      "team": "ANA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tristan Luneau",
+      "team": "ANA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyson Hinds",
+      "team": "ANA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    }
+  ]
+}

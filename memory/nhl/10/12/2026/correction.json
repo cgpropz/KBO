@@ -1,0 +1,2666 @@
+{
+  "sport": "nhl",
+  "slate_date": "10/12/2026",
+  "slate_date_iso": "2026-10-12",
+  "timezone_basis": "ET",
+  "status": "complete",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 245 non-standard lines and 18 superseded standard lines. 0 pulled standard lines count as Void.",
+  "hits": 12,
+  "misses": 13,
+  "pushes": 5,
+  "voids": 0,
+  "dnps": 0,
+  "missing": 0,
+  "hit_rate": 0.48,
+  "hit_rate_pct": 48.0,
+  "props_total": 30,
+  "props_graded": 30,
+  "ungraded_live": 0,
+  "graded_at": "2026-10-17T21:30:00+00:00",
+  "updated_at": "2026-10-17T21:30:00+00:00",
+  "before": {
+    "hits": 215,
+    "misses": 61,
+    "pushes": 8,
+    "voids": 0,
+    "hit_rate": 0.778986,
+    "hit_rate_pct": 77.9,
+    "props_graded": 293,
+    "props_total": 293
+  },
+  "excluded_research": 245,
+  "excluded_superseded": 18,
+  "pulled_standard": 0,
+  "rows_changed": [
+    {
+      "player": "Aaron Ekblad",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aaron Ekblad",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aaron Ekblad",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Amadeus Lombardi",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Andre Burakovsky",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Andre Burakovsky",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Andre Burakovsky",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Andre Burakovsky",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Mantha",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Mantha",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Mantha",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Mantha",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Anton Lundell",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anton Lundell",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anton Lundell",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anton Lundell",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anton Lundell",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Arseny Gritsyuk",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Arseny Gritsyuk",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Beck Malenstyn",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Blake Coleman",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Blake Coleman",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Blake Coleman",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Blake Coleman",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bobby Brink",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bobby Brink",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Bobby Brink",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brad Marchand",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brady Tkachuk",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brady Tkachuk",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brady Tkachuk",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Braeden Bowman",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Braeden Bowman",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Braeden Bowman",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brayden McNabb",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brayden McNabb",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brenden Dillon",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Howden",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Howden",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Pesce",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Pesce",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Verhaeghe",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Verhaeghe",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Verhaeghe",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Yakemchuk",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Yakemchuk",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Carter Yakemchuk",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Claude Giroux",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Claude Giroux",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Claude Giroux",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cody Glass",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cody Glass",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Daemon Hunt",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "David Spacek",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dawson Mercer",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dmitry Kulikov",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Drake Batherson",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Drake Batherson",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Drake Batherson",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Drake Batherson",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "push",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Dylan Cozens",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Cozens",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Cozens",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Eetu Luostarinen",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Eetu Luostarinen",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Eetu Luostarinen",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Fabian Zetterlund",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Fabian Zetterlund",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Fabian Zetterlund",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Garnet Hathaway",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gustav Forsling",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gustav Forsling",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ivan Barbashev",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ivan Barbashev",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ivan Barbashev",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Eichel",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Eichel",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Eichel",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Hughes",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Hughes",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Hughes",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jared Spurgeon",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jared Spurgeon",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jared Spurgeon",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jeremy Lauzon",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Boqvist",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Boqvist",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Bratt",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Bratt",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Bratt",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Bratt",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jesper Bratt",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "push",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Jiri Kulich",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Joel Eriksson Ek",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Joel Eriksson Ek",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Joel Eriksson Ek",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonas Brodin",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonas Brodin",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jonas Siegenthaler",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Spence",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Spence",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Spence",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Josh Doan",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Doan",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Doan",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Norris",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Norris",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Norris",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Norris",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Justin Danforth",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kirill Kaprizov",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kirill Kaprizov",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kirill Kaprizov",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Konsta Helenius",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Konsta Helenius",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Konsta Helenius",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lars Eller",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lars Eller",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Louis Crevier",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Hughes",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Hughes",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Hughes",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Luke Hughes",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Marc Gatcomb",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Marcus Foligno",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mark Stone",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mark Stone",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mark Stone",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matt Boldy",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matt Boldy",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matt Boldy",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matthew Tkachuk",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matthew Tkachuk",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Matthew Tkachuk",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mattias Samuelsson",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mattias Samuelsson",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Maxim Shabanov",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Maxim Shabanov",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Maxim Shabanov",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Maxim Shabanov",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Michael Amadio",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Michael McCarron",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mitch Marner",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mitch Marner",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mitch Marner",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nic Dowd",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nick Cousins",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nico Hischier",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nico Hischier",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nico Hischier",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nico Sturm",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Niko Mikkola",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nikolas Matinpalo",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Hanifin",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Hanifin",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Ostlund",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Ostlund",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Noah Ostlund",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Ostlund",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olen Zellweger",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olen Zellweger",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Olli Maatta",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Owen Power",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Owen Power",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Owen Power",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Parker Wotherspoon",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Parker Wotherspoon",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Peyton Krebs",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Peyton Krebs",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Quinn Hughes",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Quinn Hughes",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Quinn Hughes",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Quinn Hughes",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "push",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Radko Gudas",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Raphael Lavoie",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Raphael Lavoie",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rasmus Andersson",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rasmus Andersson",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rasmus Dahlin",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rasmus Dahlin",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Rasmus Dahlin",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ridly Greig",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Hartman",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Hartman",
+      "team": "MIN",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Hartman",
+      "team": "MIN",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan McLeod",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan McLeod",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Bennett",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Bennett",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Bennett",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Bennett",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Sam Carrick",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Lafferty",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Reinhart",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Reinhart",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Reinhart",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Reinhart",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sandis Vilmanis",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sandis Vilmanis",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Seth Jones",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Seth Jones",
+      "team": "FLA",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Seth Jones",
+      "team": "FLA",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Shane Pinto",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Shane Pinto",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Shane Pinto",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Shea Theodore",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Shea Theodore",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephen Halliday",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Stephen Halliday",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tage Thompson",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tage Thompson",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tage Thompson",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tage Thompson",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Thomas Chabot",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Thomas Chabot",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Thomas Chabot",
+      "team": "OTT",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Thomas Chabot",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Timo Meier",
+      "team": "NJD",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Timo Meier",
+      "team": "NJD",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Timo Meier",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Timo Meier",
+      "team": "NJD",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Tomas Hertl",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tomas Hertl",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tomas Hertl",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Trevor Connelly",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Trevor Connelly",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Trevor Connelly",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Trevor Connelly",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyler Kleven",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyson Kozak",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Uvis Balinskis",
+      "team": "FLA",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Warren Foegele",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Warren Foegele",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Warren Foegele",
+      "team": "OTT",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "William Eklund",
+      "team": "OTT",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "William Karlsson",
+      "team": "VGK",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "William Karlsson",
+      "team": "VGK",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "William Karlsson",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "William Karlsson",
+      "team": "VGK",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Yakov Trenin",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zach Benson",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zach Benson",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "superseded"
+    },
+    {
+      "player": "Zach Benson",
+      "team": "BUF",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zach Benson",
+      "team": "BUF",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zach Bogosian",
+      "team": "MIN",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zach Metsa",
+      "team": "BUF",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    }
+  ]
+}
