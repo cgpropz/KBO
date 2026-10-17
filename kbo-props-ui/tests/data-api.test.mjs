@@ -1491,6 +1491,32 @@ test('the next good KBO read writes one last-good copy and a later timeout serve
   }
 })
 
+test('nfl sharp odds are saved as a last-good copy', async () => {
+  const stored = new Map();
+  const client = mockClient();
+  client.storage = {
+    from() {
+      return {
+        upload(path, body) {
+          stored.set(path, JSON.parse(Buffer.from(body).toString('utf8')));
+          return Promise.resolve({ error: null });
+        },
+      };
+    },
+  };
+  const res = mockRes();
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nfl_sharp_odds' }, headers: { authorization: bearer('tok-owner') } },
+    res,
+    client,
+  );
+  await _lastGoodWrite('nfl_sharp_odds');
+  assert.equal(res.statusCode, 200);
+  assert.equal(stored.has('nfl_sharp_odds.json'), true);
+  assert.ok(stored.get('nfl_sharp_odds.json').data.records.length > 3);
+  _clearCache();
+});
+
 test('an empty KBO board is not saved as a last-good copy', async () => {
   let uploads = 0
   const client = mockClient()

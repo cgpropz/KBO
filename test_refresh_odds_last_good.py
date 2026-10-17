@@ -65,11 +65,11 @@ class RefreshOddsLastGoodTests(unittest.TestCase):
         self.assertEqual(captured["payload"]["data"]["projections"][0]["name"], "A")
         self.assertEqual(captured["payload"]["updated_at"], "2026-10-17T12:00:00Z")
 
-    def test_dry_run_empty_and_other_tables_do_not_upload(self):
+    def test_dry_run_empty_and_failed_publish_do_not_upload(self):
         calls = []
 
-        def fake_upload(*_args, **_kwargs):
-            calls.append(True)
+        def fake_upload(table, *_args, **_kwargs):
+            calls.append(table)
 
         with TemporaryDirectory() as tmp:
             for name, body in (
@@ -94,7 +94,7 @@ class RefreshOddsLastGoodTests(unittest.TestCase):
                 self.assertFalse(refresh_odds._publish_snapshot(
                     _Client(boom=True), "batter_projections.json", "batter_projections",
                 ))
-        self.assertEqual(calls, [])
+        self.assertEqual(calls, ["pitcher_rankings"])
 
     def test_a_storage_failure_does_not_fail_the_publish(self):
         def boom(*_args, **_kwargs):

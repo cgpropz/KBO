@@ -330,9 +330,10 @@ async function boardAfterReadError(client, table, err, deadline, primed) {
   throw err;
 }
 
-// Odds refresh uploads these three when it publishes. The API also writes the
-// next good row, without waiting on Storage, whenever the board version or
-// updated_at changes. An empty board is never stored.
+// These three are read in parallel with the board because the odds refresh
+// publishes them often. Every non-empty board, including sharp odds and the
+// joined nba_players list, is written here without waiting on Storage when
+// its version or updated_at changes. An empty board is never stored.
 const KBO_FALLBACK_TABLES = new Set([
   'prizepicks_props',
   'strikeout_projections',
@@ -399,7 +400,7 @@ async function writeLastGood(client, table, row) {
 }
 
 function scheduleLastGoodWrite(client, table, row) {
-  if (!KBO_FALLBACK_TABLES.has(table) || !lastGoodHasRows(row)) return Promise.resolve();
+  if (!lastGoodHasRows(row)) return Promise.resolve();
   const signature = lastGoodSignature(row);
   if (lastGoodSaved.get(table) === signature) return Promise.resolve();
   const existing = lastGoodWrites.get(table);
@@ -627,6 +628,7 @@ async function readSnapshotResolved(client, table, deadline) {
     // below this read still checks that in-memory copy before Storage.
     const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client, deadline));
     rememberBoard(table, assembled);
+    scheduleLastGoodWrite(client, table, assembled);
     return assembled;
   }
   rememberBoard(table, head);

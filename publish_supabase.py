@@ -1198,9 +1198,21 @@ def main():
                     freshness_rows[freshness_key] = (published_data, dropped, removals)
 
             if table == "nba_players":
-                for msg in publish_nba_players(session, data, headers, published_at):
-                    print(f"  ✗ {msg}", flush=True)
-                    failures.append(msg)
+                player_errors = publish_nba_players(session, data, headers, published_at)
+                if player_errors:
+                    for msg in player_errors:
+                        print(f"  ✗ {msg}", flush=True)
+                        failures.append(msg)
+                    continue
+                if isinstance(data, list) and data:
+                    upload_last_good(
+                        session,
+                        "nba_players",
+                        snapshot_record(1, data, published_at),
+                        headers,
+                    )
+                else:
+                    print("  ! nba_players last-good skipped: empty board", flush=True)
                 continue
 
             plan = snapshot_publish_plan(table, data, published_at, chunk_writes)
