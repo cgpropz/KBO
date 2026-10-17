@@ -416,6 +416,9 @@ def compute_hit_rate_stats(props: Iterable[dict]) -> dict[str, Any]:
     Aggregate HIT/MISS/PUSH/DNP counts and hit rate from graded props.
 
     Hit rate denominator is hits + misses only (PUSH / DNP / N/A excluded).
+
+    Public hit rates are computed only from day-grader recaps passed here.
+    Subscriber slip results are not an input.
     """
     hits = 0
     misses = 0

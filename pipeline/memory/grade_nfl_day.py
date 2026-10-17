@@ -150,6 +150,7 @@ def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bo
             continue
         entry = {
             "present": True,
+            "player": getattr(row, "player_display_name", "") or "",
             "team": getattr(row, "team", None),
             "passing_yards": getattr(row, "passing_yards", None),
             "attempts": getattr(row, "attempts", None),
@@ -161,14 +162,50 @@ def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bo
             "receptions": getattr(row, "receptions", None),
             "targets": getattr(row, "targets", None),
         }
-        # Combos
-        py = float(entry["passing_yards"] or 0)
-        ry = float(entry["rushing_yards"] or 0)
-        rcy = float(entry["receiving_yards"] or 0)
-        entry["pass_rush"] = py + ry
-        entry["rush_rec"] = ry + rcy
+        attach_combo_yards(entry)
         lookup[(iso, key)] = entry
     return lookup, finalized
+
+
+def _is_nan(value) -> bool:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return False
+    return number != number
+
+
+def _combo_component(value) -> float | None:
+    """Blank nflverse cells are zero. NaN is missing and must not add into a combo."""
+    if value is None or value == "":
+        return 0.0
+    number = float(value)
+    if number != number:
+        return None
+    return number
+
+
+def attach_combo_yards(entry: dict) -> dict:
+    passing = _combo_component(entry.get("passing_yards"))
+    rushing = _combo_component(entry.get("rushing_yards"))
+    receiving = _combo_component(entry.get("receiving_yards"))
+    entry["pass_rush"] = None if passing is None or rushing is None else passing + rushing
+    entry["rush_rec"] = None if rushing is None or receiving is None else rushing + receiving
+    return entry
+
+
+def stat_is_nan(stats: dict, stat: str) -> bool:
+    """True when this stat, or a combo that includes it, is NaN rather than zero."""
+    if stat == "Pass+Rush Yds":
+        return stats.get("pass_rush") is None and (
+            _is_nan(stats.get("passing_yards")) or _is_nan(stats.get("rushing_yards"))
+        )
+    if stat == "Rush+Rec Yds":
+        return stats.get("rush_rec") is None and (
+            _is_nan(stats.get("rushing_yards")) or _is_nan(stats.get("receiving_yards"))
+        )
+    column = STAT_COLUMNS.get(stat)
+    return bool(column) and _is_nan(stats.get(column))
 
 
 def actual_for_stat(stats: dict, stat: str):
@@ -183,9 +220,12 @@ def actual_for_stat(stats: dict, stat: str):
     if val is None:
         return 0.0  # nflverse often omits zeros
     try:
-        return float(val)
+        number = float(val)
     except (TypeError, ValueError):
         return None
+    if number != number:
+        return None  # NaN is missing, not a push
+    return number
 
 
 def grade_day(d: date, *, dry_run: bool = False) -> dict:
@@ -251,7 +291,11 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
 
         actual_val = actual_for_stat(stats, stat)
         if actual_val is None:
-            missing.append({"player": player, "stat": stat, "reason": "unmapped_stat"})
+            missing.append({
+                "player": player,
+                "stat": stat,
+                "reason": "stat_missing" if stat_is_nan(stats, stat) else "unmapped_stat",
+            })
             continue
         try:
             outcome = grade_line(actual_val, line)

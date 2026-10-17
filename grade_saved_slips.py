@@ -1,266 +1,134 @@
 """
-grade_saved_slips.py
-Grade saved subscriber slips against actual game results.
+Grade saved subscriber slips against final games.
 
-Reads actual stats from:
-  - Pitchers-Data/pitcher_logs.json
-  - Batters-Data/KBO_daily_batting_stats_combined.csv
+KBO, NFL, WNBA, and NHL use the same stat sources as the day graders.
+Slips for any other sport stay ungraded. A scratched, OUT, DNP, or voided
+leg counts as a push. The publish step keeps going when some slips cannot
+be graded; the summary prints could_not_grade.
 
-Queries saved_slips from Supabase where graded=false,
-then compares each leg against actual performance.
+Results are written only to saved_slips. They are subscriber entries and are
+not passed to compute_hit_rate_stats or write_recap, which are what publish
+the public hit rates.
 
-Run daily after game logs are refreshed:
   python grade_saved_slips.py
+  python grade_saved_slips.py --dry-run
+  python backfill_saved_slip_grades.py --dry-run
+  python backfill_saved_slip_grades.py
+  python backfill_saved_slip_grades.py --regrade --dry-run
 """
+from __future__ import annotations
 
-import json
-import csv
-import os
-import sys
-import unicodedata
-from datetime import datetime, timezone
+import argparse
 
-# ---------- Supabase setup ----------
-try:
-    from supabase import create_client
-except ImportError:
-    sys.exit("Install supabase-py:  pip install supabase")
-
-SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")
+from pipeline.memory.common import today_et
+from pipeline.saved_slip_db import supabase_client
+from pipeline.saved_slip_grade import FETCH_LIMIT, LiveSources, format_summary, grade_batch
+from pipeline.saved_slip_sport import legs_of
 
 
-def _clean_secret(value):
-    return str(value or "").strip().strip('"').strip("'").replace("\\n", "\n")
+def already_ungradeable(slip: dict) -> bool:
+    """A slip whose every leg was already marked ungradeable is not retried."""
+    legs = [leg for leg in legs_of(slip) if isinstance(leg, dict)]
+    return bool(legs) and all(leg.get("ungradeable") for leg in legs)
 
 
-SUPABASE_KEY = _clean_secret(
-    os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")
-)
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    sys.exit("Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY) env vars")
-
-sb = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-
-# ---------- Helpers ----------
-
-TEAM_SHORT = {
-    "DOOSAN": "Doosan", "HANWHA": "Hanwha", "KIA": "Kia",
-    "KT": "KT", "Kiwoom": "Kiwoom", "LG": "LG",
-    "LOTTE": "Lotte", "NC": "NC", "SAMSUNG": "Samsung", "SSG": "SSG",
-}
+def fetch_pages(build, limit: int) -> list:
+    """Page a fresh query until a short page or 50 pages."""
+    rows = []
+    start = 0
+    page = max(1, limit)
+    while start < page * 50:
+        resp = build().range(start, start + page - 1).execute()
+        batch = list(getattr(resp, "data", None) or [])
+        rows.extend(batch)
+        if len(batch) < page:
+            break
+        start += page
+    return rows
 
 
-def norm(name):
-    nfkd = unicodedata.normalize("NFKD", name)
-    return "".join(c for c in nfkd if not unicodedata.combining(c)).strip().lower()
+def fetch_ungraded(sb, today, limit: int) -> list:
+    """Ungraded slips before today, plus today, paged past the first page.
 
-
-def norm_team(t):
-    return TEAM_SHORT.get(t, t)
-
-
-# ---------- Build actual stats lookup ----------
-
-def build_actuals():
-    """Return dict keyed by (date, normalized_name) -> stats dict."""
-    lookup = {}
-
-    # Pitcher logs
-    pitcher_path = os.path.join(BASE, "Pitchers-Data", "pitcher_logs.json")
-    if os.path.exists(pitcher_path):
-        with open(pitcher_path) as f:
-            for log in json.load(f):
-                if log.get("Role") != "SP":
-                    continue
-                try:
-                    d = datetime.strptime(log["Date"], "%m/%d/%Y").strftime("%Y-%m-%d")
-                except (ValueError, KeyError):
-                    continue
-                key = (d, norm(log["Name"]))
-                lookup[key] = {
-                    "type": "pitcher",
-                    "so": log.get("SO", 0),
-                    "ip": log.get("IP", 0),
-                    "ha": log.get("H", 0),           # hits allowed
-                    "outs": round(log.get("IP", 0) * 3),
-                }
-
-    # Batter logs
-    batter_path = os.path.join(BASE, "Batters-Data", "KBO_daily_batting_stats_combined.csv")
-    if os.path.exists(batter_path):
-        with open(batter_path) as f:
-            for row in csv.DictReader(f):
-                try:
-                    d = datetime.strptime(row["DATE"], "%m/%d/%Y").strftime("%Y-%m-%d")
-                except (ValueError, KeyError):
-                    continue
-                key = (d, norm(row["Name"]))
-                h = int(row.get("H", 0) or 0)
-                r = int(row.get("R", 0) or 0)
-                rbi = int(row.get("RBI", 0) or 0)
-                tb = int(row.get("TB", 0) or 0)
-                lookup[key] = {
-                    "type": "batter",
-                    "h": h, "r": r, "rbi": rbi,
-                    "hrr": h + r + rbi,
-                    "tb": tb,
-                }
-
-    return lookup
-
-
-# ---------- Grading logic ----------
-
-# Map prop names to stat keys and comparison
-PROP_STAT_MAP = {
-    "Strikeouts":      ("so",  "pitcher"),
-    "K":               ("so",  "pitcher"),
-    "Hits Allowed":    ("ha",  "pitcher"),
-    "HA":              ("ha",  "pitcher"),
-    "Pitching Outs":   ("outs","pitcher"),
-    "OUTS":            ("outs","pitcher"),
-    "Hits+Runs+RBIs":  ("hrr", "batter"),
-    "HRR":             ("hrr", "batter"),
-    "Total Bases":     ("tb",  "batter"),
-    "TB":              ("tb",  "batter"),
-}
-
-
-def grade_leg(leg, game_date, actuals):
+    Slips already marked ungradeable are skipped so they cannot fill the window.
     """
-    Grade a single leg.
-    Returns 'hit', 'miss', 'push', or 'pending' (no data yet).
-    Also returns the actual value if found.
-    """
-    name_key = norm(leg.get("name", ""))
-    key = (game_date, name_key)
-    actual_stats = actuals.get(key)
+    iso = today.isoformat()
 
-    if not actual_stats:
-        return "pending", None
+    def past():
+        return (
+            sb.table("saved_slips")
+            .select("*")
+            .eq("graded", False)
+            .lt("game_date", iso)
+            .order("game_date")
+            .order("id")
+        )
 
-    prop_name = leg.get("prop", "") or leg.get("propShort", "")
-    mapping = PROP_STAT_MAP.get(prop_name)
-    if not mapping:
-        # Try propShort as fallback
-        mapping = PROP_STAT_MAP.get(leg.get("propShort", ""))
-    if not mapping:
-        return "pending", None
+    def current():
+        return (
+            sb.table("saved_slips")
+            .select("*")
+            .eq("graded", False)
+            .eq("game_date", iso)
+            .order("id")
+        )
 
-    stat_key, _ = mapping
-    actual_val = actual_stats.get(stat_key)
-    if actual_val is None:
-        return "pending", None
-
-    line = leg.get("line")
-    if line is None:
-        return "pending", actual_val
-
-    side = leg.get("side", "OVER")
-
-    if actual_val == line:
-        return "push", actual_val
-    elif side == "OVER":
-        return ("hit" if actual_val > line else "miss"), actual_val
-    else:  # UNDER
-        return ("hit" if actual_val < line else "miss"), actual_val
+    rows = fetch_pages(past, limit) + fetch_pages(current, limit)
+    return [row for row in rows if not already_ungradeable(row)]
 
 
-def grade_slip(slip, actuals):
-    """Grade all legs in a slip. Returns updated leg array and summary."""
-    game_date = slip["game_date"]
-    legs = slip.get("legs", [])
-    if isinstance(legs, str):
-        legs = json.loads(legs)
+def fetch_past(sb, today, limit: int) -> list:
+    """Every slip from before today, including graded rows. Opt-in via --regrade."""
+    def past():
+        return (
+            sb.table("saved_slips")
+            .select("*")
+            .lt("game_date", today.isoformat())
+            .order("id")
+        )
 
-    hits = misses = pushes = pending = 0
-    graded_legs = []
-
-    for leg in legs:
-        result, actual = grade_leg(leg, game_date, actuals)
-        graded_leg = {**leg, "result": result}
-        if actual is not None:
-            graded_leg["actual"] = actual
-        graded_legs.append(graded_leg)
-
-        if result == "hit":
-            hits += 1
-        elif result == "miss":
-            misses += 1
-        elif result == "push":
-            pushes += 1
-        else:
-            pending += 1
-
-    # Overall result
-    if pending > 0:
-        overall = "pending"
-        fully_graded = False
-    elif misses == 0:
-        overall = "hit"
-        fully_graded = True
-    elif hits == 0:
-        overall = "miss"
-        fully_graded = True
-    else:
-        overall = "partial"
-        fully_graded = True
-
-    return {
-        "legs": graded_legs,
-        "result": overall,
-        "hits": hits,
-        "misses": misses,
-        "pushes": pushes,
-        "graded": fully_graded,
-    }
+    return fetch_pages(past, limit)
 
 
-# ---------- Main ----------
+def apply_updates(sb, updates, summary) -> None:
+    for update in updates:
+        try:
+            sb.table("saved_slips").update(update["payload"]).eq("id", update["id"]).execute()
+        except Exception:  # noqa: BLE001 - one row must not abort the publish
+            summary["could_not_grade"] = summary.get("could_not_grade", 0) + 1
 
-def main():
-    print("Building actuals lookup...")
-    actuals = build_actuals()
-    print(f"  {len(actuals)} player-date entries loaded")
 
-    # Fetch ungraded slips
-    print("Fetching ungraded slips from Supabase...")
-    resp = sb.table("saved_slips").select("*").eq("graded", False).execute()
-    slips = resp.data or []
-    print(f"  {len(slips)} ungraded slips found")
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Grade saved slips for KBO, NFL, WNBA, and NHL")
+    parser.add_argument("--dry-run", action="store_true", help="Print counts only. Do not update rows.")
+    parser.add_argument(
+        "--regrade",
+        action="store_true",
+        help="Opt-in. Also read slips that already have a result. A graded slip is not moved to pending, ungradeable, or a void caused by missing data.",
+    )
+    parser.add_argument("--limit", type=int, default=FETCH_LIMIT, help=f"Rows per fetch (default {FETCH_LIMIT}).")
+    args = parser.parse_args(argv)
+    limit = max(1, args.limit)
 
-    if not slips:
-        print("Nothing to grade.")
-        return
-
-    updated = 0
-    still_pending = 0
-
-    for slip in slips:
-        result = grade_slip(slip, actuals)
-
-        # Update in Supabase
-        update_data = {
-            "legs": result["legs"],
-            "result": result["result"],
-            "hits": result["hits"],
-            "misses": result["misses"],
-            "pushes": result["pushes"],
-            "graded": result["graded"],
-        }
-
-        sb.table("saved_slips").update(update_data).eq("id", slip["id"]).execute()
-
-        if result["graded"]:
-            updated += 1
-        else:
-            still_pending += 1
-
-    print(f"Done: {updated} slips fully graded, {still_pending} still pending")
+    try:
+        sb = supabase_client()
+        today = today_et()
+        slips = fetch_past(sb, today, limit) if args.regrade else fetch_ungraded(sb, today, limit)
+        sources = LiveSources()
+        updates, summary = grade_batch(slips, sources, today)
+        if sources.notes:
+            summary["source_notes"] = sources.notes
+        if not args.dry_run:
+            apply_updates(sb, updates, summary)
+        print(format_summary(summary, dry_run=args.dry_run))
+    except SystemExit:
+        raise
+    except Exception as exc:  # noqa: BLE001 - publish must continue
+        print(f"saved slip grading failed: {type(exc).__name__}")
+        print("could_not_grade=1")
+        return 0
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

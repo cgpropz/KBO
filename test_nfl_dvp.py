@@ -324,6 +324,7 @@ class DvpRankTests(unittest.TestCase):
         self.assertEqual(actual_for_stat({'passing_tds': None}, 'Pass TDs'), 0.0)
         self.assertIsNone(actual_for_stat({'passing_tds': 1}, 'Anytime TDs'))
         self.assertEqual(actual_for_stat({'passing_yards': 250}, 'Pass Yards'), 250.0)
+        self.assertIsNone(actual_for_stat({'passing_yards': float('nan')}, 'Pass Yards'))
 
     def test_target_props_are_ranked(self):
         history = _history([

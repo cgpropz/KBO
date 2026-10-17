@@ -62,6 +62,57 @@ class NflAwaitingSlateTests(unittest.TestCase):
         self.assertNotIn(date(2026, 10, 4), found)
         self.assertNotIn(date(2026, 9, 27), found)
 
+    def test_nan_stat_is_missing_and_a_real_stat_still_grades(self):
+        d = date(2026, 10, 11)
+        common.write_slate(
+            "nfl",
+            d,
+            [
+                {"player": "Nan Player", "team": "KC", "stat": "Pass Yards", "line": 200.5, "recommendation": "OVER"},
+                {"player": "Real Player", "team": "KC", "stat": "Pass Yards", "line": 250.5, "recommendation": "OVER"},
+                {"player": "Zero Player", "team": "KC", "stat": "Rush Yards", "line": 10.5, "recommendation": "OVER"},
+            ],
+            source="test",
+        )
+        iso = "2026-10-11"
+        lookup = {
+            (iso, grade_nfl_day.name_key("Nan Player")): grade_nfl_day.attach_combo_yards({
+                "present": True,
+                "player": "Nan Player",
+                "passing_yards": float("nan"),
+                "rushing_yards": 12,
+                "receiving_yards": 0,
+            }),
+            (iso, grade_nfl_day.name_key("Real Player")): grade_nfl_day.attach_combo_yards({
+                "present": True,
+                "player": "Real Player",
+                "passing_yards": 300,
+                "rushing_yards": 0,
+                "receiving_yards": 0,
+            }),
+            (iso, grade_nfl_day.name_key("Zero Player")): grade_nfl_day.attach_combo_yards({
+                "present": True,
+                "player": "Zero Player",
+                "passing_yards": 10,
+                "rushing_yards": None,
+                "receiving_yards": 0,
+            }),
+        }
+        saved = grade_nfl_day.load_actuals_for_date
+        grade_nfl_day.load_actuals_for_date = lambda _d: (lookup, True)
+        try:
+            result = grade_nfl_day.grade_day(d, dry_run=True)
+        finally:
+            grade_nfl_day.load_actuals_for_date = saved
+        self.assertEqual(result["props_total"], 3)
+        self.assertEqual(result["props_graded"], 2)
+        self.assertEqual(result["pushes"], 0)
+        self.assertEqual(result["hits"], 1)
+        self.assertEqual(result["misses"], 1)
+        self.assertIsNone(lookup[(iso, grade_nfl_day.name_key("Nan Player"))]["pass_rush"])
+        self.assertEqual(grade_nfl_day.actual_for_stat({"passing_yards": None}, "Pass Yards"), 0.0)
+        self.assertEqual(grade_nfl_day.actual_for_stat({"passing_yards": 250}, "Pass Yards"), 250.0)
+
     def test_main_grades_every_awaiting_slate_instead_of_only_sunday(self):
         today = date(2026, 10, 12)
         for d in (date(2026, 10, 8), date(2026, 10, 11), date(2026, 10, 12)):

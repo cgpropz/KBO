@@ -98,6 +98,8 @@ def roster_full_names(pbp: dict | None) -> dict[int, str]:
 def _store_player(players: dict, team: str, player: dict, row: dict, full_names: dict[int, str]) -> None:
     pid = _player_id(player.get("playerId"))
     full = full_names.get(pid) if pid is not None else None
+    if full:
+        row["name"] = full
     if pid is not None:
         players[("id", pid)] = row
     if full:

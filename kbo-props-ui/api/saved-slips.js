@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildSavedSlipRow, sportColumnMissing } from '../src/savedSlipPayload.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -47,40 +48,26 @@ export default async function handler(req, res) {
 
   // ── POST: save a new slip ──
   if (req.method === 'POST') {
-    const { game_date, confidence, avg_edge, total_edge, unique_games, legs } = req.body || {};
+    const row = buildSavedSlipRow(req.body || {});
 
-    if (!game_date || !Array.isArray(legs) || legs.length === 0) {
+    if (!row.game_date || !Array.isArray(row.legs) || row.legs.length === 0) {
       return res.status(400).json({ error: 'game_date and legs[] are required' });
     }
 
-    // Sanitize legs — only keep expected fields
-    const cleanLegs = legs.map(l => ({
-      name: String(l.name || ''),
-      team: String(l.team || ''),
-      opponent: String(l.opponent || ''),
-      prop: String(l.prop || ''),
-      propShort: String(l.propShort || ''),
-      line: l.line != null ? Number(l.line) : null,
-      projection: l.projection != null ? Number(l.projection) : null,
-      edge: l.edge != null ? Number(l.edge) : null,
-      side: l.side === 'UNDER' ? 'UNDER' : 'OVER',
-      result: 'pending',
-      actual: null,
-    }));
-
-    const { data, error } = await supabase
+    const insertSlip = (payload) => supabase
       .from('saved_slips')
-      .insert({
-        user_id: user.id,
-        game_date,
-        confidence: confidence != null ? Number(confidence) : null,
-        avg_edge: avg_edge != null ? Number(avg_edge) : null,
-        total_edge: total_edge != null ? Number(total_edge) : null,
-        unique_games: unique_games != null ? Number(unique_games) : null,
-        legs: cleanLegs,
-      })
+      .insert({ user_id: user.id, ...payload })
       .select()
       .single();
+
+    let { data, error } = await insertSlip(row);
+    // The sport column is added by sql/migrations/20261017_saved_slips_sport.sql.
+    // Until that runs, keep the sport on each leg and retry without the column.
+    if (error && sportColumnMissing(error)) {
+      const withoutSport = { ...row };
+      delete withoutSport.sport;
+      ({ data, error } = await insertSlip(withoutSport));
+    }
 
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json({ slip: data });

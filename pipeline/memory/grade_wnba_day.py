@@ -113,6 +113,7 @@ def _load_boxscore_file(path: Path, lookup: dict[tuple[str, str], dict]) -> None
                 "team": cutoff.wnba_team(row.get("Team")),
                 "matchup": row.get("Match Up"),
                 "present": True,
+                "player": name,
             }
             stats["fantasy"] = round(calc_fantasy(stats), 2)
             stats["ptsReb"] = stats["pts"] + stats["reb"]
