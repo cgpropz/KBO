@@ -74,10 +74,10 @@ CG Score ranks every prop by how strongly our model's projection disagrees with 
 Not necessarily. The score measures how strongly the projection disagrees with the line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news.
 
 **What does a lower CG Score mean?**
-A lower score means a smaller model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee.
+A lower score is the under side of the projection vs the line, adjusted for matchup. A+ through C grades are based on the score. It's a ranking tool, not a guarantee.
 
 **Is CG Score the same for every sport?**
-Yes. CG Score ranks every prop by how strongly the projection disagrees with the line, adjusted for matchup (DvP) and recent form.
+No. It is adjusted by sport. WNBA and NFL use per-stat minimums. It is still projection vs line, adjusted for matchup.
 
 **Is CGPropz affiliated with PrizePicks or Underdog?**
 No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog.
@@ -106,12 +106,12 @@ No. CGPropz is an independent data and analysis site and is not affiliated with 
     {
       "@type": "Question",
       "name": "What does a lower CG Score mean?",
-      "acceptedAnswer": { "@type": "Answer", "text": "A lower score means a smaller model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee." }
+      "acceptedAnswer": { "@type": "Answer", "text": "A lower score is the under side of the projection vs the line, adjusted for matchup. A+ through C grades are based on the score. It's a ranking tool, not a guarantee." }
     },
     {
       "@type": "Question",
       "name": "Is CG Score the same for every sport?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Yes. CG Score ranks every prop by how strongly the projection disagrees with the line, adjusted for matchup (DvP) and recent form." }
+      "acceptedAnswer": { "@type": "Answer", "text": "No. It is adjusted by sport. WNBA and NFL use per-stat minimums. It is still projection vs line, adjusted for matchup." }
     },
     {
       "@type": "Question",

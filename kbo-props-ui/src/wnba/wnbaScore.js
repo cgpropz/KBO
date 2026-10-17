@@ -1,20 +1,5 @@
 import { lineMatchesStat } from '../cgScore.js'
 
-// Denominator floors for the WNBA CG Score.
-//
-// Each value is the 10th percentile of standard PrizePicks lines on the stored
-// WNBA slates in memory/wnba (through 2026-10-17), then rounded to the nearest
-// 0.5. The percentile is the linear rank on (n - 1) * 0.10, the same rule as
-// the NFL floors. A stat that is not in this map still divides by its own line.
-//
-// 3-PT Made is the exception. Its 10th percentile is 0.5 (6 of 45 standard
-// lines), and a floor of 0.5 would leave a goblin three at projection / 0.5.
-// That stat uses the 25th percentile, 1.5, which is also the most common
-// standard three. Blocked Shots and Offensive Rebounds are 0.5 at both the
-// 10th and 25th percentiles, because that is the standard market, so the
-// floor does not raise a 0.5 line. The line shown on the row stays the
-// PrizePicks number. standardLine is not the denominator.
-
 export const WNBA_LINE_FLOORS = {
   '3-PT Attempted': 3.5,
   '3-PT Made': 1.5,

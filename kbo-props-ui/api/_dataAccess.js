@@ -149,8 +149,8 @@ function kboPropScore(prop) {
   return score == null ? -Infinity : score;
 }
 
-// StrikeoutProjections / BatterProjections rows. `rating` is already
-// (projection / line) * 50. The confidence score is not a rank key.
+// StrikeoutProjections / BatterProjections rows. `rating` is already the
+// board score. The confidence score is not a rank key.
 function kboProjectionScore(row) {
   const stat = row?.prop ?? row?.stat;
   if (!lineMatchesStat(stat, row?.line)) return -Infinity;
@@ -169,8 +169,7 @@ function boardPropScore(player, prop, scoreFn) {
   return score;
 }
 
-// WNBA: projection / max(this row's line, per-stat floor) × 50.
-// standardLine is not the denominator. The stored line is not rewritten.
+// WNBA preview score. standardLine is not the denominator. The stored line is not rewritten.
 function wnbaPropScore(player, prop) {
   return boardPropScore(player, prop, wnbaCgScore);
 }
@@ -181,7 +180,7 @@ function nbaPropScore(player, prop) {
   return boardPropScore(player, prop, (projection, row) => cgScore(projection, row?.line, row?.stat ?? row?.prop));
 }
 
-// NFL Prop Lines: projection / max(line, per-stat floor) × 50.
+// NFL Prop Lines preview score.
 // Receiving and rushing yards use the Middle floors (15.5 and 18.5).
 // A yardage line at or below 0.5 still does not score.
 function nflScore(row) {

@@ -2,7 +2,7 @@ import { lineMatchesStat } from '../cgScore.js'
 
 // Denominator floors for the NFL CG Score. One floor per stat.
 //
-// Score = projection / max(line, floor) × 50. The line and the projection
+// The line and the projection
 // shown on the row stay the PrizePicks numbers. A yardage line at or below
 // 0.5 is still not a score (that card is an any-yards floor). A stat that is
 // not in this map still divides by its own line.

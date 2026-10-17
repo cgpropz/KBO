@@ -9,8 +9,14 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const FORBIDDEN = [
   '÷ line',
   '× 50',
+  '×50',
   '/ line * 50',
   'times 50',
+  'divided by',
+  'multiplied by',
+  'max(line',
+  '50 means',
+  'per-stat floor',
   'L3 50%',
   'L9 25%',
   'L15 25%',
@@ -24,13 +30,13 @@ const FORBIDDEN = [
 
 const TEXT = new Set(['.html', '.md', '.mjs', '.js', '.jsx', '.css', '.json', '.svg', '.txt'])
 
-function walk(dir, out, { jsOnly = false } = {}) {
+function walk(dir, out, { suffixes = null } = {}) {
   for (const name of readdirSync(dir)) {
     if (name === 'node_modules' || name === 'dist') continue
     const path = join(dir, name)
     const info = statSync(path)
-    if (info.isDirectory()) walk(path, out, { jsOnly })
-    else if (jsOnly ? name.endsWith('.js') : TEXT.has(name.slice(name.lastIndexOf('.')))) out.push(path)
+    if (info.isDirectory()) walk(path, out, { suffixes })
+    else if (suffixes ? suffixes.some((ext) => name.endsWith(ext)) : TEXT.has(name.slice(name.lastIndexOf('.')))) out.push(path)
   }
   return out
 }
@@ -57,8 +63,11 @@ test('public pages, guides, and the page generator keep the score formula privat
   const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
   assert.match(guide, /adjusted for the matchup and recent form/)
   assert.match(guide, /Check an extreme score/)
+  assert.match(guide, /under side of the projection vs the line/)
+  assert.match(guide, /adjusted by sport/)
   assert.equal(guide.includes('how far does our projection sit from the line'), false)
   assert.equal(guide.includes('very low line'), false)
+  assert.equal(guide.includes('smaller model edge'), false)
 })
 
 test('the built site JS does not publish the score formula', () => {
@@ -67,7 +76,7 @@ test('the built site JS does not publish the score formula', () => {
     if (process.env.CHECK_FORMULA_DIST === '1') assert.fail('dist is missing')
     return
   }
-  const files = walk(dist, [], { jsOnly: true })
+  const files = walk(dist, [], { suffixes: ['.js', '.html'] })
   assert.equal(files.length > 0, true)
   assert.deepEqual(formulaHits(files), [])
 })
