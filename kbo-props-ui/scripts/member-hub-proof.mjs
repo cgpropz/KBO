@@ -4,8 +4,11 @@
 import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
+import { chromium } from '@playwright/test'
+import { supabaseStorageKey } from '../src/supabaseClient.js'
 
 const previewUrl = (process.env.PREVIEW_URL || '').replace(/\/$/, '')
+const prodUrl = (process.env.PROD_URL || 'https://www.cgpropz.com').replace(/\/$/, '')
 const vercelToken = process.env.VERCEL_TOKEN
 const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
@@ -15,6 +18,15 @@ const teamId = 'team_NsMEVaPP3l5Ouz0DWr1y9cxU'
 const projectId = 'prj_HgdvsekuqCfqzKYvGAUD6gQi36AW'
 const outDir = new URL('../member-hub-proof/', import.meta.url)
 const cleanupOnly = process.argv.includes('--cleanup')
+
+const PHONE = { width: 390, height: 844 }
+const PAGE_PATHS = [
+  ['nflDashboard', '/?sport=nfl'],
+  ['nhlDashboard', '/?sport=nhl'],
+  ['nflBoard', '/?sport=nfl&page=projections'],
+  ['nhlBoard', '/?sport=nhl&page=projections'],
+]
+const CARD_SELECTOR = '[data-testid="prop-line-card"], table.hit-rate-board tbody tr, .nfl-edge-card'
 
 const HUB_GROUPS = [
   ['nfl_projections', 'nfl_lineups'],
@@ -194,6 +206,127 @@ async function oneHub(bypass, accessToken, groups) {
   return { wallMs: Math.round(performance.now() - started), calls }
 }
 
+function median(values) {
+  const sorted = [...values].filter((value) => Number.isFinite(value)).sort((a, b) => a - b)
+  if (!sorted.length) return null
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+}
+
+function classifyOdds(rows) {
+  const counts = { goblin: 0, demon: 0, missing: 0, unknown: 0, standard: 0, rows: rows.length }
+  for (const row of rows) {
+    const raw = row?.oddsType ?? row?.odds_type ?? row?.line_type ?? row?.lineType
+    if (raw == null || String(raw).trim() === '') counts.missing += 1
+    else {
+      const type = String(raw).trim().toLowerCase()
+      if (type === 'goblin' || type === 'demon' || type === 'standard') counts[type] += 1
+      else counts.unknown += 1
+    }
+  }
+  return counts
+}
+
+function sessionJson(session) {
+  return JSON.stringify({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    expires_in: session.expires_in,
+    token_type: session.token_type || 'bearer',
+    user: session.user,
+  })
+}
+
+async function nhlOddsCounts(base, { bypass, accessToken }) {
+  const headers = { Authorization: `Bearer ${accessToken}` }
+  if (bypass) headers['x-vercel-protection-bypass'] = bypass
+  const response = await fetch(`${base}/api/data?ds=nhl_projections`, {
+    headers,
+    signal: AbortSignal.timeout(20_000),
+  })
+  const text = await response.text()
+  let body = {}
+  try { body = JSON.parse(text) } catch { body = {} }
+  const rows = Array.isArray(body.data) ? body.data : []
+  return { status: response.status, ...classifyOdds(rows) }
+}
+
+async function timeColdPage(browser, { base, path, bypass, storageKey, storedSession }) {
+  const context = await browser.newContext({
+    viewport: PHONE,
+    extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
+  })
+  try {
+    await context.addInitScript(({ key, value }) => {
+      localStorage.setItem(key, value)
+    }, { key: storageKey, value: storedSession })
+    const page = await context.newPage()
+    const started = performance.now()
+    const target = new URL(path, base)
+    if (bypass) {
+      target.searchParams.set('x-vercel-protection-bypass', bypass)
+      target.searchParams.set('x-vercel-set-bypass-cookie', 'true')
+    }
+    await page.goto(target.toString(), { waitUntil: 'domcontentloaded', timeout: 45_000 })
+    await page.waitForSelector(CARD_SELECTOR, { timeout: 30_000 })
+    const firstCardMs = Math.round(performance.now() - started)
+    const api = await page.evaluate(() => performance.getEntriesByType('resource')
+      .filter((entry) => entry.name.includes('/api/data'))
+      .map((entry) => {
+        let ds = null
+        try { ds = new URL(entry.name).searchParams.get('ds') } catch { ds = null }
+        return { ds, ms: Math.round(entry.duration) }
+      }))
+    const dom = await page.evaluate(() => {
+      const text = document.body?.innerText || ''
+      return {
+        goblin: (text.match(/GOBLIN/g) || []).length,
+        demon: (text.match(/DEMON/g) || []).length,
+        cards: document.querySelectorAll('[data-testid="prop-line-card"]').length,
+        rows: document.querySelectorAll('table.hit-rate-board tbody tr, .nfl-edge-card').length,
+      }
+    })
+    return { firstCardMs, api, dom }
+  } finally {
+    await context.close()
+  }
+}
+
+async function timeHost(browser, { label, base, bypass, storageKey, storedSession }) {
+  const pages = {}
+  for (const [name, path] of PAGE_PATHS) {
+    const runs = []
+    for (let index = 0; index < 3; index += 1) {
+      try {
+        runs.push(await timeColdPage(browser, { base, path, bypass, storageKey, storedSession }))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'page failed'
+        runs.push({ error: bypass ? message.split(bypass).join('[bypass]') : message })
+      }
+    }
+    pages[name] = {
+      runs: runs.map((run) => ({
+        firstCardMs: run.firstCardMs ?? null,
+        api: run.api || [],
+        dom: run.dom || null,
+        error: run.error || null,
+      })),
+      medianFirstCardMs: median(runs.map((run) => run.firstCardMs)),
+    }
+  }
+  return { label, viewport: PHONE, pages }
+}
+
+function previewOddsClean(counts) {
+  return counts
+    && counts.status === 200
+    && counts.goblin === 0
+    && counts.demon === 0
+    && counts.missing === 0
+    && counts.unknown === 0
+}
+
 async function main() {
   required('VITE_SUPABASE_URL', supabaseUrl)
   required('SUPABASE_SERVICE_ROLE_KEY', serviceKey)
@@ -229,7 +362,25 @@ async function main() {
       oneHub(bypass, session.access_token, groups),
       oneHub(bypass, session.access_token, groups),
     ])
+    const storageKey = supabaseStorageKey(supabaseUrl)
+    const storedSession = sessionJson(session)
+    const browser = await chromium.launch({ headless: true })
+    let browserReport
+    let goblin
+    try {
+      goblin = {
+        prod: await nhlOddsCounts(prodUrl, { accessToken: session.access_token }),
+        preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
+      }
+      browserReport = {
+        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKey, storedSession }),
+        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKey, storedSession }),
+      }
+    } finally {
+      await browser.close()
+    }
     const report = {
+      viewport: PHONE,
       cold: { nhl, nfl },
       burst: burst.map((hub) => ({
         wallMs: hub.wallMs,
@@ -237,13 +388,24 @@ async function main() {
         nhlMs: hub.calls.find((call) => call.ds === 'nhl_projections')?.ms ?? null,
         calls: hub.calls,
       })),
+      browser: browserReport,
+      goblin,
     }
     await writeFile(new URL('./timings.json', outDir), `${JSON.stringify(report, null, 2)}\n`)
-    console.log(JSON.stringify({
+    const summary = {
       cold: { nhl: { ms: nhl.ms, status: nhl.status, rows: nhl.rows, preview: nhl.preview }, nfl: { ms: nfl.ms, status: nfl.status, rows: nfl.rows, preview: nfl.preview } },
       burst: report.burst.map((hub) => ({ wallMs: hub.wallMs, nflMs: hub.nflMs, nhlMs: hub.nhlMs })),
-    }))
-    if (nhl.status !== 200 || nfl.status !== 200) process.exitCode = 1
+      browser: {
+        prod: Object.fromEntries(Object.entries(browserReport.prod.pages).map(([name, page]) => [name, page.medianFirstCardMs])),
+        preview: Object.fromEntries(Object.entries(browserReport.preview.pages).map(([name, page]) => [name, page.medianFirstCardMs])),
+      },
+      goblin,
+    }
+    console.log(JSON.stringify(summary))
+    const pageFailed = Object.values(browserReport.preview.pages).some((page) => page.medianFirstCardMs == null)
+      || Object.values(browserReport.prod.pages).some((page) => page.medianFirstCardMs == null)
+    const domPromo = Object.values(browserReport.preview.pages).some((page) => page.runs.some((run) => (run.dom?.goblin || 0) > 0 || (run.dom?.demon || 0) > 0))
+    if (nhl.status !== 200 || nfl.status !== 200 || pageFailed || domPromo || !previewOddsClean(goblin.preview)) process.exitCode = 1
   } finally {
     await cleanup()
   }

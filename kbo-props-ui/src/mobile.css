@@ -264,6 +264,10 @@
     line-height: 1.1 !important;
   }
 
+  .cg-page-menu:not(.is-open) {
+    display: none !important;
+  }
+
   .cg-page-menu {
     order: 3;
     display: none;
@@ -623,6 +627,60 @@
     font-size: 16px !important;
     font-weight: 900 !important;
   }
+
+  /* Same free-board card, mounted directly under 768px so a 900px table
+     never sits in the phone DOM. */
+  .prop-line-cards {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .prop-line-card {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    margin: 0 0 12px;
+    padding: 12px;
+    gap: 8px;
+    background: #080c0a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+  }
+
+  .prop-line-card.locked {
+    filter: blur(6px);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .prop-line-card > .hit-rate-score {
+    order: 1;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: auto !important;
+    max-width: 108px;
+    padding: 0;
+    overflow: visible;
+    text-align: right;
+  }
+
+  .prop-line-card > :is(.nfl-lines-player, .wnba-lines-player, .kbo-player-cell),
+  .prop-line-card > div:has(> .kbo-player-cell) {
+    order: 1;
+    padding-right: 112px;
+    overflow: visible;
+  }
+
+  .prop-line-card > .hit-rate-col { order: 2; }
+  .prop-line-card > .hit-rate-chart { order: 3; display: block !important; }
+  .prop-line-card > .hit-rate-extra { order: 4; display: block !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

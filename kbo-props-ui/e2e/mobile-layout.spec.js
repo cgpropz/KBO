@@ -26,6 +26,18 @@ const fixtures = {
     gameOpponents: opponents,
     dvpRank: 4,
     imageUrl: '',
+    line_type: 'standard',
+  }, {
+    id: 'nfl-goblin',
+    player: 'Goblin Only',
+    team: 'DET',
+    opponent: 'CHI',
+    position: 'WR',
+    prop: 'Receiving Yards',
+    line: 4.5,
+    projection: 20,
+    recent,
+    line_type: 'goblin',
   }],
   nhl_projections: [{
     id: 'nhl-0',
@@ -48,6 +60,18 @@ const fixtures = {
     seasonHitRate: 0.72,
     seasonGames: 40,
     dvpRank: 3,
+    oddsType: 'standard',
+  }, {
+    id: 'nhl-goblin',
+    player: 'Goblin Skater',
+    team: 'EDM',
+    opponent: 'CGY',
+    position: 'C',
+    prop: 'Points',
+    line: 0.5,
+    projection: 1.2,
+    oddsType: 'goblin',
+    rankEligible: true,
   }],
   prizepicks_props: {
     cards: [{
@@ -56,7 +80,7 @@ const fixtures = {
       type: 'batter',
       opponent: 'LG',
       games: [],
-      props: [{ stat: 'Hits', line: 1.5, projection: 1.8, hit_rate_l10: 70, hit_rate_all: 60, recent_values: [2, 1, 0, 1, 2, 1, 3, 0, 1, 2] }],
+      props: [{ stat: 'Hits', line: 1.5, projection: 1.8, hit_rate_l10: 70, hit_rate_all: 60, odds_type: 'standard', recent_values: [2, 1, 0, 1, 2, 1, 3, 0, 1, 2] }],
     }],
   },
   wnba_projections_standard: [{
@@ -154,19 +178,19 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const [sport, path] of boards) {
-  test(`${sport} board stays inside the phone and uses 12px type`, async ({ page }) => {
+  test(`${sport} dashboard uses phone cards and 12px type`, async ({ page }) => {
     await page.goto(path)
-    const table = page.locator('table.hit-rate-board')
-    await expect(table).toBeVisible()
-    const box = await table.evaluate((el) => ({
+    const cards = page.getByTestId('prop-line-card')
+    await expect(cards.first()).toBeVisible()
+    await expect(page.getByTestId('prop-line-table')).toHaveCount(0)
+    await expect(page.locator('table.hit-rate-board')).toHaveCount(0)
+    const box = await page.getByTestId('prop-line-cards').evaluate((el) => ({
       width: el.getBoundingClientRect().width,
       scrollWidth: el.scrollWidth,
-      display: getComputedStyle(el).display,
     }))
     const viewport = page.viewportSize().width
-    expect(box.display, `${sport} board is still a desktop table`).not.toBe('table')
-    expect(box.width, `${sport} board is wider than the viewport`).toBeLessThanOrEqual(viewport + 1)
-    expect(box.scrollWidth, `${sport} board content is wider than the viewport`).toBeLessThanOrEqual(viewport + 1)
+    expect(box.width, `${sport} cards are wider than the viewport`).toBeLessThanOrEqual(viewport + 1)
+    expect(box.scrollWidth, `${sport} card content is wider than the viewport`).toBeLessThanOrEqual(viewport + 1)
     const pills = page.locator('.hit-rate-strip').first()
     if (await pills.count()) {
       const wrap = await pills.evaluate((el) => getComputedStyle(el).flexWrap)
@@ -208,20 +232,40 @@ test('empty kbo board shows the next game in Eastern Time', async ({ page }) => 
   expect(await tinyText(page), 'empty kbo board has text under 12px').toEqual([])
 })
 
-test('desktop NFL board stays a wide table', async ({ page }) => {
+test('desktop NFL and NHL dashboards stay wide tables', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/?sport=nfl&previewTier=owner')
-  const table = page.locator('table.hit-rate-board')
-  await expect(table).toBeVisible()
-  const display = await table.evaluate((el) => getComputedStyle(el).display)
-  const menu = await page.locator('.cg-menu-btn').evaluate((el) => getComputedStyle(el).display)
-  expect(display).toBe('table')
-  expect(menu).toBe('none')
+  for (const sport of ['nfl', 'nhl']) {
+    await page.goto(`/?sport=${sport}&previewTier=owner`)
+    const table = page.getByTestId('prop-line-table')
+    await expect(table).toBeVisible()
+    await expect(page.getByTestId('prop-line-card')).toHaveCount(0)
+    const display = await table.evaluate((el) => getComputedStyle(el).display)
+    const menu = await page.locator('.cg-menu-btn').evaluate((el) => getComputedStyle(el).display)
+    expect(display).toBe('table')
+    expect(menu).toBe('none')
+  }
+})
+
+test('phone NHL dashboard hides goblin lines and opens on CG Score', async ({ page }) => {
+  await page.goto('/?sport=nhl&previewTier=owner')
+  await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
+  await expect(page.getByText('Goblin Skater')).toHaveCount(0)
+  await expect(page.getByText(/GOBLIN/)).toHaveCount(0)
+  await expect(page.getByText(/sorted by CG Score|CG Score/)).toBeVisible()
+})
+
+test('a sport tab opens that sport dashboard', async ({ page }) => {
+  await page.goto('/?sport=nfl&page=projections&previewTier=owner')
+  await page.getByRole('tab', { name: 'NHL' }).click()
+  await expect(page.getByRole('heading', { name: 'Prop Lines' })).toBeVisible()
+  await expect(page.getByText('NHL / PRIZEPICKS')).toBeVisible()
+  await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
 })
 
 test('phone layout is unlayered and sport min-width stays in a layer', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/?sport=nfl&previewTier=owner')
-  await expect(page.locator('table.hit-rate-board')).toBeVisible()
+  await expect(page.getByTestId('prop-line-table')).toBeVisible()
   const cascade = await page.evaluate(() => {
     let menuUnlayered = false
     let tableLayered = false

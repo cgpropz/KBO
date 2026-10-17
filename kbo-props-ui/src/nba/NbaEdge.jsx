@@ -3,7 +3,6 @@ import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import { fitImage } from '../fitImage.js'
 
-const LINE_TYPES = ['standard', 'demon', 'goblin']
 const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
 const MINUTE_TABS = [
   { label: 'All Min', min: 0 },
@@ -39,7 +38,7 @@ function formatHitRate(value) {
 }
 
 export default function NbaEdge() {
-  const [lineType, setLineType] = useState('standard')
+  const lineType = 'standard'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState(null)
@@ -230,12 +229,6 @@ export default function NbaEdge() {
             <option key={matchup.label} value={matchup.label}>
               {matchup.dateLabel ? `${matchup.dateLabel} · ${matchup.label}` : matchup.label}
             </option>
-          ))}
-        </select>
-
-        <select className="edge-select" aria-label="Odds type" value={lineType} onChange={(event) => setLineType(event.target.value)}>
-          {LINE_TYPES.map((type) => (
-            <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)} Lines</option>
           ))}
         </select>
 

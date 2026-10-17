@@ -1,4 +1,5 @@
 import { publishedAtFromPayload } from './boardFreshness';
+import { filterStandardBoard } from './standardBoard';
 import { cachedAccessToken, readCachedSession, refreshedAccessToken, sessionAccessToken } from './supabaseClient';
 
 /*
@@ -32,12 +33,12 @@ async function accessToken({ fresh = false } = {}) {
   }
 }
 
-async function fetchDevStatic(staticPath) {
+async function fetchDevStatic(ds, staticPath) {
   const res = await fetch(`${import.meta.env.BASE_URL}data/${staticPath}?v=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load ${staticPath}`);
   const data = await res.json();
   return {
-    data,
+    data: filterStandardBoard(ds, data),
     updatedAt: publishedAtFromPayload(data) || res.headers.get('last-modified') || null,
     source: 'dev_static',
     preview: false,
@@ -86,7 +87,7 @@ export async function fetchApiDataset(ds, { devStaticPath, priority, player, fre
     const body = await res.json();
     const preview = !!body.preview;
     return {
-      data: body.data,
+      data: filterStandardBoard(ds, body.data),
       updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
       source: 'api',
       preview,
@@ -96,7 +97,7 @@ export async function fetchApiDataset(ds, { devStaticPath, priority, player, fre
   } catch (err) {
     if (import.meta.env.DEV && devStaticPath) {
       console.warn(`[data] ${ds} API unavailable in dev, using local static file`, err.message);
-      return fetchDevStatic(devStaticPath);
+      return fetchDevStatic(ds, devStaticPath);
     }
     if (isTimeoutError(err)) {
       throw new Error(`Timed out loading ${ds}. The data service may be slow — please refresh.`);

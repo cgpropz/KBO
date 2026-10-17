@@ -9,7 +9,6 @@ import { slateDateLabel } from '../wnbaBoard'
 import { fitImage } from '../fitImage.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
-const LINE_TYPES = ['standard', 'demon', 'goblin']
 const MINUTE_TABS = [
   { label: 'All Min', min: 0 },
   { label: '20+ Min', min: 20 },
@@ -118,7 +117,7 @@ function fmtAmericanOdds(value) {
 }
 
 export default function Projections({ onSelectPlayer }) {
-  const [lineType, setLineType] = useState('standard')
+  const lineType = 'standard'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState(null)
@@ -323,12 +322,6 @@ export default function Projections({ onSelectPlayer }) {
             <option key={m.label} value={m.label}>
               {m.dateLabel ? `${m.dateLabel} · ${m.label}` : m.label}
             </option>
-          ))}
-        </select>
-
-        <select className="edge-select" value={lineType} onChange={e => setLineType(e.target.value)}>
-          {LINE_TYPES.map(type => (
-            <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)} Lines</option>
           ))}
         </select>
 

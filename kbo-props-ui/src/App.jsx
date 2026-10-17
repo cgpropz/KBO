@@ -6,6 +6,7 @@ import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
 import { accountFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
+import { slipTabSearch, sportTabSearch } from './memberNav'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
@@ -61,6 +62,10 @@ function App() {
     if (typeof window === 'undefined') return null
     return slipLinkFromSearch(window.location.search)
   });
+  // Sport-tab clicks force the dashboard. The first load and a slip switch
+  // still honor a named sub-page. homeTick remounts the shell.
+  const [forceHome, setForceHome] = useState(false);
+  const [homeTick, setHomeTick] = useState(0);
   const [sport, setSportState] = useState(() => {
     if (typeof window === 'undefined') return 'nfl';
     // The account page lives on the KBO shell. This visit does not write
@@ -74,14 +79,30 @@ function App() {
 
   // Sport switcher clicks only. Pricing hops and the closed-NBA fallback
   // change the in-memory sport without becoming the saved choice.
-  const chooseSport = (next) => {
+  const rememberSport = (next) => {
     setSportState(next);
     rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, next);
   };
 
+  const replaceSearch = (search) => {
+    if (typeof window === 'undefined') return;
+    window.history.replaceState(null, '', `${window.location.pathname}${search}`);
+  };
+
+  const chooseSport = (next) => {
+    rememberSport(next);
+    setEntry(null);
+    setForceHome(true);
+    setHomeTick((tick) => tick + 1);
+    replaceSearch(sportTabSearch(typeof window === 'undefined' ? '' : window.location.search, next));
+  };
+
   const chooseSlipSport = (next) => {
-    chooseSport(next);
+    rememberSport(next);
     setEntry({ view: 'slip', drawer: false });
+    setForceHome(false);
+    setHomeTick((tick) => tick + 1);
+    replaceSearch(slipTabSearch(next));
   };
 
   useEffect(() => {
@@ -212,20 +233,24 @@ function App() {
     /* WNBA section — separate sport shell behind the same auth */
     sportApp = (
       <WnbaApp
+        key={`wnba-${homeTick}`}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
         entry={entry}
+        forceHome={forceHome}
         onNavigateKbo={(nextView) => { setSportState('kbo'); setView(nextView || 'pricing'); }}
       />
     );
   } else if (visibleSport === 'nba') {
     sportApp = (
       <NbaApp
+        key={`nba-${homeTick}`}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
         entry={entry}
+        forceHome={forceHome}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -233,10 +258,12 @@ function App() {
   } else if (visibleSport === 'nhl') {
     sportApp = (
       <NhlApp
+        key={`nhl-${homeTick}`}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
         entry={entry}
+        forceHome={forceHome}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -244,10 +271,12 @@ function App() {
   } else if (visibleSport === 'nfl') {
     sportApp = (
       <NflApp
+        key={`nfl-${homeTick}`}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
         entry={entry}
+        forceHome={forceHome}
         onNavigateHome={() => setView('hub')}
         onNavigatePricing={() => { setSportState('kbo'); setView('pricing'); }}
       />
@@ -256,12 +285,14 @@ function App() {
     /* KBO section — same nav + board shell as WNBA/NFL */
     sportApp = (
       <KboApp
+        key={`kbo-${homeTick}`}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
         onNavigateHome={() => setView('hub')}
         initialView={view}
         entry={entry}
+        forceHome={forceHome}
       />
     );
   }

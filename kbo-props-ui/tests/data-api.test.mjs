@@ -46,6 +46,7 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
           avg: 12,
           hit_rate_l10: 50,
           recommendation: 'OVER',
+          odds_type: 'standard',
         }
         if (c === 0 && p === 0) {
           row.cg_projection = 95
@@ -61,8 +62,8 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
 
 const TABLES = {
   prizepicks_props: kboBoard(),
-  strikeout_projections: { generated_at: NOW, projections: Array.from({ length: 10 }, (_, i) => ({ name: `P${i}`, rating: i, line: 4.5 })), team_so_per_g: { LG: 7 } },
-  batter_projections: { generated_at: NOW, projections: Array.from({ length: 8 }, (_, i) => ({ name: `B${i}`, cg_projection: i })) },
+  strikeout_projections: { generated_at: NOW, projections: Array.from({ length: 10 }, (_, i) => ({ name: `P${i}`, rating: i, line: 4.5, odds_type: 'standard' })), team_so_per_g: { LG: 7 } },
+  batter_projections: { generated_at: NOW, projections: Array.from({ length: 8 }, (_, i) => ({ name: `B${i}`, cg_projection: i, odds_type: 'standard' })) },
   matchup_data: { generated_at: NOW, matchups: [{ away: 'LG', home: 'KT', props: [{ name: 'x', line: 3.5 }, { name: 'y', line: 1.5 }], market: { total: 8.5 }, away_pitcher: { name: 'A', line: 17.5, k_projection: 19.9, profile: { era: 3.1 } }, home_pitcher: { name: 'H', profile: { era: 4 } } }] },
   pitcher_rankings: Array.from({ length: 12 }, (_, i) => ({ name: `R${i}`, rk: i + 1 })),
   graded_props_history: { generated_at: NOW, summary: { hit: 10 }, graded: Array.from({ length: 20 }, (_, i) => ({ id: i })), pending: Array.from({ length: 9 }, (_, i) => ({ id: i })) },
@@ -74,7 +75,7 @@ const TABLES = {
   wnba_players: Array.from({ length: 30 }, (_, i) => ({ name: `W${i}` })),
   wnba_lineups: Array.from({ length: 6 }, (_, i) => ({ game: i })),
   nfl_projections: Array.from({ length: 15 }, (_, i) => ({
-    player: `N${i}`, line: 50, projection: 40 + i,
+    player: `N${i}`, line: 50, projection: 40 + i, line_type: 'standard',
     ...(i === 0 ? { recent: [11, 22, 33], gameDates: ['2026-09-07'], profile: { toi: 18 } } : {}),
   })),
   nfl_lineups: Array.from({ length: 4 }, (_, i) => ({ game: i })),

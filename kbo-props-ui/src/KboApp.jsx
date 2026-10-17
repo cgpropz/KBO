@@ -7,6 +7,7 @@ import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu'
 import PlayerSearch from './PlayerSearch'
 import RouteFallback from './RouteFallback'
 import { GuideNavLinks } from './GuideLinks'
+import { viewOnLoad } from './memberNav'
 import './KboPropBoard.css'
 
 const KboPropBoard = lazy(() => import('./KboPropBoard'))
@@ -37,11 +38,18 @@ const SlipBoard = lazy(() => import('./SlipBoard'))
    matching the WNBA and NFL dashboards. */
 const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
 
-export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, initialView, entry }) {
+export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, initialView, entry, forceHome }) {
   const { signOut, user, tier } = useAuth()
   const menu = usePageMenu()
-  const opened = entry?.view === 'slip' ? 'optimizer' : entry?.view === 'player' && entry.player ? 'player' : null
-  const [view, setView] = useState(opened || (NAV_ITEMS.some((item) => item.id === initialView) || initialView === 'pricing' ? initialView : 'board'))
+  const [view, setView] = useState(() => {
+    if (!forceHome && initialView === 'pricing') return 'pricing'
+    return viewOnLoad({
+      sport: 'kbo',
+      entry,
+      search: typeof window === 'undefined' ? '' : window.location.search,
+      forceHome,
+    })
+  })
   const [previousView, setPreviousView] = useState('board')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' ? entry.player : null)
   const isPaid = hasAnyPaidAccess(tier)

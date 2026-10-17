@@ -16,7 +16,7 @@ export const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
 export const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
 export const DEFAULT_FILTERS = {
   side: 'All',
-  sortBy: 'L10 Hit Rate',
+  sortBy: 'CG Score',
   minHitRate: 0,
   minGames: 0,
   position: 'All',

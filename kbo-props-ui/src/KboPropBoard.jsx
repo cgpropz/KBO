@@ -13,8 +13,12 @@ import { kboBreakEvenWindows } from './prizepicksBreakeven'
 import { BoardSkeleton } from './BootScreen.jsx'
 import './KboPropBoard.css'
 import { fitImage } from './fitImage.js'
+import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
+import { rememberBoardSort, withDefaultSort } from './boardSort'
+import { usePhoneBoard } from './usePhoneBoard'
 
 const FREE_ROW_LIMIT = 3
+const SORT_OPTIONS = ['CG Score', 'L10 Hit Rate', 'Full Hit Rate', 'Player Name']
 
 const DEFAULT_FILTERS = {
   direction: 'All',
@@ -98,14 +102,17 @@ function MiniChart({ values, line }) {
 
 function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropTab, count }) {
   if (!open) return null
-  const update = (key, next) => setFilters((current) => ({ ...current, [key]: next }))
+  const update = (key, next) => {
+    setFilters((current) => ({ ...current, [key]: next }))
+    if (key === 'sortBy') rememberBoardSort('kbo', next)
+  }
   return (
     <div className="kbo-filter-overlay" onClick={close}>
       <aside className="kbo-filter-panel" onClick={(event) => event.stopPropagation()} aria-label="KBO prop filters">
         <header><h2>Filters</h2><button onClick={close} aria-label="Close filters">Close x</button></header>
         <label>Sort by
           <select value={filters.sortBy} onChange={(event) => update('sortBy', event.target.value)}>
-            <option>CG Score</option><option>L10 Hit Rate</option><option>Full Hit Rate</option><option>Player Name</option>
+            {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </label>
         <label>Prop type
@@ -125,13 +132,13 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
         <label>Minimum CG score
           <input type="number" inputMode="decimal" placeholder="Any score" value={filters.minScore} onChange={(event) => update('minScore', event.target.value)} />
         </label>
-        <footer><button className="kbo-reset" onClick={() => setFilters(DEFAULT_FILTERS)}>Reset</button><button className="kbo-apply" onClick={close}>Show {count} lines</button></footer>
+        <footer><button className="kbo-reset" onClick={() => { setFilters(DEFAULT_FILTERS); rememberBoardSort('kbo', DEFAULT_FILTERS.sortBy) }}>Reset</button><button className="kbo-apply" onClick={close}>Show {count} lines</button></footer>
       </aside>
     </div>
   )
 }
 
-function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand }) {
+function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand, phone }) {
   const [whyOpen, setWhyOpen] = useState(false)
   const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
   const scoreNote = buildCgScoreExplainer({
@@ -143,21 +150,37 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
     recentValues: prop.recent_values,
     newestFirst: true,
   })
+  const meter = showBreakEven && breakEvenWindows.length > 0
+    ? (
+      <BreakEvenMeter
+        windows={breakEvenWindows}
+        side={direction === 'under' ? 'under' : 'over'}
+        chartCountsOvers={direction === 'under'}
+      />
+    )
+    : null
   return (
-    <>
-      <tr className={locked ? 'locked' : undefined} ref={whyOpen ? undefined : rowRef}>
-        <td onClick={() => !locked && onSelectPlayer?.(card.name)} style={{ cursor: locked ? 'default' : 'pointer' }}>
-          <div className="kbo-player-cell">
-            <div className="kbo-avatar">{photo ? <img src={fitImage(photo, 42)} alt="" loading="lazy" /> : initials(card.name)}</div>
-            <div>
-              <strong>{card.name}</strong>
-              <small>{card.team}, {card.type}</small>
-              <b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b>
+    <BoardLine
+      phone={phone}
+      className={locked ? 'locked' : undefined}
+      rowRef={whyOpen ? undefined : rowRef}
+      cells={[
+        {
+          onClick: () => !locked && onSelectPlayer?.(card.name),
+          style: { cursor: locked ? 'default' : 'pointer' },
+          node: (
+            <div className="kbo-player-cell">
+              <div className="kbo-avatar">{photo ? <img src={fitImage(photo, 42)} alt="" loading="lazy" /> : initials(card.name)}</div>
+              <div>
+                <strong>{card.name}</strong>
+                <small>{card.team}, {card.type}</small>
+                <b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b>
+              </div>
             </div>
-          </div>
-        </td>
-        <td className="hit-rate-chart"><MiniChart values={prop.recent_values} line={prop.line} /></td>
-        <td className={`hit-rate-score ${direction}`}>
+          ),
+        },
+        { className: 'hit-rate-chart', node: <MiniChart values={prop.recent_values} line={prop.line} /> },
+        { className: `hit-rate-score ${direction}`, node: (
           <CgScoreCell
             scoreText={score == null ? '-' : value(score)}
             note={locked ? null : scoreNote}
@@ -167,29 +190,19 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
               onExpand?.()
             }}
           />
-        </td>
-        <td className="hit-rate-col"><HitRateStrip pills={hitPills} /></td>
-        <td><div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div></td>
-      </tr>
-      {showBreakEven && breakEvenWindows.length > 0 && (
-        <tr className="be-meter-row">
-          <td colSpan={5}>
-            <BreakEvenMeter
-              windows={breakEvenWindows}
-              side={direction === 'under' ? 'under' : 'over'}
-              chartCountsOvers={direction === 'under'}
-            />
-          </td>
-        </tr>
+        ) },
+        { className: 'hit-rate-col', node: <HitRateStrip pills={hitPills} /> },
+        { node: <div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div> },
+      ]}
+      after={(
+        <>
+          {meter && (phone ? meter : <tr className="be-meter-row"><td colSpan={5}>{meter}</td></tr>)}
+          {whyOpen && !locked && scoreNote && (phone
+            ? <CgScoreNote note={scoreNote} />
+            : <tr className="cg-score-note-row" ref={rowRef}><td colSpan={5}><CgScoreNote note={scoreNote} /></td></tr>)}
+        </>
       )}
-      {whyOpen && !locked && scoreNote && (
-        <tr className="cg-score-note-row" ref={rowRef}>
-          <td colSpan={5}>
-            <CgScoreNote note={scoreNote} />
-          </td>
-        </tr>
-      )}
-    </>
+    />
   )
 }
 
@@ -199,7 +212,8 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
   const [propTab, setPropTab] = useState('All Props')
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'kbo', SORT_OPTIONS))
+  const phone = usePhoneBoard()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
   const [whyRevision, setWhyRevision] = useState(0)
@@ -303,37 +317,47 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
           <BoardSkeleton />
         </div>
       )}
-      {!!rows.length && <div className="kbo-lines-table-wrap" ref={tableWrapRef}><table className="kbo-lines-table hit-rate-board"><thead><tr><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></tr></thead><tbody>
-        {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows }, index) => (
-          <KboBoardRow
-            key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
-            card={card}
-            prop={prop}
-            score={score}
-            direction={direction}
-            hitPills={hitPills}
-            breakEvenWindows={breakEvenWindows}
-            showBreakEven={isPaid}
-            photo={photoLookup[String(card.name || '').toLowerCase()]}
-            locked={!isPaid && index >= FREE_ROW_LIMIT}
-            rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-            onSelectPlayer={onSelectPlayer}
-            onExpand={() => setWhyRevision((current) => current + 1)}
-          />
-        ))}
-        {Array.from({ length: placeholderCount }, (_, index) => <tr key={`locked-${index}`} className="locked kbo-placeholder-row" aria-hidden="true"><td colSpan={5}><span className="kbo-placeholder-bar" /></td></tr>)}
-      </tbody></table>
-        {hasLockedRows && lockTop != null && (
-          <div className="kbo-lines-lock-overlay" style={{ top: lockTop }}>
-            <div className="kbo-lines-lock-card">
-              <div className="kbo-lines-lock-icon">🔒</div>
-              <h3>Unlock the Full Board</h3>
-              <p>Free members see the top {FREE_ROW_LIMIT} lines.{lockedCount > 0 ? ` ${lockedCount} more are locked.` : ''} Upgrade to see every prop line.</p>
-              <button onClick={() => onNavigatePricing?.()}>View Plans</button>
+      {!!rows.length && (
+        <BoardSurface
+          phone={phone}
+          wrapClass="kbo-lines-table-wrap"
+          wrapRef={tableWrapRef}
+          tableClass="kbo-lines-table hit-rate-board"
+          head={<><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>Matchup</th></>}
+          overlay={hasLockedRows && lockTop != null && (
+            <div className="kbo-lines-lock-overlay" style={{ top: lockTop }}>
+              <div className="kbo-lines-lock-card">
+                <div className="kbo-lines-lock-icon">🔒</div>
+                <h3>Unlock the Full Board</h3>
+                <p>Free members see the top {FREE_ROW_LIMIT} lines.{lockedCount > 0 ? ` ${lockedCount} more are locked.` : ''} Upgrade to see every prop line.</p>
+                <button onClick={() => onNavigatePricing?.()}>View Plans</button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>}
+          )}
+        >
+          {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows }, index) => (
+            <KboBoardRow
+              key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
+              card={card}
+              prop={prop}
+              score={score}
+              direction={direction}
+              hitPills={hitPills}
+              breakEvenWindows={breakEvenWindows}
+              showBreakEven={isPaid}
+              photo={photoLookup[String(card.name || '').toLowerCase()]}
+              locked={!isPaid && index >= FREE_ROW_LIMIT}
+              rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+              onSelectPlayer={onSelectPlayer}
+              onExpand={() => setWhyRevision((current) => current + 1)}
+              phone={phone}
+            />
+          ))}
+          {Array.from({ length: placeholderCount }, (_, index) => (
+            <LockedPlaceholder key={`locked-${index}`} phone={phone} className="locked kbo-placeholder-row" />
+          ))}
+        </BoardSurface>
+      )}
       {!error && snapshot && !boardEmpty && !rows.length && <p className="kbo-notice">No KBO prop lines match these filters.</p>}
       <Filters open={filtersOpen} close={() => setFiltersOpen(false)} filters={filters} setFilters={setFilters} propTabs={propTabs} propTab={propTab} setPropTab={setPropTab} count={rows.length} />
     </main>

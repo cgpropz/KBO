@@ -13,6 +13,9 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
 import { fitImage } from '../fitImage.js'
+import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
+import { rememberBoardSort, withDefaultSort } from '../boardSort'
+import { usePhoneBoard } from '../usePhoneBoard'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -63,7 +66,7 @@ const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
 const GAMES_OPTIONS = [0, 3, 5, 8, 10]
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
-const DEFAULT_FILTERS = { side: 'All', sortBy: 'L10 Hit Rate', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
+const DEFAULT_FILTERS = { side: 'All', sortBy: 'CG Score', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
@@ -160,7 +163,7 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.isOver
   const grade = dvpGrade(item.dvpRank)
@@ -174,9 +177,13 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   })
 
   return (
-    <>
-      <tr className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`} ref={open || whyOpen ? undefined : rowRef} onClick={locked ? undefined : onToggle}>
-        <td>
+    <BoardLine
+      phone={phone}
+      className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+      rowRef={open || whyOpen ? undefined : rowRef}
+      onClick={locked ? undefined : onToggle}
+      cells={[
+        { node: (
           <div className="wnba-lines-player">
             <div className="wnba-lines-avatar">
               {item.imageUrl
@@ -190,40 +197,39 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
-        </td>
-        <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
-        <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>
-          <CgScoreCell
-            scoreText={item.score.toFixed(1)}
-            note={locked ? null : scoreNote}
-            open={whyOpen}
-            onToggle={onWhy}
-          />
-        </td>
-        <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
-        <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-        <td>
+        ) },
+        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+          <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+        ) },
+        { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
+        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
+        { node: (
           <div className="wnba-lines-matchup">
             <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
             <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
-        </td>
-      </tr>
-      {whyOpen && !locked && scoreNote && (
-        <tr className="cg-score-note-row" ref={open ? undefined : rowRef}>
-          <td colSpan={6}>
-            <CgScoreNote note={scoreNote} />
-          </td>
-        </tr>
+        ) },
+      ]}
+      after={(
+        <>
+          {whyOpen && !locked && scoreNote && (phone
+            ? <CgScoreNote note={scoreNote} />
+            : (
+              <tr className="cg-score-note-row" ref={open ? undefined : rowRef}>
+                <td colSpan={6}><CgScoreNote note={scoreNote} /></td>
+              </tr>
+            ))}
+          {open && !locked && (phone
+            ? <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+            : (
+              <tr className="nfl-sharp-strip-row" ref={rowRef}>
+                <td colSpan={6}><BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} /></td>
+              </tr>
+            ))}
+        </>
       )}
-      {open && !locked && (
-        <tr className="nfl-sharp-strip-row" ref={rowRef}>
-          <td colSpan={6}>
-            <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
-          </td>
-        </tr>
-      )}
-    </>
+    />
   )
 }
 
@@ -397,7 +403,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
 
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'wnba', SORT_OPTIONS))
+  const phone = usePhoneBoard()
   const [openId, setOpenId] = useState(null)
   const [whyId, setWhyId] = useState(null)
 
@@ -417,8 +424,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const lastFreeRowRef = useRef(null)
   const [lockTop, setLockTop] = useState(null)
 
-  const updateFilter = (key, value) => setFilters(current => ({ ...current, [key]: value }))
-  const resetFilters = () => setFilters(DEFAULT_FILTERS)
+  const updateFilter = (key, value) => {
+    setFilters(current => ({ ...current, [key]: value }))
+    if (key === 'sortBy') rememberBoardSort('wnba', value)
+  }
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS)
+    rememberBoardSort('wnba', DEFAULT_FILTERS.sortBy)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -613,41 +626,13 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
-            <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
-              <table className="wnba-lines-table hit-rate-board">
-                <thead>
-                  <tr>
-                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((item, index) => {
-                    const matched = boardOddsFor(oddsIndex, item)
-                    return (
-                      <PropRow
-                        key={item.id}
-                        item={item}
-                        onSelectPlayer={goPlayer}
-                        locked={!isPaid && index >= FREE_ROW_LIMIT}
-                        rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-                        open={openId === item.id}
-                        onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
-                        whyOpen={whyId === item.id}
-                        onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
-                        odds={matched.odds}
-                        seen={matched.seen}
-                        oddsState={oddsState}
-                      />
-                    )
-                  })}
-                  {Array.from({ length: placeholderCount }, (_, index) => (
-                    <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
-                      <td colSpan={6}><span className="wnba-placeholder-bar" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {hasLockedRows && lockTop != null && (
+            <BoardSurface
+              phone={phone}
+              wrapClass="wnba-lines-table-wrap"
+              wrapRef={tableWrapRef}
+              tableClass="wnba-lines-table hit-rate-board"
+              head={<><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th></>}
+              overlay={hasLockedRows && lockTop != null && (
                 <div className="wnba-lines-lock-overlay" style={{ top: lockTop }}>
                   <div className="wnba-lines-lock-card">
                     <div className="wnba-lines-lock-icon">🔒</div>
@@ -657,7 +642,31 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                   </div>
                 </div>
               )}
-            </div>
+            >
+              {rows.map((item, index) => {
+                const matched = boardOddsFor(oddsIndex, item)
+                return (
+                  <PropRow
+                    key={item.id}
+                    item={item}
+                    phone={phone}
+                    onSelectPlayer={goPlayer}
+                    locked={!isPaid && index >= FREE_ROW_LIMIT}
+                    rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                    open={openId === item.id}
+                    onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                    whyOpen={whyId === item.id}
+                    onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                    odds={matched.odds}
+                    seen={matched.seen}
+                    oddsState={oddsState}
+                  />
+                )
+              })}
+              {Array.from({ length: placeholderCount }, (_, index) => (
+                <LockedPlaceholder key={`locked-${index}`} phone={phone} className="wnba-lines-row locked wnba-placeholder-row" />
+              ))}
+            </BoardSurface>
           )}
 
           <FiltersPanel

@@ -6,6 +6,7 @@ import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
+import { viewOnLoad } from '../memberNav'
 
 const NbaPlayers = lazy(() => import('./NbaPlayers'))
 const NbaTeams = lazy(() => import('./NbaTeams'))
@@ -25,29 +26,8 @@ const SlipBoard = lazy(() => import('../SlipBoard'))
 
 const NAV_IDS = new Set(NAV_ITEMS.map((item) => item.id))
 
-// Dashboard is the PrizePicks prop-lines board. Players stays its own roster
-// page. A stored or linked tab (cg_nba_tab / nba_tab, or ?nbaTab=) opens that
-// page when it is one of the nav items.
-const STORED_TAB_KEYS = ['cg_nba_tab', 'nba_tab']
-
 function resolveNbaView(view) {
   return NAV_IDS.has(view) ? view : 'dashboard'
-}
-
-function readLinkedNbaView() {
-  if (typeof window === 'undefined') return 'dashboard'
-  try {
-    const params = new URLSearchParams(window.location.search)
-    const linked = params.get('nbaTab')
-    let stored = ''
-    for (const key of STORED_TAB_KEYS) {
-      const value = localStorage.getItem(key)
-      if (!stored && value) stored = value
-    }
-    return resolveNbaView(linked || stored || 'dashboard')
-  } catch {
-    return 'dashboard'
-  }
 }
 
 const EMPTY_COPY = {
@@ -70,14 +50,15 @@ function EmptyTab({ title, body }) {
   )
 }
 
-export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => {
-    if (entry?.view === 'slip') return 'slip'
-    if (entry?.view === 'player' && entry.player) return 'players'
-    return readLinkedNbaView()
-  })
+  const [view, setView] = useState(() => viewOnLoad({
+    sport: 'nba',
+    entry,
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    forceHome,
+  }))
   const [playerName, setPlayerName] = useState(entry?.player || '')
   const openView = (next) => {
     if (next !== 'players') setPlayerName('')

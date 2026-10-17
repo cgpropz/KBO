@@ -93,11 +93,11 @@ test('live All-Access price ids include NHL and Discord Only prices do not', () 
 
 test('an unconfirmed goalie is not one of the free top rows', () => {
   const payload = [
-    { player: 'Probable Goalie', projection: 30, line: 20, rankEligible: false },
-    { player: 'Skater A', projection: 4, line: 2.5, rankEligible: true },
-    { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true },
-    { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true },
-    { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true },
+    { player: 'Probable Goalie', projection: 30, line: 20, rankEligible: false, oddsType: 'standard' },
+    { player: 'Skater A', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard' },
+    { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
+    { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true, oddsType: 'standard' },
+    { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true, oddsType: 'standard' },
   ]
   const shaped = shapeForTier('nhl_projections', payload, 'free')
   assert.equal(shaped.preview, true)
@@ -115,10 +115,10 @@ function mockRes() {
 }
 
 const PROJECTION_ROWS = [
-  { player: 'Mikko Rantanen', projection: 3.2, line: 2.5, rankEligible: true },
-  { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true },
-  { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true },
-  { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true },
+  { player: 'Mikko Rantanen', projection: 3.2, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Skater B', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Skater C', projection: 2, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Skater D', projection: 1, line: 2.5, rankEligible: true, oddsType: 'standard' },
 ]
 
 function mockClient({ flag = false } = {}) {

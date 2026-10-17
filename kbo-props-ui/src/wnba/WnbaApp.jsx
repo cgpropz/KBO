@@ -7,6 +7,7 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import Paywall from '../Paywall'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
+import { viewOnLoad } from '../memberNav'
 
 const Projections = lazy(() => import('./Projections'))
 const Dashboard = lazy(() => import('./Dashboard'))
@@ -38,10 +39,15 @@ function ComingSoon({ label }) {
   )
 }
 
-export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, entry }) {
+export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, entry, forceHome }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'playerDetail' : 'dashboard')
+  const [view, setView] = useState(() => viewOnLoad({
+    sport: 'wnba',
+    entry,
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    forceHome,
+  }))
   const [teamFilter, setTeamFilter] = useState('All')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.player || null)
   const [returnView, setReturnView] = useState('players')

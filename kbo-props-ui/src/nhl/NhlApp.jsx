@@ -7,6 +7,7 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import { useNhlOpen } from '../useNhlOpen'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
+import { viewOnLoad } from '../memberNav'
 import '../nfl/nfl.css'
 import './nhl.css'
 
@@ -28,12 +29,17 @@ const NAV = [
 
 const SlipBoard = lazy(() => import('../SlipBoard'))
 
-export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.item ? 'player' : 'dashboard')
+  const [view, setView] = useState(() => viewOnLoad({
+    sport: 'nhl',
+    entry,
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    forceHome,
+  }))
   const [selected, setSelected] = useState(entry?.item || null)
 
   const openPlayer = (item) => {

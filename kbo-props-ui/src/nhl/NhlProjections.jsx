@@ -95,7 +95,7 @@ export default function NhlProjections({ onSelectPlayer }) {
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Board</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
       </div>
-      <p className="nhl-note">One card per player and prop. Standard lines are preferred. A demon or goblin is shown only when that is the line PrizePicks posted. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
+      <p className="nhl-note">One card per player and prop. Standard PrizePicks lines only. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
       <div className="nfl-edge-controls">
         <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
         <div className="nfl-position-tabs">
