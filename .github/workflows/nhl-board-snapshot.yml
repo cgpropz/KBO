@@ -37,8 +37,13 @@ jobs:
       - name: Download MoneyPuck game logs
         run: python nhl/fetch_history.py
 
+      - name: Install the board reader client
+        run: pip install "psycopg[binary]"
+
       - name: Build the NHL board
         run: python -m nhl.build_board --root /tmp/moneypuck
+        env:
+          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
 
       - name: Save the daily board snapshot
         run: python -m nhl.board_snapshot --board nhl/projections.json --out memory/nhl/board

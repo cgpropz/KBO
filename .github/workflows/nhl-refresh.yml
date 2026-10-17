@@ -47,13 +47,15 @@ jobs:
           cache: pip
 
       - name: Install snapshot dependencies
-        run: pip install requests
+        run: pip install requests "psycopg[binary]"
 
       - name: Download MoneyPuck game logs
         run: python nhl/fetch_history.py
 
       - name: Build the NHL board and lineups
         run: python -m nhl.build_board --root /tmp/moneypuck
+        env:
+          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
 
       - name: Match PrizePicks lines to Unabated
         continue-on-error: true

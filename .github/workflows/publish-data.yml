@@ -82,6 +82,8 @@ jobs:
 
       - name: Build current NFL projections and starting lineups
         run: python nfl/build_projection_data.py
+        env:
+          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
 
       - name: Build NFL prop correlations
         continue-on-error: true

@@ -48,12 +48,14 @@ jobs:
           cache: pip
 
       - name: Install snapshot dependencies
-        run: pip install pandas requests
+        run: pip install pandas requests "psycopg[binary]"
 
       # PrizePicks lines live in projections.json, which is not in git.
       # sharp_odds.py skips the snapshot when that file is missing.
       - name: Build current NFL projections and starting lineups
         run: timeout 240 python nfl/build_projection_data.py
+        env:
+          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
 
       - name: Match NFL PrizePicks lines to Unabated sportsbook odds
         continue-on-error: true
