@@ -7,7 +7,7 @@ const https = require('https');
 const http = require('http');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
-const cheerio = require('cheerio');
+const { parseRotowireLineups } = require('./rotowireLineups');
 require('dotenv').config();
 
 const app = express();
@@ -1424,80 +1424,8 @@ function fetchHtml(url) {
   });
 }
 
-function parseRotowireLineups(html) {
-  const $ = cheerio.load(html);
-  const games = [];
-
-  // Anchor on the parent .lineup container (which holds .lineup__meta + .lineup__box)
-  // Skip the "is-tools" variant used for promo sections
-  $('.lineup').not('.is-tools').each((_, container) => {
-    const $c  = $(container);
-    const $box = $c.find('.lineup__box').first();
-    if (!$box.length) return;
-
-    // Game time — sibling of .lineup__box inside .lineup__meta
-    const gameTime = $c.find('.lineup__meta .lineup__time').first()
-      .text().replace(/\s+/g, ' ').trim();
-
-    // Team abbr lives inside .lineup__box; team name lives in .lineup__matchup (sibling)
-    function parseTeamMeta(sideClass) {
-      const abbr = $box.find(`.lineup__team.${sideClass} .lineup__abbr`).text().trim();
-      const name = $c.find(`.lineup__matchup .lineup__mteam.${sideClass}`).text().trim();
-      const canonical = normalizeTeamAbbr(abbr) || abbr;
-      return { abbr: canonical, rawAbbr: abbr, name };
-    }
-
-    const visitor = parseTeamMeta('is-visit');
-    const home    = parseTeamMeta('is-home');
-    if (!visitor.abbr && !home.abbr) return;
-
-    // Parse one team's list, splitting at .lineup__title.is-middle divider
-    function parseList(sideClass) {
-      const $list = $box.find(`.lineup__list.${sideClass}`);
-      const starters = [];
-      const inactive = [];
-      let passedDivider = false;
-
-      $list.children().each((_, el) => {
-        const $el = $(el);
-        const cls = ($el.attr('class') || '');
-
-        if (cls.includes('lineup__title') && cls.includes('is-middle')) {
-          passedDivider = true;
-          return;
-        }
-        if (!cls.includes('lineup__player')) return;
-
-        const name = $el.find('a').attr('title') || $el.find('a').text().trim();
-        if (!name) return;
-
-        const pos     = $el.find('.lineup__pos').text().trim();
-        const injText = $el.find('.lineup__inj').text().trim().toUpperCase();
-        let status = 'expected';
-        if      (injText === 'OUT')                      status = 'out';
-        else if (injText === 'GTD')                      status = 'gtd';
-        else if (injText === 'QUES' || injText === 'Q') status = 'questionable';
-        else if (cls.includes('is-pct-play-0'))          status = 'out';
-        else if (cls.includes('is-pct-play-50'))         status = 'gtd';
-        else if (cls.includes('is-pct-play-75'))         status = 'questionable';
-
-        (passedDivider ? inactive : starters).push({ name, pos, status });
-      });
-
-      return { starters, inactive };
-    }
-
-    const vis = parseList('is-visit');
-    const hom = parseList('is-home');
-
-    games.push({
-      gameTime,
-      visitor: { ...visitor, players: vis.starters, inactive: vis.inactive },
-      home:    { ...home,    players: hom.starters, inactive: hom.inactive },
-    });
-  });
-
-  return games;
+function readRotowireLineups(html) {
+  return parseRotowireLineups(html, normalizeTeamAbbr);
 }
 
 // GET /api/lineups
@@ -1508,7 +1436,7 @@ app.get('/api/lineups', async (req, res) => {
   }
   try {
     const html  = await fetchHtml('https://www.rotowire.com/wnba/lineups.php');
-    const games = parseRotowireLineups(html);
+    const games = readRotowireLineups(html);
     lineupsCache.data = games;
     lineupsCache.ts   = now;
     res.json(games);
