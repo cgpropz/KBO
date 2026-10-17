@@ -359,6 +359,76 @@ function discordMetadata(metas) {
   return (metas || []).find((metadata) => metadataSignalsDiscord(metadata)) || null;
 }
 
+// Checkout omits line items. Read the subscription price, then the session
+// line items. If both reads throw, the error is rethrown so the webhook
+// returns 500 and does not grant the unknown-price fallback.
+async function checkoutSessionPrice(stripeApi, session) {
+  let price = session.line_items?.data?.[0]?.price || null;
+  if (price) return price;
+  let readError = null;
+  if (session.subscription) {
+    try {
+      const sub = await stripeApi.subscriptions.retrieve(session.subscription);
+      price = sub.items?.data?.[0]?.price || null;
+    } catch (err) {
+      readError = err;
+    }
+  }
+  if (!price) {
+    try {
+      const listed = await stripeApi.checkout.sessions.listLineItems(session.id, { limit: 1 });
+      price = listed.data?.[0]?.price || null;
+      readError = null;
+    } catch (err) {
+      readError = err;
+    }
+  }
+  if (!price && readError) throw readError;
+  return price;
+}
+
+// Grant the checkout price. A Stripe read error while resolving that price
+// is 500 with no profile or claim write, so Stripe retries the event.
+export async function handleCheckoutSessionCompleted(obj, deps = {}) {
+  return guardStripe(async () => {
+    const { stripe: stripeApi, supabase: db } = webhookDeps(deps);
+    const userId = obj.client_reference_id;
+    const email = obj.customer_details?.email || obj.customer_email;
+    const price = await checkoutSessionPrice(stripeApi, obj);
+    // Lifetime, Founders, and Yearly resolve by price id or product id,
+    // including taxed totals that are not the list price.
+    const tier = await tierForStripePrice(stripeApi, price, { metadata: obj.metadata, strict: true });
+
+    let replayBlocked = false;
+    if (obj.subscription) {
+      const sub = await stripeApi.subscriptions.retrieve(
+        typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id,
+      );
+      replayBlocked = await subscriptionPeriodBlocked(stripeApi, sub);
+    }
+    if (!replayBlocked && obj.payment_intent) {
+      replayBlocked = await paymentChargeBlocks(stripeApi, obj.payment_intent);
+    }
+    let grantFailure = null;
+    if (replayBlocked) {
+      grantFailure = await clearTierByCustomer(customerIdOf(obj.customer), deps);
+    } else if (userId) {
+      grantFailure = await setTierById(userId, tier, db);
+    } else if (email) {
+      grantFailure = await setTierByEmail(email, tier);
+    } else {
+      console.error('[webhook] checkout.session.completed: no user ID or email');
+    }
+    if (grantFailure) return grantFailure;
+
+    const reported = price && !obj.line_items
+      ? { ...obj, line_items: { data: [{ price }] } }
+      : obj;
+    await reportPurchaseToX(reported, { conversionTime: deps.conversionTime });
+    return null;
+  });
+}
+
 // Unknown prices fall back to full access. Before that fallback, classify the
 // price (live Discord Only ids, product id, and product metadata
 // tier=discord_only) and, if it is still unknown, the subscription itself so
@@ -429,62 +499,10 @@ export default async function handler(req, res) {
   // Fires immediately when the user completes checkout. Has client_reference_id
   // set to the Supabase user ID (added by SubscriptionPage.jsx).
   if (event.type === 'checkout.session.completed') {
-    const userId = obj.client_reference_id;
-    const email  = obj.customer_details?.email || obj.customer_email;
-
-    // checkout.session.completed does NOT include line_items by default, so
-    // resolve the real price from the subscription (or fetch line items for
-    // one-time purchases) before mapping to a sport-specific tier.
-    let price = obj.line_items?.data?.[0]?.price || null;
-    if (!price && obj.subscription) {
-      try {
-        const sub = await getStripe().subscriptions.retrieve(obj.subscription);
-        price = sub.items?.data?.[0]?.price || null;
-      } catch (err) {
-        console.error('[webhook] could not retrieve subscription for price:', err.message);
-      }
-    }
-    if (!price) {
-      try {
-        const li = await getStripe().checkout.sessions.listLineItems(obj.id, { limit: 1 });
-        price = li.data?.[0]?.price || null;
-      } catch (err) {
-        console.error('[webhook] could not list checkout line items:', err.message);
-      }
-    }
-    // Lifetime ($249.99 and Founders $99.99) and Yearly ($149.99) resolve here
-    // by price id / product id, including taxed totals that are not the list price.
-    const tier = await tierForStripePrice(getStripe(), price, { metadata: obj.metadata, strict: true });
-
-    let replayBlocked = false;
-    if (obj.subscription) {
-      const sub = await getStripe().subscriptions.retrieve(
-        typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id,
-      );
-      replayBlocked = await subscriptionPeriodBlocked(getStripe(), sub);
-    }
-    if (!replayBlocked && obj.payment_intent) {
-      replayBlocked = await paymentChargeBlocks(getStripe(), obj.payment_intent);
-    }
-    let grantFailure = null;
-    if (replayBlocked) {
-      grantFailure = await clearTierByCustomer(customerIdOf(obj.customer));
-    } else if (userId) {
-      grantFailure = await setTierById(userId, tier);
-    } else if (email) {
-      grantFailure = await setTierByEmail(email, tier);
-    } else {
-      console.error('[webhook] checkout.session.completed: no user ID or email');
-    }
-    if (grantFailure) return res.status(grantFailure.status).json(grantFailure.body);
-
-    // Server-side X purchase conversion (same Event ID + conversion_id = session
-    // id as the browser pixel, so X de-duplicates). No-op unless the X_* env
-    // vars are set; never throws, so it cannot fail the webhook.
-    const reported = price && !obj.line_items
-      ? { ...obj, line_items: { data: [{ price }] } }
-      : obj;
-    await reportPurchaseToX(reported, { conversionTime: (event.created || 0) * 1000 || undefined });
+    const failure = await handleCheckoutSessionCompleted(obj, {
+      conversionTime: (event.created || 0) * 1000 || undefined,
+    });
+    if (failure) return res.status(failure.status).json(failure.body);
   }
 
   // ── customer.subscription.created ──────────────────────────────────────

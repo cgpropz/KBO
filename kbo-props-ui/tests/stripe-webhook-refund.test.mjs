@@ -10,6 +10,7 @@ import {
   clearTierByCustomer,
   clearTierByEmail,
   handleChargeRefunded,
+  handleCheckoutSessionCompleted,
   handleDisputeEvent,
   handleInvoicePaymentSucceeded,
 } from '../api/stripe-webhook.js'
@@ -824,6 +825,99 @@ test('a checkout charge read error does not re-grant a lifetime session', async 
     },
   }
   assert.equal(await sessionGrantsLifetime(clear, session), true)
+})
+
+function stripeReadError(message) {
+  return Object.assign(new Error(message), { type: 'StripeAPIError' })
+}
+
+test('checkout returns 500 when the subscription and line-item reads both fail', async () => {
+  const db = mockDb()
+  const stripe = entitlementStripe()
+  stripe.subscriptions.retrieve = async () => {
+    throw stripeReadError(`subscription down ${EMAIL}`)
+  }
+  stripe.checkout = {
+    sessions: {
+      async listLineItems() {
+        throw stripeReadError(`line items down ${EMAIL}`)
+      },
+    },
+  }
+  const logs = []
+  const original = console.error
+  console.error = (...args) => logs.push(args.map(String).join(' '))
+  let failure
+  try {
+    failure = await handleCheckoutSessionCompleted({
+      id: 'cs_both',
+      client_reference_id: 'user-1',
+      customer: 'cus_1',
+      subscription: 'sub_1',
+      customer_details: { email: EMAIL },
+    }, { stripe, supabase: db })
+  } finally {
+    console.error = original
+  }
+  assert.equal(failure.status, 500)
+  assert.deepEqual(failure.body, { error: 'stripe read failed' })
+  assert.equal(JSON.stringify(failure.body).includes(EMAIL), false)
+  assert.equal(logs.some((line) => line.includes(EMAIL)), false)
+  assert.equal(db.state.upserts.length, 0)
+  assert.equal(db.state.claimWrites.length, 0)
+  assert.equal(db.state.metadata.tier, 'combined')
+})
+
+test('a checkout line-item read still grants when the subscription read fails', async () => {
+  const db = mockDb()
+  const stripe = entitlementStripe()
+  let retrieves = 0
+  stripe.subscriptions.retrieve = async () => {
+    retrieves += 1
+    if (retrieves === 1) throw stripeReadError('subscription down')
+    return { id: 'sub_1', items: { data: [{ price: { id: KBO } }] } }
+  }
+  stripe.checkout = {
+    sessions: {
+      async listLineItems() {
+        return { data: [{ price: { id: KBO } }] }
+      },
+    },
+  }
+  const failure = await handleCheckoutSessionCompleted({
+    id: 'cs_lines',
+    client_reference_id: 'user-1',
+    customer: 'cus_1',
+    subscription: 'sub_1',
+  }, { stripe, supabase: db })
+  assert.equal(failure, null)
+  assert.deepEqual(db.state.upserts, [{ id: 'user-1', tier: 'kbo' }])
+  assert.equal(db.state.claimWrites[0].tier, 'kbo')
+  assert.equal(db.state.claimWrites[0].provider, 'email')
+})
+
+test('a one-time checkout returns 500 when line items cannot be read', async () => {
+  const db = mockDb()
+  const stripe = entitlementStripe()
+  stripe.checkout = {
+    sessions: {
+      async listLineItems() {
+        throw stripeReadError('line items down')
+      },
+    },
+  }
+  const failure = await handleCheckoutSessionCompleted({
+    id: 'cs_once',
+    client_reference_id: 'user-1',
+    customer: 'cus_1',
+    customer_details: { email: EMAIL },
+  }, { stripe, supabase: db })
+  assert.equal(failure.status, 500)
+  assert.deepEqual(failure.body, { error: 'stripe read failed' })
+  assert.equal(JSON.stringify(failure.body).includes(EMAIL), false)
+  assert.equal(db.state.upserts.length, 0)
+  assert.equal(db.state.claimWrites.length, 0)
+  assert.equal(db.state.metadata.tier, 'combined')
 })
 
 test('a Stripe price lookup error on the webhook returns 500', async () => {
