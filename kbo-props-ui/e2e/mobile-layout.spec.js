@@ -251,7 +251,7 @@ test('phone NHL dashboard hides goblin lines and opens on CG Score', async ({ pa
   await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
   await expect(page.getByText('Goblin Skater')).toHaveCount(0)
   await expect(page.getByText(/GOBLIN/)).toHaveCount(0)
-  await expect(page.getByText(/sorted by CG Score|CG Score/)).toBeVisible()
+  await expect(page.getByLabel('Sort')).toHaveValue('CG Score')
 })
 
 test('a sport tab opens that sport dashboard', async ({ page }) => {
