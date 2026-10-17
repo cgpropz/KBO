@@ -517,7 +517,19 @@
     overflow-wrap: anywhere;
   }
 
+  /* The WNBA fade-in animation leaves translateY(0) in place, which traps
+     position:fixed inside the page instead of the screen. The filter sheet
+     then runs past the bottom and sits on the cards. */
+  .wnba-root .fade-in {
+    animation: none !important;
+    transform: none !important;
+  }
+
   :is(.kbo-filter-overlay, .nfl-filters-overlay, .wnba-filters-overlay) {
+    position: fixed !important;
+    inset: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-end !important;
@@ -534,6 +546,7 @@
     border-radius: 20px 20px 0 0 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     background: #080c0a !important;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   :is(.nfl-lineups-grid, .nfl-edge-grid, .nfl-top-grid, .wnba-root .edge-grid) {
@@ -723,7 +736,35 @@
 
   .prop-line-card > .hit-rate-col { order: 2; }
   .prop-line-card > .hit-rate-chart { order: 3; display: block !important; }
+  .prop-line-card > .hit-rate-chart:empty { display: none !important; }
   .prop-line-card > .hit-rate-extra { order: 4; display: block !important; }
+
+  /* The desktop WNBA board keeps its bordered panel. On a phone that padding
+     is the only thing making these cards narrower than NFL and NHL. */
+  .wnba-propboard {
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  /* The odds chevron is a circle at the right of the name. On a phone it
+     grows to 44px and sits on the score link. Put it on its own row, under
+     the name and clear of the right edge. */
+  .prop-line-card :is(.nfl-lines-player, .wnba-lines-player) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .prop-line-card .nfl-odds-toggle {
+    order: 5;
+    flex: 1 0 100%;
+    width: 44px;
+    max-width: 44px;
+    height: 44px;
+    margin: 4px 0 0 50px !important;
+  }
 }
 
 /* A mouse window in this range is not a phone, so the desktop table stays.
