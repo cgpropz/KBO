@@ -577,3 +577,46 @@ export function statusChips({ sport, rows, lineups, recap, ready = true, now = n
   }
   return chips
 }
+
+// ET calendar day of a row/game start. A bare YYYY-MM-DD is already a gameday.
+export function etGameday(start) {
+  if (!start) return null
+  const s = String(start)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const t = Date.parse(s)
+  return Number.isFinite(t) ? etDateIso(new Date(t)) : null
+}
+
+function notStarted(start, now) {
+  const s = String(start)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s >= etDateIso(now)
+  const t = Date.parse(s)
+  return Number.isFinite(t) && t > now.getTime()
+}
+
+// The next gameday: the earliest ET day that still has a game not yet started.
+export function nextGameday(items, now = new Date()) {
+  let best = null
+  for (const item of items || []) {
+    if (!item?.start || !notStarted(item.start, now)) continue
+    const day = etGameday(item.start)
+    if (day && (!best || day < best)) best = day
+  }
+  return best
+}
+
+// Keep the hub on one slate. Items with no usable start can't be placed on a
+// day and stay in; everything dated on another gameday is dropped.
+// NFL is a weekly slate (Sunday through Monday night), so it is never scoped.
+export const WEEKLY_SLATE_SPORTS = new Set(['nfl'])
+export function hubGamedayFor(sport, items, now = new Date()) {
+  return WEEKLY_SLATE_SPORTS.has(sport) ? null : nextGameday(items, now)
+}
+
+export function scopeToGameday(items, day) {
+  if (!day) return items || []
+  return (items || []).filter((item) => {
+    const d = etGameday(item?.start)
+    return !d || d === day
+  })
+}
