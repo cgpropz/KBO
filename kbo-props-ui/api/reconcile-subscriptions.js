@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { mergeTier, tierForStripePrice, signalsLifetimePurchase } from './_stripeTier.js';
+import { mergeTier, signalsLifetimePurchase, reconcileTierForSubscription, lifetimeChargeBlocksAccess } from './_stripeTier.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 import { writeTierClaim } from './_tierClaim.js';
 
@@ -82,12 +82,10 @@ async function walkSubscriptions(status, { byEmail, discordEmails, recordSite })
       // mixed-case Checkout address still matches the Supabase account.
       // Discord-only prices are recorded separately and are not merged into
       // the site tier, so they cannot grant All-Access.
-      const price = sub.items?.data?.[0]?.price;
-      const priceId = typeof price === 'string' ? price : price?.id;
-      // Product metadata and the live Discord Only product id are checked
-      // here. The list expand stops at the price object (Stripe rejects a
-      // fifth expand level), so an unknown price is retrieved once.
-      const classified = await tierForStripePrice(stripe, price || priceId, { metadata: sub.metadata });
+      // A refunded or disputed current-period charge is not an active grant.
+      // reconcileTierForSubscription returns null in that case.
+      const classified = await reconcileTierForSubscription(stripe, sub);
+      if (classified == null) continue;
       if (classified === 'discord') {
         discordEmails.add(normalized);
         continue;
@@ -123,6 +121,8 @@ async function collectLifetimeEmails() {
       if (session.mode !== 'payment' || session.payment_status !== 'paid') continue;
       const email = (session.customer_details?.email || session.customer_email || '').trim().toLowerCase();
       if (!email) continue;
+      const charge = await chargeForCheckoutSession(session);
+      if (await lifetimeChargeBlocksAccess(charge, stripe)) continue;
       const lines = session.line_items?.data || [];
       const hit = lines.some((line) => signalsLifetimePurchase({
         price: line?.price,
@@ -136,6 +136,30 @@ async function collectLifetimeEmails() {
     startingAfter = list.data[list.data.length - 1].id;
   }
   return emails;
+}
+
+async function chargeForCheckoutSession(session) {
+  let paymentIntent = session?.payment_intent;
+  if (typeof paymentIntent === 'string' && typeof stripe.paymentIntents?.retrieve === 'function') {
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntent, { expand: ['latest_charge'] });
+    } catch {
+      return null;
+    }
+  }
+  if (!paymentIntent || typeof paymentIntent !== 'object') return null;
+  if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge === 'object') {
+    return paymentIntent.latest_charge;
+  }
+  const chargeId = typeof paymentIntent.latest_charge === 'string' ? paymentIntent.latest_charge : null;
+  if (chargeId && typeof stripe.charges?.retrieve === 'function') {
+    try {
+      return await stripe.charges.retrieve(chargeId);
+    } catch {
+      return null;
+    }
+  }
+  return paymentIntent.charges?.data?.[0] || null;
 }
 
 async function collectActiveSubscriberTiers() {

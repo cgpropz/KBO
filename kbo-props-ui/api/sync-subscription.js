@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { computeStripeAccess } from './_stripeTier.js';
+import { accessAfterSyncRecompute } from './_stripeTier.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
 import { profileTierClaim, writeTierClaim } from './_tierClaim.js';
 
@@ -8,12 +8,29 @@ function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
 }
 
-const stripe = new Stripe(cleanEnv(process.env.STRIPE_SECRET_KEY));
+let stripeClient = null;
+function getStripe() {
+  if (!stripeClient) stripeClient = new Stripe(cleanEnv(process.env.STRIPE_SECRET_KEY));
+  return stripeClient;
+}
 
-const supabase = createClient(
-  cleanEnv(process.env.VITE_SUPABASE_URL),
-  cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
-);
+let supabaseClient = null;
+function getSupabase() {
+  if (!supabaseClient) {
+    supabaseClient = createClient(
+      cleanEnv(process.env.VITE_SUPABASE_URL),
+      cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
+    );
+  }
+  return supabaseClient;
+}
+
+async function claimOrFail(db, userId, tier) {
+  const wrote = await writeTierClaim(db, userId, tier);
+  if (wrote) return null;
+  console.error(`[sync-subscription] tier claim failed for ${userId}`);
+  return { error: 'tier claim failed' };
+}
 
 /**
  * POST /api/sync-subscription
@@ -27,7 +44,9 @@ const supabase = createClient(
  * Stripe customer lookup is case-insensitive. A logged-out Checkout Session
  * stores the email the buyer typed; Supabase accounts are lowercase.
  */
-export default async function handler(req, res) {
+export async function syncMemberSubscription(req, res, deps = {}) {
+  const stripe = deps.stripe || getStripe();
+  const supabase = deps.supabase || getSupabase();
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).end('Method Not Allowed');
@@ -52,19 +71,12 @@ export default async function handler(req, res) {
   // Paid site tiers are not recomputed here (same as before). Discord role
   // sync still runs so a failed webhook role update is retried on login.
   // Discord-only falls through: an All-Access purchase can upgrade it, and a
-  // lapsed Discord-only plan can return to free.
-  if (currentTier && currentTier !== 'free' && currentTier !== 'discord') {
-    await writeTierClaim(supabase, user.id, currentTier);
-    await safeDiscordSync(supabase, user.id);
-    return res.status(200).json({ tier: currentTier, synced: false });
-  }
-
-  // Look up the user's live Stripe entitlement across all active/trialing
-  // subscriptions + any one-time lifetime purchase, mapped to a per-sport tier.
-  // Discord-only subscriptions resolve to 'discord' and do not grant site access.
-  let access = { tier: 'free', discordOnly: false };
+  // lapsed Discord-only plan can return to free. A free profile is granted
+  // only what accessAfterSyncRecompute still sees, so a refunded or disputed
+  // current period is not written back.
+  let access = { tier: 'free', discordOnly: false, unchanged: false };
   try {
-    access = await computeStripeAccess(stripe, user.email);
+    access = await accessAfterSyncRecompute(stripe, user.email, currentTier);
   } catch (err) {
     console.error('[sync-subscription] Stripe lookup failed:', err.message);
     if (currentTier === 'discord') {
@@ -72,6 +84,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ tier: 'discord', synced: false });
     }
     return res.status(500).json({ error: 'Stripe lookup failed' });
+  }
+
+  if (access.unchanged) {
+    const claimFailure = await claimOrFail(supabase, user.id, currentTier);
+    if (claimFailure) return res.status(500).json(claimFailure);
+    await safeDiscordSync(supabase, user.id);
+    return res.status(200).json({ tier: currentTier, synced: false });
   }
 
   const tier = access.tier || 'free';
@@ -84,12 +103,14 @@ export default async function handler(req, res) {
         console.error('[sync-subscription] clear discord tier failed:', clearError);
         return res.status(500).json({ error: 'DB write failed' });
       }
-      await writeTierClaim(supabase, user.id, 'free');
+      const claimFailure = await claimOrFail(supabase, user.id, 'free');
+      if (claimFailure) return res.status(500).json(claimFailure);
       await setDiscordOnlyFlag(supabase, user.id, false);
       await safeDiscordSync(supabase, user.id);
       return res.status(200).json({ tier: 'free', synced: true });
     }
-    await writeTierClaim(supabase, user.id, profileTierClaim(currentTier));
+    const claimFailure = await claimOrFail(supabase, user.id, profileTierClaim(currentTier));
+    if (claimFailure) return res.status(500).json(claimFailure);
     await safeDiscordSync(supabase, user.id);
     return res.status(200).json({ tier: 'free', synced: false });
   }
@@ -105,9 +126,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'DB write failed' });
   }
 
-  await writeTierClaim(supabase, user.id, tier);
+  const claimFailure = await claimOrFail(supabase, user.id, tier);
+  if (claimFailure) return res.status(500).json(claimFailure);
   await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
   await safeDiscordSync(supabase, user.id);
   console.log(`[sync-subscription] granted ${tier} to ${user.email}`);
   return res.status(200).json({ tier, synced: true });
+}
+
+export default function handler(req, res) {
+  return syncMemberSubscription(req, res);
 }
