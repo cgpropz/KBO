@@ -6,10 +6,15 @@ Slips for any other sport stay ungraded. A scratched, OUT, DNP, or voided
 leg counts as a push. The publish step keeps going when some slips cannot
 be graded; the summary prints could_not_grade.
 
+Results are written only to saved_slips. They are subscriber entries and are
+not passed to compute_hit_rate_stats or write_recap, which are what publish
+the public hit rates.
+
   python grade_saved_slips.py
   python grade_saved_slips.py --dry-run
   python backfill_saved_slip_grades.py --dry-run
   python backfill_saved_slip_grades.py
+  python backfill_saved_slip_grades.py --regrade --dry-run
 """
 from __future__ import annotations
 
@@ -18,50 +23,71 @@ import argparse
 from pipeline.memory.common import today_et
 from pipeline.saved_slip_db import supabase_client
 from pipeline.saved_slip_grade import FETCH_LIMIT, LiveSources, format_summary, grade_batch
+from pipeline.saved_slip_sport import legs_of
+
+
+def already_ungradeable(slip: dict) -> bool:
+    """A slip whose every leg was already marked ungradeable is not retried."""
+    legs = [leg for leg in legs_of(slip) if isinstance(leg, dict)]
+    return bool(legs) and all(leg.get("ungradeable") for leg in legs)
+
+
+def fetch_pages(build, limit: int) -> list:
+    """Page a fresh query until a short page or 50 pages."""
+    rows = []
+    start = 0
+    page = max(1, limit)
+    while start < page * 50:
+        resp = build().range(start, start + page - 1).execute()
+        batch = list(getattr(resp, "data", None) or [])
+        rows.extend(batch)
+        if len(batch) < page:
+            break
+        start += page
+    return rows
 
 
 def fetch_ungraded(sb, today, limit: int) -> list:
+    """Ungraded slips before today, plus today, paged past the first page.
+
+    Slips already marked ungradeable are skipped so they cannot fill the window.
+    """
     iso = today.isoformat()
-    past = (
-        sb.table("saved_slips")
-        .select("*")
-        .eq("graded", False)
-        .lt("game_date", iso)
-        .order("game_date")
-        .limit(limit)
-        .execute()
-    )
-    current = (
-        sb.table("saved_slips")
-        .select("*")
-        .eq("graded", False)
-        .eq("game_date", iso)
-        .order("id")
-        .limit(limit)
-        .execute()
-    )
-    return list(past.data or []) + list(current.data or [])
+
+    def past():
+        return (
+            sb.table("saved_slips")
+            .select("*")
+            .eq("graded", False)
+            .lt("game_date", iso)
+            .order("game_date")
+            .order("id")
+        )
+
+    def current():
+        return (
+            sb.table("saved_slips")
+            .select("*")
+            .eq("graded", False)
+            .eq("game_date", iso)
+            .order("id")
+        )
+
+    rows = fetch_pages(past, limit) + fetch_pages(current, limit)
+    return [row for row in rows if not already_ungradeable(row)]
 
 
 def fetch_past(sb, today, limit: int) -> list:
-    """Every slip from before today, one page at a time."""
-    rows = []
-    start = 0
-    while start < limit * 50:
-        resp = (
+    """Every slip from before today, including graded rows. Opt-in via --regrade."""
+    def past():
+        return (
             sb.table("saved_slips")
             .select("*")
             .lt("game_date", today.isoformat())
             .order("id")
-            .range(start, start + limit - 1)
-            .execute()
         )
-        batch = list(resp.data or [])
-        rows.extend(batch)
-        if len(batch) < limit:
-            break
-        start += limit
-    return rows
+
+    return fetch_pages(past, limit)
 
 
 def apply_updates(sb, updates, summary) -> None:
@@ -78,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--regrade",
         action="store_true",
-        help="Re-grade every slip dated before today, including slips that already have a result.",
+        help="Opt-in. Also read slips that already have a result. A graded slip is not moved to pending, ungradeable, or a void caused by missing data.",
     )
     parser.add_argument("--limit", type=int, default=FETCH_LIMIT, help=f"Rows per fetch (default {FETCH_LIMIT}).")
     args = parser.parse_args(argv)

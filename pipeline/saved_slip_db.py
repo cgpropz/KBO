@@ -10,12 +10,9 @@ def _clean(value) -> str:
 
 def supabase_client():
     url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")
-    key = _clean(os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY"))
+    key = _clean(os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
     if not url or not key:
-        raise SystemExit(
-            "Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY "
-            "(or VITE_SUPABASE_SERVICE_ROLE_KEY)"
-        )
+        raise SystemExit("Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY")
     try:
         from supabase import create_client
     except ImportError as exc:

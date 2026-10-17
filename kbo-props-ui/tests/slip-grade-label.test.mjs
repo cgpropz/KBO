@@ -106,10 +106,34 @@ test('the save payload keeps sport, odds type, and projection id', () => {
   assert.equal(row.legs[0].odds_type, 'standard')
   assert.equal(row.legs[0].projection_id, '15700846')
   assert.equal(row.legs[0].player_id, '123')
+  assert.equal(row.legs[0].game_date, null)
   const fromProp = savedLegFromProp({ name: 'A', prop: 'Points', team: 'LVA', oddsType: 'standard', id: '44' }, 'MORE', 'wnba')
   assert.equal(fromProp.sport, 'wnba')
   assert.equal(fromProp.side, 'OVER')
   assert.equal(fromProp.projection_id, '44')
+  const sundayNight = savedLegFromProp({
+    name: 'Patrick Mahomes',
+    prop: 'Pass Yards',
+    team: 'KC',
+    start_time: '2026-10-19T00:30:00Z',
+    gameday: '2026-10-20',
+  }, 'OVER', 'nfl')
+  assert.equal(sundayNight.game_date, '2026-10-18')
+  assert.equal(sundayNight.start_time, undefined)
+  const monday = savedLegFromProp({
+    name: 'Patrick Mahomes',
+    prop: 'Pass Yards',
+    team: 'KC',
+    start_time: '2026-10-20T00:15:00Z',
+  }, 'OVER', 'nfl')
+  assert.equal(monday.game_date, '2026-10-19')
+  const gamedayOnly = savedLegFromProp({
+    name: 'A',
+    prop: 'Points',
+    team: 'LVA',
+    gameday: '2026-10-18',
+  }, 'OVER', 'wnba')
+  assert.equal(gamedayOnly.game_date, '2026-10-18')
   assert.equal(sportColumnMissing({ code: 'PGRST204', message: "Could not find the 'sport' column of 'saved_slips' in the schema cache" }), true)
   assert.equal(sportColumnMissing({ code: '42703', message: 'column "sport" of relation "saved_slips" does not exist' }), true)
   assert.equal(sportColumnMissing({ code: '23505', message: 'duplicate key' }), false)

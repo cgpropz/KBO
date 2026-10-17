@@ -25,6 +25,25 @@ function projectionIdOf(leg) {
   return id
 }
 
+// ET calendar day. A bare YYYY-MM-DD is already a gameday. A timestamp is
+// converted so a Sunday 8:30pm ET kickoff is not stored as Monday UTC.
+export function etGameDate(value) {
+  if (value == null || value === '') return null
+  const raw = String(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  const parsed = Date.parse(raw)
+  if (!Number.isFinite(parsed)) return null
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(parsed))
+}
+
+export function legGameDate(leg) {
+  if (!leg || typeof leg !== 'object') return null
+  return etGameDate(leg.start_time ?? leg.startTime ?? leg.start_time_utc)
+    || etGameDate(leg.gameday ?? leg.gameDate ?? leg.game_date)
+}
+
 export function cleanSavedLeg(leg, sport) {
   const sideRaw = String(leg?.side || '').toUpperCase()
   const side = sideRaw === 'UNDER' || sideRaw === 'LESS' ? 'UNDER' : 'OVER'
@@ -46,6 +65,7 @@ export function cleanSavedLeg(leg, sport) {
     status: text(leg?.status),
     injury: text(leg?.injury),
     pp_status: text(leg?.ppStatus ?? leg?.pp_status),
+    game_date: legGameDate(leg),
     result: 'pending',
     actual: null,
   }

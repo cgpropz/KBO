@@ -10,9 +10,8 @@ a partial. A leg whose game is not final stays pending.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from pipeline.memory.common import (
     RESULT_DNP,
@@ -29,7 +28,7 @@ from pipeline.memory.common import (
     team_key,
 )
 from pipeline.memory.grade_kbo_day import STAT_KEY as KBO_STAT_KEY
-from pipeline.memory.grade_nfl_day import actual_for_stat
+from pipeline.memory.grade_nfl_day import actual_for_stat, stat_is_nan
 from pipeline.memory.grade_nfl_day import name_key as nfl_name_key
 from pipeline.memory.grade_nhl_day import STAT_KEYS as NHL_STAT_KEYS
 from pipeline.memory.grade_nhl_day import _lookup_player, name_key as nhl_name_key
@@ -38,9 +37,12 @@ from pipeline.memory import cutoff
 from pipeline.saved_slip_sport import catalog, infer_slip_sport, legs_of
 
 GRADED_SPORTS = tuple(catalog()["GRADED_SPORTS"])
-OUT_TOKENS = {"out", "dnp", "scratched", "scratch", "inactive", "void"}
+OUT_TOKENS = {"out", "dnp", "scratched", "scratch", "inactive", "void", "removed", "pulled"}
+STATUS_FIELDS = ("status", "ppStatus", "pp_status", "board_status")
+MISSING_DATA_VOIDS = {"dnp", "missing", "not_on_slate", "stat_missing"}
 NFL_ALIAS = {"JAC": "JAX", "LA": "LAR", "WSH": "WAS"}
 FETCH_LIMIT = 200
+DATE_WINDOW_DAYS = 7
 
 
 def _graded_sports() -> set[str]:
@@ -78,14 +80,71 @@ class NhlDay:
 
 
 def ruled_out(leg: dict) -> bool:
-    for key in ("status", "injury", "ppStatus", "pp_status", "board_status"):
+    """Exact status values only. Free-text injury notes are not a void."""
+    for key in STATUS_FIELDS:
         text = str(leg.get(key) or "").strip().lower()
-        if not text:
-            continue
-        tokens = set(re.findall(r"[a-z]+", text))
-        if tokens & OUT_TOKENS:
+        if text in OUT_TOKENS:
             return True
     return False
+
+
+def et_calendar_date(value) -> date | None:
+    """ET game date. A bare calendar day is kept. A timestamp is converted to ET."""
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, date):
+        return value
+    else:
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        if len(raw) >= 10 and raw[4:5] == "-" and raw[7:8] == "-" and "T" not in raw and ":" not in raw:
+            try:
+                return date.fromisoformat(raw[:10])
+            except ValueError:
+                return None
+        if "T" not in raw and ":" not in raw:
+            return parse_date(raw)
+        try:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        return parsed.date()
+    try:
+        from zoneinfo import ZoneInfo
+
+        return parsed.astimezone(ZoneInfo("America/New_York")).date()
+    except Exception:
+        return parsed.astimezone(timezone(timedelta(hours=-4))).date()
+
+
+def explicit_leg_date(leg: dict) -> date | None:
+    """The leg's own ET game date, from start_time, then gameday, then game_date."""
+    for key in ("start_time", "startTime", "start_time_utc"):
+        found = et_calendar_date(leg.get(key))
+        if found:
+            return found
+    for key in ("gameday", "gameDate", "game_date"):
+        found = et_calendar_date(leg.get(key))
+        if found:
+            return found
+    return None
+
+
+def nearest_date(candidates, anchor: date, window: int = DATE_WINDOW_DAYS) -> date | None:
+    best = None
+    best_dist = None
+    for when in candidates:
+        if not isinstance(when, date):
+            continue
+        dist = abs((when - anchor).days)
+        if dist > window:
+            continue
+        if best is None or dist < best_dist or (dist == best_dist and when > best):
+            best = when
+            best_dist = dist
+    return best
 
 
 def _side(leg: dict) -> str:
@@ -146,10 +205,16 @@ def _settle(leg: dict, outcome: str, actual) -> dict:
 
 def _grade_value(leg: dict, actual, line) -> dict:
     try:
-        outcome = grade_line(actual, line)
+        number = float(actual)
     except (TypeError, ValueError):
         return _blocked(leg, "bad_line")
-    return _settle(leg, outcome, actual)
+    if number != number:
+        return _pending(leg)
+    try:
+        outcome = grade_line(number, line)
+    except (TypeError, ValueError):
+        return _blocked(leg, "bad_line")
+    return _settle(leg, outcome, number)
 
 
 def _expand_lookup(lookup: dict) -> dict:
@@ -167,12 +232,29 @@ def _expand_lookup(lookup: dict) -> dict:
     return out
 
 
-def _find_row(lookup: dict, iso: str, name: str):
+def _teams_agree(sport: str, leg_team, row_team) -> bool:
+    """When both sides name a team, the lookup has to be that team."""
+    left = str(leg_team or "").strip()
+    right = str(row_team or "").strip()
+    if not left or not right:
+        return True
+    if sport == "nfl":
+        return bool(_nfl_forms(left) & _nfl_forms(right))
+    if sport == "wnba":
+        return cutoff.wnba_team(left) == cutoff.wnba_team(right)
+    if sport == "nhl":
+        from nhl.teams import team_abbr
+
+        return team_abbr(left) == team_abbr(right)
+    return team_key(left) == team_key(right)
+
+
+def _find_row(lookup: dict, iso: str, name: str, team: str = "", sport: str = ""):
     for alias in (nfl_name_key(name), name_match_key(name), normalize_name(name)):
         if not alias:
             continue
         row = lookup.get((iso, alias))
-        if row:
+        if row and _teams_agree(sport, team, row.get("team")):
             return row
     return None
 
@@ -199,9 +281,6 @@ def grade_kbo_legs(legs: list[dict], game_date: date, day: KboDay) -> list[dict]
     done = _kbo_teams_done(actuals, iso, legs)
     graded = []
     for leg in legs:
-        if ruled_out(leg):
-            graded.append(_void(leg, "out"))
-            continue
         pair = matchup_pair(leg.get("team"), leg.get("opponent"))
         if pair and pair in (day.postponed or set()):
             graded.append(_void(leg, "postponed"))
@@ -209,20 +288,23 @@ def grade_kbo_legs(legs: list[dict], game_date: date, day: KboDay) -> list[dict]
         if day.scheduled is not None and pair is not None and pair not in day.scheduled:
             graded.append(_void(leg, "not_on_slate"))
             continue
-        stats = _find_row(actuals, iso, leg.get("name") or "")
-        if not stats:
-            prop_team = team_key(leg.get("team") or "")
-            graded.append(_void(leg, "dnp") if prop_team and prop_team in done else _pending(leg))
+        stats = _find_row(actuals, iso, leg.get("name") or "", leg.get("team") or "", "kbo")
+        if stats:
+            stat_key = _mapped(KBO_STAT_KEY, leg)
+            if not stat_key:
+                graded.append(_blocked(leg, "unmapped_prop"))
+                continue
+            actual = stats.get(stat_key)
+            if actual is None:
+                graded.append(_pending(leg))
+                continue
+            graded.append(_grade_value(leg, actual, leg.get("line")))
             continue
-        stat_key = _mapped(KBO_STAT_KEY, leg)
-        if not stat_key:
-            graded.append(_blocked(leg, "unmapped_prop"))
+        if ruled_out(leg):
+            graded.append(_void(leg, "out"))
             continue
-        actual = stats.get(stat_key)
-        if actual is None:
-            graded.append(_blocked(leg, "stat_missing"))
-            continue
-        graded.append(_grade_value(leg, actual, leg.get("line")))
+        prop_team = team_key(leg.get("team") or "")
+        graded.append(_void(leg, "dnp") if prop_team and prop_team in done else _pending(leg))
     return graded
 
 
@@ -244,16 +326,20 @@ def grade_nfl_legs(legs: list[dict], game_date: date, day: NflDay) -> list[dict]
     actuals = _expand_lookup(day.actuals)
     graded = []
     for leg in legs:
-        if ruled_out(leg):
-            graded.append(_void(leg, "out"))
-            continue
-        stats = _find_row(actuals, iso, leg.get("name") or "")
+        prop = str(leg.get("prop") or leg.get("propShort") or "")
+        stats = _find_row(actuals, iso, leg.get("name") or "", leg.get("team") or "", "nfl")
         if stats:
-            actual = actual_for_stat(stats, str(leg.get("prop") or leg.get("propShort") or ""))
+            if stat_is_nan(stats, prop):
+                graded.append(_pending(leg))
+                continue
+            actual = actual_for_stat(stats, prop)
             if actual is None:
                 graded.append(_blocked(leg, "unmapped_prop"))
             else:
                 graded.append(_grade_value(leg, actual, leg.get("line")))
+            continue
+        if ruled_out(leg):
+            graded.append(_void(leg, "out"))
             continue
         team = str(leg.get("team") or "")
         if day.finals is None or day.scheduled is None:
@@ -265,9 +351,7 @@ def grade_nfl_legs(legs: list[dict], game_date: date, day: NflDay) -> list[dict]
         if _team_in(team, day.finals):
             graded.append(_void(leg, "dnp"))
             continue
-        if team and day.scheduled is not None and not _team_in(team, day.scheduled):
-            graded.append(_void(leg, "not_on_slate"))
-            continue
+        # A slip saved on Saturday is not evidence the Sunday game was off the slate.
         graded.append(_pending(leg))
     return graded
 
@@ -287,19 +371,19 @@ def grade_wnba_legs(legs: list[dict], game_date: date, day: WnbaDay) -> list[dic
     done = _wnba_teams_done(box, iso)
     graded = []
     for leg in legs:
+        stats = _find_row(box, iso, leg.get("name") or "", leg.get("team") or "", "wnba")
+        if stats:
+            stat_key = _mapped(WNBA_STAT_VALUE, leg)
+            if not stat_key:
+                graded.append(_blocked(leg, "unmapped_prop"))
+                continue
+            graded.append(_grade_value(leg, stats.get(stat_key), leg.get("line")))
+            continue
         if ruled_out(leg):
             graded.append(_void(leg, "out"))
             continue
-        stats = _find_row(box, iso, leg.get("name") or "")
-        if not stats:
-            team = cutoff.wnba_team(leg.get("team") or "")
-            graded.append(_void(leg, "dnp") if team and team in done else _pending(leg))
-            continue
-        stat_key = _mapped(WNBA_STAT_VALUE, leg)
-        if not stat_key:
-            graded.append(_blocked(leg, "unmapped_prop"))
-            continue
-        graded.append(_grade_value(leg, stats.get(stat_key), leg.get("line")))
+        team = cutoff.wnba_team(leg.get("team") or "")
+        graded.append(_void(leg, "dnp") if team and team in done else _pending(leg))
     return graded
 
 
@@ -323,9 +407,6 @@ def grade_nhl_legs(legs: list[dict], day: NhlDay) -> list[dict]:
     players = _expand_nhl(day.actuals.get("players") or {})
     graded = []
     for leg in legs:
-        if ruled_out(leg):
-            graded.append(_void(leg, "out"))
-            continue
         team = team_abbr(leg.get("team"))
         if team not in final_teams:
             graded.append(_pending(leg))
@@ -335,18 +416,29 @@ def grade_nhl_legs(legs: list[dict], day: NhlDay) -> list[dict]:
             "playerId": leg.get("player_id") or leg.get("playerId"),
             "player_id": leg.get("player_id") or leg.get("playerId"),
         }
-        stats = _lookup_player(players, team, prop) or players.get((team, name_match_key(leg.get("name"))))
-        if not stats:
-            graded.append(_void(leg, "missing"))
+        by_id = None
+        if prop.get("playerId") or prop.get("player_id"):
+            by_id = _lookup_player(players, team, prop)
+            if by_id and not _teams_agree("nhl", leg.get("team"), by_id.get("team")):
+                by_id = None
+        named = players.get((team, name_match_key(leg.get("name")))) or players.get((team, nhl_name_key(leg.get("name") or "")))
+        if named and not _teams_agree("nhl", leg.get("team"), named.get("team")):
+            named = None
+        stats = by_id or named
+        if stats:
+            if stats.get("played") is False:
+                graded.append(_void(leg, "dnp"))
+                continue
+            stat_key = _mapped(NHL_STAT_KEYS, leg)
+            if not stat_key or stats.get(stat_key) is None:
+                graded.append(_blocked(leg, "unmapped_prop"))
+                continue
+            graded.append(_grade_value(leg, stats.get(stat_key), leg.get("line")))
             continue
-        if stats.get("played") is False:
-            graded.append(_void(leg, "dnp"))
+        if ruled_out(leg):
+            graded.append(_void(leg, "out"))
             continue
-        stat_key = _mapped(NHL_STAT_KEYS, leg)
-        if not stat_key or stats.get(stat_key) is None:
-            graded.append(_blocked(leg, "unmapped_prop"))
-            continue
-        graded.append(_grade_value(leg, stats.get(stat_key), leg.get("line")))
+        graded.append(_void(leg, "missing"))
     return graded
 
 
@@ -389,10 +481,65 @@ def _summarize(legs: list[dict]) -> dict:
     }
 
 
+def _grade_group(sport: str, legs: list[dict], game_date: date, day) -> list[dict]:
+    if sport == "kbo":
+        return grade_kbo_legs(legs, game_date, day)
+    if sport == "nfl":
+        return grade_nfl_legs(legs, game_date, day)
+    if sport == "wnba":
+        return grade_wnba_legs(legs, game_date, day)
+    return grade_nhl_legs(legs, day)
+
+
+def _leg_date(leg: dict, sport: str, anchor: date | None, sources) -> date | None:
+    found = explicit_leg_date(leg)
+    if found:
+        return found
+    if anchor is None:
+        return None
+    finder = getattr(sources, "team_game_date", None)
+    if finder is None:
+        return None
+    return finder(sport, str(leg.get("team") or ""), anchor)
+
+
+def team_on_day(sport: str, day, team: str, iso: str) -> bool:
+    """True when this loaded day shows the team played, is scheduled, or was postponed."""
+    if not str(team or "").strip() or day is None or isinstance(day, DayUnavailable):
+        return False
+    if isinstance(day, NflDay):
+        if _team_in(team, day.scheduled) or _team_in(team, day.finals):
+            return True
+        return _indexed_team(day.actuals, iso, team, "nfl")
+    if isinstance(day, WnbaDay):
+        return _indexed_team(day.box, iso, team, "wnba")
+    if isinstance(day, NhlDay):
+        from nhl.teams import team_abbr
+
+        return team_abbr(team) in set((day.actuals or {}).get("final_teams") or [])
+    if isinstance(day, KboDay):
+        if _indexed_team(day.actuals, iso, team, "kbo"):
+            return True
+        want = team_key(team)
+        for pair in list(day.scheduled or []) + list(day.postponed or []):
+            if want in pair:
+                return True
+    return False
+
+
+def _indexed_team(lookup, iso: str, team: str, sport: str) -> bool:
+    for (day, _), row in (lookup or {}).items():
+        if day != iso or not isinstance(row, dict):
+            continue
+        if str(row.get("team") or "").strip() and _teams_agree(sport, team, row.get("team")):
+            return True
+    return False
+
+
 def grade_slip(slip: dict, sources) -> dict:
     sport = infer_slip_sport(slip)
     legs = [leg if isinstance(leg, dict) else {} for leg in legs_of(slip)]
-    game_date = parse_date(slip.get("game_date"))
+    anchor = parse_date(slip.get("game_date"))
     if sport not in _graded_sports():
         summary = _summarize([_blocked(leg, "no_grader") for leg in legs])
         summary["sport"] = sport or "unknown"
@@ -401,33 +548,42 @@ def grade_slip(slip: dict, sources) -> dict:
         summary["result"] = "pending"
         summary["graded"] = False
         return summary
-    if game_date is None:
+    if anchor is None and not any(explicit_leg_date(leg) for leg in legs):
         summary = _summarize([_blocked(leg, "bad_date") for leg in legs])
         summary["sport"] = sport
         summary["source_error"] = False
         summary["ungradeable"] = True
         return summary
-    try:
-        day = sources.for_sport(sport, game_date)
-    except Exception as exc:  # a source failure leaves the slip pending for the next run
-        day = DayUnavailable(sport, type(exc).__name__)
-    if isinstance(day, DayUnavailable) or day is None:
-        summary = _summarize([_pending(leg) for leg in legs])
-        summary["sport"] = sport
-        summary["source_error"] = True
-        summary["ungradeable"] = False
-        return summary
-    if sport == "kbo":
-        graded = grade_kbo_legs(legs, game_date, day)
-    elif sport == "nfl":
-        graded = grade_nfl_legs(legs, game_date, day)
-    elif sport == "wnba":
-        graded = grade_wnba_legs(legs, game_date, day)
-    else:
-        graded = grade_nhl_legs(legs, day)
-    summary = _summarize(graded)
+    dated = [(leg, _leg_date(leg, sport, anchor, sources)) for leg in legs]
+    days: dict[date, object] = {}
+    source_error = False
+    for _, when in dated:
+        if when is None or when in days:
+            continue
+        try:
+            day = sources.for_sport(sport, when)
+        except Exception as exc:  # a source failure leaves the leg pending for the next run
+            day = DayUnavailable(sport, type(exc).__name__)
+        if isinstance(day, DayUnavailable) or day is None:
+            source_error = True
+        days[when] = day
+    grouped: dict[date | None, list[tuple[int, dict]]] = {}
+    for index, (leg, when) in enumerate(dated):
+        grouped.setdefault(when, []).append((index, leg))
+    results: list[dict | None] = [None] * len(dated)
+    for when, pairs in grouped.items():
+        group = [leg for _, leg in pairs]
+        if when is None or isinstance(days.get(when), DayUnavailable) or days.get(when) is None:
+            graded_group = [_pending(leg) for leg in group]
+        else:
+            graded_group = _grade_group(sport, group, when, days[when])
+        for (index, _), graded_leg in zip(pairs, graded_group):
+            results[index] = graded_leg
+    summary = _summarize([leg for leg in results if leg is not None])
     summary["sport"] = sport
-    summary["source_error"] = False
+    summary["source_error"] = source_error and summary.get("pending_legs")
+    if source_error and not summary.get("pending_legs"):
+        summary["source_error"] = False
     return summary
 
 
@@ -479,6 +635,35 @@ def same_grade(slip: dict, payload: dict) -> bool:
     )
 
 
+def _change_bucket(row: dict) -> str:
+    if row.get("ungradeable") and not row.get("graded"):
+        return "ungradeable"
+    return row.get("result") or "pending"
+
+
+def missing_data_void(payload: dict) -> bool:
+    """A push that exists only because stats or a slate row were absent."""
+    if payload.get("result") != "push":
+        return False
+    if _count(payload.get("hits")) or _count(payload.get("misses")):
+        return False
+    reasons = [
+        str(leg.get("void_reason") or "")
+        for leg in payload.get("legs") or []
+        if (leg.get("result") or "") == "push"
+    ]
+    return bool(reasons) and all(reason in MISSING_DATA_VOIDS for reason in reasons)
+
+
+def downgrade_blocked(slip: dict, payload: dict) -> bool:
+    """A graded slip must not fall back to pending, ungradeable, or a missing-data void."""
+    if not slip.get("graded"):
+        return False
+    if not payload.get("graded") or payload.get("ungradeable") or payload.get("result") == "pending":
+        return True
+    return missing_data_void(payload)
+
+
 def grade_batch(slips: list[dict], sources, today: date) -> tuple[list[dict], dict]:
     """Grade slips in memory. Returns updates and a count summary. No ids are logged."""
     summary = {
@@ -488,6 +673,8 @@ def grade_batch(slips: list[dict], sources, today: date) -> tuple[list[dict], di
         "pending": 0,
         "could_not_grade": 0,
         "graded": 0,
+        "kept_graded": 0,
+        "changes": {},
     }
     updates = []
     for slip in slips:
@@ -520,12 +707,19 @@ def grade_batch(slips: list[dict], sources, today: date) -> tuple[list[dict], di
             "misses": graded["misses"],
             "pushes": graded["pushes"],
             "graded": graded["graded"],
+            "ungradeable": bool(graded.get("ungradeable")),
         }
+        if downgrade_blocked(slip, payload):
+            summary["kept_graded"] += 1
+            continue
         if same_grade(slip, payload):
             summary["unchanged"] += 1
             continue
         summary["would_update"] += 1
-        updates.append({"id": slip.get("id"), "payload": payload})
+        change = f"{slip.get('result') or 'pending'}→{_change_bucket(payload)}"
+        summary["changes"][change] = summary["changes"].get(change, 0) + 1
+        stored = {key: value for key, value in payload.items() if key != "ungradeable"}
+        updates.append({"id": slip.get("id"), "payload": stored})
     return updates, summary
 
 
@@ -547,6 +741,11 @@ def format_summary(summary: dict, *, dry_run: bool = False) -> str:
         lines.append("by_sport " + " ".join(sports))
     if results:
         lines.append("by_result " + " ".join(results))
+    changes = summary.get("changes") or {}
+    if changes:
+        lines.append("changes " + " ".join(f"{key}={value}" for key, value in sorted(changes.items())))
+    if summary.get("kept_graded"):
+        lines.append(f"kept_graded={summary['kept_graded']}")
     if summary.get("source_notes"):
         lines.append("sources " + " ".join(summary["source_notes"]))
     lines.append(f"could_not_grade={summary.get('could_not_grade', 0)}")
@@ -563,6 +762,23 @@ class LiveSources:
         self._nfl_games = None
         self._nfl_actuals: dict = {}
         self._nhl: dict = {}
+
+    def team_game_date(self, sport: str, team: str, anchor: date) -> date | None:
+        """Nearest game for this team within 7 days of the slip date."""
+        if not str(team or "").strip():
+            return None
+        try:
+            if sport == "nfl":
+                return nearest_date(self._nfl_team_dates(team, anchor), anchor)
+            if sport == "wnba":
+                return nearest_date(self._wnba_team_dates(team, anchor), anchor)
+            if sport == "nhl":
+                return nearest_date(self._nhl_team_dates(team, anchor), anchor)
+            if sport == "kbo":
+                return nearest_date(self._kbo_team_dates(team, anchor), anchor)
+        except (Exception, SystemExit) as exc:  # noqa: BLE001 - a lookup miss stays pending
+            self._note(sport, anchor, exc)
+        return None
 
     def for_sport(self, sport: str, game_date: date):
         try:
@@ -622,6 +838,79 @@ class LiveSources:
             frame = pd.read_csv(GAMES_URL, low_memory=False)
             self._nfl_games = frame.to_dict("records")
         return self._nfl_games
+
+    def _nfl_team_dates(self, team: str, anchor: date) -> list[date]:
+        found = []
+        for game in self._games():
+            when = parse_date(game.get("gameday"))
+            if when is None:
+                continue
+            sides = {str(game.get("away_team") or "").upper(), str(game.get("home_team") or "").upper()}
+            sides.discard("")
+            if _team_in(team, sides):
+                found.append(when)
+        return found
+
+    def _wnba_team_dates(self, team: str, anchor: date) -> list[date]:
+        del anchor
+        if self._wnba_box is None:
+            from pipeline.memory.grade_wnba_day import load_boxscores
+
+            self._wnba_box = load_boxscores()
+        want = cutoff.wnba_team(team)
+        found = []
+        for (iso, _), row in (self._wnba_box or {}).items():
+            if not isinstance(row, dict) or cutoff.wnba_team(row.get("team")) != want:
+                continue
+            when = parse_date(iso)
+            if when:
+                found.append(when)
+        return found
+
+    def _kbo_team_dates(self, team: str, anchor: date) -> list[date]:
+        from pipeline.memory.common import postponed_matchups, scheduled_matchups
+        from pipeline.memory.grade_kbo_day import build_actuals
+
+        if self._kbo_actuals is None:
+            self._kbo_actuals = build_actuals()
+        want = team_key(team)
+        found = []
+        for (iso, _), row in (self._kbo_actuals or {}).items():
+            if isinstance(row, dict) and team_key(row.get("team")) == want:
+                when = parse_date(iso)
+                if when:
+                    found.append(when)
+        for offset in range(-DATE_WINDOW_DAYS, DATE_WINDOW_DAYS + 1):
+            when = anchor + timedelta(days=offset)
+            pairs = []
+            postponed = postponed_matchups("kbo", when)
+            scheduled = scheduled_matchups("kbo", when)
+            if postponed:
+                pairs.extend(postponed)
+            if scheduled:
+                pairs.extend(scheduled)
+            if any(want in pair for pair in pairs):
+                found.append(when)
+        return found
+
+    def _nhl_team_dates(self, team: str, anchor: date) -> list[date]:
+        from nhl.teams import team_abbr
+        from pipeline.memory.grade_nhl_day import load_actuals
+
+        want = team_abbr(team)
+        found = []
+        for offset in range(-DATE_WINDOW_DAYS, DATE_WINDOW_DAYS + 1):
+            when = anchor + timedelta(days=offset)
+            iso = format_iso(when)
+            if iso not in self._nhl:
+                try:
+                    self._nhl[iso] = load_actuals(when)
+                except (Exception, SystemExit) as exc:  # noqa: BLE001
+                    self._note("nhl", when, exc)
+                    self._nhl[iso] = {"final_teams": set(), "players": {}}
+            if want in set((self._nhl.get(iso) or {}).get("final_teams") or []):
+                found.append(when)
+        return found
 
     def _nhl_day(self, game_date: date) -> NhlDay:
         iso = format_iso(game_date)

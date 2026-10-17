@@ -3,6 +3,8 @@
 -- Does not create, drop, or replace any RLS policy. Existing policies stay as they are.
 -- Apply by hand after Board QA confirms. Do not run this from the publish pipeline.
 
+set lock_timeout = '3s';
+
 alter table public.saved_slips
   add column if not exists sport text;
 
