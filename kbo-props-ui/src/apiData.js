@@ -1,5 +1,5 @@
 import { publishedAtFromPayload } from './boardFreshness';
-import { cachedAccessToken, readCachedSession, sessionAccessToken } from './supabaseClient';
+import { cachedAccessToken, readCachedSession, refreshedAccessToken, sessionAccessToken } from './supabaseClient';
 
 /*
  * Client for the server-gated data endpoint (api/data.js).
@@ -26,7 +26,7 @@ async function accessToken({ fresh = false } = {}) {
   // Logged-out visitors have no session. Skip the client download entirely.
   if (!readCachedSession()) return null;
   try {
-    return await sessionAccessToken();
+    return await (fresh ? refreshedAccessToken() : sessionAccessToken());
   } catch {
     return null;
   }

@@ -67,6 +67,20 @@ export function loadSupabase() {
   return clientPromise
 }
 
+// Forces a token refresh. Used when the server answered a signed-in request
+// as logged out (revoked or rejected access token that has not expired yet).
+export async function refreshedAccessToken() {
+  const client = await loadSupabase()
+  if (!client) return null
+  try {
+    const { data, error } = await client.auth.refreshSession()
+    if (!error && data?.session?.access_token) return data.session.access_token
+  } catch {
+    /* fall through to the stored session */
+  }
+  return sessionAccessToken()
+}
+
 export async function sessionAccessToken() {
   const client = await loadSupabase()
   if (!client) return null
