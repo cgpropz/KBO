@@ -36,6 +36,13 @@ from nhl.model import (
     rank_score,
 )
 from nhl.teams import name_to_abbr, team_abbr, team_name
+from pipeline.prizepicks_seen import (
+    collect_prizepicks_pages,
+    flag_missing_seen_projections,
+    previous_board_rows,
+    prizepicks_fetch_is_usable,
+    prizepicks_projection_ids,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "kbo-props-ui" / "public" / "data" / "nhl"
@@ -103,6 +110,8 @@ def prizepicks_pulled_status(status) -> str | None:
     if compact in PULLED_STATUSES:
         return compact
     return None
+
+
 FINAL_STATES = {"OFF", "FINAL", "OVER"}
 UPCOMING_STATES = {"FUT", "PRE"}
 
@@ -197,16 +206,12 @@ def restore_teams_without_current_logs(rows, skaters, previous) -> tuple[list, s
 
 
 def _previous_projections(out_dir: Path) -> list:
-    for path in (out_dir / "projections.json", PUBLIC_DIR / "projections.json"):
-        if not path.is_file():
-            continue
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        if isinstance(payload, list):
-            return payload
-    return []
+    # The checkout does not keep projections.json between workflow runs.
+    # previous_board_rows reads the published nhl_projections snapshot.
+    return previous_board_rows(
+        (out_dir / "projections.json", PUBLIC_DIR / "projections.json"),
+        "nhl_projections",
+    )
 
 
 def _write_if_ready(path: Path, payload, ready: bool) -> bool:
@@ -272,7 +277,17 @@ def _this_slate(games: list[dict]) -> list[dict]:
 
 
 def fetch_prizepicks():
-    return prizepicks_cards(_json(PRIZEPICKS_URL))
+    """Return (cards, projection ids) for a usable body, else (None, []).
+
+    Pages follow links.next and meta current_page/total_pages. A 403, a
+    transport error, a later page error, or an empty body leaves the previous
+    board alone and does not mark any projection removed.
+    """
+    payload, error = collect_prizepicks_pages(PRIZEPICKS_URL, _json)
+    if error is not None or not prizepicks_fetch_is_usable(200, payload):
+        print(f"PrizePicks failed or was empty, skipping projections: {error or 'empty'}")
+        return None, []
+    return prizepicks_cards(payload), prizepicks_projection_ids(payload)
 
 
 def prizepicks_cards(payload):
@@ -854,11 +869,7 @@ def build(root: Path, out_dir: Path) -> int:
         for team in (game["away"], game["home"]):
             by_team_game.setdefault(team, game)
 
-    try:
-        cards = fetch_prizepicks()
-    except Exception as exc:  # noqa: BLE001
-        print(f"PrizePicks failed, skipping projections: {exc}")
-        cards = None
+    cards, fetched_ids = fetch_prizepicks()
     try:
         goalies, slugs = fetch_goalies()
     except Exception as exc:  # noqa: BLE001
@@ -928,6 +939,7 @@ def build(root: Path, out_dir: Path) -> int:
                 projections.append({
                     **chart,
                     "id": card["id"],
+                    "projection_id": card["id"],
                     "player": card["player"],
                     "playerId": str(history[-1]["player_id"]) if history else None,
                     "team": card["team"],
@@ -974,6 +986,10 @@ def build(root: Path, out_dir: Path) -> int:
         if blocked and not projections:
             print("ERROR: no current-season logs and no previous board; leaving the last file")
             projections_ready = False
+        else:
+            projections = flag_missing_seen_projections(
+                previous, projections, fetched_ids, fetch_ok=True, exclude_teams=blocked,
+            )
     else:
         removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)
