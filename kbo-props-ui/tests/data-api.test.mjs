@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -728,6 +728,102 @@ test('a slow head and an out-of-budget chunk read serve last-good or 503, never 
   }
 })
 
+test('the shared deadline cuts the storage read short of its own limit', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() })
+  const version = '2026-10-17T12:00:00Z'
+  const drain = () => new Promise((resolve) => { setImmediate(resolve) })
+  let chunkStarted = false
+  let storageStartedAt = 0
+  let storageFinished = false
+  const client = {
+    auth: {
+      async getUser() {
+        return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+      },
+    },
+    storage: {
+      from() {
+        return {
+          download() {
+            storageStartedAt = Date.now()
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                storageFinished = true
+                resolve({
+                  data: {
+                    text: async () => JSON.stringify({
+                      data: [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: new Date().toISOString() }],
+                      updated_at: new Date().toISOString(),
+                    }),
+                  },
+                  error: null,
+                })
+              }, 2_000)
+            })
+          },
+        }
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        in() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+          return new Promise((resolve) => {
+            setTimeout(() => resolve({
+              data: {
+                id: 1,
+                updated_at: version,
+                data: { snapshotChunks: { version, generated_at: version, kind: 'list', ids: [10, 11] } },
+              },
+              error: null,
+            }), 4_400)
+          })
+        },
+        then(resolve, reject) {
+          chunkStarted = true
+          return new Promise(() => {}).then(resolve, reject)
+        },
+      }
+      return chain
+    },
+  }
+  try {
+    const res = mockRes()
+    const started = Date.now()
+    const pending = handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      res,
+      client,
+    )
+    await drain()
+    t.mock.timers.tick(4_400)
+    await drain()
+    t.mock.timers.tick(SNAPSHOT_READ_MS)
+    await drain()
+    assert.equal(chunkStarted, true)
+    assert.ok(storageStartedAt > started)
+    const storageMs = stepBudgetMs(started + boardReadBudgetMs(), timeouts.lastGoodReadMs, storageStartedAt)
+    assert.ok(storageMs < timeouts.lastGoodReadMs)
+    assert.ok(storageMs < 2_000)
+    t.mock.timers.tick(storageMs)
+    await drain()
+    await pending
+    assert.equal(storageFinished, false)
+    assert.equal(res.statusCode, 503)
+    assert.equal(res.body.code, 'upstream_timeout')
+    assert.equal(res.body.data, undefined)
+    assert.equal(JSON.stringify(res.body).includes('StoredOnly'), false)
+    assert.ok(Date.now() - storageStartedAt < timeouts.lastGoodReadMs)
+  } finally {
+    t.mock.timers.reset()
+    _clearCache()
+  }
+})
+
 test('the snapshot read starts before the tier lookup finishes', async () => {
   for (const ds of ['prizepicks_props', 'nhl_projections']) {
     let released = false
@@ -972,6 +1068,85 @@ function freshLastGood(table) {
     },
   }
 }
+
+test('a storage copy is not served from memory after its age limit', async (t) => {
+  const prev = { ...timeouts }
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() })
+  _setTimeouts({ snapshotReadMs: 40, tierLookupMs: 500, lastGoodReadMs: 200 })
+  const drain = () => new Promise((resolve) => { setImmediate(resolve) })
+  const maxAge = lastGoodMaxAgeMs('nhl_projections')
+  const left = 60_000
+  const generatedAt = new Date(Date.now() - maxAge + left).toISOString()
+  const stored = [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: generatedAt }]
+  let downloads = 0
+  const client = {
+    auth: {
+      async getUser() {
+        return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+      },
+    },
+    storage: {
+      from() {
+        return {
+          download() {
+            downloads += 1
+            return Promise.resolve({
+              data: { text: async () => JSON.stringify({ data: stored, updated_at: generatedAt }) },
+              error: null,
+            })
+          },
+        }
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+          return new Promise(() => {})
+        },
+      }
+      return chain
+    },
+  }
+  const req = { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } }
+  try {
+    const first = mockRes()
+    const firstRead = handleDataRequest(req, first, client)
+    await drain()
+    t.mock.timers.tick(40)
+    await drain()
+    await firstRead
+    assert.equal(first.statusCode, 200)
+    assert.equal(first.body.data[0].player, 'StoredOnly')
+    assert.equal(downloads, 1)
+
+    const second = mockRes()
+    await handleDataRequest(req, second, client)
+    assert.equal(second.statusCode, 200)
+    assert.equal(second.body.data[0].player, 'StoredOnly')
+    assert.equal(downloads, 1)
+
+    t.mock.timers.tick(left + 1_000)
+    await drain()
+    const third = mockRes()
+    const thirdRead = handleDataRequest(req, third, client)
+    await drain()
+    t.mock.timers.tick(40)
+    await drain()
+    await thirdRead
+    assert.equal(third.statusCode, 503)
+    assert.equal(third.body.code, 'upstream_timeout')
+    assert.equal(third.body.data, undefined)
+    assert.ok(left + 1_000 < cacheWindows.staleMs)
+  } finally {
+    t.mock.timers.reset()
+    _setTimeouts(prev)
+    _clearCache()
+  }
+})
 
 test('a timed-out KBO or WNBA read serves last-good instead of 503', async () => {
   const prev = { ...timeouts }

@@ -157,6 +157,8 @@ export function assembleNbaPlayerRows(head, extraRows) {
     ? head.data.nbaPlayerChunks
     : null;
   if (marker == null) return head;
+  // When the publisher adds versions, the head and every chunk must get
+  // version in the same change. A version on only one of them is a mixed set.
   const version = nbaManifestVersion(head.data);
   if (version === false) throw new Error('nba_players chunk set is mixed');
   const chunkIds = Array.isArray(marker)
@@ -280,7 +282,7 @@ async function boardAfterReadError(client, table, err, deadline) {
   if (hit?.row && Date.now() - hit.at < cacheWindows.staleMs) return hit.row;
   const lastGood = await readLastGood(client, table, deadline);
   if (lastGood) {
-    rememberBoard(table, lastGood, boardCacheVersion(lastGood), Date.now() - cacheWindows.freshMs + 15_000);
+    rememberBoard(table, lastGood, boardCacheVersion(lastGood), lastGoodMemoryAt(table, lastGood));
     return lastGood;
   }
   throw err;
@@ -383,6 +385,17 @@ export async function readLastGood(client, table, deadline) {
   } catch {
     return null;
   }
+}
+
+// Keep a Storage copy in memory only for the time still left under its age
+// limit. The usual backdate makes a cold copy refresh immediately, and the
+// 30 min stale window must not keep serving it after that limit.
+export function lastGoodMemoryAt(table, row, now = Date.now()) {
+  const ts = lastGoodTimestamp(row);
+  const timeLeft = Number.isFinite(ts) ? ts + lastGoodMaxAgeMs(table) - now : 0;
+  const withinStaleWindow = now - cacheWindows.freshMs + 15_000;
+  const withinAgeLimit = now + timeLeft - cacheWindows.staleMs;
+  return Math.min(withinStaleWindow, withinAgeLimit);
 }
 
 async function fetchSnapshotRow(client, table, id, deadline) {
