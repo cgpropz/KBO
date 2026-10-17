@@ -313,7 +313,7 @@ export const PAGE_IMAGES = {
   },
   '/guides/cg-score': {
     src: '/images/how-cg-score-works-featured.png',
-    alt: 'How CG Score works: a higher score is a bigger model edge.',
+    alt: 'How CG Score works: a higher score is a bigger gap between projection and line.',
   },
   '/wnba-player-props': {
     src: '/images/wnba-finals-featured.png',
@@ -384,6 +384,10 @@ export function guideFromMarkdown(markdown, fallbackSlug) {
 }
 
 function renderGuideHtml({ title, description, path, body, faqs, faqPage, h1, datePublished, dateModified }) {
+  // The live meta description stays. The Article node uses the formula-free wording.
+  const articleDescription = path === '/guides/cg-score'
+    ? description.replaceAll('bigger model edge', 'bigger gap between projection and line')
+    : description
   const schemas = [
     breadcrumbNode([
       { name: 'Home', url: pageUrl('/') },
@@ -391,7 +395,7 @@ function renderGuideHtml({ title, description, path, body, faqs, faqPage, h1, da
     ]),
     articleNode({
       headline: h1,
-      description,
+      description: articleDescription,
       url: pageUrl(path),
       datePublished,
       dateModified,

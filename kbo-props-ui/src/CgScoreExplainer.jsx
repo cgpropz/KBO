@@ -8,7 +8,7 @@ export function CgScoreNote({ note }) {
       <p><strong>CG Score {note.score}.</strong> {note.lead}</p>
       {note.recent && <p>{note.recent}</p>}
       {note.smallSample && <p>Small sample, so give this less weight.</p>}
-      {note.capped && <p>Score capped because the line is small.</p>}
+      {note.capped && <p>Scores on very small lines are adjusted.</p>}
       <p className="cg-score-note-disclaimer">{note.disclaimer}</p>
     </div>
   )

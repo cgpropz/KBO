@@ -31,7 +31,7 @@ A player prop has two numbers that matter here:
 
 CG Score puts those two numbers on one scale, so you can compare props across different stats and players at a glance.
 
-## How the score is calculated
+## What the number means
 
 CG Score shows how far the CGPropz projection sits from the line. The CGPropz model compares its projection with the posted line and turns that comparison into one score, centered on 50:
 
