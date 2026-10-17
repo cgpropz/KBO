@@ -16,6 +16,7 @@ const SECRET_ENV_KEYS = ['SUPABASE_JWT_SECRET', 'JWT_SECRET'];
 const paidTiers = new Map();
 const inflightLookups = new Map();
 let jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
+let jwksInflight = null;
 
 function envOf(options) {
   return options.env || process.env;
@@ -107,28 +108,55 @@ async function loadJwks(env, fetchImpl, { force = false, now = Date.now } = {}) 
   const sameUrl = jwksCache.url === issuer;
   const fresh = sameUrl && jwksCache.keys.length && clock - jwksCache.at < JWKS_TTL_MS;
   if (fresh && !force) return jwksCache.keys;
-  if (force && sameUrl && clock - jwksCache.forcedAt < JWKS_FORCE_REFRESH_MS) {
+  // The minute window has to hold when the last fetch stored no keys.
+  // sameUrl is false until that empty result is cached, which is why a
+  // burst of unknown kids used to skip this check and refetch every time.
+  const withinForceWindow = sameUrl && clock - jwksCache.forcedAt < JWKS_FORCE_REFRESH_MS;
+  if (withinForceWindow && (force || jwksCache.keys.length === 0)) return jwksCache.keys;
+  if (jwksInflight && jwksInflight.issuer === issuer) return jwksInflight.promise;
+
+  const promise = (async () => {
+    const anon = String(env?.VITE_SUPABASE_ANON_KEY || env?.SUPABASE_ANON_KEY || '').trim();
+    let keys = [];
+    try {
+      const response = await fetchImpl(`${issuer}/.well-known/jwks.json`, {
+        headers: anon ? { apikey: anon } : {},
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response?.ok) {
+        const body = await response.json();
+        if (Array.isArray(body?.keys)) keys = body.keys;
+      }
+    } catch {
+      keys = [];
+    }
+    const previous = jwksCache.url === issuer ? jwksCache : null;
+    const gotKeys = keys.length > 0;
+    jwksCache = {
+      url: issuer,
+      at: gotKeys ? clock : (previous?.keys?.length ? previous.at : clock),
+      keys: gotKeys ? keys : (previous?.keys?.length ? previous.keys : []),
+      // Stamp the window on a forced refresh and on an empty or failed body,
+      // so the next unknown kid does not open another fetch.
+      forcedAt: force || !gotKeys ? clock : (previous?.forcedAt || 0),
+    };
     return jwksCache.keys;
+  })();
+
+  const flight = { issuer, promise };
+  jwksInflight = flight;
+  try {
+    return await promise;
+  } finally {
+    if (jwksInflight === flight) jwksInflight = null;
   }
-  if (force) jwksCache = { ...jwksCache, forcedAt: clock };
-  const anon = String(env?.VITE_SUPABASE_ANON_KEY || env?.SUPABASE_ANON_KEY || '').trim();
-  const response = await fetchImpl(`${issuer}/.well-known/jwks.json`, {
-    headers: anon ? { apikey: anon } : {},
-    signal: AbortSignal.timeout(2000),
-  });
-  if (!response?.ok) return jwksCache.keys;
-  const body = await response.json();
-  const keys = Array.isArray(body?.keys) ? body.keys : [];
-  if (keys.length) {
-    jwksCache = { url: issuer, at: clock, keys, forcedAt: force ? clock : jwksCache.forcedAt };
-  }
-  return keys.length ? keys : jwksCache.keys;
 }
 
 export function clearMemberTierCache() {
   paidTiers.clear();
   inflightLookups.clear();
   jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
+  jwksInflight = null;
 }
 
 function prunePaidTiers(now) {

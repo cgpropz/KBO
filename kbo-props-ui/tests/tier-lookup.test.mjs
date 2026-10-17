@@ -224,6 +224,52 @@ test('alg none, a forged or unknown kid, and the wrong iss, aud, or role do not 
   clearMemberTierCache();
 });
 
+test('forged-kid tokens fetch JWKS at most once a minute when no keys come back', async () => {
+  clearMemberTierCache();
+  const env = { VITE_SUPABASE_URL: 'https://project.supabase.co' };
+  const claims = {
+    aud: 'authenticated',
+    role: 'authenticated',
+    sub: 'u-fan',
+    email: 'fan@example.com',
+    exp: 1_700_000_600,
+    iss: 'https://project.supabase.co/auth/v1',
+  };
+  const header = Buffer.from(JSON.stringify({ alg: 'ES256', kid: 'forged-kid', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+  const token = `Bearer ${header}.${payload}.${Buffer.from('not-a-signature').toString('base64url')}`;
+  let now = 1_700_000_000_000;
+
+  async function burst(fetchImpl) {
+    let fetches = 0;
+    const counting = async (...args) => {
+      fetches += 1;
+      return fetchImpl(...args);
+    };
+    const opts = { env, fetchImpl: counting, now: () => now };
+    await Promise.all(Array.from({ length: 5 }, () => verifyAccessToken(token, opts)));
+    assert.equal(fetches, 1);
+    for (let i = 0; i < 5; i += 1) {
+      assert.equal(await verifyAccessToken(token, opts), null);
+    }
+    assert.equal(fetches, 1);
+    now += 59_000;
+    assert.equal(await verifyAccessToken(token, opts), null);
+    assert.equal(fetches, 1);
+    now += 1_000;
+    assert.equal(await verifyAccessToken(token, opts), null);
+    assert.equal(fetches, 2);
+    clearMemberTierCache();
+    now += 60_000;
+  }
+
+  await burst(async () => ({ ok: true, json: async () => ({ keys: [] }) }));
+  await burst(async () => ({ ok: false, status: 503, json: async () => ({}) }));
+  await burst(async () => {
+    throw new Error('jwks down');
+  });
+});
+
 test('a slow profile still serves the member the full board', async () => {
   const prev = { ...timeouts };
   _setTimeouts({ tierLookupMs: 400 });
