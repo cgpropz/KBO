@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { fetchNhlSharpOdds } from './nhlData'
+import { lineWord } from '../lineCount'
 
 function formatValue(value) {
   const number = Number(value)
@@ -53,7 +54,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
     <section className="nfl-lines-page">
       <div className="nfl-board-header">
         <div><p>NHL / UNABATED</p><h1>PP Odds</h1></div>
-        <span>{records.length} lines</span>
+        <span>{records.length} {lineWord(records.length)}</span>
       </div>
       <p className="nhl-note">NHL prices come from the same public Unabated file as the NFL board. Hockey is league 6. Full game only. PP Edge compares the no-vig book price with PrizePicks Flex.</p>
       {error && <div className="nfl-notice">Unable to load odds: {error}</div>}

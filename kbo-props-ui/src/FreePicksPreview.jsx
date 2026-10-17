@@ -11,6 +11,7 @@ import { freeTop3SectionState } from './freePreviewCopy';
 import { selectFreeTop3 } from './freeTopPicks';
 import './FreeFunnel.css';
 import './bootScreen.css';
+import { lineWord } from './lineCount';
 
 /*
  * Landing-page "today's free picks" card for logged-out visitors.
@@ -279,7 +280,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
               <button className="ff-unlock" onClick={onSeePlans}>
                 <span aria-hidden="true">🔒</span>
                 <span>
-                  <strong>Unlock the other {state.lockedCount} {activeBoard.label} lines</strong>
+                  <strong>Unlock the other {state.lockedCount} {activeBoard.label} {lineWord(state.lockedCount)}</strong>
                   <small>Full model boards from $9.99/week</small>
                 </span>
                 <span className="ff-unlock-arrow" aria-hidden="true">→</span>

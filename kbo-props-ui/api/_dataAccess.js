@@ -254,8 +254,97 @@ function nhlScore(row) {
   return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
 }
 
-function nhlBoardPayload(payload) {
-  return Array.isArray(payload) ? prepareBoardRows(payload) : payload;
+// Prop boards a member actually scrolls. The free preview and the paid
+// payload both start from this set: standard lines only, then prepareBoardRows
+// (PrizePicks pulled / removed, and Points overs under 0.69).
+const MEMBER_BOARD_DATASETS = new Set([
+  'prizepicks_props',
+  'wnba_projections_standard',
+  'nfl_projections',
+  'nhl_projections',
+]);
+
+function sameRows(next, prev) {
+  if (!Array.isArray(prev) || next.length !== prev.length) return false;
+  for (let i = 0; i < next.length; i += 1) {
+    if (next[i] !== prev[i]) return false;
+  }
+  return true;
+}
+
+function prepareMemberBoard(ds, payload) {
+  if (ds === 'nfl_projections' || ds === 'nhl_projections') {
+    if (!Array.isArray(payload)) return payload;
+    const rows = prepareBoardRows(payload);
+    return sameRows(rows, payload) ? payload : rows;
+  }
+  if (ds === 'prizepicks_props') {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+    const cards = Array.isArray(payload.cards) ? payload.cards : [];
+    let changed = false;
+    const nextCards = [];
+    for (const card of cards) {
+      const prev = Array.isArray(card?.props) ? card.props : [];
+      const props = prepareBoardRows(prev);
+      if (!props.length) {
+        changed = true;
+        continue;
+      }
+      if (!sameRows(props, prev)) {
+        changed = true;
+        nextCards.push({ ...card, props });
+      } else {
+        nextCards.push(card);
+      }
+    }
+    if (!changed) return payload;
+    const total = nextCards.reduce((sum, card) => sum + card.props.length, 0);
+    return {
+      ...payload,
+      cards: nextCards,
+      ...(payload.total_props != null ? { total_props: total } : {}),
+    };
+  }
+  if (ds === 'wnba_projections_standard') {
+    if (!Array.isArray(payload)) return payload;
+    let changed = false;
+    const next = [];
+    for (const player of payload) {
+      if (!player || typeof player !== 'object' || !Array.isArray(player.ppAllProps)) {
+        next.push(player);
+        continue;
+      }
+      const props = prepareBoardRows(player.ppAllProps);
+      const hadProps = player.ppAllProps.length > 0;
+      if (hadProps && props.length === 0) {
+        changed = true;
+        continue;
+      }
+      if (!sameRows(props, player.ppAllProps)) {
+        changed = true;
+        next.push({ ...player, ppAllProps: props });
+      } else {
+        next.push(player);
+      }
+    }
+    return changed ? next : payload;
+  }
+  return payload;
+}
+
+function countMemberBoardRows(ds, payload) {
+  if (ds === 'nfl_projections' || ds === 'nhl_projections') {
+    return Array.isArray(payload) ? payload.length : 0;
+  }
+  if (ds === 'prizepicks_props') {
+    const cards = Array.isArray(payload?.cards) ? payload.cards : [];
+    return cards.reduce((sum, card) => sum + (Array.isArray(card?.props) ? card.props.length : 0), 0);
+  }
+  if (ds === 'wnba_projections_standard') {
+    const players = Array.isArray(payload) ? payload : [];
+    return players.reduce((sum, player) => sum + (Array.isArray(player?.ppAllProps) ? player.ppAllProps.length : 0), 0);
+  }
+  return 0;
 }
 
 function nhlSharpScore(row) {
@@ -726,10 +815,10 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
     tierShapeFilters += 1;
     payload = filterStandardBoard(ds, payload);
   }
-  // Drop Points overs under 0.69 from the paid board and the free preview.
-  // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
-  // visible and not ranked into the free top 3.
-  if (ds === 'nhl_projections') payload = nhlBoardPayload(payload);
+  // Same row set for the paid board and the free denominator. Pulled,
+  // removed, and non-standard lines are already gone. Points overs under
+  // 0.69 are gone. Held overs stay, with rankEligible false.
+  if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }
@@ -737,6 +826,17 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
     const hidden = hiddenNflPreview(ds, payload);
     return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
   }
-  const { data, lockedCount } = spec.free(payload);
-  return { data, preview: true, lockedCount };
+  const preview = spec.free(payload);
+  if (!MEMBER_BOARD_DATASETS.has(ds)) {
+    return { data: preview.data, preview: true, lockedCount: preview.lockedCount };
+  }
+  // Started games and other rows the top-3 skip are still on the member
+  // board, so they stay in the locked remainder.
+  const memberRows = countMemberBoardRows(ds, payload);
+  const shown = countMemberBoardRows(ds, preview.data);
+  return {
+    data: preview.data,
+    preview: true,
+    lockedCount: Math.max(0, memberRows - shown),
+  };
 }

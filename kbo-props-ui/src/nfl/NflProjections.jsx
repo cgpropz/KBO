@@ -14,6 +14,7 @@ import { BoardLoadError } from '../BoardLoadError'
 import { teamLogoUrl } from './nflTeams'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { lineClause } from '../lineCount'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -153,7 +154,7 @@ export default function NflProjections({ onSelectPlayer }) {
       {!hold && !error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
       {!hold && !error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!hold && !error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
-      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} lines are locked. Upgrade to see every edge.`}</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see every edge.`}</div>}
       {!hold && <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>}
     </section>
   )

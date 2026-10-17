@@ -14,6 +14,7 @@ import { fitImage } from './fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
+import { countedLines, lineWord } from './lineCount'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
 import { QuietMemberPreview } from './QuietMemberPreview'
 import { MemberBoardStatus } from './MemberBoardStatus'
@@ -139,7 +140,7 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
         <label>Minimum CG score
           <input type="number" inputMode="decimal" placeholder="Any score" value={filters.minScore} onChange={(event) => update('minScore', event.target.value)} />
         </label>
-        <footer><button className="kbo-reset" onClick={() => { setFilters(DEFAULT_FILTERS); rememberBoardSort('kbo', DEFAULT_FILTERS.sortBy) }}>Reset</button><button className="kbo-apply" onClick={close}>Show {count} lines</button></footer>
+        <footer><button className="kbo-reset" onClick={() => { setFilters(DEFAULT_FILTERS); rememberBoardSort('kbo', DEFAULT_FILTERS.sortBy) }}>Reset</button><button className="kbo-apply" onClick={close}>Show {count} {lineWord(count)}</button></footer>
       </aside>
     </div>
   )
@@ -337,7 +338,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       </nav>}
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
-        {!boardEmpty && !hold && <div className="kbo-header-actions"><span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
+        {!boardEmpty && !hold && <div className="kbo-header-actions"><span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="kbo-notice" />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />

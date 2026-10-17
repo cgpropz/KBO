@@ -86,12 +86,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: kbo-props-ui/package-lock.json
       - run: npm ci --no-audit --no-fund
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
       - name: Build the site
         run: npm run build
       - name: iPhone width check
         run: npm run test:phone
+        env:
+          PHONE_SKIP_BUILD: "1"
+          CI: "true"
+      - name: Phone card fit at 320 and 390
+        run: npx playwright test -c playwright.card-fit.config.js
         env:
           PHONE_SKIP_BUILD: "1"
           CI: "true"
