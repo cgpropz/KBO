@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS saved_slips (
   total_edge  numeric,
   unique_games int,
   legs        jsonb NOT NULL DEFAULT '[]',    -- array of leg objects
+  sport       text,                           -- kbo | nfl | wnba | nhl | nba; null on rows saved before the column existed
   graded      boolean DEFAULT false,          -- true once results are in
   result      text DEFAULT 'pending',         -- 'pending' | 'hit' | 'miss' | 'push' | 'partial'
   hits        int DEFAULT 0,                  -- count of legs that hit

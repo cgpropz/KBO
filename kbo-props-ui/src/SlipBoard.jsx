@@ -5,6 +5,7 @@ import { STANDARD_LINE } from './responsibleGambling'
 import { sessionAccessToken } from './supabaseClient'
 import { isPromoLine, matchImportedPick } from './slipLines'
 import { slipSport, sportDate } from './slipSports'
+import { savedLegFromProp } from './savedSlipPayload.js'
 import { playerKey } from './slipRank'
 import {
   PAYOUT_ENTRY,
@@ -238,18 +239,10 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           game_date: sportDate(config.timeZone),
+          sport: config.id,
           confidence: avg == null ? null : Math.round(avg),
           avg_edge: null,
-          legs: legs.map((leg) => ({
-            name: leg.name,
-            team: leg.team,
-            opponent: leg.opponent,
-            prop: leg.prop,
-            line: leg.line,
-            projection: leg.projection,
-            side: leg.side === 'LESS' ? 'UNDER' : 'OVER',
-            odds_type: leg.odds_type,
-          })),
+          legs: legs.map((leg) => savedLegFromProp(leg, leg.side, config.id)),
         }),
       })
       setNotice(response.ok ? 'Slip saved.' : 'The slip could not be saved.')

@@ -4,6 +4,8 @@ import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
+import { inferSlipSport, slipGradeLabel } from './slipSportInfer.js';
+import { savedLegFromProp } from './savedSlipPayload.js';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
 import { formatBreakEvenRate } from './prizepicksBreakeven';
@@ -21,6 +23,8 @@ function rememberSlipSport(id, sport) {
 }
 
 function slipMatchesSport(slip, sport) {
+  const resolved = String(slip?.sport || inferSlipSport(slip) || '').toLowerCase();
+  if (resolved) return resolved === sport;
   try {
     const map = JSON.parse(localStorage.getItem(SLIP_SPORT_KEY) || '{}');
     if (map[slip.id]) return map[slip.id] === sport;
@@ -121,20 +125,12 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
     if (selectedArr.length === 0) return;
     await saveSlipToDb({
       game_date: gameDate,
+      sport: config.id,
       confidence: slipScore.confidence,
       avg_edge: slipScore.avgEdge,
       total_edge: slipScore.totalEdge,
       unique_games: slipScore.uniqueGames,
-      legs: selectedArr.map(idx => {
-        const p = allProps[idx];
-        const side = getSide(idx);
-        return {
-          name: p.name, team: p.team, opponent: p.opponent,
-          prop: p.prop, propShort: p.propShort,
-          line: p.line, projection: p.projection,
-          edge: p.edge, side,
-        };
-      }),
+      legs: selectedArr.map(idx => savedLegFromProp(allProps[idx], getSide(idx), config.id)),
     });
     setMode('saved');
   };
@@ -142,20 +138,12 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const saveAutoSlip = async (slipData) => {
     await saveSlipToDb({
       game_date: gameDate,
+      sport: config.id,
       confidence: slipData.score.confidence,
       avg_edge: slipData.score.avgEdge,
       total_edge: slipData.score.totalEdge,
       unique_games: slipData.score.uniqueGames,
-      legs: slipData.indices.map(idx => {
-        const p = allProps[idx];
-        const side = getSide(idx);
-        return {
-          name: p.name, team: p.team, opponent: p.opponent,
-          prop: p.prop, propShort: p.propShort,
-          line: p.line, projection: p.projection,
-          edge: p.edge, side,
-        };
-      }),
+      legs: slipData.indices.map(idx => savedLegFromProp(allProps[idx], getSide(idx), config.id)),
     });
   };
 
@@ -752,6 +740,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
               {sportSlips.map((slip) => {
                 const slipLegs = Array.isArray(slip.legs) ? slip.legs : [];
                 const isGraded = slip.graded;
+                const comingSoon = slipGradeLabel(slip);
                 const resultClass = isGraded
                   ? slip.result === 'hit' ? 'so-result-hit'
                     : slip.result === 'miss' ? 'so-result-miss'
@@ -763,7 +752,9 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                   <div key={slip.id} className={`so-saved-card ${resultClass}`}>
                     <div className="so-saved-card-header">
                       <div className="so-saved-meta">
-                        {isGraded && (
+                        {comingSoon ? (
+                          <span className="so-result-badge so-result-badge-soon">Grading coming soon</span>
+                        ) : isGraded && (
                           <span className={`so-result-badge so-result-badge-${slip.result}`}>
                             {slip.result === 'hit' ? '✅ HIT' : slip.result === 'miss' ? '❌ MISS' : slip.result === 'partial' ? `⚠️ ${slip.hits}/${slipLegs.length}` : slip.result === 'push' ? '➡️ PUSH' : '⏳'}
                           </span>

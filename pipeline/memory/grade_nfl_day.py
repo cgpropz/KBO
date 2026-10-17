@@ -150,6 +150,7 @@ def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bo
             continue
         entry = {
             "present": True,
+            "player": getattr(row, "player_display_name", "") or "",
             "team": getattr(row, "team", None),
             "passing_yards": getattr(row, "passing_yards", None),
             "attempts": getattr(row, "attempts", None),

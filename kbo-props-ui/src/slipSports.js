@@ -104,6 +104,7 @@ function slipFields(row, extra = {}) {
     awayTeam: row?.awayTeam || extra.awayTeam || '',
     homeTeam: row?.homeTeam || extra.homeTeam || '',
     sport: extra.sport || row?.sport || '',
+    projection_id: row?.projection_id || extra.projection_id || null,
   }
 }
 
@@ -152,6 +153,7 @@ async function loadKboProps() {
       edge: num(row.edge) ?? Math.round((projection - line) * 100) / 100,
       imageUrl: photoByName.get(key) || '',
       ppImageUrl: ppByName.get(key) || '',
+      sport: 'kbo',
     })
     if (!keepSlipRow(built)) continue
     props.push(built)
@@ -180,7 +182,7 @@ function basketLine(player, prop, fillMissingStandard) {
   return { odds_type: 'standard', ...cleaned }
 }
 
-function basketRows(players, { source = '' } = {}) {
+function basketRows(players, { source = '', sport = '' } = {}) {
   const fillMissingStandard = source === 'projections_standard.json'
   const props = []
   const seen = new Set()
@@ -221,6 +223,7 @@ function basketRows(players, { source = '' } = {}) {
         injury: player?.injury,
         ppStatus: player?.ppStatus || player?.pp_status,
         held: player?.held,
+        sport,
       })
       if (!keepSlipRow(built, { player })) continue
       props.push(built)
@@ -230,14 +233,14 @@ function basketRows(players, { source = '' } = {}) {
   return props
 }
 
-async function loadBasketProps(fetchDataFile, { emptyWhenNoGame = false, timeZone = 'America/New_York' } = {}) {
+async function loadBasketProps(fetchDataFile, { emptyWhenNoGame = false, timeZone = 'America/New_York', sport = '' } = {}) {
   const source = 'projections_standard.json'
   const doc = await fetchDataFile(source).catch(() => [])
   const players = Array.isArray(doc) ? doc : []
   if (emptyWhenNoGame && !playsOnDay(players, sportDate(timeZone), timeZone)) {
     return { props: [], empty: wnbaEmptyState() }
   }
-  return { props: basketRows(players, { source }), empty: null }
+  return { props: basketRows(players, { source, sport }), empty: null }
 }
 
 function flatRows(rows, shorts, { pointsGate = false, sport = '' } = {}) {
@@ -305,7 +308,7 @@ export const SLIP_SPORTS = {
       chip('AST', 'AST', (row) => row.propShort === 'AST'),
       chip('PRA', 'PRA', (row) => row.propShort === 'PRA'),
     ],
-    loadProps: () => loadBasketProps((file) => fetchWnbaData(`wnba/${file}`), { emptyWhenNoGame: true }),
+    loadProps: () => loadBasketProps((file) => fetchWnbaData(`wnba/${file}`), { emptyWhenNoGame: true, sport: 'wnba' }),
   },
   nba: {
     id: 'nba',
@@ -323,7 +326,7 @@ export const SLIP_SPORTS = {
       chip('AST', 'AST', (row) => row.propShort === 'AST'),
       chip('PRA', 'PRA', (row) => row.propShort === 'PRA'),
     ],
-    loadProps: () => loadBasketProps((file) => fetchNbaData(`nba/${file}`)),
+    loadProps: () => loadBasketProps((file) => fetchNbaData(`nba/${file}`), { sport: 'nba' }),
   },
   nfl: {
     id: 'nfl',
@@ -363,7 +366,7 @@ export const SLIP_SPORTS = {
     ],
     loadProps: async () => {
       const snapshot = await fetchNhlProjections()
-      return flatRows(snapshot.projections, NHL_SHORT, { pointsGate: true })
+      return flatRows(snapshot.projections, NHL_SHORT, { pointsGate: true, sport: 'nhl' })
     },
   },
 }
