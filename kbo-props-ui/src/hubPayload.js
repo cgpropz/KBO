@@ -36,6 +36,10 @@ const KEEP = [
   'image', 'ppImageUrl', 'playerId', 'start', 'recent', 'hitRate', 'hitGames',
   'hitHits', 'oppRank', 'goalieStatus', 'statusLabel', 'status', 'injury',
   'ppStatus', 'held',
+  // Still read after the trim: top 3 / L10 / counts (rank + line type) and
+  // the next-gameday scope (start, plus gameday/date and the matchup sides).
+  'rankEligible', 'line_type', 'oddsType', 'odds_type', 'gameday', 'date',
+  'awayTeam', 'homeTeam', 'away', 'home', 'position',
 ]
 
 function slim(row) {

@@ -66,6 +66,34 @@ function availabilityOf(source) {
   }
 }
 
+// Fields the hub still reads after the row is built: rank and line type stay
+// so a false rank or a goblin/demon cannot be treated as a standard line,
+// and the gameday/start pair is what next-slate scoping and goalie matching use.
+const HUB_CARRY = [
+  'rankEligible', 'line_type', 'oddsType', 'odds_type', 'gameday', 'date',
+  'awayTeam', 'homeTeam', 'away', 'home', 'position',
+]
+
+function carryHubFields(...sources) {
+  const out = {}
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+    for (const key of HUB_CARRY) {
+      if (source[key] !== undefined && out[key] === undefined) out[key] = source[key]
+    }
+  }
+  return out
+}
+
+function hubStart(...sources) {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+    const start = source.start_time || source.start || source.game_time || source.gameDate || source.gameday || source.date || null
+    if (start) return start
+  }
+  return null
+}
+
 // Held lines (PrizePicks hold / suspended / removed, or an explicit flag) and
 // OUT / IR / LTIR / scratched / suspended players. Does not touch the score.
 export function rowIsHeldOrOut(row) {
@@ -297,12 +325,13 @@ export function kboHubRows(data, photos = {}) {
         score,
         image: kboCardImage(card, photos?.[card.name] || lookup[normalizePlayerName(card.name)]),
         ppImageUrl: card.image_url || card.ppImageUrl || null,
-        start: card.start_time || card.game_time || null,
+        start: hubStart(card, prop),
         recent,
         ...l10ForRow(recent, prop.line, side, pills, prop.hit_rate_l10),
         oppRank: null,
         statusLabel: availabilityLabel({ ...card, ...prop }),
         ...availabilityOf({ ...card, ...prop }),
+        ...carryHubFields(prop, card),
       })
     }
   }
@@ -326,12 +355,13 @@ export function nflHubRows(data) {
         score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
         image: row.imageUrl || null,
         ppImageUrl: row.ppImageUrl || row.imageUrl || null,
-        start: row.start_time || null,
+        start: hubStart(row),
         recent,
         ...l10ForRow(recent, row.line, side, nflHitPills(row), null),
         oppRank: rankOrNull(row.dvpRank),
         statusLabel: availabilityLabel(row),
         ...availabilityOf(row),
+        ...carryHubFields(row),
       }
     })
 }
@@ -354,7 +384,7 @@ export function nhlHubRows(data) {
       image: row.imageUrl || null,
       ppImageUrl: row.ppImageUrl || row.imageUrl || null,
       playerId: row.playerId || null,
-      start: row.start_time || null,
+      start: hubStart(row),
       recent,
       ...l10ForRow(recent, row.line, side, nhlHitPills(row), row.hitRate),
       oppRank: rankOrNull(row.dvpRank),
@@ -362,6 +392,7 @@ export function nhlHubRows(data) {
       statusLabel: row.goalieStatus === 'confirmed' ? 'Confirmed' : row.goalieStatus === 'probable' ? 'Probable' : availabilityLabel(row),
       detail: row,
       ...availabilityOf(row),
+      ...carryHubFields(row),
       }
     })
 }
@@ -411,12 +442,13 @@ function basketballRows(data, scoreFn, roster, sport) {
         score: num(scoreFn(prop)),
         image: imageFor(player) || player.image || player.imageUrl || null,
         ppImageUrl: player.ppImageUrl || player.image_url || null,
-        start: prop.start_time || prop.gameDate || null,
+        start: hubStart(prop, player),
         recent,
         ...l10ForRow(recent, prop.line, side, pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
         statusLabel: availabilityLabel({ ...player, ...prop }),
         ...availabilityOf({ ...player, ...prop }),
+        ...carryHubFields(prop, player),
       })
     }
   }
