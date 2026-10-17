@@ -1,6 +1,6 @@
 <!--
 DRAFT, NOT FOR PUBLISH. Owner (Code Green) approval required; Git bot publishes at /nba-player-props.
-No stats, accuracy or hit-rate claims on this page. NBA board facts (formula, no free preview, hit-rate
+No stats, accuracy or hit-rate claims on this page. NBA board facts (no free preview, hit-rate
 windows, line tabs, stat types, board opens Oct 20) come from the Board QA README, '## NBA' section,
 verified 2026-10-16 ~12:07 PM ET: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md
 qa_pick_ledger: 0 NBA rows (SELECT only, Oct 16 ~12:05 PM ET). graded_props_history not used.
@@ -59,14 +59,12 @@ Opening night is a three-game slate. Wednesday is the first full slate of the se
 Each row pairs a posted line with the CGPropz projection, the CG Score and recent hit rates, with the player's game log and matchup context one tap away.
 
 - **Projection:** the model's estimate of the player's stat for tonight.
-- **CG Score:** how far the projection sits from the line. On NBA it's the projection divided by that prop's own line, times 50. Unlike WNBA and NFL, there are no minimum-line floors, so 50 always means the projection equals the line. [How CG Score works](/guides/cg-score).
+- **CG Score:** CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only. [How CG Score works](/guides/cg-score).
 - **Hit rates:** how often the player cleared tonight's line in recent games. The board shows **L5, L10, L20, H2H** (against tonight's opponent) and **Season**, with **L10** as the main view. Read each with its game count.
 - **Line types:** standard, demon and goblin lines each have their own tab. Each line is scored against its own number.
 - **Stat types:** Points, Rebounds, Assists, 3-PT Made, Steals, Blocked Shots, Turnovers, Blocks + Steals, Points + Rebounds, Points + Assists, Rebounds + Assists, and Points + Rebounds + Assists. The demon tab also includes Double-Double and Triple-Double.
 - **Free preview:** none for NBA. The full board is All-Access.
 <!-- NBA facts: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md, '## NBA' section (verified 2026-10-16 ~12:07 PM ET). -->
-
-A CG Score is not a probability, and a higher score is not a claim that a prop hits more often.
 
 ## Reading NBA props early in the season
 
@@ -95,7 +93,7 @@ On the CGPropz NBA board, which opens Tuesday, Oct 20. It shows standard, demon 
 No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access and opens Tuesday, Oct 20.
 
 **What is CG Score?**
-It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often.
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
 **Can I use these props on PrizePicks or Underdog?**
 The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog.
@@ -109,7 +107,7 @@ The lines on CGPropz are the lines at the time the board was updated. Confirm th
     { "@type": "Question", "name": "When does the 2026-27 NBA season start?", "acceptedAnswer": { "@type": "Answer", "text": "Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers at Knicks (7:00 PM ET) and Thunder at Spurs (9:30 PM ET)." } },
     { "@type": "Question", "name": "Where are today's NBA player props?", "acceptedAnswer": { "@type": "Answer", "text": "On the CGPropz NBA board, which opens Tuesday, Oct 20. It shows standard, demon and goblin lines on separate tabs, with every prop available to All-Access members." } },
     { "@type": "Question", "name": "Are there free NBA picks?", "acceptedAnswer": { "@type": "Answer", "text": "No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access and opens Tuesday, Oct 20." } },
-    { "@type": "Question", "name": "What is CG Score?", "acceptedAnswer": { "@type": "Answer", "text": "It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often." } },
+    { "@type": "Question", "name": "What is CG Score?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." } },
     { "@type": "Question", "name": "Can I use these props on PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog." } }
   ]
 }
@@ -129,5 +127,5 @@ SOURCES (accessed Fri Oct 16, 2026; 1 lookup used of 5)
   https://cdn.nba.com/manage/2026/08/2026-27-NBA-Regular-Season-Schedule-By-Date.pdf
 - AP News 2026-27 schedule by date: cross-check of Oct 20-21 ET times.
   https://apnews.com/article/los-angeles-lakers-dallas-los-angeles-clippers-sacramento-memphis-8f39af2f0d87d11bbe75ea4dd438b33f
-- Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md, '## NBA' (verified 2026-10-16 ~12:07 PM ET): formula proj/own line x 50, no floors; no homepage free top 3 (FREE_TOP_3_BOARDS excludes NBA); hit pills L5/L10/L20/H2H/Season (L10 default sort); standard/demon/goblin tabs; 12 standard stats, demon adds Double-Double/Triple-Double; board gated (nba_public=false) until Oct 20. Fantasy Score deliberately not mentioned (not verified on live card). Prop counts in README deliberately not cited.
+- Board QA README, '## NBA' (verified 2026-10-16 ~12:07 PM ET): no homepage free top 3; hit pills L5/L10/L20/H2H/Season (L10 default sort); standard/demon/goblin tabs; 12 standard stats, demon adds Double-Double/Triple-Double; board gated until Oct 20. Fantasy Score deliberately not mentioned. Prop counts deliberately not cited.
 -->

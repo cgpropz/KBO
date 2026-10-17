@@ -80,7 +80,7 @@ Board updated: {{FROM BOARD QA LEDGER}} ET. Result after the game: {{FROM BOARD 
 
 ## How to read the board: CG Score and hit rates
 
-**CG Score** shows how far the CGPropz projection sits from the posted line. On a score of 50, the projection and the line are equal, as long as the line is at or above that stat's minimum (see below). Above 50, the projection is over the line; below 50, it's under. The further from 50, the bigger the gap between the model and the line. It is a measure of that gap, not a probability that the prop hits. On the WNBA board, it's the projection divided by the larger of the prop's own line or a minimum line for that stat, times 50. The minimums keep very low lines from producing extreme scores; for example, the minimum is 4.5 for points, 3.5 for rebounds and 1.5 for assists. When a line is below its minimum, a score of 50 means the projection equals the minimum, not the line. <!-- WNBA minLines (README): 3PA 3.5, 3PM 1.5, Ast 1.5, Blks+Stls 1.5, Blk Shots 0.5, DReb 4.5, FGA 9.5, FGM 4.5, Fantasy 15.5, FTA 3.5, FTM 2.5, Minutes 33, OReb 0.5, Pts 4.5, Pts+Asts 7.5, Pts+Rebs 9.5, PRA 10.5, Reb 3.5, Rebs+Asts 5, Stl 1.5, TO 1.5, 2PA 6, 2PM 3.5 --> The WNBA board shows demon and goblin lines alongside standard lines, and each is scored against its own line. The board treats a prop as an over when the projection is at or above the line. <!-- CG Score per-sport formula source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (section 'CG Score', site JS /assets/index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET after PR #112) --> [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
+**CG Score** ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only. The WNBA board shows demon and goblin lines alongside standard lines. The board treats a prop as an over when the projection is at or above the line. [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
 
 **Hit rates** count how often a player has cleared today's line in a recent window. The CGPropz WNBA board shows several:
 - **L10:** the player's last ten games against today's line.
@@ -139,7 +139,7 @@ The Golden State Valkyries and the Atlanta Dream. Both swept their semifinal ser
 On this page, in the section for each game, once the CGPropz board for that game is built. Each game gets the three props from the free preview of the WNBA board.
 
 **What is CG Score?**
-It shows how far the CGPropz projection sits from the line. At 50 they're equal when the line is at or above that stat's minimum; the further from 50, the bigger the gap. It isn't a win probability.
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
 **Why are hit rates less reliable in the Finals?**
 Rotations tighten, minutes shift, and head-to-head samples are only a few games. Read every hit rate with its sample size and check the latest injury news.
@@ -171,7 +171,7 @@ The lines on CGPropz are the lines at the time the board was updated. Confirm th
     {
       "@type": "Question",
       "name": "What is CG Score?",
-      "acceptedAnswer": { "@type": "Answer", "text": "It shows how far the CGPropz projection sits from the line. At 50 they're equal when the line is at or above that stat's minimum; the further from 50, the bigger the gap. It isn't a win probability." }
+      "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." }
     },
     {
       "@type": "Question",
@@ -209,5 +209,5 @@ SOURCES (fetched/searched Sun Oct 11, 2026; schedule still {{CONFIRM SCHEDULE}} 
 - Board fields (L10 / season / H2H hit rate, CG Score, DVP): CGPropz WNBA board UI (site repo src/wnba/Dashboard.jsx sort options). Not a stat source.
 - Demon/goblin lines on the WNBA board: verified by Board QA (relayed Oct 11, 2:27 PM ET).
 - WNBA Game 1 free top 3: NOT filled on purpose; can change before lock (Oct 17).
-- CG Score WNBA formula, ranking and free top-3 rule: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (re-verified vs site JS index-B876gw9W.js, 2026-10-11 2:25 PM ET). Note: README says 'Points - 1st 3 Minutes' props are excluded from ranking but can appear in the free preview.
+- WNBA free top 3 is the top three on the full board. 'Points - 1st 3 Minutes' props can appear in the free preview.
 -->

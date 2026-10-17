@@ -43,7 +43,7 @@ const NbaApp = lazy(() => loadSport('nba'))
 const NhlApp = lazy(() => loadSport('nhl'))
 
 function App() {
-  const { user, tier, passwordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, tier, tierConfirmed, passwordRecovery, clearPasswordRecovery } = useAuth();
   const { requireAge } = useAgeGate();
   const [previewNode, setPreviewNode] = useState(null);
   const [refreshingBoard, setRefreshingBoard] = useState(false);
@@ -216,7 +216,7 @@ function App() {
 
   /* Anonymous visitors and free accounts browse in preview mode. The server
      sends the top 3 lines per board, except NFL while its preview flag is off. */
-  const seesFreePreview = !user || tier === 'free'
+  const seesFreePreview = !user || (tierConfirmed && tier === 'free')
   const previewBar = seesFreePreview && (
     <div className="ff-preview-bar" role="note" ref={setPreviewNode}>
       <span>👀 {freePreviewBannerText(visibleSport)}</span>

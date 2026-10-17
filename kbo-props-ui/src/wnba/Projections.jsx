@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { fetchWnbaSnapshot } from './wnbaData'
 import BoardStatus from '../BoardStatus'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fmtDvpRank } from './utils/formatters'
 import { wnbaCgScore } from './wnbaScore'
 import ProjectionTable from './components/ProjectionTable'
@@ -123,6 +127,9 @@ export default function Projections({ onSelectPlayer }) {
   const lineType = 'standard'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState(null)
   const [propType, setPropType] = useState('All')
@@ -143,6 +150,8 @@ export default function Projections({ onSelectPlayer }) {
         if (cancelled) return
         setData(Array.isArray(snapshot?.data) ? snapshot.data : [])
         setUpdatedAt(snapshot?.updatedAt || null)
+        setRefreshing(snapshot?.refreshing === true)
+        setMemberPreview(snapshot?.preview === true)
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -151,7 +160,24 @@ export default function Projections({ onSelectPlayer }) {
     }
     load()
     return () => { cancelled = true }
-  }, [lineType])
+  }, [lineType, loadAttempt])
+
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
+    setData(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setRefreshing(false)
+    setMemberPreview(false)
+    setError(null)
+    setLoading(false)
+  })
+  const phase = useMemberBoardPhase('wnba', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError(null)
+    setLoading(true)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const propTypes = useMemo(() => {
     if (!data) return ['All']
@@ -358,13 +384,15 @@ export default function Projections({ onSelectPlayer }) {
         </span>
       </div>
 
-      {error && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && (
         <div style={{ padding: '32px', textAlign: 'center', color: '#ef4444', background: '#1a0a0a', borderRadius: 12, border: '1px solid #3f1a1a' }}>
           WNBA projections snapshot unavailable. Run the WNBA refresh to publish <code style={{ color: '#f97316' }}>wnba/projections_{lineType}.json</code>.
         </div>
       )}
 
-      {viewMode === 'table' ? (
+      {!hold && (viewMode === 'table' ? (
         <div className="card" style={{ overflow: 'hidden' }}>
           <ProjectionTable data={filtered} loading={loading} selectedPropType={propType} onSelectPlayer={onSelectPlayer} />
         </div>
@@ -451,9 +479,9 @@ export default function Projections({ onSelectPlayer }) {
             </div>
           )}
         </div>
-      )}
+      ))}
 
-      <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+      {!hold && <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
         {[
           { color: '#38bdf8', label: `${lineType} PrizePicks feed active` },
           { color: '#facc15', label: 'DVP uses separate Guard, Forward, Center opponent files' },
@@ -463,7 +491,7 @@ export default function Projections({ onSelectPlayer }) {
             <span style={{ fontSize: 11, color: '#8b94a9' }}>{label}</span>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   )
 }

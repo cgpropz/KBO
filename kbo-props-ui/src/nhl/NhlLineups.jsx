@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { fetchNhlLineups } from './nhlData'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { TEAM_NAMES, teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 
@@ -71,19 +75,41 @@ export default function NhlLineups() {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
     let active = true
     fetchNhlLineups()
-      .then(({ matchups: next, preview, lockedCount: locked }) => {
+      .then(({ matchups: next, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
         if (!active) return
         setMatchups(next)
         setLockedCount(preview ? locked : 0)
+        setMemberPreview(preview === true)
+        setRefreshing(pendingRefresh === true)
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nhl_lineups', (snapshot) => {
+    setMatchups(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
+    setError('')
+    setLoaded(true)
+  })
+  const phase = useMemberBoardPhase('nhl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   return (
     <section className="nfl-lineups">
@@ -92,11 +118,13 @@ export default function NhlLineups() {
         <h1>Lines and Goalies</h1>
         <span>Goalie tags come from Daily Faceoff. Skater lines are projected. If that page has no skaters, the list is the last game they actually played. A team with nothing posted stays empty.</span>
       </header>
-      {error && <div className="nfl-notice">Unable to load lineups: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading lines and starting goalies.</div>}
-      {!error && loaded && !matchups.length && <div className="nfl-notice">No lineups are posted for tonight.</div>}
-      {!!matchups.length && <div className="nfl-lineups-grid">{matchups.map((matchup) => <Matchup key={`${matchup.date}-${matchup.awayTeam}-${matchup.homeTeam}`} matchup={matchup} />)}</div>}
-      {lockedCount > 0 && <div className="nfl-notice">{lockedCount} more games are locked.</div>}
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && <div className="nfl-notice">Unable to load lineups: {error}</div>}
+      {!hold && !error && !loaded && <div className="nfl-notice">Loading lines and starting goalies.</div>}
+      {!hold && !error && loaded && !matchups.length && <div className="nfl-notice">No lineups are posted for tonight.</div>}
+      {!hold && !!matchups.length && <div className="nfl-lineups-grid">{matchups.map((matchup) => <Matchup key={`${matchup.date}-${matchup.awayTeam}-${matchup.homeTeam}`} matchup={matchup} />)}</div>}
+      {showPaywall && lockedCount > 0 && <div className="nfl-notice">{lockedCount} more games are locked.</div>}
     </section>
   )
 }

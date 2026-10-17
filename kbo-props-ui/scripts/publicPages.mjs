@@ -43,7 +43,7 @@ import {
 
 const SCORE_FAQ = {
   q: 'What does CG Score mean?',
-  a: 'CG Score compares the CGPropz projection with the posted line. The method stated on the site is projection divided by the line, multiplied by 50. A score of 50 means the projection equals the line. It is not a probability, and a higher score is not a claim that the prop hits more often.',
+  a: "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.",
 };
 
 const AFFILIATION_FAQ = {

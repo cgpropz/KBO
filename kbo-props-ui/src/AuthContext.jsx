@@ -2,13 +2,17 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
 import { loadSupabase, readCachedSession } from './supabaseClient';
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
+import { settlePlanCheck } from './planCheck.js';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
 const TIER_CACHE_KEY = 'cg_tier';
 const AuthContext = createContext({
   user: null,
   tier: 'free',
+  tierConfirmed: true,
+  planCheckExhausted: false,
   loading: false,
+  retryPlanCheck: () => {},
   signOut: () => {},
   refreshTier: () => {},
   discord: EMPTY_DISCORD,
@@ -62,12 +66,16 @@ const CACHED_SESSION = DEV_PREVIEW ? null : readCachedSession();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
   const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? (CACHED_SESSION?.user ? readCachedTier(CACHED_SESSION.user.id) : 'free'));
+  const [tierConfirmed, setTierConfirmed] = useState(() => Boolean(DEV_PREVIEW) || !CACHED_SESSION?.user);
+  const [planCheckExhausted, setPlanCheckExhausted] = useState(false);
   const [discord, setDiscord] = useState(EMPTY_DISCORD);
   const [passwordRecovery, setPasswordRecovery] = useState(recoveryFromWindow);
   // Session is resolved from local storage before paint. Tier refresh and the
   // Supabase client download stay off the first render.
   const loading = false;
   const userRef = useRef(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
+  const planGeneration = useRef(0);
+  const initialCheck = useRef(0);
   const lastPaidDiscordSync = useRef(0);
 
   const applyTier = useCallback((next, userId) => {
@@ -109,7 +117,7 @@ export function AuthProvider({ children }) {
   const fetchTier = useCallback(async (userId) => {
     if (DEV_PREVIEW || !userId) return;
     const client = await loadSupabase();
-    if (!client) return;
+    if (!client) throw new Error('supabase unavailable');
     const { data: rows } = await client
       .from('user_profiles')
       .select('tier')
@@ -148,7 +156,40 @@ export function AuthProvider({ children }) {
     await fetchDiscord(userId);
   }, [applyTier, fetchDiscord, postSync]);
 
-  // Public method: force a tier re-check (e.g. after payment)
+  const endPlanCheck = useCallback((gen, userId, outcome) => {
+    if (planGeneration.current !== gen) return;
+    if (userId && userRef.current?.id !== userId) return;
+    if (outcome === 'ok') {
+      planGeneration.current += 1;
+      setTierConfirmed(true);
+      setPlanCheckExhausted(false);
+    } else {
+      setPlanCheckExhausted(true);
+    }
+  }, []);
+
+  // Public method: force a tier re-check (e.g. after payment). A hang or a
+  // missing client leaves the plan unconfirmed and shows Retry.
+  const confirmTier = useCallback((userId) => {
+    const gen = planGeneration.current + 1;
+    planGeneration.current = gen;
+    setTierConfirmed(false);
+    setPlanCheckExhausted(false);
+    const work = Promise.resolve().then(() => fetchTier(userId)).then(() => {
+      endPlanCheck(gen, userId, 'ok');
+    });
+    return settlePlanCheck(work).then((outcome) => {
+      if (outcome !== 'ok') endPlanCheck(gen, userId, outcome);
+      return outcome;
+    });
+  }, [endPlanCheck, fetchTier]);
+
+  const retryPlanCheck = useCallback(() => {
+    const uid = userRef.current?.id;
+    if (!uid) return Promise.resolve('ok');
+    return confirmTier(uid);
+  }, [confirmTier]);
+
   const refreshTier = useCallback(() => {
     const uid = userRef.current?.id;
     if (uid) return fetchTier(uid);
@@ -162,37 +203,65 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (DEV_PREVIEW) return undefined;
     let cancelled = false;
+    let subscribed = false;
     let unsubscribe = () => {};
+    const subscribe = (client) => {
+      if (!client || cancelled || subscribed) return;
+      subscribed = true;
+      const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
+        const previousId = userRef.current?.id || null;
+        const u = session?.user ?? null;
+        setUser(u);
+        userRef.current = u;
+        if (u) {
+          const startupCoversUser = planGeneration.current === initialCheck.current && u.id === previousId;
+          if (!startupCoversUser) confirmTier(u.id);
+        } else {
+          planGeneration.current += 1;
+          setTier('free');
+          setTierConfirmed(true);
+          setPlanCheckExhausted(false);
+          setDiscord(EMPTY_DISCORD);
+          clearCachedTier();
+        }
+      });
+      if (cancelled) subscription.unsubscribe();
+      else unsubscribe = () => subscription.unsubscribe();
+    };
     const start = () => {
-      loadSupabase().then((client) => {
-        if (cancelled || !client) return;
-        client.auth.getSession().then(({ data: { session } }) => {
-          if (cancelled) return;
-          const u = session?.user ?? null;
-          setUser(u);
-          userRef.current = u;
-          if (u) fetchTier(u.id);
-          else {
-            setTier('free');
-            clearCachedTier();
-          }
-        });
-        const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-          if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
-          const u = session?.user ?? null;
-          setUser(u);
-          userRef.current = u;
-          if (u) {
-            fetchTier(u.id);
-          } else {
-            setTier('free');
-            setDiscord(EMPTY_DISCORD);
-            clearCachedTier();
-          }
-        });
-        if (cancelled) subscription.unsubscribe();
-        else unsubscribe = () => subscription.unsubscribe();
-      }).catch(() => { /* a failed client download must not block the shell */ });
+      const cachedId = userRef.current?.id || null;
+      const gen = planGeneration.current + 1;
+      planGeneration.current = gen;
+      initialCheck.current = gen;
+      setTierConfirmed(false);
+      setPlanCheckExhausted(false);
+      settlePlanCheck(async () => {
+        const client = await loadSupabase();
+        if (!client) throw new Error('supabase unavailable');
+        subscribe(client);
+        const { data: { session } } = await client.auth.getSession();
+        if (cancelled) return;
+        const u = session?.user ?? null;
+        setUser(u);
+        userRef.current = u;
+        if (!u) {
+          planGeneration.current += 1;
+          setTier('free');
+          setTierConfirmed(true);
+          setPlanCheckExhausted(false);
+          clearCachedTier();
+          return;
+        }
+        await fetchTier(u.id);
+        if (!cancelled && userRef.current?.id === u.id) endPlanCheck(gen, u.id, 'ok');
+      }).then((outcome) => {
+        if (cancelled || outcome === 'ok') return;
+        loadSupabase().then((client) => { if (!cancelled) subscribe(client); }).catch(() => {});
+        const uid = userRef.current?.id || cachedId;
+        if (uid) endPlanCheck(gen, uid, outcome);
+        else setTierConfirmed(true);
+      });
     };
     // Logged-out visitors have nothing to refresh. The Supabase client is a
     // separate ~51KB chunk; downloading it on the landing page competes with
@@ -206,13 +275,13 @@ export function AuthProvider({ children }) {
       cancelled = true;
       unsubscribe();
     };
-  }, [fetchTier, passwordRecovery]);
+  }, [confirmTier, endPlanCheck, fetchTier, passwordRecovery]);
 
   // Re-check tier when user returns to the tab (e.g. after paying in Stripe tab)
   useEffect(() => {
     function onVisible() {
       if (document.visibilityState === 'visible' && userRef.current?.id) {
-        fetchTier(userRef.current.id);
+        fetchTier(userRef.current.id).catch(() => {});
       }
     }
     document.addEventListener('visibilitychange', onVisible);
@@ -233,13 +302,16 @@ export function AuthProvider({ children }) {
     if (client) await client.auth.signOut();
     setUser(null);
     userRef.current = null;
+    planGeneration.current += 1;
     setTier('free');
+    setTierConfirmed(true);
+    setPlanCheckExhausted(false);
     setDiscord(EMPTY_DISCORD);
     clearCachedTier();
   }
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier, discord, refreshDiscord, passwordRecovery, clearPasswordRecovery }}>
+    <AuthContext.Provider value={{ user, tier, tierConfirmed, planCheckExhausted, loading, signOut, refreshTier, retryPlanCheck, discord, refreshDiscord, passwordRecovery, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   );

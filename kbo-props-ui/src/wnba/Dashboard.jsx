@@ -1,8 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
 import BoardStatus from '../BoardStatus'
-import { useAuth } from '../AuthContext'
-import { sportAccess } from '../entitlements'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
@@ -17,6 +15,9 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
 import { opponentLabel } from '../cardMark'
@@ -411,16 +412,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [whyId, setWhyId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(({ fresh = false } = {}) => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json', { fresh }).then((snapshot) => {
     const payload = snapshot?.data
     const records = Array.isArray(payload?.records) ? payload.records : []
     return { records: wnbaRecordsAsSharp(records), preview: !!snapshot?.preview }
   }))
-
-  const { tier } = useAuth()
-  // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
-  const isPaid = sportAccess(tier).wnba && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -447,6 +446,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         ])
         if (cancelled) return
         setLockedCount(previewLockedCount(pr?.preview === true, pr?.lockedCount))
+        setRefreshing(pr?.refreshing === true)
+        setMemberPreview(pr?.preview === true)
         setUpdatedAt(pr?.updatedAt || null)
         setProjections(Array.isArray(pr?.data) ? pr.data : [])
         setPlayers(Array.isArray(pl) ? pl : [])
@@ -466,12 +467,18 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
 
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('wnba_projections_standard', (snapshot) => {
     setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
     setUpdatedAt(snapshot.updatedAt || null)
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLoadError('')
     setProjLoading(false)
     reloadOdds()
   })
+  const phase = useMemberBoardPhase('wnba', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const isPaid = phase === 'member'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -484,7 +491,6 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
 
   // Flatten every prop into a scored row.
-  // Score = projection / max(this row's line, per-stat floor) × 50.
   // The line on the row is the PrizePicks line. See wnbaCgScore.
   const allRows = useMemo(() => {
     if (!projections) return []
@@ -600,7 +606,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const goPlayer = name => onSelectPlayer?.(name)
   const goProjections = () => onNavigate?.('projections')
 
-  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
@@ -630,21 +636,23 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           <div className="wnba-board-header">
             <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="wnba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
-              <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+              <span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
 
-          {projLoading && (
+          {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
+          <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="wnba-notice" />
+          {!hold && projLoading && (
             <div role="status" aria-label="Loading WNBA prop lines">
               <BoardSkeleton />
             </div>
           )}
-          {!projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load WNBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
-          <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />
-          {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
-          {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
-          {!projLoading && !!rows.length && (
+          {!hold && !projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load WNBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
+          {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />}
+          {!hold && !projLoading && !loadError && !allRows.length && <div className="wnba-notice">No WNBA props are on the board right now. Check back closer to tip-off.</div>}
+          {!hold && !projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
+          {!hold && !projLoading && !!rows.length && (
             <BoardSurface
               phone={phone}
               wrapClass="wnba-lines-table-wrap"
@@ -703,13 +711,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       </div>
 
       {/* ── KPI strip ────────────────────────────────────────── */}
+      {!hold && (<>
       <div className="wnba-kpi-grid">
         <KpiCard label="Active Players" value={totalPlayers} sub="2025–2026 roster" color="#FF6900" />
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="combined 2025+2026" color="#3b82f6" />
         <KpiCard
           label="Props on Board"
           value={projLoading ? '…' : propsOnBoardCount(allRows.length, isPaid ? 0 : lockedCount).toLocaleString()}
-          sub={!projLoading && !isPaid && lockedCount > 0 ? `${allRows.length} shown, ${lockedCount} locked` : 'scored & rated'}
+          sub={!projLoading && showPaywall && lockedCount > 0 ? `${allRows.length} shown, ${lockedCount} locked` : 'scored & rated'}
           color="#a855f7"
         />
         <KpiCard label="Avg Top Score" value={avgTopScore != null ? avgTopScore.toFixed(1) : '…'} sub="top 10 plays" color="#22c55e" />
@@ -734,7 +743,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                       />
                     )
                   })}
-                  {!isPaid && hotStreaks.length >= FREE_ROW_LIMIT && (
+                  {showPaywall && hotStreaks.length >= FREE_ROW_LIMIT && (
                     <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
                       Free members see the top {FREE_ROW_LIMIT}.{' '}
                       <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
@@ -759,7 +768,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                       last={i === bestValue.length - 1 && (isPaid || bestValue.length < FREE_ROW_LIMIT)}
                     />
                   ))}
-                  {!isPaid && bestValue.length >= FREE_ROW_LIMIT && (
+                  {showPaywall && bestValue.length >= FREE_ROW_LIMIT && (
                     <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
                       Free members see the top {FREE_ROW_LIMIT}.{' '}
                       <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
@@ -791,6 +800,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
               : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>No matchups posted yet.</p>}
         </InsightPanel>
       </div>
+      </>)}
     </div>
   )
 }

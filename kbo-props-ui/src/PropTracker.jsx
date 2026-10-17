@@ -1,5 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { fetchDataSnapshot } from './dataUrl';
+import { MemberBoardStatus } from './MemberBoardStatus';
+import { QuietMemberPreview } from './QuietMemberPreview';
+import { useMemberBoardPhase } from './useMemberBoardPhase';
+import { useFullBoardRefresh } from './useFullBoardRefresh';
 import './PropTracker.css';
 
 const TEAMS = {
@@ -19,6 +23,9 @@ const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('
 function PropTracker() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [memberPreview, setMemberPreview] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [pendingLocked, setPendingLocked] = useState(0);
   const [tab, setTab] = useState('graded');
   const [playerSearch, setPlayerSearch] = useState('');
@@ -39,6 +46,8 @@ function PropTracker() {
       .then(snap => {
         const d = snap.data;
         setPendingLocked(snap.preview ? snap.lockedCount : 0);
+        setRefreshing(snap.refreshing === true);
+        setMemberPreview(snap.preview === true);
         debugLog('Data loaded:', { pending: d?.pending?.length || 0, graded: d?.graded?.length || 0, generatedAt: d?.generated_at });
         setData(d); setLoading(false);
       })
@@ -46,7 +55,23 @@ function PropTracker() {
         debugLog('Error loading data:', err.message);
         setLoading(false);
       });
-  }, []);
+  }, [loadAttempt]);
+
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('graded_props_history', (snapshot) => {
+    setPendingLocked(0);
+    setRefreshing(false);
+    setMemberPreview(false);
+    setData(snapshot.data);
+    setLoading(false);
+  });
+  const phase = useMemberBoardPhase('kbo', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted });
+  const hold = phase === 'loading' || phase === 'exhausted';
+  const showPaywall = phase === 'free';
+  const retryLoad = () => {
+    clearRefreshExhausted();
+    setLoading(true);
+    setLoadAttempt((current) => current + 1);
+  };
 
   const filteredGraded = useMemo(() => {
     if (!data?.graded) return [];
@@ -149,6 +174,7 @@ function PropTracker() {
     setDateFrom(''); setDateTo(''); setMinHitPct('');
   };
 
+  if (hold) return <div className="gt-container"><MemberBoardStatus phase={phase} onRetry={retryLoad} className="gt-loading" /></div>;
   if (loading) return <div className="gt-container"><div className="gt-loading">Loading tracker data...</div></div>;
   if (!data) return <div className="gt-container"><div className="gt-loading">No grading data available.</div></div>;
 
@@ -157,6 +183,7 @@ function PropTracker() {
 
   return (
     <div className="gt-container">
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="gt-loading" />
       <header className="gt-header">
         <h1 className="gt-title">Model Results</h1>
         <span className="gt-subtitle">Automated prop grading &amp; analytics</span>
@@ -234,7 +261,7 @@ function PropTracker() {
                     <td className="gt-venue">{p.venue}</td>
                   </tr>
                 ))}
-                {pendingLocked > 0 && (
+                {showPaywall && pendingLocked > 0 && (
                   <tr className="gt-row gt-locked-row">
                     <td colSpan="10" className="gt-empty">
                       🔒 {pendingLocked} more pending {pendingLocked === 1 ? 'prop is' : 'props are'} locked. Upgrade to see today&apos;s full card.

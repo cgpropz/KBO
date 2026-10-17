@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
 import BoardStatus from './BoardStatus'
-import { useAuth } from './AuthContext'
-import { sportAccess } from './entitlements'
 import HitRateStrip from './HitRateStrip'
 import { kboHitPills } from './hitRateStrip'
 import { directionFor, scoreFor } from './kboBoardScore'
@@ -17,6 +15,9 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
+import { QuietMemberPreview } from './QuietMemberPreview'
+import { MemberBoardStatus } from './MemberBoardStatus'
+import { useMemberBoardPhase } from './useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from './useFullBoardRefresh'
 import { BoardLoadError } from './BoardLoadError'
 import { opponentLabel } from './cardMark'
@@ -223,12 +224,9 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const phone = usePhoneBoard()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [whyRevision, setWhyRevision] = useState(0)
-
-  const { tier } = useAuth()
-  // The server decides what is sent (full board vs. top-3 preview); lockedCount
-  // is how many rows it withheld. The client tier only drives UI chrome.
-  const isPaid = sportAccess(tier).kbo && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -246,6 +244,8 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         setSnapshot(props.data)
         setUpdatedAt(props.updatedAt || null)
         setLockedCount(previewLockedCount(props.preview === true, props.lockedCount))
+        setRefreshing(props.refreshing === true)
+        setMemberPreview(props.preview === true)
         setPhotos(playerPhotos.data || {})
         setError('')
       } catch (loadError) {
@@ -260,12 +260,18 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     return () => { active = false; window.clearInterval(refresh) }
   }, [loadAttempt])
 
-  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('prizepicks_props', (snapshot) => {
-    setSnapshot(snapshot.data)
-    setUpdatedAt(snapshot.updatedAt || null)
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('prizepicks_props', (next) => {
+    setSnapshot(next.data)
+    setUpdatedAt(next.updatedAt || null)
     setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
     setError('')
   })
+  const phase = useMemberBoardPhase('kbo', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const isPaid = phase === 'member'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -306,7 +312,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   }, [allRows, filters, propTab])
 
   const boardEmpty = !!snapshot && !allRows.length
-  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
@@ -331,17 +337,19 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       </nav>}
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
-        {!boardEmpty && <div className="kbo-header-actions"><span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
+        {!boardEmpty && !hold && <div className="kbo-header-actions"><span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
       </section>
-      {error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
-      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="kbo-notice" />
-      {!error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
-      {!error && !snapshot && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="kbo-notice" />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />
+      {!hold && error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
+      {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="kbo-notice" />}
+      {!hold && !error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
+      {!hold && !error && !snapshot && (
         <div role="status" aria-label="Loading KBO prop lines">
           <BoardSkeleton />
         </div>
       )}
-      {!!rows.length && (
+      {!hold && !!rows.length && (
         <BoardSurface
           phone={phone}
           wrapClass="kbo-lines-table-wrap"

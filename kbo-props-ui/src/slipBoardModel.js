@@ -47,7 +47,7 @@ function nflSlipRow(row) {
   return Object.hasOwn(NFL_LINE_FLOORS, stat)
 }
 
-// NFL uses the board floors (projection / max(line, floor) × 50). Other
+// NFL uses the board floors. Other
 // sports stay on the plain line. The More/Less side is still projection
 // versus the posted line, so a short yardage over does not flip to Less.
 export function slipCg(row) {

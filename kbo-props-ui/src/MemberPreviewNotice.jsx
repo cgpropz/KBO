@@ -1,14 +1,21 @@
 import './BoardLoadError.css'
+import { useAuth } from './AuthContext'
 
-// Shown when a paid member is still on the 3-row preview. Retry appears
-// only after the background refresh has used its retries.
-export function MemberPreviewNotice({ preview = false, exhausted, onRetry, className = 'nfl-notice' }) {
+// Shown when the board is still the free preview. Retry reloads the board
+// and runs the plan check again.
+export function MemberPreviewNotice({ preview = false, exhausted, retry = false, onRetry, className = 'nfl-notice' }) {
+  const { retryPlanCheck } = useAuth()
   if (!preview && !exhausted) return null
+  const showRetry = Boolean(exhausted || retry)
+  const run = () => {
+    if (typeof retryPlanCheck === 'function') retryPlanCheck()
+    if (typeof onRetry === 'function') onRetry()
+  }
   return (
     <div className={className}>
       Free preview
-      {exhausted && typeof onRetry === 'function' && (
-        <button type="button" className="board-retry" onClick={onRetry}>Retry</button>
+      {showRetry && (
+        <button type="button" className="board-retry" onClick={run}>Retry</button>
       )}
     </div>
   )

@@ -1,8 +1,5 @@
 import { cgScore, lineMatchesStat } from './cgScore.js'
 
-// CG Score on the KBO board is the model projection divided by the line,
-// times 50. 50 means the projection sits on the line. Below 50 is an under.
-//
 // `cg_projection` is a separate 1-100 confidence score. It is high for a
 // strong under, so using it as the CG Score ranks below-line picks at 86-95.
 // `avg` is the season mean. It is not a projection.

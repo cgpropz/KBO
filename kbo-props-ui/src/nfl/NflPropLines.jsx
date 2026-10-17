@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
-import { useAuth } from '../AuthContext'
-import { sportAccess } from '../entitlements'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
@@ -278,15 +279,13 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [whyId, setWhyId] = useState(null)
 
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
     ({ fresh = false } = {}) => fetchNflSharpOdds({ fresh }).then(({ records, preview }) => ({ records, preview })),
     { enabled: loaded },
   )
-
-  const { tier } = useAuth()
-  // Server-side gating: free users only receive the top rows (lockedCount = rows withheld).
-  const isPaid = sportAccess(tier).nfl && lockedCount === 0
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -294,7 +293,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(previewLockedCount(preview, locked)); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing: pendingRefresh }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(previewLockedCount(preview, locked)); setMemberPreview(preview === true); setRefreshing(pendingRefresh === true); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
     return () => { active = false }
   }, [loadAttempt])
 
@@ -302,10 +301,16 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
     setError('')
     setLoaded(true)
     reloadOdds()
   })
+  const phase = useMemberBoardPhase('nfl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const isPaid = phase === 'member'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -374,7 +379,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   const paintCount = usePhonePaintCount(phone, rows.length)
   const visibleRows = rows.slice(0, paintCount)
-  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
@@ -402,18 +407,20 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       <div className="nfl-board-header">
         <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
-          <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+          <span>{hold ? '' : `${rows.length}${showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by ${filters.sortBy}`}</span>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
-      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
-      {!error && !loaded && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
+      {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
+      {!hold && !error && !loaded && (
         <div role="status" aria-label="Loading NFL prop lines">
           <BoardSkeleton />
         </div>
       )}
-      {!error && loaded && !projections.length && !isPaid && lockedCount > 0 && (
+      {!hold && !error && loaded && !projections.length && showPaywall && lockedCount > 0 && (
         <div className="nfl-lines-lock-card">
           <div className="nfl-lines-lock-icon">🔒</div>
           <h3>Unlock the Full Board</h3>
@@ -421,9 +428,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <button onClick={onNavigatePricing}>View Plans</button>
         </div>
       )}
-      {!error && loaded && !projections.length && (isPaid || lockedCount <= 0) && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
-      {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
-      {!!rows.length && (
+      {!hold && !error && loaded && !projections.length && !showPaywall && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
+      {!hold && !error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
+      {!hold && !!rows.length && (
         <BoardSurface
           phone={phone}
           wrapClass="nfl-lines-table-wrap"

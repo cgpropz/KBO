@@ -64,7 +64,6 @@ export function teamColor(abbr) {
 }
 
 // ── PrizePicks Rating helpers ─────────────────────────────────────────────────
-// Formula: (projection / ppLine) * 50  →  50 = exactly on the line.
 // Yardage at 0.5 is an any-yards floor and is not a score.
 export function calcRating(proj, line, stat) {
   if (isYardageStat(stat) && Number(line) <= 0.5) return null

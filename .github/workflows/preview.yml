@@ -99,7 +99,10 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MEMBER_EMAIL: sev1-hub-preview@example.com
+          # One member per run. Concurrent previews share this workflow, and
+          # cleanup deletes the member. A shared address lets one job remove
+          # the account another job is still timing.
+          MEMBER_EMAIL: sev1-hub-preview-${{ github.run_id }}@example.com
 
       - name: Remove the proof member
         if: always()
@@ -108,7 +111,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MEMBER_EMAIL: sev1-hub-preview@example.com
+          MEMBER_EMAIL: sev1-hub-preview-${{ github.run_id }}@example.com
 
       - name: Save member hub proof
         if: always()

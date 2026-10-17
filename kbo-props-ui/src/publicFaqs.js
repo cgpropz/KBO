@@ -18,7 +18,7 @@ export function publicFaqs() {
     },
     {
       q: 'What is CG Score?',
-      a: 'CG Score compares our projection with the posted line. 50 means they match. Above 50, the projection is over the line. Below 50, it is under. It measures that gap. It is not a probability that the prop hits.',
+      a: 'CG Score is projection vs line, adjusted for matchup. It is not a probability that the prop hits.',
     },
     {
       q: 'Can I cancel anytime?',

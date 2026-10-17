@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
 import { nbaLogoUrl } from './nbaPropLines'
 import { opponentLabel } from '../cardMark'
@@ -44,6 +48,9 @@ export default function NbaEdge() {
   const lineType = 'standard'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [error, setError] = useState(null)
   const [propType, setPropType] = useState('All')
@@ -64,6 +71,8 @@ export default function NbaEdge() {
         if (cancelled) return
         setData(Array.isArray(snapshot?.data) ? snapshot.data : [])
         setUpdatedAt(snapshot?.updatedAt || null)
+        setRefreshing(snapshot?.refreshing === true)
+        setMemberPreview(snapshot?.preview === true)
       } catch (err) {
         if (!cancelled) {
           setData(null)
@@ -75,7 +84,24 @@ export default function NbaEdge() {
     }
     load()
     return () => { cancelled = true }
-  }, [lineType])
+  }, [lineType, loadAttempt])
+
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nba_projections_standard', (snapshot) => {
+    setData(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setRefreshing(false)
+    setMemberPreview(false)
+    setError(null)
+    setLoading(false)
+  })
+  const phase = useMemberBoardPhase('nba', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError(null)
+    setLoading(true)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const propTypes = useMemo(() => {
     if (!data) return ['All']
@@ -261,13 +287,15 @@ export default function NbaEdge() {
         </span>
       </div>
 
-      {error && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && (
         <div style={{ padding: '32px', textAlign: 'center', color: '#ef4444', background: '#1a0a0a', borderRadius: 12, border: '1px solid #3f1a1a' }}>
           NBA lines snapshot unavailable. Run <code style={{ color: '#f97316' }}>python nba/nba-pp-odds.py</code> to write the board.
         </div>
       )}
 
-      {viewMode === 'table' ? (
+      {!hold && (viewMode === 'table' ? (
         <div className="card" style={{ overflow: 'auto' }}>
           <table className="data-table">
             <thead>
@@ -372,7 +400,7 @@ export default function NbaEdge() {
             </div>
           )}
         </div>
-      )}
+      ))}
     </div>
   )
 }

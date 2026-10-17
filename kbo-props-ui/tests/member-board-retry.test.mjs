@@ -192,7 +192,9 @@ test('an open-hook retry fits after an 8s miss and a slow answer is kept', async
 test('an error tile shows a retry instead of staying on Loading', () => {
   assert.match(hubSource, /className="hub-retry"/);
   assert.match(hubSource, /Couldn\\'t load · Retry/);
-  assert.match(hubSource, /retrySport\(sport\.id\)/);
+  assert.match(hubSource, /retryHub\(sport\.id\)/);
+  assert.match(hubSource, /retrySport\(id\)/);
+  assert.match(hubSource, /retryPlanCheck\(\)/);
   assert.match(hubSource, /Couldn\\'t load your member board/);
   assert.match(hubSource, /boundedAccessToken\(\{ fresh: true \}\)/);
   assert.match(hubSource, /beginHubLoad\(/);

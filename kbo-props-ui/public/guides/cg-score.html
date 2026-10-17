@@ -4,22 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>How CG Score Works: Projection vs Line | CGPropz</title>
-  <meta name="description" content="CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+." />
+  <meta name="description" content="CG Score ranks every prop by how strongly the model projection disagrees with the line. Higher score means a bigger model edge. 21+." />
   <link rel="canonical" href="https://www.cgpropz.com/guides/cg-score" />
   <meta name="theme-color" content="#050506" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="CGPropz" />
   <meta property="og:url" content="https://www.cgpropz.com/guides/cg-score" />
   <meta property="og:title" content="How CG Score Works: Projection vs Line | CGPropz" />
-  <meta property="og:description" content="CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+." />
+  <meta property="og:description" content="CG Score ranks every prop by how strongly the model projection disagrees with the line. Higher score means a bigger model edge. 21+." />
   <meta property="og:image" content="https://www.cgpropz.com/images/how-cg-score-works-featured.png" />
-  <meta property="og:image:alt" content="How CG Score works: 50 means the projection equals the line." />
+  <meta property="og:image:alt" content="How CG Score works: a higher score is a bigger model edge." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="How CG Score Works: Projection vs Line | CGPropz" />
-  <meta name="twitter:description" content="CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+." />
+  <meta name="twitter:description" content="CG Score ranks every prop by how strongly the model projection disagrees with the line. Higher score means a bigger model edge. 21+." />
   <meta name="twitter:image" content="https://www.cgpropz.com/images/how-cg-score-works-featured.png" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"How CG Score Works","item":"https://www.cgpropz.com/guides/cg-score"}]},{"@type":"Article","headline":"How CG Score Works","description":"CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+.","datePublished":"2026-10-11T13:10:00-04:00","dateModified":"2026-10-11T13:10:00-04:00","author":{"@type":"Organization","name":"CGPropz","url":"https://www.cgpropz.com/"},"publisher":{"@id":"https://www.cgpropz.com/#organization"},"mainEntityOfPage":"https://www.cgpropz.com/guides/cg-score"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is CG Score?","acceptedAnswer":{"@type":"Answer","text":"A number that shows how far the CGPropz projection sits from a prop's line. On NHL, 50 means they're equal; on WNBA and NFL, the same holds when the line is at or above that stat's minimum. Above 50 the projection is over, below 50 it's under. KBO may show a stored score on a different basis."}},{"@type":"Question","name":"How is CG Score calculated?","acceptedAnswer":{"@type":"Answer","text":"Projection divided by line, multiplied by 50. WNBA and NFL use a minimum line for each stat when the posted line is lower, and KBO shows its stored score when one exists. See the by-sport table."}},{"@type":"Question","name":"Is a higher CG Score more likely to hit?","acceptedAnswer":{"@type":"Answer","text":"Not necessarily. The score measures the gap between projection and line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news."}},{"@type":"Question","name":"What does a CG Score below 50 mean?","acceptedAnswer":{"@type":"Answer","text":"The projection is under the line. The further below 50, the further under the line the model projects the player."}},{"@type":"Question","name":"Is CG Score the same for every sport?","acceptedAnswer":{"@type":"Answer","text":"Not exactly. The core is projection compared with the line, but WNBA and NFL apply a minimum line per stat, and KBO shows a stored score when one exists. Check the by-sport section of this guide."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}}]}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"How CG Score Works","item":"https://www.cgpropz.com/guides/cg-score"}]},{"@type":"Article","headline":"How CG Score Works","description":"CG Score ranks every prop by how strongly the model projection disagrees with the line. Higher score means a bigger model edge. 21+.","datePublished":"2026-10-11T13:10:00-04:00","dateModified":"2026-10-11T13:10:00-04:00","author":{"@type":"Organization","name":"CGPropz","url":"https://www.cgpropz.com/"},"publisher":{"@id":"https://www.cgpropz.com/#organization"},"mainEntityOfPage":"https://www.cgpropz.com/guides/cg-score"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is CG Score?","acceptedAnswer":{"@type":"Answer","text":"CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee."}},{"@type":"Question","name":"How is CG Score calculated?","acceptedAnswer":{"@type":"Answer","text":"CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only."}},{"@type":"Question","name":"Is a higher CG Score more likely to hit?","acceptedAnswer":{"@type":"Answer","text":"Not necessarily. The score measures how strongly the projection disagrees with the line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news."}},{"@type":"Question","name":"What does a lower CG Score mean?","acceptedAnswer":{"@type":"Answer","text":"A lower score is the under side of the projection vs the line, adjusted for matchup. A+ through C grades are based on the score. It's a ranking tool, not a guarantee."}},{"@type":"Question","name":"Is CG Score the same for every sport?","acceptedAnswer":{"@type":"Answer","text":"No. It is tuned by sport. It is still projection vs line, adjusted for matchup."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -94,7 +94,7 @@
     </header>
     <main>
       <h1>How CG Score Works</h1>
-<p>Every prop on a CGPropz board has a CG Score. It answers one question: <strong>how far does our projection sit from the line?</strong> This guide explains how the score is built, how to read it, and what it can't tell you.</p>
+<p>Every prop on a CGPropz board has a CG Score. It ranks that prop against the rest of the board, adjusted for the matchup and recent form. This guide explains how to read the score, and what it can't tell you.</p>
 <h2>What CG Score measures</h2>
 <p>A player prop has two numbers that matter here:</p>
 <ul>
@@ -103,71 +103,19 @@
 </ul>
 <p>CG Score puts those two numbers on one scale, so you can compare props across different stats and players at a glance.</p>
 <h2>How the score is calculated</h2>
-<p>The core method, used across the CGPropz boards, is:</p>
-<blockquote><p><strong>CG Score = (projection ÷ line) × 50</strong></p></blockquote>
-<figure><img src="/images/how-cg-score-diagram.png" alt="CG Score diagram: 50 means the projection equals the line. Above 50 the projection is over the line, and below 50 it is under the line." /></figure>
-<p>That puts the midpoint at 50:</p>
-<div class="table-scroll">
-<table>
-<thead><tr><th>CG Score</th><th>What it means</th></tr></thead>
-<tbody>
-<tr><td><strong>50</strong></td><td>The projection equals the line. On NHL this always holds. On WNBA and NFL it holds when the line is at or above that stat's minimum (see below).</td></tr>
-<tr><td><strong>Above 50</strong></td><td>The projection is over the line. The higher the score, the further over.</td></tr>
-<tr><td><strong>Below 50</strong></td><td>The projection is under the line. The lower the score, the further under.</td></tr>
-</tbody>
-</table>
-</div>
-<p><strong>Illustrative example (not a real prop):</strong> if the projection is 6.0 and the line is 5.0, the score is 6.0 ÷ 5.0 × 50 = 60. If the projection is 4.0 against the same line, the score is 40.</p>
-<p>Because the score is a ratio, the same gap means more on a small line than on a big one. A projection half a point over a low line produces a bigger score than half a point over a high line.</p>
-<h3>By sport</h3>
-<div class="table-scroll">
-<table>
-<thead><tr><th>Sport</th><th>Formula on the board</th></tr></thead>
-<tbody>
-<tr><td>NHL</td><td>Projection ÷ line × 50</td></tr>
-<tr><td>WNBA</td><td>Projection ÷ the larger of the prop's own line or a minimum line for that stat, × 50. Demon and goblin lines are scored against their own line. &quot;Points, first 3 minutes&quot; props are left off the board.</td></tr>
-<tr><td>NFL</td><td>Projection ÷ the larger of the line or a minimum line for that prop type, × 50.</td></tr>
-<tr><td>KBO</td><td>The stored KBO score when one exists. Otherwise, projection (or season average when there's no projection) ÷ line × 50.</td></tr>
-</tbody>
-</table>
-</div>
-<p><strong>All sports:</strong> yardage lines of 0.5 or lower are not scored.</p>
-<p><strong>WNBA minimum lines.</strong> Each WNBA stat has a minimum line, from 0.5 for low-count stats such as blocked shots and offensive rebounds up to 33 for minutes. A few common ones: points 4.5, rebounds 3.5, assists 1.5, points + rebounds + assists 10.5, three-pointers made 1.5. If a prop's line is below its stat's minimum, the minimum is used instead.</p>
-<p><strong>NFL minimum lines.</strong> If the posted line is below the minimum for its prop type, the minimum is used instead:</p>
-<div class="table-scroll">
-<table>
-<thead><tr><th>Prop type</th><th>Minimum line</th></tr></thead>
-<tbody>
-<tr><td>Pass attempts</td><td>28.5</td></tr>
-<tr><td>Pass completions</td><td>18</td></tr>
-<tr><td>Pass TDs</td><td>1</td></tr>
-<tr><td>Pass yards</td><td>186.5</td></tr>
-<tr><td>Pass + rush yards</td><td>210.5</td></tr>
-<tr><td>Targets</td><td>2</td></tr>
-<tr><td>Receiving yards</td><td>5.5</td></tr>
-<tr><td>Receptions</td><td>1.5</td></tr>
-<tr><td>Rush attempts</td><td>2.5</td></tr>
-<tr><td>Rush yards</td><td>5.5</td></tr>
-<tr><td>Rush + rec yards</td><td>30.5</td></tr>
-</tbody>
-</table>
-</div>
-<p>This keeps a tiny line from producing an extreme score. It also means that on WNBA and NFL, when the line is below the minimum, a score of 50 means the projection equals the minimum, not the posted line.</p>
-<p><strong>KBO is different.</strong> When a KBO prop has a stored score, the board shows that score instead of the plain ratio. On KBO, don't assume 50 means the projection equals the line until that's confirmed.</p>
-<p><strong>How the free top 3 is chosen.</strong> On NHL and WNBA, the free top 3 is the top three props on the full board by the formulas above. KBO's free top 3 is chosen on the server and does not follow the site formula. NFL has no free top 3 right now.</p>
-<p><strong>Demon and goblin lines.</strong> The NHL and WNBA boards show demon and goblin lines alongside standard lines, each with its own score.</p>
-<p><strong>Which side.</strong> The board treats a prop as an over when the projection is at or above the line, and an under when it's below.</p>
+<p>CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.</p>
+<figure><img src="/images/how-cg-score-diagram.png" alt="CG Score ranks every prop by how strongly the model projection disagrees with the line." /></figure>
 <h2>How to read CG Score on the board</h2>
 <ul>
 <li><strong>Use it to sort, then dig in.</strong> The score helps you find props where the projection and the line disagree the most. Open the player card to see why.</li>
-<li><strong>Check the side.</strong> A score well above 50 points to the over; well below 50 points to the under. Close to 50 means the model and the line roughly agree.</li>
+<li><strong>Check the side.</strong> A higher score is a bigger model edge. Open the card to see whether the model is on the over or the under.</li>
 <li><strong>Pair it with hit rates.</strong> The board also shows how often the player cleared today's line over the last ten games, this season and against today's opponent. Always read those with their sample size.</li>
 <li><strong>Check the news.</strong> The projection is built before late news. If a player's role changes because of injuries, rest or lineup moves, the score may not reflect it yet.</li>
-<li><strong>Watch for odd lines.</strong> A very low line can make a modest projection look like a huge score. If a score looks extreme, check the line and the stat before acting on it.</li>
+<li><strong>Check an extreme score.</strong> If a score looks out of place, open the player card and check the latest news before you act on it.</li>
 </ul>
 <h2>What CG Score does not tell you</h2>
 <ul>
-<li><strong>It is not a probability.</strong> A score of 70 does not mean a 70% chance. It describes the gap between projection and line, nothing more.</li>
+<li><strong>It is not a probability.</strong> The score ranks the gap between the projection and the line. It does not state the chance of a hit.</li>
 <li><strong>A higher score does not mean a higher chance of hitting.</strong> We're not claiming that bigger scores win more often. A large gap can come from a real edge, a stale line, or missing information.</li>
 <li><strong>It does not include the payout.</strong> Pick'em entries need a certain share of correct picks to break even, and that depends on the entry type. CG Score doesn't account for it.</li>
 <li><strong>It does not include variance.</strong> Two props with the same score can carry very different risk depending on the stat and the player's role.</li>
@@ -184,15 +132,15 @@
 <h3><a href="https://www.cgpropz.com/pricing">Get the full All-Access board →</a></h3>
 <h2>FAQ</h2>
 <h3>What is CG Score?</h3>
-<p>A number that shows how far the CGPropz projection sits from a prop's line. On NHL, 50 means they're equal; on WNBA and NFL, the same holds when the line is at or above that stat's minimum. Above 50 the projection is over, below 50 it's under. KBO may show a stored score on a different basis.</p>
+<p>CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee.</p>
 <h3>How is CG Score calculated?</h3>
-<p>Projection divided by line, multiplied by 50. WNBA and NFL use a minimum line for each stat when the posted line is lower, and KBO shows its stored score when one exists. See the by-sport table.</p>
+<p>CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.</p>
 <h3>Is a higher CG Score more likely to hit?</h3>
-<p>Not necessarily. The score measures the gap between projection and line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news.</p>
-<h3>What does a CG Score below 50 mean?</h3>
-<p>The projection is under the line. The further below 50, the further under the line the model projects the player.</p>
+<p>Not necessarily. The score measures how strongly the projection disagrees with the line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news.</p>
+<h3>What does a lower CG Score mean?</h3>
+<p>A lower score is the under side of the projection vs the line, adjusted for matchup. A+ through C grades are based on the score. It's a ranking tool, not a guarantee.</p>
 <h3>Is CG Score the same for every sport?</h3>
-<p>Not exactly. The core is projection compared with the line, but WNBA and NFL apply a minimum line per stat, and KBO shows a stored score when one exists. Check the by-sport section of this guide.</p>
+<p>No. It is tuned by sport. It is still projection vs line, adjusted for matchup.</p>
 <h3>Is CGPropz affiliated with PrizePicks or Underdog?</h3>
 <p>No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog.</p>
 <hr />

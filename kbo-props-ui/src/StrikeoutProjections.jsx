@@ -10,6 +10,10 @@ import { BoardLoadError } from './BoardLoadError';
 import { opponentLabel } from './cardMark';
 import { CardTeamLogo } from './CardTeamLogo';
 import { kboLogoUrl } from './slipBoardModel.js';
+import { MemberBoardStatus } from './MemberBoardStatus';
+import { QuietMemberPreview } from './QuietMemberPreview';
+import { useMemberBoardPhase } from './useMemberBoardPhase';
+import { useFullBoardRefresh } from './useFullBoardRefresh';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -81,6 +85,8 @@ function StrikeoutProjections({ onNavigate }) {
   const [photos, setPhotos] = useState({});
   const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [memberPreview, setMemberPreview] = useState(false);
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedProp, setSelectedProp] = useState('all');
@@ -135,6 +141,8 @@ function StrikeoutProjections({ onNavigate }) {
         if (cancelled) return;
         setData(kSnap?.data || null);
         setUpdatedAt(kSnap?.updatedAt || null);
+        setRefreshing(kSnap?.refreshing === true);
+        setMemberPreview(kSnap?.preview === true);
         setMatchupData(mData);
         setOpponentStatsData(oppData);
         setPrizepicksData(ppData);
@@ -157,7 +165,19 @@ function StrikeoutProjections({ onNavigate }) {
     };
   }, [loadAttempt]);
 
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('strikeout_projections', (snapshot) => {
+    setData(snapshot?.data || null);
+    setUpdatedAt(snapshot?.updatedAt || null);
+    setRefreshing(false);
+    setMemberPreview(false);
+    setError(null);
+    setLoading(false);
+  });
+  const phase = useMemberBoardPhase('kbo', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted });
+  const hold = phase === 'loading' || phase === 'exhausted';
+
   const retryLoad = () => {
+    clearRefreshExhausted();
     setError(null);
     setLoading(true);
     setLoadAttempt((current) => current + 1);
@@ -251,6 +271,15 @@ function StrikeoutProjections({ onNavigate }) {
     .map((part) => part[0]?.toUpperCase() || '')
     .join('') || '?';
 
+  if (hold) {
+    return (
+      <div className="so-container">
+        <div className="so-loading">
+          <MemberBoardStatus phase={phase} onRetry={retryLoad} className="so-error" />
+        </div>
+      </div>
+    );
+  }
   if (loading) {
     return (
       <div className="so-container">
@@ -574,6 +603,7 @@ function StrikeoutProjections({ onNavigate }) {
 
   return (
     <div className="so-container so-k-page">
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="so-error" />
       <header className="so-header">
         <div className="so-header-inner">
           <div>

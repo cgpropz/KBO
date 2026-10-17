@@ -1,7 +1,6 @@
 <!--
 DRAFT, NOT FOR PUBLISH. Requested by COO bot; Code Green approval required; Git bot publishes.
 No stats on this page. The board-row example uses made-up numbers and is labeled as such.
-CG Score per-sport formulas: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (re-verified vs site JS index-B876gw9W.js, 2026-10-11 2:25 PM ET). NBA not covered: {{CONFIRM WITH BOARD QA}}.
 File path for Git bot: content/guides/start-here.md, served at /guides/start-here, with /start-here redirect.
 PrizePicks descriptions are paraphrased from PrizePicks' own pages (see SOURCES). No payout multipliers are included on purpose.
 -->
@@ -40,7 +39,7 @@ New to player props? This page gets you from zero to your first informed pick in
 
 **Minute 3 to 5: Check the context.** Open the player card. Look at the game log, the matchup (defense vs. position), and how many games the hit rates are based on. Check the latest injury and lineup news for both teams.
 
-**Minute 5 to 7: Compare the line.** Open your pick'em app and find the same player and stat. Is the line the same as on the board? If it moved, the CG Score on the board no longer matches what you'd be picking. Recalculate or skip it.
+**Minute 5 to 7: Compare the line.** Open your pick'em app and find the same player and stat. Is the line the same as on the board? If it moved, the CG Score on the board no longer matches the line you'd be picking. Skip it, or wait until the board matches the line in your app.
 
 **Minute 7 to 9: Decide the size before the pick.** Set a budget for the day first. Start small while you learn. Choose a lineup type you understand (see Power vs Flex below).
 
@@ -54,13 +53,13 @@ Passing is a valid outcome. If the line moved, the news changed, or the sample i
 
 | Player | Stat | Line | Side | Projection | CG Score | L5 | L10 | Season | DVP |
 |---|---|---|---|---|---|---|---|---|---|
-| Sample Player (Team A) | Points | 18.5 | Over | 21.0 | 56.8 | 3 of 5 | 6 of 10 | 20 of 34 | Soft matchup |
+| Sample Player (Team A) | Points | 18.5 | Over | 21.0 | A+ | 3 of 5 | 6 of 10 | 20 of 34 | Soft matchup |
 
 What each column tells you:
 - **Line (18.5):** the number posted by the pick'em app or sportsbook.
 - **Side (Over):** the direction the model leans, because the projection is above the line.
 - **Projection (21.0):** what the CGPropz model expects the player to score.
-- **CG Score (56.8):** projection ÷ line × 50, so 21.0 ÷ 18.5 × 50. Above 50 means the projection is over the line.
+- **CG Score (A+):** how strongly the model's projection disagrees with the line. Higher means a bigger model edge. The next section explains it.
 - **L5 / L10 / Season:** how many games in each window the player cleared 18.5. Read the count, not only the percentage.
 - **DVP:** how the opponent has defended this position, as context for the matchup.
 
@@ -68,30 +67,11 @@ How to read it: the model sits a little over the line. Recent form is mixed, and
 
 ## What CG Score is (and isn't)
 
-CG Score shows **how far the CGPropz projection sits from the line**. The core method is:
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
-> **CG Score = (projection ÷ line) × 50**
-
-- **50:** projection equals the line. That always holds on NHL; on WNBA and NFL it holds when the line is at or above the stat's minimum. KBO may show a stored score on a different basis.
-- **Above 50:** projection is over the line. Further above means a bigger gap.
-- **Below 50:** projection is under the line. Further below means a bigger gap.
-
-How it varies by sport:
-- **NHL:** projection ÷ line × 50.
-- **WNBA:** projection ÷ the larger of the prop's own line or a minimum line for that stat, × 50. Minimums keep very low lines from producing extreme scores (points, for example, uses 4.5).
-- **NFL:** projection ÷ the larger of the line or a minimum line for that prop type, × 50.
-- **All sports:** yardage lines of 0.5 or lower aren't scored.
-- **KBO:** the stored KBO score when one exists, otherwise projection (or season average) ÷ line × 50. {{CONFIRM WITH BOARD QA: what KBO's stored score measures and its scale}}
-- **NBA:** {{CONFIRM WITH BOARD QA}}
-
-On WNBA and NFL, when a line is below its minimum, a score of 50 means the projection equals the minimum, not the line. Full minimum lists are in the [CG Score guide](/guides/cg-score) {{URL PENDING GIT BOT}}.
-
-**About the free top 3:** on NHL and WNBA it's the top three props on the full board by CG Score. KBO's free top 3 is chosen on the server and does not follow the site formula. NFL has no free top 3 right now.
+**About the free top 3:** on NHL and WNBA it's the top three props on the full board by CG Score. KBO's free top 3 is chosen on the server. NFL has no free top 3 right now.
 
 The board treats a prop as an over when the projection is at or above the line.
-<!-- CG Score per-sport formula source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (section 'CG Score', site JS /assets/index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET after PR #112) -->
-
-**What it doesn't mean:** CG Score is not a win probability, and a higher score does not mean a prop is more likely to hit. It tells you where the model and the line disagree most. Your job is to find out why. A very small line can also make a modest projection look like a huge score, so double-check extreme values.
 
 [Full guide: How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
 
@@ -156,7 +136,7 @@ The free top 3 on the homepage shows three props a day in each sport with a free
 
 - **All-Access:** CGPropz's paid plan with every sport's full board.
 - **Board:** the list of today's props for a sport, with projections, scores and hit rates.
-- **CG Score:** how far the CGPropz projection sits from the line. Core method: projection ÷ line × 50, with per-sport adjustments (see above). 50 means they're equal on NHL, and on WNBA and NFL when the line is at or above the stat's minimum. KBO may show a stored score on a different basis.
+- **CG Score:** CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 - **Demon:** on PrizePicks, a harder projection (red icon) with a higher potential payout.
 - **DNP:** "did not play." Picks on players who don't play are handled under each app's rules.
 - **DVP (defense vs. position):** how an opponent has defended a given position, used as matchup context.
@@ -194,7 +174,7 @@ A goblin (green icon) is an easier projection with a lower payout. A demon (red 
 In a Power Play every pick must be correct, and the payout is higher. A Flex Play can still pay out with one or two misses, with a lower top payout. Check the exact payout on your lineup screen before you submit.
 
 **Does a higher CG Score mean a pick is more likely to hit?**
-No. CG Score shows how far the projection sits from the line. It is not a probability. Use it to find props worth a closer look.
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
 **Is CGPropz affiliated with PrizePicks or Underdog?**
 No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog.
@@ -228,7 +208,7 @@ No. CGPropz is an independent data and analysis site and is not affiliated with 
     {
       "@type": "Question",
       "name": "Does a higher CG Score mean a pick is more likely to hit?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. CG Score shows how far the projection sits from the line. It is not a probability. Use it to find props worth a closer look." }
+      "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." }
     },
     {
       "@type": "Question",
@@ -261,8 +241,8 @@ SOURCES / NOTES (accessed Sun Oct 11, 2026)
   https://www.prizepicks.com/playbook-article/2-pick-flex-plays-on-prizepicks-hit-one-pick-get-paid
 - PAYOUT MULTIPLIERS DELIBERATELY OMITTED: PrizePicks' own "Potential Outcomes" help page lists two different 6-pick Power values in different sections (37.5x vs 25x). Figures are not stable enough to publish; link to PrizePicks instead.
 - Rithmm Starter Guide (https://www.rithmm.com/post/rithmm-starter-guide): viewed once via search snippet for STRUCTURE ONLY (sport tour, quick links, props, tracking). No text copied.
-- CG Score per sport + side rule: Board QA README /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md (re-verified vs site JS index-B876gw9W.js, 2026-10-11 2:25 PM ET). NBA not in README. NHL/WNBA free top 3 = top 3 of full board (verified); KBO free top 3 chosen server-side, not the site formula (verified); NFL no free top 3. Demon/goblin lines on NHL and WNBA boards verified by Board QA (Oct 11, 2:27 PM ET); NFL/KBO unconfirmed.
+- Free top 3: NHL and WNBA use the top three on the full board; KBO is chosen on the server; NFL has none. Demon and goblin lines appear on the NHL and WNBA boards.
 - Links per Git bot rules (Oct 11): /#free-top-3 (homepage section, pending); highest hit rate = sport boards sorted by L10 pill; no /free-top-3 or /highest-hit-rate-today pages.
   Caution against "higher score hits more" informed by /workspace/shared/lab/cg_score_check/results.md (no numbers used).
-- Board-row example: all values invented for illustration; 21.0/18.5*50 = 56.8 (arithmetic check).
+- Board-row example: all values invented for illustration. The score cell is a grade, not a calculated example.
 -->

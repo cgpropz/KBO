@@ -3,6 +3,9 @@ import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
@@ -160,6 +163,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
     rememberBoardSort('nhl', value)
   }
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [openId, setOpenId] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
@@ -169,10 +174,12 @@ export default function NhlPropLines({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt }) => {
+      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt, refreshing: pendingRefresh }) => {
         if (!active) return
         setProjections(next)
         setLockedCount(previewLockedCount(preview, locked))
+        setMemberPreview(preview === true)
+        setRefreshing(pendingRefresh === true)
         setUpdatedAt(publishedAt || null)
         setError('')
         setLoaded(true)
@@ -184,11 +191,16 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nhl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
     setUpdatedAt(snapshot.updatedAt || null)
     setError('')
     setLoaded(true)
     reloadOdds()
   })
+  const phase = useMemberBoardPhase('nhl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -213,21 +225,23 @@ export default function NhlPropLines({ onSelectPlayer }) {
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
-          <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
+          <span>{hold ? 'lines' : `${rows.length}${showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines`}</span>
           <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </div>
       </div>
-      {error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}
-      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
-      {!error && !loaded && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}
+      {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
+      {!hold && !error && !loaded && (
         <div role="status" aria-label="Loading NHL prop lines">
           <BoardSkeleton />
         </div>
       )}
-      {!error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
-      {!!rows.length && (
+      {!hold && !error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
+      {!hold && !!rows.length && (
         <BoardSurface
           phone={phone}
           wrapClass="nfl-lines-table-wrap"
@@ -253,7 +267,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
           })}
         </BoardSurface>
       )}
-      {lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more lines are locked.</div>}
+      {showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more lines are locked.</div>}
     </section>
   )
 }

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { QuietMemberPreview } from '../QuietMemberPreview'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
@@ -281,6 +285,9 @@ export default function NflSharpOdds({ onSelectPlayer }) {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [memberPreview, setMemberPreview] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [matchup, setMatchup] = useState(ALL_MATCHUPS)
   const [prop, setProp] = useState('All')
@@ -298,12 +305,14 @@ export default function NflSharpOdds({ onSelectPlayer }) {
     let active = true
     const load = () => {
       fetchNflSharpOdds()
-        .then(({ payload: nextPayload, records: nextRecords, preview, lockedCount: locked }) => {
+        .then(({ payload: nextPayload, records: nextRecords, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
           if (!active) return
           loadedRef.current = true
           setPayload(nextPayload)
           setRecords(nextRecords)
           setLockedCount(preview ? locked : 0)
+          setMemberPreview(preview === true)
+          setRefreshing(pendingRefresh === true)
           setError('')
           setLoaded(true)
         })
@@ -325,7 +334,30 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       window.clearInterval(refresh)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [])
+  }, [loadAttempt])
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nfl_sharp_odds', (snapshot) => {
+    const nextPayload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+      ? snapshot.data
+      : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+    loadedRef.current = true
+    setPayload(nextPayload)
+    setRecords(Array.isArray(nextPayload.records) ? nextPayload.records : [])
+    setLockedCount(0)
+    setRefreshing(false)
+    setMemberPreview(false)
+    setError('')
+    setLoaded(true)
+  })
+  const phase = useMemberBoardPhase('nfl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    loadedRef.current = false
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const baseline = BASELINES[mode] || BASELINES.flex
 
@@ -430,13 +462,15 @@ export default function NflSharpOdds({ onSelectPlayer }) {
           Only +EV vs PP
         </label>
       </section>
-      {error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
-      {showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
-      {!error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
-      {!error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} lines are locked. Upgrade to see the full board.`}</div>}
-      {!!rows.length && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
+      {!hold && error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
+      {!hold && !error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
+      {!hold && showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
+      {!hold && !error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
+      {!hold && !error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} lines are locked. Upgrade to see the full board.`}</div>}
+      {!hold && !!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className={`nfl-lines-table nfl-sharp-table${showCg ? ' has-cg' : ''}`}>
             <thead>
