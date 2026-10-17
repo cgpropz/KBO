@@ -58,19 +58,13 @@ The Wild Card works differently from the other rounds. LG, the fourth seed, adva
 
 The live KBO board in the app lines a model number up with the posted prop. The free preview shows three lines. The rest of that live board is All-Access, and those rows are not printed here. Graded results for days already in the archive are listed below, including misses.
 
-**How the KBO free top 3 is picked:** KBO's free picks are chosen on the server. They do not follow the site's CG Score formula, so they aren't simply the top three CG Scores on the board.
+**How the KBO free top 3 is picked:** KBO's free picks are chosen on the server. They aren't simply the top three CG Scores on the board.
 
 ## What CG Score means on KBO
 
-CG Score compares the CGPropz projection with the posted line. KBO works a little differently from the other sports:
-- When a KBO prop has a **stored KBO score**, the board shows that score.
-- When it doesn't, the score is the projection (or the player's season average if there's no projection) divided by the line, times 50. On that basis, 50 means the projection equals the line.
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
-{{CONFIRM WITH BOARD QA: what KBO's stored score measures and its scale}}. Until that's confirmed, don't read 50 on a stored KBO score as "projection equals line."
-
-The score is not a probability, and a higher score is not a claim that the prop hits more often. [How CG Score works](/guides/cg-score) is the full guide.
-
-<!-- Source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md, CG Score section (site JS index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET): "KBO: stored cg_projection or rating, else (projection or season avg) / line * 50"; "KBO selection server-side, free_top3 = null". Yardage rule (lines <= 0.5 unscored) does not affect KBO stats. -->
+[How CG Score works](/guides/cg-score) is the full guide.
 
 ## Recent full-board results
 
@@ -121,7 +115,7 @@ Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM
 In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order.
 
 **What does CG Score mean on KBO?**
-When a KBO prop has a stored KBO score, the board shows it. Otherwise it's the projection divided by the line, times 50. A higher score is not a probability or a claim that the prop hits more often.
+CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
 
 **What is a full-board result?**
 Every prop the model graded that day, including hits, misses, pushes and DNPs. It is the whole graded board for that date, not a short list of winners.
@@ -143,7 +137,7 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
     { "@type": "Question", "name": "Are there KBO player props during the playoffs?", "acceptedAnswer": { "@type": "Answer", "text": "The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. When lines are posted, the KBO board covers them, and the free top 3 appears on the homepage." } },
     { "@type": "Question", "name": "What time do KBO playoff games start in ET?", "acceptedAnswer": { "@type": "Answer", "text": "Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET." } },
     { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order." } },
-    { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "When a KBO prop has a stored KBO score, the board shows it. Otherwise it's the projection divided by the line, times 50. A higher score is not a probability or a claim that the prop hits more often." } },
+    { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." } },
     { "@type": "Question", "name": "What is a full-board result?", "acceptedAnswer": { "@type": "Answer", "text": "Every prop the model graded that day, including hits, misses, pushes and DNPs. It is the whole graded board for that date, not a short list of winners." } },
     { "@type": "Question", "name": "What time zone are the results dates?", "acceptedAnswer": { "@type": "Answer", "text": "Korea (KST) game dates, not US Eastern Time." } },
     { "@type": "Question", "name": "Where is pricing?", "acceptedAnswer": { "@type": "Answer", "text": "All-Access plans are on the pricing page." } },
