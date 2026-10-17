@@ -15,6 +15,9 @@ import {
   tierForPrice,
 } from '../api/_stripeTier.js'
 import { devTierOverride, landingSportOpens, nhlDevBypass, sportAccess as clientAccess } from '../src/entitlements.js'
+import { bearerFor, installJwtSecret } from './access-token.mjs'
+
+installJwtSecret()
 
 const ALL_ACCESS_PRICE_IDS = {
   'price_1TtFErPwL0k9PEMvIrEJajK1': 'weekly',
@@ -186,7 +189,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
   for (const token of ['tok-owner', 'tok-fan', 'tok-member', 'tok-weekly', 'tok-monthly']) {
     const res = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${token}` } },
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${bearerFor(token)}` } },
       res,
       client,
     )
@@ -200,7 +203,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
   for (const token of ['tok-discord', 'tok-kbo', 'tok-nope']) {
     const preview = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${token}` } },
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: `Bearer ${bearerFor(token)}` } },
       preview,
       client,
     )
@@ -224,7 +227,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
   for (const token of ['tok-owner', 'tok-fan', 'tok-weekly', 'tok-monthly']) {
     const open = mockRes()
     await handleNhlAccessRequest(
-      { method: 'GET', headers: { authorization: `Bearer ${token}` } },
+      { method: 'GET', headers: { authorization: `Bearer ${bearerFor(token)}` } },
       open,
       client,
     )
@@ -234,7 +237,7 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
   for (const token of ['tok-discord', 'tok-kbo']) {
     const closed = mockRes()
     await handleNhlAccessRequest(
-      { method: 'GET', headers: { authorization: `Bearer ${token}` } },
+      { method: 'GET', headers: { authorization: `Bearer ${bearerFor(token)}` } },
       closed,
       client,
     )
@@ -250,7 +253,7 @@ test('NHL defense vs position follows the same All-Access gate', async () => {
   const client = mockClient()
   const res = mockRes()
   await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-fan' } },
+    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: `Bearer ${bearerFor('tok-fan')}` } },
     res,
     client,
   )
@@ -261,7 +264,7 @@ test('NHL defense vs position follows the same All-Access gate', async () => {
 
   const discord = mockRes()
   await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: 'Bearer tok-discord' } },
+    { method: 'GET', query: { ds: 'nhl_dvp_f' }, headers: { authorization: `Bearer ${bearerFor('tok-discord')}` } },
     discord,
     client,
   )
@@ -279,7 +282,7 @@ test('NHL defense vs position follows the same All-Access gate', async () => {
 
   const missing = mockRes()
   await handleDataRequest(
-    { method: 'GET', query: { ds: 'nhl_dvp_g' }, headers: { authorization: 'Bearer tok-owner' } },
+    { method: 'GET', query: { ds: 'nhl_dvp_g' }, headers: { authorization: `Bearer ${bearerFor('tok-owner')}` } },
     missing,
     client,
   )

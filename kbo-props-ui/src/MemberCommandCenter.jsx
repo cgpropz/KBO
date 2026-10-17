@@ -219,52 +219,70 @@ function useBoards(access, nbaOpen, selectedId) {
   const [lineups, setLineups] = useState({});
   const selectedRef = useRef(selectedId);
   selectedRef.current = selectedId;
+  const accessRef = useRef(access);
+  accessRef.current = access;
+  const nbaOpenRef = useRef(nbaOpen);
+  nbaOpenRef.current = nbaOpen;
+  const generation = useRef(0);
+  const loadSportRef = useRef(async () => {});
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
   }, []);
 
   useEffect(() => {
-    let alive = true;
+    const gen = generation.current + 1;
+    generation.current = gen;
+    const alive = () => generation.current === gen;
     let slot = 0;
-    loadHubSports(SPORTS, () => selectedRef.current, async (sport) => {
-      if (!alive) return;
+    const loadSport = async (sport) => {
+      if (!alive()) return;
       const mine = slot;
       slot += 1;
-      const allowed = sport.id === 'nba' ? nbaOpen === true : access[sport.id];
+      const open = nbaOpenRef.current;
+      const allowed = sport.id === 'nba' ? open === true : accessRef.current[sport.id];
       if (!allowed) {
-        setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && nbaOpen !== true ? 'closed' : 'locked', raw: null } }));
+        setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && open !== true ? 'closed' : 'locked', raw: null } }));
         return;
       }
       const extras = [];
       if (sport.roster) {
         extras.push(
           fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
-            .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
+            .then((snap) => { if (alive()) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
             .catch(() => {}),
         );
       }
       if (sport.lineups) {
         extras.push(
           fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
-            .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
-            .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); }),
+            .then((snap) => { if (alive()) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
+            .catch(() => { if (alive()) setLineups((s) => ({ ...s, [sport.id]: null })); }),
         );
       }
       const board = loadMemberBoard(sport, fetchApiDataset, undefined, {
         slot: mine,
         priority: mine === 0 ? 'high' : undefined,
       }).then((snap) => {
-        if (!alive) return;
+        if (!alive()) return;
         setBoards((b) => ({
           ...b,
           [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
         }));
-      }).catch(() => { if (alive) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
+      }).catch(() => { if (alive()) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
       await Promise.all([board, ...extras]);
-    }, () => alive);
-    return () => { alive = false; };
+    };
+    loadSportRef.current = loadSport;
+    loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
+    return () => { generation.current += 1; };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const retrySport = (id) => {
+    const sport = SPORTS.find((item) => item.id === id);
+    if (!sport) return;
+    setBoards((b) => ({ ...b, [id]: { status: 'loading', raw: null } }));
+    loadSportRef.current(sport);
+  };
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -272,7 +290,7 @@ function useBoards(access, nbaOpen, selectedId) {
     return () => clearInterval(id);
   }, []);
 
-  return useMemo(() => {
+  const shaped = useMemo(() => {
     const out = {};
     SPORTS.forEach((sport) => {
       const b = boards[sport.id];
@@ -301,6 +319,8 @@ function useBoards(access, nbaOpen, selectedId) {
     });
     return out;
   }, [boards, photos, rosters, lineups, now]);
+
+  return { boards: shaped, retrySport };
 }
 
 function emptyCopy(status, sport) {
@@ -315,7 +335,7 @@ function sportStatus(sport, board, nbaOpen) {
   if (!board || board.status === 'loading') return 'Loading';
   if (board.status === 'locked') return 'Locked';
   if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'Opens soon';
-  if (board.status === 'error') return 'Unavailable';
+  if (board.status === 'error') return 'Couldn\'t load · Retry';
   if (board.status === 'empty' || !board.count) return 'No lines';
   const games = board.games?.length ? `${board.games.length} game${board.games.length === 1 ? '' : 's'}` : null;
   return games ? `${games} · ${board.count} props` : `${board.count} props`;
@@ -337,7 +357,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
   ));
   const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
-  const boards = useBoards(access, nbaOpen, selected.id);
+  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id);
   const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
@@ -452,7 +472,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
         <label className="hub-matchup-filter">
           <span>Matchup:</span>
           <select value={matchup} onChange={(event) => { setMatchup(event.target.value); setFocus(null); }} disabled={!games.length}>
-            <option value="">{games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
+            <option value="">{state.status === 'loading' ? 'Loading games…' : state.status === 'error' ? 'Couldn\'t load games' : games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
             {games.map((game) => (
               <option key={gameKey(game)} value={gameKey(game)}>
                 {game.opponent ? `${game.team} vs ${game.opponent}` : game.team}
@@ -475,7 +495,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               <h1>Tonight&apos;s {selected.name} top 3</h1>
             </div>
             <p className="hub-slate">
-              {shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
+              {state.status === 'loading' ? 'Loading games…' : state.status === 'error' ? `Couldn't load ${selected.name}` : shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
               {firstStart && <> · First start {clockLabel(firstStart.toISOString())}</>}
             </p>
           </div>
@@ -518,7 +538,12 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                   </span>
                 </button>
               )) : (
-                <section className="hub-card hub-card-empty"><p>{emptyCopy(state.status, selected)}</p></section>
+                <section className="hub-card hub-card-empty">
+                  <p>{emptyCopy(state.status, selected)}</p>
+                  {state.status === 'error' && (
+                    <button type="button" className="hub-retry" onClick={() => retrySport(selected.id)}>Retry</button>
+                  )}
+                </section>
               )}
             </div>
 
@@ -599,7 +624,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     </span>
                   </button>
                 )) : (
-                  <p className="hub-chart-empty">No L10 hit rates on this board.</p>
+                  <p className="hub-chart-empty">{state.status === 'error' ? emptyCopy(state.status, selected) : state.status === 'loading' ? 'Loading today\'s board…' : 'No L10 hit rates on this board.'}</p>
                 )}
               </section>
               </div>
@@ -616,8 +641,11 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <button
                       key={sport.id}
                       type="button"
-                      className={`hub-tile ${sport.id === selected.id ? 'is-active' : ''}`}
-                      onClick={() => pickSport(sport.id)}
+                      className={`hub-tile ${sport.id === selected.id ? 'is-active' : ''} ${boards[sport.id]?.status === 'error' ? 'is-error' : ''}`}
+                      onClick={() => {
+                        pickSport(sport.id);
+                        if (boards[sport.id]?.status === 'error') retrySport(sport.id);
+                      }}
                     >
                       <strong>{sport.name}</strong>
                       <span>{sportStatus(sport, boards[sport.id], nbaOpen)}</span>

@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -14,6 +14,10 @@ import {
   previewNflGameMarkets,
   shapeForTier,
 } from '../api/_dataAccess.js'
+import { bearerFor, installJwtSecret } from './access-token.mjs'
+
+installJwtSecret()
+const bearer = (name) => `Bearer ${bearerFor(name)}`
 
 const NOW = '2026-09-25T12:00:00Z'
 const DEFAULT_TIMEOUTS = {
@@ -154,7 +158,7 @@ function mockRes() {
 
 async function call(ds, token, method = 'GET', query = {}) {
   const res = mockRes()
-  const req = { method, query: { ds, ...query }, headers: token ? { authorization: `Bearer ${token}` } : {} }
+  const req = { method, query: { ds, ...query }, headers: token ? { authorization: bearer(token) } : {} }
   await handleDataRequest(req, res, mockClient())
   return res
 }
@@ -698,7 +702,7 @@ test('a slow head and an out-of-budget chunk read serve last-good or 503, never 
     const storedRes = mockRes()
     const started = Date.now()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: bearer('tok-owner') } },
       storedRes,
       withStorage,
     )
@@ -713,7 +717,7 @@ test('a slow head and an out-of-budget chunk read serve last-good or 503, never 
     const withoutStorage = client({ storage: undefined })
     const emptyRes = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: bearer('tok-owner') } },
       emptyRes,
       withoutStorage,
     )
@@ -795,7 +799,7 @@ test('the shared deadline cuts the storage read short of its own limit', async (
     const res = mockRes()
     const started = Date.now()
     const pending = handleDataRequest(
-      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: bearer('tok-owner') } },
       res,
       client,
     )
@@ -833,8 +837,7 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
     const client = {
       auth: {
         async getUser() {
-          await gate
-          return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+          throw new Error('auth.getUser must not run')
         },
       },
       from(table) {
@@ -843,7 +846,10 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
           eq() { return chain },
           abortSignal() { return chain },
           async maybeSingle() {
-            if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+            if (table === 'user_profiles') {
+              await gate
+              return { data: { tier: 'owner' }, error: null }
+            }
             assert.equal(released, false, table)
             sawSnapshot = true
             const payload = table === 'nhl_projections'
@@ -858,7 +864,7 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
     _clearCache()
     const res = mockRes()
     const pending = handleDataRequest(
-      { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok' } },
+      { method: 'GET', query: { ds }, headers: { authorization: bearer('tok') } },
       res,
       client,
     )
@@ -871,11 +877,9 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
-test('an auth timeout during the parallel read returns the preview', async () => {
+test('a profile timeout with no paid cache returns the free preview', async () => {
   const prev = { ...timeouts }
   _setTimeouts({ tierLookupMs: 40 })
-  let release
-  const gate = new Promise((resolve) => { release = resolve })
   const nhl = Array.from({ length: 6 }, (_, i) => ({
     player: `S${i}`, prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard', rankEligible: true,
   }))
@@ -884,8 +888,7 @@ test('an auth timeout during the parallel read returns the preview', async () =>
       const client = {
         auth: {
           async getUser() {
-            await gate
-            return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+            throw new Error('auth.getUser must not run')
           },
         },
         from(table) {
@@ -893,10 +896,10 @@ test('an auth timeout during the parallel read returns the preview', async () =>
             select() { return chain },
             eq() { return chain },
             abortSignal() { return chain },
-            async maybeSingle() {
-              if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+            maybeSingle() {
+              if (table === 'user_profiles') return new Promise(() => {})
               const payload = table === 'nhl_projections' ? nhl : structuredClone(TABLES[table])
-              return { data: { data: payload, updated_at: NOW }, error: null }
+              return Promise.resolve({ data: { data: payload, updated_at: NOW }, error: null })
             },
           }
           return chain
@@ -905,7 +908,7 @@ test('an auth timeout during the parallel read returns the preview', async () =>
       _clearCache()
       const res = mockRes()
       await handleDataRequest(
-        { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok-owner' } },
+        { method: 'GET', query: { ds }, headers: { authorization: bearer('tok-fan') } },
         res,
         client,
       )
@@ -916,7 +919,6 @@ test('an auth timeout during the parallel read returns the preview', async () =>
       else assert.equal(res.body.data.length, FREE_ROW_LIMIT)
     }
   } finally {
-    release()
     _setTimeouts(prev)
     _clearCache()
   }
@@ -945,7 +947,7 @@ test('one in-flight read serves a burst for the same table', async () => {
       },
     }
   }
-  const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } }
+  const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } }
   const a = mockRes()
   const b = mockRes()
   const pending = Promise.all([
@@ -969,7 +971,7 @@ test('a board older than 60s is served while one refresh runs', async () => {
     _clearCache()
     const first = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } },
       first,
       mockClient(),
     )
@@ -995,7 +997,7 @@ test('a board older than 60s is served while one refresh runs', async () => {
     const started = Date.now()
     const second = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } },
       second,
       slow,
     )
@@ -1021,7 +1023,7 @@ test('a copy older than 30 min is not served from memory', async () => {
     _clearCache()
     const first = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: bearer('tok-owner') } },
       first,
       mockClient(),
     )
@@ -1039,7 +1041,7 @@ test('a copy older than 30 min is not served from memory', async () => {
     }
     const second = mockRes()
     await handleDataRequest(
-      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: 'Bearer tok-owner' } },
+      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: bearer('tok-owner') } },
       second,
       client,
     )
@@ -1111,7 +1113,7 @@ test('a storage copy is not served from memory after its age limit', async (t) =
       return chain
     },
   }
-  const req = { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } }
+  const req = { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: bearer('tok-owner') } }
   try {
     const first = mockRes()
     const firstRead = handleDataRequest(req, first, client)
@@ -1152,7 +1154,7 @@ test('a timed-out KBO or WNBA read serves last-good instead of 503', async () =>
   const prev = { ...timeouts }
   _setTimeouts({ snapshotReadMs: 30, tierLookupMs: 30, lastGoodReadMs: 200 })
   try {
-    for (const ds of ['wnba_projections_standard', 'prizepicks_props', 'wnba_lineups']) {
+    for (const ds of ['wnba_projections_standard', 'prizepicks_props', 'strikeout_projections', 'batter_projections', 'wnba_lineups']) {
       _clearCache()
       const client = mockClient()
       const profiles = mockClient().from('user_profiles')
@@ -1168,7 +1170,7 @@ test('a timed-out KBO or WNBA read serves last-good instead of 503', async () =>
       }
       const res = mockRes()
       await handleDataRequest(
-        { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok-owner' } },
+        { method: 'GET', query: { ds }, headers: { authorization: bearer('tok-owner') } },
         res,
         client,
       )
@@ -1176,6 +1178,80 @@ test('a timed-out KBO or WNBA read serves last-good instead of 503', async () =>
       assert.equal(res.body.preview, false, ds)
       assert.ok(res.body.data, ds)
     }
+  } finally {
+    _setTimeouts(prev)
+    _clearCache()
+  }
+})
+
+test('the next good KBO read writes one last-good copy and a later timeout serves it', async () => {
+  const stored = new Map()
+  let uploads = 0
+  const client = mockClient()
+  client.storage = {
+    from() {
+      return {
+        upload(path, body) {
+          uploads += 1
+          stored.set(path, JSON.parse(Buffer.from(body).toString('utf8')))
+          return Promise.resolve({ error: null })
+        },
+        async download(path) {
+          const body = stored.get(path)
+          if (!body) return { data: null, error: { message: 'missing' } }
+          return { data: { text: async () => JSON.stringify(body) }, error: null }
+        },
+      }
+    },
+  }
+  const first = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    first,
+    client,
+  )
+  await _lastGoodWrite('prizepicks_props')
+  assert.equal(first.body.preview, false)
+  assert.equal(uploads, 1)
+  assert.equal(stored.has('prizepicks_props.json'), true)
+  assert.ok(stored.get('prizepicks_props.json').data.cards.length > 3)
+  const freshAt = new Date().toISOString()
+  stored.get('prizepicks_props.json').data.generated_at = freshAt
+  stored.get('prizepicks_props.json').updated_at = freshAt
+
+  const second = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    second,
+    client,
+  )
+  await _lastGoodWrite('prizepicks_props')
+  assert.equal(uploads, 1)
+
+  const prev = { ...timeouts }
+  _setTimeouts({ snapshotReadMs: 30, tierLookupMs: 200, lastGoodReadMs: 200 })
+  const profiles = mockClient().from('user_profiles')
+  client.from = (table) => {
+    if (table === 'user_profiles') return profiles
+    return {
+      select() { return this },
+      eq() { return this },
+      abortSignal() { return this },
+      maybeSingle() { return new Promise(() => {}) },
+    }
+  }
+  try {
+    _clearCache()
+    const timedOut = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+      timedOut,
+      client,
+    )
+    assert.equal(timedOut.statusCode, 200)
+    assert.equal(timedOut.body.preview, false)
+    assert.ok(timedOut.body.data.cards.length > 3)
+    assert.equal(uploads, 1)
   } finally {
     _setTimeouts(prev)
     _clearCache()
@@ -1240,7 +1316,7 @@ test('a stale nba_players refresh stores the joined player list', async () => {
       return chain
     },
   }
-  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: 'Bearer tok-owner' } }
+  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: bearer('tok-owner') } }
   const first = mockRes()
   await handleDataRequest(req, first, client)
   assert.equal(first.statusCode, 200)
@@ -1324,7 +1400,7 @@ test('a failed nba_players refresh keeps the last good in-memory copy for the fa
       return chain
     },
   }
-  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: 'Bearer tok-owner' } }
+  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: bearer('tok-owner') } }
   const first = mockRes()
   await handleDataRequest(req, first, client)
   assert.deepEqual(first.body.data.map((row) => row.athleteId), ['a', 'b'])

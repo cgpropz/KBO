@@ -6,6 +6,9 @@ import { assembleSnapshotRows, snapshotChunkManifest } from '../api/_snapshotChu
 import { boardForPresentation, handleDataRequest, _clearCache, readLastGood } from '../api/data.js'
 import { completePublishedRow } from '../scripts/bake-landing-preview.mjs'
 import { nhlHubRows } from '../src/memberHub.js'
+import { bearerFor, installJwtSecret } from './access-token.mjs'
+
+installJwtSecret()
 
 const VERSION = '2026-10-17T01:54:00+00:00'
 const OLD = '2026-10-16T00:00:00+00:00'
@@ -163,7 +166,7 @@ async function call(chunks, { token = 'tok', player, view } = {}) {
         ...(player ? { player } : {}),
         ...(view ? { view } : {}),
       },
-      headers: token ? { authorization: `Bearer ${token}` } : {},
+      headers: token ? { authorization: `Bearer ${bearerFor(token)}` } : {},
     },
     res,
     mockClient(chunks),

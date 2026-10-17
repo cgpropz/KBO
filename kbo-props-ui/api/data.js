@@ -15,6 +15,7 @@ import {
 import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
+import { clearMemberTierCache, lookupMemberTier } from './_memberTier.js';
 
 export { assembleSnapshotRows, snapshotChunkManifest };
 
@@ -277,21 +278,82 @@ function isNbaPlayerManifest(table, row) {
 
 // Cold instance: fall back to the private last-good copy the publish job
 // writes to Storage. Read with the server key only; never a public URL.
-async function boardAfterReadError(client, table, err, deadline) {
+async function boardAfterReadError(client, table, err, deadline, primed) {
   const hit = currentBoard(table);
   if (hit?.row && Date.now() - hit.at < cacheWindows.staleMs) return hit.row;
-  const lastGood = await readLastGood(client, table, deadline);
+  const lastGood = primed ? await primed : await readLastGood(client, table, deadline);
   if (lastGood) {
+    if (primed) {
+      console.warn(`[api/data] ${table} served from last-good copy (${lastGood.updated_at || 'unknown time'})`);
+    }
     rememberBoard(table, lastGood, boardCacheVersion(lastGood), lastGoodMemoryAt(table, lastGood));
     return lastGood;
   }
   throw err;
 }
 
+// These three KBO tables are published by the odds refresh, which does not
+// upload a Storage copy. Prime that read on its own timer so a slow snapshot
+// cannot spend the shared budget before Storage, and write the next good row.
+const KBO_FALLBACK_TABLES = new Set([
+  'prizepicks_props',
+  'strikeout_projections',
+  'batter_projections',
+]);
+const lastGoodWrites = new Map();
+const lastGoodSaved = new Set();
+
+async function writeLastGood(client, table, row) {
+  try {
+    const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
+    if (!storage || typeof storage.upload !== 'function') return false;
+    const body = Buffer.from(JSON.stringify({
+      data: row.data,
+      updated_at: row.updated_at || null,
+    }));
+    const { error } = await storage.upload(`${table}.json`, body, {
+      contentType: 'application/json',
+      upsert: true,
+      cacheControl: '0',
+    });
+    if (error) {
+      console.warn(`[api/data] ${table} last-good write failed:`, error.message || error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[api/data] ${table} last-good write failed:`, err.message);
+    return false;
+  }
+}
+
+function scheduleLastGoodWrite(client, table, row) {
+  if (!KBO_FALLBACK_TABLES.has(table) || !row || row.data == null) return Promise.resolve();
+  if (lastGoodSaved.has(table)) return Promise.resolve();
+  const existing = lastGoodWrites.get(table);
+  if (existing) return existing;
+  const pending = writeLastGood(client, table, row).then((ok) => {
+    if (ok) lastGoodSaved.add(table);
+  }).finally(() => {
+    if (lastGoodWrites.get(table) === pending) lastGoodWrites.delete(table);
+  });
+  lastGoodWrites.set(table, pending);
+  return pending;
+}
+
+export function _lastGoodWrite(table) {
+  return lastGoodWrites.get(table) || Promise.resolve();
+}
+
 function startBoardRead(client, table) {
   if (inflight.has(table)) return inflight.get(table);
   const deadline = Date.now() + boardReadBudgetMs();
-  const pending = readSnapshotResolved(client, table, deadline).catch((err) => boardAfterReadError(client, table, err, deadline));
+  // Own deadline, not the shared 10.5s board budget. NHL stays sequential.
+  const primed = KBO_FALLBACK_TABLES.has(table)
+    ? readLastGood(client, table, Date.now() + timeouts.lastGoodReadMs, { announce: false })
+    : null;
+  const pending = readSnapshotResolved(client, table, deadline)
+    .catch((err) => boardAfterReadError(client, table, err, deadline, primed));
   inflight.set(table, pending);
   // Both handlers are attached so a background refresh cannot reject later
   // as an unhandled rejection. Callers that await `pending` still see it.
@@ -358,7 +420,7 @@ export function lastGoodTimestamp(parsed) {
   return NaN;
 }
 
-export async function readLastGood(client, table, deadline) {
+export async function readLastGood(client, table, deadline, { announce = true } = {}) {
   try {
     const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
     if (!storage || typeof storage.download !== 'function') return null;
@@ -380,7 +442,9 @@ export async function readLastGood(client, table, deadline) {
       console.warn(`[api/data] ${table} last-good copy too old (${parsed.updated_at || 'no time'}); not served`);
       return null;
     }
-    console.warn(`[api/data] ${table} served from last-good copy (${parsed.updated_at || 'unknown time'})`);
+    if (announce) {
+      console.warn(`[api/data] ${table} served from last-good copy (${parsed.updated_at || 'unknown time'})`);
+    }
     return { data: parsed.data, updated_at: parsed.updated_at || null };
   } catch {
     return null;
@@ -478,6 +542,7 @@ async function readSnapshotResolved(client, table, deadline) {
     const extra = await fetchSnapshotRows(client, table, ids, deadline);
     const assembled = assembleSnapshotRows(head, extra);
     rememberBoard(table, assembled, head.data.snapshotChunks.version);
+    await scheduleLastGoodWrite(client, table, assembled);
     return assembled;
   }
   if (isNbaPlayerManifest(table, head)) {
@@ -488,34 +553,29 @@ async function readSnapshotResolved(client, table, deadline) {
     return assembled;
   }
   rememberBoard(table, head);
+  await scheduleLastGoodWrite(client, table, head);
   return head;
 }
 
 // NBA caller identity. Unlike resolveTier, a bad token or a missing email is
 // a hard failure (emailResolved false) so the NBA gate can fail closed.
+// Identity comes from the signed access token. user_profiles is read inside
+// lookupMemberTier, which owns the 4s budget and never calls auth.getUser.
 export async function resolveNbaCaller(client, authorization) {
   const token = (authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token) {
     return { emailResolved: true, email: null, tierResolved: true, tier: 'free' };
   }
-  const { data, error } = await client.auth.getUser(token);
-  const user = data?.user;
-  if (error || !user || typeof user.email !== 'string' || !user.email.trim()) {
+  const result = await lookupMemberTier(client, authorization, { budgetMs: timeouts.tierLookupMs });
+  if (!result.userId || !result.email) {
     return { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   }
-  const { data: profile, error: profileError } = await client
-    .from('user_profiles')
-    .select('tier')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (profileError) {
-    return { emailResolved: true, email: user.email, tierResolved: false, tier: 'free' };
-  }
+  const tierResolved = result.source === 'profile' || result.source === 'cache';
   return {
     emailResolved: true,
-    email: user.email,
-    tierResolved: true,
-    tier: profile?.tier || 'free',
+    email: result.email,
+    tierResolved,
+    tier: tierResolved ? result.tier : 'free',
   };
 }
 
@@ -542,16 +602,7 @@ function forbid(res) {
 }
 
 async function handleNbaRequest(req, res, client, ds) {
-  let caller;
-  try {
-    caller = await withTimeout(
-      resolveNbaCaller(client, req.headers?.authorization),
-      timeouts.tierLookupMs,
-      'NBA access lookup timed out'
-    );
-  } catch {
-    return forbid(res);
-  }
+  const caller = await resolveNbaCaller(client, req.headers?.authorization);
   // Auth/email failures deny before the flag read, so a hanging flag cannot
   // turn a bad token into a long request or an open gate.
   if (caller.emailResolved !== true) return forbid(res);
@@ -632,16 +683,7 @@ async function handleNbaRequest(req, res, client, ds) {
 // Landing-card bit only. Same decision as handleNbaRequest, and never a snapshot.
 // True solely when nbaAccessDecision is 'full'. Errors and preview are false.
 export async function nbaSectionOpen(req, client) {
-  let caller;
-  try {
-    caller = await withTimeout(
-      resolveNbaCaller(client, req.headers?.authorization),
-      timeouts.tierLookupMs,
-      'NBA access lookup timed out'
-    );
-  } catch {
-    return false;
-  }
+  const caller = await resolveNbaCaller(client, req.headers?.authorization);
   if (caller.emailResolved !== true) return false;
 
   let nbaPublic = false;
@@ -675,11 +717,7 @@ async function handleNhlRequest(req, res, client, ds) {
 
   // Auth and the snapshot start together. A lookup blip must not open the
   // board, and it must not hold the read: the free preview is the fallback.
-  const callerPromise = withTimeout(
-    resolveNbaCaller(client, req.headers?.authorization),
-    timeouts.tierLookupMs,
-    'NHL access lookup timed out'
-  ).catch(() => ({ emailResolved: false, email: null, tierResolved: false, tier: 'free' }));
+  const callerPromise = resolveNbaCaller(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
 
   let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
@@ -739,16 +777,7 @@ async function handleNhlRequest(req, res, client, ds) {
 }
 
 export async function nhlSectionOpen(req, client) {
-  let caller;
-  try {
-    caller = await withTimeout(
-      resolveNbaCaller(client, req.headers?.authorization),
-      timeouts.tierLookupMs,
-      'NHL access lookup timed out'
-    );
-  } catch {
-    return false;
-  }
+  const caller = await resolveNbaCaller(client, req.headers?.authorization);
   return nhlAccessDecision({
     emailResolved: caller.emailResolved,
     email: caller.email,
@@ -759,18 +788,11 @@ export async function nhlSectionOpen(req, client) {
 
 // Resolve the caller's tier from a Supabase access token. Anonymous or invalid
 // tokens are treated as 'free' (they still receive the public preview).
+// The lookup itself lives in _memberTier.js so a later tier-cache change can
+// rebase onto this helper instead of a second in-handler cache.
 export async function resolveTier(client, authorization) {
-  const token = (authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return { tier: 'free', userId: null };
-  const { data, error } = await client.auth.getUser(token);
-  const user = data?.user;
-  if (error || !user) return { tier: 'free', userId: null };
-  const { data: profile } = await client
-    .from('user_profiles')
-    .select('tier')
-    .eq('id', user.id)
-    .maybeSingle();
-  return { tier: profile?.tier || 'free', userId: user.id };
+  const result = await lookupMemberTier(client, authorization, { budgetMs: timeouts.tierLookupMs });
+  return { tier: result.tier || 'free', userId: result.userId };
 }
 
 /**
@@ -858,13 +880,10 @@ export async function handleDataRequest(req, res, client) {
     }
   }
 
-  // Auth and the snapshot start together. The 4s cap still applies, and a
-  // blip falls through to the free preview instead of blocking the read.
-  const tierPromise = withTimeout(
-    resolveTier(client, req.headers?.authorization),
-    timeouts.tierLookupMs,
-    'Tier lookup timed out'
-  ).then((result) => result?.tier || 'free').catch(() => 'free');
+  // The profile read starts with the snapshot. lookupMemberTier owns the 4s
+  // cap, including one retry and a paid-tier cache used only on timeout.
+  const tierPromise = resolveTier(client, req.headers?.authorization)
+    .then((result) => result?.tier || 'free');
   const rowPromise = readSnapshot(client, spec.table);
 
   let tier = 'free';
@@ -909,6 +928,9 @@ export function _clearCache() {
   cache.clear();
   latestVersion.clear();
   inflight.clear();
+  lastGoodWrites.clear();
+  lastGoodSaved.clear();
+  clearMemberTierCache();
 }
 
 export default function handler(req, res) {

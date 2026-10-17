@@ -27,6 +27,31 @@ export function retryDelayWithin(slot, elapsedMs, budgetMs = FETCH_BUDGET_MS) {
 
 const defaultWait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function boardTimeout(ms) {
+  const err = new Error('Board request timed out');
+  err.code = 'BOARD_TIMEOUT';
+  let timer;
+  const expired = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(err), Math.max(1, ms));
+  });
+  return {
+    expired,
+    cancel() { clearTimeout(timer); },
+  };
+}
+
+// Race the fetch against the remaining budget. apiData.js only starts its
+// own timer after the access token resolves, so a hung session would
+// otherwise leave the tile on Loading.
+async function fetchWithinBudget(fetcher, sport, attempt, ms) {
+  const limit = boardTimeout(ms);
+  try {
+    return await Promise.race([fetcher(sport.ds, attempt), limit.expired]);
+  } finally {
+    limit.cancel();
+  }
+}
+
 export async function loadMemberBoard(sport, fetcher, wait = defaultWait, options = {}) {
   const now = options.now || Date.now;
   const budgetMs = options.budgetMs || FETCH_BUDGET_MS;
@@ -42,7 +67,7 @@ export async function loadMemberBoard(sport, fetcher, wait = defaultWait, option
 
   let first;
   try {
-    first = await fetcher(sport.ds, attemptOptions(false));
+    first = await fetchWithinBudget(fetcher, sport, attemptOptions(false), attemptOptions(false).timeoutMs);
     if (!first?.preview) return first;
   } catch (err) {
     first = { error: err };
@@ -54,7 +79,7 @@ export async function loadMemberBoard(sport, fetcher, wait = defaultWait, option
   }
   await wait(delay);
   try {
-    const again = await fetcher(sport.ds, attemptOptions(true));
+    const again = await fetchWithinBudget(fetcher, sport, attemptOptions(true), attemptOptions(true).timeoutMs);
     if (again && (!again.preview || first.error)) return again;
   } catch (err) {
     if (first.error) throw err;
@@ -63,17 +88,22 @@ export async function loadMemberBoard(sport, fetcher, wait = defaultWait, option
   return first;
 }
 
-// Selected sport first. Later sports wait until the one ahead of them
-// finishes, and a sport the member switches to jumps the remaining line.
+// Selected sport is started first. Every sport then loads on its own, so a
+// slow or failed board cannot keep the others on Loading.
 export async function loadHubSports(sports, selectedId, loadOne, isAlive = () => true) {
-  const pending = sports.map((sport) => sport.id);
-  const byId = new Map(sports.map((sport) => [sport.id, sport]));
   const current = typeof selectedId === 'function' ? selectedId : () => selectedId;
-  while (pending.length && isAlive()) {
-    const preferred = current();
-    const index = pending.indexOf(preferred);
-    const id = index >= 0 ? pending.splice(index, 1)[0] : pending.shift();
-    const sport = byId.get(id);
-    if (sport) await loadOne(sport);
-  }
+  const preferred = current();
+  const ordered = [...sports].sort((a, b) => {
+    if (a.id === preferred) return -1;
+    if (b.id === preferred) return 1;
+    return 0;
+  });
+  await Promise.all(ordered.map(async (sport) => {
+    if (!isAlive()) return;
+    try {
+      await loadOne(sport);
+    } catch {
+      // loadOne records its own error. One throw must not cancel the rest.
+    }
+  }));
 }
