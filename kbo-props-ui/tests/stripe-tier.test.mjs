@@ -72,6 +72,16 @@ function mockStripe({ listByEmail = {}, searchByQuery = {}, subsByCustomer = {},
         return invoicesById[id] || { lines: { data: [] } }
       },
     },
+    invoicePayments: {
+      async list({ payment } = {}) {
+        const paymentIntent = payment?.payment_intent || ''
+        calls.push({ op: 'invoicePayments', paymentIntent })
+        const invoiceId = paymentIntent.startsWith('pi_') ? paymentIntent.slice(3) : ''
+        const invoice = invoicesById[invoiceId]
+        if (!invoice) return { data: [] }
+        return { data: [{ id: `inpay_${invoiceId}`, invoice: { id: invoiceId, ...invoice } }] }
+      },
+    },
     prices: {
       async retrieve(id) {
         calls.push({ op: 'price', id })
@@ -301,7 +311,7 @@ test('a $99.99 discord charge is not treated as lifetime', async () => {
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_discord', metadata: { cg_plan: 'discord_monthly' } }],
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, payment_intent: 'pi_in_discord', metadata: { cg_plan: 'discord_monthly' } }],
     },
     invoicesById: {
       in_discord: { lines: { data: [{ price: { id: DISCORD_MONTHLY } }] } },
@@ -314,7 +324,7 @@ test('a $99.99 discord charge is not treated as lifetime', async () => {
   const byInvoice = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_discord' }],
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, payment_intent: 'pi_in_discord' }],
     },
     invoicesById: {
       in_discord: { lines: { data: [{ price: { id: DISCORD_WEEKLY } }] } },
@@ -370,7 +380,7 @@ test('a $99.99 charge on the discord product is not lifetime', async () => {
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_d', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_prod' }],
+      cus_d: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, payment_intent: 'pi_in_prod' }],
     },
     invoicesById: {
       in_prod: { lines: { data: [{ price: { id: 'price_unknown', product: DISCORD_ONLY_PRODUCT_ID } }] } },
@@ -385,7 +395,7 @@ test('a $99.99 charge on the lifetime price still grants combined', async () => 
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_life: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, invoice: 'in_life' }],
+      cus_life: [{ paid: true, refunded: false, amount: LIFETIME_AMOUNT, payment_intent: 'pi_in_life' }],
     },
     invoicesById: {
       in_life: { lines: { data: [{ price: { id: 'price_1THZjaPwL0k9PEMvARtuGG1F' } }] } },
@@ -434,7 +444,7 @@ test('a taxed lifetime charge grants combined by price id', async () => {
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_life: [{ paid: true, refunded: false, amount: 26749, invoice: 'in_new' }],
+      cus_life: [{ paid: true, refunded: false, amount: 26749, payment_intent: 'pi_in_new' }],
     },
     invoicesById: {
       in_new: { lines: { data: [{ price: { id: NEW_LIFETIME, product: 'prod_UG5v4BQ2Mo0wie' } }] } },
@@ -447,7 +457,7 @@ test('a taxed founders charge grants combined by the shared lifetime price id', 
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_life: [{ paid: true, refunded: false, amount: 10724, invoice: 'in_founders' }],
+      cus_life: [{ paid: true, refunded: false, amount: 10724, payment_intent: 'pi_in_founders' }],
     },
     invoicesById: {
       in_founders: { lines: { data: [{ price: { id: FOUNDERS } }] } },
@@ -460,7 +470,7 @@ test('the lifetime product id grants combined when the price id is unrecognized'
   const stripe = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_life', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_life: [{ paid: true, refunded: false, amount: 26000, invoice: 'in_prod' }],
+      cus_life: [{ paid: true, refunded: false, amount: 26000, payment_intent: 'pi_in_prod' }],
     },
     invoicesById: {
       in_prod: { lines: { data: [{ price: { id: 'price_not_listed', product: 'prod_UG5v4BQ2Mo0wie' } }] } },
@@ -506,7 +516,7 @@ test('a yearly subscription grants combined and a yearly invoice charge is not l
   const chargeOnly = mockStripe({
     listByEmail: { 'fan@example.com': [customer('cus_year', 'fan@example.com')] },
     chargesByCustomer: {
-      cus_year: [{ paid: true, refunded: false, amount: 16049, invoice: 'in_year' }],
+      cus_year: [{ paid: true, refunded: false, amount: 16049, payment_intent: 'pi_in_year' }],
     },
     invoicesById: {
       in_year: { lines: { data: [{ price: { id: YEARLY, type: 'recurring', recurring: { interval: 'year' }, metadata: { tier: 'combined' } } }] } },

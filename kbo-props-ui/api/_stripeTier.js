@@ -405,58 +405,63 @@ async function resolveChargeCommerce(stripe, charge, env) {
     return target;
   }
 
-  const invoiceRef = charge?.invoice;
-  const invoiceId = typeof invoiceRef === 'string' ? invoiceRef : invoiceRef?.id;
-  if (invoiceId && typeof stripe.invoices?.retrieve === 'function') {
-    try {
-      const invoice = typeof invoiceRef === 'object' && invoiceRef?.lines
-        ? invoiceRef
-        : await stripe.invoices.retrieve(invoiceId);
-      if (
-        metadataSignalsDiscord(invoice?.metadata)
-        || metadataSignalsDiscord(invoice?.subscription_details?.metadata)
-        || metadataSignalsDiscord(invoice?.parent?.subscription_details?.metadata)
-      ) {
+  // Basil charges have no invoice field. The invoice is on Invoice Payments.
+  // A Stripe error is rethrown so a taxed lifetime charge is not treated as
+  // "not lifetime" and written through as a 200.
+  const invoice = await invoiceFromChargePayments(stripe, charge);
+  if (invoice) {
+    if (
+      metadataSignalsDiscord(invoice?.metadata)
+      || metadataSignalsDiscord(invoice?.subscription_details?.metadata)
+      || metadataSignalsDiscord(invoice?.parent?.subscription_details?.metadata)
+    ) {
+      target.discord = true;
+      target.resolved = true;
+      return target;
+    }
+    applyCommerceLines(target, invoice?.lines?.data, invoice?.metadata, env);
+    if (target.lifetime || target.discord) return target;
+  }
+
+  const pi = paymentIntentIdOf(charge?.payment_intent);
+  if (!target.resolved && pi && typeof stripe.checkout?.sessions?.list === 'function') {
+    const found = await stripe.checkout.sessions.list({
+      payment_intent: pi,
+      limit: 1,
+      expand: ['data.line_items.data.price'],
+    });
+    const session = found?.data?.[0];
+    if (session) {
+      if (metadataSignalsDiscord(session.metadata)) {
         target.discord = true;
         target.resolved = true;
         return target;
       }
-      applyCommerceLines(target, invoice?.lines?.data, invoice?.metadata, env);
-      if (target.lifetime || target.discord) return target;
-    } catch {
-      // Fall through. A legacy $99.99 charge with an unreadable invoice still
-      // uses the amount fallback below.
-    }
-  }
-
-  const pi = typeof charge?.payment_intent === 'string'
-    ? charge.payment_intent
-    : charge?.payment_intent?.id;
-  if (!target.resolved && pi && typeof stripe.checkout?.sessions?.list === 'function') {
-    try {
-      const found = await stripe.checkout.sessions.list({
-        payment_intent: pi,
-        limit: 1,
-        expand: ['data.line_items.data.price'],
-      });
-      const session = found?.data?.[0];
-      if (session) {
-        if (metadataSignalsDiscord(session.metadata)) {
-          target.discord = true;
-          target.resolved = true;
-          return target;
-        }
-        applyCommerceLines(target, session.line_items?.data, session.metadata, env);
-        if (!target.resolved && (session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders')) {
-          target.lifetime = true;
-          target.resolved = true;
-        }
+      applyCommerceLines(target, session.line_items?.data, session.metadata, env);
+      if (!target.resolved && (session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders')) {
+        target.lifetime = true;
+        target.resolved = true;
       }
-    } catch {
-      // Leave unresolved so the legacy amount fallback can still apply.
     }
   }
   return target;
+}
+
+async function invoiceFromChargePayments(stripe, charge) {
+  const pi = paymentIntentIdOf(charge?.payment_intent);
+  if (!pi || typeof stripe?.invoicePayments?.list !== 'function') return null;
+  const page = await stripe.invoicePayments.list({
+    payment: { type: 'payment_intent', payment_intent: pi },
+    limit: 5,
+  });
+  const rows = Array.isArray(page?.data) ? page.data : [];
+  for (const row of rows) {
+    const linked = row?.invoice;
+    if (linked && typeof linked === 'object' && Array.isArray(linked.lines?.data)) return linked;
+    const id = typeof linked === 'string' ? linked : linked?.id;
+    if (id && typeof stripe.invoices?.retrieve === 'function') return stripe.invoices.retrieve(id);
+  }
+  return null;
 }
 
 export function chargeFullyRefunded(charge) {
@@ -724,6 +729,39 @@ async function chargeGrantsSiteLifetime(stripe, charge, env) {
   return chargeIsLifetimePurchase(stripe, charge, env);
 }
 
+// Lifetime charges can sit behind the newest 50. Follow has_more. Stop if a
+// page does not advance, and throw if Stripe still reports more after the cap
+// so an older lifetime charge is not silently dropped.
+async function listCustomerCharges(stripe, customerId) {
+  if (typeof stripe.charges?.list !== 'function') {
+    const err = new Error('stripe charges.list missing');
+    err.type = 'StripeConnectionError';
+    throw err;
+  }
+  const charges = [];
+  let startingAfter;
+  for (let page = 0; page < 20; page += 1) {
+    const listed = await stripe.charges.list({
+      customer: customerId,
+      limit: 50,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    const rows = Array.isArray(listed?.data) ? listed.data : [];
+    charges.push(...rows);
+    if (!listed?.has_more || rows.length === 0) return charges;
+    const next = rows[rows.length - 1]?.id;
+    if (!next || next === startingAfter) {
+      const err = new Error('stripe charges.list did not advance');
+      err.type = 'StripeConnectionError';
+      throw err;
+    }
+    startingAfter = next;
+  }
+  const err = new Error('stripe charges.list truncated');
+  err.type = 'StripeConnectionError';
+  throw err;
+}
+
 // Authoritative recompute from live Stripe state: active/trialing
 // subscriptions + any one-time lifetime charge.
 // Returns { tier, discordOnly }.
@@ -738,13 +776,7 @@ export async function computeStripeAccess(stripe, email, env = process.env) {
 
   const customers = await customersForEmail(stripe, email);
   for (const c of customers) {
-    if (typeof stripe.charges?.list !== 'function') {
-      const err = new Error('stripe charges.list missing');
-      err.type = 'StripeConnectionError';
-      throw err;
-    }
-    const listed = await stripe.charges.list({ customer: c.id, limit: 50 });
-    const charges = listed?.data || [];
+    const charges = await listCustomerCharges(stripe, c.id);
 
     const subs = await stripe.subscriptions.list({ customer: c.id, status: 'all', limit: 20 });
     for (const s of subs.data) {

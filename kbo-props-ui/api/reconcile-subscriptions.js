@@ -9,12 +9,22 @@ function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
 }
 
-const stripe = new Stripe(cleanEnv(process.env.STRIPE_SECRET_KEY));
+let stripeClient = null;
+function getStripe() {
+  if (!stripeClient) stripeClient = new Stripe(cleanEnv(process.env.STRIPE_SECRET_KEY));
+  return stripeClient;
+}
 
-const supabase = createClient(
-  cleanEnv(process.env.VITE_SUPABASE_URL),
-  cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
-);
+let supabaseClient = null;
+function getSupabase() {
+  if (!supabaseClient) {
+    supabaseClient = createClient(
+      cleanEnv(process.env.VITE_SUPABASE_URL),
+      cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
+    );
+  }
+  return supabaseClient;
+}
 
 // Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}` when the CRON_SECRET
 // env var is set on the project (https://vercel.com/docs/cron-jobs/manage-cron-jobs).
@@ -36,6 +46,7 @@ function safeEqual(a, b) {
 }
 
 async function findUserByEmail(email) {
+  const supabase = getSupabase();
   const target = (email || '').trim().toLowerCase();
   if (!target) return null;
 
@@ -63,7 +74,7 @@ async function walkSubscriptions(status, { byEmail, discordEmails, recordSite })
   let startingAfter;
 
   while (true) {
-    const page = await stripe.subscriptions.list({
+    const page = await getStripe().subscriptions.list({
       status,
       limit: 100,
       starting_after: startingAfter,
@@ -84,7 +95,7 @@ async function walkSubscriptions(status, { byEmail, discordEmails, recordSite })
       // the site tier, so they cannot grant All-Access.
       // A refunded or disputed current-period charge is not an active grant.
       // reconcileTierForSubscription returns null in that case.
-      const classified = await reconcileTierForSubscription(stripe, sub);
+      const classified = await reconcileTierForSubscription(getStripe(), sub);
       if (classified == null) continue;
       if (classified === 'discord') {
         discordEmails.add(normalized);
@@ -110,7 +121,7 @@ async function collectLifetimeEmails() {
   let startingAfter;
   const since = Math.floor(Date.now() / 1000) - 120 * 24 * 3600;
   for (let page = 0; page < 10; page += 1) {
-    const list = await stripe.checkout.sessions.list({
+    const list = await getStripe().checkout.sessions.list({
       status: 'complete',
       limit: 100,
       starting_after: startingAfter,
@@ -121,16 +132,7 @@ async function collectLifetimeEmails() {
       if (session.mode !== 'payment' || session.payment_status !== 'paid') continue;
       const email = (session.customer_details?.email || session.customer_email || '').trim().toLowerCase();
       if (!email) continue;
-      const charge = await chargeForCheckoutSession(session);
-      if (await lifetimeChargeBlocksAccess(charge, stripe)) continue;
-      const lines = session.line_items?.data || [];
-      const hit = lines.some((line) => signalsLifetimePurchase({
-        price: line?.price,
-        priceId: typeof line?.price === 'string' ? line.price : line?.price?.id,
-        product: line?.price && typeof line.price === 'object' ? line.price.product : null,
-        metadata: session.metadata,
-      })) || session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders';
-      if (hit) emails.add(email);
+      if (await sessionGrantsLifetime(getStripe(), session)) emails.add(email);
     }
     if (!list.has_more || !list.data?.length) break;
     startingAfter = list.data[list.data.length - 1].id;
@@ -138,28 +140,40 @@ async function collectLifetimeEmails() {
   return emails;
 }
 
-async function chargeForCheckoutSession(session) {
+async function chargeForCheckoutSession(stripeApi, session) {
   let paymentIntent = session?.payment_intent;
-  if (typeof paymentIntent === 'string' && typeof stripe.paymentIntents?.retrieve === 'function') {
-    try {
-      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntent, { expand: ['latest_charge'] });
-    } catch {
-      return null;
-    }
+  if (typeof paymentIntent === 'string' && typeof stripeApi.paymentIntents?.retrieve === 'function') {
+    paymentIntent = await stripeApi.paymentIntents.retrieve(paymentIntent, { expand: ['latest_charge'] });
   }
   if (!paymentIntent || typeof paymentIntent !== 'object') return null;
   if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge === 'object') {
     return paymentIntent.latest_charge;
   }
   const chargeId = typeof paymentIntent.latest_charge === 'string' ? paymentIntent.latest_charge : null;
-  if (chargeId && typeof stripe.charges?.retrieve === 'function') {
-    try {
-      return await stripe.charges.retrieve(chargeId);
-    } catch {
-      return null;
-    }
+  if (chargeId && typeof stripeApi.charges?.retrieve === 'function') {
+    return stripeApi.charges.retrieve(chargeId);
   }
   return paymentIntent.charges?.data?.[0] || null;
+}
+
+// A Stripe error skips this email. Returning null used to look like "no
+// refund", and the lifetime pass then re-granted a charge it could not read.
+export async function sessionGrantsLifetime(stripeApi, session) {
+  let charge = null;
+  try {
+    charge = await chargeForCheckoutSession(stripeApi, session);
+  } catch {
+    console.error('[reconcile] lifetime charge read failed');
+    return false;
+  }
+  if (await lifetimeChargeBlocksAccess(charge, stripeApi)) return false;
+  const lines = session.line_items?.data || [];
+  return lines.some((line) => signalsLifetimePurchase({
+    price: line?.price,
+    priceId: typeof line?.price === 'string' ? line.price : line?.price?.id,
+    product: line?.price && typeof line.price === 'object' ? line.price.product : null,
+    metadata: session.metadata,
+  })) || session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders';
 }
 
 async function collectActiveSubscriberTiers() {
@@ -173,6 +187,7 @@ async function collectActiveSubscriberTiers() {
 }
 
 async function emailForUserId(userId) {
+  const supabase = getSupabase();
   try {
     const { data, error } = await supabase.auth.admin.getUserById(userId);
     if (error || !data?.user?.email) return null;
@@ -186,6 +201,7 @@ async function emailForUserId(userId) {
 // subscription is gone. Site tiers are not downgraded here — cancellation of
 // All-Access / KBO / Lifetime still happens in the webhook recompute.
 async function reconcileDiscordFlags(discordEmails) {
+  const supabase = getSupabase();
   const summary = { flagged: 0, cleared: 0, lapsedDiscordTier: 0 };
   for (const email of discordEmails) {
     const user = await findUserByEmail(email);
@@ -243,6 +259,7 @@ async function reconcileDiscordFlags(discordEmails) {
 }
 
 async function syncConnectedDiscordRoles() {
+  const supabase = getSupabase();
   const summary = { connected: 0, synced: 0, failed: 0 };
   const pageSize = 200;
   let from = 0;
@@ -267,6 +284,7 @@ async function syncConnectedDiscordRoles() {
 }
 
 async function setTierByEmail(email, tier) {
+  const supabase = getSupabase();
   const user = await findUserByEmail(email);
   if (!user?.id) {
     return { status: 'missing_account', email };

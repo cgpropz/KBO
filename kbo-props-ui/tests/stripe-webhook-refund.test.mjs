@@ -5,6 +5,7 @@ import {
   lifetimeChargeBlocksAccess,
   reconcileTierForSubscription,
 } from '../api/_stripeTier.js'
+import { sessionGrantsLifetime } from '../api/reconcile-subscriptions.js'
 import {
   clearTierByCustomer,
   clearTierByEmail,
@@ -63,10 +64,14 @@ function plan(id, priceId, period, invoice) {
   return {
     id,
     status: 'active',
-    current_period_start: period.start,
-    current_period_end: period.end,
     latest_invoice: invoice,
-    items: { data: [{ price: { id: priceId } }] },
+    items: {
+      data: [{
+        price: { id: priceId },
+        current_period_start: period.start,
+        current_period_end: period.end,
+      }],
+    },
   }
 }
 
@@ -672,4 +677,151 @@ test('the email lookup finds the member on the second user page', async () => {
   assert.deepEqual(db.state.upserts, [{ id: 'user-1', tier: 'free' }])
   assert.equal(db.state.claimWrites[0].tier, 'free')
   assert.equal(db.state.claimWrites[0].provider, 'email')
+})
+
+test('a taxed lifetime refund reads invoice payments, and a Stripe error returns 500', async () => {
+  const charge = {
+    id: 'ch_tax',
+    customer: 'cus_1',
+    amount: 26749,
+    amount_refunded: 26749,
+    refunded: true,
+    paid: true,
+    disputed: false,
+    payment_intent: 'pi_tax',
+  }
+  const stripe = entitlementStripe({ charges: [charge] })
+  stripe.invoicePayments.list = async () => ({
+    data: [{
+      invoice: {
+        id: 'in_tax',
+        lines: { data: [{ price: { id: 'price_1UPJ78PwL0k9PEMvnZPU3k5a' } }] },
+      },
+    }],
+  })
+  const db = mockDb()
+  const failure = await handleChargeRefunded(charge, { stripe, supabase: db })
+  assert.equal(failure, null)
+  assert.equal(db.state.upserts.at(-1).tier, 'free')
+  assert.equal(charge.invoice, undefined)
+
+  const broken = entitlementStripe({ charges: [charge] })
+  broken.invoicePayments.list = async () => {
+    throw Object.assign(new Error('stripe down'), { type: 'StripeAPIError' })
+  }
+  const kept = mockDb()
+  const blocked = await handleChargeRefunded(charge, { stripe: broken, supabase: kept })
+  assert.equal(blocked.status, 500)
+  assert.deepEqual(blocked.body, { error: 'stripe read failed' })
+  assert.equal(kept.state.upserts.length, 0)
+  assert.equal(kept.state.metadata.tier, 'combined')
+
+  const recompute = entitlementStripe({
+    charges: [{ ...charge, refunded: false, amount_refunded: 0 }],
+  })
+  recompute.invoicePayments.list = async () => {
+    throw Object.assign(new Error('stripe down'), { type: 'StripeAPIError' })
+  }
+  const member = mockDb()
+  const dropped = await clearTierByCustomer('cus_1', { stripe: recompute, supabase: member })
+  assert.equal(dropped.status, 500)
+  assert.deepEqual(dropped.body, { error: 'stripe read failed' })
+  assert.equal(member.state.upserts.length, 0)
+  assert.equal(member.state.metadata.tier, 'combined')
+})
+
+test('charges.list keeps a lifetime charge that is past the first page', async () => {
+  const filler = Array.from({ length: 50 }, (_, i) => ({
+    id: `ch_${i}`,
+    paid: true,
+    amount: 100,
+    refunded: false,
+    disputed: false,
+  }))
+  const lifetime = {
+    id: 'ch_life_page2',
+    paid: true,
+    refunded: false,
+    amount: 9999,
+    disputed: false,
+    metadata: { cg_plan: 'lifetime' },
+  }
+  const stripe = entitlementStripe()
+  let calls = 0
+  stripe.charges.list = async ({ starting_after } = {}) => {
+    calls += 1
+    if (!starting_after) return { data: filler, has_more: true }
+    return { data: [lifetime], has_more: false }
+  }
+  const synced = await accessAfterSyncRecompute(stripe, EMAIL, 'free')
+  assert.equal(calls, 2)
+  assert.equal(synced.tier, 'combined')
+})
+
+test('a checkout charge read error does not re-grant a lifetime session', async () => {
+  const session = {
+    mode: 'payment',
+    payment_status: 'paid',
+    customer_details: { email: EMAIL },
+    payment_intent: 'pi_life',
+    metadata: { cg_plan: 'lifetime' },
+    line_items: { data: [{ price: { id: 'price_1UPJ78PwL0k9PEMvnZPU3k5a' } }] },
+  }
+  const broken = {
+    paymentIntents: {
+      async retrieve() {
+        throw Object.assign(new Error('stripe down'), { type: 'StripeAPIError' })
+      },
+    },
+  }
+  assert.equal(await sessionGrantsLifetime(broken, session), false)
+
+  const refunded = {
+    paymentIntents: {
+      async retrieve() {
+        return {
+          latest_charge: {
+            id: 'ch_life',
+            paid: true,
+            refunded: true,
+            amount: 9999,
+            amount_refunded: 9999,
+            disputed: false,
+          },
+        }
+      },
+    },
+  }
+  assert.equal(await sessionGrantsLifetime(refunded, session), false)
+
+  const unread = {
+    paymentIntents: {
+      async retrieve() {
+        return { id: 'pi_life', latest_charge: 'ch_life' }
+      },
+    },
+    charges: {
+      async retrieve() {
+        throw Object.assign(new Error('stripe down'), { type: 'StripeAPIError' })
+      },
+    },
+  }
+  assert.equal(await sessionGrantsLifetime(unread, session), false)
+
+  const clear = {
+    paymentIntents: {
+      async retrieve() {
+        return {
+          latest_charge: {
+            id: 'ch_clear',
+            paid: true,
+            refunded: false,
+            amount: 9999,
+            disputed: false,
+          },
+        }
+      },
+    },
+  }
+  assert.equal(await sessionGrantsLifetime(clear, session), true)
 })
