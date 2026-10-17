@@ -73,6 +73,24 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Time the signed-in member hub
+        run: node scripts/member-hub-proof.mjs
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MEMBER_EMAIL: sev1-hub-preview@example.com
+
+      - name: Save member hub proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: member-hub-proof
+          path: kbo-props-ui/member-hub-proof/*
+          if-no-files-found: ignore
+
       - name: Screenshot and Lighthouse the preview
         run: node scripts/preview-audit.mjs
         env:
