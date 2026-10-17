@@ -30,8 +30,13 @@
 
 .cg-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 20px clamp(16px, 5vw, 48px);
 }
 
@@ -50,9 +55,13 @@
 
 .cg-guide-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
   margin-left: 28px;
   margin-right: auto;
+  overflow-x: auto;
 }
 .cg-guide-nav a {
   color: #d4d4d8;
@@ -64,8 +73,11 @@
 .cg-guide-nav a:hover { color: #86efac; }
 .cg-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 .cg-link-btn {
   background: transparent;

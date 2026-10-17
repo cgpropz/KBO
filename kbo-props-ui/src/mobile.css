@@ -1,13 +1,19 @@
 /*
  * Shared phone layout. This file is imported by the entry chunk and is the
  * only project stylesheet left unlayered. Every other project stylesheet is
- * wrapped in @layer components, so these rules win below 768px even when a
+ * wrapped in @layer components, so these rules win on a phone even when a
  * sport chunk loads later and even when that chunk uses a stronger selector.
  * Sport stylesheets may still color their own data. They cannot restyle the
  * shell, the cards, or the type scale on a phone.
  *
- * The two rules outside the media query only hide the new menu control and
- * the landing sport row on desktop. They do not change the wide layout.
+ * The phone block is @media (--phone-board). The build rewrites that token
+ * to PHONE_BOARD_QUERY in src/phoneBoardQuery.js, the same string
+ * usePhoneBoard matches. A touch phone stays on cards when Safari requests
+ * the desktop site or the page is zoomed. An iPad (device height over 1000px)
+ * or a touch laptop stays on the desktop table.
+ *
+ * Rules outside that query hide the menu control on a wide desktop and, from
+ * 768px to 1200px, keep navs and headers from stretching the page.
  */
 
 .board-refresh-note {
@@ -51,7 +57,8 @@
 .pl-header > .sport-switcher,
 .cg-header > .sport-switcher { display: none; }
 
-@media (max-width: 767px) {
+/* Menu button, phone shell, and cards. Same query as usePhoneBoard. */
+@media (--phone-board) {
   html,
   body {
     max-width: 100%;
@@ -717,6 +724,63 @@
   .prop-line-card > .hit-rate-col { order: 2; }
   .prop-line-card > .hit-rate-chart { order: 3; display: block !important; }
   .prop-line-card > .hit-rate-extra { order: 4; display: block !important; }
+}
+
+/* A mouse window in this range is not a phone, so the desktop table stays.
+   The nav still has to wrap or scroll. Touch phones already match the query
+   above; these rules only fill the gap where that query does not. */
+@media (max-width: 1200px) {
+  :is(.kbo-app-nav, .nfl-nav, .wnba-nav, .pl-header, .cg-header, .hub-top, .hub-sportbar) {
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  :is(
+    .kbo-app-nav-links,
+    .nfl-nav-links,
+    .wnba-nav-links,
+    .pl-nav,
+    .cg-guide-nav,
+    .cg-header-actions,
+    .pl-header-actions,
+    .hub-nav,
+    .hub-tools,
+    .sport-switcher
+  ) {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  :is(.nfl-player-search, .kbo-player-search, .wnba-player-search) {
+    width: min(190px, 100%);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  :is(.nfl-pro-badge, .kbo-app-pro-badge) {
+    min-width: 0;
+  }
+
+  :is(.nfl-hero, .nfl-board-header, .kbo-board-header, .wnba-board-header, .nfl-lines-header-actions, .kbo-header-actions, .wnba-lines-header-actions) {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :is(.nfl-root, .kbo-app-root, .wnba-root, .hub, .pl-landing, .cg-landing, .nfl-content, .kbo-app-content, .wnba-content, .hub-main) {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  :is(.nfl-lines-table-wrap, .kbo-lines-table-wrap, .wnba-lines-table-wrap, .nfl-table-wrap, .nfl-lines-page, .nfl-edge-board) {
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

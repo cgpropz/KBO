@@ -108,7 +108,7 @@ jobs:
               '',
               `Open them here: ${runUrl}`,
               '',
-              'The check fails if a main page is wider than an iPhone (390px), in Safari and in the X app.',
+              'The check fails if a page is wider than the viewport: iPhone portrait (390), a desktop-site iPhone (980), and a 780px window, in Safari and in the X app. Screenshots are the public boards only.',
             ].join('\n')
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

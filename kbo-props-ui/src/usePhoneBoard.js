@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { PHONE_BOARD_QUERY } from './phoneBoardQuery.js'
 
-export const PHONE_BOARD_QUERY = '(max-width: 767px)'
+export { PHONE_BOARD_QUERY }
 
 function phoneNow() {
   return typeof window !== 'undefined'
@@ -12,6 +13,7 @@ function phoneNow() {
 export function usePhoneBoard() {
   const [phone, setPhone] = useState(phoneNow)
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
     const media = window.matchMedia(PHONE_BOARD_QUERY)
     const apply = () => setPhone(media.matches)
     apply()
