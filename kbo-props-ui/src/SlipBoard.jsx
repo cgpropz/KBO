@@ -82,7 +82,8 @@ function Mark({ sport, row, size = 52 }) {
   )
 }
 
-function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, onOpenPrizePicks, saving, notice }) {
+function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, onOpenPrizePicks, saving, notice, place }) {
+  const disclaimerId = `prizepicks-disclaimer-${place}`
   const altered = legs.some((leg) => isPromoLine(leg))
   const ladder = ladderFor(mode, altered)
   const estimate = estimateFor(mode, legs.length, altered)
@@ -136,13 +137,13 @@ function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, onOpenPrizePick
           type="button"
           className="is-secondary"
           data-testid="open-prizepicks"
-          aria-describedby="prizepicks-disclaimer"
+          aria-describedby={disclaimerId}
           onClick={onOpenPrizePicks}
           disabled={legs.length === 0}
         >
           {PRIZEPICKS_OPEN_LABEL}
         </button>
-        <div className="b2-pp-notes" id="prizepicks-disclaimer" data-testid="prizepicks-note">
+        <div className="b2-pp-notes" id={disclaimerId} data-testid="prizepicks-note">
           <p className="b2-pp-note b2-pp-note-full">{PRIZEPICKS_NOTE_FULL}</p>
           <p className="b2-pp-note b2-pp-note-phone">{PRIZEPICKS_NOTE_PHONE}</p>
         </div>
@@ -285,7 +286,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
     }
   }
 
-  const sheet = (
+  const sheet = (place) => (
     <SlipSheet
       sport={config.id}
       legs={legs}
@@ -296,6 +297,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
       onOpenPrizePicks={openInPrizePicks}
       saving={saving}
       notice={notice}
+      place={place}
     />
   )
 
@@ -426,10 +428,10 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
           </div>
           <p className="b2-rg">{STANDARD_LINE}</p>
         </main>
-        <aside className="b2-side">{sheet}</aside>
+        <aside className="b2-side">{sheet('side')}</aside>
       </div>
       {open ? <button type="button" className="b2-scrim" aria-label="Close slip" onClick={() => setOpen(false)} /> : null}
-      {open ? <div className="b2-sheet-pop">{sheet}</div> : null}
+      {open ? <div className="b2-sheet-pop">{sheet('pop')}</div> : null}
       <div className="b2-dock">
         <span className="b2-grab" />
         <button type="button" className="b2-dock-main" onClick={() => setOpen(true)} data-testid="slip-dock">
