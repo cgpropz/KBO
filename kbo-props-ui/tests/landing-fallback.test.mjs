@@ -64,11 +64,11 @@ test('the bake keeps the free top 3 and strips total edges', () => {
   const props = landingPreviewBody('nfl_projections', {
     updated_at: now,
     data: [
-      { player: 'Started', line: 10, projection: 30, prop: 'Receptions', start_time: '2000-01-01T00:00:00.000Z' },
-      { player: 'A', line: 10, projection: 20, prop: 'Receptions', start_time: '2099-01-01T00:00:00.000Z' },
-      { player: 'B', line: 10, projection: 18, prop: 'Receptions', start_time: '2099-01-01T00:00:00.000Z' },
-      { player: 'C', line: 10, projection: 16, prop: 'Receptions', start_time: '2099-01-01T00:00:00.000Z' },
-      { player: 'D', line: 10, projection: 14, prop: 'Receptions', start_time: '2099-01-01T00:00:00.000Z' },
+      { player: 'Started', line: 10, projection: 30, prop: 'Receptions', line_type: 'standard', start_time: '2000-01-01T00:00:00.000Z' },
+      { player: 'A', line: 10, projection: 20, prop: 'Receptions', line_type: 'standard', start_time: '2099-01-01T00:00:00.000Z' },
+      { player: 'B', line: 10, projection: 18, prop: 'Receptions', line_type: 'standard', start_time: '2099-01-01T00:00:00.000Z' },
+      { player: 'C', line: 10, projection: 16, prop: 'Receptions', line_type: 'standard', start_time: '2099-01-01T00:00:00.000Z' },
+      { player: 'D', line: 10, projection: 14, prop: 'Receptions', line_type: 'standard', start_time: '2099-01-01T00:00:00.000Z' },
     ],
   });
   assert.equal(props.preview, true);

@@ -27,6 +27,7 @@ const fixtures = {
     gameOpponents: opponents,
     dvpRank: 4,
     imageUrl: 'https://a.espncdn.com/i/headshots/nfl/players/full/4374302.png',
+    line_type: 'standard',
   }],
   nfl_game_markets: {
     generated_at: '2026-10-11T20:00:00Z',
@@ -62,6 +63,7 @@ const fixtures = {
     seasonGames: 40,
     dvpRank: 3,
     imageUrl: 'https://assets.nhle.com/mugs/nhl/edm/8478402.png',
+    oddsType: 'standard',
   }],
   prizepicks_props: {
     cards: [{
@@ -70,7 +72,7 @@ const fixtures = {
       type: 'batter',
       opponent: 'LG',
       games: [],
-      props: [{ stat: 'Hits', line: 1.5, projection: 1.8, hit_rate_l10: 70, hit_rate_all: 60, recent_values: [2, 1, 0, 1, 2, 1, 3, 0, 1, 2] }],
+      props: [{ stat: 'Hits', line: 1.5, projection: 1.8, hit_rate_l10: 70, hit_rate_all: 60, odds_type: 'standard', recent_values: [2, 1, 0, 1, 2, 1, 3, 0, 1, 2] }],
     }],
   },
   wnba_projections_standard: [{

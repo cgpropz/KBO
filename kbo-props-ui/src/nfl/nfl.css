@@ -239,3 +239,22 @@
 .nfl-sharp-table.has-cg .nfl-sharp-quote-logo { height: 20px; }
 .nfl-sharp-table.has-cg .nfl-sharp-quote-book { max-width: 150px; flex-wrap: wrap; }
 .nfl-sharp-table.has-cg .nfl-sharp-edge { min-width: 0; max-width: 150px; }
+
+/* Phone NFL board: one control per row so the Prop select can show "All props". */
+@media (max-width: 767px) {
+  .nfl-edge-controls {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .nfl-edge-controls > input,
+  .nfl-edge-controls > label,
+  .nfl-edge-controls > .nfl-position-tabs {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+    max-width: 100%;
+  }
+  .nfl-edge-controls select {
+    width: 100%;
+    max-width: 100%;
+  }
+  .nfl-position-tabs { flex-wrap: wrap; justify-content: flex-start; }
+}

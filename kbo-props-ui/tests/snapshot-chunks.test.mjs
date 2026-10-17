@@ -31,10 +31,10 @@ function manifest(ids, version = VERSION) {
 }
 
 const board = [
-  { player: 'First', projection: 4, line: 2.5, rankEligible: true },
-  { player: 'Second', projection: 3, line: 2.5, rankEligible: true },
-  { player: 'Third', projection: 2, line: 2.5, rankEligible: true },
-  { player: 'Fourth', projection: 1, line: 2.5, rankEligible: true },
+  { player: 'First', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Second', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Third', projection: 2, line: 2.5, rankEligible: true, oddsType: 'standard' },
+  { player: 'Fourth', projection: 1, line: 2.5, rankEligible: true, oddsType: 'standard' },
 ]
 
 test('chunks join in order and a single row stays the stored payload', () => {

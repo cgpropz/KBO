@@ -11,6 +11,7 @@ export async function fetchNflProjections() {
     updatedAt: snapshot.updatedAt,
     preview: snapshot.preview,
     lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
   }
 }
 

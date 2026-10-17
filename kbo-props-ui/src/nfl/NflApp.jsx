@@ -6,6 +6,7 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import NflPlayerSearch from './NflPlayerSearch'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
+import { viewOnLoad } from '../memberNav'
 import './nfl.css'
 
 const NflGameMarkets = lazy(() => import('./NflGameMarkets'))
@@ -26,10 +27,15 @@ const NAV_ITEMS = [
 
 const SlipBoard = lazy(() => import('../SlipBoard'))
 
-export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
+export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'player' : 'dashboard')
+  const [view, setView] = useState(() => viewOnLoad({
+    sport: 'nfl',
+    entry,
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    forceHome,
+  }))
   const [previousView, setPreviousView] = useState('dashboard')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' && entry.player ? { player: entry.player, prop: entry.prop || null } : null)
 

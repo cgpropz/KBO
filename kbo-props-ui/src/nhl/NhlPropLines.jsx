@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 import HitRateStrip from '../HitRateStrip'
@@ -12,8 +13,12 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import { BoardLine, BoardSurface } from '../PropLineCard'
+import { initialBoardSort, rememberBoardSort } from '../boardSort'
+import { usePhoneBoard } from '../usePhoneBoard'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
+const SORT_OPTIONS = ['CG Score', 'Hit Rate', 'Season', 'H2H', 'DVP']
 
 function formatValue(value) {
   const number = Number(value)
@@ -70,7 +75,7 @@ export function sortBoard(rows, sortBy) {
   })
 }
 
-function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }) {
+function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const score = rowScore(item)
   const isOver = Number(item.projection) >= Number(item.line)
@@ -86,57 +91,55 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen }
   const grade = dvpGrade(item.dvpRank)
   const logo = teamLogoUrl(item.opponent)
   return (
-    <>
-    <tr className={`nfl-lines-row${open ? ' is-open' : ''}`} onClick={onToggle}>
-      <td>
-        <div className="nfl-lines-player">
-          <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
-          <div className="nfl-lines-info">
-            <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
-            {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
-            {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
-            <span className="nfl-lines-tag">{item.team}, {item.position}</span>
-            <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
-              <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
-              {item.oddsType && item.oddsType !== 'standard' && <span className="nhl-odds">{item.oddsType.toUpperCase()}</span>}
+    <BoardLine
+      phone={phone}
+      className={`nfl-lines-row${open ? ' is-open' : ''}`}
+      onClick={onToggle}
+      cells={[
+        { node: (
+          <div className="nfl-lines-player">
+            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
+            <div className="nfl-lines-info">
+              <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
+              {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
+              {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
+              <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+              <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
+                <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
+              </div>
             </div>
+            <OddsChevron open={open} player={item.player} onToggle={onToggle} />
           </div>
-          <OddsChevron open={open} player={item.player} onToggle={onToggle} />
-        </div>
-      </td>
-      <td className="hit-rate-chart"><MiniChart recent={recent} line={Number(item.line)} /></td>
-      <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>
-        <CgScoreCell
-          scoreText={score == null ? '—' : score.toFixed(1)}
-          note={scoreNote}
-          open={whyOpen}
-          onToggle={() => setWhyOpen((current) => !current)}
-        />
-      </td>
-      <td className="hit-rate-col"><HitRateStrip pills={nhlHitPills(item)} /></td>
-      <td className="hit-rate-extra">{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
-      <td>
-        <div className="nfl-lines-matchup">
-          {logo && <img className="nfl-lines-matchup-logo" src={fitImage(logo, 22)} alt={item.opponent} loading="lazy" />}
-          <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
-        </div>
-      </td>
-    </tr>
-    {whyOpen && scoreNote && (
-      <tr className="cg-score-note-row">
-        <td colSpan={6}>
-          <CgScoreNote note={scoreNote} />
-        </td>
-      </tr>
-    )}
-    {open && (
-      <tr className="nfl-sharp-strip-row">
-        <td colSpan={6}>
-          <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
-        </td>
-      </tr>
-    )}
-    </>
+        ) },
+        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={Number(item.line)} /> },
+        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+          <CgScoreCell
+            scoreText={score == null ? '—' : score.toFixed(1)}
+            note={scoreNote}
+            open={whyOpen}
+            onToggle={() => setWhyOpen((current) => !current)}
+          />
+        ) },
+        { className: 'hit-rate-col', node: <HitRateStrip pills={nhlHitPills(item)} /> },
+        { className: 'hit-rate-extra', node: item.dvpRank ? ordinal(item.dvpRank) : '—' },
+        { node: (
+          <div className="nfl-lines-matchup">
+            {logo && <img className="nfl-lines-matchup-logo" src={fitImage(logo, 22)} alt={item.opponent} loading="lazy" />}
+            <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+          </div>
+        ) },
+      ]}
+      after={(
+        <>
+          {whyOpen && scoreNote && (phone
+            ? <CgScoreNote note={scoreNote} />
+            : <tr className="cg-score-note-row"><td colSpan={6}><CgScoreNote note={scoreNote} /></td></tr>)}
+          {open && (phone
+            ? <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+            : <tr className="nfl-sharp-strip-row"><td colSpan={6}><BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} /></td></tr>)}
+        </>
+      )}
+    />
   )
 }
 
@@ -145,7 +148,12 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [tab, setTab] = useState('All Props')
-  const [sortBy, setSortBy] = useState('CG Score')
+  const [sortBy, setSortBy] = useState(() => initialBoardSort('nhl', SORT_OPTIONS))
+  const phone = usePhoneBoard()
+  const changeSort = (value) => {
+    setSortBy(value)
+    rememberBoardSort('nhl', value)
+  }
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [openId, setOpenId] = useState(null)
@@ -156,21 +164,31 @@ export default function NhlPropLines({ onSelectPlayer }) {
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt }) => {
+      .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt, refreshing }) => {
         if (!active) return
         setProjections(next)
-        setLockedCount(preview ? locked : 0)
+        setLockedCount(preview && !refreshing ? locked : 0)
         setUpdatedAt(publishedAt || null)
+        setError('')
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
+  useFullBoardRefresh('nhl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLockedCount(0)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setError('')
+    setLoaded(true)
+  })
+
+  const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {
     const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
-    return sortBoard(filtered, sortBy)
-  }, [projections, tab, sortBy])
+    return sortBoard(filtered, sortKey)
+  }, [projections, tab, sortKey])
 
   return (
     <section className="nfl-lines-page">
@@ -183,12 +201,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
-          <select className="nhl-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort">
-            <option>CG Score</option>
-            <option>Hit Rate</option>
-            <option>Season</option>
-            <option>H2H</option>
-            <option>DVP</option>
+          <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
+            {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </div>
       </div>
@@ -200,33 +214,30 @@ export default function NhlPropLines({ onSelectPlayer }) {
       )}
       {!error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
       {!!rows.length && (
-        <div className="nfl-lines-table-wrap">
-          <table className="nfl-lines-table hit-rate-board">
-            <thead>
-              <tr>
-                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((item) => {
-                const id = item.id || `${item.player}-${item.prop}-${item.line}`
-                const matched = boardOddsFor(oddsIndex, item)
-                return (
-                  <PropRow
-                    key={id}
-                    item={item}
-                    onSelectPlayer={onSelectPlayer}
-                    open={openId === id}
-                    onToggle={() => setOpenId((current) => current === id ? null : id)}
-                    odds={matched.odds}
-                    seen={matched.seen}
-                    oddsState={oddsState}
-                  />
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <BoardSurface
+          phone={phone}
+          wrapClass="nfl-lines-table-wrap"
+          tableClass="nfl-lines-table hit-rate-board"
+          head={<><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th></>}
+        >
+          {rows.map((item) => {
+            const id = item.id || `${item.player}-${item.prop}-${item.line}`
+            const matched = boardOddsFor(oddsIndex, item)
+            return (
+              <PropRow
+                key={id}
+                item={item}
+                phone={phone}
+                onSelectPlayer={onSelectPlayer}
+                open={openId === id}
+                onToggle={() => setOpenId((current) => current === id ? null : id)}
+                odds={matched.odds}
+                seen={matched.seen}
+                oddsState={oddsState}
+              />
+            )
+          })}
+        </BoardSurface>
       )}
       {lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more lines are locked.</div>}
     </section>

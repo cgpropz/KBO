@@ -3,7 +3,7 @@ import { boardSide, findSharpOdds, indexSharpOdds, oddsPanelMessage, usableSharp
 import { BASELINES, BookStrip } from './BookOddsStrip'
 import './bookOddsStrip.css'
 
-export function useBoardOdds(load) {
+export function useBoardOdds(load, { enabled = true } = {}) {
   const loadRef = useRef(load)
   const [records, setRecords] = useState([])
   const [oddsState, setOddsState] = useState('loading')
@@ -13,6 +13,7 @@ export function useBoardOdds(load) {
   }, [load])
 
   useEffect(() => {
+    if (!enabled) return undefined
     let active = true
     loadRef.current()
       .then(({ records: next, preview }) => {
@@ -26,7 +27,7 @@ export function useBoardOdds(load) {
         setOddsState('error')
       })
     return () => { active = false }
-  }, [])
+  }, [enabled])
 
   const index = useMemo(() => indexSharpOdds(records), [records])
   return { index, oddsState }

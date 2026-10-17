@@ -75,6 +75,8 @@ jobs:
         run: |
           npm i -g vercel@64.2.0
           url=$(vercel deploy --token "$VERCEL_TOKEN" --yes \
+            --build-env "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --build-env "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" \
             --env "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
             --env "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" \
             --env "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY")

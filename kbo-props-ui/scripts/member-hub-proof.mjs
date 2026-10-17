@@ -4,8 +4,11 @@
 import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
+import { chromium } from '@playwright/test'
+import { supabaseStorageKey } from '../src/supabaseClient.js'
 
 const previewUrl = (process.env.PREVIEW_URL || '').replace(/\/$/, '')
+const prodUrl = (process.env.PROD_URL || 'https://www.cgpropz.com').replace(/\/$/, '')
 const vercelToken = process.env.VERCEL_TOKEN
 const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
@@ -15,6 +18,17 @@ const teamId = 'team_NsMEVaPP3l5Ouz0DWr1y9cxU'
 const projectId = 'prj_HgdvsekuqCfqzKYvGAUD6gQi36AW'
 const outDir = new URL('../member-hub-proof/', import.meta.url)
 const cleanupOnly = process.argv.includes('--cleanup')
+
+const PHONE = { width: 390, height: 844 }
+const COLD_LOADS = 5
+
+const PAGE_PATHS = [
+  ['nflDashboard', '/?sport=nfl'],
+  ['nhlDashboard', '/?sport=nhl'],
+  ['nflBoard', '/?sport=nfl&page=projections'],
+  ['nhlBoard', '/?sport=nhl&page=projections'],
+]
+const CARD_SELECTOR = '[data-testid="prop-line-card"], table.hit-rate-board tbody tr, .nfl-edge-card'
 
 const HUB_GROUPS = [
   ['nfl_projections', 'nfl_lineups'],
@@ -119,16 +133,37 @@ async function verify(tokenHash) {
   return body
 }
 
-async function upsertTier(id) {
-  const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?on_conflict=id`, {
-    method: 'POST',
-    headers: {
-      ...serviceHeaders(),
-      Prefer: 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify({ id, tier: 'combined' }),
+async function profileTier(id) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(id)}&select=tier`, {
+    headers: serviceHeaders(),
+    signal: AbortSignal.timeout(8_000),
   })
-  if (!response.ok) throw new Error(`tier upsert failed (${response.status} ${await errorCode(response)})`)
+  const rows = await response.json().catch(() => [])
+  return Array.isArray(rows) ? (rows[0]?.tier || '') : ''
+}
+
+async function upsertTier(id) {
+  const headers = {
+    ...serviceHeaders(),
+    Prefer: 'return=representation,resolution=merge-duplicates',
+  }
+  const patch = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ tier: 'combined' }),
+  })
+  const patched = await patch.json().catch(() => [])
+  const patchedTier = Array.isArray(patched) ? patched[0]?.tier : ''
+  if (!patch.ok || patchedTier !== 'combined') {
+    const post = await fetch(`${supabaseUrl}/rest/v1/user_profiles?on_conflict=id`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ id, tier: 'combined' }),
+    })
+    if (!post.ok) throw new Error(`tier upsert failed (${post.status} ${await errorCode(post)})`)
+  }
+  const tier = await profileTier(id)
+  if (tier !== 'combined') throw new Error(`proof member tier is ${tier || 'missing'}`)
 }
 
 async function deleteMember(id) {
@@ -178,6 +213,7 @@ async function timedFetch(ds, { bypass, accessToken }) {
     status: response.status,
     bytes: Buffer.byteLength(text),
     preview: body.preview === true,
+    tier: typeof body.tier === 'string' ? body.tier : null,
     rows,
     error: typeof body.error === 'string' ? body.error.slice(0, 160) : null,
     cache: response.headers.get('x-vercel-cache'),
@@ -192,6 +228,240 @@ async function oneHub(bypass, accessToken, groups) {
     calls.push(...results)
   }
   return { wallMs: Math.round(performance.now() - started), calls }
+}
+
+function median(values) {
+  const nums = [...values]
+  if (!nums.length || nums.some((value) => !Number.isFinite(value))) return null
+  const sorted = nums.sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+}
+
+function classifyOdds(rows) {
+  const counts = { goblin: 0, demon: 0, missing: 0, unknown: 0, standard: 0, rows: rows.length }
+  for (const row of rows) {
+    const raw = row?.oddsType ?? row?.odds_type ?? row?.line_type ?? row?.lineType
+    if (raw == null || String(raw).trim() === '') counts.missing += 1
+    else {
+      const type = String(raw).trim().toLowerCase()
+      if (type === 'goblin' || type === 'demon' || type === 'standard') counts[type] += 1
+      else counts.unknown += 1
+    }
+  }
+  return counts
+}
+
+function sessionJson(session) {
+  const expiresIn = Number(session.expires_in) || 3600
+  const expiresAt = Number(session.expires_at) || Math.floor(Date.now() / 1000) + expiresIn
+  return JSON.stringify({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: expiresAt,
+    expires_in: expiresIn,
+    token_type: session.token_type || 'bearer',
+    user: session.user,
+  })
+}
+
+async function nhlOddsCounts(base, { bypass, accessToken }) {
+  const headers = { Authorization: `Bearer ${accessToken}` }
+  if (bypass) headers['x-vercel-protection-bypass'] = bypass
+  const response = await fetch(`${base}/api/data?ds=nhl_projections`, {
+    headers,
+    signal: AbortSignal.timeout(20_000),
+  })
+  const text = await response.text()
+  let body = {}
+  try { body = JSON.parse(text) } catch { body = {} }
+  const rows = Array.isArray(body.data) ? body.data : []
+  return { status: response.status, ...classifyOdds(rows) }
+}
+
+// Logged out on purpose: no Authorization header. Goblin and demon must be
+// gone. A row with no odds-type field is kept, so missing may be above zero.
+async function strikeoutOddsCounts(base, { bypass } = {}) {
+  const headers = {}
+  if (bypass) headers['x-vercel-protection-bypass'] = bypass
+  const response = await fetch(`${base}/api/data?ds=strikeout_projections`, {
+    headers,
+    signal: AbortSignal.timeout(20_000),
+  })
+  const text = await response.text()
+  let body = {}
+  try { body = JSON.parse(text) } catch { body = {} }
+  const rows = Array.isArray(body.data?.projections) ? body.data.projections : []
+  return {
+    status: response.status,
+    preview: body.preview === true,
+    ...classifyOdds(rows),
+  }
+}
+
+function strikeoutClean(counts) {
+  return counts
+    && counts.status === 200
+    && counts.goblin === 0
+    && counts.demon === 0
+}
+
+async function clientAuthStorageKeys(base, bypass) {
+  const headers = bypass ? { 'x-vercel-protection-bypass': bypass } : {}
+  const keys = new Set()
+  const envKey = supabaseStorageKey(supabaseUrl)
+  if (envKey) keys.add(envKey)
+  const seen = new Set()
+  const queue = [`${base}/`]
+  let foundInBundle = false
+  const take = (text) => {
+    for (const match of text.matchAll(/https:\/\/[a-z0-9-]+\.supabase\.co/gi)) {
+      const key = supabaseStorageKey(match[0])
+      if (key) keys.add(key)
+      foundInBundle = true
+    }
+    for (const match of text.matchAll(/\/assets\/[A-Za-z0-9_.-]+\.js/g)) {
+      const next = new URL(match[0], base).toString()
+      if (!seen.has(next)) queue.push(next)
+    }
+  }
+  let scanned = 0
+  while (queue.length && scanned < 12 && !foundInBundle) {
+    const url = queue.shift()
+    if (seen.has(url)) continue
+    seen.add(url)
+    scanned += 1
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20_000) }).catch(() => null)
+    if (!response?.ok) continue
+    take(await response.text())
+  }
+  return { keys: [...keys], foundInBundle }
+}
+
+async function pageHint(page) {
+  try {
+    return await page.evaluate(() => {
+      const heading = (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+      const paywall = Boolean(document.querySelector('.pw-title'))
+      const keys = Object.keys(localStorage).filter((key) => /^sb-[a-z0-9-]+-auth-token$/.test(key))
+      let session = false
+      let tierMatch = false
+      let tier = 'none'
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('cg_tier') || 'null')
+        tier = typeof cached?.tier === 'string' ? cached.tier : 'none'
+        for (const key of keys) {
+          const id = JSON.parse(localStorage.getItem(key) || 'null')?.user?.id
+          if (!id) continue
+          session = true
+          if (cached?.userId === id) tierMatch = true
+        }
+      } catch {
+        tier = 'bad'
+      }
+      return ` h1=${heading || 'none'} paywall=${paywall} session=${session} tier=${tier} tierMatch=${tierMatch} keys=${keys.length}`
+    })
+  } catch {
+    return ''
+  }
+}
+
+function memberStorageState(base, storageKeys, storedSession) {
+  const origin = new URL(base).origin
+  return {
+    cookies: [],
+    origins: storageKeys.length
+      ? [{ origin, localStorage: storageKeys.map((name) => ({ name, value: storedSession })) }]
+      : [],
+  }
+}
+
+async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSession }) {
+  const context = await browser.newContext({
+    viewport: PHONE,
+    extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
+    storageState: memberStorageState(base, storageKeys, storedSession),
+  })
+  let page
+  try {
+    // sessionStorage is not part of storageState. Derive the cached tier from
+    // the session user id in the page so the two cannot drift apart.
+    await context.addInitScript(({ keys, value }) => {
+      try {
+        for (const key of keys) localStorage.setItem(key, value)
+        const userId = JSON.parse(value)?.user?.id
+        if (userId) sessionStorage.setItem('cg_tier', JSON.stringify({ userId, tier: 'combined' }))
+      } catch { /* the page still loads logged out */ }
+    }, { keys: storageKeys, value: storedSession })
+    page = await context.newPage()
+    const started = performance.now()
+    const target = new URL(path, base)
+    if (bypass) {
+      target.searchParams.set('x-vercel-protection-bypass', bypass)
+      target.searchParams.set('x-vercel-set-bypass-cookie', 'true')
+    }
+    await page.goto(target.toString(), { waitUntil: 'domcontentloaded', timeout: 45_000 })
+    await page.waitForSelector(CARD_SELECTOR, { timeout: 30_000 })
+    const firstCardMs = Math.round(performance.now() - started)
+    const api = await page.evaluate(() => performance.getEntriesByType('resource')
+      .filter((entry) => entry.name.includes('/api/data'))
+      .map((entry) => {
+        let ds = null
+        try { ds = new URL(entry.name).searchParams.get('ds') } catch { ds = null }
+        return { ds, ms: Math.round(entry.duration) }
+      }))
+    const dom = await page.evaluate(() => {
+      const text = document.body?.innerText || ''
+      return {
+        goblin: (text.match(/GOBLIN/g) || []).length,
+        demon: (text.match(/DEMON/g) || []).length,
+        cards: document.querySelectorAll('[data-testid="prop-line-card"]').length,
+        rows: document.querySelectorAll('table.hit-rate-board tbody tr, .nfl-edge-card').length,
+      }
+    })
+    return { firstCardMs, api, dom }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'page failed'
+    const hint = page ? await pageHint(page) : ''
+    const text = `${message}${hint}`
+    return { error: bypass ? text.split(bypass).join('[bypass]') : text }
+  } finally {
+    await context.close()
+  }
+}
+
+async function timeHost(browser, { label, base, bypass, storageKeys, storedSession }) {
+  const pages = {}
+  for (const [name, path] of PAGE_PATHS) {
+    const runs = []
+    for (let index = 0; index < COLD_LOADS; index += 1) {
+      try {
+        runs.push(await timeColdPage(browser, { base, path, bypass, storageKeys, storedSession }))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'page failed'
+        runs.push({ error: bypass ? message.split(bypass).join('[bypass]') : message })
+      }
+    }
+    pages[name] = {
+      runs: runs.map((run) => ({
+        firstCardMs: run.firstCardMs ?? null,
+        api: run.api || [],
+        dom: run.dom || null,
+        error: run.error || null,
+      })),
+      medianFirstCardMs: median(runs.map((run) => run.firstCardMs)),
+    }
+  }
+  return { label, viewport: PHONE, pages }
+}
+
+function previewOddsClean(counts) {
+  return counts
+    && counts.status === 200
+    && counts.goblin === 0
+    && counts.demon === 0
+    && counts.missing === 0
+    && counts.unknown === 0
 }
 
 async function main() {
@@ -229,7 +499,34 @@ async function main() {
       oneHub(bypass, session.access_token, groups),
       oneHub(bypass, session.access_token, groups),
     ])
+    const storedSession = sessionJson(session)
+    const [prodAuth, previewAuth] = await Promise.all([
+      clientAuthStorageKeys(prodUrl, null),
+      clientAuthStorageKeys(previewUrl, bypass),
+    ])
+    const browser = await chromium.launch({ headless: true })
+    let browserReport
+    let goblin
+    let strikeout
+    try {
+      goblin = {
+        prod: await nhlOddsCounts(prodUrl, { accessToken: session.access_token }),
+        preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
+      }
+      strikeout = {
+        prod: await strikeoutOddsCounts(prodUrl),
+        preview: await strikeoutOddsCounts(previewUrl, { bypass }),
+      }
+      browserReport = {
+        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKeys: prodAuth.keys, storedSession }),
+        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKeys: previewAuth.keys, storedSession }),
+      }
+    } finally {
+      await browser.close()
+    }
     const report = {
+      viewport: PHONE,
+      authBundle: { prod: prodAuth.foundInBundle, preview: previewAuth.foundInBundle },
       cold: { nhl, nfl },
       burst: burst.map((hub) => ({
         wallMs: hub.wallMs,
@@ -237,13 +534,30 @@ async function main() {
         nhlMs: hub.calls.find((call) => call.ds === 'nhl_projections')?.ms ?? null,
         calls: hub.calls,
       })),
+      browser: browserReport,
+      goblin,
+      strikeout,
+      coldLoads: COLD_LOADS,
     }
     await writeFile(new URL('./timings.json', outDir), `${JSON.stringify(report, null, 2)}\n`)
-    console.log(JSON.stringify({
+    const previewFalse = [nhl, nfl].filter((call) => call.preview === false && call.status === 200).length
+    const summary = {
+      coldLoads: COLD_LOADS,
+      previewFalse,
       cold: { nhl: { ms: nhl.ms, status: nhl.status, rows: nhl.rows, preview: nhl.preview }, nfl: { ms: nfl.ms, status: nfl.status, rows: nfl.rows, preview: nfl.preview } },
       burst: report.burst.map((hub) => ({ wallMs: hub.wallMs, nflMs: hub.nflMs, nhlMs: hub.nhlMs })),
-    }))
-    if (nhl.status !== 200 || nfl.status !== 200) process.exitCode = 1
+      browser: {
+        prod: Object.fromEntries(Object.entries(browserReport.prod.pages).map(([name, page]) => [name, page.medianFirstCardMs])),
+        preview: Object.fromEntries(Object.entries(browserReport.preview.pages).map(([name, page]) => [name, page.medianFirstCardMs])),
+      },
+      goblin,
+      strikeout,
+    }
+    console.log(JSON.stringify(summary))
+    const pageFailed = Object.values(browserReport.preview.pages).some((page) => page.medianFirstCardMs == null)
+      || Object.values(browserReport.prod.pages).some((page) => page.medianFirstCardMs == null)
+    const domPromo = Object.values(browserReport.preview.pages).some((page) => page.runs.some((run) => (run.dom?.goblin || 0) > 0 || (run.dom?.demon || 0) > 0))
+    if (nhl.status !== 200 || nfl.status !== 200 || pageFailed || domPromo || !previewOddsClean(goblin.preview) || !strikeoutClean(strikeout.preview)) process.exitCode = 1
   } finally {
     await cleanup()
   }

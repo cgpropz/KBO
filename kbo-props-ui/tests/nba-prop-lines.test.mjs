@@ -159,7 +159,7 @@ test('filters keep one prop type and sort by last-10 hit rate', () => {
       { stat: 'Points', line: 18, projection: 21, opponent: 'BOS', hitRates: { L10: 90 } },
     ],
   }]
-  const rows = filterAndSortRows(buildPropRows(projections, []), 'Points', DEFAULT_FILTERS)
+  const rows = filterAndSortRows(buildPropRows(projections, []), 'Points', { ...DEFAULT_FILTERS, sortBy: 'L10 Hit Rate' })
   assert.deepEqual(rows.map((row) => row.player), ['B', 'A'])
   assert.equal(nbaLogoUrl('NY'), 'https://a.espncdn.com/i/teamlogos/nba/500/ny.png')
   assert.equal(dvpGrade(30), 'A+')

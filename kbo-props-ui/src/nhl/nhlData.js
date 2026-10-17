@@ -7,6 +7,7 @@ export async function fetchNhlProjections() {
     updatedAt: snapshot.updatedAt,
     preview: snapshot.preview,
     lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
   }
 }
 

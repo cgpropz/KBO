@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
@@ -28,7 +29,7 @@ function Card({ item, onSelectPlayer }) {
   return (
     <article className="nfl-edge-card">
       <div className="nfl-card-topline">
-        <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME'}</span>
+        <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : (typeof item.oddsType === 'string' && item.oddsType && item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME')}</span>
         <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">
@@ -78,11 +79,18 @@ export default function NhlProjections({ onSelectPlayer }) {
     let active = true
     fetchNhlProjections()
       .then(({ projections: next, updatedAt: publishedAt }) => {
-        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setLoaded(true) }
+        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setError(''); setLoaded(true) }
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
+
+  useFullBoardRefresh('nhl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setError('')
+    setLoaded(true)
+  })
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -95,7 +103,7 @@ export default function NhlProjections({ onSelectPlayer }) {
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Board</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
       </div>
-      <p className="nhl-note">One card per player and prop. Standard lines are preferred. A demon or goblin is shown only when that is the line PrizePicks posted. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
+      <p className="nhl-note">One card per player and prop. Standard PrizePicks lines only. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
       <div className="nfl-edge-controls">
         <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
         <div className="nfl-position-tabs">

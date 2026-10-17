@@ -4,6 +4,10 @@ import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
+import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
+import { rememberBoardSort, withDefaultSort } from '../boardSort'
+import { usePhoneBoard } from '../usePhoneBoard'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import {
   DEFAULT_FILTERS,
   GAMES_OPTIONS,
@@ -96,7 +100,7 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const grade = dvpGrade(item.dvpRank)
   const scoreNote = buildCgScoreExplainer({
@@ -109,48 +113,44 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy }) {
   })
 
   return (
-    <>
-    <tr className={`wnba-lines-row${locked ? ' locked' : ''}`} ref={whyOpen ? undefined : rowRef}>
-      <td>
-        <div className="wnba-lines-player">
-          <div className="wnba-lines-avatar">
-            {item.imageUrl
-              ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
-              : initials(item.player)}
+    <BoardLine
+      phone={phone}
+      className={`wnba-lines-row${locked ? ' locked' : ''}`}
+      rowRef={whyOpen ? undefined : rowRef}
+      cells={[
+        { node: (
+          <div className="wnba-lines-player">
+            <div className="wnba-lines-avatar">
+              {item.imageUrl
+                ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
+                : initials(item.player)}
+            </div>
+            <div className="wnba-lines-info">
+              <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
+              <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+            </div>
           </div>
-          <div className="wnba-lines-info">
-            <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
-            <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
-            <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+        ) },
+        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: `hit-rate-score ${item.isOver ? 'over' : 'under'}`, node: (
+          <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+        ) },
+        { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
+        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
+        { node: (
+          <div className="wnba-lines-matchup">
+            <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+            <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
-        </div>
-      </td>
-      <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
-      <td className={`hit-rate-score ${item.isOver ? 'over' : 'under'}`}>
-        <CgScoreCell
-          scoreText={item.score.toFixed(1)}
-          note={locked ? null : scoreNote}
-          open={whyOpen}
-          onToggle={onWhy}
-        />
-      </td>
-      <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
-      <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—'}</td>
-      <td>
-        <div className="wnba-lines-matchup">
-          <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
-          <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
-        </div>
-      </td>
-    </tr>
-    {whyOpen && !locked && scoreNote && (
-      <tr className="cg-score-note-row" ref={rowRef}>
-        <td colSpan={6}>
-          <CgScoreNote note={scoreNote} />
-        </td>
-      </tr>
-    )}
-    </>
+        ) },
+      ]}
+      after={whyOpen && !locked && scoreNote
+        ? (phone
+          ? <CgScoreNote note={scoreNote} />
+          : <tr className="cg-score-note-row" ref={rowRef}><td colSpan={6}><CgScoreNote note={scoreNote} /></td></tr>)
+        : null}
+    />
   )
 }
 
@@ -323,7 +323,8 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [whyId, setWhyId] = useState(null)
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'nba', SORT_OPTIONS))
+  const phone = usePhoneBoard()
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [isPaid, setIsPaid] = useState(false)
@@ -332,8 +333,14 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const lastFreeRowRef = useRef(null)
   const [lockTop, setLockTop] = useState(null)
 
-  const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
-  const resetFilters = () => setFilters(DEFAULT_FILTERS)
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    if (key === 'sortBy') rememberBoardSort('nba', value)
+  }
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS)
+    rememberBoardSort('nba', DEFAULT_FILTERS.sortBy)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -346,9 +353,9 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           fetchNbaData('nba/players.json').catch(() => []),
         ])
         if (cancelled) return
-        setLockedCount(board?.preview ? board.lockedCount : 0)
+        setLockedCount(board?.preview && !board?.refreshing ? board.lockedCount : 0)
         setUpdatedAt(board?.updatedAt || null)
-        setIsPaid(board?.preview !== true)
+        setIsPaid(board?.preview !== true || board?.refreshing === true)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
       } catch (err) {
@@ -365,6 +372,15 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     load()
     return () => { cancelled = true }
   }, [])
+
+  useFullBoardRefresh('nba_projections_standard', (snapshot) => {
+    setLockedCount(0)
+    setUpdatedAt(snapshot.updatedAt || null)
+    setIsPaid(true)
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setLoadError('')
+    setProjLoading(false)
+  })
 
   const totalPlayers = players?.length ?? 0
   const totalGames = projections ? projections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0
@@ -459,33 +475,13 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
           {!projLoading && !!rows.length && (
-            <div className="wnba-lines-table-wrap" ref={tableWrapRef}>
-              <table className="wnba-lines-table hit-rate-board">
-                <thead>
-                  <tr>
-                    <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((item, index) => (
-                    <PropRow
-                      key={item.id}
-                      item={item}
-                      onSelectPlayer={onSelectPlayer}
-                      locked={!isPaid && index >= FREE_ROW_LIMIT}
-                      rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-                      whyOpen={whyId === item.id}
-                      onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
-                    />
-                  ))}
-                  {Array.from({ length: placeholderCount }, (_, index) => (
-                    <tr key={`locked-${index}`} className="wnba-lines-row locked wnba-placeholder-row" aria-hidden="true">
-                      <td colSpan={6}><span className="wnba-placeholder-bar" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {hasLockedRows && lockTop != null && (
+            <BoardSurface
+              phone={phone}
+              wrapClass="wnba-lines-table-wrap"
+              wrapRef={tableWrapRef}
+              tableClass="wnba-lines-table hit-rate-board"
+              head={<><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th></>}
+              overlay={hasLockedRows && lockTop != null && (
                 <div className="wnba-lines-lock-overlay" style={{ top: lockTop }}>
                   <div className="wnba-lines-lock-card">
                     <div className="wnba-lines-lock-icon">🔒</div>
@@ -495,7 +491,23 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                   </div>
                 </div>
               )}
-            </div>
+            >
+              {rows.map((item, index) => (
+                <PropRow
+                  key={item.id}
+                  item={item}
+                  phone={phone}
+                  onSelectPlayer={onSelectPlayer}
+                  locked={!isPaid && index >= FREE_ROW_LIMIT}
+                  rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                  whyOpen={whyId === item.id}
+                  onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                />
+              ))}
+              {Array.from({ length: placeholderCount }, (_, index) => (
+                <LockedPlaceholder key={`locked-${index}`} phone={phone} className="wnba-lines-row locked wnba-placeholder-row" />
+              ))}
+            </BoardSurface>
           )}
 
           <FiltersPanel

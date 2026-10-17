@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
 import { teamLogoUrl } from './nflTeams'
@@ -14,6 +15,9 @@ import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
+import { rememberBoardSort, withDefaultSort } from '../boardSort'
+import { usePhoneBoard, usePhonePaintCount } from '../usePhoneBoard'
 
 const FREE_ROW_LIMIT = 3
 
@@ -24,7 +28,7 @@ const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
 const GAMES_OPTIONS = [0, 3, 5, 8, 10]
 const POSITIONS = ['All', 'QB', 'RB', 'WR', 'TE']
 const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
-const DEFAULT_FILTERS = { side: 'All', sortBy: 'Hit Rate', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
+const DEFAULT_FILTERS = { side: 'All', sortBy: 'CG Score', minHitRate: 0, minGames: 0, position: 'All', grade: 'All Grades', edgeMin: '', edgeMax: '', lineMin: '', lineMax: '' }
 
 function formatValue(value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(1)
@@ -94,7 +98,7 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const isOver = item.projection >= item.line
   const grade = dvpGrade(item.dvpRank)
@@ -108,14 +112,28 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
     recentValues: recent,
   })
 
+  const note = whyOpen && !locked && scoreNote
+    ? (phone ? <CgScoreNote note={scoreNote} /> : (
+      <tr className="cg-score-note-row" ref={open ? undefined : rowRef}>
+        <td colSpan={6}><CgScoreNote note={scoreNote} /></td>
+      </tr>
+    ))
+    : null
+  const oddsRow = open && !locked
+    ? (phone ? <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} /> : (
+      <tr className="nfl-sharp-strip-row" id={stripId} ref={rowRef}>
+        <td colSpan={6}><BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} /></td>
+      </tr>
+    ))
+    : null
   return (
-    <>
-      <tr
-        className={`nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
-        ref={open || whyOpen ? undefined : rowRef}
-        onClick={locked ? undefined : onToggle}
-      >
-        <td>
+    <BoardLine
+      phone={phone}
+      className={`nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+      rowRef={open || whyOpen ? undefined : rowRef}
+      onClick={locked ? undefined : onToggle}
+      cells={[
+        { node: (
           <div className="nfl-lines-player">
             <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
@@ -125,40 +143,27 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
-        </td>
-        <td className="hit-rate-chart"><MiniChart recent={recent} line={item.line} /></td>
-        <td className={`hit-rate-score ${isOver ? 'over' : 'under'}`}>
-          <CgScoreCell
-            scoreText={item.score.toFixed(1)}
-            note={locked ? null : scoreNote}
-            open={whyOpen}
-            onToggle={onWhy}
-          />
-        </td>
-        <td className="hit-rate-col"><HitRateStrip pills={item.hitPills} /></td>
-        <td className="hit-rate-extra" style={item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined}>{item.dvpRank ? ordinal(item.dvpRank) : '—'}</td>
-        <td>
+        ) },
+        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+          <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+        ) },
+        { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
+        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(item.dvpRank) : '—' },
+        { node: (
           <div className="nfl-lines-matchup">
             <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
             <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
-        </td>
-      </tr>
-      {whyOpen && !locked && scoreNote && (
-        <tr className="cg-score-note-row" ref={open ? undefined : rowRef}>
-          <td colSpan={6}>
-            <CgScoreNote note={scoreNote} />
-          </td>
-        </tr>
+        ) },
+      ]}
+      after={(
+        <>
+          {note}
+          {oddsRow}
+        </>
       )}
-      {open && !locked && (
-        <tr className="nfl-sharp-strip-row" id={stripId} ref={rowRef}>
-          <td colSpan={6}>
-            <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
-          </td>
-        </tr>
-      )}
-    </>
+    />
   )
 }
 
@@ -267,7 +272,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [loaded, setLoaded] = useState(false)
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'nfl', SORT_OPTIONS))
+  const phone = usePhoneBoard()
   const [openId, setOpenId] = useState(null)
   const [whyId, setWhyId] = useState(null)
 
@@ -275,6 +281,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [updatedAt, setUpdatedAt] = useState(null)
   const { index: oddsIndex, oddsState } = useBoardOdds(
     () => fetchNflSharpOdds().then(({ records, preview }) => ({ records, preview })),
+    { enabled: loaded },
   )
 
   const { tier } = useAuth()
@@ -287,12 +294,26 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview ? locked : 0); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview && !refreshing ? locked : 0); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
   }, [])
 
-  const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
-  const resetFilters = () => setFilters(DEFAULT_FILTERS)
+  useFullBoardRefresh('nfl_projections', (snapshot) => {
+    setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
+    setUpdatedAt(snapshot.updatedAt || null)
+    setLockedCount(0)
+    setError('')
+    setLoaded(true)
+  })
+
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    if (key === 'sortBy') rememberBoardSort('nfl', value)
+  }
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS)
+    rememberBoardSort('nfl', DEFAULT_FILTERS.sortBy)
+  }
 
   const lineBounds = useMemo(() => {
     const lines = projections.map((item) => item.line).filter((value) => typeof value === 'number')
@@ -343,6 +364,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     })
   }, [projections, propTab, filters])
 
+  const paintCount = usePhonePaintCount(phone, rows.length)
+  const visibleRows = rows.slice(0, paintCount)
   const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
@@ -392,41 +415,13 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       {!error && loaded && !projections.length && (isPaid || lockedCount <= 0) && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
       {!!rows.length && (
-        <div className="nfl-lines-table-wrap" ref={tableWrapRef}>
-          <table className="nfl-lines-table hit-rate-board">
-            <thead>
-              <tr>
-                <th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((item, index) => {
-                const matched = boardOddsFor(oddsIndex, item)
-                return (
-                  <PropRow
-                    key={item.id}
-                    item={item}
-                    onSelectPlayer={onSelectPlayer}
-                    locked={!isPaid && index >= FREE_ROW_LIMIT}
-                    rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
-                    open={openId === item.id}
-                    onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
-                    whyOpen={whyId === item.id}
-                    onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
-                    odds={matched.odds}
-                    seen={matched.seen}
-                    oddsState={oddsState}
-                  />
-                )
-              })}
-              {Array.from({ length: placeholderCount }, (_, index) => (
-                <tr key={`locked-${index}`} className="nfl-lines-row locked nfl-placeholder-row" aria-hidden="true">
-                  <td colSpan={6}><span className="nfl-placeholder-bar" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {hasLockedRows && lockTop != null && (
+        <BoardSurface
+          phone={phone}
+          wrapClass="nfl-lines-table-wrap"
+          wrapRef={tableWrapRef}
+          tableClass="nfl-lines-table hit-rate-board"
+          head={<><th>Lines</th><th>L10 Chart</th><th>CG Score</th><th>Over hit rate</th><th>DVP</th><th>Matchup</th></>}
+          overlay={hasLockedRows && lockTop != null && (
             <div className="nfl-lines-lock-overlay" style={{ top: lockTop }}>
               <div className="nfl-lines-lock-card">
                 <div className="nfl-lines-lock-icon">🔒</div>
@@ -436,7 +431,31 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
               </div>
             </div>
           )}
-        </div>
+        >
+          {visibleRows.map((item, index) => {
+            const matched = boardOddsFor(oddsIndex, item)
+            return (
+              <PropRow
+                key={item.id}
+                item={item}
+                phone={phone}
+                onSelectPlayer={onSelectPlayer}
+                locked={!isPaid && index >= FREE_ROW_LIMIT}
+                rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
+                open={openId === item.id}
+                onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                whyOpen={whyId === item.id}
+                onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                odds={matched.odds}
+                seen={matched.seen}
+                oddsState={oddsState}
+              />
+            )
+          })}
+          {Array.from({ length: placeholderCount }, (_, index) => (
+            <LockedPlaceholder key={`locked-${index}`} phone={phone} className="nfl-lines-row locked nfl-placeholder-row" />
+          ))}
+        </BoardSurface>
       )}
       <FiltersPanel
         open={filtersOpen}

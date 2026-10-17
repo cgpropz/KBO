@@ -84,7 +84,7 @@ function BatterProjections() {
   const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
-  const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
+  const oddsTypeFilter = 'standard';
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [playerSearch, setPlayerSearch] = useState('');
@@ -559,7 +559,6 @@ function BatterProjections() {
 
   const activeFilterCount = [
     propFilter !== 'all',
-    oddsTypeFilter !== 'all',
     hitRateFilter !== 'all',
     hitRateMinimum !== 'off',
     playerSearch.trim() !== '',
@@ -567,7 +566,6 @@ function BatterProjections() {
 
   const clearFilters = () => {
     setPropFilter('all');
-    setOddsTypeFilter('all');
     setHitRateFilter('all');
     setHitRateMinimum('off');
     setPlayerSearch('');
@@ -704,33 +702,6 @@ function BatterProjections() {
                     onClick={() => setPropFilter(f)}
                   >
                     {f === 'all' ? 'All' : f === 'Hits+Runs+RBIs' ? 'H+R+RBI' : f === 'Total Bases' ? 'Total Bases' : 'Fantasy'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="bp-filter-group" aria-label="Line type">
-              <span className="bp-filter-label">Line type</span>
-              <div className="bp-filter-options">
-                {[
-                  { key: 'all', label: 'Any' },
-                  { key: 'standard', label: 'Standard' },
-                  { key: 'goblin', label: 'Goblin' },
-                  { key: 'demon', label: 'Demon' },
-                  { key: 'promo', label: 'Promos' },
-                ].map(({ key, label }) => (
-                  <button
-                    key={`ot-${key}`}
-                    className={`bp-filter-btn bp-filter-btn-ot ${oddsTypeFilter === key ? 'active' : ''}`}
-                    onClick={() => setOddsTypeFilter(key)}
-                    title={
-                      key === 'goblin' ? 'Easier line / lower payout'
-                      : key === 'demon' ? 'Harder line / higher payout'
-                      : key === 'promo' ? 'Goblin or Demon'
-                      : key === 'standard' ? 'Standard PrizePicks line'
-                      : 'Show all line types'
-                    }
-                  >
-                    {label}
                   </button>
                 ))}
               </div>

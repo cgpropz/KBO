@@ -79,7 +79,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProp, setSelectedProp] = useState('all');
-  const [oddsTypeFilter, setOddsTypeFilter] = useState('all');
+  const oddsTypeFilter = 'standard';
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [sortField, setSortField] = useState('rating');
@@ -509,14 +509,12 @@ function StrikeoutProjections({ onNavigate }) {
 
   const activeFilterCount = [
     selectedProp !== 'all',
-    oddsTypeFilter !== 'all',
     hitRateFilter !== 'all',
     hitRateMinimum !== 'off',
   ].filter(Boolean).length;
 
   const clearFilters = () => {
     setSelectedProp('all');
-    setOddsTypeFilter('all');
     setHitRateFilter('all');
     setHitRateMinimum('off');
   };
@@ -589,25 +587,6 @@ function StrikeoutProjections({ onNavigate }) {
               <div className="so-filter-options">
                 {propOptions.map((option) => (
                   <button key={option.key} className={`so-filter-btn ${selectedProp === option.key ? 'active' : ''}`} onClick={() => setSelectedProp(option.key)}>{option.label}</button>
-                ))}
-              </div>
-            </div>
-            <div className="so-filter-group">
-              <span className="so-filter-label">Line type</span>
-              <div className="so-filter-options">
-                {[
-                  { key: 'all', label: 'Any' },
-                  { key: 'standard', label: 'Standard' },
-                  { key: 'goblin', label: 'Goblin' },
-                  { key: 'demon', label: 'Demon' },
-                  { key: 'promo', label: 'Promos' },
-                ].map(({ key, label }) => (
-                  <button
-                    key={`ot-${key}`}
-                    className={`so-filter-btn ${oddsTypeFilter === key ? 'active' : ''}`}
-                    onClick={() => setOddsTypeFilter(key)}
-                    title={key === 'goblin' ? 'Easier line / lower payout' : key === 'demon' ? 'Harder line / higher payout' : key === 'promo' ? 'Goblin or Demon' : key === 'standard' ? 'Standard PrizePicks line' : 'Show all line types'}
-                  >{label}</button>
                 ))}
               </div>
             </div>

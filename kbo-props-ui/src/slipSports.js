@@ -167,10 +167,9 @@ function lineTypePresent(row) {
   ))
 }
 
-// Only projections_standard.json may treat a missing line type as standard.
-// WNBA and NBA standard rows omit the field. Demon and goblin boards omit it
-// too, and those rows stay excluded. A row that already carries a type keeps
-// it, so a labeled demon or goblin is still dropped.
+// A row with no odds-type field is already standard. The standard basketball
+// file still stamps odds_type so the slip row is labeled. A present goblin
+// or demon keeps its type and is dropped.
 function basketLine(player, prop, fillMissingStandard) {
   const merged = { ...player, ...prop }
   if (!fillMissingStandard || lineTypePresent(merged)) return merged

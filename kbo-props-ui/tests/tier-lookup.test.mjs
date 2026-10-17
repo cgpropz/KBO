@@ -34,7 +34,7 @@ function profileClient(read) {
                 generated_at: new Date().toISOString(),
                 cards: Array.from({ length: 6 }, (_, i) => ({
                   name: `Player ${i}`,
-                  props: [{ stat: 'SO', line: 1.5, projection: i + 1, cg_projection: i + 10, recommendation: 'OVER' }],
+                  props: [{ stat: 'SO', line: 1.5, projection: i + 1, cg_projection: i + 10, recommendation: 'OVER', odds_type: 'standard' }],
                 })),
               },
               updated_at: new Date().toISOString(),
@@ -192,6 +192,63 @@ test('a slow profile still serves the member the full board', async () => {
   } finally {
     _setTimeouts(prev);
     _clearCache();
+  }
+});
+
+test('a cached KBO tier stays on the NFL and NHL preview when the profile times out', async () => {
+  const prev = { ...timeouts };
+  _setTimeouts({ tierLookupMs: 80 });
+  const nfl = Array.from({ length: 4 }, (_, i) => ({
+    player: `QB${i}`, prop: 'Pass Yds', line: 200 - i, projection: 210, line_type: 'standard',
+  }));
+  const nhl = Array.from({ length: 6 }, (_, i) => ({
+    player: `S${i}`, prop: 'Points', line: 1.5, projection: 1, oddsType: 'standard', rankEligible: true,
+  }));
+  const boardClient = (read) => ({
+    auth: {
+      async getUser() { throw new Error('auth.getUser must not run'); },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain; },
+        eq() { return chain; },
+        abortSignal() { return chain; },
+        maybeSingle() {
+          if (table === 'user_profiles') return read();
+          const rows = table === 'nhl_projections' ? nhl : nfl;
+          return Promise.resolve({ data: { data: rows, updated_at: new Date().toISOString() }, error: null });
+        },
+      };
+      return chain;
+    },
+  });
+  try {
+    clearMemberTierCache();
+    for (const ds of ['nfl_projections', 'nhl_projections']) {
+      _clearCache();
+      const warm = mockRes();
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: { authorization: `Bearer ${bearerFor('tok-kbo')}` } },
+        warm,
+        boardClient(async () => ({ data: { tier: 'kbo' }, error: null })),
+      );
+      assert.equal(warm.statusCode, 200, ds);
+      assert.equal(warm.body.tier, 'kbo', ds);
+      assert.equal(warm.body.preview, true, ds);
+      const cold = mockRes();
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: { authorization: `Bearer ${bearerFor('tok-kbo')}` } },
+        cold,
+        boardClient(() => new Promise(() => {})),
+      );
+      assert.equal(cold.body.tier, 'kbo', ds);
+      assert.equal(cold.body.preview, true, ds);
+      assert.ok(cold.body.data.length < (ds === 'nhl_projections' ? nhl.length : nfl.length), ds);
+    }
+  } finally {
+    _setTimeouts(prev);
+    _clearCache();
+    clearMemberTierCache();
   }
 });
 

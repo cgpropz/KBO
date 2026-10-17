@@ -25,7 +25,7 @@ test('the demon free preview ranks the floored pick line and keeps the posted li
     { name: 'Points Edge', ppAllProps: [{ stat: 'Points', line: 8.5, standardLine: 8.5, projection: 16 }] },
     { name: 'High Standard', ppAllProps: [{ stat: 'Points', line: 20, standardLine: 8, projection: 10 }] },
   ]
-  const preview = shapeForTier('wnba_projections_demon', payload, 'free')
+  const preview = shapeForTier('wnba_projections_standard', payload, 'free')
   assert.deepEqual(preview.data.map((player) => player.name), ['Points Edge', 'Tiny Three', 'High Standard'])
   assert.equal(preview.data[1].ppAllProps[0].line, 0.5)
   assert.equal(preview.lockedCount, 0)
@@ -36,7 +36,7 @@ test('the NBA free preview does not use the WNBA line floor', () => {
     { name: 'Tiny', ppAllProps: [{ stat: '3-PT Made', line: 0.5, projection: 2.15 }] },
     { name: 'Normal', ppAllProps: [{ stat: 'Points', line: 8.5, projection: 12 }] },
   ]
-  const preview = shapeForTier('nba_projections_goblin', payload, 'free')
+  const preview = shapeForTier('nba_projections_standard', payload, 'free')
   assert.deepEqual(preview.data.map((player) => player.name), ['Tiny', 'Normal'])
   assert.equal(preview.data[0].ppAllProps[0].line, 0.5)
 })

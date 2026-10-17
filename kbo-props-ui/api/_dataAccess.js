@@ -3,6 +3,7 @@ import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { pointsOverDisposition, prepareBoardRows } from '../src/nhl/pointsGate.js';
+import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -554,35 +555,8 @@ function countList(payload, key) {
   return Array.isArray(payload) ? payload.length : 0;
 }
 
-// Same snapshot shape the board already renders, with the pick rows removed.
-// lockedCount stays positive so the page shows the paywall instead of an error
-// or an empty-board message.
-function hiddenNflPreview(ds, payload) {
-  if (ds === 'nfl_projections') {
-    return { data: [], lockedCount: countList(payload) };
-  }
-  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
-  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
-  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
-}
-
-const ODDS_TYPE_KEYS = ['odds_type', 'oddsType', 'line_type', 'lineType'];
-
-// undefined: the row has no odds-type field (a ranking, a lineup, a total).
-// '' : the field is present and blank. Anything other than "standard" is out.
-function explicitOddsType(row) {
-  if (!row || typeof row !== 'object') return undefined;
-  for (const key of ODDS_TYPE_KEYS) {
-    if (!Object.hasOwn(row, key) || row[key] == null) continue;
-    return String(row[key]).trim().toLowerCase();
-  }
-  return undefined;
-}
-
 function isStandardProp(row) {
-  const type = explicitOddsType(row);
-  if (type === undefined) return true;
-  return type === 'standard';
+  return isStandardBoardLine(row);
 }
 
 function filterLineMap(value) {
@@ -657,6 +631,9 @@ function stripNonStandardLines(payload) {
       next.matchups = filtered;
     }
   }
+  if (changed && payload.summary && typeof payload.summary === 'object' && (next.graded || next.pending)) {
+    next.summary = summaryForGradedRows(next.graded ?? payload.graded, next.pending ?? payload.pending);
+  }
   return changed ? next : payload;
 }
 
@@ -664,16 +641,50 @@ export function standardLinesOnly(payload) {
   return stripNonStandardLines(payload);
 }
 
+// Same snapshot shape the board already renders, with the pick rows removed.
+// lockedCount stays positive so the page shows the paywall instead of an error
+// or an empty-board message.
+function hiddenNflPreview(ds, payload) {
+  if (ds === 'nfl_projections') {
+    return { data: [], lockedCount: countList(payload) };
+  }
+  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
+}
+
+// Code Green, 7:53 AM ET on Oct 17, 2026: standard lines only for everyone,
+// including free and logged-out visitors. The filter runs before the
+// free-preview trim. Set this to false only to restore the old preview order.
+export const FILTER_STANDARD_BEFORE_FREE_PREVIEW = true;
+
+let tierShapeFilters = 0;
+
+export function _tierShapeFilters() {
+  return tierShapeFilters;
+}
+
+export function _resetTierShapeFilters() {
+  tierShapeFilters = 0;
+}
+
 // Decide what the caller receives for one dataset snapshot.
-export function shapeForTier(ds, payload, tier) {
+// alreadyStandard means the cached board was filtered once for this entry.
+// The hot path must not walk the rows again.
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
-  payload = standardLinesOnly(payload);
+  // Standard lines are removed before the trim on paid boards and, while
+  // FILTER_STANDARD_BEFORE_FREE_PREVIEW is on, on free and logged-out boards.
+  const paid = sportAccess(tier)[spec.sport] === true;
+  if (!alreadyStandard && (paid || FILTER_STANDARD_BEFORE_FREE_PREVIEW)) {
+    tierShapeFilters += 1;
+    payload = filterStandardBoard(ds, payload);
+  }
   // Drop Points overs under 0.69 from the paid board and the free preview.
   // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
   // visible and not ranked into the free top 3.
   if (ds === 'nhl_projections') payload = nhlBoardPayload(payload);
-  const paid = sportAccess(tier)[spec.sport] === true;
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }

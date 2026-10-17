@@ -3,9 +3,10 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
+  FILTER_STANDARD_BEFORE_FREE_PREVIEW,
   FREE_ROW_LIMIT,
   NFL_FREE_PREVIEW_ENABLED,
   isNbaDataset,
@@ -13,6 +14,7 @@ import {
   nflFreeTotalEdgesEnabled,
   previewNflGameMarkets,
   shapeForTier,
+  _tierShapeFilters,
 } from '../api/_dataAccess.js'
 import { bearerFor, installJwtSecret } from './access-token.mjs'
 
@@ -46,6 +48,7 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
           avg: 12,
           hit_rate_l10: 50,
           recommendation: 'OVER',
+          odds_type: 'standard',
         }
         if (c === 0 && p === 0) {
           row.cg_projection = 95
@@ -61,8 +64,8 @@ function kboBoard(nCards = 6, propsPerCard = 3) {
 
 const TABLES = {
   prizepicks_props: kboBoard(),
-  strikeout_projections: { generated_at: NOW, projections: Array.from({ length: 10 }, (_, i) => ({ name: `P${i}`, rating: i, line: 4.5 })), team_so_per_g: { LG: 7 } },
-  batter_projections: { generated_at: NOW, projections: Array.from({ length: 8 }, (_, i) => ({ name: `B${i}`, cg_projection: i })) },
+  strikeout_projections: { generated_at: NOW, projections: Array.from({ length: 10 }, (_, i) => ({ name: `P${i}`, rating: i, line: 4.5, odds_type: 'standard' })), team_so_per_g: { LG: 7 } },
+  batter_projections: { generated_at: NOW, projections: Array.from({ length: 8 }, (_, i) => ({ name: `B${i}`, cg_projection: i, odds_type: 'standard' })) },
   matchup_data: { generated_at: NOW, matchups: [{ away: 'LG', home: 'KT', props: [{ name: 'x', line: 3.5 }, { name: 'y', line: 1.5 }], market: { total: 8.5 }, away_pitcher: { name: 'A', line: 17.5, k_projection: 19.9, profile: { era: 3.1 } }, home_pitcher: { name: 'H', profile: { era: 4 } } }] },
   pitcher_rankings: Array.from({ length: 12 }, (_, i) => ({ name: `R${i}`, rk: i + 1 })),
   graded_props_history: { generated_at: NOW, summary: { hit: 10 }, graded: Array.from({ length: 20 }, (_, i) => ({ id: i })), pending: Array.from({ length: 9 }, (_, i) => ({ id: i })) },
@@ -74,7 +77,7 @@ const TABLES = {
   wnba_players: Array.from({ length: 30 }, (_, i) => ({ name: `W${i}` })),
   wnba_lineups: Array.from({ length: 6 }, (_, i) => ({ game: i })),
   nfl_projections: Array.from({ length: 15 }, (_, i) => ({
-    player: `N${i}`, line: 50, projection: 40 + i,
+    player: `N${i}`, line: 50, projection: 40 + i, line_type: 'standard',
     ...(i === 0 ? { recent: [11, 22, 33], gameDates: ['2026-09-07'], profile: { toi: 18 } } : {}),
   })),
   nfl_lineups: Array.from({ length: 4 }, (_, i) => ({ game: i })),
@@ -631,8 +634,8 @@ test('a slow head and an out-of-budget chunk read serve last-good or 503, never 
   _setTimeouts({ snapshotReadMs: 80, lastGoodReadMs: 80, tierLookupMs: 400 })
   const version = '2026-10-17T12:00:00Z'
   const stored = [
-    { player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: new Date().toISOString() },
-    { player: 'Second', projection: 3, line: 2.5, rankEligible: true },
+    { player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard', generated_at: new Date().toISOString() },
+    { player: 'Second', projection: 3, line: 2.5, rankEligible: true, oddsType: 'standard' },
   ]
   const partial = [{ player: 'PartialOnly', projection: 9, line: 1, rankEligible: true }]
   function client({ storage }) {
@@ -877,7 +880,126 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
-test('a profile timeout with no paid cache is retryable and not a free preview', async () => {
+test('shapeForTier walks standard lines only when the cache has not already', () => {
+  const rows = [
+    { player: 'A', line: 1, projection: 2, line_type: 'standard' },
+    { player: 'B', line: 1, projection: 2, line_type: 'goblin' },
+  ]
+  const filtered = shapeForTier('nfl_projections', rows, 'combined')
+  assert.equal(filtered.data.length, 1)
+  const cached = shapeForTier('nfl_projections', rows, 'combined', { alreadyStandard: true })
+  assert.equal(cached.data.length, 2)
+  assert.equal(cached.preview, false)
+})
+
+function nflClient({ tier = 'owner', rows = TABLES.nfl_projections } = {}) {
+  return {
+    auth: {
+      async getUser() {
+        throw new Error('auth.getUser must not run')
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        async maybeSingle() {
+          if (table === 'user_profiles') return { data: { tier }, error: null }
+          return { data: { data: structuredClone(rows), updated_at: NOW }, error: null }
+        },
+      }
+      return chain
+    },
+  }
+}
+
+test('the standard-line filter runs once per cached board', async () => {
+  const rows = [
+    ...structuredClone(TABLES.nfl_projections),
+    { player: 'Gob', line: 1, projection: 2, line_type: 'goblin' },
+  ]
+  const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } }
+  const first = mockRes()
+  await handleDataRequest(req, first, nflClient({ rows }))
+  assert.equal(first.statusCode, 200)
+  assert.equal(first.body.preview, false)
+  assert.equal(first.body.data.some((row) => row.player === 'Gob'), false)
+  assert.equal(first.body.data.length, TABLES.nfl_projections.length)
+  assert.equal(_standardFilterRuns(), 1)
+  assert.equal(_tierShapeFilters(), 0)
+  const second = mockRes()
+  await handleDataRequest(req, second, nflClient({ rows }))
+  assert.equal(_standardFilterRuns(), 1)
+  assert.equal(_tierShapeFilters(), 0)
+  assert.equal(second.body.data.length, first.body.data.length)
+})
+
+test('an anonymous strikeout preview is standard lines only', async () => {
+  const rows = {
+    projections: [
+      { name: 'Naile', line: 17.5, projection: 20, odds_type: 'goblin', prop: 'Strikeouts', rating: 200 },
+      { name: 'A', line: 5, projection: 4, odds_type: 'standard', prop: 'Strikeouts', rating: 40 },
+      { name: 'B', line: 5, projection: 3, odds_type: 'standard', prop: 'Strikeouts', rating: 30 },
+      { name: 'C', line: 5, projection: 2, odds_type: 'standard', prop: 'Strikeouts', rating: 20 },
+    ],
+  }
+  const req = { method: 'GET', query: { ds: 'strikeout_projections' }, headers: {} }
+  const free = mockRes()
+  await handleDataRequest(req, free, nflClient({ rows }))
+  assert.equal(FILTER_STANDARD_BEFORE_FREE_PREVIEW, true)
+  assert.equal(free.body.preview, true)
+  assert.equal(free.body.data.projections.some((row) => row.name === 'Naile'), false)
+  assert.deepEqual(free.body.data.projections.map((row) => row.name), ['A', 'B', 'C'])
+  assert.equal(_standardFilterRuns(), 1)
+  const paid = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'strikeout_projections' }, headers: { authorization: bearer('tok-owner') } },
+    paid,
+    nflClient({ rows }),
+  )
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.projections.some((row) => row.name === 'Naile'), false)
+  assert.equal(_standardFilterRuns(), 1)
+})
+
+test('the NBA full path drops non-standard props', async () => {
+  const players = [
+    { name: 'Std', ppAllProps: [{ stat: 'Points', odds_type: 'standard', line: 20, projection: 22 }] },
+    { name: 'Demon', ppAllProps: [{ stat: 'Points', odds_type: 'demon', line: 15, projection: 30 }] },
+  ]
+  const client = {
+    auth: {
+      async getUser() {
+        throw new Error('auth.getUser must not run')
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        async maybeSingle() {
+          if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+          if (table === 'app_flags') return { data: { value: false }, error: null }
+          return { data: { data: structuredClone(players), updated_at: NOW }, error: null }
+        },
+      }
+      return chain
+    },
+  }
+  const res = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nba_projections_standard' }, headers: { authorization: bearer('tok-owner') } },
+    res,
+    client,
+  )
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, false)
+  assert.deepEqual(res.body.data.map((row) => row.name), ['Std'])
+})
+
+test('a profile timeout with no paid cache returns the free preview', async () => {
   const prev = { ...timeouts }
   _setTimeouts({ tierLookupMs: 40 })
   const nhl = Array.from({ length: 6 }, (_, i) => ({
@@ -1190,7 +1312,7 @@ test('a storage copy is not served from memory after its age limit', async (t) =
   const maxAge = lastGoodMaxAgeMs('nhl_projections')
   const left = 60_000
   const generatedAt = new Date(Date.now() - maxAge + left).toISOString()
-  const stored = [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: generatedAt }]
+  const stored = [{ player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, oddsType: 'standard', generated_at: generatedAt }]
   let downloads = 0
   const client = {
     auth: {
