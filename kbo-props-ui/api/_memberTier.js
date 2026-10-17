@@ -108,11 +108,13 @@ async function loadJwks(env, fetchImpl, { force = false, now = Date.now } = {}) 
   const sameUrl = jwksCache.url === issuer;
   const fresh = sameUrl && jwksCache.keys.length && clock - jwksCache.at < JWKS_TTL_MS;
   if (fresh && !force) return jwksCache.keys;
-  // The minute window has to hold when the last fetch stored no keys.
-  // sameUrl is false until that empty result is cached, which is why a
-  // burst of unknown kids used to skip this check and refetch every time.
+  // The minute window has to hold when the last fetch stored no keys, and
+  // when a refetch fails after those keys have gone stale. A stale non-empty
+  // cache used to miss this check and fetch again on the next request.
+  // sameUrl is false until a result is cached, which is why a burst of
+  // unknown kids used to skip this check and refetch every time.
   const withinForceWindow = sameUrl && clock - jwksCache.forcedAt < JWKS_FORCE_REFRESH_MS;
-  if (withinForceWindow && (force || jwksCache.keys.length === 0)) return jwksCache.keys;
+  if (withinForceWindow && (force || !fresh)) return jwksCache.keys;
   if (jwksInflight && jwksInflight.issuer === issuer) return jwksInflight.promise;
 
   const promise = (async () => {

@@ -270,6 +270,49 @@ test('forged-kid tokens fetch JWKS at most once a minute when no keys come back'
   });
 });
 
+test('a failed JWKS fetch keeps the once-a-minute window after cached keys go stale', async () => {
+  clearMemberTierCache();
+  const env = { VITE_SUPABASE_URL: 'https://project.supabase.co' };
+  const claims = {
+    aud: 'authenticated',
+    role: 'authenticated',
+    sub: 'u-fan',
+    email: 'fan@example.com',
+    exp: 1_800_000_000,
+    iss: 'https://project.supabase.co/auth/v1',
+  };
+  const header = Buffer.from(JSON.stringify({ alg: 'ES256', kid: 'forged-kid', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+  const token = `Bearer ${header}.${payload}.${Buffer.from('not-a-signature').toString('base64url')}`;
+  let now = 1_700_000_000_000;
+  let fail = false;
+  let fetches = 0;
+  const fetchImpl = async () => {
+    fetches += 1;
+    if (fail) throw new Error('jwks down');
+    return { ok: true, json: async () => ({ keys: [{ kid: 'real-kid', kty: 'EC', crv: 'P-256' }] }) };
+  };
+  const opts = { env, fetchImpl, now: () => now };
+  assert.equal(await verifyAccessToken(token, opts), null);
+  assert.equal(fetches, 2);
+
+  now += (10 * 60 * 1000) + 1;
+  fail = true;
+  assert.equal(await verifyAccessToken(token, opts), null);
+  assert.equal(fetches, 3);
+  for (let i = 0; i < 5; i += 1) {
+    assert.equal(await verifyAccessToken(token, opts), null);
+  }
+  assert.equal(fetches, 3);
+  now += 59_000;
+  assert.equal(await verifyAccessToken(token, opts), null);
+  assert.equal(fetches, 3);
+  now += 1_000;
+  assert.equal(await verifyAccessToken(token, opts), null);
+  assert.equal(fetches, 4);
+  clearMemberTierCache();
+});
+
 test('a slow profile still serves the member the full board', async () => {
   const prev = { ...timeouts };
   _setTimeouts({ tierLookupMs: 400 });
