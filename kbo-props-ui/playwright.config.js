@@ -13,7 +13,7 @@ const mobileUse = {
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/phone-width.spec.js',
+  testIgnore: ['**/phone-width.spec.js', '**/phone-card-fit.spec.js'],
   timeout: 60_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
@@ -25,7 +25,7 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile',
-      testIgnore: ['**/phone-width.spec.js', '**/webkit-member-scale.spec.js'],
+      testIgnore: ['**/phone-width.spec.js', '**/phone-card-fit.spec.js', '**/webkit-member-scale.spec.js'],
       use: mobileUse,
     },
     {

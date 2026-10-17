@@ -499,7 +499,17 @@
     flex: 0 0 40px !important;
   }
 
-  .hit-rate-strip,
+  .hit-rate-strip {
+    display: flex !important;
+    flex-flow: row wrap !important;
+    align-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+    overflow: visible;
+  }
+
   .nfl-sharp-books {
     display: flex !important;
     flex-flow: row nowrap !important;
@@ -528,10 +538,26 @@
   .nfl-lines-tabs::-webkit-scrollbar,
   .nfl-sharp-books::-webkit-scrollbar { display: none; }
 
-  .hit-rate-pill,
   :is(.kbo-prop-tabs, .nfl-lines-tabs, .wnba-lines-tabs, .kbo-player-tabs, .nfl-player-tabs, .wnba-player-tabs) > button,
   .nfl-sharp-book-cell {
     flex: 0 0 auto !important;
+    white-space: nowrap;
+  }
+
+  .hit-rate-pill {
+    flex: 1 1 auto !important;
+    width: auto;
+    min-width: max-content;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .hit-rate-pill-k,
+  .hit-rate-pill-n,
+  .hit-rate-pill-v {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -726,8 +752,12 @@
   }
 
   .prop-line-card {
-    display: flex !important;
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 56px;
+    grid-auto-rows: auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 4px;
     position: relative;
     width: 100% !important;
     max-width: 100% !important;
@@ -735,7 +765,6 @@
     box-sizing: border-box;
     margin: 0 0 12px;
     padding: 12px;
-    gap: 8px;
     background: #080c0a;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
@@ -747,28 +776,133 @@
     pointer-events: none;
   }
 
+  /* The score and the odds button share the right column on different rows.
+     Name, tag, and line stay in the middle column, so a long name truncates
+     instead of running into "Why this score?" or the odds button. */
+  .wnba-root .wnba-content {
+    padding: 8px 8px 24px !important;
+  }
+
+  .wnba-propboard {
+    padding: 8px !important;
+    border-radius: 12px;
+  }
+
+  .prop-line-card > :is(.nfl-lines-player, .wnba-lines-player),
+  .prop-line-card > div:has(> .kbo-player-cell),
+  .prop-line-card .kbo-player-cell,
+  .prop-line-card :is(.nfl-lines-info, .wnba-lines-info),
+  .prop-line-card .kbo-player-cell > div:not(.kbo-avatar) {
+    display: contents;
+  }
+
+  .prop-line-card > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .prop-line-card :is(.nfl-lines-avatar, .wnba-lines-avatar, .kbo-avatar) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .prop-line-card :is(.nfl-player-link, .wnba-player-link),
+  .prop-line-card .kbo-player-cell strong,
+  .prop-line-card :is(.nfl-lines-tag, .wnba-lines-tag),
+  .prop-line-card .kbo-player-cell small,
+  .prop-line-card :is(.nhl-probable, .nhl-confirmed) {
+    grid-column: 2;
+    display: block;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prop-line-card :is(.nfl-player-link, .wnba-player-link),
+  .prop-line-card .kbo-player-cell strong {
+    grid-row: 1;
+    min-height: 0;
+    text-align: left;
+  }
+
+  .prop-line-card :is(.nfl-lines-tag, .wnba-lines-tag),
+  .prop-line-card .kbo-player-cell small,
+  .prop-line-card :is(.nhl-probable, .nhl-confirmed) {
+    grid-row: 2;
+  }
+
+  .prop-line-card :is(.nhl-probable, .nhl-confirmed) {
+    justify-self: start;
+    align-self: start;
+    width: max-content;
+    overflow: hidden;
+  }
+
+  .prop-line-card :is(.nhl-probable, .nhl-confirmed) + .nfl-lines-tag {
+    margin-top: 18px;
+  }
+
+  .prop-line-card :is(.nfl-lines-line, .wnba-lines-line),
+  .prop-line-card .kbo-player-cell b {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    display: block;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prop-line-card .nfl-odds-toggle {
+    grid-column: 3;
+    grid-row: 3;
+    align-self: center;
+    justify-self: end;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    margin: 0;
+  }
+
   .prop-line-card > .hit-rate-score {
-    order: 1;
-    position: absolute;
-    top: 12px;
-    right: 12px;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    position: static !important;
+    align-self: start;
+    justify-self: stretch;
     width: auto !important;
-    max-width: 108px;
+    min-width: 0 !important;
+    max-width: 56px;
     padding: 0;
-    overflow: visible;
+    overflow: hidden;
     text-align: right;
   }
 
-  .prop-line-card > :is(.nfl-lines-player, .wnba-lines-player, .kbo-player-cell),
-  .prop-line-card > div:has(> .kbo-player-cell) {
-    order: 1;
-    padding-right: 112px;
-    overflow: visible;
+  .prop-line-card .cg-score-cell {
+    align-items: flex-end;
+    max-width: 56px;
+    min-width: 0;
   }
 
-  .prop-line-card > .hit-rate-col { order: 2; }
-  .prop-line-card > .hit-rate-chart { order: 3; display: block !important; }
-  .prop-line-card > .hit-rate-extra { order: 4; display: block !important; }
+  .prop-line-card .cg-score-why {
+    max-width: 56px;
+    min-width: 0 !important;
+    min-height: 0;
+    padding: 0;
+    white-space: normal;
+    line-height: 1.15;
+    text-align: right;
+  }
+
+  .prop-line-card > .hit-rate-chart,
+  .prop-line-card > .hit-rate-col,
+  .prop-line-card > .hit-rate-extra {
+    display: block !important;
+  }
 }
 
 /* A mouse window in this range is not a phone, so the desktop table stays.

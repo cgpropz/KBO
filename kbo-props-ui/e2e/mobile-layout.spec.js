@@ -194,8 +194,22 @@ for (const [sport, path] of boards) {
     expect(box.scrollWidth, `${sport} card content is wider than the viewport`).toBeLessThanOrEqual(viewport + 1)
     const pills = page.locator('.hit-rate-strip').first()
     if (await pills.count()) {
-      const wrap = await pills.evaluate((el) => getComputedStyle(el).flexWrap)
-      expect(wrap, `${sport} hit-rate pills wrap`).toBe('nowrap')
+      const fit = await pills.evaluate((el) => {
+        const strip = el.getBoundingClientRect()
+        return {
+          scroll: el.scrollWidth,
+          client: el.clientWidth,
+          labels: [...el.querySelectorAll('.hit-rate-pill-k')].map((node) => {
+            const box = node.getBoundingClientRect()
+            return {
+              text: node.textContent || '',
+              visible: box.width > 2 && box.left >= strip.left - 1 && box.right <= strip.right + 1 && node.scrollWidth <= node.clientWidth + 1,
+            }
+          }),
+        }
+      })
+      expect(fit.scroll, `${sport} hit-rate strip scrolls`).toBeLessThanOrEqual(fit.client + 1)
+      for (const label of fit.labels) expect(label.visible, `${sport} hit-rate label ${label.text}`).toBe(true)
     }
     expect(await tinyText(page), `${sport} has text under 12px`).toEqual([])
   })
