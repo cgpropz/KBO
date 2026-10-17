@@ -6,6 +6,8 @@ import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
 import { accountFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
+import { isXCampaignPath } from './xCampaign'
+import XLanding from './XLanding'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
@@ -56,6 +58,10 @@ function App() {
     if (typeof window === 'undefined') return 'landing';
     return pauseTokenFromSearch(window.location.search) ? 'auth' : 'landing';
   }); // 'landing' | 'auth'
+  const [onCampaign, setOnCampaign] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return isXCampaignPath(window.location.pathname);
+  });
   const [authMode, setAuthMode] = useState('login');
   const [entry, setEntry] = useState(() => {
     if (typeof window === 'undefined') return null
@@ -123,7 +129,7 @@ function App() {
   // the check is closed. A closed NBA falls back to NFL in memory only.
   // NHL is a live sport: logged-out and free visitors enter it and hit the
   // same paywall as KBO, WNBA, and NFL.
-  if (sport === 'nba' && !nba.ready) {
+  if (!onCampaign && sport === 'nba' && !nba.ready) {
     return (
       <>
         <RouteFallback />
@@ -131,7 +137,7 @@ function App() {
       </>
     );
   }
-  if (sport === 'nba' && !nba.open) {
+  if (!onCampaign && sport === 'nba' && !nba.open) {
     setSportState(sportAfterNbaGate(sport, false));
   }
   const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? sportAfterNbaGate(sport, false) : sport;
@@ -146,6 +152,41 @@ function App() {
   // Pops up after a Stripe Payment Link redirects back with ?checkout=success.
   // Stable key keeps it mounted if the page behind it switches branches.
   const checkoutSuccess = <CheckoutSuccess key="checkout-success" onSignUp={openSignUp} onLogin={openLogin} />;
+
+  // X ads landing. Weekly checkout does not require an account. Login and
+  // signup stay on this URL, so the incoming query string is still here after
+  // either form. Opening a board leaves the campaign view without dropping it.
+  if (onCampaign) {
+    if (!user && publicView === 'auth') {
+      return (
+        <>
+          <Suspense fallback={<RouteFallback />}>
+            <AuthPage
+              initialMode={authMode}
+              onBack={() => setPublicView('landing')}
+            />
+          </Suspense>
+          <SiteFooter />
+          {checkoutSuccess}
+        </>
+      );
+    }
+    return (
+      <>
+        <XLanding
+          onLogin={openLogin}
+          onSignUp={openSignUp}
+          onOpenBoard={(s) => {
+            setSportState(s);
+            setView('home');
+            setOnCampaign(false);
+            window.scrollTo(0, 0);
+          }}
+        />
+        {checkoutSuccess}
+      </>
+    );
+  }
 
   /* Not logged in → login/signup form when requested */
   if (!user && publicView === 'auth') {

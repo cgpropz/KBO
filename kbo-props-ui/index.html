@@ -28,31 +28,7 @@
     <meta name="twitter:description" content="CG Score rates every standard prop line on one board. Weekly is $4.99 the first week with code XWEEK, then $9.99/week." />
     <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
     <meta name="twitter:image:alt" content="CGPropz: every prop line, scored, for KBO, NFL, NHL and WNBA" />
-    <!-- X conversion tracking. The queue is installed immediately; uwt.js waits
-         until the page is interactive so it does not compete with the hero. -->
-    <script>
-    window.twq = window.twq || function() {
-      window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
-    };
-    window.twq.version = '1.1';
-    window.twq.queue = window.twq.queue || [];
-    twq('config', 'pul9k');
-    function cgLoadTwitter() {
-      if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
-      var script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://static.ads-twitter.com/uwt.js';
-      document.body.appendChild(script);
-    }
-    function cgArmTwitter() {
-      // Idle callbacks fire immediately on a quiet page. Wait until after the
-      // hero paint so uwt.js is not in the landing burst.
-      setTimeout(cgLoadTwitter, 4000);
-    }
-    if (document.readyState === 'complete') cgArmTwitter();
-    else window.addEventListener('load', cgArmTwitter, { once: true });
-    </script>
-    <!-- End X conversion tracking base code -->
+    <!--x-pixel-->
     <!--seo-jsonld-->
     <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"WebSite","@id":"https://www.cgpropz.com/#website","name":"CGPropz","url":"https://www.cgpropz.com/","publisher":{"@id":"https://www.cgpropz.com/#organization"}}]}</script>
     <!--/seo-jsonld-->

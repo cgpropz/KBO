@@ -18,6 +18,30 @@
   <meta name="twitter:description" content="CGPropz All-Access pricing: Weekly $9.99, Monthly $29.99, Yearly $149.99, and Lifetime $249.99. Checkout stays in the app. This page does not list prop rows." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"Pricing","item":"https://www.cgpropz.com/pricing"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What's included in the free tier?","acceptedAnswer":{"@type":"Answer","text":"You get the landing page, today's KBO & WNBA schedules, and a preview of the top 3 lines on the KBO, WNBA, NFL, and NHL boards. Upgrade to unlock full projections, prop cards, and the PrizePicks edge board for every sport."}},{"@type":"Question","name":"Does one subscription cover every sport?","acceptedAnswer":{"@type":"Answer","text":"Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards."}},{"@type":"Question","name":"Can I cancel anytime?","acceptedAnswer":{"@type":"Answer","text":"Yes. Weekly, Monthly, and Yearly subscriptions can be cancelled at any time, and your access continues until the end of your current billing period. Lifetime is a one-time purchase with nothing to cancel. There is no free trial."}},{"@type":"Question","name":"What is Discord Only?","acceptedAnswer":{"@type":"Answer","text":"A cheaper plan that posts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the site boards. All-Access includes the full site and the site-subscriber Discord role."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }

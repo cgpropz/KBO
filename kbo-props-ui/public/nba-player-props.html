@@ -18,6 +18,30 @@
   <meta name="twitter:description" content="NBA player props today and tonight: the CGPropz NBA board opens Oct 20 with CG Scores, projections and hit rates. Opening-week schedule in ET. 21+." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"NBA player props","item":"https://www.cgpropz.com/nba-player-props"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"When does the 2026-27 NBA season start?","acceptedAnswer":{"@type":"Answer","text":"Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers at Knicks (7:00 PM ET) and Thunder at Spurs (9:30 PM ET)."}},{"@type":"Question","name":"Where are today's NBA player props?","acceptedAnswer":{"@type":"Answer","text":"On the CGPropz NBA board, which opens Tuesday, Oct 20. It shows standard, demon and goblin lines on separate tabs, with every prop available to All-Access members."}},{"@type":"Question","name":"Are there free NBA picks?","acceptedAnswer":{"@type":"Answer","text":"No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access and opens Tuesday, Oct 20."}},{"@type":"Question","name":"What is CG Score?","acceptedAnswer":{"@type":"Answer","text":"It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often."}},{"@type":"Question","name":"Can I use these props on PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }

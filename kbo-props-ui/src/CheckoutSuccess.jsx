@@ -52,7 +52,12 @@ export default function CheckoutSuccess({ onSignUp, onLogin }) {
         const info = await lookupSession(checkout.sessionId);
         if (!active) return;
         if (info?.paid) {
-          trackPurchaseOnce({ sessionId: checkout.sessionId, value: info.amount, plan: info.plan });
+          trackPurchaseOnce({
+            sessionId: checkout.sessionId,
+            value: info.amount,
+            currency: info.currency,
+            plan: info.plan,
+          });
           setDetails(info);
           setStatus('confirmed');
         } else {

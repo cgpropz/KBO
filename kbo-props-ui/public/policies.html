@@ -18,6 +18,30 @@
   <meta name="twitter:description" content="Refund, cancellation, and price-change terms for CGPropz plans. Current prices are on the pricing page." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"Plans & Policies","item":"https://www.cgpropz.com/policies"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the refund policy?","acceptedAnswer":{"@type":"Answer","text":"Weekly plans: no refunds once a weekly period has started. Monthly, Yearly and Lifetime: 7-day refund window on the first payment. All plans: cancel anytime."}},{"@type":"Question","name":"How do I cancel?","acceptedAnswer":{"@type":"Answer","text":"Sign in and open the subscription page from Upgrade, Manage, or View Plans. A renewing plan shows Cancel Subscription. Choose it, then confirm Yes, Cancel. CGPropz tells Stripe to end that subscription at the close of the current billing period, and the page shows the date full access lasts through. Lifetime is a one-time payment, so that page has no cancel button. Discord Only uses the same Cancel Subscription button."}},{"@type":"Question","name":"What happens if a price changes?","acceptedAnswer":{"@type":"Answer","text":"If a plan price changes, CGPropz will announce the new price before it applies. Current prices are listed on the pricing page."}},{"@type":"Question","name":"Can I pause for a week instead of cancelling?","acceptedAnswer":{"@type":"Answer","text":"Yes. Cancel Subscription offers Pause 1 week before Yes, Cancel. CGPropz tells Stripe to pause payment collection for 7 days and void any invoice created during that week. Billing resumes automatically, and the page shows the resume date. Paused members keep access. Cancel anytime is unchanged."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }
