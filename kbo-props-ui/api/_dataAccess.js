@@ -2,7 +2,7 @@ import { cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
-import { pointsOverDisposition, prepareBoardRows } from '../src/nhl/pointsGate.js';
+import { applyPointsOverGate, dropPulledRows, pointsOverDisposition } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
@@ -255,14 +255,21 @@ function nhlScore(row) {
 }
 
 // Prop boards a member actually scrolls. The free preview and the paid
-// payload both start from this set: standard lines only, then prepareBoardRows
-// (PrizePicks pulled / removed, and Points overs under 0.69).
+// payload both start from this set: standard lines only, then pulled and
+// removed PrizePicks rows. The NHL Points-over gate runs only for
+// nhl_projections.
 const MEMBER_BOARD_DATASETS = new Set([
   'prizepicks_props',
   'wnba_projections_standard',
   'nfl_projections',
   'nhl_projections',
 ]);
+
+function memberBoardRows(ds, rows) {
+  const live = dropPulledRows(rows);
+  if (ds !== 'nhl_projections') return live;
+  return live.map(applyPointsOverGate).filter(Boolean);
+}
 
 function sameRows(next, prev) {
   if (!Array.isArray(prev) || next.length !== prev.length) return false;
@@ -275,7 +282,7 @@ function sameRows(next, prev) {
 function prepareMemberBoard(ds, payload) {
   if (ds === 'nfl_projections' || ds === 'nhl_projections') {
     if (!Array.isArray(payload)) return payload;
-    const rows = prepareBoardRows(payload);
+    const rows = memberBoardRows(ds, payload);
     return sameRows(rows, payload) ? payload : rows;
   }
   if (ds === 'prizepicks_props') {
@@ -285,7 +292,7 @@ function prepareMemberBoard(ds, payload) {
     const nextCards = [];
     for (const card of cards) {
       const prev = Array.isArray(card?.props) ? card.props : [];
-      const props = prepareBoardRows(prev);
+      const props = memberBoardRows(ds, prev);
       if (!props.length) {
         changed = true;
         continue;
@@ -314,7 +321,7 @@ function prepareMemberBoard(ds, payload) {
         next.push(player);
         continue;
       }
-      const props = prepareBoardRows(player.ppAllProps);
+      const props = memberBoardRows(ds, player.ppAllProps);
       const hadProps = player.ppAllProps.length > 0;
       if (hadProps && props.length === 0) {
         changed = true;
@@ -816,8 +823,9 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
     payload = filterStandardBoard(ds, payload);
   }
   // Same row set for the paid board and the free denominator. Pulled,
-  // removed, and non-standard lines are already gone. Points overs under
-  // 0.69 are gone. Held overs stay, with rankEligible false.
+  // removed, and non-standard lines are already gone on every paid board.
+  // Only nhl_projections then drops Points overs under 0.69 and leaves
+  // overs from 0.69 up to 0.86 on the board with rankEligible false.
   if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };

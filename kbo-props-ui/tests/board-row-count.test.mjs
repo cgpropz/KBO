@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { shapeForTier } from '../api/_dataAccess.js'
-import { prepareBoardRows } from '../src/nhl/pointsGate.js'
+import { dropPulledRows, prepareBoardRows } from '../src/nhl/pointsGate.js'
 import { isStandardBoardLine } from '../src/standardBoard.js'
 
-// Free rows plus the locked remainder are the rows a member still sees
-// after prepareBoardRows. Pulled, removed, and non-standard lines are in
-// neither count.
+// Free rows plus the locked remainder are the rows a member still sees.
+// Pulled, removed, and non-standard lines are in neither count. The NHL
+// Points gate is part of that set only for nhl_projections.
 
 const FUTURE = '2099-01-01T00:00:00.000Z'
 const PAST = '2000-01-01T00:00:00.000Z'
@@ -93,6 +93,11 @@ function rowsFrom(ds, data) {
   return Array.isArray(data) ? data : []
 }
 
+function memberSet(sport, raw) {
+  const standard = raw.filter((line) => isStandardBoardLine(line))
+  return sport.ds === 'nhl_projections' ? prepareBoardRows(standard) : dropPulledRows(standard)
+}
+
 function isPulled(line) {
   if (line?.removed === true) return true
   const compact = String(line?.pp_status ?? line?.ppStatus ?? '').toLowerCase().replace(/[^a-z]/g, '')
@@ -100,9 +105,9 @@ function isPulled(line) {
 }
 
 for (const sport of SPORTS) {
-  test(`${sport.sport}: free count plus locked count equals member rows after prepareBoardRows`, () => {
+  test(`${sport.sport}: free count plus locked count equals member rows`, () => {
     const raw = boardRows(sport)
-    const expected = prepareBoardRows(raw.filter((line) => isStandardBoardLine(line)))
+    const expected = memberSet(sport, raw)
     const payload = payloadFor(sport.ds, raw)
     const free = shapeForTier(sport.ds, structuredClone(payload), 'free')
     const member = shapeForTier(sport.ds, structuredClone(payload), 'combined')
@@ -120,16 +125,30 @@ for (const sport of SPORTS) {
       assert.equal(isPulled(line), false, line.id)
       assert.equal(isStandardBoardLine(line), true, line.id)
     }
-    for (const id of ['low', 'removed', 'suspended', 'pp-held', 'hold', 'onhold', 'pp-removed', 'goblin', 'demon', 'blank']) {
+    for (const id of ['removed', 'suspended', 'pp-held', 'hold', 'onhold', 'pp-removed', 'goblin', 'demon', 'blank']) {
       assert.equal(freeRows.some((line) => line.id === id), false, id)
       assert.equal(memberRows.some((line) => line.id === id), false, id)
     }
 
     assert.equal(freeRows.some((line) => line.id === 'started'), false)
     assert.equal(memberRows.some((line) => line.id === 'started'), true)
-    assert.equal(freeRows.some((line) => line.id === 'held'), false)
-    assert.equal(memberRows.find((line) => line.id === 'held')?.rankEligible, false)
     assert.equal(freeRows.length, 3)
     assert.ok(free.lockedCount > 0)
+
+    const held = memberRows.find((line) => line.id === 'held')
+    const low = memberRows.find((line) => line.id === 'low')
+    if (sport.ds === 'nhl_projections') {
+      assert.equal(memberRows.some((line) => line.id === 'low'), false)
+      assert.equal(freeRows.some((line) => line.id === 'low'), false)
+      assert.equal(freeRows.some((line) => line.id === 'held'), false)
+      assert.equal(held?.rankEligible, false)
+    } else {
+      assert.ok(low, `${sport.sport} low Points row`)
+      assert.ok(held, `${sport.sport} held Points row`)
+      assert.notEqual(low.rankEligible, false)
+      assert.notEqual(held.rankEligible, false)
+      assert.equal(low.line, 0.5)
+      assert.equal(held.line, 0.5)
+    }
   })
 }

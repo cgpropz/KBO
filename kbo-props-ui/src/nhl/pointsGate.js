@@ -50,9 +50,14 @@ function prizepicksPulled(row) {
   return PULLED.has(compact)
 }
 
+// PrizePicks pulled and removed lines. This is every paid board, not the
+// NHL Points gate.
+export function dropPulledRows(rows) {
+  return (Array.isArray(rows) ? rows : []).filter((row) => !prizepicksPulled(row))
+}
+
+// NHL board list only. Pulled lines leave, then the Points-over gate runs.
+// Other sports must not use this for a stat that happens to be named Points.
 export function prepareBoardRows(rows) {
-  return (Array.isArray(rows) ? rows : [])
-    .filter((row) => !prizepicksPulled(row))
-    .map(applyPointsOverGate)
-    .filter(Boolean)
+  return dropPulledRows(rows).map(applyPointsOverGate).filter(Boolean)
 }
