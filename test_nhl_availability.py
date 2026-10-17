@@ -33,7 +33,7 @@ def _free_top3(rows):
     """Same order the free preview uses: projection / line, eligible rows only."""
 
     def score(row):
-        if row.get("rankEligible") is False:
+        if row.get("removed") or row.get("rankEligible") is False:
             return float("-inf")
         line = row.get("line") or 0
         if line <= 0:
@@ -75,15 +75,15 @@ class AvailabilityTests(unittest.TestCase):
 
         board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
         names = [row["player"] for row in board]
+        by_name = {row["player"]: row for row in board}
         self.assertEqual(called[0], "https://api-web.nhle.com/v1/gamecenter/2026020087/right-rail")
-        self.assertNotIn("Brad Marchand", names)
-        self.assertNotIn("William Eklund", names)
-        self.assertNotIn("Long Term", names)
-        self.assertNotIn("Healthy Scratch", names)
-        self.assertIn("Alex Tuch", names)
+        for name in ("Brad Marchand", "William Eklund", "Long Term", "Healthy Scratch"):
+            self.assertIs(by_name[name]["removed"], True)
+            self.assertEqual(by_name[name]["pp_status"], "removed")
+        self.assertIsNot(by_name["Alex Tuch"].get("removed"), True)
         self.assertEqual(names[:3], ["Alex Tuch", "Skater A", "Skater B"])
         self.assertEqual(_free_top3(board), ["Skater A", "Alex Tuch", "Skater B"])
-        self.assertEqual(len(board), 5)
+        self.assertEqual(len(board), len(rows))
 
     def test_nhl_api_is_the_source_when_lineups_have_no_out_ir_or_scratch(self):
         marchand = _row("Brad Marchand", 8473419, 99, projection=9)
@@ -101,6 +101,8 @@ class AvailabilityTests(unittest.TestCase):
         }]
 
         def fetch(url):
+            if "right-rail" not in url:
+                return {"injuries": [], "forwards": [], "defensemen": [], "goalies": []}
             self.assertIn("api-web.nhle.com", url)
             self.assertIn("2026020087", url)
             return {
@@ -132,11 +134,11 @@ class AvailabilityTests(unittest.TestCase):
             }
 
         board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
-        names = [row["player"] for row in board]
-        self.assertNotIn("Brad Marchand", names)
-        self.assertNotIn("William Eklund", names)
-        self.assertNotIn("Jordan Staal", names)
-        self.assertIn("Alex Tuch", names)
+        by_name = {row["player"]: row for row in board}
+        for name in ("Brad Marchand", "William Eklund", "Jordan Staal"):
+            self.assertIs(by_name[name]["removed"], True)
+            self.assertEqual(by_name[name]["pp_status"], "removed")
+        self.assertIsNot(by_name["Alex Tuch"].get("removed"), True)
         self.assertEqual(_free_top3(board), ["Skater A", "Alex Tuch", "Skater B"])
 
     def test_a_failed_injury_source_keeps_the_board(self):
@@ -206,7 +208,10 @@ class AvailabilityTests(unittest.TestCase):
             games,
             fetch_json=lambda url: {"gameInfo": {"awayTeam": {"scratches": []}, "homeTeam": {"scratches": []}}},
         )
-        self.assertEqual([row["player"] for row in board], ["Sam Reinhart"])
+        self.assertEqual([row["player"] for row in board if not row.get("removed")], ["Sam Reinhart"])
+        held = next(row for row in board if row["player"] == "Brad Marchand")
+        self.assertIs(held["removed"], True)
+        self.assertEqual(held["pp_status"], "removed")
 
     def test_a_failed_api_keeps_lineup_statuses_and_the_rest_of_the_board(self):
         rows = [
@@ -221,7 +226,9 @@ class AvailabilityTests(unittest.TestCase):
         with self.assertLogs("nhl.availability", level="WARNING") as logs:
             board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
         self.assertIn("using lineup statuses", logs.output[0])
-        self.assertEqual([row["player"] for row in board], ["Skater A"])
+        self.assertEqual([row["player"] for row in board], ["Skater A", "Brad Marchand"])
+        self.assertIs(board[-1]["removed"], True)
+        self.assertEqual(board[-1]["pp_status"], "removed")
 
 
 def _row_gtd():
@@ -254,6 +261,8 @@ def _fetch(espn=None, rosters=None):
 def test_suspension_is_blocked():
     assert _av.blocked_status("Suspension") == "SUSPENDED"
     assert _av.blocked_status("Day-To-Day") is None
+    assert _av.blocked_status("Week-To-Week") == "WEEK-TO-WEEK"
+    assert _av.blocked_status("OUT week to week") == "OUT"
 
 
 def test_espn_out_and_suspended_dropped_day_to_day_kept():
@@ -269,14 +278,24 @@ def test_espn_out_and_suspended_dropped_day_to_day_kept():
         {"player": "Tage Thompson", "team": "BUF"},
         {"player": "Quinton Byfield", "team": "LAK"},
     ]
-    kept = [r["player"] for r in _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn))]
-    assert kept == ["Tage Thompson"]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[])
+    by_name = {r["player"]: r for r in kept}
+    assert [name for name, row in by_name.items() if not row.get("removed")] == ["Tage Thompson"]
+    assert by_name["Rasmus Dahlin"]["removed"] is True
+    assert by_name["Rasmus Dahlin"]["pp_status"] == "removed"
+    assert by_name["Frank Nazar"]["removed"] is True
+    assert by_name["Quinton Byfield"]["removed"] is True
+    assert len(kept) == len(rows)
 
 
 def test_not_on_active_roster_dropped():
     rows = [{"playerId": "1", "player": "A", "team": "LAK"}, {"playerId": "2", "player": "B", "team": "LAK"}]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}))
-    assert [r["player"] for r in kept] == ["A"]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}), manual=[])
+    assert [r["player"] for r in kept if not r.get("removed")] == ["A"]
+    held = next(r for r in kept if r["player"] == "B")
+    assert held["removed"] is True
+    assert held["pp_status"] == "removed"
+    assert len(kept) == 2
 
 
 def test_missing_from_full_projected_lineup_dropped_accents_ok():
@@ -286,8 +305,11 @@ def test_missing_from_full_projected_lineup_dropped_accents_ok():
         {"player": "Healthy Scratch", "team": "MTL", "position": "F"},
         {"player": "Some Goalie", "team": "MTL", "position": "G"},
     ]
-    kept = [r["player"] for r in _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch())]
-    assert kept == ["Juraj Slafkovský", "Some Goalie"]
+    kept = _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch(), manual=[])
+    assert [r["player"] for r in kept if not r.get("removed")] == ["Juraj Slafkovský", "Some Goalie"]
+    scratch = next(r for r in kept if r["player"] == "Healthy Scratch")
+    assert scratch["removed"] is True
+    assert scratch["injury"] == "SCRATCHED"
 
 
 def test_partial_lineup_does_not_drop():
@@ -390,3 +412,124 @@ def test_two_confirmations_and_no_game_do_not_pick_a_starter():
     ]
     kept = [row["player"] for row in _av.drop_unavailable(rows, lineups, [], fetch_json=_fetch())]
     assert kept == ["Ilya Sorokin", "Semyon Varlamov"]
+
+
+def _skater(player, team="TOR", gameday="2026-10-17", prop="Points", line=0.5, projection=0.9):
+    return {
+        "player": player,
+        "team": team,
+        "opponent": "NYI",
+        "prop": prop,
+        "line": line,
+        "projection": projection,
+        "score": 10,
+        "oddsType": "standard",
+        "gameday": gameday,
+        "awayTeam": "NYI",
+        "homeTeam": "TOR",
+        "rankEligible": True,
+    }
+
+
+def test_an_out_player_is_kept_and_marked_removed():
+    # Same flags as a pulled line: the row stays, prepareBoardRows drops it.
+    espn = {"injuries": [{"injuries": [
+        {"status": "Out", "athlete": {"displayName": "John Tavares", "team": {"abbreviation": "TOR"}}},
+        {"status": "Week-To-Week", "athlete": {"displayName": "Samuel Honzek", "team": {"abbreviation": "CGY"}}},
+        {"status": "Day-To-Day", "athlete": {"displayName": "Egor Chinakhov", "team": {"abbreviation": "PIT"}}},
+    ]}]}
+    rows = [
+        _skater("John Tavares"),
+        _skater("Samuel Honzek", team="CGY"),
+        _skater("Egor Chinakhov", team="PIT"),
+        _skater("Auston Matthews"),
+    ]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[])
+    by_name = {row["player"]: row for row in kept}
+    assert len(kept) == 4
+    assert by_name["John Tavares"]["removed"] is True
+    assert by_name["John Tavares"]["pp_status"] == "removed"
+    assert by_name["John Tavares"]["injury"] == "OUT"
+    assert by_name["Samuel Honzek"]["removed"] is True
+    assert by_name["Samuel Honzek"]["injury"] == "WEEK-TO-WEEK"
+    assert by_name["Egor Chinakhov"].get("removed") is not True
+    assert by_name["Auston Matthews"].get("removed") is not True
+    playable = [row["player"] for row in kept if not row.get("removed")]
+    assert playable == ["Egor Chinakhov", "Auston Matthews"]
+
+
+def test_manual_out_list_pulls_tavares_for_that_date_only():
+    rows = [
+        _skater("John Tavares", gameday="2026-10-17"),
+        _skater("John Tavares", gameday="2026-10-18"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
+    ]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=None)
+    tonight, later, matthews = kept
+    assert tonight["removed"] is True
+    assert tonight["pp_status"] == "removed"
+    assert tonight["injury"] == "OUT"
+    assert later.get("removed") is not True
+    assert matthews.get("removed") is not True
+
+
+def test_a_failed_injury_source_uses_the_override_and_does_not_crash():
+    import logging
+
+    rows = [
+        _skater("John Tavares"),
+        _skater("Auston Matthews"),
+        _skater("Rasmus Dahlin", team="BUF"),
+    ]
+
+    def fetch(url):
+        raise TimeoutError(f"offline {url}")
+
+    logged = []
+
+    class _Handler(logging.Handler):
+        def emit(self, record):
+            logged.append(record.getMessage())
+
+    handler = _Handler()
+    logger = logging.getLogger("nhl.availability")
+    previous_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    try:
+        kept = _av.finish_board(rows, [], [{"id": 2026020087}], fetch_json=fetch)
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+    assert any("manual out list" in message for message in logged)
+    by_name = {row["player"]: row for row in kept}
+    assert by_name["John Tavares"]["removed"] is True
+    assert by_name["Auston Matthews"].get("removed") is not True
+    assert by_name["Rasmus Dahlin"].get("removed") is not True
+    assert len(kept) == 3
+
+
+def test_duplicate_projection_id_or_player_stat_line_game_collapses():
+    from nhl.build_board import dedupe_board_rows
+
+    same_id = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM"), "id": "15863634", "projection": 1.1},
+        {**_skater("Jake Walman", team="EDM"), "id": "15863634", "projection": 9.9, "oddsType": "goblin"},
+    ])
+    assert len(same_id) == 1
+    assert same_id[0]["id"] == "15863634"
+    assert same_id[0]["oddsType"] == "standard"
+
+    same_bet = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM"), "id": "1", "oddsType": "goblin"},
+        {**_skater("Jake Walman", team="EDM"), "id": "2", "oddsType": "standard", "projection_id": "2"},
+    ])
+    assert len(same_bet) == 1
+    assert same_bet[0]["oddsType"] == "standard"
+    assert same_bet[0]["id"] == "2"
+
+    different_line = dedupe_board_rows([
+        {**_skater("Jake Walman", team="EDM", line=1.5), "id": "3"},
+        {**_skater("Jake Walman", team="EDM", line=2.5), "id": "4"},
+    ])
+    assert [row["id"] for row in different_line] == ["3", "4"]

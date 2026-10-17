@@ -5,13 +5,17 @@ snapshot lists someone OUT, IR, LTIR, or scratched. The public NHL web
 API (api-web.nhle.com) is the source when the snapshot has none of those
 statuses, and it also adds a scratch the snapshot missed. A failed API
 read logs a warning. Lineup statuses still apply. With neither source,
-the board stays as it is.
+only nhl/manual_out.json is applied and the rest of the board stays.
 
 Pregame, those two rarely flag anyone, so drop_unavailable also uses
 ESPN's public NHL injury report (Out, IR, LTIR, suspended), the
 api-web.nhle.com active roster (AHL assignments), and the projected
 lineup (a skater missing from a complete 18-skater lineup is a scratch).
-Each source fails on its own; the manual EXCLUDED_PLAYER_IDS list in
+Each source fails on its own. OUT, IR, LTIR, scratched, suspended, and
+week-to-week rows stay in the file with removed true, the same flags as a
+pulled PrizePicks line, so prepareBoardRows drops them. nhl/manual_out.json
+is the ops override when the feed is late or down. A failed feed logs a
+warning and that file still applies. The EXCLUDED_PLAYER_IDS list in
 build_board.py stays as a fallback.
 
 Goalie saves use that same filter. Daily Faceoff's starting-goalies page
@@ -28,6 +32,8 @@ import logging
 import re
 import unicodedata
 import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
 
 from nhl.model import apply_points_over_gate
 
@@ -49,7 +55,10 @@ def name_key(name: str | None) -> str:
 
 
 def blocked_status(value) -> str | None:
-    """OUT, IR, LTIR, or scratched. Anything else stays on the board."""
+    """OUT, IR, LTIR, scratched, suspended, or week-to-week.
+
+    Day-to-day, questionable, and probable stay on the board.
+    """
     compact = re.sub(r"[^A-Z]", "", str(value or "").upper())
     if not compact:
         return None
@@ -59,11 +68,103 @@ def blocked_status(value) -> str | None:
         return "IR"
     if compact == "OUT" or compact.startswith("OUT"):
         return "OUT"
+    if "WEEKTOWEEK" in compact or compact == "WTW":
+        return "WEEK-TO-WEEK"
     if "SCRATCH" in compact:
         return "SCRATCHED"
     if compact.startswith("SUSPEN"):
         return "SUSPENDED"
     return None
+
+
+MANUAL_OUT_PATH = Path(__file__).with_name("manual_out.json")
+_PULLED_STATUS = {"removed", "suspended", "held", "hold", "onhold"}
+
+
+def _row_day(row) -> str:
+    for key in ("gameday", "date", "game_date_iso", "start_time", "startTime"):
+        raw = (row or {}).get(key)
+        if not raw:
+            continue
+        text = str(raw).strip()
+        if len(text) >= 10 and text[4] == "-" and text[7] == "-":
+            return text[:10]
+    return ""
+
+
+def _today_et() -> str:
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+    except Exception:
+        return datetime.now(timezone.utc).date().isoformat()
+
+
+def load_manual_out(path=None) -> list[dict]:
+    """Players ops pulled by hand. A missing or broken file logs and returns none."""
+    target = Path(path) if path is not None else MANUAL_OUT_PATH
+    try:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    except Exception as exc:  # noqa: BLE001 - a bad override file must not wipe the board
+        log.warning("NHL manual out list failed, ignoring it: %s", exc)
+        return []
+    rows = payload.get("players") if isinstance(payload, dict) else payload
+    if not isinstance(rows, list):
+        log.warning("NHL manual out list has no players array")
+        return []
+    return [
+        row for row in rows
+        if isinstance(row, dict) and (row.get("name") or row.get("player") or row.get("playerId") or row.get("player_id"))
+    ]
+
+
+def manual_out_status(row, entries, today: str | None = None) -> str | None:
+    """Override status for this row, or None when the list does not name them.
+
+    A dated entry applies to that game date. A row with no date matches the
+    entry only on the entry's own date, so tomorrow's build does not keep
+    pulling a player who was out today.
+    """
+    if not entries:
+        return None
+    today = today or _today_et()
+    key = name_key((row or {}).get("player") or (row or {}).get("name"))
+    player_id = str((row or {}).get("playerId") or (row or {}).get("player_id") or "").strip()
+    team = str((row or {}).get("team") or "").upper()
+    day = _row_day(row)
+    for entry in entries:
+        entry_name = name_key(entry.get("name") or entry.get("player"))
+        entry_id = str(entry.get("playerId") or entry.get("player_id") or "").strip()
+        name_match = bool(key and entry_name and key == entry_name)
+        id_match = bool(player_id and entry_id and player_id == entry_id)
+        if not name_match and not id_match:
+            continue
+        entry_team = str(entry.get("team") or "").upper()
+        if entry_team and team and entry_team != team:
+            continue
+        entry_date = str(entry.get("date") or entry.get("gameday") or "")[:10]
+        if entry_date:
+            if day and day != entry_date:
+                continue
+            if not day and entry_date != today:
+                continue
+        status = blocked_status(entry.get("status") or entry.get("injury")) or "OUT"
+        return status
+    return None
+
+
+def hold_row(row, status: str) -> dict:
+    """Keep the row and mark it the way a pulled PrizePicks line is marked."""
+    held = dict(row)
+    held["removed"] = True
+    compact = re.sub(r"[^a-z]", "", str(held.get("pp_status") or "").lower())
+    if compact not in _PULLED_STATUS:
+        held["pp_status"] = "removed"
+    if not held.get("injury"):
+        held["injury"] = status
+    return held
 
 
 def _person(value) -> str:
@@ -199,30 +300,42 @@ def unavailable_keys(lineups, games, fetch_json=_json) -> tuple[set[str], set[st
     return api_names, api_ids
 
 
-def parse_espn_injuries(payload) -> set[tuple[str, str]]:
-    """(name key, team) for players ESPN lists Out, IR, LTIR, or suspended.
+def parse_espn_injuries(payload) -> dict[tuple[str, str], str]:
+    """(name key, team) -> status for Out, IR, LTIR, suspended, or week-to-week.
 
-    Day-to-day and questionable players stay on the board.
+    Day-to-day and questionable players stay on the board. The public ESPN
+    NHL injury report is the same list NHL.com's status report is written from.
     """
-    out: set[tuple[str, str]] = set()
+    out: dict[tuple[str, str], str] = {}
     for team in (payload or {}).get("injuries") or []:
         for item in (team or {}).get("injuries") or []:
             status = item.get("status")
             kind = item.get("type")
             if isinstance(kind, dict):
                 kind = kind.get("description") or kind.get("name")
-            if not (blocked_status(status) or blocked_status(kind)):
+            details = item.get("details") or {}
+            fantasy = details.get("fantasyStatus") if isinstance(details, dict) else None
+            if isinstance(fantasy, dict):
+                fantasy = fantasy.get("description") or fantasy.get("abbreviation")
+            detail = details.get("detail") or details.get("type") if isinstance(details, dict) else None
+            label = (
+                blocked_status(status)
+                or blocked_status(kind)
+                or blocked_status(fantasy)
+                or blocked_status(detail)
+            )
+            if not label:
                 continue
             athlete = item.get("athlete") or {}
             name = athlete.get("displayName") or athlete.get("fullName")
             abbr = str(((athlete.get("team") or {}).get("abbreviation")) or "").upper()
             abbr = ESPN_TEAM.get(abbr, abbr)
             if name:
-                out.add((name_key(name), abbr))
+                out[(name_key(name), abbr)] = label
     return out
 
 
-def fetch_espn_unavailable(fetch_json=_json) -> set[tuple[str, str]]:
+def fetch_espn_unavailable(fetch_json=_json) -> dict[tuple[str, str], str]:
     return parse_espn_injuries(fetch_json(ESPN_INJURIES_URL))
 
 
@@ -388,69 +501,104 @@ def starter_for_row(row, starters) -> dict[str, str] | None:
     return None
 
 
-def drop_unavailable(projections, lineups, games, fetch_json=_json) -> list:
-    """Remove players who will not dress. Each source fails on its own.
+def _injury_status(row, names, ids, espn, espn_names, rosters, dressed) -> str | None:
+    """Why this skater will not dress, or None when the row stays playable."""
+    player_id = str(row.get("playerId") or "").strip()
+    key = name_key(row.get("player"))
+    team = str(row.get("team") or "").upper()
+    if player_id and player_id in ids:
+        return "OUT"
+    if key and key in names:
+        return "OUT"
+    if key and (key, team) in espn:
+        return espn[(key, team)]
+    if key and not team and key in espn_names:
+        for (name, _team), label in espn.items():
+            if name == key:
+                return label
+    roster = rosters.get(team)
+    if roster and player_id and player_id not in roster:
+        return "OUT"
+    lineup = dressed.get(team)
+    if lineup and row.get("position") != "G" and key and key not in lineup:
+        # Last-name match keeps a player whose first name is spelled
+        # differently on the line sheet (Alex / Alexander).
+        if "last:" + _last_key(row.get("player")) not in lineup:
+            return "SCRATCHED"
+    return None
 
-    1. Lineup snapshot and NHL game data statuses (OUT/IR/LTIR/scratched).
-    2. ESPN's public NHL injury report: Out, IR, LTIR, suspended.
+
+def drop_unavailable(projections, lineups, games, fetch_json=_json, manual=None) -> list:
+    """Hold players who will not dress. Each source fails on its own.
+
+    1. Lineup snapshot and NHL game data statuses (OUT/IR/LTIR/scratched/week-to-week).
+    2. ESPN's public NHL injury report: Out, IR, LTIR, suspended, week-to-week.
     3. Not on the team's active NHL roster (AHL assignment, waived, traded).
     4. A skater missing from his team's complete projected lineup
        (healthy scratch).
-    5. A goalie saves prop for someone other than the confirmed starter.
-       The starter is the Daily Faceoff name already on the lineup
-       snapshot. No confirmed starter means the goalie props stay.
+    5. nhl/manual_out.json, or the list passed as manual.
+    6. A goalie saves prop for someone other than the confirmed starter
+       is omitted. The starter is the Daily Faceoff name already on the
+       lineup snapshot. No confirmed starter means the goalie props stay.
+
+    Injury and scratch rows are kept with removed true and pp_status removed.
+    A failed feed logs a warning. The manual list still applies, and the
+    build does not raise.
     """
     rows = list(projections or [])
     try:
         names, ids = unavailable_keys(lineups, games, fetch_json)
     except Exception as exc:  # noqa: BLE001 - keep the board when the injury read fails
-        log.warning("NHL injury source failed, keeping the board for that source: %s", exc)
+        log.warning(
+            "NHL injury source failed, keeping the board and using the manual out list only: %s",
+            exc,
+        )
         names, ids = set(), set()
     try:
         espn = fetch_espn_unavailable(fetch_json)
     except Exception as exc:  # noqa: BLE001
         log.warning("ESPN injury report failed: %s", exc)
-        espn = set()
+        espn = {}
+    if isinstance(espn, set):
+        espn = {pair: "OUT" for pair in espn}
     espn_names = {key for key, _team in espn}
-    rosters = fetch_rosters({row.get("team") for row in rows}, fetch_json)
+    try:
+        rosters = fetch_rosters({row.get("team") for row in rows}, fetch_json)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("NHL roster source failed: %s", exc)
+        rosters = {}
     dressed = projected_lineups(lineups)
     starters = confirmed_starters(lineups)
+    overrides = load_manual_out() if manual is None else list(manual or [])
     kept = []
     for row in rows:
-        player_id = str(row.get("playerId") or "").strip()
-        key = name_key(row.get("player"))
-        team = str(row.get("team") or "").upper()
-        if player_id and player_id in ids:
-            continue
-        if key in names:
-            continue
-        if (key, team) in espn or (not team and key in espn_names):
-            continue
-        roster = rosters.get(team)
-        if roster and player_id and player_id not in roster:
-            continue
-        lineup = dressed.get(team)
-        if lineup and row.get("position") != "G" and key not in lineup:
-            # Last-name match keeps a player whose first name is spelled
-            # differently on the line sheet (Alex / Alexander).
-            if "last:" + _last_key(row.get("player")) not in lineup:
-                continue
         starter = starter_for_row(row, starters)
         if starter and _goalie_prop(row) and not _same_goalie(row.get("player"), starter):
             continue
-        kept.append(row)
+        status = _injury_status(row, names, ids, espn, espn_names, rosters, dressed)
+        manual_status = manual_out_status(row, overrides)
+        if manual_status:
+            status = manual_status
+        if status:
+            kept.append(hold_row(row, status))
+        else:
+            kept.append(row)
     return kept
 
 
-def finish_board(projections, lineups, games, fetch_json=_json) -> list:
+def finish_board(projections, lineups, games, fetch_json=_json, manual=None) -> list:
     """Filter, then rank. The saved board and the free top 3 both use this list.
 
     Points overs under 0.69 are dropped here. Points overs from 0.69 up to
     0.86 stay on the list with rankEligible false, so they are visible and
-    not promoted.
+    not promoted. Held injury rows stay in the list and sort after playable
+    rows. prepareBoardRows drops removed true before the free top 3.
     """
-    kept = apply_points_over_gate(drop_unavailable(projections, lineups, games, fetch_json=fetch_json))
+    kept = apply_points_over_gate(
+        drop_unavailable(projections, lineups, games, fetch_json=fetch_json, manual=manual)
+    )
     kept.sort(key=lambda row: (
+        row.get("removed") is True,
         row.get("rankEligible") is False,
         -(row.get("score") or 0),
         row.get("player") or "",

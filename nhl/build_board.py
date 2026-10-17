@@ -857,6 +857,79 @@ def _eastern():
         return timezone.utc
 
 
+def _projection_id(row: dict) -> str:
+    for key in ("projection_id", "id"):
+        raw = row.get(key)
+        if raw is None:
+            continue
+        text = str(raw).strip()
+        if text:
+            return text
+    return ""
+
+
+def _board_duplicate_key(row: dict) -> tuple | None:
+    """player + stat + line + game. Odds type is not part of an exact copy."""
+    player = _name_key(row.get("player") or row.get("name"))
+    stat = str(row.get("prop") or row.get("stat") or "").strip().lower()
+    if not player or not stat:
+        return None
+    try:
+        line = f"{float(row.get('line')):.2f}"
+    except (TypeError, ValueError):
+        line = str(row.get("line") or "").strip()
+    day = str(row.get("gameday") or row.get("date") or row.get("game_date_iso") or row.get("start_time") or "")[:10]
+    away = str(row.get("awayTeam") or row.get("away") or "").upper()
+    home = str(row.get("homeTeam") or row.get("home") or "").upper()
+    if away and home:
+        game = f"{day}|{away}@{home}"
+    else:
+        game = f"{day}|{str(row.get('team') or '').upper()}|{str(row.get('opponent') or '').upper()}"
+    return (player, stat, line, game)
+
+
+def _prefer_duplicate(new: dict, old: dict) -> bool:
+    """Keep a live standard row ahead of a pulled or goblin copy."""
+    def rank(row):
+        odds = str(row.get("oddsType") or row.get("odds_type") or "").strip().lower()
+        standard = 0 if odds in {"", "standard"} else 1
+        removed = 1 if row.get("removed") else 0
+        return (removed, standard)
+    return rank(new) < rank(old)
+
+
+def dedupe_board_rows(rows: list) -> list:
+    """Drop an exact second copy of an NHL board row.
+
+    A copy is the same projection id, or the same player, stat, line, and
+    game. The kept row is the live standard line when one of the copies is
+    one. Order otherwise follows the first copy.
+    """
+    records = [row for row in rows or [] if isinstance(row, dict)]
+    best: dict = {}
+    order: list = []
+    id_to_key: dict[str, tuple] = {}
+    loose: list[dict] = []
+    for row in records:
+        pid = _projection_id(row)
+        key = _board_duplicate_key(row)
+        if pid and pid in id_to_key:
+            key = id_to_key[pid]
+        if key is None:
+            loose.append(row)
+            continue
+        if pid:
+            id_to_key[pid] = key
+        current = best.get(key)
+        if current is None:
+            best[key] = row
+            order.append(key)
+            continue
+        if _prefer_duplicate(row, current):
+            best[key] = row
+    return [best[key] for key in order] + loose
+
+
 def build(root: Path, out_dir: Path) -> int:
     try:
         games = fetch_schedule()
@@ -970,14 +1043,13 @@ def build(root: Path, out_dir: Path) -> int:
                 })
 
     lineups = build_lineups(games, goalies, lines)
-    # OUT, IR, LTIR, and scratched players come off before the file is saved
-    # and before this list is ranked for the free top 3. A confirmed Daily
-    # Faceoff starter drops the other goalies on that team in the same pass.
+    # OUT, IR, LTIR, scratched, and week-to-week players stay in the file
+    # with removed true, the same flags as a pulled line. prepareBoardRows
+    # drops them from the member board, the free board, and slips. A
+    # confirmed Daily Faceoff starter still drops the other goalies.
     if projections_ready:
-        before = len(projections)
         projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
         projections = finish_board(projections, lineups, games)
-        removed = before - len(projections)
         previous = _previous_projections(out_dir)
         projections, blocked = restore_teams_without_current_logs(projections, skaters, previous)
         for team in sorted(blocked):
@@ -986,10 +1058,13 @@ def build(root: Path, out_dir: Path) -> int:
         if blocked and not projections:
             print("ERROR: no current-season logs and no previous board; leaving the last file")
             projections_ready = False
+            removed = 0
         else:
             projections = flag_missing_seen_projections(
                 previous, projections, fetched_ids, fetch_ok=True, exclude_teams=blocked,
             )
+            projections = dedupe_board_rows(projections)
+            removed = sum(1 for row in projections if row.get("removed") and row.get("injury"))
     else:
         removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)

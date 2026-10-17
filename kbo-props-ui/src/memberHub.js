@@ -38,13 +38,15 @@ export function normalizePlayerName(name) {
 }
 
 // Same compact rule as nhl/availability.py blocked_status. OUT, IR, LTIR,
-// scratched, and suspended come off. GTD, questionable, and probable stay.
+// scratched, suspended, and week-to-week come off. GTD, questionable, and
+// probable stay.
 export function blockedAvailability(value) {
   const compact = String(value || '').toUpperCase().replace(/[^A-Z]/g, '')
   if (!compact) return null
   if (compact.includes('LTIR') || compact === 'LONGTERMIR' || compact === 'LONGTERMINJUREDRESERVE' || compact === 'IRLT') return 'LTIR'
   if (compact === 'IR' || compact === 'INJUREDRESERVE') return 'IR'
   if (compact === 'OUT' || compact.startsWith('OUT')) return 'OUT'
+  if (compact.includes('WEEKTOWEEK') || compact === 'WTW') return 'WEEK-TO-WEEK'
   if (compact.includes('SCRATCH')) return 'SCRATCHED'
   if (compact.startsWith('SUSPEN')) return 'SUSPENDED'
   return null
