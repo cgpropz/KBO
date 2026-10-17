@@ -406,6 +406,63 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
   }
 })
 
+test('member and logged-out NHL sharp odds ids are a subset of the standard board', async () => {
+  const demonIds = [15856898, 15857300, 15857317]
+  TABLES.nhl_projections = [
+    { id: 100, player: 'Standard', prop: 'Shots On Goal', line: 2.5, projection: 3.1, oddsType: 'standard' },
+    { id: 101, player: 'Also', prop: 'Points', line: 1.5, projection: 1.1, oddsType: 'standard' },
+    { id: 102, player: 'Tiny Over', prop: 'Points', line: 0.5, projection: 0.5, oddsType: 'standard' },
+    { id: demonIds[0], player: 'Demon', prop: 'Shots On Goal', line: 4.5, projection: 5, oddsType: 'demon' },
+    { id: demonIds[1], player: 'Goblin', prop: 'Points', line: 1.5, projection: 2, oddsType: 'goblin' },
+    { id: demonIds[2], player: 'Demon Two', prop: 'Shots On Goal', line: 3.5, projection: 4, oddsType: 'demon' },
+  ]
+  TABLES.nhl_sharp_odds = {
+    generated_at: NOW,
+    provider: 'unabated',
+    status: 'ok',
+    message: 'matched',
+    records: [
+      { id: 100, player: 'Standard', prop: 'Shots On Goal', pp_line: 2.5, line_type: null, pp_edge_flex: 1 },
+      { id: 101, player: 'Also', prop: 'Points', pp_line: 1.5, line_type: null, pp_edge_flex: 1 },
+      { id: 102, player: 'Tiny Over', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 1 },
+      ...demonIds.map((id, index) => ({
+        id, player: `Demon ${index}`, prop: 'Shots On Goal', pp_line: 4.5, line_type: null, pp_edge_flex: 50 - index,
+      })),
+      { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 20 },
+      { player: 'No Id', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 15 },
+    ],
+  }
+  try {
+    const board = await call('nhl_projections', 'tok-owner')
+    const paid = await call('nhl_sharp_odds', 'tok-owner')
+    const anon = await call('nhl_sharp_odds')
+    assert.equal(board.statusCode, 200)
+    assert.equal(board.body.preview, false)
+    const standardIds = new Set(board.body.data.map((row) => String(row.id)))
+    assert.equal(standardIds.has('100'), true)
+    assert.equal(standardIds.has('101'), true)
+    assert.equal(standardIds.has('102'), false)
+    for (const id of demonIds) assert.equal(standardIds.has(String(id)), false)
+
+    assert.equal(paid.statusCode, 200)
+    assert.equal(paid.body.preview, false)
+    const paidIds = paid.body.data.records.map((row) => String(row.id))
+    assert.deepEqual(paidIds, ['100', '101'])
+    for (const id of paidIds) assert.equal(standardIds.has(id), true)
+    assert.equal(paid.body.data.message, 'matched')
+
+    assert.equal(anon.statusCode, 200)
+    assert.equal(anon.body.preview, true)
+    const anonIds = anon.body.data.records.map((row) => String(row.id))
+    assert.deepEqual(anonIds, ['100', '101'])
+    for (const id of anonIds) assert.equal(standardIds.has(id), true)
+    assert.equal(anon.body.data.records.some((row) => demonIds.includes(row.id)), false)
+  } finally {
+    delete TABLES.nhl_projections
+    delete TABLES.nhl_sharp_odds
+  }
+})
+
 test('NFL free game markets withhold total edges unless the flag is on', () => {
   assert.equal(nflFreeTotalEdgesEnabled({}), false)
   assert.equal(nflFreeTotalEdgesEnabled({ NFL_FREE_TOTAL_EDGES_ENABLED: 'false' }), false)

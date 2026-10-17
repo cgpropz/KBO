@@ -264,3 +264,41 @@ export function filterStandardBoard(ds, payload) {
   }
   return filterGeneralPayload(payload)
 }
+
+// NHL sharp-odds rows are stored with line_type null on standard lines and on
+// demon lines. A missing type cannot separate them. WNBA goblin and demon
+// props also have no type field; there the dataset name is the signal, so
+// this join is not applied to those datasets.
+export function projectionRowId(row) {
+  const raw = row?.id ?? row?.projection_id
+  if (raw == null) return ''
+  return String(raw).trim()
+}
+
+export function standardProjectionIdSet(rows) {
+  const ids = new Set()
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const id = projectionRowId(row)
+    if (id) ids.add(id)
+  }
+  return ids
+}
+
+// Keep a sharp-odds row only when its id is on the standard board. A missing
+// id, or an id that is not on that board, is unknown and drops.
+export function filterNhlSharpOdds(payload, standardIds) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
+  if (!Array.isArray(payload.records)) return payload
+  const allowed = standardIds instanceof Set ? standardIds : standardProjectionIdSet(standardIds)
+  let changed = false
+  const records = []
+  for (const row of payload.records) {
+    const id = projectionRowId(row)
+    if (!id || !allowed.has(id)) {
+      changed = true
+      continue
+    }
+    records.push(row)
+  }
+  return changed ? { ...payload, records } : payload
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { FILTER_STANDARD_BEFORE_FREE_PREVIEW, shapeForTier } from '../api/_dataAccess.js'
-import { filterStandardBoard, isStandardBoardLine, rawOddsType } from '../src/standardBoard.js'
+import { filterNhlSharpOdds, filterStandardBoard, isStandardBoardLine, rawOddsType } from '../src/standardBoard.js'
 
 test('raw odds type keeps unknown tokens and blank stays empty', () => {
   assert.equal(rawOddsType({ odds_type: ' Goblin ' }), 'goblin')
@@ -172,6 +172,29 @@ test('a paid WNBA standard board keeps all 224 players when most lists are empty
   assert.equal(paid.data.filter((player) => player.ppAllProps.length > 0).length, 13)
   assert.equal(paid.data.some((player) => player.name === 'Goblin Only'), false)
   assert.equal(players.length, 225)
+})
+
+test('NHL sharp odds keep only ids on the standard board and drop unknowns', () => {
+  const standard = [
+    { id: 100, player: 'Standard', oddsType: 'standard' },
+    { id: 101, player: 'Plain' },
+    { id: 15856898, player: 'Demon', oddsType: 'demon' },
+  ]
+  const odds = {
+    message: 'matched',
+    records: [
+      { id: 100, player: 'Standard', line_type: null },
+      { id: '101', player: 'Plain', line_type: null },
+      { id: 15856898, player: 'Demon', line_type: null },
+      { id: 15857300, player: 'Demon2', line_type: null },
+      { id: 999, player: 'Unknown', line_type: null },
+      { player: 'NoId', line_type: null },
+    ],
+  }
+  const kept = filterNhlSharpOdds(odds, filterStandardBoard('nhl_projections', standard))
+  assert.deepEqual(kept.records.map((row) => row.player), ['Standard', 'Plain'])
+  assert.equal(kept.message, 'matched')
+  assert.equal(odds.records.length, 6)
 })
 
 test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds type', () => {
