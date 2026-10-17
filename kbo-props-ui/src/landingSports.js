@@ -1,13 +1,18 @@
-// Sport tabs on the public landing. Row builders stay in publicBoard.js so
-// this module can render the shell without shipping board code.
+// The public landing fetches one board: the NFL free top 3. Row builders stay
+// in publicBoard.js so this module can render the shell without shipping
+// board code. Other leagues are links, not datasets.
 
 export const LANDING_SPORTS = [
-  { id: 'nfl', name: 'NFL', sportName: 'Football', props: 'Yards · Receptions · Rush att', ds: 'nfl_projections', dev: 'nfl/projections.json', lineups: 'nfl_lineups', lineupsDev: 'nfl/lineups.json' },
-  { id: 'kbo', name: 'KBO', sportName: 'Baseball', props: 'Hits · RBIs · Strikeouts', ds: 'prizepicks_props', dev: 'prizepicks_props.json' },
-  { id: 'wnba', name: 'WNBA', sportName: 'Basketball', props: 'Points · Rebounds · PRA', ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', lineups: 'wnba_lineups', lineupsDev: 'wnba/lineups.json' },
-  { id: 'nhl', name: 'NHL', sportName: 'Hockey', props: 'Shots · Points · Saves', ds: 'nhl_projections', dev: 'nhl/projections.json', lineups: 'nhl_lineups', lineupsDev: 'nhl/lineups.json' },
+  { id: 'nfl', name: 'NFL', sportName: 'Football', props: 'Yards · Receptions · Rush att', ds: 'nfl_projections', dev: 'nfl/projections.json' },
 ]
 
-// Featured sport on the public landing: the hero fetch, the phone, and the
-// default tabs. NFL lineups load with that fetch. KBO has no lineup file.
+// Featured sport on the public landing: the hero fetch and the phone.
 export const HERO_LANDING_SPORT_ID = 'nfl'
+
+// Teased on the landing. Opening one loads that sport's own free top 3.
+// None of these datasets are requested with the landing.
+export const LOCKED_LANDING_SPORTS = [
+  { id: 'kbo', name: 'KBO', href: '/?sport=kbo' },
+  { id: 'wnba', name: 'WNBA', href: '/?sport=wnba' },
+  { id: 'nhl', name: 'NHL', href: '/?sport=nhl' },
+]

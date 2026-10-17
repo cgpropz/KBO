@@ -34,7 +34,13 @@ export const dataUrl = (path) =>
   `${import.meta.env.BASE_URL}data/${path}?v=${Date.now()}`;
 
 async function fetchStaticSnapshot(path) {
-  const response = await fetch(dataUrl(path), { cache: 'no-store' });
+  // player_photos.json is safe to keep in the browser cache. The other static
+  // files still bust, because a slate can change under the same name.
+  const cacheable = path === 'player_photos.json';
+  const response = await fetch(
+    cacheable ? `${import.meta.env.BASE_URL}data/${path}` : dataUrl(path),
+    cacheable ? undefined : { cache: 'no-store' },
+  );
   if (!response.ok) throw new Error(`Failed to load ${path}`);
   const data = await response.json();
   return {

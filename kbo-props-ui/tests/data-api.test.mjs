@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, boardReadBudgetMs, stepBudgetMs, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -101,6 +101,8 @@ const TABLES = {
     sport: 'nfl', minShared: 8,
     pairs: [{ player: 'Q', stat: 'Pass Yards', partner: 'R', partnerStat: 'Receiving Yards', agreement: 0.81, n: 9 }],
   },
+  kbo_hub: { hub: true, rows: [{ player: 'SHOULD_NOT_LEAK', score: 99 }] },
+  nfl_hub: { hub: true, rows: [{ player: 'PRECOMPUTED', score: 9, stat: 'Receptions' }] },
   nfl_sharp_odds: {
     generated_at: NOW,
     provider: 'unabated',
@@ -167,6 +169,9 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   const res = await call('prizepicks_props')
   assert.equal(res.statusCode, 200)
   assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.headers['cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.headers['vercel-cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.headers.vary, 'Authorization')
   assert.equal(res.body.preview, true)
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
@@ -182,10 +187,16 @@ test('member snapshots and signed-in previews are not edge cached', async () => 
   const paid = await call('prizepicks_props', 'tok-kbo')
   assert.equal(paid.body.preview, false)
   assert.equal(paid.headers['cache-control'], PRIVATE_DATA_CACHE)
+  assert.equal(paid.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(paid.headers['vercel-cdn-cache-control'], 'private, no-store')
+  assert.equal(paid.headers.vary, 'Authorization')
   const authedFree = await call('prizepicks_props', 'tok-free')
   assert.equal(authedFree.body.preview, true)
   // A preview to a signed-in caller may be a lookup blip; the browser must not keep it.
   assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(authedFree.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(authedFree.headers['vercel-cdn-cache-control'], 'private, no-store')
+  assert.equal(authedFree.headers.vary, 'Authorization')
   const publicRankings = await call('pitcher_rankings')
   assert.equal(publicRankings.body.preview, false)
   assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
@@ -222,6 +233,43 @@ test('board payloads keep the last 10 chart games and omit the rest of the log',
 
   const markets = await call('nfl_game_markets', 'tok-owner')
   assert.equal(markets.body.data.games.length, 6)
+})
+
+test('hub view trims the board and never serves a member table to a free caller', async () => {
+  const member = await call('nfl_projections', 'tok-owner', 'GET', { view: 'hub' })
+  assert.equal(member.statusCode, 200)
+  assert.equal(member.body.preview, false)
+  assert.equal(member.headers['cache-control'], PRIVATE_DATA_CACHE)
+  assert.equal(member.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(member.headers.vary, 'Authorization')
+  assert.equal(member.body.data.hub, true)
+  assert.equal(member.body.data.rows[0].player, 'PRECOMPUTED')
+  assert.equal(member.body.data.rows[0].profile, undefined)
+  assert.equal(member.body.data.gameDates, undefined)
+
+  const anon = await call('prizepicks_props', undefined, 'GET', { view: 'hub' })
+  assert.equal(anon.body.preview, true)
+  assert.equal(anon.body.data.hub, true)
+  assert.equal(anon.body.data.cards, undefined)
+  assert.equal(anon.body.data.rows.length, FREE_ROW_LIMIT)
+  assert.equal(anon.body.data.rows.some((row) => row.player === 'SHOULD_NOT_LEAK'), false)
+  assert.deepEqual(anon.body.data.rows.map((row) => row.score).sort((a, b) => b - a), [52, 51, 50])
+  assert.equal(anon.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(anon.headers['cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(anon.headers['vercel-cdn-cache-control'], 'public, s-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(anon.headers.vary, 'Authorization')
+
+  const signedIn = await call('prizepicks_props', 'tok-free', 'GET', { view: 'hub' })
+  assert.equal(signedIn.body.preview, true)
+  assert.equal(signedIn.body.data.hub, true)
+  assert.equal(signedIn.body.data.rows.some((row) => row.player === 'SHOULD_NOT_LEAK'), false)
+  assert.equal(signedIn.headers['cache-control'], 'private, no-store, max-age=0')
+  assert.equal(signedIn.headers['cdn-cache-control'], 'private, no-store')
+  assert.equal(signedIn.headers.vary, 'Authorization')
+
+  const log = await call('nfl_projections', 'tok-owner', 'GET', { view: 'hub', player: 'N0' })
+  assert.equal(log.body.data.hub, undefined)
+  assert.equal(log.body.data[0].profile.toi, 18)
 })
 
 test('invalid token is treated as free', async () => {
@@ -602,9 +650,22 @@ test('board clocks are public and never include prop rows', async () => {
 
 test('snapshot reads finish in time for last-good inside the 12s client window', () => {
   assert.equal(SNAPSHOT_READ_MS, 4_500)
+  assert.equal(CLIENT_FETCH_MS, 12_000)
   assert.equal(DEFAULT_TIMEOUTS.snapshotReadMs, SNAPSHOT_READ_MS)
   assert.equal(DEFAULT_TIMEOUTS.tierLookupMs, 4_000)
-  assert.ok(DEFAULT_TIMEOUTS.snapshotReadMs + DEFAULT_TIMEOUTS.lastGoodReadMs < 12_000)
+  assert.ok(DEFAULT_TIMEOUTS.snapshotReadMs + DEFAULT_TIMEOUTS.lastGoodReadMs < CLIENT_FETCH_MS)
+  // A split board is a head read plus a chunk read. Those two slices plus
+  // last-good would pass 12s if each used its own full timer.
+  assert.ok(SNAPSHOT_READ_MS * 2 + DEFAULT_TIMEOUTS.lastGoodReadMs >= CLIENT_FETCH_MS)
+  assert.ok(boardReadBudgetMs() < CLIENT_FETCH_MS)
+  const start = 0
+  const deadline = start + boardReadBudgetMs()
+  const afterHead = start + SNAPSHOT_READ_MS
+  const chunkMs = stepBudgetMs(deadline, SNAPSHOT_READ_MS, afterHead)
+  const afterChunks = afterHead + chunkMs
+  const lastMs = stepBudgetMs(deadline, DEFAULT_TIMEOUTS.lastGoodReadMs, afterChunks)
+  assert.ok(afterChunks + lastMs - start < CLIENT_FETCH_MS)
+  assert.ok(afterChunks + lastMs <= deadline)
 })
 
 test('the snapshot read starts before the tier lookup finishes', async () => {
@@ -904,4 +965,101 @@ test('board clocks fall back when the status table is missing', async () => {
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.boards.length, 5)
   assert.equal(JSON.stringify(res.body).includes('cards'), false)
+})
+
+test('NFL free preview keeps three standard PrizePicks rows', async () => {
+  const rows = [
+    { player: 'Goblin', line: 10, projection: 100, line_type: 'goblin' },
+    { player: 'Demon', line: 10, projection: 90, oddsType: 'demon' },
+    { player: 'Blank', line: 10, projection: 80, line_type: '  ' },
+    { player: 'A', line: 10, projection: 30 },
+    { player: 'B', line: 10, projection: 20, line_type: 'standard' },
+    { player: 'C', line: 10, projection: 15, line_type: 'Standard' },
+  ]
+  const client = {
+    auth: { async getUser() { return { data: { user: null }, error: { message: 'nope' } } } },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        async maybeSingle() {
+          if (table !== 'nfl_projections') return { data: null, error: null }
+          return { data: { data: rows, updated_at: NOW }, error: null }
+        },
+      }
+      return chain
+    },
+  }
+  const res = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'nfl_projections' }, headers: {} }, res, client)
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, true)
+  assert.deepEqual(res.body.data.map((row) => row.player), ['A', 'B', 'C'])
+})
+
+test('a stale nba_players refresh stores the joined player list', async () => {
+  let chunkReads = 0
+  const client = {
+    auth: {
+      async getUser() {
+        return { data: { user: { id: 'u-owner', email: 'CGPropz@gmail.com' } }, error: null }
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        gt() { return chain },
+        order() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+          if (table === 'app_flags') return Promise.resolve({ data: { value: false }, error: null })
+          return Promise.resolve({
+            data: { data: { nbaPlayerChunks: 2 }, updated_at: '2026-10-07T00:00:00Z' },
+            error: null,
+          })
+        },
+        then(resolve, reject) {
+          const generation = chunkReads
+          chunkReads += 1
+          return Promise.resolve({
+            data: [
+              { id: 2, data: [{ athleteId: generation === 0 ? 'a' : 'a2' }], updated_at: '2026-10-07T00:00:00Z' },
+              { id: 3, data: [{ athleteId: 'b' }], updated_at: '2026-10-07T00:00:00Z' },
+            ],
+            error: null,
+          }).then(resolve, reject)
+        },
+      }
+      return chain
+    },
+  }
+  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: 'Bearer tok-owner' } }
+  const first = mockRes()
+  await handleDataRequest(req, first, client)
+  assert.equal(first.statusCode, 200)
+  assert.deepEqual(first.body.data.map((row) => row.athleteId), ['a', 'b'])
+  assert.equal(chunkReads, 1)
+
+  const prevFresh = cacheWindows.freshMs
+  cacheWindows.freshMs = 0
+  try {
+    const second = mockRes()
+    await handleDataRequest(req, second, client)
+    assert.deepEqual(second.body.data.map((row) => row.athleteId), ['a', 'b'])
+    const started = Date.now()
+    while (chunkReads < 2) {
+      if (Date.now() - started > 1000) throw new Error('background refresh did not read chunks')
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    cacheWindows.freshMs = prevFresh
+    const third = mockRes()
+    await handleDataRequest(req, third, client)
+    assert.deepEqual(third.body.data.map((row) => row.athleteId), ['a2', 'b'])
+    assert.equal(chunkReads, 2)
+  } finally {
+    cacheWindows.freshMs = prevFresh
+  }
 })

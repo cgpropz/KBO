@@ -5,6 +5,7 @@ import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import NflPlayerSearch from './NflPlayerSearch'
 import RouteFallback from '../RouteFallback'
+import { sportViewFromEntry } from '../appSport'
 import { GuideNavLinks } from '../GuideLinks'
 import './nfl.css'
 
@@ -29,7 +30,7 @@ const SlipBoard = lazy(() => import('../SlipBoard'))
 export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.player ? 'player' : 'dashboard')
+  const [view, setView] = useState(() => sportViewFromEntry(entry) || 'dashboard')
   const [previousView, setPreviousView] = useState('dashboard')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' && entry.player ? { player: entry.player, prop: entry.prop || null } : null)
 

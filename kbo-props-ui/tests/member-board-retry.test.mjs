@@ -146,6 +146,16 @@ test('an open-hook retry fits after an 8s miss and a slow answer is kept', async
   assert.equal(late, 1);
 });
 
+test('a hub view is forwarded on the first fetch and the retry', async () => {
+  const calls = [];
+  await loadMemberBoard(sport, async (ds, o) => { calls.push(o); return calls.length === 1 ? preview : full; }, noWait, { view: 'hub' });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].view, 'hub');
+  assert.equal(calls[1].view, 'hub');
+  assert.equal(calls[1].fresh, true);
+  assert.equal(calls[0].devStaticPath, sport.dev);
+});
+
 test('a preview sent to a signed-in caller is never browser-cached', () => {
   assert.equal(previewForSignedIn({ headers: { authorization: 'Bearer t' } }, { preview: true }), true);
   assert.equal(previewForSignedIn({ headers: { authorization: 'Bearer t' } }, { preview: false }), false);

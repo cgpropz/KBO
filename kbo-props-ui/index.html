@@ -45,9 +45,13 @@
       document.body.appendChild(script);
     }
     function cgArmTwitter() {
-      // Idle callbacks fire immediately on a quiet page. Wait until after the
-      // hero paint so uwt.js is not in the landing burst.
-      setTimeout(cgLoadTwitter, 4000);
+      // The twq queue above is live immediately. uwt.js itself waits until
+      // after first paint and an idle slice so it is not in the landing burst.
+      var start = function () {
+        if (window.requestIdleCallback) requestIdleCallback(cgLoadTwitter, { timeout: 5000 });
+        else setTimeout(cgLoadTwitter, 4000);
+      };
+      requestAnimationFrame(function () { requestAnimationFrame(start); });
     }
     if (document.readyState === 'complete') cgArmTwitter();
     else window.addEventListener('load', cgArmTwitter, { once: true });
@@ -375,9 +379,9 @@
       <div class="cg-boot-skeleton">
         <header class="cg-boot-top">
           <div class="cg-boot-mark">cg<span>propz</span></div>
-          <nav class="cg-boot-nav" aria-hidden="true"><span>KBO</span><span>NFL</span><span>WNBA</span><span>NHL</span></nav>
+          <nav class="cg-boot-nav" aria-hidden="true"><span>NFL</span></nav>
         </header>
-        <p class="cg-kicker">Today’s free top 3</p>
+        <p class="cg-kicker">Today’s NFL free top 3</p>
         <div class="cg-picks"><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div><div class="cg-pick" aria-hidden="true"><span class="cg-rank cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-stat cg-shimmer"></span></div></div>
         <p class="cg-kicker">Board</p>
         <div class="cg-rows"><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div><div class="cg-row" aria-hidden="true"><span class="cg-avatar cg-shimmer"></span><span class="cg-lines"><i class="cg-shimmer"></i><i class="cg-shimmer"></i></span><span class="cg-mini"><b></b><b></b><b></b><b></b><b></b></span></div></div>
@@ -410,8 +414,8 @@
       <h1>Every prop line, scored.</h1>
       <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
       <section id="free-top-3">
-        <h2>Highest hit rates on the board</h2>
-        <p>Sorted by L10 hit rate vs today's standard line.</p>
+        <h2>Today's NFL free top 3</h2>
+        <p>The three highest-scored standard NFL lines. Other leagues stay locked on this page.</p>
       </section>
     </main>
     <footer>

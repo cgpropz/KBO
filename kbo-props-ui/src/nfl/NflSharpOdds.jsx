@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { BoardSkeleton } from '../BootScreen'
 import { fetchNflSharpOdds } from './nflData'
 import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
@@ -431,7 +432,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
         </label>
       </section>
       {error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
+      {!error && !loaded && <BoardSkeleton rows={6} label="Loading PrizePicks odds" />}
       {showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
       {!error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
       {!error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}

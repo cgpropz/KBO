@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
+import { BoardSkeleton } from '../BootScreen'
 import HitRateStrip from '../HitRateStrip'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
@@ -454,7 +455,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
             </div>
           </div>
 
-          {projLoading && <div className="wnba-notice">Loading NBA prop lines…</div>}
+          {projLoading && <BoardSkeleton rows={6} label="Loading NBA prop lines" />}
           {!projLoading && loadError && <div className="wnba-notice">Unable to load NBA prop lines: {loadError}. Please refresh to try again.</div>}
           {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
           {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}

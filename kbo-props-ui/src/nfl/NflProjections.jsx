@@ -4,6 +4,7 @@ import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
+import { BoardSkeleton } from '../BootScreen'
 import { fitImage } from '../fitImage.js'
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
@@ -112,7 +113,7 @@ export default function NflProjections({ onSelectPlayer }) {
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span><span>Projection = L3 50% + L9 25% + L15 25%</span><span><b>30</b> 50 <b>70</b> SCORE SCALE</span></div>
       {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
+      {!error && !loaded && <BoardSkeleton rows={6} label="Loading the current PrizePicks board" />}
       {!error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
       {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} lines are locked. Upgrade to see every edge.`}</div>}

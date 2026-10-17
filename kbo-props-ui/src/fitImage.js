@@ -3,7 +3,9 @@
 // Anything that is not a known public logo or headshot host is left unchanged,
 // so a paid data URL cannot be tunneled through the image route.
 
-export const IMAGE_WIDTHS = [48, 64, 80, 96, 128, 160]
+// On-screen marks are 22–72px. Retina asks for about twice that, and 128 is
+// the largest file we will resize. 160 was only ever a tie with 128.
+export const IMAGE_WIDTHS = [48, 64, 80, 96, 128]
 
 // PrizePicks new_player.image_url. League and player id are path segments.
 // Hyphens and repeated underscores show up in real filenames (Jean-Gabriel,
@@ -44,8 +46,10 @@ export function manualPlayerPng(url) {
   return value
 }
 
-// nfl.com originals are about 3400×2450, past the proxy's pixel cap. Ask for a
-// 200px thumbnail first. Spaces are not legal in fetch(), so encode them.
+// nfl.com originals are about 3400×2450, past sharp's default pixel cap, so the
+// proxy 502s and the page falls back to the full file. Ask Cloudinary for a
+// 200px thumb first. A URL that already has a width or thumb is left alone.
+// Spaces are not legal in fetch(), so encode them.
 export function fetchableImageUrl(url) {
   let value = String(url || '').trim().replace(/ /g, '%20')
   if (!value) return ''
@@ -69,7 +73,7 @@ export function snapWidth(cssPx) {
 }
 
 export function isRemoteHeadshotOrLogo(url) {
-  if (typeof url !== 'string' || url.includes('..') || url.includes('\\') || url.includes('@')) return false
+  if (!safeImageUrl(url)) return false
   return REMOTE_HOSTS.some((pattern) => pattern.test(url))
 }
 

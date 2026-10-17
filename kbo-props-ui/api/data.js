@@ -15,6 +15,7 @@ import {
 import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
+import { HUB_TABLE, hubPayload } from '../src/hubPayload.js';
 
 export { assembleSnapshotRows, snapshotChunkManifest };
 
@@ -39,7 +40,18 @@ export function previewForSignedIn(req, body) {
 }
 
 function sendData(req, res, body, memberGated) {
-  res.setHeader('Cache-Control', previewForSignedIn(req, body) ? 'private, no-store, max-age=0' : dataCacheControl(req, { memberGated }));
+  const signedInPreview = previewForSignedIn(req, body);
+  const authorization = String(req?.headers?.authorization || '').trim();
+  res.setHeader('Cache-Control', signedInPreview ? 'private, no-store, max-age=0' : dataCacheControl(req, { memberGated }));
+  res.setHeader('Vary', 'Authorization');
+  // The edge stores only anonymous responses. A member body and a signed-in
+  // free preview are no-store, so a cached preview can never be replayed as
+  // the member board (or the other way around).
+  const edge = signedInPreview || memberGated || authorization
+    ? 'private, no-store'
+    : `public, ${PUBLIC_DATA_CACHE}`;
+  res.setHeader('CDN-Cache-Control', edge);
+  res.setHeader('Vercel-CDN-Cache-Control', edge);
   return res.status(200).json(body);
 }
 
@@ -53,11 +65,49 @@ export function boardForPresentation(data) {
   return data;
 }
 
-function withPresentedData(req, shaped, fullData) {
+export function wantsHub(req) {
+  return String(req?.query?.view || '') === 'hub' && !String(req?.query?.player || '').trim();
+}
+
+// A missing hub table is remembered so the next request does not pay for
+// another 404 before reading the full board and trimming it.
+const hubMiss = new Map();
+const HUB_MISS_MS = 10 * 60 * 1000;
+
+async function readPrecomputedHub(client, ds) {
+  const table = HUB_TABLE[ds];
+  if (!table || !client) return null;
+  const missed = hubMiss.get(table);
+  if (missed && Date.now() - missed < HUB_MISS_MS) return null;
+  try {
+    const row = await readSnapshot(client, table);
+    if (row?.data?.hub === true && Array.isArray(row.data.rows)) return row;
+    hubMiss.set(table, Date.now());
+    return null;
+  } catch {
+    hubMiss.set(table, Date.now());
+    return null;
+  }
+}
+
+function presentForCaller(req, ds, tierShaped, fullData) {
+  if (wantsHub(req) && HUB_TABLE[ds]) {
+    return hubPayload(ds, tierShaped?.data);
+  }
+  return presentBoardPayload(req.query?.player, tierShaped, fullData);
+}
+
+function withPresentedData(req, ds, shaped, fullData) {
   return {
     ...shaped,
-    data: presentBoardPayload(req.query?.player, shaped, fullData),
+    data: presentForCaller(req, ds, shaped, fullData),
   };
+}
+
+function memberSeesFullBoard(ds, tier) {
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  if (!spec || !HUB_TABLE[ds]) return false;
+  return sportAccess(tier)?.[spec.sport] === true;
 }
 
 function cleanEnv(value) {
@@ -94,10 +144,25 @@ export const cacheWindows = { freshMs: CACHE_TTL_MS, staleMs: STALE_MAX_MS };
 const inflight = new Map();
 
 // The snapshot read has to finish, and the last-good copy after it, inside
-// the client's 12s fetch. Auth runs beside the read and keeps its own 4s cap.
-// Mutable so unit tests can shrink the window without waiting.
+// the client's 12s fetch. A split board is a head read plus a chunk read, so
+// those two steps and last-good share one budget. Auth runs beside the read
+// and keeps its own 4s cap. Mutable so unit tests can shrink the window.
+export const CLIENT_FETCH_MS = 12_000;
 export const SNAPSHOT_READ_MS = 4_500;
 export const timeouts = { snapshotReadMs: SNAPSHOT_READ_MS, tierLookupMs: 4_000, lastGoodReadMs: 6_000 };
+
+// Head + chunks + last-good. Two full snapshot slices plus last-good is
+// 15s, which is past the client. The shared budget stays strictly under 12s.
+export function boardReadBudgetMs(limits = timeouts) {
+  const split = (Number(limits.snapshotReadMs) * 2) + Number(limits.lastGoodReadMs);
+  return Math.min(split, CLIENT_FETCH_MS - 1);
+}
+
+export function stepBudgetMs(deadline, cap, now = Date.now()) {
+  const limit = Number(cap);
+  if (!Number.isFinite(deadline)) return limit;
+  return Math.max(0, Math.min(limit, deadline - now));
+}
 export function _setTimeouts(partial) {
   Object.assign(timeouts, partial);
 }
@@ -151,9 +216,11 @@ export function assembleNbaPlayerRows(head, extraRows) {
   return { data: players, updated_at: updated };
 }
 
-async function readNbaPlayerChunks(client) {
+async function readNbaPlayerChunks(client, deadline) {
+  const ms = stepBudgetMs(deadline, timeouts.snapshotReadMs);
+  if (ms <= 0) throw timeoutError('Dataset read timed out');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
     let builder = client
       .from('nba_players')
@@ -165,7 +232,7 @@ async function readNbaPlayerChunks(client) {
     }
     const { data, error } = await withTimeout(
       builder,
-      timeouts.snapshotReadMs,
+      ms,
       'Dataset read timed out'
     );
     if (error) throw new Error(error.message);
@@ -182,20 +249,10 @@ async function readNbaPlayerChunks(client) {
 }
 
 async function readNbaPlayers(client) {
-  const head = await readSnapshot(client, 'nba_players');
-  if (!head) return null;
-  const marker = head.data && typeof head.data === 'object' && !Array.isArray(head.data)
-    ? head.data.nbaPlayerChunks
-    : null;
-  if (marker == null) return head;
-  try {
-    const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client));
-    rememberBoard('nba_players', assembled);
-    return assembled;
-  } catch (err) {
-    forgetBoard('nba_players');
-    throw err;
-  }
+  // Chunks are joined inside readSnapshotResolved, and that joined list is
+  // what the in-process cache stores. A background refresh therefore replaces
+  // the manifest with the player rows instead of leaving the head uncached.
+  return readSnapshot(client, 'nba_players');
 }
 
 export function boardCacheVersion(row) {
@@ -245,10 +302,10 @@ function isNbaPlayerManifest(table, row) {
 
 // Cold instance: fall back to the private last-good copy the publish job
 // writes to Storage. Read with the server key only; never a public URL.
-async function boardAfterReadError(client, table, err) {
+async function boardAfterReadError(client, table, err, deadline) {
   const hit = currentBoard(table);
   if (hit?.row && Date.now() - hit.at < cacheWindows.staleMs) return hit.row;
-  const lastGood = await readLastGood(client, table);
+  const lastGood = await readLastGood(client, table, deadline);
   if (lastGood) {
     rememberBoard(table, lastGood, boardCacheVersion(lastGood), Date.now() - cacheWindows.freshMs + 15_000);
     return lastGood;
@@ -258,7 +315,8 @@ async function boardAfterReadError(client, table, err) {
 
 function startBoardRead(client, table) {
   if (inflight.has(table)) return inflight.get(table);
-  const pending = readSnapshotResolved(client, table).catch((err) => boardAfterReadError(client, table, err));
+  const deadline = Date.now() + boardReadBudgetMs();
+  const pending = readSnapshotResolved(client, table, deadline).catch((err) => boardAfterReadError(client, table, err, deadline));
   inflight.set(table, pending);
   // Both handlers are attached so a background refresh cannot reject later
   // as an unhandled rejection. Callers that await `pending` still see it.
@@ -325,13 +383,15 @@ export function lastGoodTimestamp(parsed) {
   return NaN;
 }
 
-export async function readLastGood(client, table) {
+export async function readLastGood(client, table, deadline) {
   try {
     const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
     if (!storage || typeof storage.download !== 'function') return null;
+    const ms = stepBudgetMs(deadline, timeouts.lastGoodReadMs);
+    if (ms <= 0) return null;
     const { data, error } = await withTimeout(
       storage.download(`${table}.json`),
-      timeouts.lastGoodReadMs,
+      ms,
       'Last-good read timed out'
     );
     if (error || !data) return null;
@@ -352,9 +412,11 @@ export async function readLastGood(client, table) {
   }
 }
 
-async function fetchSnapshotRow(client, table, id) {
+async function fetchSnapshotRow(client, table, id, deadline) {
+  const ms = stepBudgetMs(deadline, timeouts.snapshotReadMs);
+  if (ms <= 0) throw timeoutError('Dataset read timed out');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
     let builder = client
       .from(table)
@@ -366,7 +428,7 @@ async function fetchSnapshotRow(client, table, id) {
     }
     const { data, error } = await withTimeout(
       builder.maybeSingle(),
-      timeouts.snapshotReadMs,
+      ms,
       'Dataset read timed out'
     );
     if (error) throw new Error(error.message);
@@ -382,9 +444,11 @@ async function fetchSnapshotRow(client, table, id) {
   }
 }
 
-async function fetchSnapshotRows(client, table, ids) {
+async function fetchSnapshotRows(client, table, ids, deadline) {
+  const ms = stepBudgetMs(deadline, timeouts.snapshotReadMs);
+  if (ms <= 0) throw timeoutError('Dataset read timed out');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
     let builder = client
       .from(table)
@@ -395,7 +459,7 @@ async function fetchSnapshotRows(client, table, ids) {
     }
     const { data, error } = await withTimeout(
       builder,
-      timeouts.snapshotReadMs,
+      ms,
       'Dataset read timed out'
     );
     if (error) throw new Error(error.message);
@@ -418,20 +482,30 @@ async function fetchSnapshotRows(client, table, ids) {
 // row is that joined payload, identical to a single-row publish. Reassemble
 // here, before the cache and before any ?view=hub trim, so a caller never
 // shapes the manifest.
-async function readSnapshotResolved(client, table) {
-  const head = await fetchSnapshotRow(client, table, 1);
-  if (!head || !snapshotChunkManifest(head.data)) {
-    if (!isNbaPlayerManifest(table, head)) rememberBoard(table, head);
-    return head;
+async function readSnapshotResolved(client, table, deadline) {
+  const head = await fetchSnapshotRow(client, table, 1, deadline);
+  if (head && snapshotChunkManifest(head.data)) {
+    const ids = head.data.snapshotChunks.ids;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isInteger(id))) {
+      throw new Error('snapshot chunk manifest is invalid');
+    }
+    const extra = await fetchSnapshotRows(client, table, ids, deadline);
+    const assembled = assembleSnapshotRows(head, extra);
+    rememberBoard(table, assembled, head.data.snapshotChunks.version);
+    return assembled;
   }
-  const ids = head.data.snapshotChunks.ids;
-  if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isInteger(id))) {
-    throw new Error('snapshot chunk manifest is invalid');
+  if (isNbaPlayerManifest(table, head)) {
+    try {
+      const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client, deadline));
+      rememberBoard(table, assembled);
+      return assembled;
+    } catch (err) {
+      forgetBoard(table);
+      throw err;
+    }
   }
-  const extra = await fetchSnapshotRows(client, table, ids);
-  const assembled = assembleSnapshotRows(head, extra);
-  rememberBoard(table, assembled, head.data.snapshotChunks.version);
-  return assembled;
+  rememberBoard(table, head);
+  return head;
 }
 
 // NBA caller identity. Unlike resolveTier, a bad token or a missing email is
@@ -527,6 +601,20 @@ async function handleNbaRequest(req, res, client, ds) {
     return res.status(400).json({ error: 'Unknown dataset' });
   }
 
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: caller.tier,
+        access: sportAccess(caller.tier),
+      }, true);
+    }
+  }
+
   let row;
   try {
     row = ds === 'nba_players'
@@ -555,8 +643,22 @@ async function handleNbaRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: caller.tier,
+        access: sportAccess(caller.tier),
+      }, true);
+    }
+  }
   const shaped = withPresentedData(
     req,
+    ds,
     decision === 'full'
       ? { data: board, preview: false, lockedCount: 0 }
       : shapeForTier(ds, board, 'free'),
@@ -656,6 +758,7 @@ async function handleNhlRequest(req, res, client, ds) {
     tierResolved: caller.tierResolved,
     tier: caller.tier,
   });
+  const tierName = caller.tierResolved === true ? caller.tier : 'free';
 
   let board;
   try {
@@ -664,8 +767,22 @@ async function handleNhlRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  if (wantsHub(req) && decision === 'full') {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier: tierName,
+        access: sportAccess(tierName),
+      }, true);
+    }
+  }
   const shaped = withPresentedData(
     req,
+    ds,
     decision === 'full'
       ? { data: board, preview: false, lockedCount: 0 }
       : shapeForTier(ds, board, 'free'),
@@ -676,8 +793,8 @@ async function handleNhlRequest(req, res, client, ds) {
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
-    tier: caller.tierResolved === true ? caller.tier : 'free',
-    access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
+    tier: tierName,
+    access: sportAccess(tierName),
   }, decision === 'full');
 }
 
@@ -829,6 +946,19 @@ export async function handleDataRequest(req, res, client) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
+  if (wantsHub(req) && memberSeesFullBoard(ds, tier)) {
+    const pre = await readPrecomputedHub(client, ds);
+    if (pre) {
+      return sendData(req, res, {
+        data: pre.data,
+        updatedAt: pre.updated_at || null,
+        preview: false,
+        lockedCount: 0,
+        tier,
+        access: sportAccess(tier),
+      }, true);
+    }
+  }
   let board;
   try {
     board = boardForPresentation(row.data);
@@ -836,7 +966,7 @@ export async function handleDataRequest(req, res, client) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const shaped = withPresentedData(req, shapeForTier(ds, board, tier), board);
+  const shaped = withPresentedData(req, ds, shapeForTier(ds, board, tier), board);
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,
@@ -852,6 +982,7 @@ export function _clearCache() {
   cache.clear();
   latestVersion.clear();
   inflight.clear();
+  hubMiss.clear();
 }
 
 export default function handler(req, res) {

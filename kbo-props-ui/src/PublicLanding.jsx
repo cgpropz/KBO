@@ -7,14 +7,14 @@ import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { STRIPE_LINKS } from './pricingTiers';
-import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
+import { HERO_LANDING_SPORT_ID, LANDING_SPORTS, LOCKED_LANDING_SPORTS } from './landingSports';
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
-import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import PlayerMark from './PlayerMark';
+import { BoardSkeleton } from './BootScreen';
 import { playerInitials } from './playerMark';
 import './PublicLanding.css';
 
@@ -95,14 +95,29 @@ function Phone({ rows, sport }) {
   );
 }
 
+function OtherSportLinks({ thin }) {
+  return (
+    <div className="pl-locked">
+      <p className="pl-empty">
+        {thin
+          ? 'Fewer than 3 NFL free lines are left on this slate. KBO, WNBA, and NHL still post a free top 3 on their own pages.'
+          : 'KBO, WNBA, and NHL stay on their own pages. This page does not load those boards.'}
+      </p>
+      <p className="pl-foot">
+        {LOCKED_LANDING_SPORTS.map((item) => (
+          <a key={item.id} href={item.href}>{item.name} free top 3</a>
+        ))}
+      </p>
+    </div>
+  );
+}
+
 export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSignOut, user }) {
   const menu = usePageMenu();
   const { requireAge } = useAgeGate();
   const [boards, setBoards] = useState({});
-  const [markets, setMarkets] = useState(null);
+  const markets = { data: { games: [] }, locked: true, preview: false, lockedCount: 0 };
   const [boardApi, setBoardApi] = useState(null);
-  const [sportId, setSportId] = useState(HERO_LANDING_SPORT_ID);
-  const [hitSportId, setHitSportId] = useState(HERO_LANDING_SPORT_ID);
   const [openFaq, setOpenFaq] = useState(null);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
@@ -142,71 +157,34 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       }));
     };
 
-    const loadSport = async (sport, priority) => {
-      let snap = null;
-      try {
-        snap = await loadDataset(sport.ds, sport.dev, priority);
-      } catch {
-        if (active) setBoards((prev) => ({ ...prev, [sport.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
-        return;
-      }
-      if (!snap) return;
-      let lineupData = null;
-      if (sport.lineups) {
-        try {
-          const lineupSnap = await loadDataset(sport.lineups, sport.lineupsDev, priority);
-          lineupData = lineupSnap?.data ?? null;
-        } catch { /* a missing injury report still shows the board */ }
-      }
-      await publish(sport, snap, lineupData);
-    };
-
-    // One /api/data call while the hero paints. Board code and every other
-    // dataset wait until a data section is scrolled into view, or until a
-    // gap after load so they are not part of the initial burst.
-    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
-
-    const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
-      heroSnap.then(async (snap) => {
+    // Signed-out and free visitors get one board read: the NFL free top 3.
+    // Other leagues, lineups, and the matchup sheet stay locked and are not fetched.
+    loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low')
+      .then((snap) => {
         if (!active) return;
-        if (snap === 'error') {
+        if (!snap) {
           setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
           return;
         }
-        let lineupData = null;
-        if (HERO_SPORT.lineups) {
-          try {
-            const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev);
-            lineupData = lineupSnap?.data ?? null;
-          } catch { /* a missing injury report still shows the board */ }
-        }
-        publish(HERO_SPORT, snap, lineupData);
+        publish(HERO_SPORT, snap, null);
+      })
+      .catch(() => {
+        if (active) setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
       });
-      LANDING_SPORTS.forEach((sport) => {
-        if (sport.id !== HERO_SPORT.id) loadSport(sport);
-      });
-      loadDataset('nfl_game_markets', 'nfl/game_markets.json')
-        .then((snap) => { if (active && snap) setMarkets(snap); })
-        .catch(() => { if (active) setMarkets({ data: { games: [] }, preview: false, lockedCount: 0 }); });
-    });
 
     return () => {
       active = false;
-      stop();
     };
   }, []);
 
-  const sport = LANDING_SPORTS.find((item) => item.id === sportId) || LANDING_SPORTS[0];
-  const hitSport = LANDING_SPORTS.find((item) => item.id === hitSportId) || LANDING_SPORTS[0];
-  const sportState = boards[sport.id];
-  const hitState = boards[hitSport.id];
-  const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
-  const hitRows = boardApi ? boardApi.publicTopHitRows(hitState?.rows || []) : [];
-  const phoneRows = switchRows;
+  const nflState = boards.nfl;
+  const nflSettled = !!nflState && nflState.status !== 'loading';
+  const freeTop = boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 3) : [];
+  const thinSlate = nflSettled && freeTop.length < 3;
+  const phoneRows = freeTop;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
   const dvpRows = (gameRows.length ? gameRows : (boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 4) : [])).filter((row) => row.oppRank != null);
-  const settled = LANDING_SPORTS.every((item) => boards[item.id]);
 
   const scrollTo = (id) => {
     menu.close();
@@ -246,10 +224,6 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     finally { setLifetimeBusy(false); }
   };
 
-  const chooseSport = (id) => {
-    setSportId(id);
-  };
-
   return (
     <div className="pl-landing" id="top">
       <div className="pl-glow" />
@@ -278,7 +252,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       <main className="pl-main">
         <section className="pl-hero">
           <div>
-            <p className="pl-kick">KBO · NFL · NHL · WNBA</p>
+            <p className="pl-kick">NFL</p>
             <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
             <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
             <div className="pl-cta-row">
@@ -291,34 +265,23 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <li><i />One login, every league</li>
             </ul>
           </div>
-          <Phone rows={phoneRows} sport={sport.id} />
+          <Phone rows={phoneRows} sport="nfl" />
         </section>
 
         <section id="free-top-3">
-          <p className="pl-kick">{hitRows.length >= 10 ? 'Top 10 tonight' : 'L10 hit rates'}</p>
-          <h2>Highest hit rates on the board</h2>
-          <p className="pl-lead">Sorted by L10 hit rate vs today's standard line. A log shorter than 10 games stays off this list.</p>
-          <div className="pl-seg" role="tablist" aria-label="Hit-rate sport">
-            {LANDING_SPORTS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={item.id === hitSport.id}
-                className={item.id === hitSport.id ? 'on' : ''}
-                onClick={() => setHitSportId(item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
+          <p className="pl-kick">Free top 3</p>
+          <h2>Today&apos;s NFL free top 3</h2>
+          <p className="pl-lead">The three highest-scored standard NFL lines. Other leagues stay locked on this page.</p>
           <div className="pl-card">
-            {hitRows.length ? <BoardTable rows={hitRows} showHitRate sport={hitSport.id} /> : (
-              <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
+            {freeTop.length ? <BoardTable rows={freeTop} showHitRate sport="nfl" /> : (
+              nflSettled
+                ? <p className="pl-empty">No scored standard lines in the NFL public preview right now.</p>
+                : <BoardSkeleton rows={3} label="Loading the NFL free top 3" />
             )}
-            {hitState?.preview && hitState.lockedCount > 0 && (
-              <p className="pl-foot">Public preview · {hitState.lockedCount} more lines on All-Access</p>
+            {nflState?.preview && nflState.lockedCount > 0 && (
+              <p className="pl-foot">Public preview · {nflState.lockedCount} more lines on All-Access</p>
             )}
+            {thinSlate && <OtherSportLinks thin />}
           </div>
         </section>
 
@@ -327,7 +290,9 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           <h2>The whole game on one card</h2>
           <div className="pl-two">
             <div className="pl-card pl-match">
-              {game ? (
+              {markets?.locked ? (
+                <p className="pl-empty">Matchup sheets are locked. Open the NFL board to see the game card.</p>
+              ) : game ? (
                 <>
                   <div className="pl-match-top">
                     <TeamMark team={game.awayTeam} name={game.awayName} />
@@ -346,13 +311,15 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                   )}
                 </>
               ) : (
-                <p className="pl-empty">
-                  {!markets
-                    ? 'Loading the game card…'
-                    : (markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
-                      ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
-                      : 'No game card is posted right now.')}
-                </p>
+                !markets
+                  ? <BoardSkeleton rows={3} label="Loading the game card" />
+                  : (
+                    <p className="pl-empty">
+                      {markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
+                        ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
+                        : 'No game card is posted right now.'}
+                    </p>
+                  )
               )}
             </div>
             <div>
@@ -374,49 +341,29 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         </section>
 
         <section id="boards">
-          <p className="pl-kick">Leagues</p>
-          <h2>Switch sports, keep the board</h2>
+          <p className="pl-kick">NFL</p>
+          <h2>Today&apos;s free top 3</h2>
           <div className="pl-card pl-sw">
             <div className="pl-sw-top">
-              <div className="pl-seg" role="tablist" aria-label="League">
-                {LANDING_SPORTS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={item.id === sport.id}
-                    className={item.id === sport.id ? 'on' : ''}
-                    onClick={() => chooseSport(item.id)}
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-              <p className="pl-sw-meta"><b>{sport.sportName}</b> · {boardApi ? boardApi.slateLabel(sportState?.rows || []) : 'Board'} · {sport.props}</p>
+              <p className="pl-sw-meta"><b>{HERO_SPORT.sportName}</b> · {boardApi ? boardApi.slateLabel(freeTop) : 'Board'} · {HERO_SPORT.props}</p>
             </div>
-            {switchRows.length ? <BoardTable rows={switchRows} sport={sport.id} /> : (
-              <p className="pl-empty">
-                {settled
-                  ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
-                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} lines are on the full board.` : ''}`
-                    : `No scored standard lines in the ${sport.name} public preview right now.`)
-                  : 'Loading the board…'}
-              </p>
+            {freeTop.length ? <BoardTable rows={freeTop} sport="nfl" /> : (
+              nflSettled ? (
+                <p className="pl-empty">
+                  {!NFL_FREE_PREVIEW_ENABLED && !nflState?.rows?.length
+                    ? `NFL free preview is off.${nflState?.lockedCount ? ` ${nflState.lockedCount} lines are on the full board.` : ''}`
+                    : 'No scored standard lines in the NFL public preview right now.'}
+                </p>
+              ) : <BoardSkeleton rows={4} label="Loading the NFL board" />
             )}
             <div className="pl-foot">
               <span>Standard lines · CG Score is the board score</span>
-              {sportState?.rows?.length > 0 && (
-                <button type="button" className="pl-text" onClick={() => onOpenBoard?.(sport.id)}>Open {sport.name}</button>
+              {freeTop.length > 0 && (
+                <button type="button" className="pl-text" onClick={() => onOpenBoard?.('nfl')}>Open NFL</button>
               )}
             </div>
           </div>
-          <div className="pl-tick">
-            {LANDING_SPORTS.map((item) => (
-              <button key={item.id} type="button" className={item.id === sport.id ? 'on' : ''} onClick={() => chooseSport(item.id)}>
-                <i />{item.name} <em>{boardApi ? boardApi.slateLabel(boards[item.id]?.rows || []) : 'Board'}</em>
-              </button>
-            ))}
-          </div>
+          {!thinSlate && <OtherSportLinks thin={false} />}
         </section>
 
         <section id="pricing">
@@ -519,7 +466,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
 function TeamMark({ team, name }) {
   const src = teamLogoUrl(team);
   return src
-    ? <img src={fitImage(src, 36)} alt={name || team} width="36" height="36" />
+    ? <img src={fitImage(src, 36)} alt={name || team} width="36" height="36" loading="lazy" decoding="async" />
     : <span className="pl-avatar" aria-hidden="true">{playerInitials(name || team)}</span>;
 }
 

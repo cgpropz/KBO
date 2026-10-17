@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
 import BoardStatus from '../BoardStatus'
+import { BoardSkeleton } from '../BootScreen'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
 import { cgScore, lineMatchesStat } from '../cgScore'
@@ -103,7 +104,7 @@ export default function NhlProjections({ onSelectPlayer }) {
         </div>
       </div>
       {error && <div className="nfl-notice">Unable to load the board: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}
+      {!error && !loaded && <BoardSkeleton rows={6} label="Loading the PrizePicks board" />}
       {!error && loaded && !rows.length && <div className="nfl-notice">No cards match.</div>}
       <div className="nfl-edge-grid">
         {rows.map((item) => <Card key={item.id || `${item.player}-${item.prop}`} item={item} onSelectPlayer={onSelectPlayer} />)}

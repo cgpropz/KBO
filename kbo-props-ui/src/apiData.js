@@ -58,7 +58,7 @@ async function readErrorDetail(res) {
   }
 }
 
-export async function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs } = {}) {
+export async function fetchApiDataset(ds, { devStaticPath, priority, player, view, fresh = false, timeoutMs } = {}) {
   const budget = Number.isFinite(timeoutMs)
     ? Math.min(FETCH_TIMEOUT_MS, Math.max(1, timeoutMs))
     : FETCH_TIMEOUT_MS;
@@ -66,6 +66,7 @@ export async function fetchApiDataset(ds, { devStaticPath, priority, player, fre
     const token = await accessToken({ fresh });
     const params = new URLSearchParams({ ds });
     if (player) params.set('player', player);
+    if (view) params.set('view', view);
     const res = await fetch(`/api/data?${params}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       signal: AbortSignal.timeout(budget),

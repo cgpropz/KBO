@@ -49,7 +49,7 @@ export const SPORTS = [
     tagline: 'PrizePicks prop edges built from weighted recent form and live lines.',
     accent: '#7fff68',
     glow: 'rgba(127, 255, 104, 0.35)',
-    features: ['Top 3 daily props', 'Full PrizePicks edge board', '2025 + 2026 game logs'],
+    features: ["Today's NFL free top 3", 'Full PrizePicks edge board', '2025 + 2026 game logs'],
     portrait: '/sport-cards/nfl-card.webp',
     portraitAlt: 'Illustrated football player in a dark helmet',
   },

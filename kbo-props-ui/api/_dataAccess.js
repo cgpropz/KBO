@@ -193,11 +193,21 @@ function nflPlayerKey(row, index) {
   return name || `\0${index}`;
 }
 
+// Same rule as the member hub: a missing line type is standard. Demon,
+// goblin, and any other explicit type are not a free NFL row.
+function nflPreviewStandard(row) {
+  const type = row?.line_type ?? row?.oddsType;
+  return type == null || String(type).toLowerCase() === 'standard';
+}
+
 // Free NFL board: each player's highest-scoring eligible prop, then the top 3
-// distinct players. Started games and unmatched yardage lines are not eligible.
+// distinct players. Started games, unmatched yardage lines, and non-standard
+// PrizePicks lines are not eligible.
 function previewNflProjections(payload) {
   const rows = (Array.isArray(payload) ? payload : []).filter((row) => (
-    lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
+    nflPreviewStandard(row)
+    && lineMatchesStat(row?.prop ?? row?.stat, row?.line)
+    && !gameAlreadyStarted(row)
   ));
   const bestByPlayer = new Map();
   rows.forEach((item, index) => {

@@ -6,6 +6,7 @@ import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import { useNhlOpen } from '../useNhlOpen'
 import RouteFallback from '../RouteFallback'
+import { sportViewFromEntry } from '../appSport'
 import { GuideNavLinks } from '../GuideLinks'
 import '../nfl/nfl.css'
 import './nhl.css'
@@ -33,8 +34,8 @@ export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, o
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
-  const [view, setView] = useState(entry?.view === 'slip' ? 'slip' : entry?.view === 'player' && entry.item ? 'player' : 'dashboard')
-  const [selected, setSelected] = useState(entry?.item || null)
+  const [view, setView] = useState(() => sportViewFromEntry(entry) || 'dashboard')
+  const [selected, setSelected] = useState(entry?.item || (entry?.view === 'player' && entry.player ? { player: entry.player, prop: entry.prop || null } : null))
 
   const openPlayer = (item) => {
     setSelected(item)

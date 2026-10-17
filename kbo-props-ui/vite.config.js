@@ -154,4 +154,13 @@ export default defineConfig({
   plugins: [cssLayerPlugin(), react(), stripPaidData(), previewCleanUrls(), devMembershipPreview()],
   // For GitHub Pages: set base to repo name, or '/' for custom domain
   base: process.env.GITHUB_PAGES ? '/KBO/' : '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/highcharts')) return 'highcharts'
+        },
+      },
+    },
+  },
 })

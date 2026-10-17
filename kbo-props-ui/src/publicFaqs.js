@@ -1,16 +1,12 @@
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag.js'
 
 export function publicFaqs() {
-  const previewBoards = NFL_FREE_PREVIEW_ENABLED
-    ? 'KBO, WNBA, NFL, and NHL'
-    : 'KBO, WNBA, and NHL'
-  const nflNote = NFL_FREE_PREVIEW_ENABLED
-    ? ''
-    : ' The NFL free preview is off, so NFL rows are not in that public feed.'
   return [
     {
       q: "What's on the page before you subscribe?",
-      a: `You get this page and the public preview of the top lines on the ${previewBoards} boards.${nflNote} All-Access unlocks the full boards.`,
+      a: NFL_FREE_PREVIEW_ENABLED
+        ? 'This page shows the NFL free top 3. KBO, WNBA, and NHL each keep a free top 3 on their own pages. All-Access unlocks the full boards.'
+        : 'This page does not list NFL rows while the NFL free preview is off. KBO, WNBA, and NHL each keep a free top 3 on their own pages. All-Access unlocks the full boards.',
     },
     {
       q: 'Does one login cover every league?',

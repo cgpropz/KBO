@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { loadHubSports, loadMemberBoard } from './memberBoardLoad';
+import { FETCH_BUDGET_MS, loadMemberBoard } from './memberBoardLoad';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -11,14 +11,13 @@ import { teamColor as wnbaTeamColor } from './wnba/utils/formatters';
 import { teamLogoUrl as nhlLogo, nhlHeadshotUrl } from './nhl/nhlTeams';
 import { nbaLogoUrl } from './nba/nbaPropLines';
 import Results from './Results';
+import { BoardSkeleton } from './BootScreen';
 import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
-  hubGamedayFor,
-  scopeToGameday,
+  confirmedGoalieStarters, hubGamedayFor, normalizePlayerName, playableRows, sameMatchup, scopeToGameday, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
-import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
+import { DEFAULT_MEMBER_SPORT, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
 
 /*
@@ -140,7 +139,7 @@ function headshotSources(row, cssPx) {
 function TeamLogo({ src, size = 16, className = 'hub-logo-img', title }) {
   const { src: url, next } = useImageChain(src ? [fitImage(src, size), src] : []);
   if (!url) return null;
-  return <img className={className} src={url} alt="" title={title} width={size} height={size} loading="lazy" onError={next} />;
+  return <img className={className} src={url} alt="" title={title} width={size} height={size} loading="lazy" decoding="async" onError={next} />;
 }
 
 function Avatar({ row, sport, size = 48 }) {
@@ -150,7 +149,7 @@ function Avatar({ row, sport, size = 48 }) {
   return (
     <div className="hub-avatar-wrap" style={{ width: size, height: size }}>
       <div className={`hub-avatar${src ? '' : ' is-fallback'}`} style={src ? undefined : { background: fill, color: inkOn(fill) }} aria-hidden="true">
-        {src ? <img src={src} alt="" width={size} height={size} loading="lazy" onError={next} /> : initials(row.player)}
+        {src ? <img src={src} alt="" width={size} height={size} loading="lazy" decoding="async" onError={next} /> : initials(row.player)}
       </div>
       {logo && <span className="hub-avatar-badge"><TeamLogo src={logo} size={16} className="" title={row.team} /></span>}
     </div>
@@ -204,7 +203,7 @@ function L10Chart({ values, line, side }) {
 function useRecap() {
   const [recap, setRecap] = useState(null);
   useEffect(() => {
-    fetch(`/member-recap.json?v=${Date.now()}`, { cache: 'no-store' })
+    fetch('/member-recap.json')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setRecap(j?.sports || {}))
       .catch(() => setRecap({}));
@@ -212,59 +211,78 @@ function useRecap() {
   return recap;
 }
 
-function useBoards(access, nbaOpen, selectedId) {
+function withKboPhotos(rows, photos) {
+  if (!photos || !rows?.length) return rows || [];
+  const lookup = {};
+  for (const [name, url] of Object.entries(photos)) lookup[normalizePlayerName(name)] = url;
+  return rows.map((row) => {
+    if (row.image) return row;
+    const image = photos[row.player] || lookup[normalizePlayerName(row.player)] || null;
+    return image ? { ...row, image } : row;
+  });
+}
+
+function rowsFromBoard(sport, raw, photos) {
+  if (raw?.hub === true && Array.isArray(raw.rows)) {
+    return sport.id === 'kbo' ? withKboPhotos(raw.rows, photos) : raw.rows;
+  }
+  if (sport.id === 'kbo') return sport.toRows(raw, photos || {});
+  return sport.toRows(raw);
+}
+
+function useBoards(access, nbaOpen, activeId) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
-  const [rosters, setRosters] = useState({});
   const [lineups, setLineups] = useState({});
-  const selectedRef = useRef(selectedId);
-  selectedRef.current = selectedId;
+  const started = useRef(new Set());
+  const photosStarted = useRef(false);
+
+  const allowed = (sport) => (sport.id === 'nba' ? nbaOpen === true : !!access[sport.id]);
+
+  const loadSport = (sport) => {
+    if (!sport || started.current.has(sport.id) || !allowed(sport)) return;
+    started.current.add(sport.id);
+    if (sport.id === 'kbo' && !photosStarted.current) {
+      photosStarted.current = true;
+      fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
+    }
+    if (sport.lineups) {
+      fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
+        .then((snap) => setLineups((s) => ({ ...s, [sport.id]: snap.data })))
+        .catch(() => setLineups((s) => ({ ...s, [sport.id]: null })));
+    }
+    let settled = false;
+    const finish = (patch) => {
+      if (settled) return;
+      settled = true;
+      setBoards((b) => ({ ...b, [sport.id]: patch }));
+    };
+    // The data client already rejects at 12s. This is the backstop so a tile
+    // cannot stay on Loading if that rejection never arrives.
+    const timer = setTimeout(() => finish({ status: 'error', raw: null }), FETCH_BUDGET_MS + 500);
+    loadMemberBoard(sport, fetchApiDataset, undefined, { view: 'hub' })
+      .then((snap) => {
+        clearTimeout(timer);
+        finish({
+          status: 'ready',
+          raw: snap.data,
+          updatedAt: snap.updatedAt,
+          preview: snap.preview,
+          lockedCount: snap.lockedCount,
+        });
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        finish({ status: 'error', raw: null });
+      });
+  };
 
   useEffect(() => {
-    fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    let slot = 0;
-    loadHubSports(SPORTS, () => selectedRef.current, async (sport) => {
-      if (!alive) return;
-      const mine = slot;
-      slot += 1;
-      const allowed = sport.id === 'nba' ? nbaOpen === true : access[sport.id];
-      if (!allowed) {
-        setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && nbaOpen !== true ? 'closed' : 'locked', raw: null } }));
-        return;
-      }
-      const extras = [];
-      if (sport.roster) {
-        extras.push(
-          fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
-            .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
-            .catch(() => {}),
-        );
-      }
-      if (sport.lineups) {
-        extras.push(
-          fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
-            .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
-            .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); }),
-        );
-      }
-      const board = loadMemberBoard(sport, fetchApiDataset, undefined, {
-        slot: mine,
-        priority: mine === 0 ? 'high' : undefined,
-      }).then((snap) => {
-        if (!alive) return;
-        setBoards((b) => ({
-          ...b,
-          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
-        }));
-      }).catch(() => { if (alive) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
-      await Promise.all([board, ...extras]);
-    }, () => alive);
-    return () => { alive = false; };
-  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+    // NFL on first paint. Another sport, its roster, and its lineups load
+    // only after that tab is selected. Nothing else is prefetched.
+    const active = SPORTS.find((sport) => sport.id === activeId);
+    if (active) loadSport(active);
+  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -272,39 +290,50 @@ function useBoards(access, nbaOpen, selectedId) {
     return () => clearInterval(id);
   }, []);
 
-  return useMemo(() => {
-    const out = {};
-    SPORTS.forEach((sport) => {
-      const b = boards[sport.id];
-      if (!b) { out[sport.id] = { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] }; return; }
-      if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
-      const raw = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
-      const playable = playableRows(
-        raw,
-        unavailableFromLineups(sport.id, lineups[sport.id]),
-        confirmedGoalieStarters(lineups[sport.id]),
-      );
-      // One slate for daily sports (NFL keeps its week): tomorrow's games stay off tonight's top 3, L10 and counts.
-      const gameday = hubGamedayFor(sport.id, playable, now);
-      const all = scopeToGameday(playable, gameday);
-      const shown = countPlayable(all);
+  const out = {};
+  SPORTS.forEach((sport) => {
+    if (!allowed(sport)) {
+      out[sport.id] = { status: sport.id === 'nba' && nbaOpen !== true ? 'closed' : 'locked', rows: [], all: [], games: [], count: 0, lineups: [] };
+      return;
+    }
+    const b = boards[sport.id];
+    if (!b) {
       out[sport.id] = {
-        status: all.length ? 'ready' : 'empty',
-        rows: topHubRows(all, 12),
-        all,
-        games: scopeToGameday(hubGames(sport.id, all, lineups[sport.id]), gameday),
-        gameday,
-        count: shown + (b.preview ? Number(b.lockedCount) || 0 : 0),
-        updatedAt: b.updatedAt,
-        lineups: lineups[sport.id] || [],
+        status: sport.id === activeId ? 'loading' : 'idle',
+        rows: [],
+        all: [],
+        games: [],
+        count: 0,
+        lineups: [],
       };
-    });
-    return out;
-  }, [boards, photos, rosters, lineups, now]);
+      return;
+    }
+    if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
+    const raw = rowsFromBoard(sport, b.raw, photos);
+    const playable = playableRows(
+      raw,
+      unavailableFromLineups(sport.id, lineups[sport.id]),
+      confirmedGoalieStarters(lineups[sport.id]),
+    );
+    // One slate for daily sports (NFL keeps its week): tomorrow's games stay off tonight's top 3, L10 and counts.
+    const gameday = hubGamedayFor(sport.id, playable, now);
+    const all = scopeToGameday(playable, gameday);
+    const shown = countPlayable(all);
+    out[sport.id] = {
+      status: all.length ? 'ready' : 'empty',
+      rows: topHubRows(all, 12),
+      all,
+      games: scopeToGameday(hubGames(sport.id, all, lineups[sport.id]), gameday),
+      gameday,
+      count: shown + (b.preview ? Number(b.lockedCount) || 0 : 0),
+      updatedAt: b.updatedAt,
+      lineups: lineups[sport.id] || [],
+    };
+  });
+  return out;
 }
 
 function emptyCopy(status, sport) {
-  if (status === 'loading') return 'Loading today\'s board…';
   if (status === 'locked') return `${sport.name} isn't in your plan. Add it from Manage plan.`;
   if (status === 'closed') return 'The NBA board opens soon. No lines are posted for members yet.';
   if (status === 'error') return `Couldn't load the ${sport.name} board. Open it directly or try again shortly.`;
@@ -312,6 +341,7 @@ function emptyCopy(status, sport) {
 }
 
 function sportStatus(sport, board, nbaOpen) {
+  if (board?.status === 'idle') return 'Open';
   if (!board || board.status === 'loading') return 'Loading';
   if (board.status === 'locked') return 'Locked';
   if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'Opens soon';
@@ -329,21 +359,23 @@ function BellIcon() {
   );
 }
 
-export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
+export default function MemberCommandCenter({ onEnterSport, onNavigate, initialPanel = 'today' }) {
   const { user, tier, signOut } = useAuth();
   const access = sportAccess(tier);
   const { open: nbaOpen } = useNbaOpen();
-  const [picked, setPicked] = useState(() => (
-    readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
-  ));
-  const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
-  const boards = useBoards(access, nbaOpen, selected.id);
+  // A saved cg_member_sport of KBO, NHL, or WNBA stays in storage for that
+  // sport's page. The hub itself always opens on NFL and does not overwrite
+  // the saved key until a tile is tapped.
+  const [picked, setPicked] = useState(DEFAULT_MEMBER_SPORT);
+  const selectedSport = SPORTS.find((s) => s.id === selectedHubSport(picked));
+  const boards = useBoards(access, nbaOpen, selectedSport.id);
   const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
-  const [panel, setPanel] = useState('today');
+  const [panel, setPanel] = useState(initialPanel === 'results' ? 'results' : 'today');
   const [bellOpen, setBellOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const selected = selectedSport;
   const pickSport = (id) => {
     setPicked(id);
     rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, id);
@@ -452,7 +484,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
         <label className="hub-matchup-filter">
           <span>Matchup:</span>
           <select value={matchup} onChange={(event) => { setMatchup(event.target.value); setFocus(null); }} disabled={!games.length}>
-            <option value="">{games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
+            <option value="">{state.status === 'loading' ? 'Loading' : games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
             {games.map((game) => (
               <option key={gameKey(game)} value={gameKey(game)}>
                 {game.opponent ? `${game.team} vs ${game.opponent}` : game.team}
@@ -475,7 +507,9 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
               <h1>Tonight&apos;s {selected.name} top 3</h1>
             </div>
             <p className="hub-slate">
-              {shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted'}
+              {state.status === 'loading'
+                ? 'Loading the slate'
+                : (shownGames.length ? `${shownGames.length} game${shownGames.length === 1 ? '' : 's'}` : 'No games posted')}
               {firstStart && <> · First start {clockLabel(firstStart.toISOString())}</>}
             </p>
           </div>
@@ -517,7 +551,9 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <span>CG</span>
                   </span>
                 </button>
-              )) : (
+              )) : state.status === 'loading' ? (
+                <BoardSkeleton rows={3} label={`Loading the ${selected.name} board`} />
+              ) : (
                 <section className="hub-card hub-card-empty"><p>{emptyCopy(state.status, selected)}</p></section>
               )}
             </div>
@@ -537,7 +573,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
                   </button>
                 )) : null}
-                {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (
+                {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && state.status !== 'loading' && (
                   <button type="button" className="hub-open" onClick={() => onEnterSport(selected.id, { view: 'board' })}>
                     Open full board ({state.count} props) →
                   </button>
@@ -598,7 +634,9 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       <span className="hub-num">{row.hitHits}/{row.hitGames}</span>
                     </span>
                   </button>
-                )) : (
+                )) : state.status === 'loading' ? (
+                  <BoardSkeleton rows={4} label="Loading hit rates" />
+                ) : (
                   <p className="hub-chart-empty">No L10 hit rates on this board.</p>
                 )}
               </section>
@@ -620,7 +658,11 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       onClick={() => pickSport(sport.id)}
                     >
                       <strong>{sport.name}</strong>
-                      <span>{sportStatus(sport, boards[sport.id], nbaOpen)}</span>
+                      {boards[sport.id]?.status === 'loading' ? (
+                        <i className="cg-shimmer hub-tile-load" aria-label="Loading" />
+                      ) : (
+                        <span>{sportStatus(sport, boards[sport.id], nbaOpen)}</span>
+                      )}
                     </button>
                   ))}
                 </div>

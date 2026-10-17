@@ -5,7 +5,7 @@ import { useNbaOpen } from './useNbaOpen'
 import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
-import { accountFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
+import { accountFromSearch, pageEntryFromSearch, resultsFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
@@ -48,7 +48,8 @@ function App() {
   const [view, setView] = useState(() => {
     if (typeof window === 'undefined') return 'hub';
     if (pauseTokenFromSearch(window.location.search) || accountFromSearch(window.location.search)) return 'pricing';
-    return sportFromSearch(window.location.search) ? 'home' : 'hub';
+    if (resultsFromSearch(window.location.search) && !sportFromSearch(window.location.search)) return 'hub';
+    return sportFromSearch(window.location.search) || pageEntryFromSearch(window.location.search) ? 'home' : 'hub';
   });
   // Pre-login flow: marketing page first, then the login/signup form.
   // A pause email link must be opened by the matching signed-in member.
@@ -59,7 +60,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [entry, setEntry] = useState(() => {
     if (typeof window === 'undefined') return null
-    return slipLinkFromSearch(window.location.search)
+    return pageEntryFromSearch(window.location.search) || slipLinkFromSearch(window.location.search)
   });
   const [sport, setSportState] = useState(() => {
     if (typeof window === 'undefined') return 'nfl';
@@ -173,6 +174,7 @@ function App() {
         {user ? (
           <Suspense fallback={<RouteFallback />}>
             <CgpropzLanding
+              initialPanel={resultsFromSearch(window.location.search) ? 'results' : 'today'}
               onEnterSport={(s, next) => { setSportState(s); setEntry(next || null); setView('home'); }}
               onNavigate={(nextView) => { setSportState('kbo'); setEntry(null); setView(nextView); }}
             />
@@ -189,8 +191,8 @@ function App() {
     );
   }
 
-  /* Anonymous visitors and free accounts browse in preview mode. The server
-     sends the top 3 lines per board, except NFL while its preview flag is off. */
+  /* A sport page, not the landing. Anonymous visitors and free accounts see
+     that sport's own top 3. NFL withholds its rows while its preview flag is off. */
   const seesFreePreview = !user || tier === 'free'
   const previewBar = seesFreePreview && (
     <div className="ff-preview-bar" role="note" ref={setPreviewNode}>

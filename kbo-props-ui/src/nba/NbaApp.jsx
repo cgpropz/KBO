@@ -5,6 +5,7 @@ import './nba.css'
 import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import RouteFallback from '../RouteFallback'
+import { sportViewFromEntry } from '../appSport'
 import { GuideNavLinks } from '../GuideLinks'
 
 const NbaPlayers = lazy(() => import('./NbaPlayers'))
@@ -73,11 +74,9 @@ function EmptyTab({ title, body }) {
 export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => {
-    if (entry?.view === 'slip') return 'slip'
-    if (entry?.view === 'player' && entry.player) return 'players'
-    return readLinkedNbaView()
-  })
+  const [view, setView] = useState(() => (
+    sportViewFromEntry(entry, { oddsId: 'projections', playerId: 'players' }) || readLinkedNbaView()
+  ))
   const [playerName, setPlayerName] = useState(entry?.player || '')
   const openView = (next) => {
     if (next !== 'players') setPlayerName('')
