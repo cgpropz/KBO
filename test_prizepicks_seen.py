@@ -1,5 +1,6 @@
 """Missing PrizePicks ids: future games only, one slate, full pages, published board."""
 import datetime
+import json
 import unittest
 from pathlib import Path
 
@@ -211,6 +212,7 @@ BUILD_STEPS = {
     "nhl-board-snapshot.yml": "Build the NHL board",
     "nfl-refresh.yml": "Build current NFL projections and starting lineups",
     "nfl-odds-live.yml": "Build current NFL projections and starting lineups",
+    "publish-data.yml": "Build current NFL projections and starting lineups",
 }
 
 
@@ -220,6 +222,110 @@ def _named_step(text: str, name: str) -> str:
     rest = text[start + len(marker):]
     nxt = rest.find("\n      - ")
     return rest if nxt < 0 else rest[:nxt]
+
+
+class _Cursor:
+    def __init__(self, row):
+        self.row = row
+
+    def fetchone(self):
+        return self.row
+
+
+class _Conn:
+    def __init__(self, row=None, error=None):
+        self.row, self.error, self.sql, self.closed = row, error, [], False
+
+    def execute(self, sql):
+        self.sql.append(sql)
+        if self.error:
+            raise self.error
+        return _Cursor(self.row)
+
+    def close(self):
+        self.closed = True
+
+
+class BoardReaderTests(unittest.TestCase):
+    NO_FILE = Path("/tmp/cgpropz-no-such-projections.json")
+
+    def test_reads_the_previous_board_as_board_reader(self):
+        conn = _Conn(row=([_row("15830428")],))
+        seen = {}
+
+        def connect(url):
+            seen["url"] = url
+            return conn
+
+        def get(url, headers):
+            raise AssertionError("REST must not be used when the reader works")
+
+        rows = previous_board_rows(
+            self.NO_FILE, "nhl_projections",
+            env={"BOARD_READER_DB_URL": "postgresql://board_reader:x@h/db",
+                 "SUPABASE_URL": "https://example.supabase.co",
+                 "SUPABASE_SERVICE_ROLE_KEY": "service-role"},
+            get=get, connect=connect,
+        )
+        self.assertEqual(rows[0]["projection_id"], "15830428")
+        self.assertEqual(seen["url"], "postgresql://board_reader:x@h/db")
+        self.assertEqual(conn.sql, ["select data from public.nhl_projections where id = 1"])
+        self.assertTrue(conn.closed)
+
+    def test_json_text_column_is_parsed(self):
+        conn = _Conn(row=(json.dumps([_row("a")]),))
+        rows = previous_board_rows(self.NO_FILE, "nfl_projections",
+                                   env={"BOARD_READER_DB_URL": "u"}, connect=lambda u: conn)
+        self.assertEqual(rows[0]["projection_id"], "a")
+
+    def test_denied_or_unreachable_means_no_previous_board(self):
+        denied = _Conn(error=PermissionError("permission denied for table nhl_projections"))
+        self.assertEqual(previous_board_rows(self.NO_FILE, "nhl_projections",
+                                             env={"BOARD_READER_DB_URL": "u"}, connect=lambda u: denied), [])
+        self.assertTrue(denied.closed)
+
+        def boom(url):
+            raise OSError("timeout")
+        self.assertEqual(previous_board_rows(self.NO_FILE, "nfl_projections",
+                                             env={"BOARD_READER_DB_URL": "u"}, connect=boom), [])
+
+    def test_missing_row_and_other_tables_return_nothing(self):
+        self.assertEqual(previous_board_rows(self.NO_FILE, "nhl_projections",
+                                             env={"BOARD_READER_DB_URL": "u"}, connect=lambda u: _Conn(row=None)), [])
+        called = {"n": 0}
+
+        def connect(url):
+            called["n"] += 1
+            return _Conn(row=([],))
+        self.assertEqual(previous_board_rows(self.NO_FILE, "user_profiles",
+                                             env={"BOARD_READER_DB_URL": "u"}, connect=connect), [])
+        self.assertEqual(called["n"], 0)
+
+    def test_missing_secret_falls_back_without_connecting(self):
+        def connect(url):
+            raise AssertionError("no URL, no connection")
+        self.assertEqual(previous_board_rows(self.NO_FILE, "nhl_projections", env={}, connect=connect), [])
+
+    def test_only_build_steps_get_the_reader_secret(self):
+        for name, step in BUILD_STEPS.items():
+            text = Path(".github/workflows", name).read_text(encoding="utf-8")
+            body = _named_step(text, step)
+            self.assertIn("BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}", body, name)
+            self.assertEqual(text.count("secrets.BOARD_READER_DB_URL"), 1, name)
+            installs = text + (Path("requirements.txt").read_text(encoding="utf-8")
+                               if "requirements.txt" in text else "")
+            self.assertIn("psycopg", installs, name)
+        for path in Path(".github/workflows").glob("*.yml"):
+            if path.name not in BUILD_STEPS:
+                self.assertNotIn("BOARD_READER_DB_URL", path.read_text(encoding="utf-8"), path.name)
+
+    def test_the_migration_grants_select_only(self):
+        sql = Path("sql/security/03_board_reader_role.sql").read_text(encoding="utf-8").lower()
+        self.assertIn("nobypassrls", sql)
+        self.assertIn("grant select on public.nhl_projections, public.nfl_projections to board_reader", sql)
+        self.assertNotIn("password", sql.split("-- ====", 2)[-1].replace("its password is set", ""))
+        for verb in ("insert", "update", "delete", "truncate", "grant all"):
+            self.assertNotIn(f"grant {verb}", sql)
 
 
 class PublishedBoardTests(unittest.TestCase):

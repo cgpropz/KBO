@@ -389,13 +389,67 @@ def _anon_key(env) -> str:
     return ""
 
 
-def load_published_board(table: str, *, env=None, get=None) -> list:
+BOARD_READER_TABLES = ("nhl_projections", "nfl_projections")
+
+
+def _board_reader_url(env) -> str:
+    return str(env.get("BOARD_READER_DB_URL") or "").strip()
+
+
+def _connect_board_reader(url):
+    import psycopg  # noqa: PLC0415 - optional; only the build steps install it
+
+    return psycopg.connect(url, connect_timeout=15, autocommit=True)
+
+
+def load_board_with_reader(table: str, *, env=None, connect=None):
+    """Read data from <table> id = 1 as the SELECT-only board_reader role.
+
+    Returns None when BOARD_READER_DB_URL is unset (so the caller can try
+    the next source) and [] when the connection or the SELECT fails. The
+    connection string is never logged.
+    """
+    env = os.environ if env is None else env
+    url = _board_reader_url(env)
+    if not url:
+        return None
+    if table not in BOARD_READER_TABLES:
+        return []
+    connect = connect or _connect_board_reader
+    conn = None
+    try:
+        conn = connect(url)
+        cur = conn.execute(f"select data from public.{table} where id = 1")
+        row = cur.fetchone()
+    except Exception as exc:  # denied, unreachable, psycopg missing
+        print(f"[prizepicks_seen] previous {table} unavailable via board_reader ({type(exc).__name__})")
+        return []
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    data = row[0] if row else None
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except ValueError:
+            return []
+    rows = rows_from_supabase_body({"data": data}) if isinstance(data, list) else []
+    return rows
+
+
+def load_published_board(table: str, *, env=None, get=None, connect=None) -> list:
     """GET the published board with the anon key.
 
     Empty when the key is missing or Postgres denies the anon role. That
     denial is not retried with the service role.
     """
     env = os.environ if env is None else env
+    via_reader = load_board_with_reader(table, env=env, connect=connect)
+    if via_reader is not None:
+        return via_reader
     base = str(env.get("SUPABASE_URL") or env.get("VITE_SUPABASE_URL") or "").strip()
     key = _anon_key(env)
     if not base or not key:
@@ -420,13 +474,14 @@ def load_published_board(table: str, *, env=None, get=None) -> list:
     return rows if isinstance(rows, list) else []
 
 
-def previous_board_rows(paths, table: str, *, env=None, get=None) -> list:
+def previous_board_rows(paths, table: str, *, env=None, get=None, connect=None) -> list:
     """Local board file when this checkout has one, otherwise the Supabase snapshot.
 
     GitHub Actions checks out a clean tree. nfl/projections.json and
     nhl/projections.json are gitignored and are not restored from an artifact.
-    The fallback is a GET of nhl_projections or nfl_projections (id = 1) with
-    the anon key. Row-level security currently denies that role, so a blocked
+    The fallback reads nhl_projections or nfl_projections (id = 1) as the
+    SELECT-only board_reader role (BOARD_READER_DB_URL), else a GET with the
+    anon key. Row-level security currently denies that role, so a blocked
     read leaves no previous board instead of using the service role.
     """
     if isinstance(paths, (str, Path)):
@@ -435,4 +490,4 @@ def previous_board_rows(paths, table: str, *, env=None, get=None) -> list:
         rows = read_local_board(path)
         if rows:
             return rows
-    return load_published_board(table, env=env, get=get)
+    return load_published_board(table, env=env, get=get, connect=connect)
