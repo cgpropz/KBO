@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-14",
   "timezone_basis": "ET",
   "status": "complete",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 148 non-standard lines and 14 superseded standard lines. 2 pulled standard lines count as Void.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 148 non-standard lines and 0 superseded duplicates. 14 replaced standard lines, 2 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 13,
   "misses": 7,
   "pushes": 1,
-  "voids": 2,
+  "voids": 16,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.65,
   "hit_rate_pct": 65.0,
-  "props_total": 23,
-  "props_graded": 23,
+  "props_total": 37,
+  "props_graded": 37,
   "ungraded_live": 0,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 185
   },
   "excluded_research": 148,
-  "excluded_superseded": 14,
+  "excluded_duplicate": 0,
+  "replaced_standard": 14,
   "pulled_standard": 2,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "Adam Engstrom",
@@ -119,8 +121,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Alex Tuch",
@@ -319,8 +321,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brent Burns",
@@ -379,8 +381,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brock Nelson",
@@ -469,8 +471,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Cole Hutson",
@@ -539,8 +541,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Devon Toews",
@@ -769,8 +771,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jakub Dobes",
@@ -809,8 +811,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jason Robertson",
@@ -859,8 +861,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jordan Kyrou",
@@ -899,8 +901,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Josh Anderson",
@@ -1179,8 +1181,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nathan MacKinnon",
@@ -1219,8 +1221,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nazem Kadri",
@@ -1259,8 +1261,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nick Suzuki",
@@ -1439,8 +1441,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Ryan Leonard",
@@ -1569,8 +1571,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Timothy Liljegren",

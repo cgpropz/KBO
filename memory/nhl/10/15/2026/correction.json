@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-15",
   "timezone_basis": "ET",
   "status": "complete",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 842 non-standard lines and 58 superseded standard lines. 10 pulled standard lines count as Void.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 842 non-standard lines and 0 superseded duplicates. 58 replaced standard lines, 10 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 62,
   "misses": 56,
   "pushes": 4,
-  "voids": 10,
+  "voids": 68,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.525424,
   "hit_rate_pct": 52.5,
-  "props_total": 132,
-  "props_graded": 132,
+  "props_total": 190,
+  "props_graded": 190,
   "ungraded_live": 0,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 1032
   },
   "excluded_research": 842,
-  "excluded_superseded": 58,
+  "excluded_duplicate": 0,
+  "replaced_standard": 58,
   "pulled_standard": 10,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "Aaron Ekblad",
@@ -109,8 +111,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Adam Jiricek",
@@ -569,8 +571,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Anton Frondell",
@@ -1149,8 +1151,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Braeden Bowman",
@@ -1319,8 +1321,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brayden Schenn",
@@ -1359,8 +1361,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brendan Gallagher",
@@ -1429,8 +1431,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brock Boeser",
@@ -1599,8 +1601,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Casey Cizikas",
@@ -1629,8 +1631,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Chandler Stephenson",
@@ -1849,8 +1851,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Cole Smith",
@@ -1969,8 +1971,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Connor McMichael",
@@ -1989,8 +1991,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Connor McMichael",
@@ -2199,8 +2201,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "David Jiricek",
@@ -2529,8 +2531,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Dylan Holloway",
@@ -2799,8 +2801,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Evan Rodrigues",
@@ -3009,8 +3011,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gage Goncalves",
@@ -3219,8 +3221,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Isak Rosen",
@@ -3289,8 +3291,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Ivar Stenberg",
@@ -3359,8 +3361,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jack Drury",
@@ -3399,8 +3401,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jack Eichel",
@@ -3459,8 +3461,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jack Quinn",
@@ -4149,8 +4151,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jonathan Marchessault",
@@ -4269,8 +4271,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Joseph Woll",
@@ -4299,8 +4301,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Josh Doan",
@@ -4489,8 +4491,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kasperi Kapanen",
@@ -4719,8 +4721,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kyle Palmieri",
@@ -4799,8 +4801,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Leon Draisaitl",
@@ -4889,8 +4891,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Logan Cooley",
@@ -5119,8 +5121,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Macklin Celebrini",
@@ -5159,8 +5161,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Marc Gatcomb",
@@ -5399,8 +5401,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Matias Maccelli",
@@ -5429,8 +5431,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Matt Boldy",
@@ -5469,8 +5471,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Matt Coronato",
@@ -5569,8 +5571,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Matthew Tkachuk",
@@ -5659,8 +5661,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Mattias Samuelsson",
@@ -5719,8 +5721,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Matvei Gridin",
@@ -5789,8 +5791,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Max Crozier",
@@ -5849,8 +5851,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Maxim Tsyplakov",
@@ -5909,8 +5911,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Michael Bunting",
@@ -5949,8 +5951,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Michael Kesselring",
@@ -6089,8 +6091,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Mikhail Sergachev",
@@ -6109,8 +6111,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Mikhail Sergachev",
@@ -6159,8 +6161,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Mitch Marner",
@@ -6319,8 +6321,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Neal Pionk",
@@ -6489,8 +6491,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nikita Kucherov",
@@ -6609,8 +6611,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Noah Laba",
@@ -6809,8 +6811,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Owen Power",
@@ -6839,8 +6841,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Owen Tippett",
@@ -7309,8 +7311,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Ross Colton",
@@ -7429,8 +7431,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Ryan McDonagh",
@@ -7819,8 +7821,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Shane Pinto",
@@ -8049,8 +8051,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Steven Stamkos",
@@ -8099,8 +8101,8 @@
       "odds_type": "standard",
       "line": 22.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tage Thompson",
@@ -8169,8 +8171,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Thomas Chabot",
@@ -8379,8 +8381,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Trevor Zegras",
@@ -8589,8 +8591,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Vasily Podkolzin",
@@ -8719,8 +8721,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Vincent Trocheck",
@@ -8829,8 +8831,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Will Cuylle",
@@ -8899,8 +8901,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "William Karlsson",

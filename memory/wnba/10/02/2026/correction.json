@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-02",
   "timezone_basis": "ET",
   "status": "partial",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a pulled standard line is excluded rather than voided, matching the WNBA grader. Excluded 227 non-standard lines, 18 superseded standard lines, and 0 pulled standard lines.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 227 non-standard lines and 0 superseded duplicates. 18 replaced standard lines, 0 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 36,
   "misses": 50,
   "pushes": 4,
-  "voids": 0,
+  "voids": 18,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.418605,
   "hit_rate_pct": 41.9,
-  "props_total": 92,
-  "props_graded": 90,
+  "props_total": 110,
+  "props_graded": 108,
   "ungraded_live": 2,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 337
   },
   "excluded_research": 227,
-  "excluded_superseded": 18,
+  "excluded_duplicate": 0,
+  "replaced_standard": 18,
   "pulled_standard": 0,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "Alysha Clark",
@@ -209,8 +211,8 @@
       "odds_type": "standard",
       "line": 5.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Arike Ogunbowale",
@@ -379,8 +381,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Arike Ogunbowale",
@@ -549,8 +551,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Cecilia Zandalasini",
@@ -709,8 +711,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -769,8 +771,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -789,8 +791,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -909,8 +911,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -939,8 +941,8 @@
       "odds_type": "standard",
       "line": 7.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -979,8 +981,8 @@
       "odds_type": "standard",
       "line": 5.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jessica Shepard",
@@ -1019,8 +1021,8 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jessica Shepard",
@@ -1359,8 +1361,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kayla Thornton",
@@ -1399,8 +1401,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kayla Thornton",
@@ -1589,8 +1591,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiah Stokes",
@@ -1789,8 +1791,8 @@
       "odds_type": "standard",
       "line": 3,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Paige Bueckers",
@@ -1939,8 +1941,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tiffany Hayes",
@@ -2029,8 +2031,8 @@
       "odds_type": "standard",
       "line": 8.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tiffany Hayes",
@@ -2079,8 +2081,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Veronica Burton",
@@ -2219,8 +2221,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Veronica Burton",

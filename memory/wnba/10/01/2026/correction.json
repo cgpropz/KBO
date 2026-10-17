@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-01",
   "timezone_basis": "ET",
   "status": "partial",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a pulled standard line is excluded rather than voided, matching the WNBA grader. Excluded 209 non-standard lines, 12 superseded standard lines, and 4 pulled standard lines.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 209 non-standard lines and 0 superseded duplicates. 12 replaced standard lines, 4 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 43,
   "misses": 54,
   "pushes": 5,
-  "voids": 0,
+  "voids": 16,
   "dnps": 6,
   "missing": 0,
   "hit_rate": 0.443299,
   "hit_rate_pct": 44.3,
-  "props_total": 110,
-  "props_graded": 108,
+  "props_total": 126,
+  "props_graded": 124,
   "ungraded_live": 2,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 335
   },
   "excluded_research": 209,
-  "excluded_superseded": 12,
+  "excluded_duplicate": 0,
+  "replaced_standard": 12,
   "pulled_standard": 4,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "A'ja Wilson",
@@ -249,8 +251,8 @@
       "odds_type": "standard",
       "line": 13.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "A'ja Wilson",
@@ -309,8 +311,8 @@
       "odds_type": "standard",
       "line": 3,
       "before": "push",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Aliyah Boston",
@@ -509,8 +511,8 @@
       "odds_type": "standard",
       "line": 5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Caitlin Clark",
@@ -609,8 +611,8 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Caitlin Clark",
@@ -739,7 +741,7 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -799,7 +801,7 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -949,8 +951,8 @@
       "odds_type": "standard",
       "line": 9.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Chelsea Gray",
@@ -1019,8 +1021,8 @@
       "odds_type": "standard",
       "line": 5.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Cheyenne Parker-Tyus",
@@ -1149,7 +1151,7 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -1169,8 +1171,8 @@
       "odds_type": "standard",
       "line": 3,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jackie Young",
@@ -1449,8 +1451,8 @@
       "odds_type": "standard",
       "line": 6.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kelsey Mitchell",
@@ -1539,8 +1541,8 @@
       "odds_type": "standard",
       "line": 4,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kelsey Mitchell",
@@ -1549,7 +1551,7 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -1649,8 +1651,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kelsey Mitchell",
@@ -1679,8 +1681,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Lexie Hull",
@@ -1889,8 +1891,8 @@
       "odds_type": "standard",
       "line": 6.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Raven Johnson",

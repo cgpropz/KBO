@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-16",
   "timezone_basis": "ET",
   "status": "complete",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 141 non-standard lines and 12 superseded standard lines. 2 pulled standard lines count as Void.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 141 non-standard lines and 0 superseded duplicates. 12 replaced standard lines, 2 pulled standard lines, and 1 did-not-dress lines count as Void.",
   "hits": 10,
   "misses": 14,
   "pushes": 5,
-  "voids": 2,
+  "voids": 15,
   "dnps": 0,
-  "missing": 1,
+  "missing": 0,
   "hit_rate": 0.416667,
   "hit_rate_pct": 41.7,
-  "props_total": 32,
-  "props_graded": 32,
+  "props_total": 44,
+  "props_graded": 44,
   "ungraded_live": 0,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 185
   },
   "excluded_research": 141,
-  "excluded_superseded": 12,
+  "excluded_duplicate": 0,
+  "replaced_standard": 12,
   "pulled_standard": 2,
+  "dnp_standard": 1,
   "rows_changed": [
     {
       "player": "A.J. Greer",
@@ -159,8 +161,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Ben Kindel",
@@ -429,8 +431,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Declan Carlile",
@@ -479,8 +481,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Egor Chinakhov",
@@ -521,6 +523,16 @@
       "before": "missing",
       "after": "excluded",
       "reason": "research"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "before": "missing",
+      "after": "void",
+      "reason": "dnp"
     },
     {
       "player": "Elias Lindholm",
@@ -609,8 +621,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Evgeni Malkin",
@@ -789,8 +801,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "JJ Peterka",
@@ -839,8 +851,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jackson LaCombe",
@@ -869,8 +881,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jaden Schwartz",
@@ -1189,8 +1201,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nazem Kadri",
@@ -1279,8 +1291,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Noah Warren",
@@ -1359,8 +1371,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Sam Malinski",
@@ -1479,8 +1491,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tanner Jeannot",
@@ -1539,8 +1551,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tristan Luneau",

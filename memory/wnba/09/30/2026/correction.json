@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-09-30",
   "timezone_basis": "ET",
   "status": "partial",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a pulled standard line is excluded rather than voided, matching the WNBA grader. Excluded 460 non-standard lines, 16 superseded standard lines, and 2 pulled standard lines.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 460 non-standard lines and 0 superseded duplicates. 16 replaced standard lines, 2 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 80,
   "misses": 125,
   "pushes": 6,
-  "voids": 0,
+  "voids": 18,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.390244,
   "hit_rate_pct": 39.0,
-  "props_total": 215,
-  "props_graded": 211,
+  "props_total": 233,
+  "props_graded": 229,
   "ungraded_live": 4,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 693
   },
   "excluded_research": 460,
-  "excluded_superseded": 16,
+  "excluded_duplicate": 0,
+  "replaced_standard": 16,
   "pulled_standard": 2,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "Allisha Gray",
@@ -369,8 +371,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Angel Reese",
@@ -429,8 +431,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Angel Reese",
@@ -449,8 +451,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Angel Reese",
@@ -469,8 +471,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Angel Reese",
@@ -759,7 +761,7 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -1609,8 +1611,8 @@
       "odds_type": "standard",
       "line": 6.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -1719,8 +1721,8 @@
       "odds_type": "standard",
       "line": 9.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Georgia Amoore",
@@ -2129,8 +2131,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jordin Canada",
@@ -2419,8 +2421,8 @@
       "odds_type": "standard",
       "line": 12.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kayla Thornton",
@@ -2509,8 +2511,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiah Stokes",
@@ -2519,7 +2521,7 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -2539,8 +2541,8 @@
       "odds_type": "standard",
       "line": 9.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiah Stokes",
@@ -2599,8 +2601,8 @@
       "odds_type": "standard",
       "line": 7.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiki Iriafen",
@@ -2829,8 +2831,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Lauren Betts",
@@ -3059,8 +3061,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Michaela Onyenwere",
@@ -3559,8 +3561,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Rhyne Howard",
@@ -4179,8 +4181,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Sonia Citron",
@@ -4239,8 +4241,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Sonia Citron",

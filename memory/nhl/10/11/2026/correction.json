@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-11",
   "timezone_basis": "ET",
   "status": "complete",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a standard line that was gone before its game's last pregame freeze is Void. Excluded 232 non-standard lines and 5 superseded standard lines. 1 pulled standard lines count as Void.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 232 non-standard lines and 0 superseded duplicates. 5 replaced standard lines, 1 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 15,
   "misses": 15,
   "pushes": 1,
-  "voids": 1,
+  "voids": 6,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.5,
   "hit_rate_pct": 50.0,
-  "props_total": 32,
-  "props_graded": 32,
+  "props_total": 37,
+  "props_graded": 37,
   "ungraded_live": 0,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 269
   },
   "excluded_research": 232,
-  "excluded_superseded": 5,
+  "excluded_duplicate": 0,
+  "replaced_standard": 5,
   "pulled_standard": 1,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "Adam Fox",
@@ -619,8 +621,8 @@
       "odds_type": "standard",
       "line": 2.0,
       "before": "push",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Eeli Tolvanen",
@@ -659,8 +661,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Eric Robinson",
@@ -799,8 +801,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jackson Blake",
@@ -1549,8 +1551,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Nikolaj Ehlers",
@@ -1699,8 +1701,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Paul Cotter",

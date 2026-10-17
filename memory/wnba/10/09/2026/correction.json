@@ -4,17 +4,17 @@
   "slate_date_iso": "2026-10-09",
   "timezone_basis": "ET",
   "status": "partial",
-  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. Counts are live standard lines only: demon and goblin lines are excluded, a standard line left off the board once a later card for the same player and stat was frozen is excluded, and a pulled standard line is excluded rather than voided, matching the WNBA grader. Excluded 409 non-standard lines, 14 superseded standard lines, and 2 pulled standard lines.",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 409 non-standard lines and 0 superseded duplicates. 14 replaced standard lines, 2 pulled standard lines, and 0 did-not-dress lines count as Void.",
   "hits": 92,
   "misses": 117,
   "pushes": 10,
-  "voids": 0,
+  "voids": 16,
   "dnps": 0,
   "missing": 0,
   "hit_rate": 0.440191,
   "hit_rate_pct": 44.0,
-  "props_total": 223,
-  "props_graded": 219,
+  "props_total": 239,
+  "props_graded": 235,
   "ungraded_live": 4,
   "graded_at": "2026-10-17T21:30:00+00:00",
   "updated_at": "2026-10-17T21:30:00+00:00",
@@ -29,8 +29,10 @@
     "props_total": 648
   },
   "excluded_research": 409,
-  "excluded_superseded": 14,
+  "excluded_duplicate": 0,
+  "replaced_standard": 14,
   "pulled_standard": 2,
+  "dnp_standard": 0,
   "rows_changed": [
     {
       "player": "A'ja Wilson",
@@ -309,7 +311,7 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "hit",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -519,8 +521,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Breanna Stewart",
@@ -529,7 +531,7 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "miss",
-      "after": "excluded",
+      "after": "void",
       "reason": "pulled"
     },
     {
@@ -709,8 +711,8 @@
       "odds_type": "standard",
       "line": 12.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Brianna Turner",
@@ -1089,8 +1091,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "DeWanna Bonner",
@@ -1359,8 +1361,8 @@
       "odds_type": "standard",
       "line": 3.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -1499,8 +1501,8 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Gabby Williams",
@@ -2099,8 +2101,8 @@
       "odds_type": "standard",
       "line": 11.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Jonquel Jones",
@@ -2589,8 +2591,8 @@
       "odds_type": "standard",
       "line": 2.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiah Stokes",
@@ -2609,8 +2611,8 @@
       "odds_type": "standard",
       "line": 4.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Kiah Stokes",
@@ -2909,8 +2911,8 @@
       "odds_type": "standard",
       "line": 1.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Naz Hillmon",
@@ -3189,8 +3191,8 @@
       "odds_type": "standard",
       "line": 4,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Rhyne Howard",
@@ -3659,8 +3661,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Stephanie Talbot",
@@ -3779,8 +3781,8 @@
       "odds_type": "standard",
       "line": 10.5,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Stephanie Talbot",
@@ -3809,8 +3811,8 @@
       "odds_type": "standard",
       "line": 4,
       "before": "hit",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Stephanie Talbot",
@@ -3909,8 +3911,8 @@
       "odds_type": "standard",
       "line": 0.5,
       "before": "miss",
-      "after": "excluded",
-      "reason": "superseded"
+      "after": "void",
+      "reason": "replaced"
     },
     {
       "player": "Tiffany Hayes",
