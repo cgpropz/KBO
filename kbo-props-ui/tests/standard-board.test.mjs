@@ -152,3 +152,44 @@ test('paid graded history keeps a row with no odds type and the summary matches'
   assert.equal(kept.data.graded.length, 2)
   assert.equal(kept.data.pending.length, 2)
 })
+
+test('a player with an empty prop list stays on the standard board', () => {
+  const players = [{ name: 'Empty', ppAllProps: [] }]
+  assert.equal(filterStandardBoard('wnba_projections_standard', players), players)
+  assert.equal(filterStandardBoard('nba_projections_standard', players), players)
+})
+
+test('a paid WNBA standard board keeps all 224 players when most lists are empty', () => {
+  const players = Array.from({ length: 224 }, (_, i) => (
+    i < 13
+      ? { name: `P${i}`, ppAllProps: [{ stat: 'Points', line: 10 + i }] }
+      : { name: `P${i}`, ppAllProps: [] }
+  ))
+  players.push({ name: 'Goblin Only', ppAllProps: [{ stat: 'Assists', odds_type: 'goblin' }] })
+  const paid = shapeForTier('wnba_projections_standard', players, 'combined')
+  assert.equal(paid.preview, false)
+  assert.equal(paid.data.length, 224)
+  assert.equal(paid.data.filter((player) => player.ppAllProps.length > 0).length, 13)
+  assert.equal(paid.data.some((player) => player.name === 'Goblin Only'), false)
+  assert.equal(players.length, 225)
+})
+
+test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds type', () => {
+  const records = [
+    { player: 'Std', odds_type: 'standard', ev_pct: 4 },
+    { player: 'Gob', odds_type: 'goblin', ev_pct: 9 },
+    { player: 'Dem', oddsType: 'demon', ev_pct: 8 },
+    { player: 'Plain', ev_pct: 1 },
+    { player: 'Blank', odds_type: '  ', ev_pct: 2 },
+  ]
+  for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
+    const next = filterStandardBoard(ds, { records, message: 'matched' })
+    assert.deepEqual(next.records.map((row) => row.player), ['Std', 'Plain'], ds)
+    assert.equal(next.message, 'matched')
+    const paid = shapeForTier(ds, { records, message: 'matched' }, 'combined')
+    assert.equal(paid.preview, false)
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['Std', 'Plain'], ds)
+    assert.equal(paid.data.message, 'matched')
+  }
+  assert.equal(records.length, 5)
+})
