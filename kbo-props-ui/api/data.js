@@ -203,6 +203,13 @@ async function readSnapshot(client, table) {
 }
 
 export const LAST_GOOD_BUCKET = 'board-last-good';
+// Past this age the stored copy is not served (the caller gets the 503).
+// Daily sports turn over every slate; NFL boards hold for the week.
+export const LAST_GOOD_DEFAULT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const NFL_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const LAST_GOOD_MAX_AGE_MS = Object.fromEntries(
+  ['nfl_projections', 'nfl_lineups', 'nfl_sharp_odds', 'nfl_game_markets', 'correlations_nfl'].map((t) => [t, NFL_MAX_AGE_MS]),
+);
 
 export async function readLastGood(client, table) {
   try {
@@ -216,6 +223,12 @@ export async function readLastGood(client, table) {
     if (error || !data) return null;
     const parsed = JSON.parse(typeof data.text === 'function' ? await data.text() : String(data));
     if (!parsed || parsed.data == null) return null;
+    const maxAge = Object.hasOwn(LAST_GOOD_MAX_AGE_MS, table) ? LAST_GOOD_MAX_AGE_MS[table] : LAST_GOOD_DEFAULT_MAX_AGE_MS;
+    const ts = Date.parse(parsed.updated_at || '');
+    if (!Number.isFinite(ts) || Date.now() - ts > maxAge) {
+      console.warn(`[api/data] ${table} last-good copy too old (${parsed.updated_at || 'no time'}); not served`);
+      return null;
+    }
     console.warn(`[api/data] ${table} served from last-good copy (${parsed.updated_at || 'unknown time'})`);
     return { data: parsed.data, updated_at: parsed.updated_at || null };
   } catch {
