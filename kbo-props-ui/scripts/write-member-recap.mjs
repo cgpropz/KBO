@@ -1,7 +1,7 @@
 // Writes api/_memberRecap.json: the latest graded slate per sport.
-// Counts come only from a summary.json that has been re-graded (a correction
-// note). Those summaries are standard-only and live-only: pulled lines are
-// Void and superseded rows are already excluded. A sport or day without that
+// Counts come only from a re-grade. That is either correction.json beside the
+// original summary, or a summary.json that itself carries a correction note.
+// Those counts are standard-only and live-only. A sport or day without that
 // correction is left out, so an old recap.json full of stale rows cannot
 // publish a hit rate. Only counts and dates are written; no player rows,
 // lines, or projections leave the paid snapshots.
@@ -32,7 +32,12 @@ export function summaryFiles(memoryRoot, sport) {
     if (!/^\d{2}$/.test(mm)) continue
     for (const dd of dirs(join(base, mm))) {
       for (const yyyy of dirs(join(base, mm, dd))) {
-        const file = join(base, mm, dd, yyyy, 'summary.json')
+        const dir = join(base, mm, dd, yyyy)
+        // correction.json sits beside the original summary and is the re-grade.
+        // A day that was corrected in place still has the note on summary.json.
+        const correction = join(dir, 'correction.json')
+        const summary = join(dir, 'summary.json')
+        const file = existsSync(correction) ? correction : summary
         if (existsSync(file)) out.push({ iso: `${yyyy}-${mm}-${dd}`, file })
       }
     }
@@ -40,8 +45,9 @@ export function summaryFiles(memoryRoot, sport) {
   return out.sort((a, b) => a.iso.localeCompare(b.iso))
 }
 
-// A re-grade writes a correction note onto summary.json. Days graded under
-// the old rules have no note, and their recap still mixes stale rows.
+// A re-grade writes a correction note, on correction.json or on summary.json.
+// Days graded under the old rules have no note, and their recap still mixes
+// stale rows.
 export function isCorrectedSummary(summary) {
   const note = summary?.correction
   if (typeof note === 'string') return note.trim().length > 0
@@ -93,7 +99,7 @@ export function buildMemberRecap(memoryRoot, now = new Date()) {
   }
   return {
     generated_at: now.toISOString(),
-    source: 'memory/<sport>/MM/DD/YYYY/summary.json (corrected standard-only live lines)',
+    source: 'memory/<sport>/MM/DD/YYYY/correction.json, else a corrected summary.json',
     sports,
   }
 }
