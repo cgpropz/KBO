@@ -384,18 +384,42 @@ test('WNBA phone cards match NFL width, chart logs, and keep the odds button cle
   })
   expect(oddsCovered).toBe(false)
 
+  const clearOfScore = await page.evaluate(() => {
+    const hits = []
+    for (const card of document.querySelectorAll('[data-testid="prop-line-card"]')) {
+      const toggle = card.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
+      const score = card.querySelector('.cg-score-cell')?.getBoundingClientRect()
+      if (!toggle || !score) continue
+      const overlaps = toggle.left < score.right - 1 && toggle.right > score.left + 1
+        && toggle.top < score.bottom - 1 && toggle.bottom > score.top + 1
+      if (overlaps) {
+        hits.push({
+          toggle: { left: Math.round(toggle.left), right: Math.round(toggle.right), top: Math.round(toggle.top) },
+          score: { left: Math.round(score.left), right: Math.round(score.right), top: Math.round(score.top), bottom: Math.round(score.bottom) },
+        })
+      }
+    }
+    return hits
+  })
+  expect(clearOfScore).toEqual([])
+
   await page.getByRole('button', { name: 'Filters' }).click()
   await page.getByRole('button', { name: /Sort By/ }).click()
   const sort = page.locator('.wnba-filters-panel select')
   await expect(sort).toBeVisible()
+  await page.locator('.wnba-filters-apply').evaluate((el) => el.scrollIntoView({ block: 'nearest' }))
   const filterFit = await page.evaluate(() => {
-    const overlaps = (a, b) => a.width > 0 && b.width > 0
-      && a.left < b.right - 1 && a.right > b.left + 1
-      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    const topIsToggle = (el) => {
+      const box = el.getBoundingClientRect()
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      return Boolean(hit?.closest('.nfl-odds-toggle'))
+    }
     const panel = document.querySelector('.wnba-filters-panel')
-    const select = panel.querySelector('select').getBoundingClientRect()
-    const apply = panel.querySelector('.wnba-filters-apply').getBoundingClientRect()
-    const toggles = [...document.querySelectorAll('.nfl-odds-toggle')].map((el) => el.getBoundingClientRect())
+    const panelBox = panel.getBoundingClientRect()
+    const select = panel.querySelector('select')
+    const apply = panel.querySelector('.wnba-filters-apply')
+    const selectBox = select.getBoundingClientRect()
+    const applyBox = apply.getBoundingClientRect()
     let safeArea = false
     const walk = (rules) => {
       for (const rule of rules) {
@@ -407,17 +431,30 @@ test('WNBA phone cards match NFL width, chart logs, and keep the odds button cle
     for (const sheet of document.styleSheets) {
       try { walk(sheet.cssRules) } catch { /* cross-origin sheet */ }
     }
+    const inside = (box) => box.top >= -1 && box.bottom <= window.innerHeight + 1 && box.height > 0
     return {
       safeArea,
-      selectInside: select.bottom <= window.innerHeight + 1 && select.top >= 0,
-      applyInside: apply.bottom <= window.innerHeight + 1 && apply.height > 0,
-      toggleCoversSelect: toggles.some((box) => overlaps(box, select)),
+      panelInside: inside(panelBox),
+      selectInside: inside(selectBox),
+      applyInside: inside(applyBox),
+      toggleCoversSelect: topIsToggle(select),
+      toggleCoversApply: topIsToggle(apply),
     }
   })
-  expect(filterFit.safeArea).toBe(true)
-  expect(filterFit.selectInside).toBe(true)
-  expect(filterFit.applyInside).toBe(true)
-  expect(filterFit.toggleCoversSelect).toBe(false)
+  expect(filterFit).toEqual({
+    safeArea: true,
+    panelInside: true,
+    selectInside: true,
+    applyInside: true,
+    toggleCoversSelect: false,
+    toggleCoversApply: false,
+  })
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/?sport=wnba&previewTier=owner')
+  await expect(page.getByTestId('prop-line-table')).toBeVisible()
+  const desktopPanel = await page.locator('.wnba-propboard').evaluate((el) => getComputedStyle(el).paddingLeft)
+  expect(desktopPanel).not.toBe('0px')
 })
 
 test('phone layout is unlayered and sport min-width stays in a layer', async ({ page }) => {

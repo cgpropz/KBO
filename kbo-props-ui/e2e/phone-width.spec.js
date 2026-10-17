@@ -327,31 +327,41 @@ test('WNBA phone cards match the other sports and chart the game log', async ({ 
       && a.top < b.bottom - 1 && a.bottom > b.top + 1
     return [...document.querySelectorAll('[data-testid="prop-line-card"]')].every((card) => {
       const toggle = card.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
-      const why = card.querySelector('.cg-score-why')?.getBoundingClientRect()
-      return !toggle || !why || !overlaps(toggle, why)
+      const score = card.querySelector('.cg-score-cell')?.getBoundingClientRect()
+      return !toggle || !score || !overlaps(toggle, score)
     })
   })
   expect(clear).toBe(true)
 
   await page.getByRole('button', { name: 'Filters' }).click()
   await page.getByRole('button', { name: /Sort By/ }).click()
+  await page.locator('.wnba-filters-apply').evaluate((el) => el.scrollIntoView({ block: 'nearest' }))
   const filterFit = await page.evaluate(() => {
+    const topIsToggle = (el) => {
+      const box = el.getBoundingClientRect()
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      return Boolean(hit?.closest('.nfl-odds-toggle'))
+    }
     const panel = document.querySelector('.wnba-filters-panel')
-    const select = panel.querySelector('select').getBoundingClientRect()
-    const apply = panel.querySelector('.wnba-filters-apply').getBoundingClientRect()
-    const toggle = document.querySelector('.nfl-odds-toggle')?.getBoundingClientRect()
-    const overlaps = toggle && select.width > 0
-      && toggle.left < select.right - 1 && toggle.right > select.left + 1
-      && toggle.top < select.bottom - 1 && toggle.bottom > select.top + 1
+    const panelBox = panel.getBoundingClientRect()
+    const select = panel.querySelector('select')
+    const apply = panel.querySelector('.wnba-filters-apply')
+    const inside = (box) => box.top >= -1 && box.bottom <= window.innerHeight + 1 && box.height > 0
     return {
-      selectInside: select.bottom <= window.innerHeight + 1,
-      applyInside: apply.bottom <= window.innerHeight + 1,
-      overlaps: Boolean(overlaps),
+      panelInside: inside(panelBox),
+      selectInside: inside(select.getBoundingClientRect()),
+      applyInside: inside(apply.getBoundingClientRect()),
+      toggleCoversSelect: topIsToggle(select),
+      toggleCoversApply: topIsToggle(apply),
     }
   })
-  expect(filterFit.selectInside).toBe(true)
-  expect(filterFit.applyInside).toBe(true)
-  expect(filterFit.overlaps).toBe(false)
+  expect(filterFit).toEqual({
+    panelInside: true,
+    selectInside: true,
+    applyInside: true,
+    toggleCoversSelect: false,
+    toggleCoversApply: false,
+  })
 })
 
 test('zoomed iPhone keeps a 780px layout and the phone board', async ({ page }, testInfo) => {

@@ -517,7 +517,19 @@
     overflow-wrap: anywhere;
   }
 
+  /* The WNBA fade-in animation leaves translateY(0) in place, which traps
+     position:fixed inside the page instead of the screen. The filter sheet
+     then runs past the bottom and sits on the cards. */
+  .wnba-root .fade-in {
+    animation: none !important;
+    transform: none !important;
+  }
+
   :is(.kbo-filter-overlay, .nfl-filters-overlay, .wnba-filters-overlay) {
+    position: fixed !important;
+    inset: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-end !important;
