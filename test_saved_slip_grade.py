@@ -49,11 +49,14 @@ def _team_played(sport, day, team):
 
 
 class Sources:
-    def __init__(self, days, games=None):
+    def __init__(self, days, games=None, failed=None):
         self.days = days
         self.games = games or []
+        self.failed = failed or set()
 
     def for_sport(self, sport, game_date):
+        if (sport, game_date.isoformat()) in self.failed:
+            raise RuntimeError("score fetch failed")
         return self.days[(sport, game_date.isoformat())]
 
     def team_game_date(self, sport, team, anchor):
@@ -468,7 +471,8 @@ class LegDateTests(SlipGradeTests):
         wnba_hit = grade_slip(slip(SATURDAY, [leg("A'ja Wilson", "Points", 22.5, team="LVA", game_date=SUNDAY)], sport="wnba"), wnba)
         self.assertEqual(wnba_hit["result"], "hit")
         wnba_legacy = grade_slip(slip(SATURDAY, [leg("A'ja Wilson", "Points", 22.5, team="LVA")], sport="wnba"), wnba)
-        self.assertEqual(wnba_legacy["result"], "hit")
+        self.assertEqual(wnba_legacy["result"], "pending")
+        self.assertFalse(wnba_legacy["graded"])
         nhl = Sources({
             ("nhl", SATURDAY): NhlDay(actuals={"final_teams": set(), "players": {}}),
             ("nhl", SUNDAY): NhlDay(actuals={
@@ -479,8 +483,9 @@ class LegDateTests(SlipGradeTests):
         nhl_hit = grade_slip(slip(SATURDAY, [leg("Connor McDavid", "Shots On Goal", 2.5, team="EDM", game_date=SUNDAY)], sport="nhl"), nhl)
         self.assertEqual(nhl_hit["result"], "hit")
         nhl_legacy = grade_slip(slip(SATURDAY, [leg("Connor McDavid", "Shots On Goal", 2.5, team="EDM")], sport="nhl"), nhl)
-        self.assertEqual(nhl_legacy["result"], "hit")
-        self.assertNotEqual(nhl_legacy["result"], "pending")
+        self.assertEqual(nhl_legacy["result"], "pending")
+        self.assertFalse(nhl_legacy["graded"])
+        self.assertNotEqual(nhl_legacy["legs"][0].get("actual"), 4)
 
     def test_an_earlier_final_inside_the_window_is_not_this_slip(self):
         self.assertEqual(nearest_date([date(2026, 10, 11), date(2026, 10, 18)], date(2026, 10, 14)), date(2026, 10, 18))
@@ -523,6 +528,85 @@ class LegDateTests(SlipGradeTests):
         self.assertEqual(edm["result"], "pending")
         self.assertFalse(edm["graded"])
         self.assertNotEqual(edm["legs"][0].get("actual"), 6)
+
+    def test_legacy_wnba_and_nhl_do_not_fall_forward_to_a_later_final(self):
+        # Saved 10/17. The slip-date game is postponed, not final, or the
+        # score fetch failed. A final on 10/19 must not become a hit.
+        later_nhl = NhlDay(actuals={
+            "final_teams": {"EDM"},
+            "players": {("EDM", "stored"): {"name": "Connor McDavid", "team": "EDM", "sog": 5, "played": True}},
+        })
+        later_wnba = WnbaDay(box={
+            ("2026-10-19", "aja"): {"player": "A'ja Wilson", "team": "LVA", "pts": 30, "present": True},
+        })
+        nhl_leg = leg("Connor McDavid", "Shots On Goal", 3.5, team="EDM")
+        wnba_leg = leg("A'ja Wilson", "Points", 22.5, team="LVA")
+        cases = {
+            "postponed": (
+                NhlDay(actuals={"final_teams": set(), "players": {}, "postponed": ["EDM"]}),
+                WnbaDay(box={}),
+            ),
+            "not_final": (
+                NhlDay(actuals={"final_teams": set(), "players": {}}),
+                WnbaDay(box={}),
+            ),
+        }
+        for name, (nhl_today, wnba_today) in cases.items():
+            nhl = grade_slip(slip("2026-10-17", [nhl_leg], sport="nhl"), Sources({
+                ("nhl", "2026-10-17"): nhl_today,
+                ("nhl", "2026-10-19"): later_nhl,
+            }))
+            self.assertEqual(nhl["result"], "pending", name)
+            self.assertFalse(nhl["graded"], name)
+            self.assertNotEqual(nhl["legs"][0].get("actual"), 5, name)
+            wnba = grade_slip(slip("2026-10-17", [wnba_leg], sport="wnba"), Sources({
+                ("wnba", "2026-10-17"): wnba_today,
+                ("wnba", "2026-10-19"): later_wnba,
+            }))
+            self.assertEqual(wnba["result"], "pending", name)
+            self.assertFalse(wnba["graded"], name)
+            self.assertNotEqual(wnba["legs"][0].get("actual"), 30, name)
+        failed_nhl = grade_slip(slip("2026-10-17", [nhl_leg], sport="nhl"), Sources(
+            {("nhl", "2026-10-19"): later_nhl},
+            failed={("nhl", "2026-10-17")},
+        ))
+        self.assertEqual(failed_nhl["result"], "pending")
+        self.assertFalse(failed_nhl["graded"])
+        self.assertTrue(failed_nhl["source_error"])
+        self.assertNotEqual(failed_nhl["legs"][0].get("actual"), 5)
+        failed_wnba = grade_slip(slip("2026-10-17", [wnba_leg], sport="wnba"), Sources(
+            {("wnba", "2026-10-19"): later_wnba},
+            failed={("wnba", "2026-10-17")},
+        ))
+        self.assertEqual(failed_wnba["result"], "pending")
+        self.assertFalse(failed_wnba["graded"])
+        self.assertTrue(failed_wnba["source_error"])
+        self.assertNotEqual(failed_wnba["legs"][0].get("actual"), 30)
+        # A leg that already carries its own ET date still grades that date.
+        dated = grade_slip(slip("2026-10-17", [leg("Connor McDavid", "Shots On Goal", 3.5, team="EDM", game_date="2026-10-19")], sport="nhl"), Sources({
+            ("nhl", "2026-10-17"): NhlDay(actuals={"final_teams": set(), "players": {}}),
+            ("nhl", "2026-10-19"): later_nhl,
+        }))
+        self.assertEqual(dated["result"], "hit")
+        self.assertEqual(dated["legs"][0]["actual"], 5)
+
+    def test_failed_nhl_score_fetch_is_not_cached_as_no_finals(self):
+        from pipeline.memory import grade_nhl_day
+        from pipeline.saved_slip_grade import LiveSources
+
+        live = LiveSources()
+
+        def boom(_day):
+            raise RuntimeError("score fetch failed")
+
+        saved = grade_nhl_day.load_actuals
+        grade_nhl_day.load_actuals = boom
+        try:
+            with self.assertRaises(RuntimeError):
+                live._nhl_day(date(2026, 10, 17))
+        finally:
+            grade_nhl_day.load_actuals = saved
+        self.assertNotIn("2026-10-17", live._nhl)
 
         earlier = "2026-10-10"
         kbo = Sources({

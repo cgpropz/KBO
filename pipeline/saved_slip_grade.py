@@ -500,8 +500,9 @@ def _leg_date(leg: dict, sport: str, anchor: date | None, sources) -> date | Non
         return found
     if anchor is None:
         return None
-    # KBO slips were saved on the game date. Do not search backward or forward.
-    if sport == "kbo":
+    # KBO, WNBA, and NHL slips were saved on the game date. A later final is a
+    # different game. NFL still looks forward because one slate covers the week.
+    if sport in {"kbo", "wnba", "nhl"}:
         return anchor
     finder = getattr(sources, "team_game_date", None)
     if finder is None:
@@ -751,19 +752,18 @@ class LiveSources:
         self._nhl: dict = {}
 
     def team_game_date(self, sport: str, team: str, anchor: date) -> date | None:
-        """Earliest game on or after the slip date, within 7 days. Never a previous final."""
-        if not str(team or "").strip():
+        """NFL only: earliest game on or after the slip date, within 7 days.
+
+        WNBA and NHL do not use this. Their legacy legs grade the slip date
+        alone, so a missing or failed score cannot slide the leg to a later final.
+        """
+        if sport != "nfl" or not str(team or "").strip():
             return None
         try:
-            if sport == "nfl":
-                return nearest_date(self._nfl_team_dates(team, anchor), anchor)
-            if sport == "wnba":
-                return nearest_date(self._wnba_team_dates(team, anchor), anchor)
-            if sport == "nhl":
-                return nearest_date(self._nhl_team_dates(team, anchor), anchor)
+            return nearest_date(self._nfl_team_dates(team, anchor), anchor)
         except (Exception, SystemExit) as exc:  # noqa: BLE001 - a lookup miss stays pending
             self._note(sport, anchor, exc)
-        return None
+            return None
 
     def for_sport(self, sport: str, game_date: date):
         try:
@@ -839,40 +839,6 @@ class LiveSources:
             sides = {str(game.get("away_team") or "").upper(), str(game.get("home_team") or "").upper()}
             sides.discard("")
             if _team_in(team, sides):
-                found.append(when)
-        return found
-
-    def _wnba_team_dates(self, team: str, anchor: date) -> list[date]:
-        if self._wnba_box is None:
-            from pipeline.memory.grade_wnba_day import load_boxscores
-
-            self._wnba_box = load_boxscores()
-        want = cutoff.wnba_team(team)
-        found = []
-        for (iso, _), row in (self._wnba_box or {}).items():
-            if not isinstance(row, dict) or cutoff.wnba_team(row.get("team")) != want:
-                continue
-            when = parse_date(iso)
-            if self._on_or_after(when, anchor):
-                found.append(when)
-        return found
-
-    def _nhl_team_dates(self, team: str, anchor: date) -> list[date]:
-        from nhl.teams import team_abbr
-        from pipeline.memory.grade_nhl_day import load_actuals
-
-        want = team_abbr(team)
-        found = []
-        for offset in range(0, DATE_WINDOW_DAYS + 1):
-            when = anchor + timedelta(days=offset)
-            iso = format_iso(when)
-            if iso not in self._nhl:
-                try:
-                    self._nhl[iso] = load_actuals(when)
-                except (Exception, SystemExit) as exc:  # noqa: BLE001
-                    self._note("nhl", when, exc)
-                    self._nhl[iso] = {"final_teams": set(), "players": {}}
-            if want in set((self._nhl.get(iso) or {}).get("final_teams") or []):
                 found.append(when)
         return found
 
