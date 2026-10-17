@@ -110,7 +110,10 @@ function mockRes() {
   }
 }
 
+const chunkReads = []
+
 function mockClient(chunks) {
+  chunkReads.length = 0
   return {
     auth: {
       async getUser() {
@@ -122,6 +125,11 @@ function mockClient(chunks) {
       const chain = {
         select() { return chain },
         eq(col, val) { filters[col] = val; return chain },
+        in(col, values) {
+          filters.in = values.slice()
+          if (col === 'id') chunkReads.push(values.slice())
+          return chain
+        },
         abortSignal() { return chain },
         maybeSingle() {
           if (table === 'user_profiles') {
@@ -132,6 +140,11 @@ function mockClient(chunks) {
           }
           const row = chunks.find((item) => item.id === filters.id) || null
           return Promise.resolve({ data: row, error: null })
+        },
+        then(resolve, reject) {
+          const wanted = filters.in || []
+          const rows = wanted.map((id) => chunks.find((item) => item.id === id)).filter(Boolean)
+          return Promise.resolve({ data: rows, error: null }).then(resolve, reject)
         },
       }
       return chain
@@ -163,6 +176,14 @@ function playerNames(payload) {
   if (Array.isArray(payload?.rows)) return payload.rows.map((row) => row.player)
   return null
 }
+
+test('chunks are one id list, then the reassembled board', async () => {
+  const chunks = [chunk(50000, 0, board.slice(0, 2)), chunk(50001, 1, board.slice(2))]
+  const member = await call(chunks)
+  assert.equal(member.statusCode, 200)
+  assert.deepEqual(chunkReads, [[50000, 50001]])
+  assert.deepEqual(member.body.data.map((row) => row.player), ['First', 'Second', 'Third', 'Fourth'])
+})
 
 test('member hub and view=hub receive the reassembled board, not one chunk', async () => {
   const chunks = [chunk(50000, 0, board.slice(0, 2)), chunk(50001, 1, board.slice(2))]

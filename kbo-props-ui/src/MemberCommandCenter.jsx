@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { loadMemberBoard } from './memberBoardLoad';
+import { loadHubSports, loadMemberBoard } from './memberBoardLoad';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -212,11 +212,13 @@ function useRecap() {
   return recap;
 }
 
-function useBoards(access, nbaOpen) {
+function useBoards(access, nbaOpen, selectedId) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
   const [rosters, setRosters] = useState({});
   const [lineups, setLineups] = useState({});
+  const selectedRef = useRef(selectedId);
+  selectedRef.current = selectedId;
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -224,32 +226,43 @@ function useBoards(access, nbaOpen) {
 
   useEffect(() => {
     let alive = true;
-    SPORTS.forEach((sport) => {
+    let slot = 0;
+    loadHubSports(SPORTS, () => selectedRef.current, async (sport) => {
+      if (!alive) return;
+      const mine = slot;
+      slot += 1;
       const allowed = sport.id === 'nba' ? nbaOpen === true : access[sport.id];
       if (!allowed) {
         setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && nbaOpen !== true ? 'closed' : 'locked', raw: null } }));
         return;
       }
+      const extras = [];
       if (sport.roster) {
-        fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
-          .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
-          .catch(() => {});
+        extras.push(
+          fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
+            .then((snap) => { if (alive) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
+            .catch(() => {}),
+        );
       }
       if (sport.lineups) {
-        fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
-          .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
-          .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); });
+        extras.push(
+          fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
+            .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
+            .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); }),
+        );
       }
-      loadMemberBoard(sport, fetchApiDataset)
-        .then((snap) => {
-          if (!alive) return;
-          setBoards((b) => ({
-            ...b,
-            [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
-          }));
-        })
-        .catch(() => { if (alive) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
-    });
+      const board = loadMemberBoard(sport, fetchApiDataset, undefined, {
+        slot: mine,
+        priority: mine === 0 ? 'high' : undefined,
+      }).then((snap) => {
+        if (!alive) return;
+        setBoards((b) => ({
+          ...b,
+          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
+        }));
+      }).catch(() => { if (alive) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
+      await Promise.all([board, ...extras]);
+    }, () => alive);
     return () => { alive = false; };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -320,17 +333,17 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const { user, tier, signOut } = useAuth();
   const access = sportAccess(tier);
   const { open: nbaOpen } = useNbaOpen();
-  const boards = useBoards(access, nbaOpen);
-  const recap = useRecap();
   const [picked, setPicked] = useState(() => (
     readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
   ));
+  const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
+  const boards = useBoards(access, nbaOpen, selected.id);
+  const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
   const [panel, setPanel] = useState('today');
   const [bellOpen, setBellOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
   const pickSport = (id) => {
     setPicked(id);
     rememberMemberSport(typeof localStorage === 'undefined' ? null : localStorage, id);

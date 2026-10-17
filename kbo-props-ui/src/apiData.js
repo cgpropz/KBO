@@ -58,14 +58,17 @@ async function readErrorDetail(res) {
   }
 }
 
-export async function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false } = {}) {
+export async function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs } = {}) {
+  const budget = Number.isFinite(timeoutMs)
+    ? Math.min(FETCH_TIMEOUT_MS, Math.max(1, timeoutMs))
+    : FETCH_TIMEOUT_MS;
   try {
     const token = await accessToken({ fresh });
     const params = new URLSearchParams({ ds });
     if (player) params.set('player', player);
     const res = await fetch(`/api/data?${params}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(budget),
       // A retry must not reuse the browser's cached copy of the bad answer.
       ...(fresh ? { cache: 'no-store' } : {}),
       ...(priority ? { priority } : {}),

@@ -360,7 +360,12 @@ def chunked_publish_plan(table, data, version, id_base=None, max_bytes=SNAPSHOT_
 
 
 def snapshot_publish_plan(table, data, version, chunk_writes, id_base=None, max_bytes=SNAPSHOT_CHUNK_BYTES):
-    """Chunk plan when the live reader can reassemble, else None (one id=1 row)."""
+    """Chunk plan when the live reader can reassemble, else None (one id=1 row).
+
+    wnba_projections_standard uses this same 700 KB budget and the same
+    capability handshake as every other list or object snapshot. nba_players
+    keeps its own chunk format.
+    """
     if not chunk_writes:
         return None
     return chunked_publish_plan(table, data, version, id_base=id_base, max_bytes=max_bytes)

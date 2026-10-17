@@ -457,6 +457,17 @@ class CapabilityTests(unittest.TestCase):
         )
         self.assertIsNone(publish.snapshot_publish_plan("wnba_projections_standard", board, VERSION, False))
         self.assertIsNone(publish.snapshot_publish_plan("nfl_projections", board, VERSION, False))
+        wnba = publish.snapshot_publish_plan(
+            "wnba_projections_standard",
+            board,
+            VERSION,
+            True,
+            id_base=60_000,
+            max_bytes=publish._posted_bytes(board) - 1,
+        )
+        self.assertGreater(len(wnba), 1)
+        self.assertEqual(publish.SNAPSHOT_CHUNK_BYTES, 700_000)
+        self.assertIn("snapshotChunks", dict(wnba)[1])
 
 
 class PublishLogTests(unittest.TestCase):

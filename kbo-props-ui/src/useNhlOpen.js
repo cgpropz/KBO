@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useAuth } from './AuthContext';
 import { nhlDevBypass } from './entitlements';
+import { readOpenFlag } from './openFlag';
 import { cachedAccessToken, sessionAccessToken } from './supabaseClient';
 
 // The browser does not decide full access. Every signed-in account asks
@@ -37,16 +38,10 @@ async function resolveRemote(key, id) {
   try {
     let token = cachedAccessToken();
     if (!token) token = await sessionAccessToken();
-    const res = await fetch('/api/nhl-access', {
-      cache: 'no-store',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: AbortSignal.timeout(8000),
+    const open = await readOpenFlag('/api/nhl-access', {
+      token,
+      cancelled: () => id !== ticket,
     });
-    let open = false;
-    if (res.ok) {
-      const body = await res.json();
-      open = body?.open === true;
-    }
     if (id === ticket) emit({ key, open, ready: true, inflight: false });
   } catch {
     if (id === ticket) emit({ key, open: false, ready: true, inflight: false });
