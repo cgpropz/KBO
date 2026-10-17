@@ -252,8 +252,9 @@ export function resolvePurchaseTier({ priceId, price, product, metadata, env = p
 // Classify a Stripe price. Known site and Discord price ids resolve locally.
 // Any other id is retrieved once so product metadata tier=discord_only (or
 // the Discord Only product id) cannot fall through to All-Access. A failed
-// lookup keeps the unknown-price combined fallback.
-export async function tierForStripePrice(stripe, priceOrId, { metadata, env = process.env } = {}) {
+// lookup keeps the unknown-price combined fallback unless the caller asks
+// to fail closed (the webhook).
+export async function tierForStripePrice(stripe, priceOrId, { metadata, env = process.env, strict = false } = {}) {
   const price = priceOrId && typeof priceOrId === 'object' ? priceOrId : null;
   const priceId = price?.id || (typeof priceOrId === 'string' ? priceOrId : null);
   const direct = resolvePurchaseTier({ priceId, price, metadata, env });
@@ -265,8 +266,9 @@ export async function tierForStripePrice(stripe, priceOrId, { metadata, env = pr
     try {
       const full = await stripe.prices.retrieve(priceId, { expand: ['product'] });
       return resolvePurchaseTier({ priceId: full?.id || priceId, price: full, metadata, env });
-    } catch {
-      // Leave the combined fallback in place when Stripe can't be asked.
+    } catch (err) {
+      // The webhook asks again. Sync and reconcile keep the combined fallback.
+      if (strict) throw err;
     }
   }
   return direct;
@@ -405,69 +407,361 @@ async function resolveChargeCommerce(stripe, charge, env) {
     return target;
   }
 
-  const invoiceRef = charge?.invoice;
-  const invoiceId = typeof invoiceRef === 'string' ? invoiceRef : invoiceRef?.id;
-  if (invoiceId && typeof stripe.invoices?.retrieve === 'function') {
-    try {
-      const invoice = typeof invoiceRef === 'object' && invoiceRef?.lines
-        ? invoiceRef
-        : await stripe.invoices.retrieve(invoiceId);
-      if (
-        metadataSignalsDiscord(invoice?.metadata)
-        || metadataSignalsDiscord(invoice?.subscription_details?.metadata)
-        || metadataSignalsDiscord(invoice?.parent?.subscription_details?.metadata)
-      ) {
+  // Basil charges have no invoice field. The invoice is on Invoice Payments.
+  // A Stripe error is rethrown so a taxed lifetime charge is not treated as
+  // "not lifetime" and written through as a 200.
+  const invoice = await invoiceFromChargePayments(stripe, charge);
+  if (invoice) {
+    if (
+      metadataSignalsDiscord(invoice?.metadata)
+      || metadataSignalsDiscord(invoice?.subscription_details?.metadata)
+      || metadataSignalsDiscord(invoice?.parent?.subscription_details?.metadata)
+    ) {
+      target.discord = true;
+      target.resolved = true;
+      return target;
+    }
+    applyCommerceLines(target, invoice?.lines?.data, invoice?.metadata, env);
+    if (target.lifetime || target.discord) return target;
+  }
+
+  const pi = paymentIntentIdOf(charge?.payment_intent);
+  if (!target.resolved && pi && typeof stripe.checkout?.sessions?.list === 'function') {
+    const found = await stripe.checkout.sessions.list({
+      payment_intent: pi,
+      limit: 1,
+      expand: ['data.line_items.data.price'],
+    });
+    const session = found?.data?.[0];
+    if (session) {
+      if (metadataSignalsDiscord(session.metadata)) {
         target.discord = true;
         target.resolved = true;
         return target;
       }
-      applyCommerceLines(target, invoice?.lines?.data, invoice?.metadata, env);
-      if (target.lifetime || target.discord) return target;
-    } catch {
-      // Fall through. A legacy $99.99 charge with an unreadable invoice still
-      // uses the amount fallback below.
-    }
-  }
-
-  const pi = typeof charge?.payment_intent === 'string'
-    ? charge.payment_intent
-    : charge?.payment_intent?.id;
-  if (!target.resolved && pi && typeof stripe.checkout?.sessions?.list === 'function') {
-    try {
-      const found = await stripe.checkout.sessions.list({
-        payment_intent: pi,
-        limit: 1,
-        expand: ['data.line_items.data.price'],
-      });
-      const session = found?.data?.[0];
-      if (session) {
-        if (metadataSignalsDiscord(session.metadata)) {
-          target.discord = true;
-          target.resolved = true;
-          return target;
-        }
-        applyCommerceLines(target, session.line_items?.data, session.metadata, env);
-        if (!target.resolved && (session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders')) {
-          target.lifetime = true;
-          target.resolved = true;
-        }
+      applyCommerceLines(target, session.line_items?.data, session.metadata, env);
+      if (!target.resolved && (session.metadata?.cg_plan === 'lifetime' || session.metadata?.cg_plan === 'founders')) {
+        target.lifetime = true;
+        target.resolved = true;
       }
-    } catch {
-      // Leave unresolved so the legacy amount fallback can still apply.
     }
   }
   return target;
 }
 
-async function chargeGrantsSiteLifetime(stripe, charge, env) {
-  if (!(charge?.paid && !charge.refunded)) return false;
+async function invoiceFromChargePayments(stripe, charge) {
+  const pi = paymentIntentIdOf(charge?.payment_intent);
+  if (!pi || typeof stripe?.invoicePayments?.list !== 'function') return null;
+  const page = await stripe.invoicePayments.list({
+    payment: { type: 'payment_intent', payment_intent: pi },
+    limit: 5,
+  });
+  const rows = Array.isArray(page?.data) ? page.data : [];
+  for (const row of rows) {
+    const linked = row?.invoice;
+    if (linked && typeof linked === 'object' && Array.isArray(linked.lines?.data)) return linked;
+    const id = typeof linked === 'string' ? linked : linked?.id;
+    if (id && typeof stripe.invoices?.retrieve === 'function') return stripe.invoices.retrieve(id);
+  }
+  return null;
+}
+
+export function chargeFullyRefunded(charge) {
+  if (!charge || typeof charge !== 'object') return false;
+  if (charge.refunded === true) return true;
+  const amount = Number(charge.amount) || 0;
+  const refundedAmount = Number(charge.amount_refunded) || 0;
+  return amount > 0 && refundedAmount >= amount;
+}
+
+// charge.disputed stays true after the merchant wins. Only an open or lost
+// dispute blocks access. A missing disputes list still blocks, so a won
+// dispute cannot be treated as clear by forgetting the lookup.
+const DISPUTE_STATUS_CLEAR = new Set(['won', 'warning_closed']);
+
+export function disputeStatusBlocks(status) {
+  return !DISPUTE_STATUS_CLEAR.has(status);
+}
+
+export async function chargeDisputeBlocks(stripe, charge) {
+  if (charge?.disputed !== true) return false;
+  if (typeof stripe?.disputes?.list !== 'function') return true;
+  const page = await stripe.disputes.list({ charge: charge.id, limit: 10 });
+  const rows = Array.isArray(page?.data) ? page.data : [];
+  if (rows.length === 0) return true;
+  return rows.some((row) => disputeStatusBlocks(row?.status));
+}
+
+// A lifetime charge that was refunded in full, or still disputed, does not grant.
+// A partial refund of a lifetime charge keeps access. A won dispute does not.
+export async function lifetimeChargeBlocksAccess(charge, stripe = null) {
+  if (!charge) return false;
+  if (chargeFullyRefunded(charge)) return true;
+  return chargeDisputeBlocks(stripe, charge);
+}
+
+export function subscriptionPeriod(subscription) {
+  const start = Number(subscription?.current_period_start ?? subscription?.items?.data?.[0]?.current_period_start);
+  const end = Number(subscription?.current_period_end ?? subscription?.items?.data?.[0]?.current_period_end);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return { start, end };
+}
+
+export function invoiceCoversPeriod(invoice, period) {
+  if (!invoice || !period) return false;
+  const lines = Array.isArray(invoice.lines?.data) ? invoice.lines.data : [];
+  if (lines.some((line) => Number(line?.period?.start) === period.start && Number(line?.period?.end) === period.end)) {
+    return true;
+  }
+  return lines.length === 0
+    && Number(invoice.period_start) === period.start
+    && Number(invoice.period_end) === period.end;
+}
+
+// Full refund, dispute, or a partial refund that covers this period's lines.
+export function refundCoversCurrentPeriod(charge, invoice, period, disputeBlocks = false) {
+  if (!charge || !invoiceCoversPeriod(invoice, period)) return false;
+  if (chargeFullyRefunded(charge) || disputeBlocks) return true;
+  const lines = Array.isArray(invoice?.lines?.data) ? invoice.lines.data : [];
+  const periodAmount = lines
+    .filter((line) => Number(line?.period?.start) === period.start && Number(line?.period?.end) === period.end)
+    .reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
+  const refundedAmount = Number(charge.amount_refunded) || 0;
+  return periodAmount > 0 && refundedAmount >= periodAmount;
+}
+
+function invoiceIdOf(invoice) {
+  if (!invoice) return null;
+  if (typeof invoice === 'string') return invoice;
+  return invoice.id || null;
+}
+
+async function retrieveInvoice(stripe, invoiceRef) {
+  if (!invoiceRef) return null;
+  if (typeof invoiceRef === 'object') return invoiceRef;
+  if (typeof stripe?.invoices?.retrieve !== 'function') return null;
+  return stripe.invoices.retrieve(invoiceRef);
+}
+
+async function retrieveCharge(stripe, chargeRef) {
+  if (!chargeRef || typeof chargeRef !== 'string' && typeof chargeRef !== 'object') return null;
+  if (typeof chargeRef === 'object') return chargeRef;
+  if (typeof stripe?.charges?.retrieve !== 'function') return null;
+  return stripe.charges.retrieve(chargeRef);
+}
+
+function paymentIntentIdOf(value) {
+  if (typeof value === 'string' && value) return value;
+  if (value && typeof value === 'object' && typeof value.id === 'string') return value.id;
+  return '';
+}
+
+export function chargeFromInvoicePayment(payment) {
+  const pay = payment?.payment;
+  if (!pay || typeof pay !== 'object') return null;
+  if (pay.charge && typeof pay.charge === 'object') return pay.charge;
+  const intent = pay.payment_intent;
+  if (intent && typeof intent === 'object' && intent.latest_charge && typeof intent.latest_charge === 'object') {
+    return intent.latest_charge;
+  }
+  return null;
+}
+
+async function listInvoicePayments(stripe, params) {
+  if (typeof stripe?.invoicePayments?.list !== 'function') return [];
+  const page = await stripe.invoicePayments.list(params);
+  return Array.isArray(page?.data) ? page.data : [];
+}
+
+async function chargeFromPayments(stripe, payments) {
+  for (const payment of payments) {
+    const expanded = chargeFromInvoicePayment(payment);
+    if (expanded) return expanded;
+    const pay = payment?.payment;
+    const chargeId = typeof pay?.charge === 'string' ? pay.charge : '';
+    if (chargeId) {
+      const loaded = await retrieveCharge(stripe, chargeId);
+      if (loaded) return loaded;
+    }
+    const intentId = paymentIntentIdOf(pay?.payment_intent);
+    if (intentId && typeof stripe?.paymentIntents?.retrieve === 'function') {
+      const loaded = await stripe.paymentIntents.retrieve(intentId, { expand: ['latest_charge'] });
+      if (loaded?.latest_charge && typeof loaded.latest_charge === 'object') return loaded.latest_charge;
+      if (typeof loaded?.latest_charge === 'string') {
+        const charge = await retrieveCharge(stripe, loaded.latest_charge);
+        if (charge) return charge;
+      }
+    }
+  }
+  return null;
+}
+
+// Basil invoices expose the charge through Invoice Payments and the PaymentIntent
+// latest_charge. Invoice.charge, Invoice.payment_intent, and Charge.invoice are absent.
+export async function chargeForInvoice(stripe, invoice) {
+  if (!invoice || typeof invoice !== 'object') return null;
+  const embedded = Array.isArray(invoice.payments?.data) ? invoice.payments.data : [];
+  const fromEmbedded = await chargeFromPayments(stripe, embedded);
+  if (fromEmbedded) return fromEmbedded;
+  if (!invoice.id) return null;
+  const listed = await listInvoicePayments(stripe, {
+    invoice: invoice.id,
+    limit: 10,
+    expand: ['data.payment.payment_intent.latest_charge', 'data.payment.charge'],
+  });
+  return chargeFromPayments(stripe, listed);
+}
+
+function chargeMatchingInvoice(invoice, charges) {
+  if (!Array.isArray(charges)) return null;
+  const intentIds = new Set();
+  const payments = Array.isArray(invoice?.payments?.data) ? invoice.payments.data : [];
+  for (const payment of payments) {
+    const id = paymentIntentIdOf(payment?.payment?.payment_intent);
+    if (id) intentIds.add(id);
+  }
+  const invoiceId = invoiceIdOf(invoice);
+  return charges.find((charge) => {
+    const intentId = paymentIntentIdOf(charge?.payment_intent);
+    if (intentId && intentIds.has(intentId)) return true;
+    const linked = typeof charge?.invoice === 'string' ? charge.invoice : charge?.invoice?.id;
+    return Boolean(invoiceId && linked === invoiceId);
+  }) || null;
+}
+
+// Active status is not enough. Sync, reconcile, and the webhook recompute
+// skip a subscription whose current-period charge is refunded or disputed.
+// A Stripe error is thrown so the webhook returns 5xx instead of keeping access.
+export async function subscriptionPeriodBlocked(stripe, subscription, charges = null) {
+  const period = subscriptionPeriod(subscription);
+  if (!period) return false;
+  let invoice = await retrieveInvoice(stripe, subscription?.latest_invoice);
+  if (!invoiceCoversPeriod(invoice, period) && subscription?.id && typeof stripe?.invoices?.list === 'function') {
+    const page = await stripe.invoices.list({ subscription: subscription.id, limit: 10 });
+    invoice = (page?.data || []).find((item) => invoiceCoversPeriod(item, period)) || null;
+  }
+  if (!invoice || !invoiceCoversPeriod(invoice, period)) return false;
+  let charge = await chargeForInvoice(stripe, invoice);
+  if (!charge) charge = chargeMatchingInvoice(invoice, charges);
+  if (!charge) return false;
+  const disputeBlocks = await chargeDisputeBlocks(stripe, charge);
+  return refundCoversCurrentPeriod(charge, invoice, period, disputeBlocks);
+}
+
+// True when this charge is a one-time lifetime purchase, even if it was later
+// refunded. Refunded charges must still be recognizable so a refund can drop
+// them. Recurring invoices are not lifetime.
+export async function chargeIsLifetimePurchase(stripe, charge, env = process.env) {
   const commerce = await resolveChargeCommerce(stripe, charge, env);
   if (commerce.discord) return false;
   if (commerce.lifetime) return true;
-  // Price was visible and it is not a lifetime price/product.
   if (commerce.resolved) return false;
-  // Legacy pre-change PaymentIntent: no invoice, no Checkout price.
-  return charge.amount === LIFETIME_AMOUNT;
+  return Number(charge?.amount) === LIFETIME_AMOUNT;
+}
+
+// Refunds and disputes recompute only for the current period or a lifetime
+// charge. A full refund of an older invoice leaves the current period alone.
+export async function chargeRevokesEntitlement(stripe, charge, {
+  invoice = null,
+  subscription = null,
+  forceDisputed = false,
+  env = process.env,
+} = {}) {
+  const viewed = forceDisputed && charge ? { ...charge, disputed: true } : charge;
+  const disputeBlocks = forceDisputed || await chargeDisputeBlocks(stripe, viewed);
+  const touched = chargeFullyRefunded(viewed)
+    || disputeBlocks
+    || (Number(viewed?.amount_refunded) || 0) > 0;
+  if (!touched) return false;
+  if (await chargeIsLifetimePurchase(stripe, viewed, env)) {
+    return chargeFullyRefunded(viewed) || disputeBlocks;
+  }
+  const period = subscriptionPeriod(subscription);
+  if (!period) return false;
+  const loaded = invoice || await retrieveInvoice(stripe, viewed?.invoice);
+  return refundCoversCurrentPeriod(viewed, loaded, period, disputeBlocks);
+}
+
+// A replay of invoice.payment_succeeded must not grant from a charge that
+// has since been refunded or disputed. A later period's paid charge still grants.
+export async function invoiceStillGrants(stripe, invoice) {
+  const charge = await chargeForInvoice(stripe, invoice);
+  if (!charge) return true;
+  const disputeBlocks = await chargeDisputeBlocks(stripe, charge);
+  if (chargeFullyRefunded(charge) || disputeBlocks) return false;
+  const periods = [];
+  const lines = Array.isArray(invoice?.lines?.data) ? invoice.lines.data : [];
+  for (const line of lines) {
+    const start = Number(line?.period?.start);
+    const end = Number(line?.period?.end);
+    if (Number.isFinite(start) && Number.isFinite(end)) periods.push({ start, end });
+  }
+  const start = Number(invoice?.period_start);
+  const end = Number(invoice?.period_end);
+  if (Number.isFinite(start) && Number.isFinite(end)) periods.push({ start, end });
+  return !periods.some((period) => refundCoversCurrentPeriod(charge, invoice, period, disputeBlocks));
+}
+
+// Same decision sync-subscription uses before it writes a tier. A paid profile
+// is left alone. A free profile is granted only what live Stripe still entitles,
+// which excludes a refunded or disputed current period and a refunded lifetime.
+export async function accessAfterSyncRecompute(stripe, email, currentTier) {
+  if (currentTier && currentTier !== 'free' && currentTier !== 'discord') {
+    return { tier: currentTier, discordOnly: false, unchanged: true };
+  }
+  const access = await computeStripeAccess(stripe, email);
+  return {
+    tier: access.tier || 'free',
+    discordOnly: Boolean(access.discordOnly),
+    unchanged: false,
+  };
+}
+
+// Reconcile grants the live price only when the current period's charge is
+// still clear. A blocked subscription returns null so it is skipped.
+export async function reconcileTierForSubscription(stripe, subscription) {
+  if (await subscriptionPeriodBlocked(stripe, subscription)) return null;
+  const price = subscription?.items?.data?.[0]?.price;
+  const priceId = typeof price === 'string' ? price : price?.id;
+  return tierForStripePrice(stripe, price || priceId, { metadata: subscription?.metadata });
+}
+
+async function chargeGrantsSiteLifetime(stripe, charge, env) {
+  if (!charge?.paid || await lifetimeChargeBlocksAccess(charge, stripe)) return false;
+  return chargeIsLifetimePurchase(stripe, charge, env);
+}
+
+// Lifetime charges can sit behind the newest 50. Follow has_more. Stop if a
+// page does not advance, and throw if Stripe still reports more after the cap
+// so an older lifetime charge is not silently dropped.
+async function listCustomerCharges(stripe, customerId) {
+  if (typeof stripe.charges?.list !== 'function') {
+    const err = new Error('stripe charges.list missing');
+    err.type = 'StripeConnectionError';
+    throw err;
+  }
+  const charges = [];
+  let startingAfter;
+  for (let page = 0; page < 20; page += 1) {
+    const listed = await stripe.charges.list({
+      customer: customerId,
+      limit: 50,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    const rows = Array.isArray(listed?.data) ? listed.data : [];
+    charges.push(...rows);
+    if (!listed?.has_more || rows.length === 0) return charges;
+    const next = rows[rows.length - 1]?.id;
+    if (!next || next === startingAfter) {
+      const err = new Error('stripe charges.list did not advance');
+      err.type = 'StripeConnectionError';
+      throw err;
+    }
+    startingAfter = next;
+  }
+  const err = new Error('stripe charges.list truncated');
+  err.type = 'StripeConnectionError';
+  throw err;
 }
 
 // Authoritative recompute from live Stripe state: active/trialing
@@ -477,18 +771,23 @@ async function chargeGrantsSiteLifetime(stripe, charge, env) {
 // discordOnly means an active Discord-only subscription is present. It can be
 // true alongside a site tier (All-Access + Discord Only → both roles).
 // Email matching is case-insensitive (see customersForEmail).
-export async function computeStripeAccess(stripe, email, env = process.env) {
+export async function computeStripeAccess(stripe, email, env = process.env, { strict = false } = {}) {
   const sports = new Set();
   let hasSite = false;
   let discordOnly = false;
 
   const customers = await customersForEmail(stripe, email);
   for (const c of customers) {
+    const charges = await listCustomerCharges(stripe, c.id);
+
     const subs = await stripe.subscriptions.list({ customer: c.id, status: 'all', limit: 20 });
     for (const s of subs.data) {
       if (s.status !== 'active' && s.status !== 'trialing') continue;
+      // A refund or dispute of the current period's charge drops this plan.
+      // Other active plans are still counted below.
+      if (await subscriptionPeriodBlocked(stripe, s, charges)) continue;
       const rawPrice = s.items?.data?.[0]?.price;
-      const t = await tierForStripePrice(stripe, rawPrice, { metadata: s.metadata, env });
+      const t = await tierForStripePrice(stripe, rawPrice, { metadata: s.metadata, env, strict });
       if (t === 'discord') {
         discordOnly = true;
         continue;
@@ -502,19 +801,17 @@ export async function computeStripeAccess(stripe, email, env = process.env) {
     // price id, product id, or one-time price/product metadata tier=combined.
     // The exact $99.99 amount is only a fallback for legacy charges that have
     // no price attached. Taxed totals never match 9999, so they must not be
-    // required to. Grants both sports: Lifetime is all-access.
-    try {
-      const charges = await stripe.charges.list({ customer: c.id, limit: 50 });
-      for (const ch of charges.data) {
-        if (!(ch.paid && !ch.refunded)) continue;
-        const tagged = ch.metadata?.cg_plan === 'lifetime' || ch.metadata?.cg_plan === 'founders';
-        if (!tagged && ch.amount < LIFETIME_AMOUNT) continue;
-        if (!(await chargeGrantsSiteLifetime(stripe, ch, env))) continue;
-        sports.add('kbo');
-        sports.add('wnba');
-        hasSite = true;
-      }
-    } catch { /* charges optional */ }
+    // required to. Grants both sports: Lifetime is all-access. Refunded and
+    // disputed lifetime charges are skipped.
+    for (const ch of charges) {
+      if (!ch.paid || await lifetimeChargeBlocksAccess(ch, stripe)) continue;
+      const tagged = ch.metadata?.cg_plan === 'lifetime' || ch.metadata?.cg_plan === 'founders';
+      if (!tagged && ch.amount < LIFETIME_AMOUNT) continue;
+      if (!(await chargeGrantsSiteLifetime(stripe, ch, env))) continue;
+      sports.add('kbo');
+      sports.add('wnba');
+      hasSite = true;
+    }
   }
 
   let tier = tierFromSports(sports, hasSite);
