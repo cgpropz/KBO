@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BOARD_RETRY_WINDOW_MS, FETCH_BUDGET_MS, MEMBER_BOARD_ATTEMPTS, TILE_ATTEMPT_MS, loadHubSports, loadMemberBoard, memberBoardPatch, retryDelayWithin } from '../src/memberBoardLoad.js';
+import { BOARD_RETRY_WINDOW_MS, FETCH_BUDGET_MS, MEMBER_BOARD_ATTEMPTS, TILE_ATTEMPT_MS, beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch, retryDelayWithin } from '../src/memberBoardLoad.js';
+import { _setSupabaseClientFactory, boundedAccessToken } from '../src/supabaseClient.js';
 import { readOpenFlag } from '../src/openFlag.js';
 import { previewForSignedIn } from '../api/data.js';
 
@@ -193,10 +194,96 @@ test('an error tile shows a retry instead of staying on Loading', () => {
   assert.match(hubSource, /Couldn\\'t load · Retry/);
   assert.match(hubSource, /retrySport\(sport\.id\)/);
   assert.match(hubSource, /Couldn\\'t load your member board/);
-  assert.match(hubSource, /refreshedAccessToken\(/);
+  assert.match(hubSource, /boundedAccessToken\(\{ fresh: true \}\)/);
+  assert.match(hubSource, /beginHubLoad\(/);
+  assert.match(hubSource, /hubTokenForRetry\(/);
   assert.match(hubSource, /onUnresolved/);
   assert.match(apiSource, /Free preview/);
-  assert.equal(hubSource.match(/refreshedAccessToken\(/g).length, 1);
+  assert.equal(hubSource.includes('refreshedAccessToken('), false);
+});
+
+function sessionStorage(token, expiresAt) {
+  return {
+    'sb-project-auth-token': JSON.stringify({
+      access_token: token,
+      expires_at: expiresAt,
+      user: { id: 'u1' },
+    }),
+    getItem(key) { return this[key] ?? null; },
+  };
+}
+
+test('a hung refresh or a rejected client import still opens the hub', async () => {
+  const previous = globalThis.localStorage;
+  const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+  globalThis.localStorage = sessionStorage('cached-tok', expiresAt);
+  try {
+    _setSupabaseClientFactory(() => ({
+      auth: {
+        refreshSession: () => new Promise(() => {}),
+        getSession: () => new Promise(() => {}),
+      },
+    }));
+    const opened = [];
+    const started = Date.now();
+    await beginHubLoad(
+      (token) => { opened.push(token); },
+      () => boundedAccessToken({ fresh: true, waitMs: 40 }),
+    );
+    assert.deepEqual(opened, ['cached-tok']);
+    assert.ok(Date.now() - started < 1_000);
+
+    _setSupabaseClientFactory(() => {
+      throw new Error('client download failed');
+    });
+    await beginHubLoad(
+      (token) => { opened.push(token); },
+      () => boundedAccessToken({ fresh: true, waitMs: 40 }),
+    );
+    assert.deepEqual(opened, ['cached-tok', 'cached-tok']);
+
+    let skipped = 0;
+    await beginHubLoad(
+      () => { skipped += 1; },
+      async () => { throw new Error('refresh rejected'); },
+      () => false,
+    );
+    assert.equal(skipped, 0);
+    await beginHubLoad(
+      () => { skipped += 1; },
+      async () => { throw new Error('refresh rejected'); },
+    );
+    assert.equal(skipped, 1);
+  } finally {
+    _setSupabaseClientFactory(null);
+    globalThis.localStorage = previous;
+  }
+});
+
+test('a manual retry refreshes the hub token only after it expires', async () => {
+  const current = 'hub-tok';
+  const kept = await hubTokenForRetry(current, {
+    cached: () => 'hub-tok',
+    refresh: async () => { throw new Error('should not refresh'); },
+  });
+  assert.equal(kept, current);
+
+  let calls = 0;
+  const renewed = await hubTokenForRetry(current, {
+    cached: () => null,
+    refresh: async () => {
+      calls += 1;
+      return 'renewed-tok';
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(renewed, 'renewed-tok');
+
+  const unchanged = await hubTokenForRetry(current, {
+    cached: () => null,
+    refresh: async () => null,
+  });
+  assert.equal(unchanged, current);
 });
 
 test('a late preview does not replace a ready tile', () => {

@@ -145,3 +145,29 @@ export async function loadHubSports(sports, selectedId, loadOne, isAlive = () =>
     }
   }));
 }
+
+// The token read is capped by the caller. A hang or a thrown client import
+// still starts the sports, so the tiles cannot stay on Loading.
+export async function beginHubLoad(loadHub, readToken, isAlive = () => true) {
+  let token;
+  try {
+    token = await readToken();
+  } catch {
+    token = undefined;
+  } finally {
+    if (isAlive()) await loadHub(token || undefined);
+  }
+}
+
+// A manual Retry reuses the hub token while it is still valid. An expired
+// token is refreshed first. A failed refresh keeps the token already in hand.
+export async function hubTokenForRetry(current, { cached, refresh }) {
+  const stillValid = typeof cached === 'function' ? cached() : null;
+  if (stillValid) return stillValid;
+  try {
+    const next = await refresh();
+    return next || current;
+  } catch {
+    return current;
+  }
+}

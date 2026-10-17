@@ -3,8 +3,8 @@ import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { loadHubSports, loadMemberBoard, memberBoardPatch } from './memberBoardLoad';
-import { refreshedAccessToken } from './supabaseClient';
+import { beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch } from './memberBoardLoad';
+import { boundedAccessToken, cachedAccessToken } from './supabaseClient';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -227,6 +227,8 @@ function useBoards(access, nbaOpen, selectedId) {
   const generation = useRef(0);
   const loadSportRef = useRef(async () => {});
   const boardLoad = useRef({});
+  const hubTokenRef = useRef(undefined);
+  const retryTicket = useRef(0);
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -237,7 +239,6 @@ function useBoards(access, nbaOpen, selectedId) {
     generation.current = gen;
     const alive = () => generation.current === gen;
     let slot = 0;
-    let hubToken;
     const loadSport = async (sport) => {
       if (!alive()) return;
       const seq = (boardLoad.current[sport.id] || 0) + 1;
@@ -253,7 +254,7 @@ function useBoards(access, nbaOpen, selectedId) {
       }
       const dataset = (ds, opts = {}) => fetchApiDataset(ds, {
         ...opts,
-        ...(hubToken ? { accessToken: hubToken } : {}),
+        ...(hubTokenRef.current ? { accessToken: hubTokenRef.current } : {}),
         fresh: false,
       });
       const writeBoard = (snap) => {
@@ -290,24 +291,38 @@ function useBoards(access, nbaOpen, selectedId) {
       await Promise.all([board, ...extras]);
     };
     loadSportRef.current = loadSport;
-    // One refresh for this hub load. Retries and the Retry button reuse it.
+    // One capped refresh for this hub load. A hang or a failed client
+    // download still starts the sports. Background retries reuse the token.
     let stopped = false;
-    refreshedAccessToken().then((token) => {
-      if (stopped || !alive()) return;
-      hubToken = token || undefined;
-      loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
-    });
+    beginHubLoad(
+      (token) => {
+        if (token) hubTokenRef.current = token;
+        return loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
+      },
+      () => boundedAccessToken({ fresh: true }),
+      () => !stopped && alive(),
+    );
     return () => {
       stopped = true;
       generation.current += 1;
+      retryTicket.current += 1;
     };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retrySport = (id) => {
     const sport = SPORTS.find((item) => item.id === id);
     if (!sport) return;
+    const ticket = retryTicket.current + 1;
+    retryTicket.current = ticket;
     setBoards((b) => ({ ...b, [id]: { status: 'loading', raw: null } }));
-    loadSportRef.current(sport);
+    hubTokenForRetry(hubTokenRef.current, {
+      cached: () => cachedAccessToken(),
+      refresh: () => boundedAccessToken({ fresh: true }),
+    }).then((token) => {
+      if (ticket !== retryTicket.current) return;
+      hubTokenRef.current = token;
+      loadSportRef.current(sport);
+    });
   };
 
   const [now, setNow] = useState(() => new Date());
