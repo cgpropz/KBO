@@ -20,6 +20,8 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard, usePhonePaintCount } from '../usePhoneBoard'
 import { BoardLoadError } from '../BoardLoadError'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 
 const FREE_ROW_LIMIT = 3
 
@@ -72,11 +74,6 @@ function dvpColor(rank) {
     ? mixColor(DVP_RED, DVP_NEUTRAL, (value - 1) / 14)
     : mixColor(DVP_NEUTRAL, DVP_GREEN, (value - 15) / 17)
   return `rgb(${r}, ${g}, ${b})`
-}
-
-function TeamLogo({ team, className }) {
-  const url = teamLogoUrl(team)
-  return url ? <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" /> : null
 }
 
 function FilterIcon() {
@@ -140,7 +137,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
-              <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+              <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} />{item.team}, {item.position}</span>
               <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
@@ -154,7 +151,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(item.dvpRank) : '—' },
         { node: (
           <div className="nfl-lines-matchup">
-            <TeamLogo team={item.opponent} className="nfl-lines-matchup-logo" />
+            {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
             <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
         ) },

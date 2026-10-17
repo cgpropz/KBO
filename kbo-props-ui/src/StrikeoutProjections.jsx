@@ -7,6 +7,9 @@ import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
 import { BoardLoadError } from './BoardLoadError';
+import { opponentLabel } from './cardMark';
+import { CardTeamLogo } from './CardTeamLogo';
+import { kboLogoUrl } from './slipBoardModel.js';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -497,14 +500,6 @@ function StrikeoutProjections({ onNavigate }) {
             .sort((a, b) => b[1] - a[1])
             .map(([team, rate]) => ({ label: team, value: rate.toFixed(2), color: TEAMS[team] || '#999' }));
 
-  const formulaText = selectedProp === 'Hits Allowed'
-    ? '(H/IP x IP/G) x Opp H/IP ÷ Lg Avg H/IP, adjusted by WHIP and form'
-    : selectedProp === 'Pitching Outs'
-      ? '(IP/G x 3) x opponent context, adjusted by WHIP and recent form'
-      : selectedProp === 'all'
-        ? 'Filter by prop type to view the active pitcher model formula'
-        : '(SO/IP x IP/G) x Opp SO/G ÷ Lg Avg SO/G, adjusted by recent strikeout form';
-
   const hasCurrentPitcherMarkets = data.market_status !== 'no_current_pitcher_markets';
 
   const deriveValue = (proj, line) => pregameSide(proj, line);
@@ -708,13 +703,13 @@ function StrikeoutProjections({ onNavigate }) {
                         title="Show last 10 game log"
                       >
                         <span>{p.name}</span>
-                        <span className="so-mobile-matchup">{p.team} vs {p.opponent}</span>
+                        <span className="so-mobile-matchup"><CardTeamLogo team={p.team} src={kboLogoUrl(p.team)} />{p.team} {opponentLabel(p.opponent)}</span>
                       </button>
                       <span className="expand-arrow">{isExpanded ? '▾' : '▸'}</span>
                     </div>
                   </td>
-                  <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
-                  <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
+                  <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}><CardTeamLogo team={p.team} src={kboLogoUrl(p.team)} />{p.team}</span></td>
+                  <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{opponentLabel(p.opponent)}</span></td>
                   <td className="col-num mono" style={oppBaBg(p.opp_ba)}>{p.opp_ba != null ? parseFloat(p.opp_ba).toFixed(3) : '—'}</td>
                   <td className="col-num mono" style={oppKPctBg(p.opp_k_pct)}>{p.opp_k_pct != null ? parseFloat(p.opp_k_pct).toFixed(1) + '%' : '—'}</td>
                   <td className="col-prop">{p.prop}</td>
@@ -942,11 +937,6 @@ function StrikeoutProjections({ onNavigate }) {
                 ))}
             </div>
           </div>
-        </div>
-
-        <div className="so-formula-bar">
-          <span className="so-formula-icon">ƒ</span>
-          <code>{formulaText}</code>
         </div>
 
         {/* Parlay Builder Tray */}

@@ -19,6 +19,8 @@ import { usePhoneBoard } from '../usePhoneBoard'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -139,11 +141,6 @@ function hitColor(pct) {
   return `rgb(${lerp(f[0], t_[0], p)},${lerp(f[1], t_[1], p)},${lerp(f[2], t_[2], p)})`
 }
 
-function TeamLogo({ team, className }) {
-  if (!team) return null
-  return <img className={className} src={`/logos/${team}.png`} alt={team} loading="lazy" onError={e => { e.target.style.display = 'none' }} />
-}
-
 function FilterIcon() {
   return (
     <svg className="wnba-filters-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -195,7 +192,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
-              <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={item.team ? `/logos/${item.team}.png` : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
@@ -209,7 +206,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
         { node: (
           <div className="wnba-lines-matchup">
-            <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+            {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
             <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
         ) },

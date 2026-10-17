@@ -15,6 +15,8 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
 import { BoardLoadError } from '../BoardLoadError'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
@@ -91,7 +93,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
     recentValues: recent,
   })
   const grade = dvpGrade(item.dvpRank)
-  const logo = teamLogoUrl(item.opponent)
+  const teamLogo = teamLogoUrl(item.team)
   return (
     <BoardLine
       phone={phone}
@@ -105,7 +107,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
               {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
               {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
-              <span className="nfl-lines-tag">{item.team}, {item.position}</span>
+              <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogo ? fitImage(teamLogo, 16) : ''} />{item.team}, {item.position}</span>
               <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
                 <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
               </div>
@@ -126,7 +128,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
         { className: 'hit-rate-extra', node: item.dvpRank ? ordinal(item.dvpRank) : '—' },
         { node: (
           <div className="nfl-lines-matchup">
-            {logo && <img className="nfl-lines-matchup-logo" src={fitImage(logo, 22)} alt={item.opponent} loading="lazy" />}
+            {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
             <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
         ) },

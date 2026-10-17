@@ -246,6 +246,33 @@ test('desktop NFL and NHL dashboards stay wide tables', async ({ page }) => {
   }
 })
 
+test('member cards show the player logo and hide model weights', async ({ page }) => {
+  const shots = process.env.SAVE_BOARD_SHOTS
+  const pages = [
+    ['nfl-dashboard', '/?sport=nfl&previewTier=owner', 'DET', 'vs CHI'],
+    ['nfl-board', '/?sport=nfl&page=projections&previewTier=owner', 'DET', 'vs CHI'],
+    ['nhl-dashboard', '/?sport=nhl&previewTier=owner', 'EDM', 'vs CGY'],
+    ['nhl-board', '/?sport=nhl&page=projections&previewTier=owner', 'EDM', 'vs CGY'],
+    ['wnba-dashboard', '/?sport=wnba&previewTier=owner', 'LVA', 'vs NYL'],
+    ['nba-dashboard', '/?sport=nba&previewTier=owner', 'DEN', 'vs LAL'],
+    ['kbo-board', '/?sport=kbo&previewTier=owner', 'KIA', 'vs LG'],
+  ]
+  for (const [name, path, team, versus] of pages) {
+    await page.goto(path)
+    const logo = page.getByTestId('player-team-logo').first()
+    await expect(logo).toBeVisible()
+    await expect(logo).toHaveAttribute('data-team', team)
+    await expect(page.locator('body')).toContainText(versus)
+    await expect(page.locator('body')).not.toContainText('L3 50%')
+    await expect(page.locator('body')).not.toContainText('SCORE SCALE')
+    await expect(page.locator('body')).not.toContainText('0.5/0.3/0.2')
+    if (shots) await page.screenshot({ path: `${shots}/${name}.png` })
+  }
+  await page.goto('/?sport=nfl&page=projections&previewTier=owner')
+  await expect(page.locator('.nfl-board-meta')).toContainText('LIVE MODEL / DVP ADJUSTED')
+  await expect(page.locator('.nfl-board-meta')).not.toContainText('Projection =')
+})
+
 test('phone NHL dashboard hides goblin lines and opens on CG Score', async ({ page }) => {
   await page.goto('/?sport=nhl&previewTier=owner')
   await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
