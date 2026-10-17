@@ -12,10 +12,8 @@ import { lineMatchesStat } from '../cgScore.js'
 // That stat uses the 25th percentile, 1.5, which is also the most common
 // standard three. Blocked Shots and Offensive Rebounds are 0.5 at both the
 // 10th and 25th percentiles, because that is the standard market, so the
-// floor does not raise a 0.5 line.
-//
-// Score = projection / max(line, floor) × 50. The line shown on the row stays
-// the PrizePicks number. standardLine is not the denominator.
+// floor does not raise a 0.5 line. The line shown on the row stays the
+// PrizePicks number. standardLine is not the denominator.
 
 export const WNBA_LINE_FLOORS = {
   '3-PT Attempted': 3.5,

@@ -1,4 +1,3 @@
-// CG Score is (projection / line) * 50. 50 means the projection equals the line.
 // A yardage stat posted at 0.5 is PrizePicks' any-yards floor, not a yardage
 // line. Scoring it produces ratios around 1000. Counting stats (receptions,
 // attempts, touchdowns) at 0.5 are real lines and still score.

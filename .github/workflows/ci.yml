@@ -56,6 +56,10 @@ jobs:
         run: npm run test:mobile
       - name: Production build
         run: npm run build
+      - name: Built JS keeps the score formula private
+        run: node --test tests/public-formula-privacy.test.mjs
+        env:
+          CHECK_FORMULA_DIST: "1"
       - name: KBO results stay off the built site
         run: CHECK_KBO_RESULTS_DIST=1 node --test tests/kbo-results-hidden.test.mjs
       # `npm run lint` currently reports pre-existing errors on main
