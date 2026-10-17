@@ -28,7 +28,7 @@ function Card({ item, onSelectPlayer }) {
   return (
     <article className="nfl-edge-card">
       <div className="nfl-card-topline">
-        <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME'}</span>
+        <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : (typeof item.oddsType === 'string' && item.oddsType && item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME')}</span>
         <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">

@@ -76,6 +76,28 @@ export function cachedAccessToken(now = Date.now()) {
   return cached.accessToken
 }
 
+// getSession takes the auth lock and can sit there indefinitely. Board loads
+// wait this long, then use the cached bearer or continue without one.
+export const TOKEN_WAIT_MS = 2_000
+
+export async function boundedAccessToken({ fresh = false, waitMs = TOKEN_WAIT_MS } = {}) {
+  const cached = cachedAccessToken()
+  if (cached && !fresh) return cached
+  if (!readCachedSession() && !cached) return null
+  let timer
+  try {
+    const token = await Promise.race([
+      fresh ? refreshedAccessToken() : sessionAccessToken(),
+      new Promise((resolve) => { timer = setTimeout(() => resolve(null), waitMs) }),
+    ])
+    return token || cachedAccessToken()
+  } catch {
+    return cachedAccessToken()
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export function loadSupabase() {
   const url = viteEnv.VITE_SUPABASE_URL || ''
   const key = viteEnv.VITE_SUPABASE_ANON_KEY || ''

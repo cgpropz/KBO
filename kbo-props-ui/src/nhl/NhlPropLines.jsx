@@ -174,10 +174,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {
     const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
-    return sortBoard(filtered, sortBy)
-  }, [projections, tab, sortBy])
+    return sortBoard(filtered, sortKey)
+  }, [projections, tab, sortKey])
 
   return (
     <section className="nfl-lines-page">
@@ -190,7 +191,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{rows.length}{lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines</span>
-          <select className="nhl-sort" value={sortBy} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
+          <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </div>

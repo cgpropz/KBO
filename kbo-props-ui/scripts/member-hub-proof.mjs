@@ -229,8 +229,9 @@ async function oneHub(bypass, accessToken, groups) {
 }
 
 function median(values) {
-  const sorted = [...values].filter((value) => Number.isFinite(value)).sort((a, b) => a - b)
-  if (!sorted.length) return null
+  const nums = [...values]
+  if (!nums.length || nums.some((value) => !Number.isFinite(value))) return null
+  const sorted = nums.sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
   return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
 }

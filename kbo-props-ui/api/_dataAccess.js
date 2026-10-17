@@ -3,6 +3,7 @@ import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { pointsOverDisposition, prepareBoardRows } from '../src/nhl/pointsGate.js';
+import { filterStandardBoard } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -554,18 +555,6 @@ function countList(payload, key) {
   return Array.isArray(payload) ? payload.length : 0;
 }
 
-// Same snapshot shape the board already renders, with the pick rows removed.
-// lockedCount stays positive so the page shows the paywall instead of an error
-// or an empty-board message.
-function hiddenNflPreview(ds, payload) {
-  if (ds === 'nfl_projections') {
-    return { data: [], lockedCount: countList(payload) };
-  }
-  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
-  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
-  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
-}
-
 const ODDS_TYPE_KEYS = ['odds_type', 'oddsType', 'line_type', 'lineType'];
 
 // undefined: the row has no odds-type field (a ranking, a lineup, a total).
@@ -664,11 +653,40 @@ export function standardLinesOnly(payload) {
   return stripNonStandardLines(payload);
 }
 
+// Same snapshot shape the board already renders, with the pick rows removed.
+// lockedCount stays positive so the page shows the paywall instead of an error
+// or an empty-board message.
+function hiddenNflPreview(ds, payload) {
+  if (ds === 'nfl_projections') {
+    return { data: [], lockedCount: countList(payload) };
+  }
+  const key = ds === 'nfl_sharp_odds' ? 'records' : 'games';
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
+}
+
+let tierShapeFilters = 0;
+
+export function _tierShapeFilters() {
+  return tierShapeFilters;
+}
+
+export function _resetTierShapeFilters() {
+  tierShapeFilters = 0;
+}
+
 // Decide what the caller receives for one dataset snapshot.
-export function shapeForTier(ds, payload, tier) {
+// alreadyStandard means the cached board was filtered once for this entry.
+// The hot path must not walk the rows again.
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
-  payload = standardLinesOnly(payload);
+  // Standard lines only, before the preview trim and the NHL points gate,
+  // so goblin, demon, and unlabeled rows never count as locked or free.
+  if (!alreadyStandard) {
+    tierShapeFilters += 1;
+    payload = filterStandardBoard(ds, payload);
+  }
   // Drop Points overs under 0.69 from the paid board and the free preview.
   // Overs from 0.69 up to 0.86 stay, with rankEligible false, so they are
   // visible and not ranked into the free top 3.

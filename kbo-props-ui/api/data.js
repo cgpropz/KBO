@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { filterStandardBoard } from '../src/standardBoard.js';
 import bundledStatus from '../public/status.json' with { type: 'json' };
 import { publicBoardStatus } from './_boardStatus.js';
 import {
@@ -11,6 +12,7 @@ import {
   datasetIsFullyPublic,
   shapeForTier,
   sportAccess,
+  _resetTierShapeFilters,
 } from './_dataAccess.js';
 import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
@@ -93,6 +95,29 @@ const latestVersion = new Map();
 export const STALE_MAX_MS = 30 * 60 * 1000;
 export const cacheWindows = { freshMs: CACHE_TTL_MS, staleMs: STALE_MAX_MS };
 const inflight = new Map();
+
+let standardFilterRuns = 0;
+
+export function _standardFilterRuns() {
+  return standardFilterRuns;
+}
+
+// Filter after the cached read, once per cache entry. The stored snapshot
+// stays raw so a player page can still receive full logs. The cache key is
+// unchanged: a standard-line pass must not look like a new publish.
+function cachedStandardBoard(ds, table, row, raw) {
+  const hit = currentBoard(table);
+  if (hit?.row === row) {
+    if (!hit.standard) hit.standard = new Map();
+    if (hit.standard.has(ds)) return hit.standard.get(ds);
+    standardFilterRuns += 1;
+    const filtered = filterStandardBoard(ds, raw);
+    hit.standard.set(ds, filtered);
+    return filtered;
+  }
+  standardFilterRuns += 1;
+  return filterStandardBoard(ds, raw);
+}
 
 // The snapshot read has to finish, and the last-good copy after it, inside
 // the client's 12s fetch. A split board is a head read plus a chunk read, so
@@ -689,7 +714,7 @@ async function handleNbaRequest(req, res, client, ds) {
     req,
     decision === 'full'
       ? { data: board, preview: false, lockedCount: 0 }
-      : shapeForTier(ds, board, 'free'),
+      : shapeForTier(ds, cachedStandardBoard(ds, spec.table, row, board), 'free', { alreadyStandard: true }),
     board,
   );
   return sendData(req, res, {
@@ -737,8 +762,9 @@ async function handleNhlRequest(req, res, client, ds) {
     return res.status(400).json({ error: 'Unknown dataset' });
   }
 
-  // Auth and the snapshot start together. A lookup blip must not open the
-  // board, and it must not hold the read: the free preview is the fallback.
+  // Auth and the snapshot start together. lookupMemberTier owns the 4s cap,
+  // including a paid-tier cache used only on timeout. A lookup blip must not
+  // hold the read: the free preview is the fallback.
   const callerPromise = resolveNbaCaller(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
 
@@ -790,7 +816,12 @@ async function handleNhlRequest(req, res, client, ds) {
   const fullTier = sportAccess(tier).nhl ? tier : 'owner';
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, board, decision === 'full' ? fullTier : 'free'),
+    shapeForTier(
+      ds,
+      cachedStandardBoard(ds, spec.table, row, board),
+      decision === 'full' ? fullTier : 'free',
+      { alreadyStandard: true },
+    ),
     board,
   );
   return sendData(req, res, {
@@ -915,6 +946,7 @@ export async function handleDataRequest(req, res, client) {
   // The profile read starts with the snapshot. lookupMemberTier owns the 4s
   // cap, including one retry and a paid-tier cache used only on timeout.
   // A valid token with no resolved tier is not the free preview.
+  // This reader does not keep its own tier cache.
   const tierPromise = resolveTier(client, req.headers?.authorization);
   const rowPromise = readSnapshot(client, spec.table);
 
@@ -946,7 +978,11 @@ export async function handleDataRequest(req, res, client) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const shaped = withPresentedData(req, shapeForTier(ds, board, tier), board);
+  const shaped = withPresentedData(
+    req,
+    shapeForTier(ds, cachedStandardBoard(ds, spec.table, row, board), tier, { alreadyStandard: true }),
+    board,
+  );
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,
@@ -965,6 +1001,8 @@ export function _clearCache() {
   lastGoodWrites.clear();
   lastGoodSaved.clear();
   clearMemberTierCache();
+  standardFilterRuns = 0;
+  _resetTierShapeFilters();
 }
 
 export default function handler(req, res) {

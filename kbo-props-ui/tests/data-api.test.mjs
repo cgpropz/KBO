@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -13,6 +13,7 @@ import {
   nflFreeTotalEdgesEnabled,
   previewNflGameMarkets,
   shapeForTier,
+  _tierShapeFilters,
 } from '../api/_dataAccess.js'
 import { bearerFor, installJwtSecret } from './access-token.mjs'
 
@@ -878,7 +879,62 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
-test('a profile timeout with no paid cache is retryable and not a free preview', async () => {
+test('shapeForTier walks standard lines only when the cache has not already', () => {
+  const rows = [
+    { player: 'A', line: 1, projection: 2, line_type: 'standard' },
+    { player: 'B', line: 1, projection: 2, line_type: 'goblin' },
+  ]
+  const filtered = shapeForTier('nfl_projections', rows, 'combined')
+  assert.equal(filtered.data.length, 1)
+  const cached = shapeForTier('nfl_projections', rows, 'combined', { alreadyStandard: true })
+  assert.equal(cached.data.length, 2)
+  assert.equal(cached.preview, false)
+})
+
+function nflClient({ tier = 'owner', rows = TABLES.nfl_projections } = {}) {
+  return {
+    auth: {
+      async getUser() {
+        throw new Error('auth.getUser must not run')
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        async maybeSingle() {
+          if (table === 'user_profiles') return { data: { tier }, error: null }
+          return { data: { data: structuredClone(rows), updated_at: NOW }, error: null }
+        },
+      }
+      return chain
+    },
+  }
+}
+
+test('the standard-line filter runs once per cached board', async () => {
+  const rows = [
+    ...structuredClone(TABLES.nfl_projections),
+    { player: 'Gob', line: 1, projection: 2, line_type: 'goblin' },
+  ]
+  const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } }
+  const first = mockRes()
+  await handleDataRequest(req, first, nflClient({ rows }))
+  assert.equal(first.statusCode, 200)
+  assert.equal(first.body.preview, false)
+  assert.equal(first.body.data.some((row) => row.player === 'Gob'), false)
+  assert.equal(first.body.data.length, TABLES.nfl_projections.length)
+  assert.equal(_standardFilterRuns(), 1)
+  assert.equal(_tierShapeFilters(), 0)
+  const second = mockRes()
+  await handleDataRequest(req, second, nflClient({ rows }))
+  assert.equal(_standardFilterRuns(), 1)
+  assert.equal(_tierShapeFilters(), 0)
+  assert.equal(second.body.data.length, first.body.data.length)
+})
+
+test('a profile timeout with no paid cache returns the free preview', async () => {
   const prev = { ...timeouts }
   _setTimeouts({ tierLookupMs: 40 })
   const nhl = Array.from({ length: 6 }, (_, i) => ({
