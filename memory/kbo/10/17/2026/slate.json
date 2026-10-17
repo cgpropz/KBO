@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-17",
   "timezone_basis": "KST",
   "schema_version": 2,
-  "frozen_at": "2026-10-16T22:43:02.835843+00:00",
+  "frozen_at": "2026-10-17T00:20:12.824063+00:00",
   "source": "kbo-props-ui/public/data/prizepicks_props.json",
-  "source_commit": "41b34243ade8",
+  "source_commit": "50911a599af3",
   "props": [
     {
       "projection": 5.65,
@@ -32,7 +32,7 @@
         "form_factor": 1.0,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.259078+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
       "hit_rate_all": 46.7,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 30.0,
@@ -45,8 +45,51 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
+    },
+    {
+      "projection": 4.08,
+      "edge": -0.42,
+      "player": "Anders Tolhurst",
+      "team": "LG",
+      "opponent": "Kia",
+      "role": "pitcher",
+      "venue": "Gwangju",
+      "stat": "Pitcher Strikeouts",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection_source": "strikeout_projections.json",
+      "cg_projection": 79,
+      "rating": 45.3,
+      "games_used": 38,
+      "factors": {
+        "so_per_ip": 0.632,
+        "ip_per_g": 4.859,
+        "whip": 1.645,
+        "opp_factor": 1.015,
+        "whip_factor": 1.0,
+        "form_factor": 1.0,
+        "opp_so_per_g": 7.89,
+        "league_avg_so_per_g": 7.676,
+        "source": "weighted_logs"
+      },
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
+      "hit_rate_all": 50.0,
+      "hit_rate_l5": 20.0,
+      "hit_rate_l10": 40.0,
+      "hit_rate_l20": 45.0,
+      "baseline_projection": 2.79,
+      "baseline_recommendation": "UNDER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-17T05:00:00+00:00",
+      "start_time_source": "fallback_kbo_weekday_earliest",
+      "first_frozen_at": "2026-10-17T00:20:12+00:00",
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 4.08,
@@ -117,7 +160,7 @@
         "league_avg_so_per_g": 7.676,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.259078+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
       "hit_rate_all": 60.0,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 50.0,
@@ -130,8 +173,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 1.84,
@@ -163,7 +206,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 44.6,
       "hit_rate_l5": 40.0,
       "hit_rate_l10": 30.0,
@@ -176,8 +219,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 6.93,
@@ -209,7 +252,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 55.0,
       "hit_rate_l5": 40.0,
       "hit_rate_l10": 30.0,
@@ -222,8 +265,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 1.34,
@@ -252,7 +295,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 53.8,
       "hit_rate_l5": 40.0,
       "hit_rate_l10": 40.0,
@@ -265,8 +308,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 2.36,
@@ -298,7 +341,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 45.5,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 40.0,
@@ -311,8 +354,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 10.2,
@@ -344,7 +387,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 49.5,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 40.0,
@@ -357,8 +400,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 5.53,
@@ -384,7 +427,7 @@
         "form_factor": 1.0,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.259078+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
       "hit_rate_all": 50.0,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 40.0,
@@ -397,8 +440,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 5.21,
@@ -427,7 +470,7 @@
         "league_avg_so_per_g": 7.676,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.259078+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
       "hit_rate_all": 37.0,
       "hit_rate_l5": 80.0,
       "hit_rate_l10": 60.0,
@@ -440,8 +483,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 18.12,
@@ -469,7 +512,7 @@
         "league_avg_so_per_g": 7.676,
         "source": "weighted_logs"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.259078+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.012712+00:00",
       "hit_rate_all": 74.1,
       "hit_rate_l5": 80.0,
       "hit_rate_l10": 90.0,
@@ -482,8 +525,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 2.4,
@@ -515,7 +558,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 49.1,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 60.0,
@@ -528,8 +571,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 10.16,
@@ -561,7 +604,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 58.3,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 70.0,
@@ -574,8 +617,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": null,
@@ -600,7 +643,7 @@
         "venue": "",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 0,
       "hit_rate_l5": 0,
       "hit_rate_l10": 0,
@@ -610,8 +653,44 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
+    },
+    {
+      "projection": null,
+      "edge": null,
+      "player": "Moon Jeong-bin",
+      "team": "LG",
+      "opponent": "Kia",
+      "role": "batter",
+      "venue": "Gwangju",
+      "stat": "Hits+Runs+RBIs",
+      "line": 1.5,
+      "odds_type": "goblin",
+      "recommendation": "NO LINE",
+      "games_used": 0,
+      "factors": {
+        "opp_factor": 1.0,
+        "park_factor": 1.0,
+        "opp_pitcher": "James Naile",
+        "opp_pitcher_whip": 1.164,
+        "opp_pitcher_hand": "R",
+        "batter_hand": "UNK",
+        "venue": "",
+        "home_team": "Kia"
+      },
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
+      "hit_rate_all": 0,
+      "hit_rate_l5": 0,
+      "hit_rate_l10": 0,
+      "hit_rate_l20": 0,
+      "formula_applied": false,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-17T05:00:00+00:00",
+      "start_time_source": "fallback_kbo_weekday_earliest",
+      "first_frozen_at": "2026-10-17T00:20:12+00:00",
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": null,
@@ -672,7 +751,7 @@
         "venue": "",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 0,
       "hit_rate_l5": 0,
       "hit_rate_l10": 0,
@@ -682,8 +761,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 1.52,
@@ -715,7 +794,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 49.8,
       "hit_rate_l5": 20.0,
       "hit_rate_l10": 40.0,
@@ -728,24 +807,24 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 6.89,
-      "edge": 2.39,
+      "edge": 1.89,
       "player": "Park Hae-min",
       "team": "LG",
       "opponent": "Kia",
       "role": "batter",
       "venue": "Gwangju",
       "stat": "Hitter Fantasy Score",
-      "line": 4.5,
+      "line": 5.0,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "prizepicks_props.json",
-      "cg_projection": 81,
-      "rating": 76.6,
+      "cg_projection": 78,
+      "rating": 68.9,
       "games_used": 144,
       "factors": {
         "avg_per_g": 6.61,
@@ -761,11 +840,11 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
-      "hit_rate_all": 53.7,
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
+      "hit_rate_all": 38.6,
       "hit_rate_l5": 20.0,
-      "hit_rate_l10": 40.0,
-      "hit_rate_l20": 60.0,
+      "hit_rate_l10": 20.0,
+      "hit_rate_l20": 45.0,
       "baseline_projection": 6.54,
       "baseline_recommendation": "OVER",
       "formula_mode": "tuned",
@@ -774,8 +853,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 1.78,
@@ -807,7 +886,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 40.9,
       "hit_rate_l5": 40.0,
       "hit_rate_l10": 30.0,
@@ -820,8 +899,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": 7.94,
@@ -853,7 +932,7 @@
         "venue": "Gwangju",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 44.7,
       "hit_rate_l5": 60.0,
       "hit_rate_l10": 40.0,
@@ -866,8 +945,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     },
     {
       "projection": null,
@@ -892,7 +971,7 @@
         "venue": "",
         "home_team": "Kia"
       },
-      "projections_generated_at": "2026-10-16T22:41:57.784847+00:00",
+      "projections_generated_at": "2026-10-17T00:19:47.519117+00:00",
       "hit_rate_all": 0,
       "hit_rate_l5": 0,
       "hit_rate_l10": 0,
@@ -902,8 +981,8 @@
       "start_time_utc": "2026-10-17T05:00:00+00:00",
       "start_time_source": "fallback_kbo_weekday_earliest",
       "first_frozen_at": "2026-10-16T20:49:42+00:00",
-      "last_pregame_frozen_at": "2026-10-16T22:43:02+00:00",
-      "source_commit": "41b34243ade8"
+      "last_pregame_frozen_at": "2026-10-17T00:20:12+00:00",
+      "source_commit": "50911a599af3"
     }
   ]
 }
