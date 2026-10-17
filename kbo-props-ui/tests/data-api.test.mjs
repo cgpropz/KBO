@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, boardReadBudgetMs, stepBudgetMs, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -602,9 +602,22 @@ test('board clocks are public and never include prop rows', async () => {
 
 test('snapshot reads finish in time for last-good inside the 12s client window', () => {
   assert.equal(SNAPSHOT_READ_MS, 4_500)
+  assert.equal(CLIENT_FETCH_MS, 12_000)
   assert.equal(DEFAULT_TIMEOUTS.snapshotReadMs, SNAPSHOT_READ_MS)
   assert.equal(DEFAULT_TIMEOUTS.tierLookupMs, 4_000)
-  assert.ok(DEFAULT_TIMEOUTS.snapshotReadMs + DEFAULT_TIMEOUTS.lastGoodReadMs < 12_000)
+  assert.ok(DEFAULT_TIMEOUTS.snapshotReadMs + DEFAULT_TIMEOUTS.lastGoodReadMs < CLIENT_FETCH_MS)
+  // A split board is a head read plus a chunk read. Those two slices plus
+  // last-good would pass 12s if each used its own full timer.
+  assert.ok(SNAPSHOT_READ_MS * 2 + DEFAULT_TIMEOUTS.lastGoodReadMs >= CLIENT_FETCH_MS)
+  assert.ok(boardReadBudgetMs() < CLIENT_FETCH_MS)
+  const start = 0
+  const deadline = start + boardReadBudgetMs()
+  const afterHead = start + SNAPSHOT_READ_MS
+  const chunkMs = stepBudgetMs(deadline, SNAPSHOT_READ_MS, afterHead)
+  const afterChunks = afterHead + chunkMs
+  const lastMs = stepBudgetMs(deadline, DEFAULT_TIMEOUTS.lastGoodReadMs, afterChunks)
+  assert.ok(afterChunks + lastMs - start < CLIENT_FETCH_MS)
+  assert.ok(afterChunks + lastMs <= deadline)
 })
 
 test('the snapshot read starts before the tier lookup finishes', async () => {
@@ -904,4 +917,71 @@ test('board clocks fall back when the status table is missing', async () => {
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.boards.length, 5)
   assert.equal(JSON.stringify(res.body).includes('cards'), false)
+})
+
+test('a stale nba_players refresh stores the joined player list', async () => {
+  let chunkReads = 0
+  const client = {
+    auth: {
+      async getUser() {
+        return { data: { user: { id: 'u-owner', email: 'CGPropz@gmail.com' } }, error: null }
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        gt() { return chain },
+        order() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+          if (table === 'app_flags') return Promise.resolve({ data: { value: false }, error: null })
+          return Promise.resolve({
+            data: { data: { nbaPlayerChunks: 2 }, updated_at: '2026-10-07T00:00:00Z' },
+            error: null,
+          })
+        },
+        then(resolve, reject) {
+          const generation = chunkReads
+          chunkReads += 1
+          return Promise.resolve({
+            data: [
+              { id: 2, data: [{ athleteId: generation === 0 ? 'a' : 'a2' }], updated_at: '2026-10-07T00:00:00Z' },
+              { id: 3, data: [{ athleteId: 'b' }], updated_at: '2026-10-07T00:00:00Z' },
+            ],
+            error: null,
+          }).then(resolve, reject)
+        },
+      }
+      return chain
+    },
+  }
+  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: 'Bearer tok-owner' } }
+  const first = mockRes()
+  await handleDataRequest(req, first, client)
+  assert.equal(first.statusCode, 200)
+  assert.deepEqual(first.body.data.map((row) => row.athleteId), ['a', 'b'])
+  assert.equal(chunkReads, 1)
+
+  const prevFresh = cacheWindows.freshMs
+  cacheWindows.freshMs = 0
+  try {
+    const second = mockRes()
+    await handleDataRequest(req, second, client)
+    assert.deepEqual(second.body.data.map((row) => row.athleteId), ['a', 'b'])
+    const started = Date.now()
+    while (chunkReads < 2) {
+      if (Date.now() - started > 1000) throw new Error('background refresh did not read chunks')
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    cacheWindows.freshMs = prevFresh
+    const third = mockRes()
+    await handleDataRequest(req, third, client)
+    assert.deepEqual(third.body.data.map((row) => row.athleteId), ['a2', 'b'])
+    assert.equal(chunkReads, 2)
+  } finally {
+    cacheWindows.freshMs = prevFresh
+  }
 })
