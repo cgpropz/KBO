@@ -18,6 +18,7 @@ from pipeline.memory.common import (
     format_iso,
     format_mmddyyyy,
     grade_line,
+    gradeable_slate_prop,
     load_json,
     memory_dir,
     model_result,
@@ -170,9 +171,29 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
             )
         return {"status": "waiting", "reason": "no slate", "slate_date": format_mmddyyyy(d)}
 
+    # Standard lines still on the board. Demon/goblin are research-only.
+    # Pulled and superseded cards are not scored and do not block the day.
+    props = [prop for prop in slate["props"] if gradeable_slate_prop(prop)]
+    if not props:
+        if not dry_run:
+            write_meta(
+                "wnba",
+                d,
+                status="waiting",
+                props_total=0,
+                props_graded=0,
+                missing=["no live standard props"],
+            )
+        return {
+            "status": "waiting",
+            "reason": "no live standard props",
+            "slate_date": format_mmddyyyy(d),
+            "props_total": 0,
+            "props_graded": 0,
+        }
+
     box = load_boxscores()
     iso = format_iso(d)
-    props = slate["props"]
     graded = []
     missing = []
 

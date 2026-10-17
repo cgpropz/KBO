@@ -646,13 +646,27 @@ def test_late_recheck_retracts_a_pregame_slate_prop():
             "start_time_utc": "2026-10-17T23:00:00+00:00",
         },
     ]
+    props[0]["first_frozen_at"] = "2026-10-16T00:10:00+00:00"
+    props[0]["last_pregame_frozen_at"] = "2026-10-16T00:29:30+00:00"
     moment = datetime(2026, 10, 17, 0, 40, tzinfo=timezone.utc)
     kept, dropped = retract_slate_props(props, updated, moment)
     assert dropped == 1
-    assert [row["player"] for row in kept] == ["Auston Matthews"]
+    by_player = {row["player"]: row for row in kept}
+    assert set(by_player) == {"Egor Chinakhov", "Auston Matthews"}
+    chinakhov = by_player["Egor Chinakhov"]
+    assert chinakhov["removed"] is True
+    assert chinakhov["pp_status"] == "removed"
+    assert chinakhov["stat"] == "Shots On Goal"
+    assert chinakhov["first_frozen_at"] == "2026-10-16T00:10:00+00:00"
+    assert chinakhov["last_pregame_frozen_at"] == "2026-10-16T00:29:30+00:00"
+    assert by_player["Auston Matthews"].get("removed") is not True
+    again, dropped_again = retract_slate_props(kept, updated, moment)
+    assert dropped_again == 0
+    assert again[0]["pp_status"] == "removed"
     started = datetime(2026, 10, 17, 1, 5, tzinfo=timezone.utc)
-    _kept, dropped_late = retract_slate_props(props, updated, started)
+    late, dropped_late = retract_slate_props(props, updated, started)
     assert dropped_late == 0
+    assert late[0].get("removed") is not True
 
 
 def test_duplicate_projection_id_or_player_stat_line_game_collapses():

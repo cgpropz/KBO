@@ -869,7 +869,14 @@ def _projection_id(row: dict) -> str:
 
 
 def _board_duplicate_key(row: dict) -> tuple | None:
-    """player + stat + line + game. Odds type is not part of an exact copy."""
+    """player + stat + line + game.
+
+    Odds type is not part of the key. A goblin or demon at the same line is
+    the same bet as the standard row, so the dedupe keeps one copy (the live
+    standard line when one is present). This board is standard-only after
+    that pass. Nothing downstream should expect a goblin or demon copy of
+    the same line to still be on the board.
+    """
     player = _name_key(row.get("player") or row.get("name"))
     stat = str(row.get("prop") or row.get("stat") or "").strip().lower()
     if not player or not stat:
@@ -902,8 +909,11 @@ def dedupe_board_rows(rows: list) -> list:
     """Drop an exact second copy of an NHL board row.
 
     A copy is the same projection id, or the same player, stat, line, and
-    game. The kept row is the live standard line when one of the copies is
-    one. Order otherwise follows the first copy.
+    game. Odds type is ignored, which is what a standard-only board wants:
+    a goblin or demon at that same line is not kept beside the standard row.
+    The kept row is the live standard line when one of the copies is one.
+    Order otherwise follows the first copy. Downstream readers must not
+    expect both odds types at the same line.
     """
     records = [row for row in rows or [] if isinstance(row, dict)]
     best: dict = {}
