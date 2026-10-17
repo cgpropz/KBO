@@ -32,9 +32,13 @@
   top: 0;
   z-index: 5;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
+  width: 100%;
   max-width: 1120px;
+  min-width: 0;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 16px 24px;
   background: rgba(7, 10, 8, 0.82);
@@ -53,8 +57,12 @@
 
 .pl-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
+  min-width: 0;
+  max-width: 100%;
   margin-left: auto;
+  overflow-x: auto;
 }
 
 .pl-nav a,

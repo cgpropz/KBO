@@ -20,8 +20,13 @@
   position: sticky;
   z-index: 30;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 12px 22px;
   background: rgba(5, 5, 6, 0.94);
   backdrop-filter: blur(10px);
@@ -42,7 +47,7 @@
 }
 .hub-brand span { color: var(--hub-mint); }
 
-.hub-nav { display: flex; gap: 4px; flex: 1; }
+.hub-nav { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; max-width: 100%; overflow-x: auto; }
 .hub-nav button, .hub-footer nav button, .hub-footer nav a {
   border: 0;
   background: none;

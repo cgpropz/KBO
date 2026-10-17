@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { PHONE_BOARD_QUERY } from './phoneBoardQuery.js'
 
-export const PHONE_BOARD_QUERY = '(max-width: 767px)'
+export { PHONE_BOARD_QUERY }
 
 function phoneNow() {
   return typeof window !== 'undefined'

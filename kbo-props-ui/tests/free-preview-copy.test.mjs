@@ -38,7 +38,7 @@ test('the NFL preview banner follows NFL_FREE_PREVIEW_ENABLED and other sports s
 
 test('the phone lock card is full width in the unlayered mobile sheet', () => {
   const css = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '../src/mobile.css'), 'utf8')
-  const phone = css.slice(css.indexOf('@media (max-width: 767px)'))
+  const phone = css.slice(css.indexOf('@media (--phone-board)'))
   const rule = phone.slice(phone.indexOf('.nfl-lines-lock-card'))
   assert.match(rule, /width:\s*100%/)
   assert.match(rule, /max-width:\s*none/)

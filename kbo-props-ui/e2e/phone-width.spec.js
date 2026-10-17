@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
+import { PHONE_BOARD_QUERY } from '../src/phoneBoardQuery.js'
 
 const recent = [70, 80, 55, 90, 60, 75, 88, 40, 95, 62, 71, 83]
 const seasons = Array(12).fill(2026)
@@ -140,11 +141,20 @@ async function installFixtures(page) {
   })
 }
 
-async function pageWidth(page) {
-  return page.evaluate(() => Math.max(
-    document.documentElement.scrollWidth,
-    document.body ? document.body.scrollWidth : 0,
-  ))
+async function expectFits(page, label) {
+  const box = await page.evaluate(() => ({
+    scrollWidth: Math.max(
+      document.documentElement.scrollWidth,
+      document.body ? document.body.scrollWidth : 0,
+    ),
+    innerWidth: window.innerWidth,
+  }))
+  expect(box.scrollWidth, `${label} scrollWidth`).toBeLessThanOrEqual(box.innerWidth)
+  return box
+}
+
+function touchProject(testInfo) {
+  return testInfo.project.use.isMobile === true && testInfo.project.use.hasTouch === true
 }
 
 test.beforeEach(async ({ page }) => {
@@ -152,28 +162,29 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const [name, path] of pages) {
-  test(`${name} stays inside 390px`, async ({ page }) => {
+  test(`${name} stays inside the viewport`, async ({ page }) => {
     await page.goto(path, { waitUntil: 'load' })
     await page.waitForTimeout(600)
-    const width = await pageWidth(page)
-    expect(width, `${name} scrollWidth`).toBeLessThanOrEqual(390)
+    await expectFits(page, name)
   })
 }
 
-test('nfl game markets stays inside 390px', async ({ page }) => {
+test('nfl game markets stays inside the viewport', async ({ page }) => {
   await page.goto('/?sport=nfl', { waitUntil: 'load' })
-  await page.locator('.cg-menu-btn').click()
+  // The phone menu mounts with the shell. click() waits for it. A desktop
+  // window already shows the link, so a hidden menu is not an error.
+  const menu = page.locator('.cg-menu-btn')
+  if (await menu.waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false)) await menu.click()
   await page.getByRole('button', { name: 'Game Markets' }).click()
   await page.waitForTimeout(400)
-  const width = await pageWidth(page)
-  expect(width, 'nfl game markets scrollWidth').toBeLessThanOrEqual(390)
+  await expectFits(page, 'nfl game markets')
 })
 
 for (const [sport, path, playerSelector] of boardShots) {
-  test(`${sport} board screenshot and player page stay inside 390px`, async ({ page }, testInfo) => {
+  test(`${sport} board screenshot and player page stay inside the viewport`, async ({ page }, testInfo) => {
     await page.goto(path, { waitUntil: 'load' })
     await page.waitForTimeout(600)
-    expect(await pageWidth(page), `${sport} board scrollWidth`).toBeLessThanOrEqual(390)
+    await expectFits(page, `${sport} board`)
     if (testInfo.project.name === 'iphone-safari') {
       await mkdir('phone-screenshots', { recursive: true })
       await page.screenshot({ path: `phone-screenshots/${sport}-board.png`, fullPage: false })
@@ -182,6 +193,103 @@ for (const [sport, path, playerSelector] of boardShots) {
     await expect(player).toBeVisible()
     await player.click()
     await page.waitForTimeout(400)
-    expect(await pageWidth(page), `${sport} player scrollWidth`).toBeLessThanOrEqual(390)
+    await expectFits(page, `${sport} player`)
   })
 }
+
+const fitSurfaces = [
+  ['hub', '/'],
+  ['nfl-dashboard', '/?sport=nfl'],
+  ['nhl-dashboard', '/?sport=nhl'],
+  ['nfl-board', '/?sport=nfl&page=projections'],
+  ['nhl-board', '/?sport=nhl&page=projections'],
+  ['kbo-board', '/?sport=kbo'],
+  ['wnba-dashboard', '/?sport=wnba'],
+  ['nba-dashboard', '/?sport=nba'],
+]
+
+for (const [name, path] of fitSurfaces) {
+  test(`${name} is no wider than the viewport`, async ({ page }, testInfo) => {
+    await page.goto(path, { waitUntil: 'load' })
+    await page.waitForTimeout(600)
+    const box = await expectFits(page, name)
+    const touch = touchProject(testInfo)
+    const dashboard = name === 'nfl-dashboard' || name === 'nhl-dashboard' || name === 'kbo-board' || name === 'wnba-dashboard' || name === 'nba-dashboard'
+    if (!dashboard) return
+    if (touch) {
+      await expect(page.getByTestId('prop-line-card').first(), `${name} cards`).toBeVisible()
+      await expect(page.getByTestId('prop-line-table')).toHaveCount(0)
+      return
+    }
+    expect(box.innerWidth, `${name} desktop width`).toBeGreaterThan(767)
+    await expect(page.getByTestId('prop-line-table'), `${name} table`).toBeVisible()
+    await expect(page.getByTestId('prop-line-card')).toHaveCount(0)
+  })
+}
+
+test('desktop-site iPhone keeps a 980px layout and coarse pointer', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'iphone-desktop-site', 'desktop-site project only')
+  await page.goto('/?sport=nfl', { waitUntil: 'load' })
+  const info = await page.evaluate((query) => ({
+    innerWidth: window.innerWidth,
+    phone: window.matchMedia(query).matches,
+    coarse: window.matchMedia('(hover: none) and (pointer: coarse)').matches,
+    device: window.matchMedia('(max-device-width: 932px)').matches,
+  }), PHONE_BOARD_QUERY)
+  expect(info.innerWidth).toBe(980)
+  expect(info.coarse).toBe(true)
+  expect(info.device).toBe(true)
+  expect(info.phone).toBe(true)
+})
+
+test('a desktop window from 768 to 1200 does not grow the page', async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== 'iphone-safari', 'once per run')
+  const widths = [780, 980, 1100]
+  const paths = [
+    ['hub', '/'],
+    ['nfl-dashboard', '/?sport=nfl'],
+    ['nhl-dashboard', '/?sport=nhl'],
+    ['nfl-board', '/?sport=nfl&page=projections'],
+    ['nhl-board', '/?sport=nhl&page=projections'],
+    ['kbo-board', '/?sport=kbo'],
+    ['wnba-dashboard', '/?sport=wnba'],
+  ]
+  for (const width of widths) {
+    const context = await browser.newContext({
+      viewport: { width, height: 900 },
+      screen: { width: 1440, height: 900 },
+      isMobile: false,
+      hasTouch: false,
+    })
+    const page = await context.newPage()
+    await installFixtures(page)
+    for (const [name, path] of paths) {
+      await page.goto(path, { waitUntil: 'load' })
+      await page.waitForTimeout(400)
+      const box = await page.evaluate((query) => ({
+        scrollWidth: Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0),
+        innerWidth: window.innerWidth,
+        phone: window.matchMedia(query).matches,
+      }), PHONE_BOARD_QUERY)
+      expect(box.phone, `${name} at ${width} stays a desktop`).toBe(false)
+      expect(box.scrollWidth, `${name} at ${width} scrollWidth`).toBeLessThanOrEqual(box.innerWidth)
+    }
+    await expect(page.getByTestId('prop-line-table')).toBeVisible()
+    await expect(page.getByTestId('prop-line-card')).toHaveCount(0)
+    await context.close()
+  }
+})
+
+test('zoomed iPhone keeps a 780px layout and the phone board', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'width-780', '780px project only')
+  await page.goto('/?sport=nfl', { waitUntil: 'load' })
+  const info = await page.evaluate((query) => ({
+    innerWidth: window.innerWidth,
+    phone: window.matchMedia(query).matches,
+    narrow: window.matchMedia('(max-width: 767px)').matches,
+  }), PHONE_BOARD_QUERY)
+  expect(info.innerWidth).toBe(780)
+  expect(info.narrow).toBe(false)
+  expect(info.phone).toBe(true)
+  await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
+})
