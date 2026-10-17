@@ -18,6 +18,7 @@ import { BoardSkeleton } from '../BootScreen.jsx'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard, usePhonePaintCount } from '../usePhoneBoard'
+import { BoardLoadError } from '../BoardLoadError'
 
 const FREE_ROW_LIMIT = 3
 
@@ -270,6 +271,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'nfl', SORT_OPTIONS))
@@ -279,8 +281,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
-  const { index: oddsIndex, oddsState } = useBoardOdds(
-    () => fetchNflSharpOdds().then(({ records, preview }) => ({ records, preview })),
+  const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
+    ({ fresh = false } = {}) => fetchNflSharpOdds({ fresh }).then(({ records, preview }) => ({ records, preview })),
     { enabled: loaded },
   )
 
@@ -294,9 +296,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview && !refreshing ? locked : 0); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError.message))
+    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(preview && !refreshing ? locked : 0); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
 
   useFullBoardRefresh('nfl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
@@ -304,7 +306,14 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     setLockedCount(0)
     setError('')
     setLoaded(true)
+    reloadOdds()
   })
+
+  const retryLoad = () => {
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const updateFilter = (key, value) => {
     setFilters((current) => ({ ...current, [key]: value }))
@@ -398,7 +407,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
-      {error && <div className="nfl-notice">Unable to load the NFL snapshot: {error}</div>}
+      {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
       {!error && !loaded && (
         <div role="status" aria-label="Loading NFL prop lines">
           <BoardSkeleton />

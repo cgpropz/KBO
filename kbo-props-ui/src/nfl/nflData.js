@@ -39,8 +39,8 @@ export async function fetchNflGameMarkets() {
   }
 }
 
-export async function fetchNflSharpOdds() {
-  const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json' })
+export async function fetchNflSharpOdds({ fresh = false } = {}) {
+  const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json', fresh })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
     ? snapshot.data
     : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }

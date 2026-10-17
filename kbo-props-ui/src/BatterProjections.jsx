@@ -7,6 +7,7 @@ import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
+import { BoardLoadError } from './BoardLoadError';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -114,7 +115,7 @@ function BatterProjections() {
       })
       .catch(err => {
         debugLog('Error loading data:', err.message);
-        setError(err.message);
+        setError(err);
         setLoading(false);
       });
   }, []);
@@ -253,7 +254,7 @@ function BatterProjections() {
     debugLog('Error state:', error);
     return (
       <div className="bp-container">
-        <div className="bp-loading"><p className="bp-error">Error: {error}</p></div>
+        <div className="bp-loading"><BoardLoadError className="bp-error" error={error} prefix="Error:" onRetry={() => loadBatterData(false)} /></div>
       </div>
     );
   }

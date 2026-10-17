@@ -6,6 +6,7 @@ import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
+import { BoardLoadError } from './BoardLoadError';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -78,6 +79,7 @@ function StrikeoutProjections({ onNavigate }) {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedProp, setSelectedProp] = useState('all');
   const oddsTypeFilter = 'standard';
   const [hitRateFilter, setHitRateFilter] = useState('all');
@@ -137,7 +139,7 @@ function StrikeoutProjections({ onNavigate }) {
         setError(null);
       } catch (err) {
         if (cancelled) return;
-        setError(err.message);
+        setError(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -150,7 +152,13 @@ function StrikeoutProjections({ onNavigate }) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [loadAttempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setLoading(true);
+    setLoadAttempt((current) => current + 1);
+  };
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -252,7 +260,7 @@ function StrikeoutProjections({ onNavigate }) {
   if (error) {
     return (
       <div className="so-container">
-        <div className="so-loading"><p className="so-error">Error: {error}</p></div>
+        <div className="so-loading"><BoardLoadError className="so-error" error={error} prefix="Error:" onRetry={retryLoad} /></div>
       </div>
     );
   }

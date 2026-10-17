@@ -13,6 +13,7 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
 import { BoardSkeleton } from '../BootScreen.jsx'
+import { BoardLoadError } from '../BoardLoadError'
 import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
@@ -147,6 +148,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [tab, setTab] = useState('All Props')
   const [sortBy, setSortBy] = useState(() => initialBoardSort('nhl', SORT_OPTIONS))
   const phone = usePhoneBoard()
@@ -157,8 +159,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [lockedCount, setLockedCount] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [openId, setOpenId] = useState(null)
-  const { index: oddsIndex, oddsState } = useBoardOdds(
-    () => fetchNhlSharpOdds().then(({ records, preview }) => ({ records, preview })),
+  const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
+    ({ fresh = false } = {}) => fetchNhlSharpOdds({ fresh }).then(({ records, preview }) => ({ records, preview })),
   )
 
   useEffect(() => {
@@ -172,9 +174,9 @@ export default function NhlPropLines({ onSelectPlayer }) {
         setError('')
         setLoaded(true)
       })
-      .catch((loadError) => active && setError(loadError.message))
+      .catch((loadError) => active && setError(loadError))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
 
   useFullBoardRefresh('nhl_projections', (snapshot) => {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
@@ -182,7 +184,14 @@ export default function NhlPropLines({ onSelectPlayer }) {
     setUpdatedAt(snapshot.updatedAt || null)
     setError('')
     setLoaded(true)
+    reloadOdds()
   })
+
+  const retryLoad = () => {
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {
@@ -206,7 +215,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
           </select>
         </div>
       </div>
-      {error && <div className="nfl-notice">Unable to load the NHL board: {error}</div>}
+      {error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}
       {!error && !loaded && (
         <div role="status" aria-label="Loading NHL prop lines">
           <BoardSkeleton />

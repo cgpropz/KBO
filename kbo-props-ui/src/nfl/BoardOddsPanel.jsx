@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { boardSide, findSharpOdds, indexSharpOdds, oddsPanelMessage, usableSharpOdds } from '../boardOdds'
 import { BASELINES, BookStrip } from './BookOddsStrip'
 import './bookOddsStrip.css'
@@ -7,15 +7,21 @@ export function useBoardOdds(load, { enabled = true } = {}) {
   const loadRef = useRef(load)
   const [records, setRecords] = useState([])
   const [oddsState, setOddsState] = useState('loading')
+  const [pass, setPass] = useState(0)
 
   useEffect(() => {
     loadRef.current = load
   }, [load])
 
+  const reload = useCallback(() => {
+    setPass((current) => current + 1)
+  }, [])
+
   useEffect(() => {
     if (!enabled) return undefined
     let active = true
-    loadRef.current()
+    // The first load can use the cache. A later pass is the full-board refresh.
+    loadRef.current({ fresh: pass > 0 })
       .then(({ records: next, preview }) => {
         if (!active) return
         setRecords(Array.isArray(next) ? next : [])
@@ -27,10 +33,10 @@ export function useBoardOdds(load, { enabled = true } = {}) {
         setOddsState('error')
       })
     return () => { active = false }
-  }, [enabled])
+  }, [enabled, pass])
 
   const index = useMemo(() => indexSharpOdds(records), [records])
-  return { index, oddsState }
+  return { index, oddsState, reload }
 }
 
 export function OddsChevron({ open, player, onToggle, disabled = false }) {
