@@ -482,6 +482,13 @@ def test_is_out_of_a_protocol_or_boot_is_not_an_out():
     assert _av.news_out_status("Jones is out of the walking boot.") is None
     assert _av.news_out_status("Jones is out.") == "OUT"
     assert _av.news_out_status("Jones is out tonight.") == "OUT"
+    assert _av.news_out_status("Jones is out of the lineup.") == "OUT"
+    assert _av.news_out_status("Jones is out of action.") == "OUT"
+    assert _av.news_out_status("Jones is out of tonight's game.") == "OUT"
+    assert _av.news_out_status("Jones is out of tonight\u2019s game.") == "OUT"
+    assert _av.news_out_status(
+        "Jones is out of the protocol, but he is out of the lineup."
+    ) == "OUT"
 
 
 def _note(name, team, details, created, nhl_id="1"):
@@ -526,6 +533,36 @@ def test_undated_out_notes_cover_one_day_and_remains_out_covers_two_weeks():
     assert by_day[("Scratch Day", "2026-10-17")]["removed"] is True
     assert by_day[("Scratch Day", "2026-10-19")].get("removed") is not True
     assert by_day[("Boot Guy", "2026-10-17")].get("removed") is not True
+
+
+def test_out_of_the_lineup_action_or_tonights_game_covers_one_day():
+    created = "2026-10-17T15:00:00Z"
+    phrases = {
+        "Line Guy": "Guy is out of the lineup.",
+        "Action Guy": "Guy is out of action.",
+        "Tonight Guy": "Guy is out of tonight's game.",
+        "Proto Guy": "Guy is out of the protocol.",
+        "Boot Guy": "Guy is out of the walking boot.",
+    }
+    news = [
+        _note(name, "BUF", details, created, nhl_id=str(index))
+        for index, (name, details) in enumerate(phrases.items(), start=1)
+    ]
+    rows = [
+        _skater(name, team="BUF", gameday=day)
+        for name in phrases
+        for day in ("2026-10-17", "2026-10-18", "2026-10-19")
+    ]
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=[], news=news)
+    by_day = {(row["player"], row["gameday"]): row for row in kept}
+    for name in ("Line Guy", "Action Guy", "Tonight Guy"):
+        assert by_day[(name, "2026-10-17")]["removed"] is True
+        assert by_day[(name, "2026-10-17")]["injury"] == "OUT"
+        assert by_day[(name, "2026-10-18")]["removed"] is True
+        assert by_day[(name, "2026-10-19")].get("removed") is not True
+    for name in ("Proto Guy", "Boot Guy"):
+        for day in ("2026-10-17", "2026-10-18", "2026-10-19"):
+            assert by_day[(name, day)].get("removed") is not True
 
 
 def test_manual_out_list_pulls_tavares_for_that_date_only():
