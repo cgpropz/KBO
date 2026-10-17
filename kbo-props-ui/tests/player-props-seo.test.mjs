@@ -129,7 +129,8 @@ test('KBO page keeps the playoff guide and leaves the results table off', () => 
 })
 
 test('NFL, NHL, and WNBA pages call a higher score a gap, not a model edge', () => {
-  const sentence = "A higher score means a bigger gap between projection and line. It isn't a win probability."
+  const sentence = "The further the score is from 50, the bigger the gap between projection and line. Above 50 leans over, below 50 leans under. It isn't a win probability."
+  const opening = "CG Score compares the CGPropz projection to the line. The board also shows DVP and recent hit rates as matchup and form context."
   const pages = renderSportPages().filter((page) =>
     ['/nfl-player-props', '/nhl-player-props', '/wnba-player-props'].includes(page.path),
   )
@@ -137,8 +138,11 @@ test('NFL, NHL, and WNBA pages call a higher score a gap, not a model edge', () 
   for (const page of pages) {
     const built = readFileSync(fileURLToPath(new URL(`../public${page.path}.html`, import.meta.url)), 'utf8')
     for (const html of [page.html, built]) {
+      assert.equal(html.includes(opening), true, page.path)
       assert.equal(html.includes(sentence), true, page.path)
+      assert.equal(html.includes('A higher score means a bigger gap'), false, page.path)
       assert.equal(html.includes('bigger model edge'), false, page.path)
+      assert.equal(html.includes('adjusted for matchup (DvP) and recent form'), false, page.path)
     }
     const data = graph(page.html)
     const faq = data['@graph'].find((node) => node['@type'] === 'FAQPage')
