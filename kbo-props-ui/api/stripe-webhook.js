@@ -92,18 +92,19 @@ async function clearTierByCustomer(customerId) {
   const { error } = await supabase
     .from('user_profiles')
     .upsert({ id: user.id, tier: access.tier }, { onConflict: 'id' });
-  if (error) console.error(`[webhook] recompute failed for ${email}:`, error);
-  else console.log(`[webhook] recomputed ${email} → ${access.tier} (subscription change)`);
-  if (!error) {
-    const wrote = await writeTierClaim(supabase, user.id, access.tier);
-    const failure = subscriptionDeletedClaimResult(wrote);
-    if (failure) {
-      console.error(`[webhook] tier claim failed for ${user.id}`);
-      return failure;
-    }
-    await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
-    await safeDiscordSync(supabase, user.id);
+  if (error) {
+    console.error(`[webhook] tier update failed for ${user.id}`);
+    return { status: 500, body: { error: 'tier update failed' } };
   }
+  console.log(`[webhook] ${user.id} → ${access.tier}`);
+  const wrote = await writeTierClaim(supabase, user.id, access.tier);
+  const failure = subscriptionDeletedClaimResult(wrote);
+  if (failure) {
+    console.error(`[webhook] tier claim failed for ${user.id}`);
+    return failure;
+  }
+  await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
+  await safeDiscordSync(supabase, user.id);
   return null;
 }
 
