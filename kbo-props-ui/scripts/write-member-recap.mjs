@@ -1,8 +1,10 @@
-// Writes api/_memberRecap.json: the latest graded slate per sport, counted
-// from Board QA's grading files (memory/<sport>/MM/DD/YYYY/recap.json).
-// Only standard PrizePicks lines count (no goblin/demon), and rows marked
-// rank_eligible: false are skipped. Only counts and dates are written; no
-// player rows, lines, or projections leave the paid snapshots.
+// Writes api/_memberRecap.json: the latest graded slate per sport.
+// Counts come only from a summary.json that has been re-graded (a correction
+// note). Those summaries are standard-only and live-only: pulled lines are
+// Void and superseded rows are already excluded. A sport or day without that
+// correction is left out, so an old recap.json full of stale rows cannot
+// publish a hit rate. Only counts and dates are written; no player rows,
+// lines, or projections leave the paid snapshots.
 //
 // The file stays next to the API, not in public/ or dist. /api/data serves it
 // to paid members. A build without the parent repo (the Vercel rebuild of
@@ -23,19 +25,36 @@ function dirs(path) {
   }
 }
 
-export function recapFiles(memoryRoot, sport) {
+export function summaryFiles(memoryRoot, sport) {
   const out = []
   const base = join(memoryRoot, sport)
   for (const mm of dirs(base)) {
     if (!/^\d{2}$/.test(mm)) continue
     for (const dd of dirs(join(base, mm))) {
       for (const yyyy of dirs(join(base, mm, dd))) {
-        const file = join(base, mm, dd, yyyy, 'recap.json')
+        const file = join(base, mm, dd, yyyy, 'summary.json')
         if (existsSync(file)) out.push({ iso: `${yyyy}-${mm}-${dd}`, file })
       }
     }
   }
   return out.sort((a, b) => a.iso.localeCompare(b.iso))
+}
+
+// A re-grade writes a correction note onto summary.json. Days graded under
+// the old rules have no note, and their recap still mixes stale rows.
+export function isCorrectedSummary(summary) {
+  const note = summary?.correction
+  if (typeof note === 'string') return note.trim().length > 0
+  return note != null && typeof note === 'object' && !Array.isArray(note)
+}
+
+export function correctedRecord(summary) {
+  if (!isCorrectedSummary(summary)) return null
+  return {
+    hits: Number(summary.hits) || 0,
+    misses: Number(summary.misses) || 0,
+    pushes: Number(summary.pushes) || 0,
+  }
 }
 
 export function standardRecord(recap) {
@@ -54,21 +73,29 @@ export function standardRecord(recap) {
 export function buildMemberRecap(memoryRoot, now = new Date()) {
   const sports = {}
   for (const sport of SPORTS) {
-    const files = recapFiles(memoryRoot, sport)
+    const files = summaryFiles(memoryRoot, sport)
     for (let i = files.length - 1; i >= 0; i -= 1) {
-      let recap
+      let summary
       try {
-        recap = JSON.parse(readFileSync(files[i].file, 'utf8'))
+        summary = JSON.parse(readFileSync(files[i].file, 'utf8'))
       } catch {
         continue
       }
-      const record = standardRecord(recap)
-      if (record.hits + record.misses + record.pushes === 0) continue
-      sports[sport] = { slate_date_iso: recap.slate_date_iso || files[i].iso, graded_at: recap.graded_at || null, ...record }
+      const record = correctedRecord(summary)
+      if (!record || record.hits + record.misses + record.pushes === 0) continue
+      sports[sport] = {
+        slate_date_iso: summary.slate_date_iso || files[i].iso,
+        graded_at: summary.graded_at || summary.updated_at || null,
+        ...record,
+      }
       break
     }
   }
-  return { generated_at: now.toISOString(), source: 'memory/<sport>/MM/DD/YYYY/recap.json (standard lines)', sports }
+  return {
+    generated_at: now.toISOString(),
+    source: 'memory/<sport>/MM/DD/YYYY/summary.json (corrected standard-only live lines)',
+    sports,
+  }
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
