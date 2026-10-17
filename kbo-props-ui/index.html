@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+    /* Phone screens only. Sets a width token before paint and never touches
+       the viewport meta, including after React hydrates. */
+    (function () {
+      try {
+        var coarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        var w = window.screen && window.screen.width;
+        var h = window.screen && window.screen.height;
+        if (!coarse || !w || !h) return;
+        if (w > 1000 || h > 1000) return;
+        document.documentElement.style.setProperty('--phone-screen', w + 'px');
+      } catch (e) { /* a desktop without matchMedia keeps the normal layout */ }
+    })();
+    </script>
     <link rel="preload" href="/fonts/inter-latin-400800.woff2" as="font" type="font/woff2" crossorigin />
     <title>CGPropz: Every prop line, scored.</title>
     <meta name="description" content="CG Score rates every standard prop line on one board. Weekly is $4.99 the first week with code XWEEK, then $9.99/week." />

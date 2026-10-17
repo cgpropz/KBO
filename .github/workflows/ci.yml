@@ -34,7 +34,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: kbo-props-ui
@@ -50,8 +50,8 @@ jobs:
         run: node scripts/check-function-limit.mjs
       - name: API unit tests
         run: npm run test:api
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
       - name: Mobile layout
         run: npm run test:mobile
       - name: Production build
