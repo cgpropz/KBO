@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
+import './BoardLoadError.css';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
@@ -213,7 +214,7 @@ function useRecap() {
   return recap;
 }
 
-function useBoards(access, nbaOpen, selectedId) {
+function useBoards(access, nbaOpen, selectedId, planPending) {
   const [boards, setBoards] = useState({});
   const [photos, setPhotos] = useState(null);
   const [rosters, setRosters] = useState({});
@@ -247,6 +248,10 @@ function useBoards(access, nbaOpen, selectedId) {
       const place = slot;
       slot += 1;
       const open = nbaOpenRef.current;
+      if (planPending) {
+        setBoards((b) => ({ ...b, [sport.id]: { status: 'loading', raw: null } }));
+        return;
+      }
       const allowed = sport.id === 'nba' ? open === true : accessRef.current[sport.id];
       if (!allowed) {
         setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && open !== true ? 'closed' : 'locked', raw: null } }));
@@ -307,7 +312,7 @@ function useBoards(access, nbaOpen, selectedId) {
       generation.current += 1;
       retryTicket.current = {};
     };
-  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, planPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retrySport = (id) => {
     const sport = SPORTS.find((item) => item.id === id);
@@ -366,7 +371,7 @@ function useBoards(access, nbaOpen, selectedId) {
 }
 
 function emptyCopy(status, sport) {
-  if (status === 'loading') return 'Loading today\'s board…';
+  if (status === 'loading') return 'Loading your member board…';
   if (status === 'locked') return `${sport.name} isn't in your plan. Add it from Manage plan.`;
   if (status === 'closed') return 'The NBA board opens soon. No lines are posted for members yet.';
   if (status === 'error') return 'Couldn\'t load your member board';
@@ -392,14 +397,15 @@ function BellIcon() {
 }
 
 export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
-  const { user, tier, signOut } = useAuth();
+  const { user, tier, tierConfirmed, signOut } = useAuth();
+  const planPending = Boolean(user) && tierConfirmed !== true;
   const access = sportAccess(tier);
   const { open: nbaOpen } = useNbaOpen();
   const [picked, setPicked] = useState(() => (
     readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
   ));
   const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
-  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id);
+  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id, planPending);
   const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
@@ -581,7 +587,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                 </button>
               )) : (
                 <section className="hub-card hub-card-empty">
-                  <p>{emptyCopy(state.status, selected)}</p>
+                  <p>{state.status === 'loading' && <span className="board-spinner" aria-hidden="true" />}{emptyCopy(state.status, selected)}</p>
                   {state.status === 'error' && (
                     <button type="button" className="hub-retry" onClick={() => retrySport(selected.id)}>Retry</button>
                   )}
@@ -666,7 +672,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     </span>
                   </button>
                 )) : (
-                  <p className="hub-chart-empty">{state.status === 'error' ? emptyCopy(state.status, selected) : state.status === 'loading' ? 'Loading today\'s board…' : 'No L10 hit rates on this board.'}</p>
+                  <p className="hub-chart-empty">{state.status === 'error' ? emptyCopy(state.status, selected) : state.status === 'loading' ? 'Loading your member board…' : 'No L10 hit rates on this board.'}</p>
                 )}
               </section>
               </div>

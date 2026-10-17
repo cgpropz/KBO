@@ -8,6 +8,8 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
 import {
@@ -325,8 +327,8 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'nba', SORT_OPTIONS))
   const phone = usePhoneBoard()
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
-  const [isPaid, setIsPaid] = useState(false)
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -353,15 +355,14 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
         ])
         if (cancelled) return
         setLockedCount(previewLockedCount(board?.preview === true, board?.lockedCount))
+        setRefreshing(board?.refreshing === true)
         setUpdatedAt(board?.updatedAt || null)
-        setIsPaid(board?.preview !== true)
         setProjections(Array.isArray(board?.data) ? board.data : [])
         setPlayers(Array.isArray(roster) ? roster : [])
       } catch (err) {
         if (!cancelled) {
           setProjections([])
           setPlayers([])
-          setIsPaid(false)
           setLoadError(err?.message ? err : Object.assign(new Error('Request failed'), { code: err?.code }))
         }
       } finally {
@@ -374,12 +375,16 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
 
   const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nba_projections_standard', (snapshot) => {
     setLockedCount(0)
+    setRefreshing(false)
     setUpdatedAt(snapshot.updatedAt || null)
-    setIsPaid(true)
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setLoadError('')
     setProjLoading(false)
   })
+  const phase = useMemberBoardPhase('nba', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const isPaid = phase === 'member'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -441,7 +446,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     return top.reduce((sum, row) => sum + row.score, 0) / top.length
   }, [allRows])
 
-  const hasLockedRows = !isPaid && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
+  const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
   const placeholderCount = isPaid || lockedCount <= 0 ? 0 : Math.max(4, Math.min(lockedCount, 6))
 
@@ -471,17 +476,18 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           <div className="wnba-board-header">
             <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="nba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
-              <span>{rows.length}{lockedCount > 0 && !isPaid ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
+              <span>{rows.length}{showPaywall && lockedCount > 0 ? ` + ${lockedCount} locked` : ''} lines · sorted by {filters.sortBy}</span>
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
 
-          {projLoading && <div className="wnba-notice">Loading NBA prop lines…</div>}
-          {!projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load NBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
-          <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />
-          {!projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
-          {!projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
-          {!projLoading && !!rows.length && (
+          {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
+          {!hold && projLoading && <div className="wnba-notice">Loading NBA prop lines…</div>}
+          {!hold && !projLoading && loadError && <BoardLoadError className="wnba-notice" error={loadError} prefix="Unable to load NBA prop lines:" suffix=". Please refresh to try again." onRetry={retryLoad} />}
+          {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />}
+          {!hold && !projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
+          {!hold && !projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
+          {!hold && !projLoading && !!rows.length && (
             <BoardSurface
               phone={phone}
               wrapClass="wnba-lines-table-wrap"
@@ -531,6 +537,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
         </section>
       </div>
 
+      {!hold && (<>
       <div className="wnba-kpi-grid">
         <KpiCard label="Active Players" value={totalPlayers} sub="2025–26 roster" color="#FF6900" />
         <KpiCard label="Games Logged" value={projLoading ? '…' : totalGames.toLocaleString()} sub="players with a projection" color="#3b82f6" />
@@ -559,7 +566,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                       last={index === hotStreaks.length - 1 && (isPaid || hotStreaks.length < FREE_ROW_LIMIT)}
                     />
                   ))}
-                  {!isPaid && hotStreaks.length >= FREE_ROW_LIMIT && (
+                  {showPaywall && hotStreaks.length >= FREE_ROW_LIMIT && (
                     <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
                       Free members see the top {FREE_ROW_LIMIT}.{' '}
                       <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
@@ -591,7 +598,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                       last={index === bestValue.length - 1 && (isPaid || bestValue.length < FREE_ROW_LIMIT)}
                     />
                   ))}
-                  {!isPaid && bestValue.length >= FREE_ROW_LIMIT && (
+                  {showPaywall && bestValue.length >= FREE_ROW_LIMIT && (
                     <p style={{ color: '#6b7280', fontSize: 11, margin: '10px 0 0', fontWeight: 600 }}>
                       Free members see the top {FREE_ROW_LIMIT}.{' '}
                       <button type="button" onClick={() => onNavigatePricing?.()} style={{ background: 'none', border: 'none', padding: 0, color: '#FF6900', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>Upgrade</button>
@@ -624,6 +631,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
               : <p style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>No matchups posted yet.</p>}
         </InsightPanel>
       </div>
+      </>)}
     </div>
   )
 }

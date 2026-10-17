@@ -22,6 +22,7 @@ export async function fetchNflLineups() {
     updatedAt: snapshot.updatedAt,
     preview: snapshot.preview,
     lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
   }
 }
 
@@ -36,6 +37,7 @@ export async function fetchNflGameMarkets() {
     updatedAt: snapshot.updatedAt,
     preview: snapshot.preview,
     lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
   }
 }
 
@@ -50,5 +52,6 @@ export async function fetchNflSharpOdds({ fresh = false } = {}) {
     updatedAt: snapshot.updatedAt,
     preview: snapshot.preview,
     lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
   }
 }

@@ -5,6 +5,8 @@ import { nflCgScore } from './nflLineFloors'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
 import { BoardLoadError } from '../BoardLoadError'
@@ -79,16 +81,18 @@ export default function NflProjections({ onSelectPlayer }) {
   const [loaded, setLoaded] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
 
   useEffect(() => {
     let active = true
     fetchNflProjections()
-      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked }) => {
+      .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
         if (!active) return
         setProjections(next)
         setUpdatedAt(publishedAt || null)
         setLockedCount(previewLockedCount(preview, locked))
+        setRefreshing(pendingRefresh === true)
         setError('')
         setLoaded(true)
       })
@@ -100,9 +104,13 @@ export default function NflProjections({ onSelectPlayer }) {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setLockedCount(0)
+    setRefreshing(false)
     setError('')
     setLoaded(true)
   })
+  const phase = useMemberBoardPhase('nfl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -134,13 +142,14 @@ export default function NflProjections({ onSelectPlayer }) {
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span></div>
-      {error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
-      <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />
-      {!error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
-      {!error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
-      {!error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
-      {!error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} lines are locked. Upgrade to see every edge.`}</div>}
-      <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
+      {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
+      {!hold && !error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
+      {!hold && !error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
+      {!hold && !error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} lines are locked. Upgrade to see every edge.`}</div>}
+      {!hold && <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>}
     </section>
   )
 }

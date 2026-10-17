@@ -8,6 +8,7 @@ const TIER_CACHE_KEY = 'cg_tier';
 const AuthContext = createContext({
   user: null,
   tier: 'free',
+  tierConfirmed: true,
   loading: false,
   signOut: () => {},
   refreshTier: () => {},
@@ -62,6 +63,7 @@ const CACHED_SESSION = DEV_PREVIEW ? null : readCachedSession();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
   const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? (CACHED_SESSION?.user ? readCachedTier(CACHED_SESSION.user.id) : 'free'));
+  const [tierConfirmed, setTierConfirmed] = useState(() => Boolean(DEV_PREVIEW) || !CACHED_SESSION?.user);
   const [discord, setDiscord] = useState(EMPTY_DISCORD);
   const [passwordRecovery, setPasswordRecovery] = useState(recoveryFromWindow);
   // Session is resolved from local storage before paint. Tier refresh and the
@@ -149,6 +151,13 @@ export function AuthProvider({ children }) {
   }, [applyTier, fetchDiscord, postSync]);
 
   // Public method: force a tier re-check (e.g. after payment)
+  const confirmTier = useCallback((userId) => {
+    setTierConfirmed(false);
+    return Promise.resolve(fetchTier(userId)).finally(() => {
+      if (userRef.current?.id === userId) setTierConfirmed(true);
+    });
+  }, [fetchTier]);
+
   const refreshTier = useCallback(() => {
     const uid = userRef.current?.id;
     if (uid) return fetchTier(uid);
@@ -171,9 +180,10 @@ export function AuthProvider({ children }) {
           const u = session?.user ?? null;
           setUser(u);
           userRef.current = u;
-          if (u) fetchTier(u.id);
+          if (u) confirmTier(u.id);
           else {
             setTier('free');
+            setTierConfirmed(true);
             clearCachedTier();
           }
         });
@@ -183,9 +193,10 @@ export function AuthProvider({ children }) {
           setUser(u);
           userRef.current = u;
           if (u) {
-            fetchTier(u.id);
+            confirmTier(u.id);
           } else {
             setTier('free');
+            setTierConfirmed(true);
             setDiscord(EMPTY_DISCORD);
             clearCachedTier();
           }
@@ -206,7 +217,7 @@ export function AuthProvider({ children }) {
       cancelled = true;
       unsubscribe();
     };
-  }, [fetchTier, passwordRecovery]);
+  }, [confirmTier, passwordRecovery]);
 
   // Re-check tier when user returns to the tab (e.g. after paying in Stripe tab)
   useEffect(() => {
@@ -234,12 +245,13 @@ export function AuthProvider({ children }) {
     setUser(null);
     userRef.current = null;
     setTier('free');
+    setTierConfirmed(true);
     setDiscord(EMPTY_DISCORD);
     clearCachedTier();
   }
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signOut, refreshTier, discord, refreshDiscord, passwordRecovery, clearPasswordRecovery }}>
+    <AuthContext.Provider value={{ user, tier, tierConfirmed, loading, signOut, refreshTier, discord, refreshDiscord, passwordRecovery, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   );

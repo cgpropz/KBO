@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNhlProjections } from './nhlData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
@@ -79,14 +81,15 @@ export default function NhlProjections({ onSelectPlayer }) {
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedAt, setUpdatedAt] = useState(null)
   const [showingPreview, setShowingPreview] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [tab, setTab] = useState('ALL')
   const [query, setQuery] = useState('')
 
   useEffect(() => {
     let active = true
     fetchNhlProjections()
-      .then(({ projections: next, updatedAt: publishedAt, preview }) => {
-        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setShowingPreview(preview === true); setError(''); setLoaded(true) }
+      .then(({ projections: next, updatedAt: publishedAt, preview, refreshing: pendingRefresh }) => {
+        if (active) { setProjections(next); setUpdatedAt(publishedAt || null); setShowingPreview(preview === true); setRefreshing(pendingRefresh === true); setError(''); setLoaded(true) }
       })
       .catch((loadError) => active && setError(loadError))
     return () => { active = false }
@@ -96,9 +99,13 @@ export default function NhlProjections({ onSelectPlayer }) {
     setProjections(Array.isArray(snapshot.data) ? snapshot.data : [])
     setUpdatedAt(snapshot.updatedAt || null)
     setShowingPreview(false)
+    setRefreshing(false)
     setError('')
     setLoaded(true)
   })
+  const phase = useMemberBoardPhase('nhl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
 
   const retryLoad = () => {
     clearRefreshExhausted()
@@ -125,13 +132,16 @@ export default function NhlProjections({ onSelectPlayer }) {
           {TABS.map((name) => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name === 'ALL' ? 'ALL' : name.split(' ')[0]}</button>)}
         </div>
       </div>
-      {error && <BoardLoadError error={error} prefix="Unable to load the board:" onRetry={retryLoad} />}
-      <MemberPreviewNotice preview={showingPreview} exhausted={refreshExhausted} onRetry={retryLoad} />
-      {!error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}
-      {!error && loaded && !rows.length && <div className="nfl-notice">No cards match.</div>}
-      <div className="nfl-edge-grid">
-        {rows.map((item) => <Card key={item.id || `${item.player}-${item.prop}`} item={item} onSelectPlayer={onSelectPlayer} />)}
-      </div>
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      {!hold && error && <BoardLoadError error={error} prefix="Unable to load the board:" onRetry={retryLoad} />}
+      {showPaywall && <MemberPreviewNotice preview={showingPreview} exhausted={refreshExhausted} onRetry={retryLoad} />}
+      {!hold && !error && !loaded && <div className="nfl-notice">Loading the PrizePicks board.</div>}
+      {!hold && !error && loaded && !rows.length && <div className="nfl-notice">No cards match.</div>}
+      {!hold && (
+        <div className="nfl-edge-grid">
+          {rows.map((item) => <Card key={item.id || `${item.player}-${item.prop}`} item={item} onSelectPlayer={onSelectPlayer} />)}
+        </div>
+      )}
     </section>
   )
 }

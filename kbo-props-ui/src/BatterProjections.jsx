@@ -11,6 +11,9 @@ import { BoardLoadError } from './BoardLoadError';
 import { opponentLabel } from './cardMark';
 import { CardTeamLogo } from './CardTeamLogo';
 import { kboLogoUrl } from './slipBoardModel.js';
+import { MemberBoardStatus } from './MemberBoardStatus';
+import { useMemberBoardPhase } from './useMemberBoardPhase';
+import { useFullBoardRefresh } from './useFullBoardRefresh';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -84,6 +87,7 @@ function BatterProjections() {
   const [matchupData, setMatchupData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
@@ -113,6 +117,7 @@ function BatterProjections() {
         setPhotos(photoSnap?.data || {});
         setMatchupData(matchupSnap?.data || null);
         setLastUpdated(batterSnap?.updatedAt || publishedAtFromPayload(batterSnap?.data) || null);
+        setRefreshing(batterSnap?.refreshing === true);
         setError(null);
         setLoading(false);
       })
@@ -243,6 +248,29 @@ function BatterProjections() {
     return <span className="sort-icon active">{sortDir === 'asc' ? '▲' : '▼'}</span>;
   };
 
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('batter_projections', (snapshot) => {
+    setData(snapshot?.data || null);
+    setLastUpdated(snapshot?.updatedAt || publishedAtFromPayload(snapshot?.data) || null);
+    setRefreshing(false);
+    setError(null);
+    setLoading(false);
+  });
+  const phase = useMemberBoardPhase('kbo', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted });
+  const hold = phase === 'loading' || phase === 'exhausted';
+  const retryMemberBoard = () => {
+    clearRefreshExhausted();
+    loadBatterData(false);
+  };
+
+  if (hold) {
+    return (
+      <div className="bp-container">
+        <div className="bp-loading">
+          <MemberBoardStatus phase={phase} onRetry={retryMemberBoard} className="bp-error" />
+        </div>
+      </div>
+    );
+  }
   if (loading) {
     debugLog('Loading state active');
     return (

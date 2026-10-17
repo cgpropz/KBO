@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchNflGameMarkets } from './nflData'
+import { MemberBoardStatus } from '../MemberBoardStatus'
+import { useMemberBoardPhase } from '../useMemberBoardPhase'
+import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { teamColor, teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
 import { downloadGameCardPng } from './gameCardShare'
@@ -193,6 +196,8 @@ export default function NflGameMarkets() {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [lockedCount, setLockedCount] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [previewMode, setPreviewMode] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -200,16 +205,37 @@ export default function NflGameMarkets() {
   useEffect(() => {
     let active = true
     fetchNflGameMarkets()
-      .then(({ payload: next, preview, lockedCount: locked }) => {
+      .then(({ payload: next, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
         if (!active) return
         setPayload(next)
         setPreviewMode(!!preview)
         setLockedCount(preview ? locked : 0)
+        setRefreshing(pendingRefresh === true)
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
-  }, [])
+  }, [loadAttempt])
+  const [refreshExhausted, clearRefreshExhausted] = useFullBoardRefresh('nfl_game_markets', (snapshot) => {
+    const next = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+      ? snapshot.data
+      : { games: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+    setPayload(next)
+    setPreviewMode(false)
+    setLockedCount(0)
+    setRefreshing(false)
+    setError('')
+    setLoaded(true)
+  })
+  const phase = useMemberBoardPhase('nfl', { refreshing: refreshing && !refreshExhausted, exhausted: refreshExhausted })
+  const hold = phase === 'loading' || phase === 'exhausted'
+  const showPaywall = phase === 'free'
+  const retryLoad = () => {
+    clearRefreshExhausted()
+    setError('')
+    setLoaded(false)
+    setLoadAttempt((current) => current + 1)
+  }
 
   const games = useMemo(() => (Array.isArray(payload?.games) ? payload.games : []), [payload])
   const hideTotalEdges = previewMode && games.every((game) => finite(game.total?.edge) == null)
@@ -263,12 +289,13 @@ export default function NflGameMarkets() {
         </div>
       </div>
       {modelLabel && <p className="nfl-game-note">{modelLabel}. Posted lines are Unabated only. CG NUMBER is each team's projected score. The total is those two scores added together.</p>}
-      {error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
-      {!error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
-      {!error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}
-      {!error && loaded && !games.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}
-      {!error && loaded && !!games.length && !rows.length && <div className="nfl-notice">No games match these filters.</div>}
-      {!!rows.length && (
+      {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
+      {!hold && error && <div className="nfl-notice">Unable to load game markets: {error}</div>}
+      {!hold && !error && !loaded && <div className="nfl-notice">Loading NFL game markets.</div>}
+      {showPaywall && !error && loaded && !games.length && lockedCount > 0 && <div className="nfl-notice">Game markets are locked. {lockedCount} games are locked. Upgrade to see the full board.</div>}
+      {!hold && !error && loaded && !games.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL games are posted right now.'}</div>}
+      {!hold && !error && loaded && !!games.length && !rows.length && <div className="nfl-notice">No games match these filters.</div>}
+      {!hold && !!rows.length && (
         <div className="nfl-game-board">
           {rows.map((game) => <GameCard key={game.id || `${game.awayTeam}-${game.homeTeam}`} game={game} hideTotalEdge={hideTotalEdges} />)}
         </div>

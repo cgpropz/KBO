@@ -33,7 +33,7 @@ test('the NFL preview banner follows NFL_FREE_PREVIEW_ENABLED and other sports s
   assert.equal(freePreviewBannerText('nfl'), NFL_FREE_PREVIEW_ENABLED ? top3 : paused)
   const app = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '../src/App.jsx'), 'utf8')
   assert.match(app, /freePreviewBannerText\(visibleSport\)/)
-  assert.match(app, /!user \|\| tier === 'free'/)
+  assert.match(app, /!user \|\| \(tierConfirmed && tier === 'free'\)/)
 })
 
 test('the phone lock card is full width in the unlayered mobile sheet', () => {
