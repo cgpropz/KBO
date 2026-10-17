@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { filterNhlSharpOdds, filterStandardBoard } from '../src/standardBoard.js';
 import bundledStatus from '../public/status.json' with { type: 'json' };
+import memberRecapFile from './_memberRecap.json' with { type: 'json' };
 import { publicBoardStatus } from './_boardStatus.js';
 import {
   DATASETS,
@@ -11,6 +12,7 @@ import {
   nhlAccessDecision,
   datasetIsFullyPublic,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
+  memberRecapForTier,
   shapeForTier,
   sportAccess,
   _resetTierShapeFilters,
@@ -974,6 +976,40 @@ export async function handleBoardStatus(req, res, client) {
   return res.status(200).json(publicBoardStatus(bundledStatus));
 }
 
+// Paid members only. The file is baked beside the API, never served as a
+// static asset. Free and logged-out callers get an empty sports map.
+export async function handleMemberRecap(req, res, client) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  const authorization = req.headers?.authorization;
+  let tier = 'free';
+  if (String(authorization || '').trim()) {
+    let resolved;
+    try {
+      resolved = await resolveTier(client || getClient(), authorization);
+    } catch (err) {
+      console.error('[api/data] member_recap tier lookup failed:', err.message);
+      resolved = { tier: 'free', pending: false };
+    }
+    if (resolved?.pending) return sendTierPending(res);
+    tier = resolved?.tier || 'free';
+  }
+  // Same URL for every caller. Keep it off the shared cache so an empty
+  // logged-out response is never reused for a member.
+  res.setHeader('Vary', 'Authorization');
+  const shaped = memberRecapForTier(memberRecapFile, tier);
+  return sendData(req, res, {
+    data: shaped.data,
+    updatedAt: shaped.data.generated_at || null,
+    preview: shaped.preview,
+    lockedCount: shaped.lockedCount,
+    tier,
+    access: sportAccess(tier),
+  }, true);
+}
+
 export async function handleDataRequest(req, res, client) {
   // Live publish asks this before it splits a board. The marker is only
   // present once this reader is deployed, so an older site keeps id=1 as the
@@ -991,6 +1027,7 @@ export async function handleDataRequest(req, res, client) {
 
   const dsEarly = String(req.query?.ds || '');
   if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
+  if (dsEarly === 'member_recap') return handleMemberRecap(req, res, client);
 
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   res.setHeader('Vary', 'Authorization');

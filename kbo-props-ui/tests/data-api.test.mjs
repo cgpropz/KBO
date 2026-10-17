@@ -334,11 +334,31 @@ test('matchups preview keeps the slate but strips projections/lines', async () =
   assert.equal(res.body.lockedCount, 2)
 })
 
-test('graded history: free keeps settled results, trims pending picks', async () => {
-  const res = await call('graded_props_history')
-  assert.equal(res.body.data.graded.length, 20)
-  assert.equal(res.body.data.pending.length, 3)
-  assert.equal(res.body.lockedCount, 6)
+test('graded history: free and logged-out callers do not receive the record', async () => {
+  for (const token of [undefined, 'tok-free']) {
+    const res = await call('graded_props_history', token)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.preview, true)
+    assert.equal(res.body.data.graded, undefined)
+    assert.equal(res.body.data.summary, undefined)
+    assert.equal(JSON.stringify(res.body).includes('overall_hit_rate'), false)
+    assert.equal(JSON.stringify(res.body).includes('"hits"'), false)
+    assert.equal(res.body.data.pending.length, 3)
+    assert.equal(res.body.lockedCount, 6)
+  }
+  const paid = await call('graded_props_history', 'tok-owner')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.data.graded.length, 20)
+})
+
+test('member recap is empty for free and logged-out callers', async () => {
+  for (const token of [undefined, 'tok-free']) {
+    const res = await call('member_recap', token)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.preview, true)
+    assert.deepEqual(res.body.data.sports, {})
+    assert.equal(JSON.stringify(res.body).includes('"hits"'), false)
+  }
 })
 
 test('public-stat datasets are returned in full to free users', async () => {

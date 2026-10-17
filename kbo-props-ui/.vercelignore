@@ -37,6 +37,11 @@ dist/data/nhl/
 public/status.json
 dist/status.json
 
+# Member recap is served by /api/data?ds=member_recap. A static copy would
+# publish the hit/miss counts.
+public/member-recap.json
+dist/member-recap.json
+
 # Local secrets / env files (Vercel uses dashboard env vars)
 .env
 .env.*

@@ -461,16 +461,62 @@ function previewMatchups(payload) {
   return { data: { ...obj, matchups: data }, lockedCount };
 }
 
-// graded_props_history: settled results (graded + summary) are the public
-// track record shown on the free Tracker tab; today's open picks (pending)
-// are paid content and are trimmed to FREE_ROW_LIMIT.
+// graded_props_history: the settled record (graded rows and the summary)
+// is paid. Free and logged-out callers get today's open picks only, trimmed
+// to FREE_ROW_LIMIT. No hit rate is included.
+const GRADED_RECORD_KEYS = new Set([
+  'graded',
+  'summary',
+  'hits',
+  'misses',
+  'pushes',
+  'overall_hit_rate',
+  'hit_rate',
+  'over_hit_rate',
+  'under_hit_rate',
+]);
+
 function previewGradedHistory(payload) {
-  const obj = payload && typeof payload === 'object' ? payload : {};
+  const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
   const pending = Array.isArray(obj.pending) ? obj.pending : [];
   const kept = pending.slice(0, FREE_ROW_LIMIT);
+  const data = { pending: kept };
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === 'pending' || GRADED_RECORD_KEYS.has(key)) continue;
+    data[key] = value;
+  }
   return {
-    data: { ...obj, pending: kept },
+    data,
     lockedCount: Math.max(0, pending.length - kept.length),
+  };
+}
+
+// Member hub recap. Same per-sport gate as the paid boards. A free or
+// logged-out caller gets no slate counts.
+export function memberRecapForTier(recap, tier) {
+  const sports = recap?.sports && typeof recap.sports === 'object' && !Array.isArray(recap.sports) ? recap.sports : {};
+  const access = sportAccess(tier);
+  const member = Object.values(access).some((open) => open === true);
+  const allowed = {};
+  if (member) {
+    for (const [sport, record] of Object.entries(sports)) {
+      if (access[sport] !== true || !record || typeof record !== 'object') continue;
+      allowed[sport] = {
+        slate_date_iso: typeof record.slate_date_iso === 'string' ? record.slate_date_iso : null,
+        graded_at: record.graded_at || null,
+        hits: Number(record.hits) || 0,
+        misses: Number(record.misses) || 0,
+        pushes: Number(record.pushes) || 0,
+      };
+    }
+  }
+  return {
+    data: {
+      generated_at: recap?.generated_at || null,
+      sports: allowed,
+    },
+    preview: !member,
+    lockedCount: 0,
   };
 }
 

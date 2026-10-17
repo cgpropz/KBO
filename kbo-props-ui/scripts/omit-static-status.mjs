@@ -4,3 +4,4 @@
 import { rmSync } from 'node:fs'
 
 rmSync(new URL('../dist/status.json', import.meta.url), { force: true })
+rmSync(new URL('../dist/member-recap.json', import.meta.url), { force: true })

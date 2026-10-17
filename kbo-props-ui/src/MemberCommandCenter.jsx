@@ -206,9 +206,8 @@ function L10Chart({ values, line, side }) {
 function useRecap() {
   const [recap, setRecap] = useState(null);
   useEffect(() => {
-    fetch(`/member-recap.json?v=${Date.now()}`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setRecap(j?.sports || {}))
+    fetchApiDataset('member_recap')
+      .then((snap) => setRecap(snap?.preview ? {} : (snap?.data?.sports || {})))
       .catch(() => setRecap({}));
   }, []);
   return recap;
