@@ -21,6 +21,7 @@ import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import { BoardLoadError } from '../BoardLoadError'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { wnbaLogoUrl } from '../slipBoardModel.js'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -192,7 +193,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
-              <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={item.team ? `/logos/${item.team}.png` : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={wnbaLogoUrl(item.team) ? fitImage(wnbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />

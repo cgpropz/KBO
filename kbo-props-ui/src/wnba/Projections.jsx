@@ -9,6 +9,7 @@ import { slateDateLabel } from '../wnbaBoard'
 import { fitImage } from '../fitImage.js'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { wnbaLogoUrl } from '../slipBoardModel.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const MINUTE_TABS = [
@@ -408,7 +409,7 @@ export default function Projections({ onSelectPlayer }) {
                   <div>
                     <p className="edge-name">{player.name}</p>
                     <div className="edge-tags">
-                      <span className="edge-team-tag"><CardTeamLogo team={player.team} src={player.team ? `/logos/${player.team}.png` : ''} />{player.team}</span>
+                      <span className="edge-team-tag"><CardTeamLogo team={player.team} src={wnbaLogoUrl(player.team) ? fitImage(wnbaLogoUrl(player.team), 16) : ''} />{player.team}</span>
                       <span className="edge-vs-tag" title={versus || matchupTag}>{matchupTag}</span>
                     </div>
                   </div>

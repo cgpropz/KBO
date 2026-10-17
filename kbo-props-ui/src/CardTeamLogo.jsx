@@ -1,5 +1,8 @@
+import { useState } from 'react'
+
 export function CardTeamLogo({ team, src }) {
-  if (!team || !src) return null
+  const [failedSrc, setFailedSrc] = useState('')
+  if (!team || !src || src === failedSrc) return null
   return (
     <img
       className="board-team-logo"
@@ -8,6 +11,7 @@ export function CardTeamLogo({ team, src }) {
       data-testid="player-team-logo"
       data-team={team}
       loading="lazy"
+      onError={() => setFailedSrc(src)}
     />
   )
 }

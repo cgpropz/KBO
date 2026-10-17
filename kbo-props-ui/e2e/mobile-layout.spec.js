@@ -88,6 +88,7 @@ const fixtures = {
     player: 'Aja Wilson',
     team: 'LVA',
     position: 'Forward',
+    avgMins: 32,
     projPts: 24,
     gp: 20,
     recentGames: wnbaGames,
@@ -254,6 +255,7 @@ test('member cards show the player logo and hide model weights', async ({ page }
     ['nhl-dashboard', '/?sport=nhl&previewTier=owner', 'EDM', 'vs CGY'],
     ['nhl-board', '/?sport=nhl&page=projections&previewTier=owner', 'EDM', 'vs CGY'],
     ['wnba-dashboard', '/?sport=wnba&previewTier=owner', 'LVA', 'vs NYL'],
+    ['wnba-board', '/?sport=wnba&page=projections&previewTier=owner', 'LVA', 'vs NYL'],
     ['nba-dashboard', '/?sport=nba&previewTier=owner', 'DEN', 'vs LAL'],
     ['kbo-board', '/?sport=kbo&previewTier=owner', 'KIA', 'vs LG'],
   ]
@@ -262,6 +264,10 @@ test('member cards show the player logo and hide model weights', async ({ page }
     const logo = page.getByTestId('player-team-logo').first()
     await expect(logo).toBeVisible()
     await expect(logo).toHaveAttribute('data-team', team)
+    if (name.startsWith('wnba')) {
+      await expect(logo).toHaveAttribute('src', /teamlogos%2Fwnba%2F500%2Flv\.png/)
+      await expect(logo).not.toHaveAttribute('src', /\/logos\//)
+    }
     await expect(page.locator('body')).toContainText(versus)
     await expect(page.locator('body')).not.toContainText('L3 50%')
     await expect(page.locator('body')).not.toContainText('SCORE SCALE')

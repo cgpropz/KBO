@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { opponentLabel } from '../src/cardMark.js'
+import { wnbaLogoUrl } from '../src/slipBoardModel.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -69,6 +70,20 @@ test('member boards keep the live-model label and drop projection weights', () =
   const nba = readFileSync(join(ROOT, 'src/nba/NbaEdge.jsx'), 'utf8')
   assert.match(wnba, /Live model \/ DvP adjusted/)
   assert.match(nba, /Live model \/ DvP adjusted/)
+})
+
+test('WNBA cards use ESPN logos and a failed logo hides', () => {
+  assert.match(wnbaLogoUrl('ATL'), /^https:\/\/a\.espncdn\.com\/i\/teamlogos\/wnba\/500\/atl\.png$/)
+  assert.match(wnbaLogoUrl('GSV'), /^https:\/\/a\.espncdn\.com\/i\/teamlogos\/wnba\/500\/gs\.png$/)
+  assert.equal(wnbaLogoUrl(''), '')
+  const logo = readFileSync(join(ROOT, 'src/CardTeamLogo.jsx'), 'utf8')
+  assert.match(logo, /onError=\{\(\) => setFailedSrc\(src\)\}/)
+  assert.match(logo, /src === failedSrc\) return null/)
+  for (const file of ['src/wnba/Dashboard.jsx', 'src/wnba/Projections.jsx']) {
+    const text = readFileSync(join(ROOT, file), 'utf8')
+    assert.match(text, /wnbaLogoUrl\(/, file)
+    assert.doesNotMatch(text, /\/logos\//, file)
+  }
 })
 
 test('every member card logo is the player team and the opponent is labeled', () => {
