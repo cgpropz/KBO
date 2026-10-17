@@ -23,6 +23,14 @@ const DOUBLE_LISTED = `
         <a title="Rhyne Howard">Rhyne Howard</a>
         <span class="lineup__pos">G</span>
       </li>
+      <li class="lineup__player">
+        <a title="Naz Hillmon">Naz Hillmon</a>
+        <span class="lineup__pos">F</span>
+      </li>
+      <li class="lineup__player">
+        <a title="Jordin Canada">Jordin Canada</a>
+        <span class="lineup__pos">G</span>
+      </li>
       <li class="lineup__title is-middle">MAY NOT PLAY</li>
       <li class="lineup__player is-pct-play-50">
         <a title="Allisha Gray">Allisha Gray</a>
@@ -35,9 +43,24 @@ const DOUBLE_LISTED = `
         <span class="lineup__inj">OUT</span>
       </li>
       <li class="lineup__player is-pct-play-50">
+        <a title="Jordin Canada">Jordin Canada</a>
+        <span class="lineup__pos">G</span>
+        <span class="lineup__inj">GTD</span>
+      </li>
+      <li class="lineup__player is-pct-play-0">
+        <a title="Naz Hillmon">Naz Hillmon</a>
+        <span class="lineup__pos">F</span>
+        <span class="lineup__inj">OUT</span>
+      </li>
+      <li class="lineup__player is-pct-play-50">
         <a title="Maya Caldwell">Maya Caldwell</a>
         <span class="lineup__pos">G</span>
         <span class="lineup__inj">GTD</span>
+      </li>
+      <li class="lineup__player is-pct-play-75">
+        <a title="Aerial Powers">Aerial Powers</a>
+        <span class="lineup__pos">F</span>
+        <span class="lineup__inj">QUES</span>
       </li>
     </ul>
     <ul class="lineup__list is-home">
@@ -57,9 +80,17 @@ test('a starter listed again under MAY NOT PLAY stays a starter with the GTD bad
   const gray = atlanta.players.filter((player) => player.name === 'Allisha Gray');
   assert.deepEqual(gray, [{ name: 'Allisha Gray', pos: 'G', status: 'gtd' }]);
   assert.equal(atlanta.inactive.some((player) => player.name === 'Allisha Gray'), false);
-  assert.deepEqual(atlanta.inactive, [{ name: 'Tina Charles', pos: 'F', status: 'out' }]);
+  const canada = atlanta.players.filter((player) => player.name === 'Jordin Canada');
+  assert.deepEqual(canada, [{ name: 'Jordin Canada', pos: 'G', status: 'gtd' }]);
+  assert.equal(atlanta.inactive.some((player) => player.name === 'Jordin Canada'), false);
+  assert.equal(atlanta.players.some((player) => player.name === 'Naz Hillmon'), false);
+  assert.deepEqual(atlanta.inactive, [
+    { name: 'Naz Hillmon', pos: 'F', status: 'out' },
+    { name: 'Tina Charles', pos: 'F', status: 'out' },
+    { name: 'Maya Caldwell', pos: 'G', status: 'gtd' },
+    { name: 'Aerial Powers', pos: 'F', status: 'questionable' },
+  ]);
   assert.equal(atlanta.players.some((player) => player.name === 'Maya Caldwell'), false);
-  assert.equal(atlanta.inactive.some((player) => player.name === 'Maya Caldwell'), false);
   assert.deepEqual(game.home.players.map((player) => player.name), ["A'ja Wilson"]);
   assert.deepEqual(game.home.inactive, []);
 });

@@ -184,7 +184,9 @@ export function unavailableFromLineups(sport, payload) {
         if (!team || typeof team !== 'object') continue
         for (const player of team.players || []) addBlockedName(names, player?.name, player?.status)
         for (const player of team.inactive || []) {
-          if (player?.name) names.add(normalizePlayerName(player.name))
+          if (!player?.name) continue
+          if (player.status === 'gtd' || player.status === 'questionable') continue
+          names.add(normalizePlayerName(player.name))
         }
       }
     }

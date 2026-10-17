@@ -11,14 +11,49 @@ function playerStatus(className, injuryText) {
   return 'expected';
 }
 
-// Rotowire lists a GTD starter under Expected Lineup and again under MAY NOT
-// PLAY. The second list is mayNotPlay. Names already in the starters stay
-// starters, with the status from the expected lineup. Only players marked out
-// who are not starters go to the out list.
+// out is more cautious than gtd or questionable, and both of those are more
+// cautious than a plain expected listing. Same title-name within a team merges
+// to the more cautious status.
+const STATUS_CAUTION = { out: 3, gtd: 2, questionable: 2, expected: 1 };
+
+function moreCautious(current, next) {
+  return (STATUS_CAUTION[next] || 0) > (STATUS_CAUTION[current] || 0) ? next : current;
+}
+
 function splitLineup(starters, mayNotPlay) {
-  const starterNames = new Set(starters.map((player) => player.name));
-  const inactive = mayNotPlay.filter((player) => player.status === 'out' && !starterNames.has(player.name));
-  return { starters, inactive };
+  const byName = new Map();
+  function add(player, listedAsStarter) {
+    if (!player?.name) return;
+    const prev = byName.get(player.name);
+    if (!prev) {
+      byName.set(player.name, { ...player, listedAsStarter });
+      return;
+    }
+    byName.set(player.name, {
+      name: player.name,
+      pos: prev.pos || player.pos,
+      status: moreCautious(prev.status, player.status),
+      listedAsStarter: prev.listedAsStarter || listedAsStarter,
+    });
+  }
+  for (const player of starters || []) add(player, true);
+  for (const player of mayNotPlay || []) add(player, false);
+
+  const mergedStarters = [];
+  const inactive = [];
+  for (const player of byName.values()) {
+    const row = { name: player.name, pos: player.pos, status: player.status };
+    if (player.status === 'out') {
+      inactive.push(row);
+      continue;
+    }
+    if (!player.listedAsStarter && (player.status === 'gtd' || player.status === 'questionable')) {
+      inactive.push(row);
+      continue;
+    }
+    if (player.listedAsStarter) mergedStarters.push(row);
+  }
+  return { starters: mergedStarters, inactive };
 }
 
 function parseRotowireLineups(html, normalizeTeamAbbr = (value) => String(value || '').trim().toUpperCase()) {

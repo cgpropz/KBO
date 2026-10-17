@@ -72,11 +72,12 @@ test('held and OUT players stay off the hub, including a Gauthier-style row', ()
   assert.equal(nfl.has('amon ra st brown'), true)
   assert.equal(nfl.has('sam laporta'), false)
   const wnba = unavailableFromLineups('wnba', [{
-    visitor: { players: [{ name: 'Angel Reese', status: 'out' }, { name: 'Allisha Gray', status: 'questionable' }], inactive: [{ name: 'Rhyne Howard' }] },
+    visitor: { players: [{ name: 'Angel Reese', status: 'out' }, { name: 'Allisha Gray', status: 'questionable' }], inactive: [{ name: 'Rhyne Howard' }, { name: 'Maya Caldwell', status: 'gtd' }] },
   }])
   assert.equal(wnba.has('angel reese'), true)
   assert.equal(wnba.has('rhyne howard'), true)
   assert.equal(wnba.has('allisha gray'), false)
+  assert.equal(wnba.has('maya caldwell'), false)
 })
 
 test('hub rows carry the board hit rate and log without changing the score', () => {
