@@ -81,21 +81,23 @@ function getClient() {
   return supabase;
 }
 
-// Short in-memory cache of snapshot rows per warm function instance, so a page
-// that loads several datasets does not hammer Supabase. Entitlement is still
-// decided per request.
+// Process-wide cache of each assembled board, keyed by table and version.
+// A warm instance serves a copy younger than 60s. After that it serves the
+// same copy immediately and refreshes it in the background (stale-while-
+// revalidate) until the copy is 30 min old. Entitlement is still decided
+// per request. One in-flight read per table, so a burst shares one fetch.
 const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map();
-// When Supabase is slow, serve the last good row this instance read (up to
-// 30 min old) instead of a 503. Identical reads share one in-flight request so
-// a burst does not pile multi-MB reads onto the PostgREST pool.
+const latestVersion = new Map();
 export const STALE_MAX_MS = 30 * 60 * 1000;
+export const cacheWindows = { freshMs: CACHE_TTL_MS, staleMs: STALE_MAX_MS };
 const inflight = new Map();
 
-// Hard ceiling on Supabase snapshot reads. Without this, an eastern-US latency
-// incident leaves Vercel functions hung and the UI stuck on "Loading…".
-// Mutable so unit tests can shrink the window without waiting a real 8s.
-export const timeouts = { snapshotReadMs: 8_000, tierLookupMs: 4_000, lastGoodReadMs: 6_000 };
+// The snapshot read has to finish, and the last-good copy after it, inside
+// the client's 12s fetch. Auth runs beside the read and keeps its own 4s cap.
+// Mutable so unit tests can shrink the window without waiting.
+export const SNAPSHOT_READ_MS = 4_500;
+export const timeouts = { snapshotReadMs: SNAPSHOT_READ_MS, tierLookupMs: 4_000, lastGoodReadMs: 6_000 };
 export function _setTimeouts(partial) {
   Object.assign(timeouts, partial);
 }
@@ -188,31 +190,95 @@ async function readNbaPlayers(client) {
   if (marker == null) return head;
   try {
     const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client));
-    cache.set('nba_players', { at: Date.now(), row: assembled });
+    rememberBoard('nba_players', assembled);
     return assembled;
   } catch (err) {
-    cache.delete('nba_players');
+    forgetBoard('nba_players');
     throw err;
   }
 }
 
-async function readSnapshot(client, table) {
-  const hit = cache.get(table);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.row;
-  if (inflight.has(table)) return inflight.get(table);
-  const pending = readSnapshotResolved(client, table).catch(async (err) => {
-    if (hit && hit.row && Date.now() - hit.at < STALE_MAX_MS) return hit.row;
-    // Cold instance: fall back to the private last-good copy the publish job
-    // writes to Storage. Read with the server key only; never a public URL.
-    const lastGood = await readLastGood(client, table);
-    if (lastGood) {
-      cache.set(table, { at: Date.now() - CACHE_TTL_MS + 15_000, row: lastGood });
-      return lastGood;
+export function boardCacheVersion(row) {
+  if (!row || row.data == null) return String(row?.updated_at || '');
+  const data = row.data;
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (item && typeof item.generated_at === 'string' && item.generated_at) return item.generated_at;
     }
-    throw err;
-  }).finally(() => inflight.delete(table));
+  } else if (typeof data === 'object') {
+    if (typeof data.generated_at === 'string' && data.generated_at) return data.generated_at;
+    const manifest = snapshotChunkManifest(data);
+    if (typeof manifest?.version === 'string' && manifest.version) return manifest.version;
+  }
+  return String(row.updated_at || '');
+}
+
+function cacheKey(table, version) {
+  return `${table}\0${version}`;
+}
+
+function rememberBoard(table, row, version = boardCacheVersion(row), at = Date.now()) {
+  const prev = latestVersion.get(table);
+  if (prev !== undefined && prev !== version) cache.delete(cacheKey(table, prev));
+  latestVersion.set(table, version);
+  cache.set(cacheKey(table, version), { at, version, row });
+}
+
+function forgetBoard(table) {
+  const version = latestVersion.get(table);
+  if (version !== undefined) cache.delete(cacheKey(table, version));
+  latestVersion.delete(table);
+}
+
+function currentBoard(table) {
+  if (!latestVersion.has(table)) return null;
+  return cache.get(cacheKey(table, latestVersion.get(table))) || null;
+}
+
+function isNbaPlayerManifest(table, row) {
+  return table === 'nba_players'
+    && row?.data
+    && typeof row.data === 'object'
+    && !Array.isArray(row.data)
+    && row.data.nbaPlayerChunks != null;
+}
+
+// Cold instance: fall back to the private last-good copy the publish job
+// writes to Storage. Read with the server key only; never a public URL.
+async function boardAfterReadError(client, table, err) {
+  const hit = currentBoard(table);
+  if (hit?.row && Date.now() - hit.at < cacheWindows.staleMs) return hit.row;
+  const lastGood = await readLastGood(client, table);
+  if (lastGood) {
+    rememberBoard(table, lastGood, boardCacheVersion(lastGood), Date.now() - cacheWindows.freshMs + 15_000);
+    return lastGood;
+  }
+  throw err;
+}
+
+function startBoardRead(client, table) {
+  if (inflight.has(table)) return inflight.get(table);
+  const pending = readSnapshotResolved(client, table).catch((err) => boardAfterReadError(client, table, err));
   inflight.set(table, pending);
+  // Both handlers are attached so a background refresh cannot reject later
+  // as an unhandled rejection. Callers that await `pending` still see it.
+  pending.then(() => {
+    if (inflight.get(table) === pending) inflight.delete(table);
+  }, () => {
+    if (inflight.get(table) === pending) inflight.delete(table);
+  });
   return pending;
+}
+
+async function readSnapshot(client, table) {
+  const hit = currentBoard(table);
+  const age = hit ? Date.now() - hit.at : Infinity;
+  if (hit && age < cacheWindows.freshMs) return hit.row;
+  if (hit && age < cacheWindows.staleMs) {
+    startBoardRead(client, table);
+    return hit.row;
+  }
+  return startBoardRead(client, table);
 }
 
 export const LAST_GOOD_BUCKET = 'board-last-good';
@@ -223,6 +289,24 @@ const NFL_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 export const LAST_GOOD_MAX_AGE_MS = Object.fromEntries(
   ['nfl_projections', 'nfl_lineups', 'correlations_nfl'].map((t) => [t, NFL_MAX_AGE_MS]),
 );
+// KBO and WNBA publishes often land many hours apart, and a timed-out read
+// used to 503 because the 6h copy was already past the window. Serve the
+// stored board through the next slate (36h) instead of an empty hub.
+export const LAST_GOOD_KBO_WNBA_MAX_AGE_MS = 36 * 60 * 60 * 1000;
+
+function datasetSport(table) {
+  for (const spec of Object.values(DATASETS)) {
+    if (spec.table === table) return spec.sport;
+  }
+  return null;
+}
+
+export function lastGoodMaxAgeMs(table) {
+  if (Object.hasOwn(LAST_GOOD_MAX_AGE_MS, table)) return LAST_GOOD_MAX_AGE_MS[table];
+  const sport = datasetSport(table);
+  if (sport === 'kbo' || sport === 'wnba') return LAST_GOOD_KBO_WNBA_MAX_AGE_MS;
+  return LAST_GOOD_DEFAULT_MAX_AGE_MS;
+}
 
 // Age comes from the board's own generated time first (data[0].generated_at or
 // a top-level generated_at), then the stored updated_at, because
@@ -255,7 +339,7 @@ export async function readLastGood(client, table) {
     if (!parsed || parsed.data == null) return null;
     // A chunk manifest is not the board. The bucket stores the full payload.
     if (snapshotChunkManifest(parsed.data)) return null;
-    const maxAge = Object.hasOwn(LAST_GOOD_MAX_AGE_MS, table) ? LAST_GOOD_MAX_AGE_MS[table] : LAST_GOOD_DEFAULT_MAX_AGE_MS;
+    const maxAge = lastGoodMaxAgeMs(table);
     const ts = lastGoodTimestamp(parsed);
     if (!Number.isFinite(ts) || Date.now() - ts > maxAge) {
       console.warn(`[api/data] ${table} last-good copy too old (${parsed.updated_at || 'no time'}); not served`);
@@ -298,24 +382,55 @@ async function fetchSnapshotRow(client, table, id) {
   }
 }
 
-// id=1 is the board, or a manifest plus the chunk ids it names. Chunks are
-// read one id at a time so a multi-megabyte board is not one statement.
-// The cached row is the joined payload, identical to a single-row publish.
-// Reassemble here, before the cache and before any ?view=hub trim, so a
-// caller never shapes the manifest.
+async function fetchSnapshotRows(client, table, ids) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
+  try {
+    let builder = client
+      .from(table)
+      .select('id, data, updated_at')
+      .in('id', ids);
+    if (typeof builder.abortSignal === 'function') {
+      builder = builder.abortSignal(controller.signal);
+    }
+    const { data, error } = await withTimeout(
+      builder,
+      timeouts.snapshotReadMs,
+      'Dataset read timed out'
+    );
+    if (error) throw new Error(error.message);
+    if (Array.isArray(data)) return data;
+    return data ? [data] : [];
+  } catch (err) {
+    if (err?.code === 'UPSTREAM_TIMEOUT') throw err;
+    if (err?.name === 'AbortError' || controller.signal.aborted) {
+      throw timeoutError('Dataset read timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// id=1 is the board, or a manifest plus the chunk ids it names. Every chunk
+// in that manifest is one .in('id', ids) read, then reassembled only when
+// the set is complete and every row carries the manifest version. The cached
+// row is that joined payload, identical to a single-row publish. Reassemble
+// here, before the cache and before any ?view=hub trim, so a caller never
+// shapes the manifest.
 async function readSnapshotResolved(client, table) {
   const head = await fetchSnapshotRow(client, table, 1);
   if (!head || !snapshotChunkManifest(head.data)) {
-    cache.set(table, { at: Date.now(), row: head });
+    if (!isNbaPlayerManifest(table, head)) rememberBoard(table, head);
     return head;
   }
   const ids = head.data.snapshotChunks.ids;
   if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isInteger(id))) {
     throw new Error('snapshot chunk manifest is invalid');
   }
-  const extra = await Promise.all(ids.map((id) => fetchSnapshotRow(client, table, id)));
+  const extra = await fetchSnapshotRows(client, table, ids);
   const assembled = assembleSnapshotRows(head, extra);
-  cache.set(table, { at: Date.now(), row: assembled });
+  rememberBoard(table, assembled, head.data.snapshotChunks.version);
   return assembled;
 }
 
@@ -352,7 +467,7 @@ const NBA_FLAG_CACHE_KEY = `app_flags:${NBA_PUBLIC_FLAG}`;
 // Missing row is not public. A query error throws so the caller can fail closed.
 export async function readNbaPublicFlag(client) {
   const hit = cache.get(NBA_FLAG_CACHE_KEY);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
+  if (hit && Date.now() - hit.at < cacheWindows.freshMs) return hit.value;
 
   const { data, error } = await client
     .from('app_flags')
@@ -496,34 +611,24 @@ export async function nbaSectionOpen(req, client) {
 }
 
 async function handleNhlRequest(req, res, client, ds) {
-  let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
-  try {
-    caller = await withTimeout(
-      resolveNbaCaller(client, req.headers?.authorization),
-      timeouts.tierLookupMs,
-      'NHL access lookup timed out'
-    );
-  } catch {
-    // A lookup blip must not open the board. Fall through to the free preview.
-    caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
-  }
-  // Same entitlement as KBO/WNBA/NFL, plus the admin email. Anything short of
-  // 'full' is the public preview, not a 403.
-  const decision = nhlAccessDecision({
-    emailResolved: caller.emailResolved,
-    email: caller.email,
-    tierResolved: caller.tierResolved,
-    tier: caller.tier,
-  });
-
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec || spec.sport !== 'nhl') {
     return res.status(400).json({ error: 'Unknown dataset' });
   }
 
+  // Auth and the snapshot start together. A lookup blip must not open the
+  // board, and it must not hold the read: the free preview is the fallback.
+  const callerPromise = withTimeout(
+    resolveNbaCaller(client, req.headers?.authorization),
+    timeouts.tierLookupMs,
+    'NHL access lookup timed out'
+  ).catch(() => ({ emailResolved: false, email: null, tierResolved: false, tier: 'free' }));
+  const rowPromise = readSnapshot(client, spec.table);
+
+  let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   let row;
   try {
-    row = await readSnapshot(client, spec.table);
+    [caller, row] = await Promise.all([callerPromise, rowPromise]);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
     const fallback = landingFallbackBody(ds, req.headers?.authorization);
@@ -542,6 +647,15 @@ async function handleNhlRequest(req, res, client, ds) {
     if (fallback) return sendData(req, res, fallback, false);
     return res.status(404).json({ error: 'Dataset not published yet' });
   }
+
+  // Same entitlement as KBO/WNBA/NFL, plus the admin email. Anything short of
+  // 'full' is the public preview, not a 403.
+  const decision = nhlAccessDecision({
+    emailResolved: caller.emailResolved,
+    email: caller.email,
+    tierResolved: caller.tierResolved,
+    tier: caller.tier,
+  });
 
   let board;
   try {
@@ -687,21 +801,19 @@ export async function handleDataRequest(req, res, client) {
     }
   }
 
-  let tier = 'free';
-  try {
-    ({ tier } = await withTimeout(
-      resolveTier(client, req.headers?.authorization),
-      timeouts.tierLookupMs,
-      'Tier lookup timed out'
-    ));
-  } catch {
-    // Auth/profile blips (or timeouts) must not block the public preview.
-    tier = 'free';
-  }
+  // Auth and the snapshot start together. The 4s cap still applies, and a
+  // blip falls through to the free preview instead of blocking the read.
+  const tierPromise = withTimeout(
+    resolveTier(client, req.headers?.authorization),
+    timeouts.tierLookupMs,
+    'Tier lookup timed out'
+  ).then((result) => result?.tier || 'free').catch(() => 'free');
+  const rowPromise = readSnapshot(client, spec.table);
 
+  let tier = 'free';
   let row;
   try {
-    row = await readSnapshot(client, spec.table);
+    [tier, row] = await Promise.all([tierPromise, rowPromise]);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
     const fallback = landingFallbackBody(ds, req.headers?.authorization);
@@ -738,6 +850,8 @@ export async function handleDataRequest(req, res, client) {
 
 export function _clearCache() {
   cache.clear();
+  latestVersion.clear();
+  inflight.clear();
 }
 
 export default function handler(req, res) {

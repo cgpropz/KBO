@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -16,6 +16,11 @@ import {
 } from '../api/_dataAccess.js'
 
 const NOW = '2026-09-25T12:00:00Z'
+const DEFAULT_TIMEOUTS = {
+  snapshotReadMs: timeouts.snapshotReadMs,
+  tierLookupMs: timeouts.tierLookupMs,
+  lastGoodReadMs: timeouts.lastGoodReadMs,
+}
 
 function kboBoard(nCards = 6, propsPerCard = 3) {
   return {
@@ -592,6 +597,241 @@ test('board clocks are public and never include prop rows', async () => {
   assert.equal(JSON.stringify(res.body).includes('Paid Player'), false)
   for (const row of res.body.boards) {
     assert.deepEqual(Object.keys(row).sort(), ['board_updated_at', 'injuries_checked_at', 'prop_count', 'sport', 'stale'])
+  }
+})
+
+test('snapshot reads finish in time for last-good inside the 12s client window', () => {
+  assert.equal(SNAPSHOT_READ_MS, 4_500)
+  assert.equal(DEFAULT_TIMEOUTS.snapshotReadMs, SNAPSHOT_READ_MS)
+  assert.equal(DEFAULT_TIMEOUTS.tierLookupMs, 4_000)
+  assert.ok(DEFAULT_TIMEOUTS.snapshotReadMs + DEFAULT_TIMEOUTS.lastGoodReadMs < 12_000)
+})
+
+test('the snapshot read starts before the tier lookup finishes', async () => {
+  for (const ds of ['prizepicks_props', 'nhl_projections']) {
+    let released = false
+    let release
+    const gate = new Promise((resolve) => { release = () => { released = true; resolve() } })
+    let sawSnapshot = false
+    const client = {
+      auth: {
+        async getUser() {
+          await gate
+          return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+        },
+      },
+      from(table) {
+        const chain = {
+          select() { return chain },
+          eq() { return chain },
+          abortSignal() { return chain },
+          async maybeSingle() {
+            if (table === 'user_profiles') return { data: { tier: 'owner' }, error: null }
+            assert.equal(released, false, table)
+            sawSnapshot = true
+            const payload = table === 'nhl_projections'
+              ? [{ player: 'Skater', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard', rankEligible: true }]
+              : structuredClone(TABLES[table])
+            return { data: { data: payload, updated_at: NOW }, error: null }
+          },
+        }
+        return chain
+      },
+    }
+    _clearCache()
+    const res = mockRes()
+    const pending = handleDataRequest(
+      { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok' } },
+      res,
+      client,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    assert.equal(sawSnapshot, true, ds)
+    release()
+    await pending
+    assert.equal(res.statusCode, 200, ds)
+    assert.equal(res.body.preview, false, ds)
+  }
+})
+
+test('one in-flight read serves a burst for the same table', async () => {
+  _clearCache()
+  let reads = 0
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  const client = mockClient()
+  const original = client.from.bind(client)
+  client.from = (table) => {
+    const chain = original(table)
+    if (table !== 'nfl_projections') return chain
+    return {
+      select() { return this },
+      eq() { return this },
+      abortSignal() { return this },
+      maybeSingle() {
+        reads += 1
+        return gate.then(() => ({
+          data: { data: structuredClone(TABLES.nfl_projections), updated_at: NOW },
+          error: null,
+        }))
+      },
+    }
+  }
+  const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } }
+  const a = mockRes()
+  const b = mockRes()
+  const pending = Promise.all([
+    handleDataRequest(req, a, client),
+    handleDataRequest({ ...req, headers: { ...req.headers } }, b, client),
+  ])
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.equal(reads, 1)
+  release()
+  await pending
+  assert.equal(a.statusCode, 200)
+  assert.equal(b.statusCode, 200)
+  assert.equal(a.body.preview, false)
+  assert.equal(b.body.data.length, a.body.data.length)
+})
+
+test('a board older than 60s is served while one refresh runs', async () => {
+  const prevFresh = cacheWindows.freshMs
+  cacheWindows.freshMs = 0
+  try {
+    _clearCache()
+    const first = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      first,
+      mockClient(),
+    )
+    assert.equal(first.statusCode, 200)
+    let reads = 0
+    let release
+    const gate = new Promise((resolve) => { release = resolve })
+    const slow = mockClient()
+    const original = slow.from.bind(slow)
+    slow.from = (table) => {
+      const chain = original(table)
+      if (table !== 'nfl_projections') return chain
+      return {
+        select() { return this },
+        eq() { return this },
+        abortSignal() { return this },
+        maybeSingle() {
+          reads += 1
+          return gate.then(() => chain.maybeSingle())
+        },
+      }
+    }
+    const started = Date.now()
+    const second = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      second,
+      slow,
+    )
+    assert.equal(second.statusCode, 200)
+    assert.equal(second.body.preview, false)
+    assert.ok(Date.now() - started < 200, 'stale copy waited on the refresh')
+    assert.equal(reads, 1)
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  } finally {
+    cacheWindows.freshMs = prevFresh
+    _clearCache()
+  }
+})
+
+test('a copy older than 30 min is not served from memory', async () => {
+  const prevWindows = { ...cacheWindows }
+  const prevTimeouts = { ...timeouts }
+  cacheWindows.freshMs = 0
+  cacheWindows.staleMs = 0
+  _setTimeouts({ snapshotReadMs: 30, tierLookupMs: 30, lastGoodReadMs: 30 })
+  try {
+    _clearCache()
+    const first = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: 'Bearer tok-owner' } },
+      first,
+      mockClient(),
+    )
+    assert.equal(first.statusCode, 200)
+    const client = mockClient()
+    const profiles = mockClient().from('user_profiles')
+    client.from = (table) => {
+      if (table === 'user_profiles') return profiles
+      return {
+        select() { return this },
+        eq() { return this },
+        abortSignal() { return this },
+        maybeSingle() { return new Promise(() => {}) },
+      }
+    }
+    const second = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nfl_lineups' }, headers: { authorization: 'Bearer tok-owner' } },
+      second,
+      client,
+    )
+    assert.equal(second.statusCode, 503)
+    assert.equal(second.body.code, 'upstream_timeout')
+  } finally {
+    Object.assign(cacheWindows, prevWindows)
+    _setTimeouts(prevTimeouts)
+    _clearCache()
+  }
+})
+
+function freshLastGood(table) {
+  const data = structuredClone(TABLES[table])
+  if (data && typeof data === 'object' && !Array.isArray(data)) data.generated_at = new Date().toISOString()
+  return {
+    from() {
+      return {
+        async download() {
+          return {
+            data: { text: async () => JSON.stringify({ data, updated_at: new Date().toISOString() }) },
+            error: null,
+          }
+        },
+      }
+    },
+  }
+}
+
+test('a timed-out KBO or WNBA read serves last-good instead of 503', async () => {
+  const prev = { ...timeouts }
+  _setTimeouts({ snapshotReadMs: 30, tierLookupMs: 30, lastGoodReadMs: 200 })
+  try {
+    for (const ds of ['wnba_projections_standard', 'prizepicks_props', 'wnba_lineups']) {
+      _clearCache()
+      const client = mockClient()
+      const profiles = mockClient().from('user_profiles')
+      client.storage = freshLastGood(ds)
+      client.from = (table) => {
+        if (table === 'user_profiles') return profiles
+        return {
+          select() { return this },
+          eq() { return this },
+          abortSignal() { return this },
+          maybeSingle() { return new Promise(() => {}) },
+        }
+      }
+      const res = mockRes()
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: { authorization: 'Bearer tok-owner' } },
+        res,
+        client,
+      )
+      assert.equal(res.statusCode, 200, ds)
+      assert.equal(res.body.preview, false, ds)
+      assert.ok(res.body.data, ds)
+    }
+  } finally {
+    _setTimeouts(prev)
+    _clearCache()
   }
 })
 
