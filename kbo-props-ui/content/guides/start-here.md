@@ -115,7 +115,7 @@ Key points from PrizePicks' own pages:
 - **You can mix them.** A lineup can combine goblins, demons and standard projections.
 - **Promotions may not apply.** Some promotions exclude goblins and demons. Check each promotion's terms.
 
-How this connects to CGPropz: the board compares the projection with the line it lists. A goblin or demon line is a different number from the standard line, so use the score for the line you're actually picking. The NHL and WNBA boards show demon and goblin lines alongside standard lines, and the NBA board puts standard, demon and goblin lines on separate tabs. Each is scored against its own line. NFL and KBO: {{CONFIRM WITH BOARD QA}}.
+How this connects to CGPropz: the board compares the projection with the line it lists. A goblin or demon line is a different number from the standard line, so use the score for the line you're actually picking. Every CGPropz board shows standard lines only. Demon and goblin lines aren't on the boards.
 
 ## PrizePicks Power Play vs Flex Play
 

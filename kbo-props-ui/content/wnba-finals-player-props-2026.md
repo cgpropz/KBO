@@ -80,7 +80,7 @@ Board updated: {{FROM BOARD QA LEDGER}} ET. Result after the game: {{FROM BOARD 
 
 ## How to read the board: CG Score and hit rates
 
-**CG Score** shows how far the CGPropz projection sits from the posted line. Around 50 means the projection and the line are roughly even, above 50 leans over, and below 50 leans under. A bigger gap from 50 means a bigger gap between the model and the line. Scores on low lines can run higher. It's a measure of that gap, not a probability, and not a claim that higher scores hit more often. The WNBA board shows demon and goblin lines alongside standard lines, and each is scored against its own line. The board treats a prop as an over when the projection is at or above the line. [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
+**CG Score** shows how far the CGPropz projection sits from the posted line. Around 50 means the projection and the line are roughly even, above 50 leans over, and below 50 leans under. A bigger gap from 50 means a bigger gap between the model and the line. Scores on low lines can run higher. It's a measure of that gap, not a probability, and not a claim that higher scores hit more often. The board treats a prop as an over when the projection is at or above the line. [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
 
 **Hit rates** count how often a player has cleared today's line in a recent window. The CGPropz WNBA board shows several:
 - **L10:** the player's last ten games against today's line.

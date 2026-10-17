@@ -53,6 +53,24 @@ function textForPhrase(path, text, phrase) {
   return scan
 }
 
+const STANDARD_LINE_FORBIDDEN = [
+  'demon and goblin lines alongside',
+  'separate tabs',
+  '{{',
+]
+
+function lineTypeHits(files) {
+  const hits = []
+  for (const path of files) {
+    if (!path.endsWith('.html')) continue
+    const text = readFileSync(path, 'utf8')
+    for (const phrase of STANDARD_LINE_FORBIDDEN) {
+      if (text.includes(phrase)) hits.push(`${relative(root, path)}: ${phrase}`)
+    }
+  }
+  return hits
+}
+
 function formulaHits(files) {
   const hits = []
   for (const path of files) {
@@ -96,6 +114,30 @@ test('public pages, guides, and the page generator keep the score formula privat
   assert.equal(explainerJs.includes('Score capped because the line is small.'), false)
 })
 
+test('built public pages show standard lines only and publish no placeholders', () => {
+  const files = walk(join(root, 'public'), []).filter((path) => path.endsWith('.html'))
+  assert.deepEqual(lineTypeHits(files), [])
+
+  const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
+  assert.match(guide, /Every CGPropz board shows standard lines only\. Demon and goblin lines aren't on the boards\./)
+  assert.match(guide, /On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score\./)
+  assert.match(guide, /KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board\./)
+  assert.match(guide, /NFL and NBA have no free top 3 right now\. The NBA board opens Tuesday, Oct 20\./)
+
+  const nba = readFileSync(join(root, 'public', 'nba-player-props.html'), 'utf8')
+  assert.match(nba, /<strong>Line types:<\/strong> The board shows standard lines only\./)
+  assert.match(nba, /The board shows standard lines only, with every prop available to All-Access members\./)
+  assert.equal(nba.includes('Double-Double'), false)
+  assert.equal(nba.includes('Triple-Double'), false)
+
+  const wnba = readFileSync(join(root, 'public', 'wnba-player-props.html'), 'utf8')
+  assert.equal(wnba.includes('alongside standard lines'), false)
+
+  const start = readFileSync(join(root, 'public', 'guides', 'start-here.html'), 'utf8')
+  assert.match(start, /A goblin \(green icon\) is an easier projection with a lower payout\./)
+  assert.match(start, /A demon \(red icon\) is a harder projection with a higher potential payout\./)
+})
+
 test('the built site JS does not publish the score formula', () => {
   const dist = join(root, 'dist')
   if (!existsSync(dist)) {
@@ -105,4 +147,5 @@ test('the built site JS does not publish the score formula', () => {
   const files = walk(dist, [], { suffixes: ['.js', '.html'] })
   assert.equal(files.length > 0, true)
   assert.deepEqual(formulaHits(files), [])
+  assert.deepEqual(lineTypeHits(files), [])
 })

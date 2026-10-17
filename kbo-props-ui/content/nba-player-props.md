@@ -61,8 +61,8 @@ Each row pairs a posted line with the CGPropz projection, the CG Score and recen
 - **Projection:** the model's estimate of the player's stat for tonight.
 - **CG Score:** how far the projection sits from the line. Around 50 means the projection and the line are roughly even, above 50 leans over, and below 50 leans under. A bigger gap from 50 means a bigger gap between the model and the line, and scores on low lines can run higher. [How CG Score works](/guides/cg-score).
 - **Hit rates:** how often the player cleared tonight's line in recent games. The board shows **L5, L10, L20, H2H** (against tonight's opponent) and **Season**, with **L10** as the main view. Read each with its game count.
-- **Line types:** standard, demon and goblin lines each have their own tab. Each line is scored against its own number.
-- **Stat types:** Points, Rebounds, Assists, 3-PT Made, Steals, Blocked Shots, Turnovers, Blocks + Steals, Points + Rebounds, Points + Assists, Rebounds + Assists, and Points + Rebounds + Assists. The demon tab also includes Double-Double and Triple-Double.
+- **Line types:** The board shows standard lines only.
+- **Stat types:** Points, Rebounds, Assists, 3-PT Made, Steals, Blocked Shots, Turnovers, Blocks + Steals, Points + Rebounds, Points + Assists, Rebounds + Assists, and Points + Rebounds + Assists.
 - **Free preview:** none for NBA. The full board is All-Access.
 
 A CG Score is not a probability, and a higher score is not a claim that a prop hits more often.
@@ -88,7 +88,7 @@ The NBA board opens Tuesday, Oct 20, and it's All-Access only. All-Access includ
 Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers at Knicks (7:00 PM ET) and Thunder at Spurs (9:30 PM ET).
 
 **Where are today's NBA player props?**
-On the CGPropz NBA board, which opens Tuesday, Oct 20. It shows standard, demon and goblin lines on separate tabs, with every prop available to All-Access members.
+On the CGPropz NBA board, which opens Tuesday, Oct 20. The board shows standard lines only, with every prop available to All-Access members.
 
 **Are there free NBA picks?**
 No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access and opens Tuesday, Oct 20.
@@ -106,7 +106,7 @@ The lines on CGPropz are the lines at the time the board was updated. Confirm th
   "@type": "FAQPage",
   "mainEntity": [
     { "@type": "Question", "name": "When does the 2026-27 NBA season start?", "acceptedAnswer": { "@type": "Answer", "text": "Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers at Knicks (7:00 PM ET) and Thunder at Spurs (9:30 PM ET)." } },
-    { "@type": "Question", "name": "Where are today's NBA player props?", "acceptedAnswer": { "@type": "Answer", "text": "On the CGPropz NBA board, which opens Tuesday, Oct 20. It shows standard, demon and goblin lines on separate tabs, with every prop available to All-Access members." } },
+    { "@type": "Question", "name": "Where are today's NBA player props?", "acceptedAnswer": { "@type": "Answer", "text": "On the CGPropz NBA board, which opens Tuesday, Oct 20. The board shows standard lines only, with every prop available to All-Access members." } },
     { "@type": "Question", "name": "Are there free NBA picks?", "acceptedAnswer": { "@type": "Answer", "text": "No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access and opens Tuesday, Oct 20." } },
     { "@type": "Question", "name": "What is CG Score?", "acceptedAnswer": { "@type": "Answer", "text": "It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often." } },
     { "@type": "Question", "name": "Can I use these props on PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog." } }

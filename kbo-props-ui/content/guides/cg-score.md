@@ -59,9 +59,9 @@ Scores on low lines can run higher, so a modest projection on a small line can p
 
 **KBO is different.** KBO can show its own stored score, so read KBO scores on their own terms rather than comparing them directly with other sports.
 
-**How the free top 3 is chosen.** On NHL and WNBA, the free top 3 is the top three props on the full board by CG Score. KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board. NFL and NBA have no free top 3 right now. The NBA board opens Tuesday, Oct 20.
+**How the free top 3 is chosen.** On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score. KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board. NFL and NBA have no free top 3 right now. The NBA board opens Tuesday, Oct 20.
 
-**Demon and goblin lines.** The NHL and WNBA boards show demon and goblin lines alongside standard lines, and the NBA board shows standard, demon and goblin lines on separate tabs. Each line has its own score. NFL and KBO: {{CONFIRM WITH BOARD QA}}.
+Every CGPropz board shows standard lines only. Demon and goblin lines aren't on the boards.
 
 **Which side.** The board treats a prop as an over when the projection is at or above the line, and an under when it's below.
 
