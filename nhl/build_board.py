@@ -1043,11 +1043,11 @@ def build(root: Path, out_dir: Path) -> int:
                 })
 
     lineups = build_lineups(games, goalies, lines)
-    # OUT, IR, LTIR, scratched, and week-to-week players stay in the file
-    # with removed true, the same flags as a pulled line. prepareBoardRows
-    # drops them from the member board, the free board, and slips. A
-    # confirmed Daily Faceoff starter still drops the other goalies.
+    # Lineup OUT / IR / LTIR / scratches come off before the file is saved.
+    # A "will not play" note the line sheet missed stays in the file with
+    # removed true. A confirmed Daily Faceoff starter still drops the other goalies.
     if projections_ready:
+        before = len(projections)
         projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
         projections = finish_board(projections, lineups, games)
         previous = _previous_projections(out_dir)
@@ -1064,7 +1064,7 @@ def build(root: Path, out_dir: Path) -> int:
                 previous, projections, fetched_ids, fetch_ok=True, exclude_teams=blocked,
             )
             projections = dedupe_board_rows(projections)
-            removed = sum(1 for row in projections if row.get("removed") and row.get("injury"))
+            removed = before - len(projections) + sum(1 for row in projections if row.get("removed"))
     else:
         removed = 0
     out_dir.mkdir(parents=True, exist_ok=True)

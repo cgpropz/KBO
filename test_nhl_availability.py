@@ -75,15 +75,15 @@ class AvailabilityTests(unittest.TestCase):
 
         board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
         names = [row["player"] for row in board]
-        by_name = {row["player"]: row for row in board}
         self.assertEqual(called[0], "https://api-web.nhle.com/v1/gamecenter/2026020087/right-rail")
-        for name in ("Brad Marchand", "William Eklund", "Long Term", "Healthy Scratch"):
-            self.assertIs(by_name[name]["removed"], True)
-            self.assertEqual(by_name[name]["pp_status"], "removed")
-        self.assertIsNot(by_name["Alex Tuch"].get("removed"), True)
+        self.assertNotIn("Brad Marchand", names)
+        self.assertNotIn("William Eklund", names)
+        self.assertNotIn("Long Term", names)
+        self.assertNotIn("Healthy Scratch", names)
+        self.assertIn("Alex Tuch", names)
         self.assertEqual(names[:3], ["Alex Tuch", "Skater A", "Skater B"])
         self.assertEqual(_free_top3(board), ["Skater A", "Alex Tuch", "Skater B"])
-        self.assertEqual(len(board), len(rows))
+        self.assertEqual(len(board), 5)
 
     def test_nhl_api_is_the_source_when_lineups_have_no_out_ir_or_scratch(self):
         marchand = _row("Brad Marchand", 8473419, 99, projection=9)
@@ -101,8 +101,6 @@ class AvailabilityTests(unittest.TestCase):
         }]
 
         def fetch(url):
-            if "right-rail" not in url:
-                return {"injuries": [], "forwards": [], "defensemen": [], "goalies": []}
             self.assertIn("api-web.nhle.com", url)
             self.assertIn("2026020087", url)
             return {
@@ -134,11 +132,11 @@ class AvailabilityTests(unittest.TestCase):
             }
 
         board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
-        by_name = {row["player"]: row for row in board}
-        for name in ("Brad Marchand", "William Eklund", "Jordan Staal"):
-            self.assertIs(by_name[name]["removed"], True)
-            self.assertEqual(by_name[name]["pp_status"], "removed")
-        self.assertIsNot(by_name["Alex Tuch"].get("removed"), True)
+        names = [row["player"] for row in board]
+        self.assertNotIn("Brad Marchand", names)
+        self.assertNotIn("William Eklund", names)
+        self.assertNotIn("Jordan Staal", names)
+        self.assertIn("Alex Tuch", names)
         self.assertEqual(_free_top3(board), ["Skater A", "Alex Tuch", "Skater B"])
 
     def test_a_failed_injury_source_keeps_the_board(self):
@@ -208,10 +206,7 @@ class AvailabilityTests(unittest.TestCase):
             games,
             fetch_json=lambda url: {"gameInfo": {"awayTeam": {"scratches": []}, "homeTeam": {"scratches": []}}},
         )
-        self.assertEqual([row["player"] for row in board if not row.get("removed")], ["Sam Reinhart"])
-        held = next(row for row in board if row["player"] == "Brad Marchand")
-        self.assertIs(held["removed"], True)
-        self.assertEqual(held["pp_status"], "removed")
+        self.assertEqual([row["player"] for row in board], ["Sam Reinhart"])
 
     def test_a_failed_api_keeps_lineup_statuses_and_the_rest_of_the_board(self):
         rows = [
@@ -226,9 +221,7 @@ class AvailabilityTests(unittest.TestCase):
         with self.assertLogs("nhl.availability", level="WARNING") as logs:
             board = finish_board(rows, lineups, [{"id": 2026020087}], fetch_json=fetch)
         self.assertIn("using lineup statuses", logs.output[0])
-        self.assertEqual([row["player"] for row in board], ["Skater A", "Brad Marchand"])
-        self.assertIs(board[-1]["removed"], True)
-        self.assertEqual(board[-1]["pp_status"], "removed")
+        self.assertEqual([row["player"] for row in board], ["Skater A"])
 
 
 def _row_gtd():
@@ -261,7 +254,7 @@ def _fetch(espn=None, rosters=None):
 def test_suspension_is_blocked():
     assert _av.blocked_status("Suspension") == "SUSPENDED"
     assert _av.blocked_status("Day-To-Day") is None
-    assert _av.blocked_status("Week-To-Week") == "WEEK-TO-WEEK"
+    assert _av.blocked_status("Week-To-Week") is None
     assert _av.blocked_status("OUT week to week") == "OUT"
 
 
@@ -278,24 +271,14 @@ def test_espn_out_and_suspended_dropped_day_to_day_kept():
         {"player": "Tage Thompson", "team": "BUF"},
         {"player": "Quinton Byfield", "team": "LAK"},
     ]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[])
-    by_name = {r["player"]: r for r in kept}
-    assert [name for name, row in by_name.items() if not row.get("removed")] == ["Tage Thompson"]
-    assert by_name["Rasmus Dahlin"]["removed"] is True
-    assert by_name["Rasmus Dahlin"]["pp_status"] == "removed"
-    assert by_name["Frank Nazar"]["removed"] is True
-    assert by_name["Quinton Byfield"]["removed"] is True
-    assert len(kept) == len(rows)
+    kept = [r["player"] for r in _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[], news=[])]
+    assert kept == ["Tage Thompson"]
 
 
 def test_not_on_active_roster_dropped():
     rows = [{"playerId": "1", "player": "A", "team": "LAK"}, {"playerId": "2", "player": "B", "team": "LAK"}]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}), manual=[])
-    assert [r["player"] for r in kept if not r.get("removed")] == ["A"]
-    held = next(r for r in kept if r["player"] == "B")
-    assert held["removed"] is True
-    assert held["pp_status"] == "removed"
-    assert len(kept) == 2
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(rosters={"LAK": ["1"]}), manual=[], news=[])
+    assert [r["player"] for r in kept] == ["A"]
 
 
 def test_missing_from_full_projected_lineup_dropped_accents_ok():
@@ -305,11 +288,8 @@ def test_missing_from_full_projected_lineup_dropped_accents_ok():
         {"player": "Healthy Scratch", "team": "MTL", "position": "F"},
         {"player": "Some Goalie", "team": "MTL", "position": "G"},
     ]
-    kept = _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch(), manual=[])
-    assert [r["player"] for r in kept if not r.get("removed")] == ["Juraj Slafkovský", "Some Goalie"]
-    scratch = next(r for r in kept if r["player"] == "Healthy Scratch")
-    assert scratch["removed"] is True
-    assert scratch["injury"] == "SCRATCHED"
+    kept = [r["player"] for r in _av.drop_unavailable(rows, _lineup("MTL", names), [], fetch_json=_fetch(), manual=[], news=[])]
+    assert kept == ["Juraj Slafkovský", "Some Goalie"]
 
 
 def test_partial_lineup_does_not_drop():
@@ -431,31 +411,70 @@ def _skater(player, team="TOR", gameday="2026-10-17", prop="Points", line=0.5, p
     }
 
 
-def test_an_out_player_is_kept_and_marked_removed():
-    # Same flags as a pulled line: the row stays, prepareBoardRows drops it.
+def _chinakhov_news():
+    return [{
+        "playerName": "Egor Chinakhov",
+        "teamAbbreviation": "PIT",
+        "playerFiveVFiveId": 8482475,
+        "newsCategoryName": "Injury",
+        "details": "Chinakhov (lower-body) will not play Friday in Colorado.",
+        "createdAt": "2026-10-17T00:34:46.237Z",
+    }, {
+        "playerName": "John Tavares",
+        "teamAbbreviation": "TOR",
+        "playerFiveVFiveId": 8475166,
+        "newsCategoryName": "Injury",
+        "details": "Tavares (lower body) is out week to week.",
+        "createdAt": "2026-10-17T14:37:13.190Z",
+    }, {
+        "playerName": "Wyatt Johnston",
+        "teamAbbreviation": "DAL",
+        "playerFiveVFiveId": 8482740,
+        "newsCategoryName": "Injury",
+        "details": "Johnston (illness) will return to the lineup on Saturday.",
+        "createdAt": "2026-10-17T16:17:58.476Z",
+    }, {
+        "playerName": "Radko Gudas",
+        "teamAbbreviation": "FLA",
+        "playerFiveVFiveId": 8475462,
+        "newsCategoryName": "Injury",
+        "details": "Gudas (undisclosed) will remain out on Saturday, but could play on Wednesday.",
+        "createdAt": "2026-10-17T14:22:03.360Z",
+    }]
+
+
+def test_will_not_play_news_holds_a_player_the_lineup_filter_left_in():
+    # ESPN day-to-day is not an OUT. The lineup sheet still had Chinakhov.
+    # The news note is the gap: it posted after the 00:29Z build on Oct 16.
     espn = {"injuries": [{"injuries": [
         {"status": "Out", "athlete": {"displayName": "John Tavares", "team": {"abbreviation": "TOR"}}},
-        {"status": "Week-To-Week", "athlete": {"displayName": "Samuel Honzek", "team": {"abbreviation": "CGY"}}},
         {"status": "Day-To-Day", "athlete": {"displayName": "Egor Chinakhov", "team": {"abbreviation": "PIT"}}},
     ]}]}
     rows = [
-        _skater("John Tavares"),
-        _skater("Samuel Honzek", team="CGY"),
-        _skater("Egor Chinakhov", team="PIT"),
-        _skater("Auston Matthews"),
+        _skater("John Tavares", gameday="2026-10-17"),
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-16"),
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-17"),
+        _skater("Wyatt Johnston", team="DAL", gameday="2026-10-17"),
+        _skater("Radko Gudas", team="FLA", gameday="2026-10-17"),
+        _skater("Radko Gudas", team="FLA", gameday="2026-10-21"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
     ]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(espn=espn), manual=[])
-    by_name = {row["player"]: row for row in kept}
-    assert len(kept) == 4
-    assert by_name["John Tavares"]["removed"] is True
-    assert by_name["John Tavares"]["pp_status"] == "removed"
-    assert by_name["John Tavares"]["injury"] == "OUT"
-    assert by_name["Samuel Honzek"]["removed"] is True
-    assert by_name["Samuel Honzek"]["injury"] == "WEEK-TO-WEEK"
-    assert by_name["Egor Chinakhov"].get("removed") is not True
-    assert by_name["Auston Matthews"].get("removed") is not True
-    playable = [row["player"] for row in kept if not row.get("removed")]
-    assert playable == ["Egor Chinakhov", "Auston Matthews"]
+    kept = _av.drop_unavailable(
+        rows, [], [], fetch_json=_fetch(espn=espn), manual=[], news=_chinakhov_news(),
+    )
+    names = [row["player"] for row in kept]
+    assert "John Tavares" not in names
+    by_day = {(row["player"], row["gameday"]): row for row in kept}
+    friday = by_day[("Egor Chinakhov", "2026-10-16")]
+    assert friday["removed"] is True
+    assert friday["pp_status"] == "removed"
+    assert friday["injury"] == "OUT"
+    assert friday["injury_source"] == "dailyfaceoff_news"
+    assert by_day[("Egor Chinakhov", "2026-10-17")].get("removed") is not True
+    assert by_day[("Wyatt Johnston", "2026-10-17")].get("removed") is not True
+    assert by_day[("Radko Gudas", "2026-10-17")]["removed"] is True
+    assert by_day[("Radko Gudas", "2026-10-21")].get("removed") is not True
+    assert by_day[("Auston Matthews", "2026-10-17")].get("removed") is not True
 
 
 def test_manual_out_list_pulls_tavares_for_that_date_only():
@@ -464,11 +483,12 @@ def test_manual_out_list_pulls_tavares_for_that_date_only():
         _skater("John Tavares", gameday="2026-10-18"),
         _skater("Auston Matthews", gameday="2026-10-17"),
     ]
-    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=None)
+    kept = _av.drop_unavailable(rows, [], [], fetch_json=_fetch(), manual=None, news=[])
     tonight, later, matthews = kept
     assert tonight["removed"] is True
     assert tonight["pp_status"] == "removed"
     assert tonight["injury"] == "OUT"
+    assert tonight["injury_source"] == "manual_out"
     assert later.get("removed") is not True
     assert matthews.get("removed") is not True
 
@@ -497,7 +517,7 @@ def test_a_failed_injury_source_uses_the_override_and_does_not_crash():
     logger.addHandler(handler)
     logger.setLevel(logging.WARNING)
     try:
-        kept = _av.finish_board(rows, [], [{"id": 2026020087}], fetch_json=fetch)
+        kept = _av.finish_board(rows, [], [{"id": 2026020087}], fetch_json=fetch, news=None)
     finally:
         logger.removeHandler(handler)
         logger.setLevel(previous_level)
@@ -507,6 +527,44 @@ def test_a_failed_injury_source_uses_the_override_and_does_not_crash():
     assert by_name["Auston Matthews"].get("removed") is not True
     assert by_name["Rasmus Dahlin"].get("removed") is not True
     assert len(kept) == 3
+
+
+def test_late_recheck_retracts_a_pregame_slate_prop():
+    from datetime import datetime, timezone
+
+    from nhl.late_out import hold_published_rows, retract_slate_props
+
+    rows = [
+        _skater("Egor Chinakhov", team="PIT", gameday="2026-10-16"),
+        _skater("Auston Matthews", gameday="2026-10-17"),
+    ]
+    rows[0]["start_time"] = "2026-10-17T01:00:00Z"
+    updated, held = hold_published_rows(rows, _chinakhov_news(), [])
+    assert held == 1
+    assert updated[0]["removed"] is True
+    props = [
+        {
+            "player": "Egor Chinakhov",
+            "team": "PIT",
+            "game_date_iso": "2026-10-16",
+            "stat": "Shots On Goal",
+            "start_time_utc": "2026-10-17T01:00:00+00:00",
+        },
+        {
+            "player": "Auston Matthews",
+            "team": "TOR",
+            "game_date_iso": "2026-10-17",
+            "stat": "Points",
+            "start_time_utc": "2026-10-17T23:00:00+00:00",
+        },
+    ]
+    moment = datetime(2026, 10, 17, 0, 40, tzinfo=timezone.utc)
+    kept, dropped = retract_slate_props(props, updated, moment)
+    assert dropped == 1
+    assert [row["player"] for row in kept] == ["Auston Matthews"]
+    started = datetime(2026, 10, 17, 1, 5, tzinfo=timezone.utc)
+    _kept, dropped_late = retract_slate_props(props, updated, started)
+    assert dropped_late == 0
 
 
 def test_duplicate_projection_id_or_player_stat_line_game_collapses():
