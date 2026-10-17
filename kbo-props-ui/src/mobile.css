@@ -713,6 +713,9 @@
     font-weight: 900 !important;
   }
 
+  body .b2-pp-note-full { display: none !important; }
+  body .b2-pp-note-phone { display: block !important; }
+
   /* Same free-board card, mounted directly under 768px so a 900px table
      never sits in the phone DOM. */
   .prop-line-cards {

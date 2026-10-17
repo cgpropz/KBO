@@ -4,6 +4,15 @@ import { formatBreakEvenRate } from './prizepicksBreakeven'
 import { STANDARD_LINE } from './responsibleGambling'
 import { sessionAccessToken } from './supabaseClient'
 import { isPromoLine, matchImportedPick } from './slipLines'
+import {
+  PRIZEPICKS_NOTE_FULL,
+  PRIZEPICKS_NOTE_PHONE,
+  PRIZEPICKS_OPEN_LABEL,
+  copySlipPicks,
+  openPrizePicksBoard,
+  openPrizePicksSlip,
+  writeSlipText,
+} from './prizepicksSlip'
 import { slipSport, sportDate } from './slipSports'
 import { playerKey } from './slipRank'
 import {
@@ -73,7 +82,7 @@ function Mark({ sport, row, size = 52 }) {
   )
 }
 
-function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice }) {
+function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, onOpenPrizePicks, saving, notice }) {
   const altered = legs.some((leg) => isPromoLine(leg))
   const ladder = ladderFor(mode, altered)
   const estimate = estimateFor(mode, legs.length, altered)
@@ -123,8 +132,22 @@ function SlipSheet({ sport, legs, mode, setMode, onSave, onCopy, saving, notice 
           {saving ? 'Saving…' : 'Save slip'}
         </button>
         <button type="button" className="is-secondary" onClick={onCopy} disabled={legs.length === 0}>Copy picks</button>
+        <button
+          type="button"
+          className="is-secondary"
+          data-testid="open-prizepicks"
+          aria-describedby="prizepicks-disclaimer"
+          onClick={onOpenPrizePicks}
+          disabled={legs.length === 0}
+        >
+          {PRIZEPICKS_OPEN_LABEL}
+        </button>
+        <div className="b2-pp-notes" id="prizepicks-disclaimer" data-testid="prizepicks-note">
+          <p className="b2-pp-note b2-pp-note-full">{PRIZEPICKS_NOTE_FULL}</p>
+          <p className="b2-pp-note b2-pp-note-phone">{PRIZEPICKS_NOTE_PHONE}</p>
+        </div>
       </div>
-      {notice ? <p className="b2-note">{notice}</p> : null}
+      {notice ? <p className="b2-note" role="status">{notice}</p> : null}
       <p className="b2-rg">{STANDARD_LINE}</p>
     </div>
   )
@@ -212,15 +235,16 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
   }
 
   const copyPicks = async () => {
-    const text = legs.map((leg) => (
-      `${leg.name} · ${leg.prop} ${fmt(leg.line)} · ${leg.side === 'LESS' ? 'Less' : 'More'} · CG ${fmtCg(shownCg(leg))}`
-    )).join('\n')
-    try {
-      await navigator.clipboard.writeText(text)
-      setNotice('Picks copied.')
-    } catch {
-      setNotice(text)
-    }
+    const result = await copySlipPicks(legs, writeSlipText)
+    setNotice(result.notice)
+  }
+
+  const openInPrizePicks = async () => {
+    await openPrizePicksSlip(legs, {
+      writeText: writeSlipText,
+      open: openPrizePicksBoard,
+      notify: setNotice,
+    })
   }
 
   const saveSlip = async () => {
@@ -269,6 +293,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
       setMode={setMode}
       onSave={saveSlip}
       onCopy={copyPicks}
+      onOpenPrizePicks={openInPrizePicks}
       saving={saving}
       notice={notice}
     />
@@ -351,7 +376,7 @@ export default function SlipBoard({ sport = 'nhl', onSport, drawer = false }) {
               <p>Turn a filter off to see the rest of the board.</p>
             </section>
           ) : null}
-          {notice ? <p className="b2-note">{notice}</p> : null}
+          {notice ? <p className="b2-note" role="status">{notice}</p> : null}
           <div className="b2-list">
             {visible.map((row) => {
               const key = rowKey(row)

@@ -324,9 +324,41 @@
 .b2-sum b { font-size: 20px; }
 .b2-break { margin: 10px 0 0; color: #d4d4d8; font-size: 13px; font-weight: 700; }
 .b2-break em { color: #fbbf24; font-style: normal; }
-.b2-cta { display: flex; gap: 8px; margin-top: 12px; }
-.b2-cta button { flex: 1; min-height: 50px; border-radius: 14px; font-size: 16px; font-weight: 900; }
+.b2-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  max-width: 100%;
+  margin-top: 12px;
+  min-width: 0;
+}
+.b2-cta > .is-primary,
+.b2-pp-notes { grid-column: 1 / -1; min-width: 0; max-width: 100%; }
+.b2-cta button {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 50px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: normal;
+}
 .b2-cta .is-secondary { border: 1px solid rgba(255, 255, 255, 0.16); }
+.b2-cta button:disabled { opacity: 0.45; cursor: default; }
+.b2-pp-note {
+  margin: 0;
+  max-width: 100%;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+.b2-pp-note-phone { display: none; }
 .b2-side { display: none; }
 .b2-sheet-pop { display: block; }
 
