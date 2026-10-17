@@ -614,14 +614,10 @@
     grid-template-columns: 1fr !important;
   }
 
-  /* NFL edge cards only. Two across through 480px so the name and the
-     DVP / season / hit-rate labels can wrap. Wider phones stay one column.
-     Desktop, iPad, and the NHL board keep the rules above and in nfl.css. */
+  /* Names and DVP / season / hit-rate labels on the narrow NFL edge cards.
+     The two-column grid itself lives in nfl.css, where the other edge
+     column rules are layered important and would otherwise stay one column. */
   @media (max-width: 480px) {
-    .nfl-root:not(.nhl-root) .nfl-edge-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-
     .nfl-root:not(.nhl-root) .nfl-edge-card :is(.nfl-card-metrics, .nfl-card-meta) {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
       gap: 6px !important;
