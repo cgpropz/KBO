@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-17T23:21:27Z",
+  "checked_at": "2026-10-17T23:23:59Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-17T23:21:27.004924+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-17T22:56:33.424908+00:00",
-      "prop_count": 798,
+      "generated_at": "2026-10-17T23:23:59.730544+00:00",
+      "prop_count": 351,
       "started_removed": 0,
       "removals": [
         {
@@ -22,6 +22,15 @@
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "goblin",
+          "projection": 2.15,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Blake Coleman",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "demon",
           "projection": 2.15,
           "reason": "line pulled"
         },
@@ -71,6 +80,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Maxim Shabanov",
+          "team": "MIN",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.56,
+          "reason": "line pulled"
+        },
+        {
           "player": "Mikael Backlund",
           "team": "CGY",
           "stat": "Shots On Goal",
@@ -96,14 +114,23 @@
           "odds_type": "goblin",
           "projection": 1.81,
           "reason": "line pulled"
+        },
+        {
+          "player": "Ryan Hartman",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "standard",
+          "projection": 1.81,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 66,
-        "superseded_dup": 39,
+        "pp_pull": 0,
+        "superseded_dup": 0,
         "manual_out": 0,
         "news_out": 0,
-        "lineup_out": 6
+        "lineup_out": 0
       }
     },
     "nba": {
