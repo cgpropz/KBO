@@ -114,6 +114,30 @@ test('nba_players chunks join in order and a single row stays as stored', () => 
     () => assembleNbaPlayerRows({ data: { nbaPlayerChunks: 2 }, updated_at: null }, []),
     /missing chunk/,
   )
+
+  const version = '2026-10-17T12:00:00Z'
+  const versioned = assembleNbaPlayerRows(
+    { data: { nbaPlayerChunks: [2, 3], version, generated_at: version }, updated_at: version },
+    [
+      { id: 3, data: { version, players: [{ athleteId: 'b' }] }, updated_at: version },
+      { id: 2, data: { version, generated_at: version, players: [{ athleteId: 'a' }] }, updated_at: version },
+    ],
+  )
+  assert.deepEqual(versioned.data.map((player) => player.athleteId), ['a', 'b'])
+  assert.throws(
+    () => assembleNbaPlayerRows(
+      { data: { nbaPlayerChunks: [2], version }, updated_at: version },
+      [{ id: 2, data: { version: '2026-10-16T00:00:00Z', players: [{ athleteId: 'old' }] }, updated_at: version }],
+    ),
+    /mixed/,
+  )
+  assert.throws(
+    () => assembleNbaPlayerRows(
+      { data: { nbaPlayerChunks: [2] }, updated_at: version },
+      [{ id: 2, data: { version, players: [{ athleteId: 'new' }] }, updated_at: version }],
+    ),
+    /mixed/,
+  )
 })
 
 test('the hub treats only the owner email as able to see NBA', () => {

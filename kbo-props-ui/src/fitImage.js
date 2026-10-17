@@ -78,7 +78,9 @@ export function isRemoteHeadshotOrLogo(url) {
 }
 
 export function parseImageQuery(src, width) {
-  const pixels = Number(width)
+  let pixels = Number(width)
+  // Tabs opened before the 128 thumb shipped still request w=160.
+  if (pixels === 160) pixels = IMAGE_WIDTHS[IMAGE_WIDTHS.length - 1]
   if (!IMAGE_WIDTHS.includes(pixels)) return null
   if (!isRemoteHeadshotOrLogo(src)) return null
   return { src, width: pixels }
