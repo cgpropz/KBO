@@ -56,6 +56,8 @@ jobs:
         run: npm run test:mobile
       - name: Production build
         run: npm run build
+      - name: KBO results stay off the built site
+        run: CHECK_KBO_RESULTS_DIST=1 node --test tests/kbo-results-hidden.test.mjs
       # `npm run lint` currently reports pre-existing errors on main
       # (SlipOptimizer.jsx, StrikeoutProjections.jsx, ...). Report them without
       # blocking until they are cleaned up.

@@ -1,41 +1,24 @@
 // Writes the public SEO pages, sitemap.xml, and robots.txt, and prerenders
 // the homepage shell in index.html.
-// When memory/kbo is present (repo checkout or the release build), recent
-// full-board results are rendered in. When this directory is built alone,
-// an existing KBO page is left in place so a later build cannot blank it.
+// The KBO page is the guide only. The daily hit/miss archive is not rendered.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { patchIndexHtml } from './homeShell.mjs';
-import { buildResultDays, discoverSummaryFiles, renderKboPage, renderSitemap, sitemapEntries } from './kboSeoPage.mjs';
+import { renderKboPage, renderSitemap, sitemapEntries } from './kboSeoPage.mjs';
 import { assertNoCurlyPlaceholders, listGuides } from './markdownGuide.mjs';
 import { renderCompliancePages, renderGuidePages, renderNotFoundPage, renderPoliciesPage, renderPricingPage, renderSportPages } from './publicPages.mjs';
 import { renderRobots } from './seoShared.mjs';
 
 const uiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const memoryRoot = resolve(uiRoot, '../memory/kbo');
 const htmlPath = resolve(uiRoot, 'public/kbo-player-props.html');
 const sitemapPath = resolve(uiRoot, 'public/sitemap.xml');
 
-export function writeKboSeo({ memoryRoot: root = memoryRoot, htmlPath: html = htmlPath, sitemapPath: sitemap = sitemapPath } = {}) {
-  let result;
-  let kboLastmod;
-  if (!existsSync(root)) {
-    if (existsSync(html)) result = { wroteHtml: 'kept', days: null };
-    else {
-      writeFileSync(html, renderKboPage([]));
-      result = { wroteHtml: true, days: 0, missing: 0 };
-    }
-  } else {
-    const days = buildResultDays(discoverSummaryFiles(root));
-    writeFileSync(html, renderKboPage(days));
-    const recorded = days.filter((day) => !day.missing);
-    kboLastmod = (recorded.at(-1) || days.at(-1))?.iso;
-    result = { wroteHtml: true, days: days.length, missing: days.filter((day) => day.missing).length, kboLastmod };
-  }
-  writeFileSync(sitemap, renderSitemap(sitemapEntries({ kboLastmod })));
-  return result;
+export function writeKboSeo({ htmlPath: html = htmlPath, sitemapPath: sitemap = sitemapPath } = {}) {
+  writeFileSync(html, renderKboPage());
+  writeFileSync(sitemap, renderSitemap(sitemapEntries()));
+  return { wroteHtml: true, days: 0, missing: 0 };
 }
 
 function writePage(publicDir, page) {
@@ -46,13 +29,11 @@ function writePage(publicDir, page) {
 
 export function writeSeoSite({
   uiRoot: root = uiRoot,
-  memoryRoot: memory = memoryRoot,
   guidesDir,
 } = {}) {
   const publicDir = join(root, 'public');
   mkdirSync(publicDir, { recursive: true });
   const kbo = writeKboSeo({
-    memoryRoot: memory,
     htmlPath: join(publicDir, 'kbo-player-props.html'),
     sitemapPath: join(publicDir, 'sitemap.xml'),
   });
@@ -70,7 +51,6 @@ export function writeSeoSite({
   }
   const recorded = guides.length ? listGuides(guidesDir) : listGuides();
   writeFileSync(join(publicDir, 'sitemap.xml'), renderSitemap(sitemapEntries({
-    kboLastmod: kbo.kboLastmod,
     guides: recorded,
   })));
   const htmlFiles = existsSync(indexPath) ? [indexPath] : [];
@@ -90,7 +70,5 @@ export function writeSeoSite({
 const isDirect = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirect) {
   const result = writeSeoSite();
-  console.log('[kbo-seo]', result.wroteHtml === true
-    ? `wrote ${result.days} KBO days (${result.missing} without a summary); guides: ${result.guides.join(', ') || 'none'}`
-    : `memory archive not in this build; left the existing KBO page; guides: ${result.guides.join(', ') || 'none'}`);
+  console.log(`[kbo-seo] wrote the KBO page without the results table; guides: ${result.guides.join(', ') || 'none'}`);
 }

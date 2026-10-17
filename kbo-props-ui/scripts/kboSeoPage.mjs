@@ -1,6 +1,5 @@
-// Build the public KBO player-props page from memory/kbo/*/summary.json.
-// Full-board results: every prop the model graded, including misses, pushes,
-// and DNPs. Days inside the archive span with no summary stay on the page.
+// Build the public KBO player-props page from the guide.
+// The daily hit/miss archive is not part of this page.
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -124,69 +123,10 @@ export function buildResultDays(files) {
   });
 }
 
-export function formatDayLabel(iso) {
-  const [year, month, day] = iso.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function countCell(value) {
-  return value == null ? '—' : String(value);
-}
-
-function dayRow(day) {
-  if (day.missing) {
-    return `<tr class="missing-day">
-      <th scope="row">${escapeHtml(formatDayLabel(day.iso))}</th>
-      <td colspan="6">No full-board results for this date.</td>
-    </tr>`;
-  }
-  return `<tr>
-      <th scope="row">${escapeHtml(formatDayLabel(day.iso))}</th>
-      <td>${countCell(day.hits)}</td>
-      <td>${countCell(day.misses)}</td>
-      <td>${countCell(day.pushes)}</td>
-      <td>${countCell(day.dnps)}</td>
-      <td>${countCell(day.voids)}</td>
-      <td>${countCell(day.graded)}</td>
-    </tr>`;
-}
-
-function propTable(day) {
-  if (day.missing || day.rows.length === 0) return '';
-  const rows = day.rows.map((prop) => `<tr>
-      <td>${escapeHtml(prop.player)}</td>
-      <td>${escapeHtml(prop.team)}</td>
-      <td>${escapeHtml(prop.stat)}</td>
-      <td>${escapeHtml(prop.side)}</td>
-      <td>${escapeHtml(prop.line)}</td>
-      <td>${escapeHtml(prop.actual)}</td>
-      <td>${escapeHtml(prop.result)}</td>
-    </tr>`).join('');
-  return `<details open>
-    <summary>${escapeHtml(formatDayLabel(day.iso))} player rows (${day.rows.length})</summary>
-    <div class="table-scroll">
-    <table>
-      <thead><tr><th>Player</th><th>Team</th><th>Stat</th><th>Side</th><th>Line</th><th>Actual</th><th>Result</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    </div>
-  </details>`;
-}
-
 const KBO_GUIDE = join(dirname(fileURLToPath(import.meta.url)), '../content/kbo-player-props.md');
 
 // Schedule cells keep their published times. A {{CONFIRM}} note inside a cell
-// is removed; the results snapshot below is not this table and is generated
-// from the archive instead.
+// is removed. The daily hit/miss archive is not rendered on this page.
 function stripScheduleMarkers(markdown) {
   return String(markdown).split('\n').map((line) => {
     if (!line.trim().startsWith('|') || !line.includes('{{')) return line;
@@ -203,61 +143,27 @@ function stripScheduleMarkers(markdown) {
 export function kboGuideParts() {
   const prepared = stripScheduleMarkers(readFileSync(KBO_GUIDE, 'utf8'));
   const { meta, body, faqPage } = stripGuideSource(prepared);
-  const resultsAt = body.indexOf('## Recent full-board results');
   const faqAt = body.indexOf('## FAQ');
-  if (resultsAt < 0 || faqAt < resultsAt) throw new Error('KBO guide is missing the results or FAQ section');
+  if (faqAt < 0) throw new Error('KBO guide is missing the FAQ section');
   if (!faqPage?.mainEntity?.length) throw new Error('KBO guide is missing FAQPage JSON-LD');
-  const before = hideUnresolved(body.slice(0, resultsAt));
+  let intro = body.slice(0, faqAt);
+  const resultsAt = intro.indexOf('## Recent full-board results');
+  if (resultsAt >= 0) intro = intro.slice(0, resultsAt);
+  const before = hideUnresolved(intro);
   const after = hideUnresolved(body.slice(faqAt));
   assertNoCurlyPlaceholders(before, '/kbo-player-props intro');
   assertNoCurlyPlaceholders(after, '/kbo-player-props faq');
   return { meta, before, after, faqPage };
 }
 
-export function renderKboPage(days) {
+export function renderKboPage() {
   const { meta, before, after, faqPage } = kboGuideParts();
-  const recorded = days.filter((day) => !day.missing).length;
-  const missing = days.filter((day) => day.missing).length;
-  const range = days.length
-    ? `${formatDayLabel(days[0].iso)} through ${formatDayLabel(days[days.length - 1].iso)}`
-    : 'the dates currently in the archive';
-  const title = meta.title_tag || 'KBO player props and full-board results | CGPropz';
+  const title = meta.title_tag || 'KBO player props | CGPropz';
   const description = meta.meta_description
-    || 'KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines, plus recent full-board results with hits, misses, pushes, and DNPs.';
+    || 'KBO player props on CGPropz: how the model board covers Korea Baseball Organization lines.';
 
   const bodyHtml = `
       ${renderMarkdown(before)}
-      <h2>Recent full-board results</h2>
-      <p class="note">
-        ${recorded} day${recorded === 1 ? '' : 's'} with a summary and ${missing} day${missing === 1 ? '' : 's'} with no summary,
-        from ${escapeHtml(range)}. <strong>All dates in this table are Korea (KST) game dates, not US Eastern Time.</strong>
-        A KBO game on a Korea date usually starts the night before or early that morning in ET.
-        Counts are hits, misses, pushes, DNPs and voids. The hit count is the recorded grade for that day.
-      </p>
-      <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Date (KST)</th>
-            <th>Hits</th>
-            <th>Misses</th>
-            <th>Pushes</th>
-            <th>DNPs</th>
-            <th>Voids</th>
-            <th>Graded</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${days.map(dayRow).join('\n')}
-        </tbody>
-      </table>
-      </div>
-      <p class="note">
-        Push and DNP totals are part of the full board. Where the archive stores a player row, it is listed below,
-        including misses. Days without a summary stay in the table.
-      </p>
-      ${days.map(propTable).join('\n')}
-
       ${renderMarkdown(after)}
     `;
 

@@ -121,7 +121,7 @@ The free top 3 is a slice of the board. All-Access includes every graded WNBA Fi
 ## More from CGPropz
 
 - [WNBA player props hub](/wnba-player-props) {{URL PENDING GIT BOT}}
-- [KBO player props and full-board results](/kbo-player-props)
+- [KBO player props](/kbo-player-props)
 - [NFL player props](/nfl-player-props) {{URL PENDING GIT BOT}}
 - [NHL player props](/nhl-player-props) {{URL PENDING GIT BOT}}
 - [How CG Score works](/guides/cg-score) {{URL PENDING GIT BOT}} <!-- not in Git bot's planned list yet -->

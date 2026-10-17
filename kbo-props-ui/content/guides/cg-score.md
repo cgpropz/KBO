@@ -110,8 +110,6 @@ This keeps a tiny line from producing an extreme score. It also means that on WN
 - **It does not include the payout.** Pick'em entries need a certain share of correct picks to break even, and that depends on the entry type. CG Score doesn't account for it.
 - **It does not include variance.** Two props with the same score can carry very different risk depending on the stat and the player's role.
 
-Graded results, including misses, are public on the [KBO full-board results page](/kbo-player-props), so you can see how the board has actually performed.
-
 ## Where to find CG Score
 
 - [KBO player props](/kbo-player-props)

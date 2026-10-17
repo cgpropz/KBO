@@ -3,13 +3,13 @@ DRAFT REFRESH of the live page https://www.cgpropz.com/kbo-player-props. NOT FOR
 Owner (Code Green) approval required; Git bot publishes (source: public/kbo-player-props.html).
 Live page fetched Mon Oct 12, 2026 ~9:15 AM ET -> /workspace/seo/raw/kbo-player-props_2026-10-12.html
 Baseline (Oct 11) -> /workspace/seo/raw/kbo-player-props.html
-Keep: hero copy, "How the KBO board works", full-board results table + player rows, existing FAQ items,
-Organization + BreadcrumbList JSON-LD. Results numbers are NOT from the QA ledger (see results section).
+Keep: hero copy, "How the KBO board works", and the playoff FAQ. The daily hit/miss results table stays off this page.
+Organization + BreadcrumbList JSON-LD.
 -->
 
 ---
 title_tag: "KBO Playoffs Player Props & PrizePicks Picks | CGPropz"
-meta_description: "KBO playoffs player props and today's free KBO picks: postseason schedule in ET, how the board scores props, and full-board graded results. 21+."
+meta_description: "KBO playoffs player props and today's free KBO picks: postseason schedule in ET, and how the board scores props. 21+."
 slug: "/kbo-player-props"
 canonical: "https://www.cgpropz.com/kbo-player-props"
 primary_keyword: "kbo playoffs player props"
@@ -56,7 +56,7 @@ The Wild Card works differently from the other rounds. LG, the fourth seed, adva
 
 ## How the KBO board works
 
-The live KBO board in the app lines a model number up with the posted prop. The free preview shows three lines. The rest of that live board is All-Access, and those rows are not printed here. Graded results for days already in the archive are listed below, including misses.
+The live KBO board in the app lines a model number up with the posted prop. The free preview shows three lines. The rest of that live board is All-Access, and those rows are not printed here.
 
 **How the KBO free top 3 is picked:** KBO's free picks are chosen on the server. They do not follow the site's CG Score formula, so they aren't simply the top three CG Scores on the board.
 
@@ -72,43 +72,6 @@ The score is not a probability, and a higher score is not a claim that the prop 
 
 <!-- Source: /cursor/stores/store-19e5dc54-5811-406a-a625-469658aadcc7/qa/README.md, CG Score section (site JS index-B876gw9W.js, re-verified 2026-10-11 2:25 PM ET): "KBO: stored cg_projection or rating, else (projection or season avg) / line * 50"; "KBO selection server-side, free_top3 = null". Yardage rule (lines <= 0.5 unscored) does not affect KBO stats. -->
 
-## Recent full-board results
-
-> {{QA: not verified in ledger}}. These figures are the page's existing archive, kept unchanged. They have not been checked against the Board QA ledger, which has no KBO rows yet (queried Mon Oct 12, 2026).
-
-15 days with a summary and 5 days with no summary, from Sep 23, 2026 through Oct 12, 2026. **All dates in this table are Korea (KST) game dates, not US Eastern Time.** A KBO game on a Korea date usually starts the night before or early that morning in ET.
-
-Counts are hits, misses, pushes, DNPs and voids. The hit count is the recorded grade for that day.
-
-| Date (KST) | Hits | Misses | Pushes | DNPs | Voids | Graded |
-|---|---|---|---|---|---|---|
-| Sep 23, 2026 | No full-board results for this date. | | | | | |
-| Sep 24, 2026 | 15 | 13 | 1 | 8 | 0 | 42 |
-| Sep 25, 2026 | 2 | 2 | 0 | 5 | 24 | 36 |
-| Sep 26, 2026 | 5 | 8 | 3 | 8 | 0 | 38 |
-| Sep 27, 2026 | 13 | 7 | 3 | 4 | 28 | 63 |
-| Sep 28, 2026 | No full-board results for this date. | | | | | |
-| Sep 29, 2026 | 20 | 16 | 1 | 21 | 0 | 73 |
-| Sep 30, 2026 | 26 | 23 | 4 | 16 | 0 | 86 |
-| Oct 1, 2026 | 9 | 5 | 5 | 23 | 0 | 80 |
-| Oct 2, 2026 | No full-board results for this date. | | | | | |
-| Oct 3, 2026 | 8 | 10 | 7 | 7 | 0 | 61 |
-| Oct 4, 2026 | 11 | 4 | 5 | 31 | 0 | 74 |
-| Oct 5, 2026 | 14 | 13 | 2 | 21 | 0 | 87 |
-| Oct 6, 2026 | 13 | 9 | 3 | 4 | 0 | 58 |
-| Oct 7, 2026 | 12 | 6 | 2 | 3 | 0 | 55 |
-| Oct 8, 2026 | No full-board results for this date. | | | | | |
-| Oct 9, 2026 | 5 | 1 | 0 | 0 | 0 | 21 |
-| Oct 10, 2026 | 3 | 4 | 2 | 3 | 0 | 22 |
-| Oct 11, 2026 | 0 | 2 | 3 | 0 | 0 | 16 |
-| Oct 12, 2026 | No full-board results for this date. | | | | | |
-
-<!-- Table copied verbatim from the live page (Oct 12 fetch). Nothing recomputed. Git bot: keep the site's generated table and player rows as they are; only the "(KST)" header label and the sentence above change. The "Graded" column does not equal the sum of the other columns on some days; that is how the live page reports it. Flag to Board QA, do not edit. -->
-
-Push and DNP totals are part of the full board. Where the archive stores a player row, it is listed below, including misses. Days without a summary stay in the table.
-
-{{KEEP EXISTING GENERATED PLAYER ROWS UNCHANGED}}
-
 ## FAQ
 
 **Are there KBO player props during the playoffs?**
@@ -122,12 +85,6 @@ In the free top 3 on the homepage. KBO's free picks are chosen on the server and
 
 **What does CG Score mean on KBO?**
 When a KBO prop has a stored KBO score, the board shows it. Otherwise it's the projection divided by the line, times 50. A higher score is not a probability or a claim that the prop hits more often.
-
-**What is a full-board result?**
-Every prop the model graded that day, including hits, misses, pushes and DNPs. It is the whole graded board for that date, not a short list of winners.
-
-**What time zone are the results dates?**
-Korea (KST) game dates, not US Eastern Time.
 
 **Where is pricing?**
 All-Access plans are on the pricing page.
@@ -144,8 +101,6 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
     { "@type": "Question", "name": "What time do KBO playoff games start in ET?", "acceptedAnswer": { "@type": "Answer", "text": "Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET." } },
     { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order." } },
     { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "When a KBO prop has a stored KBO score, the board shows it. Otherwise it's the projection divided by the line, times 50. A higher score is not a probability or a claim that the prop hits more often." } },
-    { "@type": "Question", "name": "What is a full-board result?", "acceptedAnswer": { "@type": "Answer", "text": "Every prop the model graded that day, including hits, misses, pushes and DNPs. It is the whole graded board for that date, not a short list of winners." } },
-    { "@type": "Question", "name": "What time zone are the results dates?", "acceptedAnswer": { "@type": "Answer", "text": "Korea (KST) game dates, not US Eastern Time." } },
     { "@type": "Question", "name": "Where is pricing?", "acceptedAnswer": { "@type": "Answer", "text": "All-Access plans are on the pricing page." } },
     { "@type": "Question", "name": "Is CGPropz affiliated with PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "No. CGPropz is not affiliated with PrizePicks or Underdog." } }
   ]
@@ -160,7 +115,7 @@ The free top 3 is a small slice. All-Access opens every KBO prop on the board wi
 
 ---
 
-**21+ only.** Gambling involves risk. These full-board results are a record of past grades only, and future results can differ. Only risk money you can afford to lose. If you or someone you know has a gambling problem, call **1-800-GAMBLER**.
+**21+ only.** Gambling involves risk. Only risk money you can afford to lose. If you or someone you know has a gambling problem, call **1-800-GAMBLER**.
 
 *CGPropz is not affiliated with or endorsed by PrizePicks, Underdog or the KBO. For entertainment only.*
 
