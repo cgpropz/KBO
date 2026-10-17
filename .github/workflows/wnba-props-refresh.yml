@@ -202,6 +202,7 @@ jobs:
           PUBLISH_ONLY_PREFIX: "wnba/projections"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
 
       - name: Publish public board status
         if: steps.gate.outputs.due == 'true' && always()
