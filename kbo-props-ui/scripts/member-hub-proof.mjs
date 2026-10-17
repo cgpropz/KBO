@@ -131,16 +131,37 @@ async function verify(tokenHash) {
   return body
 }
 
-async function upsertTier(id) {
-  const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?on_conflict=id`, {
-    method: 'POST',
-    headers: {
-      ...serviceHeaders(),
-      Prefer: 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify({ id, tier: 'combined' }),
+async function profileTier(id) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(id)}&select=tier`, {
+    headers: serviceHeaders(),
+    signal: AbortSignal.timeout(8_000),
   })
-  if (!response.ok) throw new Error(`tier upsert failed (${response.status} ${await errorCode(response)})`)
+  const rows = await response.json().catch(() => [])
+  return Array.isArray(rows) ? (rows[0]?.tier || '') : ''
+}
+
+async function upsertTier(id) {
+  const headers = {
+    ...serviceHeaders(),
+    Prefer: 'return=representation,resolution=merge-duplicates',
+  }
+  const patch = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ tier: 'combined' }),
+  })
+  const patched = await patch.json().catch(() => [])
+  const patchedTier = Array.isArray(patched) ? patched[0]?.tier : ''
+  if (!patch.ok || patchedTier !== 'combined') {
+    const post = await fetch(`${supabaseUrl}/rest/v1/user_profiles?on_conflict=id`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ id, tier: 'combined' }),
+    })
+    if (!post.ok) throw new Error(`tier upsert failed (${post.status} ${await errorCode(post)})`)
+  }
+  const tier = await profileTier(id)
+  if (tier !== 'combined') throw new Error(`proof member tier is ${tier || 'missing'}`)
 }
 
 async function deleteMember(id) {
@@ -190,6 +211,7 @@ async function timedFetch(ds, { bypass, accessToken }) {
     status: response.status,
     bytes: Buffer.byteLength(text),
     preview: body.preview === true,
+    tier: typeof body.tier === 'string' ? body.tier : null,
     rows,
     error: typeof body.error === 'string' ? body.error.slice(0, 160) : null,
     cache: response.headers.get('x-vercel-cache'),
@@ -228,11 +250,13 @@ function classifyOdds(rows) {
 }
 
 function sessionJson(session) {
+  const expiresIn = Number(session.expires_in) || 3600
+  const expiresAt = Number(session.expires_at) || Math.floor(Date.now() / 1000) + expiresIn
   return JSON.stringify({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
-    expires_at: session.expires_at,
-    expires_in: session.expires_in,
+    expires_at: expiresAt,
+    expires_in: expiresIn,
     token_type: session.token_type || 'bearer',
     user: session.user,
   })
@@ -252,16 +276,36 @@ async function nhlOddsCounts(base, { bypass, accessToken }) {
   return { status: response.status, ...classifyOdds(rows) }
 }
 
-async function timeColdPage(browser, { base, path, bypass, storageKey, storedSession }) {
+async function pageHint(page) {
+  try {
+    return await page.evaluate(() => {
+      const heading = (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+      const paywall = Boolean(document.querySelector('.pw-title'))
+      const session = Object.keys(localStorage).some((key) => key.startsWith('sb-') && localStorage.getItem(key)?.includes('access_token'))
+      return ` h1=${heading || 'none'} paywall=${paywall} session=${session}`
+    })
+  } catch {
+    return ''
+  }
+}
+
+async function timeColdPage(browser, { base, path, bypass, storageKey, storedSession, userId }) {
   const context = await browser.newContext({
     viewport: PHONE,
     extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
   })
+  let page
   try {
-    await context.addInitScript(({ key, value }) => {
+    await context.addInitScript(({ key, value, tierKey, tierValue }) => {
       localStorage.setItem(key, value)
-    }, { key: storageKey, value: storedSession })
-    const page = await context.newPage()
+      sessionStorage.setItem(tierKey, tierValue)
+    }, {
+      key: storageKey,
+      value: storedSession,
+      tierKey: 'cg_tier',
+      tierValue: JSON.stringify({ userId, tier: 'combined' }),
+    })
+    page = await context.newPage()
     const started = performance.now()
     const target = new URL(path, base)
     if (bypass) {
@@ -288,18 +332,23 @@ async function timeColdPage(browser, { base, path, bypass, storageKey, storedSes
       }
     })
     return { firstCardMs, api, dom }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'page failed'
+    const hint = page ? await pageHint(page) : ''
+    const text = `${message}${hint}`
+    return { error: bypass ? text.split(bypass).join('[bypass]') : text }
   } finally {
     await context.close()
   }
 }
 
-async function timeHost(browser, { label, base, bypass, storageKey, storedSession }) {
+async function timeHost(browser, { label, base, bypass, storageKey, storedSession, userId }) {
   const pages = {}
   for (const [name, path] of PAGE_PATHS) {
     const runs = []
     for (let index = 0; index < 3; index += 1) {
       try {
-        runs.push(await timeColdPage(browser, { base, path, bypass, storageKey, storedSession }))
+        runs.push(await timeColdPage(browser, { base, path, bypass, storageKey, storedSession, userId }))
       } catch (err) {
         const message = err instanceof Error ? err.message : 'page failed'
         runs.push({ error: bypass ? message.split(bypass).join('[bypass]') : message })
@@ -373,8 +422,8 @@ async function main() {
         preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
       }
       browserReport = {
-        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKey, storedSession }),
-        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKey, storedSession }),
+        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKey, storedSession, userId }),
+        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKey, storedSession, userId }),
       }
     } finally {
       await browser.close()

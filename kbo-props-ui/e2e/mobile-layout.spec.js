@@ -254,6 +254,17 @@ test('phone NHL dashboard hides goblin lines and opens on CG Score', async ({ pa
   await expect(page.getByLabel('Sort')).toHaveValue('CG Score')
 })
 
+test('a deep link opens the NFL and NHL boards as phone cards', async ({ page }) => {
+  await page.goto('/?sport=nfl&page=projections&previewTier=owner')
+  await expect(page.getByRole('heading', { name: 'Edge Board' })).toBeVisible()
+  await expect(page.locator('.nfl-edge-card').first()).toBeVisible()
+  await expect(page.getByText('Goblin Only')).toHaveCount(0)
+  await page.goto('/?sport=nhl&page=projections&previewTier=owner')
+  await expect(page.getByRole('heading', { name: 'Board' })).toBeVisible()
+  await expect(page.locator('.nfl-edge-card').first()).toBeVisible()
+  await expect(page.getByText('Goblin Skater')).toHaveCount(0)
+})
+
 test('a sport tab opens that sport dashboard', async ({ page }) => {
   await page.goto('/?sport=nfl&page=projections&previewTier=owner')
   await page.getByRole('tab', { name: 'NHL' }).click()
