@@ -2,7 +2,11 @@
 
 The local projections file is gitignored and is not on a fresh GitHub
 checkout. The copy that survives a workflow run is the published Supabase
-snapshot (nhl_projections / nfl_projections, id = 1, data = the board).
+snapshot (nhl_projections / nfl_projections). A board that fits in one row
+is id = 1. A larger board is stored as versioned chunks; this reader joins
+a complete set back into that same list. A partial or mixed set is treated
+as no previous board, so a pulled-line check never compares against half
+of an old publish and half of a new one.
 """
 from __future__ import annotations
 
@@ -380,6 +384,57 @@ def rows_from_supabase_body(body) -> list:
     return []
 
 
+def _column_data(body):
+    """The `data` column from a PostgREST row, or None when the body is not one."""
+    if isinstance(body, list) and body and isinstance(body[0], dict) and "data" in body[0]:
+        return body[0].get("data")
+    if isinstance(body, dict) and "data" in body and "snapshotChunks" not in body:
+        return body.get("data")
+    return None
+
+
+def _parse_stored(data):
+    if isinstance(data, str):
+        try:
+            return json.loads(data)
+        except ValueError:
+            return None
+    return data
+
+
+def assemble_published_board(head_data, load_chunk) -> list:
+    """Join a versioned chunk manifest back into the board list.
+
+    `load_chunk(id)` returns `{id, data}` or None. An incomplete or mixed
+    set returns [] so the caller does not treat a partial board as the
+    previous lines.
+    """
+    from publish_supabase import assemble_snapshot_rows
+
+    head = _parse_stored(head_data)
+    manifest = head.get("snapshotChunks") if isinstance(head, dict) else None
+    ids = manifest.get("ids") if isinstance(manifest, dict) else None
+    if not isinstance(ids, list) or not ids:
+        return []
+    stored = [{"id": 1, "data": head}]
+    for chunk_id in ids:
+        if isinstance(chunk_id, bool) or not isinstance(chunk_id, int):
+            return []
+        chunk = load_chunk(chunk_id)
+        if not isinstance(chunk, dict) or "id" not in chunk or "data" not in chunk:
+            return []
+        chunk_data = _parse_stored(chunk.get("data"))
+        if chunk_data is None:
+            return []
+        try:
+            chunk_row_id = int(chunk["id"])
+        except (TypeError, ValueError):
+            return []
+        stored.append({"id": chunk_row_id, "data": chunk_data})
+    assembled = assemble_snapshot_rows(stored)
+    return assembled if isinstance(assembled, list) else []
+
+
 def _anon_key(env) -> str:
     """Publishable client key. The service role is never used for this read."""
     for name in ("VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"):
@@ -417,10 +472,24 @@ def load_board_with_reader(table: str, *, env=None, connect=None):
         return []
     connect = connect or _connect_board_reader
     conn = None
+    data = None
+    chunked = None
     try:
         conn = connect(url)
         cur = conn.execute(f"select data from public.{table} where id = 1")
         row = cur.fetchone()
+        data = _parse_stored(row[0] if row else None)
+        if isinstance(data, dict) and isinstance(data.get("snapshotChunks"), dict):
+            def load_chunk(chunk_id, connection=conn):
+                cur_chunk = connection.execute(
+                    f"select id, data from public.{table} where id = {int(chunk_id)}"
+                )
+                got = cur_chunk.fetchone()
+                if not got:
+                    return None
+                return {"id": got[0], "data": got[1]}
+
+            chunked = assemble_published_board(data, load_chunk)
     except Exception as exc:  # denied, unreachable, psycopg missing
         print(f"[prizepicks_seen] previous {table} unavailable via board_reader ({type(exc).__name__})")
         return []
@@ -430,12 +499,8 @@ def load_board_with_reader(table: str, *, env=None, connect=None):
                 conn.close()
             except Exception:
                 pass
-    data = row[0] if row else None
-    if isinstance(data, str):
-        try:
-            data = json.loads(data)
-        except ValueError:
-            return []
+    if chunked is not None:
+        return chunked
     rows = rows_from_supabase_body({"data": data}) if isinstance(data, list) else []
     return rows
 
@@ -470,6 +535,27 @@ def load_published_board(table: str, *, env=None, get=None, connect=None) -> lis
             body = get(url, headers)
     except Exception:
         return []
+    data = _column_data(body)
+    if isinstance(data, dict) and isinstance(data.get("snapshotChunks"), dict):
+        def load_chunk(chunk_id):
+            chunk_url = f"{base}/rest/v1/{table}?id=eq.{int(chunk_id)}&select=id,data"
+            try:
+                if get is None:
+                    import requests
+                    response = requests.get(chunk_url, headers=headers, timeout=30)
+                    response.raise_for_status()
+                    chunk_body = response.json()
+                else:
+                    chunk_body = get(chunk_url, headers)
+            except Exception:
+                return None
+            if isinstance(chunk_body, list) and chunk_body and isinstance(chunk_body[0], dict):
+                row = chunk_body[0]
+                if "id" in row and "data" in row:
+                    return {"id": row["id"], "data": row["data"]}
+            return None
+
+        return assemble_published_board(data, load_chunk)
     rows = rows_from_supabase_body(body)
     return rows if isinstance(rows, list) else []
 
@@ -479,10 +565,12 @@ def previous_board_rows(paths, table: str, *, env=None, get=None, connect=None) 
 
     GitHub Actions checks out a clean tree. nfl/projections.json and
     nhl/projections.json are gitignored and are not restored from an artifact.
-    The fallback reads nhl_projections or nfl_projections (id = 1) as the
-    SELECT-only board_reader role (BOARD_READER_DB_URL), else a GET with the
-    anon key. Row-level security currently denies that role, so a blocked
-    read leaves no previous board instead of using the service role.
+    The fallback reads nhl_projections or nfl_projections as the SELECT-only
+    board_reader role (BOARD_READER_DB_URL), else a GET with the anon key.
+    A single id = 1 row is the board. A versioned chunk set is joined back
+    into that same list; a partial or mixed set leaves no previous board.
+    Row-level security currently denies the anon role, so a blocked read
+    leaves no previous board instead of using the service role.
     """
     if isinstance(paths, (str, Path)):
         paths = [paths]

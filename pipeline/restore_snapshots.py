@@ -41,6 +41,7 @@ from publish_supabase import (  # noqa: E402
     TABLES,
     _get_service_role_key,
     assemble_nba_player_rows,
+    fetch_snapshot_payload,
 )
 
 
@@ -68,31 +69,27 @@ def restore(prefix: str = "", force: bool = False) -> int:
         try:
             if table == "nba_players":
                 # A chunked publish stores the player list on the ids named by
-                # id=1. Other tables are still the single id=1 row.
+                # id=1. Other tables are still the single id=1 row, or a
+                # versioned chunk set that fetch_snapshot_payload joins back
+                # into that same payload.
                 resp = session.get(
                     f"{SUPABASE_URL}/rest/v1/{table}",
                     params={"select": "id,data", "order": "id.asc"},
                     headers=headers,
                     timeout=120,
                 )
+                if resp.status_code != 200:
+                    print(f"  ! {table}: HTTP {resp.status_code} (skipped)")
+                    continue
+                payload = assemble_nba_player_rows(resp.json())
             else:
-                resp = session.get(
-                    f"{SUPABASE_URL}/rest/v1/{table}",
-                    params={"id": "eq.1", "select": "data"},
-                    headers=headers,
-                    timeout=120,
-                )
+                resp, payload = fetch_snapshot_payload(session, table, headers)
+                if resp.status_code != 200:
+                    print(f"  ! {table}: HTTP {resp.status_code} (skipped)")
+                    continue
         except Exception as exc:  # network hiccup: keep going
             print(f"  ! {table}: {exc}")
             continue
-        if resp.status_code != 200:
-            print(f"  ! {table}: HTTP {resp.status_code} (skipped)")
-            continue
-        rows = resp.json()
-        if table == "nba_players":
-            payload = assemble_nba_player_rows(rows)
-        else:
-            payload = rows[0].get("data") if rows else None
         if payload is None:
             print(f"  ! {table}: no published snapshot yet (skipped)")
             continue

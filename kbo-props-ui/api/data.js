@@ -14,6 +14,9 @@ import {
 } from './_dataAccess.js';
 import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
+import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
+
+export { assembleSnapshotRows, snapshotChunkManifest };
 
 // Members may reuse a response for half a minute. It stays private, so the
 // edge never stores a paid board. Anonymous previews keep the public cache.
@@ -187,7 +190,7 @@ async function readSnapshot(client, table) {
   const hit = cache.get(table);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.row;
   if (inflight.has(table)) return inflight.get(table);
-  const pending = readSnapshotFresh(client, table).catch(async (err) => {
+  const pending = readSnapshotResolved(client, table).catch(async (err) => {
     if (hit && hit.row && Date.now() - hit.at < STALE_MAX_MS) return hit.row;
     // Cold instance: fall back to the private last-good copy the publish job
     // writes to Storage. Read with the server key only; never a public URL.
@@ -240,6 +243,8 @@ export async function readLastGood(client, table) {
     if (error || !data) return null;
     const parsed = JSON.parse(typeof data.text === 'function' ? await data.text() : String(data));
     if (!parsed || parsed.data == null) return null;
+    // A chunk manifest is not the board. The bucket stores the full payload.
+    if (snapshotChunkManifest(parsed.data)) return null;
     const maxAge = Object.hasOwn(LAST_GOOD_MAX_AGE_MS, table) ? LAST_GOOD_MAX_AGE_MS[table] : LAST_GOOD_DEFAULT_MAX_AGE_MS;
     const ts = lastGoodTimestamp(parsed);
     if (!Number.isFinite(ts) || Date.now() - ts > maxAge) {
@@ -253,15 +258,14 @@ export async function readLastGood(client, table) {
   }
 }
 
-async function readSnapshotFresh(client, table) {
-
+async function fetchSnapshotRow(client, table, id) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
   try {
     let builder = client
       .from(table)
-      .select('data, updated_at')
-      .eq('id', 1);
+      .select('id, data, updated_at')
+      .eq('id', id);
     // Real PostgREST clients cancel the HTTP request; unit mocks skip this.
     if (typeof builder.abortSignal === 'function') {
       builder = builder.abortSignal(controller.signal);
@@ -272,9 +276,7 @@ async function readSnapshotFresh(client, table) {
       'Dataset read timed out'
     );
     if (error) throw new Error(error.message);
-    const row = data || null;
-    cache.set(table, { at: Date.now(), row });
-    return row;
+    return data || null;
   } catch (err) {
     if (err?.code === 'UPSTREAM_TIMEOUT') throw err;
     if (err?.name === 'AbortError' || controller.signal.aborted) {
@@ -284,6 +286,25 @@ async function readSnapshotFresh(client, table) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// id=1 is the board, or a manifest plus the chunk ids it names. Chunks are
+// read one id at a time so a multi-megabyte board is not one statement.
+// The cached row is the joined payload, identical to a single-row publish.
+async function readSnapshotResolved(client, table) {
+  const head = await fetchSnapshotRow(client, table, 1);
+  if (!head || !snapshotChunkManifest(head.data)) {
+    cache.set(table, { at: Date.now(), row: head });
+    return head;
+  }
+  const ids = head.data.snapshotChunks.ids;
+  if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isInteger(id))) {
+    throw new Error('snapshot chunk manifest is invalid');
+  }
+  const extra = await Promise.all(ids.map((id) => fetchSnapshotRow(client, table, id)));
+  const assembled = assembleSnapshotRows(head, extra);
+  cache.set(table, { at: Date.now(), row: assembled });
+  return assembled;
 }
 
 // NBA caller identity. Unlike resolveTier, a bad token or a missing email is
