@@ -191,8 +191,8 @@ function App() {
     );
   }
 
-  /* Anonymous visitors and free accounts browse in preview mode. The server
-     sends the top 3 lines per board, except NFL while its preview flag is off. */
+  /* A sport page, not the landing. Anonymous visitors and free accounts see
+     that sport's own top 3. NFL withholds its rows while its preview flag is off. */
   const seesFreePreview = !user || tier === 'free'
   const previewBar = seesFreePreview && (
     <div className="ff-preview-bar" role="note" ref={setPreviewNode}>

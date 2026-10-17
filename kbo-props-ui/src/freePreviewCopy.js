@@ -16,7 +16,7 @@ export function freeTierPreviewFeature() {
     : 'Top 3 projections — KBO, WNBA & NHL'
 }
 
-const TOP_3_BANNER = "Free preview: you're seeing the top 3 lines on each board."
+const TOP_3_BANNER = "Free preview: you're seeing the top 3 lines on this board."
 const NFL_PAUSED_BANNER = 'NFL free preview is paused. Sign up to see the full board.'
 
 // The green bar reads the same flag the API uses. Turning the preview back

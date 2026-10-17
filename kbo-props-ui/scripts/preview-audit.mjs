@@ -104,7 +104,12 @@ async function shoot(browser, secret, width, height, file) {
 }
 
 async function shootNhl(browser, secret, width, height, file) {
-  const page = await openLanding(browser, secret, width, height)
+  // The landing no longer has an NHL tab and does not fetch that board.
+  // The NHL sport page still shows its own free top 3 and proxied headshots.
+  const page = await browser.newPage({
+    viewport: { width, height },
+    extraHTTPHeaders: { 'x-vercel-protection-bypass': secret },
+  })
   const imgStatuses = []
   page.on('response', (response) => {
     try {
@@ -112,34 +117,41 @@ async function shootNhl(browser, secret, width, height, file) {
     } catch { /* ignore a bad response url */ }
   })
   try {
-    // Other leagues wait until scroll or a few seconds after load. A scroll
-    // starts that fetch, then the NHL tab has to wait for the rows.
-    await page.mouse.wheel(0, 600)
-    await page.locator('#boards [role="tab"]', { hasText: /^NHL$/ }).click()
-    await page.locator('#free-top-3 [role="tab"]', { hasText: /^NHL$/ }).click()
-    await page.waitForSelector('#boards .pl-tr', { timeout: 20000 })
-    await page.locator('#free-top-3').evaluate((node) => node.scrollIntoView({ block: 'start' }))
-    await page.waitForTimeout(1200)
-    const info = await readAvatars(page)
+    const url = new URL(previewUrl)
+    url.searchParams.set('sport', 'nhl')
+    await page.goto(url.toString(), { waitUntil: 'networkidle', timeout: 60000 })
+    await page.waitForSelector('.nfl-lines-avatar img, .nfl-card-avatar img', { timeout: 25000 })
+    const info = await page.evaluate(() => {
+      const imgs = [...document.querySelectorAll('.nfl-lines-avatar img, .nfl-card-avatar img')].map((img) => ({
+        src: img.getAttribute('src') || '',
+        loading: img.getAttribute('loading'),
+      }))
+      return {
+        imgs,
+        phoneImages: document.querySelectorAll('.pl-phone img').length,
+        apiData: performance.getEntriesByType('resource')
+          .map((entry) => entry.name)
+          .filter((name) => name.includes('/api/data')),
+      }
+    })
     if (info.phoneImages !== 0) throw new Error(`hero phone has ${info.phoneImages} images`)
+    if (!info.imgs.length) throw new Error('NHL page has no headshots')
     for (const img of info.imgs) {
+      if (img.loading !== 'lazy') throw new Error(`headshot is not lazy: ${img.src}`)
       if (!img.src.startsWith('/api/img?')) throw new Error(`headshot skipped the image proxy: ${img.src}`)
       const decoded = decodeURIComponent(img.src)
       if (BLOCKED.test(decoded) || !decoded.includes('https://static.prizepicks.com/images/players/')) {
         throw new Error(`blocked headshot host: ${img.src}`)
       }
     }
-    const selected = await page.locator('#boards [role="tab"][aria-selected="true"]').innerText()
-    if (selected.trim() !== 'NHL') throw new Error(`board tab is ${selected}`)
     await page.screenshot({ path: file })
     return {
       width,
       file: file.split('/').pop(),
       sport: 'nhl',
-      initials: info.initials,
       imgs: info.imgs.length,
-      boardRows: info.boardRows,
       phoneImages: info.phoneImages,
+      apiData: info.apiData,
       imgStatuses,
     }
   } finally {

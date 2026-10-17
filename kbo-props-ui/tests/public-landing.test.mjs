@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { HERO_LANDING_SPORT_ID } from '../src/landingSports.js'
+import { HERO_LANDING_SPORT_ID, LANDING_SPORTS, LOCKED_LANDING_SPORTS } from '../src/landingSports.js'
 import { nflHubRows, nhlHubRows } from '../src/memberHub.js'
 import {
   BOARD_QA_ALLOWLIST,
@@ -63,9 +63,14 @@ test('the public landing has no reviews section', () => {
   assert.equal(/PrizePicks/.test(landing), false)
 })
 
-test('the public landing features NFL on the hero, phone, and sport tabs', () => {
+test('the public landing features the NFL free top 3 and does not tab through other sports', () => {
   assert.equal(HERO_LANDING_SPORT_ID, 'nfl')
-  assert.match(landing, /useState\(HERO_LANDING_SPORT_ID\)/)
+  assert.deepEqual(LANDING_SPORTS.map((sport) => sport.id), ['nfl'])
+  assert.deepEqual(LOCKED_LANDING_SPORTS.map((sport) => sport.id), ['kbo', 'wnba', 'nhl'])
+  assert.equal(landing.includes('role="tab"'), false)
+  assert.equal(landing.includes('KBO · NFL'), false)
+  assert.match(landing, /freeTop\.length < 3/)
+  assert.match(landing, /LOCKED_LANDING_SPORTS/)
   assert.equal(/setSportId\(withRows\.id\)/.test(landing), false)
   assert.equal(/setHitSportId\(withHits\.id\)/.test(landing), false)
 })
@@ -89,7 +94,10 @@ test('signed-out landing fetches only the NFL free board', () => {
   assert.equal(landing.includes('whenVisibleOrIdle'), false)
   assert.equal(landing.includes('sport.lineups'), false)
   assert.equal(landing.includes('HERO_SPORT.lineups'), false)
-  assert.match(landing, /status: 'locked'/)
+  assert.equal(landing.includes("status: 'locked'"), false)
+  assert.equal(landing.includes('prizepicks_props'), false)
+  assert.equal(landing.includes('wnba_projections'), false)
+  assert.equal(landing.includes('nhl_projections'), false)
   assert.match(landing, /publicSwitcherRows\(boards\.nfl\?\.rows \|\| \[\], 3\)/)
 })
 
@@ -98,4 +106,7 @@ test('the member hub loads the open sport and does not prefetch the rest', () =>
   assert.equal(/SPORTS\.forEach\(\(sport, index\)/.test(memberHub), false)
   assert.match(memberHub, /status: sport\.id === activeId \? 'loading' : 'idle'/)
   assert.match(memberHub, /if \(active\) loadSport\(active\)/)
+  assert.match(memberHub, /useState\(DEFAULT_MEMBER_SPORT\)/)
+  assert.equal(memberHub.includes('readMemberSportChoice'), false)
+  assert.match(memberHub, /FETCH_BUDGET_MS \+ 500/)
 })

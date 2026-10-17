@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { loadMemberBoard } from './memberBoardLoad';
+import { FETCH_BUDGET_MS, loadMemberBoard } from './memberBoardLoad';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -17,7 +17,7 @@ import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, hubGamedayFor, normalizePlayerName, playableRows, sameMatchup, scopeToGameday, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
 } from './memberHub';
-import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
+import { DEFAULT_MEMBER_SPORT, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
 
 /*
@@ -251,19 +251,35 @@ function useBoards(access, nbaOpen, activeId) {
         .then((snap) => setLineups((s) => ({ ...s, [sport.id]: snap.data })))
         .catch(() => setLineups((s) => ({ ...s, [sport.id]: null })));
     }
+    let settled = false;
+    const finish = (patch) => {
+      if (settled) return;
+      settled = true;
+      setBoards((b) => ({ ...b, [sport.id]: patch }));
+    };
+    // The data client already rejects at 12s. This is the backstop so a tile
+    // cannot stay on Loading if that rejection never arrives.
+    const timer = setTimeout(() => finish({ status: 'error', raw: null }), FETCH_BUDGET_MS + 500);
     loadMemberBoard(sport, fetchApiDataset, undefined, { view: 'hub' })
       .then((snap) => {
-        setBoards((b) => ({
-          ...b,
-          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: snap.preview, lockedCount: snap.lockedCount },
-        }));
+        clearTimeout(timer);
+        finish({
+          status: 'ready',
+          raw: snap.data,
+          updatedAt: snap.updatedAt,
+          preview: snap.preview,
+          lockedCount: snap.lockedCount,
+        });
       })
-      .catch(() => setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })));
+      .catch(() => {
+        clearTimeout(timer);
+        finish({ status: 'error', raw: null });
+      });
   };
 
   useEffect(() => {
-    // Only the open sport. KBO, WNBA, NHL, and NBA (and their rosters and
-    // lineups) wait until that tab is selected. A saved choice is that tab.
+    // NFL on first paint. Another sport, its roster, and its lineups load
+    // only after that tab is selected. Nothing else is prefetched.
     const active = SPORTS.find((sport) => sport.id === activeId);
     if (active) loadSport(active);
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -347,9 +363,10 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate, initialP
   const { user, tier, signOut } = useAuth();
   const access = sportAccess(tier);
   const { open: nbaOpen } = useNbaOpen();
-  const [picked, setPicked] = useState(() => (
-    readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
-  ));
+  // A saved cg_member_sport of KBO, NHL, or WNBA stays in storage for that
+  // sport's page. The hub itself always opens on NFL and does not overwrite
+  // the saved key until a tile is tapped.
+  const [picked, setPicked] = useState(DEFAULT_MEMBER_SPORT);
   const selectedSport = SPORTS.find((s) => s.id === selectedHubSport(picked));
   const boards = useBoards(access, nbaOpen, selectedSport.id);
   const recap = useRecap();

@@ -23,7 +23,7 @@ test('the free-tier FAQ follows NFL_FREE_PREVIEW_ENABLED', () => {
 
 test('the NFL preview banner follows NFL_FREE_PREVIEW_ENABLED and other sports stay on the top-3 line', () => {
   const paused = 'NFL free preview is paused. Sign up to see the full board.'
-  const top3 = "Free preview: you're seeing the top 3 lines on each board."
+  const top3 = "Free preview: you're seeing the top 3 lines on this board."
   for (const sport of ['kbo', 'wnba', 'nba', 'nhl']) {
     assert.equal(freePreviewBannerText(sport, false), top3)
     assert.equal(freePreviewBannerText(sport, true), top3)

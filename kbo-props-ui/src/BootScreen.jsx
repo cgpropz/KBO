@@ -70,13 +70,10 @@ export default function BootScreen({ inset = false }) {
         <header className="cg-boot-top">
           <div className="cg-boot-mark">cg<span>propz</span></div>
           <nav className="cg-boot-nav" aria-hidden="true">
-            <span>KBO</span>
             <span>NFL</span>
-            <span>WNBA</span>
-            <span>NHL</span>
           </nav>
         </header>
-        <p className="cg-kicker">Today’s free top 3</p>
+        <p className="cg-kicker">Today’s NFL free top 3</p>
         <div className="cg-picks">
           <PickSkeleton />
           <PickSkeleton />
