@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
+import { loadMemberBoard } from './memberBoardLoad';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -237,7 +238,7 @@ function useBoards(access, nbaOpen) {
           .then((snap) => { if (alive) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
           .catch(() => { if (alive) setLineups((s) => ({ ...s, [sport.id]: null })); });
       }
-      fetchApiDataset(sport.ds, { devStaticPath: sport.dev })
+      loadMemberBoard(sport, fetchApiDataset)
         .then((snap) => {
           if (!alive) return;
           setBoards((b) => ({

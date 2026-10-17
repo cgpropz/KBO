@@ -18,8 +18,10 @@ import { cachedAccessToken, readCachedSession, sessionAccessToken } from './supa
 // hanging forever when /api/data (or upstream Supabase) stalls.
 export const FETCH_TIMEOUT_MS = 12_000;
 
-async function accessToken() {
-  const cached = cachedAccessToken();
+async function accessToken({ fresh = false } = {}) {
+  // fresh skips the localStorage copy and asks the Supabase client, which
+  // refreshes an expired or rejected session before handing back a token.
+  const cached = fresh ? null : cachedAccessToken();
   if (cached) return cached;
   // Logged-out visitors have no session. Skip the client download entirely.
   if (!readCachedSession()) return null;
@@ -56,14 +58,16 @@ async function readErrorDetail(res) {
   }
 }
 
-export async function fetchApiDataset(ds, { devStaticPath, priority, player } = {}) {
+export async function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false } = {}) {
   try {
-    const token = await accessToken();
+    const token = await accessToken({ fresh });
     const params = new URLSearchParams({ ds });
     if (player) params.set('player', player);
     const res = await fetch(`/api/data?${params}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      // A retry must not reuse the browser's cached copy of the bad answer.
+      ...(fresh ? { cache: 'no-store' } : {}),
       ...(priority ? { priority } : {}),
     });
     const type = res.headers.get('content-type') || '';

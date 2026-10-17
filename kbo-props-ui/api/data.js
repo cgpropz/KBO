@@ -28,8 +28,15 @@ export function dataCacheControl(req, { memberGated = false } = {}) {
   return PUBLIC_DATA_CACHE;
 }
 
+// A signed-in caller who gets the free preview is usually a lookup blip
+// (auth or tier timeout, stale token). Never let the browser keep that copy,
+// or a paying member sees an empty hub until the private cache runs out.
+export function previewForSignedIn(req, body) {
+  return !!String(req?.headers?.authorization || '').trim() && body?.preview === true;
+}
+
 function sendData(req, res, body, memberGated) {
-  res.setHeader('Cache-Control', dataCacheControl(req, { memberGated }));
+  res.setHeader('Cache-Control', previewForSignedIn(req, body) ? 'private, no-store, max-age=0' : dataCacheControl(req, { memberGated }));
   return res.status(200).json(body);
 }
 
