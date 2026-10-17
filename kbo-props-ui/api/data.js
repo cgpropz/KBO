@@ -208,8 +208,25 @@ export const LAST_GOOD_BUCKET = 'board-last-good';
 export const LAST_GOOD_DEFAULT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const NFL_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 export const LAST_GOOD_MAX_AGE_MS = Object.fromEntries(
-  ['nfl_projections', 'nfl_lineups', 'nfl_sharp_odds', 'nfl_game_markets', 'correlations_nfl'].map((t) => [t, NFL_MAX_AGE_MS]),
+  ['nfl_projections', 'nfl_lineups', 'correlations_nfl'].map((t) => [t, NFL_MAX_AGE_MS]),
 );
+
+// Age comes from the board's own generated time first (data[0].generated_at or
+// a top-level generated_at), then the stored updated_at, because
+// nhl_projections.updated_at has historically not auto-updated.
+export function lastGoodTimestamp(parsed) {
+  const data = parsed?.data;
+  const candidates = [
+    Array.isArray(data) ? data[0]?.generated_at : null,
+    data && typeof data === 'object' && !Array.isArray(data) ? data.generated_at : null,
+    parsed?.updated_at,
+  ];
+  for (const value of candidates) {
+    const ts = Date.parse(value || '');
+    if (Number.isFinite(ts)) return ts;
+  }
+  return NaN;
+}
 
 export async function readLastGood(client, table) {
   try {
@@ -224,7 +241,7 @@ export async function readLastGood(client, table) {
     const parsed = JSON.parse(typeof data.text === 'function' ? await data.text() : String(data));
     if (!parsed || parsed.data == null) return null;
     const maxAge = Object.hasOwn(LAST_GOOD_MAX_AGE_MS, table) ? LAST_GOOD_MAX_AGE_MS[table] : LAST_GOOD_DEFAULT_MAX_AGE_MS;
-    const ts = Date.parse(parsed.updated_at || '');
+    const ts = lastGoodTimestamp(parsed);
     if (!Number.isFinite(ts) || Date.now() - ts > maxAge) {
       console.warn(`[api/data] ${table} last-good copy too old (${parsed.updated_at || 'no time'}); not served`);
       return null;
