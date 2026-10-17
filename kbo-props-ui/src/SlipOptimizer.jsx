@@ -2,11 +2,19 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import './SlipOptimizer.css';
 import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
-import { correlationSuggestions, formatAgreement } from './slipCorrelations';
+import { correlationSuggestions } from './slipCorrelations';
+import {
+  FLEX_VARIANCE,
+  PAIRS_WELL_LABEL,
+  SAME_GAME_WARNING,
+  SLIP_BETA_FOOTER,
+  WORKS_AGAINST_LABEL,
+  correlationTooltip,
+  slipSharesTeamOrGame,
+} from './slipBetaCopy';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
-import { formatBreakEvenRate } from './prizepicksBreakeven';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 const SLIP_SPORT_KEY = 'cg_slip_sports';
@@ -404,7 +412,6 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
         {payout ? (
           <div className="so-payout-figures">
             <strong>{payout.payout}</strong>
-            <span>Break-even {formatBreakEvenRate(payout.breakeven)}</span>
             {payout.altered && <span className="so-payout-altered">Altered payout</span>}
           </div>
         ) : (
@@ -474,18 +481,13 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                       <div key={idx} className="so-slip-leg">
                         <span className="so-leg-name">{p.name}</span>
                         <span className="so-leg-prop">{p.propShort}</span>
-                        <span className="so-leg-line">
-                          <span className="pp-mini">P</span>{p.line}
-                        </span>
+                        <span className="so-leg-line">{p.line}</span>
                         <span
                           className={`so-leg-side ${side === 'OVER' ? 'side-over' : 'side-under'}${isPromo(p) ? ' so-side-fixed' : ''}`}
                           onClick={() => toggleSide(idx)}
                           title={isPromo(p) ? 'More only' : 'Click to flip'}
                         >
                           {side}
-                        </span>
-                        <span className={`so-leg-edge ${p.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
-                          {(side === 'OVER' ? p.edge : -p.edge) > 0 ? '+' : ''}{(side === 'OVER' ? p.edge : -p.edge).toFixed(2)}
                         </span>
                         <button className="so-leg-remove" onClick={() => toggleSelect(idx)}>×</button>
                       </div>
@@ -499,14 +501,6 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <span className={`so-stat-val ${getConfidenceClass(slipScore.confidence)}`}>{slipScore.confidence}</span>
                   </div>
                   <div className="so-slip-stat">
-                    <span className="so-stat-label">Avg Edge</span>
-                    <span className={`so-stat-val ${slipScore.avgEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.avgEdge > 0 ? '+' : ''}{slipScore.avgEdge}</span>
-                  </div>
-                  <div className="so-slip-stat">
-                    <span className="so-stat-label">Total Edge</span>
-                    <span className={`so-stat-val ${slipScore.totalEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.totalEdge > 0 ? '+' : ''}{slipScore.totalEdge}</span>
-                  </div>
-                  <div className="so-slip-stat">
                     <span className="so-stat-label">Games</span>
                     <span className="so-stat-val">{slipScore.uniqueGames}</span>
                   </div>
@@ -515,15 +509,25 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                   {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
                 </button>
                 <div className="so-corr">
+                  <p className="so-corr-empty">{correlationTooltip(config.id)}</p>
+                  {(suggestions.pairsWell.length > 0 || suggestions.worksAgainst.length > 0) && (
+                    <p className="so-corr-empty">{SAME_GAME_WARNING}</p>
+                  )}
+                  {slipSharesTeamOrGame(selectedArr.map((idx) => allProps[idx]).filter(Boolean)) && (
+                    <p className="so-corr-empty">{SAME_GAME_WARNING}</p>
+                  )}
+                  {payoutMode === 'flex' && (suggestions.pairsWell.length > 0 || suggestions.worksAgainst.length > 0) && (
+                    <p className="so-corr-empty">{FLEX_VARIANCE}</p>
+                  )}
                   <div className="so-corr-col" data-testid="slip-pairs-well">
-                    <h3 className="so-corr-title">Pairs well</h3>
+                    <h3 className="so-corr-title" title={correlationTooltip(config.id)}>{PAIRS_WELL_LABEL}</h3>
                     {suggestions.pairsWell.length === 0 ? (
                       <p className="so-corr-empty">No teammates or opponents on today's board hit with these legs often enough.</p>
                     ) : suggestions.pairsWell.map((item) => (
                       <button key={`well-${item.idx}`} type="button" className="so-corr-row" onClick={() => toggleSelect(item.idx)}>
                         <span className="so-corr-name">{item.name} <span className="so-prop-tag">{item.propShort}</span></span>
                         <span className="so-corr-meta">
-                          {formatAgreement(item.agreement)} · n={item.n}
+                          {Number.isFinite(Number(item.n)) ? `${item.n} games` : null}
                           {item.smallSample && <span className="so-small-sample">small sample</span>}
                         </span>
                         <span className="so-corr-add">Add</span>
@@ -531,14 +535,14 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     ))}
                   </div>
                   <div className="so-corr-col" data-testid="slip-works-against">
-                    <h3 className="so-corr-title">Works against</h3>
+                    <h3 className="so-corr-title" title={correlationTooltip(config.id)}>{WORKS_AGAINST_LABEL}</h3>
                     {suggestions.worksAgainst.length === 0 ? (
                       <p className="so-corr-empty">Nothing on today's board disagrees with these legs often enough.</p>
                     ) : suggestions.worksAgainst.map((item) => (
                       <button key={`against-${item.idx}`} type="button" className="so-corr-row" onClick={() => toggleSelect(item.idx)}>
                         <span className="so-corr-name">{item.name} <span className="so-prop-tag">{item.propShort}</span></span>
                         <span className="so-corr-meta">
-                          {formatAgreement(item.agreement)} · n={item.n}
+                          {Number.isFinite(Number(item.n)) ? `${item.n} games` : null}
                           {item.smallSample && <span className="so-small-sample">small sample</span>}
                         </span>
                         <span className="so-corr-add">Add</span>
@@ -823,7 +827,8 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
       )}
 
       <div className="so-footer-note">
-        Slips are ranked by CG Score. Power and Flex show the standard payout and the break-even hit rate. A demon or goblin leg is an altered payout.
+        {SLIP_BETA_FOOTER}
+        {' '}Slips are ranked by CG Score. A demon or goblin leg is an altered payout.
         The same player is not used twice. Click OVER/UNDER on any prop to flip the side.
       </div>
     </div>
