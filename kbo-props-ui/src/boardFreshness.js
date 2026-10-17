@@ -37,6 +37,28 @@ export const STALE_AFTER_HOURS = {
 
 export const BOARD_SPORTS = ['kbo', 'wnba', 'nfl', 'nba', 'nhl']
 
+export const REMOVED_REASONS = ['pp_pull', 'superseded_dup', 'manual_out', 'news_out', 'lineup_out']
+
+export function removedReasonCounts(data) {
+  const counts = Object.fromEntries(REMOVED_REASONS.map((reason) => [reason, 0]))
+  if (!Array.isArray(data)) return counts
+  for (const row of data) {
+    if (!row || row.removed !== true) continue
+    if (Object.prototype.hasOwnProperty.call(counts, row.removed_reason)) counts[row.removed_reason] += 1
+  }
+  return counts
+}
+
+export function copyRemovedReasons(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const counts = {}
+  for (const reason of REMOVED_REASONS) {
+    const raw = value[reason]
+    counts[reason] = Number.isInteger(raw) && raw >= 0 ? raw : 0
+  }
+  return counts
+}
+
 const ET = 'America/New_York'
 
 const PUBLISH_KEYS = ['published_at', 'updated_at', 'generated_at']
@@ -164,13 +186,18 @@ export function buildBoardStatus({ snapshots = {}, previous = [], now = new Date
     if (!raw && prev) raw = prev.board_updated_at
     if (count == null) count = Number.isInteger(prev?.prop_count) ? prev.prop_count : 0
     if (!injury && !present && prev) injury = prev.injuries_checked_at
-    return {
+    const entry = {
       sport,
       board_updated_at: raw ? isoWithEtOffset(raw) : null,
       injuries_checked_at: injury ? isoWithEtOffset(injury) : null,
       prop_count: count,
       stale: raw ? isBoardStale(raw, sport, now) : true,
     }
+    if (sport === 'nhl') {
+      const reasons = present ? removedReasonCounts(snap.data) : copyRemovedReasons(prev?.removed_reasons)
+      if (reasons) entry.removed_reasons = reasons
+    }
+    return entry
   })
   return { boards }
 }

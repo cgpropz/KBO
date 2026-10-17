@@ -34,7 +34,10 @@ from __future__ import annotations
 import json
 import logging
 import re
+import ssl
+import time
 import unicodedata
+import urllib.error
 import urllib.request
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -54,6 +57,10 @@ _WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
 # A team's projected lineup only counts as complete with 12 forwards and 6 D.
 FULL_LINEUP_SKATERS = 18
 ESPN_TEAM = {"LA": "LAK", "NJ": "NJD", "SJ": "SJS", "TB": "TBL", "UTAH": "UTA"}
+# Labels on rows that are already removed. They do not decide who leaves the board.
+REMOVED_REASONS = ("pp_pull", "superseded_dup", "manual_out", "news_out", "lineup_out")
+# A dropped TLS connection on one right-rail read should not skip that game's scratches.
+_RIGHT_RAIL_DELAYS = (1.0, 2.0)
 
 
 def name_key(name: str | None) -> str:
@@ -364,7 +371,70 @@ def hold_row(row, status: str, source: str) -> dict:
     if not held.get("injury"):
         held["injury"] = status
     held["injury_source"] = source
+    if source == "manual_out":
+        held["removed_reason"] = "manual_out"
+    elif source == "dailyfaceoff_news":
+        held["removed_reason"] = "news_out"
     return held
+
+
+def _removed_sibling_key(row) -> tuple:
+    """Player, stat, and odds type. The line is not part of a live sibling."""
+    odds = str((row or {}).get("oddsType") or (row or {}).get("odds_type") or "standard").strip().lower()
+    return (
+        name_key((row or {}).get("player") or (row or {}).get("name")),
+        str((row or {}).get("prop") or (row or {}).get("stat") or "").strip().lower(),
+        odds or "standard",
+    )
+
+
+def assign_removed_reasons(rows, lineup_names=None, lineup_ids=None) -> list:
+    """Label rows that are already removed. Live rows stay live and unlabeled.
+
+    manual_out and news_out come from the fallback that held the row.
+    lineup_out is a removed row whose player the lineup snapshot or the
+    right-rail scratch list already named. A removed id with a live row for
+    the same player, stat, and odds type is superseded_dup. Anything else
+    removed is a pulled id with no live sibling.
+    """
+    names = {name_key(item) for item in (lineup_names or set()) if name_key(item)}
+    ids = {str(item).strip() for item in (lineup_ids or set()) if str(item).strip()}
+    source_rows = list(rows or [])
+    records = [row for row in source_rows if isinstance(row, dict)]
+    live = set()
+    for row in records:
+        if row.get("removed") is True:
+            continue
+        live.add(_removed_sibling_key(row))
+    for row in records:
+        if row.get("removed") is not True:
+            continue
+        source = str(row.get("injury_source") or "")
+        player_id = str(row.get("playerId") or row.get("player_id") or "").strip()
+        if source == "manual_out":
+            reason = "manual_out"
+        elif source == "dailyfaceoff_news":
+            reason = "news_out"
+        elif name_key(row.get("player") or row.get("name")) in names or (player_id and player_id in ids):
+            reason = "lineup_out"
+        elif _removed_sibling_key(row) in live:
+            reason = "superseded_dup"
+        else:
+            reason = "pp_pull"
+        row["removed_reason"] = reason
+    return source_rows
+
+
+def removed_reason_counts(rows) -> dict[str, int]:
+    """How many removed rows carry each label. Live rows are not counted."""
+    counts = {reason: 0 for reason in REMOVED_REASONS}
+    for row in rows or []:
+        if not isinstance(row, dict) or row.get("removed") is not True:
+            continue
+        reason = str(row.get("removed_reason") or "")
+        if reason in counts:
+            counts[reason] += 1
+    return counts
 
 
 def apply_fallback(rows, news, manual) -> list:
@@ -478,6 +548,32 @@ def _json(url: str, timeout: int = 40):
         return json.loads(response.read().decode("utf-8"))
 
 
+def _transient_fetch_error(exc: BaseException) -> bool:
+    """TLS drops and timeouts are worth one more right-rail try."""
+    if isinstance(exc, (TimeoutError, ConnectionError, ssl.SSLError, urllib.error.URLError)):
+        return True
+    reason = getattr(exc, "reason", None)
+    if isinstance(reason, BaseException) and reason is not exc:
+        return _transient_fetch_error(reason)
+    text = str(exc).lower()
+    return "ssl" in text or "unexpected_eof" in text or "timed out" in text
+
+
+def _read_right_rail(fetch_json, url: str):
+    """Read one right-rail page, retrying a dropped TLS connection."""
+    last = None
+    for attempt, delay in enumerate((0.0, *_RIGHT_RAIL_DELAYS)):
+        if delay:
+            time.sleep(delay)
+        try:
+            return fetch_json(url)
+        except Exception as exc:  # noqa: BLE001 - retry, then the caller records the game
+            last = exc
+            if attempt == len(_RIGHT_RAIL_DELAYS) or not _transient_fetch_error(exc):
+                raise
+    raise last
+
+
 def fetch_api_unavailable(games, fetch_json=_json) -> tuple[set[str], set[str]]:
     """Read api-web.nhle.com for each game. Every game failing raises."""
     names: set[str] = set()
@@ -490,7 +586,7 @@ def fetch_api_unavailable(games, fetch_json=_json) -> tuple[set[str], set[str]]:
             continue
         attempts += 1
         try:
-            payload = fetch_json(RIGHT_RAIL_URL.format(game_id=game_id))
+            payload = _read_right_rail(fetch_json, RIGHT_RAIL_URL.format(game_id=game_id))
         except Exception as exc:  # noqa: BLE001 - one game must not wipe the night
             errors.append(f"{game_id}: {exc}")
             continue
@@ -716,7 +812,7 @@ def starter_for_row(row, starters) -> dict[str, str] | None:
     return None
 
 
-def drop_unavailable(projections, lineups, games, fetch_json=_json, manual=None, news=None) -> list:
+def drop_unavailable(projections, lineups, games, fetch_json=_json, manual=None, news=None, scratch_box=None) -> list:
     """Remove players who will not dress. Each source fails on its own.
 
     1. Lineup snapshot and NHL game data statuses (OUT/IR/LTIR/scratched).
@@ -737,6 +833,9 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json, manual=None,
     except Exception as exc:  # noqa: BLE001 - keep the board when the injury read fails
         log.warning("NHL injury source failed, keeping the board for that source: %s", exc)
         names, ids = set(), set()
+    if scratch_box is not None:
+        scratch_box["names"] = set(names)
+        scratch_box["ids"] = set(ids)
     try:
         espn = fetch_espn_unavailable(fetch_json)
     except Exception as exc:  # noqa: BLE001
@@ -780,7 +879,7 @@ def drop_unavailable(projections, lineups, games, fetch_json=_json, manual=None,
     return apply_fallback(kept, news, overrides)
 
 
-def finish_board(projections, lineups, games, fetch_json=_json, manual=None, news=None) -> list:
+def finish_board(projections, lineups, games, fetch_json=_json, manual=None, news=None, scratch_box=None) -> list:
     """Filter, then rank. The saved board and the free top 3 both use this list.
 
     Points overs under 0.69 are dropped here. Points overs from 0.69 up to
@@ -789,6 +888,7 @@ def finish_board(projections, lineups, games, fetch_json=_json, manual=None, new
     """
     kept = apply_points_over_gate(drop_unavailable(
         projections, lineups, games, fetch_json=fetch_json, manual=manual, news=news,
+        scratch_box=scratch_box,
     ))
     kept.sort(key=lambda row: (
         row.get("removed") is True,

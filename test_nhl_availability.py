@@ -470,6 +470,7 @@ def test_will_not_play_news_holds_a_player_the_lineup_filter_left_in():
     assert friday["pp_status"] == "removed"
     assert friday["injury"] == "OUT"
     assert friday["injury_source"] == "dailyfaceoff_news"
+    assert friday["removed_reason"] == "news_out"
     assert by_day[("Egor Chinakhov", "2026-10-17")].get("removed") is not True
     assert by_day[("Wyatt Johnston", "2026-10-17")].get("removed") is not True
     assert by_day[("Radko Gudas", "2026-10-17")]["removed"] is True
@@ -577,6 +578,7 @@ def test_manual_out_list_pulls_tavares_for_that_date_only():
     assert tonight["pp_status"] == "removed"
     assert tonight["injury"] == "OUT"
     assert tonight["injury_source"] == "manual_out"
+    assert tonight["removed_reason"] == "manual_out"
     assert later.get("removed") is not True
     assert matthews.get("removed") is not True
 
@@ -656,6 +658,7 @@ def test_late_recheck_retracts_a_pregame_slate_prop():
     chinakhov = by_player["Egor Chinakhov"]
     assert chinakhov["removed"] is True
     assert chinakhov["pp_status"] == "removed"
+    assert chinakhov["removed_reason"] == "news_out"
     assert chinakhov["stat"] == "Shots On Goal"
     assert chinakhov["first_frozen_at"] == "2026-10-16T00:10:00+00:00"
     assert chinakhov["last_pregame_frozen_at"] == "2026-10-16T00:29:30+00:00"
@@ -693,3 +696,92 @@ def test_duplicate_projection_id_or_player_stat_line_game_collapses():
         {**_skater("Jake Walman", team="EDM", line=2.5), "id": "4"},
     ])
     assert [row["id"] for row in different_line] == ["3", "4"]
+
+
+def test_removed_reason_labels_rows_without_changing_who_is_live():
+    rows = [
+        {**_skater("Jake Walman", team="EDM"), "id": "live", "oddsType": "standard"},
+        {**_skater("Jake Walman", team="EDM", line=1.5), "id": "old", "oddsType": "standard", "removed": True},
+        {**_skater("Jake Walman", team="EDM"), "id": "demon", "oddsType": "demon", "removed": True},
+        {**_skater("John Tavares"), "id": "manual", "removed": True, "injury_source": "manual_out"},
+        {**_skater("John Tavares"), "id": "tavares-live", "oddsType": "standard"},
+        {**_skater("Egor Chinakhov", team="PIT"), "id": "news", "removed": True, "injury_source": "dailyfaceoff_news"},
+        {**_skater("Brad Marchand", team="FLA"), "id": "scratch", "playerId": "8473419", "removed": True},
+        {**_skater("Auston Matthews"), "id": "play"},
+    ]
+    before = [(row["id"], row.get("removed") is True) for row in rows]
+    labeled = _av.assign_removed_reasons(
+        rows,
+        lineup_names=["Brad Marchand", "Egor Chinakhov"],
+        lineup_ids=["999"],
+    )
+    assert [(row["id"], row.get("removed") is True) for row in labeled] == before
+    by_id = {row["id"]: row for row in labeled}
+    assert "removed_reason" not in by_id["live"]
+    assert "removed_reason" not in by_id["play"]
+    assert "removed_reason" not in by_id["tavares-live"]
+    assert by_id["old"]["removed_reason"] == "superseded_dup"
+    assert by_id["demon"]["removed_reason"] == "pp_pull"
+    assert by_id["manual"]["removed_reason"] == "manual_out"
+    assert by_id["news"]["removed_reason"] == "news_out"
+    assert by_id["scratch"]["removed_reason"] == "lineup_out"
+    id_only = {**_skater("Someone Else"), "removed": True, "player_id": "999"}
+    assert _av.assign_removed_reasons([id_only], lineup_ids={"999"})[0]["removed_reason"] == "lineup_out"
+    assert _av.removed_reason_counts(labeled) == {
+        "pp_pull": 1,
+        "superseded_dup": 1,
+        "manual_out": 1,
+        "news_out": 1,
+        "lineup_out": 1,
+    }
+
+
+def test_right_rail_ssl_drop_retries_then_reads_the_scratch(monkeypatch):
+    import ssl
+    import urllib.error
+
+    sleeps = []
+    monkeypatch.setattr(_av.time, "sleep", lambda delay: sleeps.append(delay))
+    calls = {"n": 0}
+    url = _av.RIGHT_RAIL_URL.format(game_id=2026020124)
+
+    def fetch(got):
+        assert got == url
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise urllib.error.URLError(ssl.SSLError("UNEXPECTED_EOF_WHILE_READING"))
+        return {
+            "gameInfo": {
+                "awayTeam": {"scratches": [{
+                    "id": 8473533,
+                    "firstName": {"default": "Jordan"},
+                    "lastName": {"default": "Staal"},
+                }]},
+                "homeTeam": {"scratches": []},
+            },
+        }
+
+    names, ids = _av.fetch_api_unavailable([{"id": 2026020124}], fetch)
+    assert ids == {"8473533"}
+    assert names == {"jordanstaal"}
+    assert sleeps == [1.0]
+    assert calls["n"] == 2
+
+
+def test_right_rail_non_transient_error_is_not_retried(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(_av.time, "sleep", lambda delay: sleeps.append(delay))
+    calls = {"n": 0}
+
+    def fetch(url):
+        calls["n"] += 1
+        raise ValueError(f"bad payload {url}")
+
+    try:
+        _av.fetch_api_unavailable([{"id": 2026020124}], fetch)
+    except RuntimeError as exc:
+        assert "bad payload" in str(exc)
+    else:
+        raise AssertionError("a failed right-rail read should still fail the source")
+    assert calls["n"] == 1
+    assert sleeps == []

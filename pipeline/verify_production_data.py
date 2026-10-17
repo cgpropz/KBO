@@ -272,6 +272,7 @@ STATUS_KEYS = {
 	"prop_count",
 	"stale",
 }
+NHL_REMOVED_REASONS = ("pp_pull", "superseded_dup", "manual_out", "news_out", "lineup_out")
 
 
 def status_document_error(payload: Any) -> str | None:
@@ -287,8 +288,18 @@ def status_document_error(payload: Any) -> str | None:
 	for row in boards:
 		if not isinstance(row, dict):
 			return "status board row is not an object"
-		if set(row) - STATUS_KEYS:
+		extra = set(row) - STATUS_KEYS
+		if extra - {"removed_reasons"}:
 			return "status board row has extra fields"
+		if "removed_reasons" in row:
+			reasons = row.get("removed_reasons")
+			if row.get("sport") != "nhl" or not isinstance(reasons, dict):
+				return "removed_reasons belongs on the nhl counts"
+			if set(reasons) != set(NHL_REMOVED_REASONS):
+				return "removed_reasons is not the five counts"
+			for value in reasons.values():
+				if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+					return "removed_reasons counts are not integers"
 		sports.append(row.get("sport"))
 	if sports != list(STATUS_SPORTS):
 		return "status boards are not the five sports"

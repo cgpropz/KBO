@@ -16,7 +16,12 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from nhl.availability import blocked_status, finish_board
+from nhl.availability import (
+    assign_removed_reasons,
+    blocked_status,
+    finish_board,
+    removed_reason_counts,
+)
 from nhl.history import load_goalies, load_skaters, team_shot_games
 from nhl.profile import attach_baseline, build_baselines, profile_splits, usage_role
 from nhl.model import (
@@ -1056,10 +1061,11 @@ def build(root: Path, out_dir: Path) -> int:
     # Lineup OUT / IR / LTIR / scratches come off before the file is saved.
     # A "will not play" note the line sheet missed stays in the file with
     # removed true. A confirmed Daily Faceoff starter still drops the other goalies.
+    scratch_box = {}
     if projections_ready:
         before = len(projections)
         projections = [row for row in projections if str(row.get("playerId")) not in EXCLUDED_PLAYER_IDS]
-        projections = finish_board(projections, lineups, games)
+        projections = finish_board(projections, lineups, games, scratch_box=scratch_box)
         previous = _previous_projections(out_dir)
         projections, blocked = restore_teams_without_current_logs(projections, skaters, previous)
         for team in sorted(blocked):
@@ -1074,9 +1080,15 @@ def build(root: Path, out_dir: Path) -> int:
                 previous, projections, fetched_ids, fetch_ok=True, exclude_teams=blocked,
             )
             projections = dedupe_board_rows(projections)
+            projections = assign_removed_reasons(
+                projections,
+                lineup_names=scratch_box.get("names") or set(),
+                lineup_ids=scratch_box.get("ids") or set(),
+            )
             removed = before - len(projections) + sum(1 for row in projections if row.get("removed"))
     else:
         removed = 0
+    reasons = removed_reason_counts(projections)
     out_dir.mkdir(parents=True, exist_ok=True)
     _write_if_ready(out_dir / "projections.json", projections, projections_ready)
     # Lineups can publish with an empty goalie page. They cannot publish if the schedule failed
@@ -1087,6 +1099,7 @@ def build(root: Path, out_dir: Path) -> int:
         "games": len(games),
         "props": len(projections),
         "unavailable": removed,
+        "removed_reasons": reasons,
         "saves": sum(1 for row in projections if row.get("prop") == PROP_SAVES),
         "lineups": len(lineups),
         "line_labels": dict(labels),

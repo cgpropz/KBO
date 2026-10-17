@@ -1,7 +1,19 @@
 // Public board clocks. The file and the database row must never carry prop
-// rows. Callers get one entry per sport and nothing else.
+// rows. NHL entries may also carry the five removed_reason counts.
 
 export const BOARD_STATUS_SPORTS = ['kbo', 'wnba', 'nfl', 'nba', 'nhl']
+
+const REMOVED_REASONS = ['pp_pull', 'superseded_dup', 'manual_out', 'news_out', 'lineup_out']
+
+function removedReasons(sport, value) {
+  if (sport !== 'nhl' || !value || typeof value !== 'object' || Array.isArray(value)) return null
+  const counts = {}
+  for (const reason of REMOVED_REASONS) {
+    const raw = value[reason]
+    counts[reason] = Number.isInteger(raw) && raw >= 0 ? raw : 0
+  }
+  return counts
+}
 
 function clock(value) {
   return typeof value === 'string' && value.trim() ? value : null
@@ -13,13 +25,16 @@ export function publicBoardStatus(payload) {
   for (const row of rows) {
     if (!row || typeof row !== 'object' || !BOARD_STATUS_SPORTS.includes(row.sport)) continue
     const count = row.prop_count
-    bySport.set(row.sport, {
+    const entry = {
       sport: row.sport,
       board_updated_at: clock(row.board_updated_at),
       injuries_checked_at: clock(row.injuries_checked_at),
       prop_count: Number.isInteger(count) && count >= 0 ? count : 0,
       stale: row.stale === true,
-    })
+    }
+    const reasons = removedReasons(row.sport, row.removed_reasons)
+    if (reasons) entry.removed_reasons = reasons
+    bySport.set(row.sport, entry)
   }
   return {
     boards: BOARD_STATUS_SPORTS.map((sport) => bySport.get(sport) || {

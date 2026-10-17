@@ -58,17 +58,23 @@ def retract_slate_props(props, held_rows, now: datetime | None = None) -> tuple[
     before a void could be recorded. Freeze times are left as they were.
     """
     now = now or datetime.now(timezone.utc)
-    keys = set()
+    keys = {}
     for row in held_rows or []:
         if not isinstance(row, dict) or not row.get("removed"):
             continue
-        if row.get("injury_source") not in {"manual_out", "dailyfaceoff_news"}:
+        source = row.get("injury_source")
+        if source not in {"manual_out", "dailyfaceoff_news"}:
             continue
-        keys.add((
+        reason = row.get("removed_reason")
+        if reason not in {"manual_out", "news_out"}:
+            reason = "manual_out" if source == "manual_out" else "news_out"
+        key = (
             name_key(row.get("player")),
             str(row.get("team") or "").upper(),
             str(row.get("gameday") or row.get("date") or "")[:10],
-        ))
+        )
+        if key[0]:
+            keys[key] = reason
     kept = []
     removed = 0
     for prop in props or []:
@@ -83,12 +89,17 @@ def retract_slate_props(props, held_rows, now: datetime | None = None) -> tuple[
         start = prop.get("start_time_utc") or prop.get("start_time")
         if key in keys and key[0] and not _started(start, now):
             status = str(prop.get("pp_status") or "").strip().lower()
+            reason = keys[key]
             if prop.get("removed") and status == "removed":
+                if reason and not prop.get("removed_reason"):
+                    prop["removed_reason"] = reason
                 kept.append(prop)
                 continue
             marked = dict(prop)
             marked["removed"] = True
             marked["pp_status"] = "removed"
+            if reason:
+                marked["removed_reason"] = reason
             kept.append(marked)
             removed += 1
             continue

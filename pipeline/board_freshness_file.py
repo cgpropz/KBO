@@ -1,8 +1,9 @@
 """shared/board_freshness.json, rewritten by each publish.
 
 One object per sport: generated_at, prop_count, how many started rows were
-dropped, and (NHL) the removal reasons since the previous freeze. A later
-publish of one sport must not blank the others.
+dropped, and (NHL) the removal reasons since the previous freeze plus how
+many removed rows carry each removed_reason. A later publish of one sport
+must not blank the others.
 """
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from nhl.availability import removed_reason_counts
 from pipeline.board_status import prop_count
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +70,8 @@ def record_sport(
         entry["removals"] = removals
     elif isinstance(boards.get(sport), dict) and "removals" in boards[sport]:
         entry["removals"] = boards[sport]["removals"]
+    if sport == "nhl":
+        entry["removed_reasons"] = removed_reason_counts(data if isinstance(data, list) else [])
     boards[sport] = entry
     document["checked_at"] = now.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     return document
