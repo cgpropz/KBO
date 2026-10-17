@@ -2,9 +2,10 @@
 // bake, and the last-good bucket. No network.
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { assembleSnapshotRows } from '../api/_snapshotChunks.js'
-import { handleDataRequest, _clearCache, readLastGood } from '../api/data.js'
+import { assembleSnapshotRows, snapshotChunkManifest } from '../api/_snapshotChunks.js'
+import { boardForPresentation, handleDataRequest, _clearCache, readLastGood } from '../api/data.js'
 import { completePublishedRow } from '../scripts/bake-landing-preview.mjs'
+import { nhlHubRows } from '../src/memberHub.js'
 
 const VERSION = '2026-10-17T01:54:00+00:00'
 const OLD = '2026-10-16T00:00:00+00:00'
@@ -103,7 +104,7 @@ function mockRes() {
     statusCode: 200,
     headers: {},
     body: undefined,
-    setHeader() {},
+    setHeader(name, value) { this.headers[name] = value },
     status(code) { this.statusCode = code; return this },
     json(obj) { this.body = obj; return this },
   }
@@ -138,19 +139,29 @@ function mockClient(chunks) {
   }
 }
 
-async function call(chunks, { token = 'tok', player } = {}) {
+async function call(chunks, { token = 'tok', player, view } = {}) {
   _clearCache()
   const res = mockRes()
   await handleDataRequest(
     {
       method: 'GET',
-      query: { ds: 'nhl_projections', ...(player ? { player } : {}) },
+      query: {
+        ds: 'nhl_projections',
+        ...(player ? { player } : {}),
+        ...(view ? { view } : {}),
+      },
       headers: token ? { authorization: `Bearer ${token}` } : {},
     },
     res,
     mockClient(chunks),
   )
   return res
+}
+
+function playerNames(payload) {
+  if (Array.isArray(payload)) return payload.map((row) => row.player)
+  if (Array.isArray(payload?.rows)) return payload.rows.map((row) => row.player)
+  return null
 }
 
 test('member hub and view=hub receive the reassembled board, not one chunk', async () => {
@@ -169,6 +180,38 @@ test('member hub and view=hub receive the reassembled board, not one chunk', asy
   assert.equal(preview.body.data.length, 3)
   assert.equal(preview.body.lockedCount, 1)
   assert.deepEqual(preview.body.data.map((row) => row.player), ['First', 'Second', 'Third'])
+})
+
+test('view=hub trims the reassembled board, not the manifest', async () => {
+  const chunks = [chunk(50000, 0, board.slice(0, 2)), chunk(50001, 1, board.slice(2))]
+  const joined = assembleSnapshotRows(manifest([50000, 50001]), chunks)
+  assert.equal(snapshotChunkManifest(joined.data), null)
+  assert.deepEqual(nhlHubRows(joined.data).map((row) => row.player), ['First', 'Second', 'Third', 'Fourth'])
+  assert.deepEqual(nhlHubRows(manifest([50000, 50001]).data), [])
+  assert.throws(() => boardForPresentation(manifest([50000, 50001]).data), /manifest is not a board/)
+
+  const hub = await call(chunks, { view: 'hub' })
+  assert.equal(hub.statusCode, 200)
+  assert.equal(hub.body.data?.snapshotChunks, undefined)
+  assert.equal(snapshotChunkManifest(hub.body.data), null)
+  assert.deepEqual(playerNames(hub.body.data), ['First', 'Second', 'Third', 'Fourth'])
+})
+
+test('the capability marker is a no-store answer and does not read a board', async () => {
+  _clearCache()
+  const res = mockRes()
+  let reads = 0
+  await handleDataRequest(
+    { method: 'GET', query: { capability: 'snapshot-chunks', ds: 'nhl_projections' }, headers: {} },
+    res,
+    { from() { reads += 1; throw new Error('should not read') } },
+  )
+  assert.equal(reads, 0)
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { snapshotChunks: 1, capability: 'snapshot-chunks' })
+  assert.equal(res.body.data, undefined)
+  assert.equal(res.headers['Cache-Control'], 'no-store')
+  assert.equal(res.headers['CDN-Cache-Control'], 'no-store')
 })
 
 test('a mixed or partial chunk set is not served as the board', async () => {

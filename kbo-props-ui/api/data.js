@@ -43,6 +43,16 @@ function sendData(req, res, body, memberGated) {
   return res.status(200).json(body);
 }
 
+// Joined board passed to tier shaping and to ?view=hub trimming. A
+// snapshotChunks manifest is not a board; trimming it would publish an empty
+// hub (or the manifest object) instead of the player rows.
+export function boardForPresentation(data) {
+  if (snapshotChunkManifest(data)) {
+    throw new Error('snapshot chunk manifest is not a board');
+  }
+  return data;
+}
+
 function withPresentedData(req, shaped, fullData) {
   return {
     ...shaped,
@@ -291,6 +301,8 @@ async function fetchSnapshotRow(client, table, id) {
 // id=1 is the board, or a manifest plus the chunk ids it names. Chunks are
 // read one id at a time so a multi-megabyte board is not one statement.
 // The cached row is the joined payload, identical to a single-row publish.
+// Reassemble here, before the cache and before any ?view=hub trim, so a
+// caller never shapes the manifest.
 async function readSnapshotResolved(client, table) {
   const head = await fetchSnapshotRow(client, table, 1);
   if (!head || !snapshotChunkManifest(head.data)) {
@@ -421,12 +433,19 @@ async function handleNbaRequest(req, res, client, ds) {
   // sportAccess() has no nba key and must stay that way. Full access returns
   // the snapshot directly. Preview (flag on, non-all-access tier) uses the
   // free trimmer. Unregistered nba_* names stay 400.
+  let board;
+  try {
+    board = boardForPresentation(row.data);
+  } catch (err) {
+    console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    return res.status(502).json({ error: 'Dataset unavailable' });
+  }
   const shaped = withPresentedData(
     req,
     decision === 'full'
-      ? { data: row.data, preview: false, lockedCount: 0 }
-      : shapeForTier(ds, row.data, 'free'),
-    row.data,
+      ? { data: board, preview: false, lockedCount: 0 }
+      : shapeForTier(ds, board, 'free'),
+    board,
   );
   return sendData(req, res, {
     data: shaped.data,
@@ -524,12 +543,19 @@ async function handleNhlRequest(req, res, client, ds) {
     return res.status(404).json({ error: 'Dataset not published yet' });
   }
 
+  let board;
+  try {
+    board = boardForPresentation(row.data);
+  } catch (err) {
+    console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    return res.status(502).json({ error: 'Dataset unavailable' });
+  }
   const shaped = withPresentedData(
     req,
     decision === 'full'
-      ? { data: row.data, preview: false, lockedCount: 0 }
-      : shapeForTier(ds, row.data, 'free'),
-    row.data,
+      ? { data: board, preview: false, lockedCount: 0 }
+      : shapeForTier(ds, board, 'free'),
+    board,
   );
   return sendData(req, res, {
     data: shaped.data,
@@ -605,6 +631,20 @@ export async function handleBoardStatus(req, res, client) {
 }
 
 export async function handleDataRequest(req, res, client) {
+  // Live publish asks this before it splits a board. The marker is only
+  // present once this reader is deployed, so an older site keeps id=1 as the
+  // board. No dataset read, and not cacheable.
+  if (String(req.query?.capability || '') === 'snapshot-chunks') {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('CDN-Cache-Control', 'no-store');
+    res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    return res.status(200).json({ snapshotChunks: 1, capability: 'snapshot-chunks' });
+  }
+
   const dsEarly = String(req.query?.ds || '');
   if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
 
@@ -677,7 +717,14 @@ export async function handleDataRequest(req, res, client) {
   }
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
-  const shaped = withPresentedData(req, shapeForTier(ds, row.data, tier), row.data);
+  let board;
+  try {
+    board = boardForPresentation(row.data);
+  } catch (err) {
+    console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    return res.status(502).json({ error: 'Dataset unavailable' });
+  }
+  const shaped = withPresentedData(req, shapeForTier(ds, board, tier), board);
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,

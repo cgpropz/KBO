@@ -90,6 +90,16 @@ NBA_PLAYER_CHUNK_BYTES = 700_000
 SNAPSHOT_CHUNK_BYTES = NBA_PLAYER_CHUNK_BYTES
 SNAPSHOT_CHUNK_KEY = "snapshotChunks"
 MISSING_TABLE = "MISSING_TABLE"
+# Each chunk is ~700 KB. A delete is an explicit primary-key list, a few rows
+# at a time, so it stays well under the authenticator role's 8s statement
+# timeout. A `not.in` of every older generation is one statement over
+# multi-megabyte jsonb and is what piled the table up when it timed out.
+SNAPSHOT_DELETE_BATCH = 2
+SNAPSHOT_ID_PAGE = 1000
+# The publisher writes chunks only after the live site says it can reassemble
+# them. Until that deploy, id=1 stays the board the current reader expects.
+READER_CAPABILITY_URL = "https://www.cgpropz.com/api/data?capability=snapshot-chunks"
+READER_CAPABILITY = "snapshot-chunks"
 
 
 def _is_retryable(response):
@@ -349,6 +359,66 @@ def chunked_publish_plan(table, data, version, id_base=None, max_bytes=SNAPSHOT_
     return None
 
 
+def snapshot_publish_plan(table, data, version, chunk_writes, id_base=None, max_bytes=SNAPSHOT_CHUNK_BYTES):
+    """Chunk plan when the live reader can reassemble, else None (one id=1 row)."""
+    if not chunk_writes:
+        return None
+    return chunked_publish_plan(table, data, version, id_base=id_base, max_bytes=max_bytes)
+
+
+def chunk_ids_from_manifest(data):
+    """Chunk ids named by a snapshotChunks manifest, or [] when id=1 is the board."""
+    manifest = snapshot_manifest(data)
+    if not manifest:
+        return []
+    ids = manifest.get("ids")
+    if not isinstance(ids, list):
+        return []
+    parsed = []
+    for chunk_id in ids:
+        if isinstance(chunk_id, bool) or not isinstance(chunk_id, int):
+            continue
+        parsed.append(int(chunk_id))
+    return parsed
+
+
+def stale_chunk_ids(existing_ids, current_ids, previous_ids):
+    """Ids to delete: everything except id=1, the new chunks, and the previous set.
+
+    The previous set stays so a reader that already fetched the old manifest
+    can still load every chunk it names. Older generations are the ones that
+    would pile up.
+    """
+    keep = {1}
+    for chunk_id in list(current_ids or []) + list(previous_ids or []):
+        if isinstance(chunk_id, bool):
+            continue
+        try:
+            keep.add(int(chunk_id))
+        except (TypeError, ValueError):
+            continue
+    stale = []
+    seen = set()
+    for row_id in existing_ids or []:
+        if isinstance(row_id, bool):
+            continue
+        try:
+            row_id = int(row_id)
+        except (TypeError, ValueError):
+            continue
+        if row_id in keep or row_id in seen:
+            continue
+        seen.add(row_id)
+        stale.append(row_id)
+    stale.sort()
+    return stale
+
+
+def chunk_delete_batches(ids, batch_size=SNAPSHOT_DELETE_BATCH):
+    size = max(1, int(batch_size))
+    return [list(ids[index:index + size]) for index in range(0, len(ids), size)]
+
+
 def post_with_retry(session, url, *, attempts=None, backoff=None, sleep=time.sleep, label="", **kwargs):
     """POST, retrying transient 5xx / statement-timeout / network errors.
 
@@ -563,14 +633,158 @@ def publish_nba_players(session, data, headers, updated_at=None):
     return []
 
 
+def _rest_get(session, table, params, headers, timeout=30):
+    return session.get(
+        f"{SUPABASE_URL}/rest/v1/{table}",
+        params=params,
+        headers=headers,
+        timeout=timeout,
+    )
+
+
+def _list_snapshot_ids(session, table, headers):
+    """Every id in the table, without the jsonb. None on failure, or MISSING_TABLE."""
+    ids = []
+    seen = set()
+    offset = 0
+    while True:
+        print(f"    … {table} list ids at {offset}", flush=True)
+        try:
+            response = _rest_get(
+                session,
+                table,
+                {"select": "id", "order": "id.asc", "limit": str(SNAPSHOT_ID_PAGE), "offset": str(offset)},
+                headers,
+            )
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            print(f"    ! {table} list ids: {type(exc).__name__}", flush=True)
+            return None
+        if optional_table_missing(table, response):
+            return MISSING_TABLE
+        if response.status_code != 200:
+            return None
+        try:
+            body = response.json()
+        except ValueError:
+            return None
+        if not isinstance(body, list):
+            return None
+        page = []
+        for row in body:
+            if not isinstance(row, dict) or isinstance(row.get("id"), bool):
+                continue
+            try:
+                row_id = int(row["id"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            page.append(row_id)
+        if not page or set(page).issubset(seen):
+            return ids
+        for row_id in page:
+            if row_id not in seen:
+                seen.add(row_id)
+                ids.append(row_id)
+        if len(body) < SNAPSHOT_ID_PAGE:
+            return ids
+        offset += SNAPSHOT_ID_PAGE
+
+
+def _previous_chunk_ids(session, table, headers):
+    """(status, ids) for the manifest currently at id=1.
+
+    status is None and ids is [] when the table holds only id=1 (today's
+    single-row board): that row can be multi-megabyte, so it is not read.
+    status is None and ids lists the chunks when id=1 is a small manifest.
+    MISSING_TABLE when the optional table was never created. Any other
+    status means the previous set is unknown and must not be deleted.
+    """
+    existing = _list_snapshot_ids(session, table, headers)
+    if existing == MISSING_TABLE:
+        return MISSING_TABLE, []
+    if existing is None:
+        return f"{table} could not list rows before cleanup", []
+    if not any(row_id != 1 for row_id in existing):
+        return None, []
+    print(f"    … {table} previous manifest", flush=True)
+    try:
+        response = _rest_get(session, table, {"id": "eq.1", "select": "data"}, headers)
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        return f"{table} could not read previous manifest ({type(exc).__name__})", []
+    if response.status_code != 200:
+        return f"{table} previous manifest HTTP {response.status_code}", []
+    try:
+        body = response.json()
+    except ValueError:
+        return f"{table} previous manifest was not json", []
+    data = body[0].get("data") if isinstance(body, list) and body and isinstance(body[0], dict) else None
+    return None, chunk_ids_from_manifest(data)
+
+
+def _delete_explicit_ids(session, table, ids, headers):
+    """Delete these ids in small `id=in.(...)` batches. None on success.
+
+    Does not use `not.in`. An empty list is a no-op.
+    """
+    batches = chunk_delete_batches(ids)
+    attempts = max(1, PUBLISH_ATTEMPTS)
+    for batch_index, batch in enumerate(batches, start=1):
+        listed = ",".join(str(row_id) for row_id in batch)
+        params = {"id": f"in.({listed})"}
+        response = None
+        last_exc = None
+        for attempt in range(1, attempts + 1):
+            print(
+                f"    … {table} delete {len(batch)} ids "
+                f"(batch {batch_index}/{len(batches)}, attempt {attempt}/{attempts})",
+                flush=True,
+            )
+            try:
+                response = session.delete(
+                    f"{SUPABASE_URL}/rest/v1/{table}",
+                    params=params,
+                    headers=headers,
+                    timeout=30,
+                )
+                last_exc = None
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_exc = exc
+                response = None
+            if response is not None and not _is_retryable(response):
+                break
+            if attempt < attempts:
+                reason = (
+                    f"HTTP {response.status_code}" if response is not None else type(last_exc).__name__
+                )
+                delay = PUBLISH_BACKOFF_SECONDS * attempt
+                print(
+                    f"    … transient {reason}; retrying in {delay:.0f}s (attempt {attempt + 1}/{attempts})",
+                    flush=True,
+                )
+                time.sleep(delay)
+        if response is None:
+            return f"{table} delete: {last_exc}"
+        if response.status_code not in (200, 204):
+            body = response.text.strip().replace("\n", " ")
+            return f"{table} delete HTTP {response.status_code}: {body[:200]}"
+    return None
+
+
 def publish_snapshot_chunks(session, table, plan, headers, updated_at=None):
     """Upsert one versioned chunk set. Failure strings, empty on success.
 
     Chunk slices are written before the id=1 manifest. A failed run leaves
     the previous id=1 snapshot, so readers never follow a manifest whose
-    chunks were not all just written. Old chunks stay until the manifest
-    flips, then the delete drops ids this version does not name.
+    chunks were not all just written. After the new manifest lands, chunk
+    ids named by neither this manifest nor the previous one are deleted in
+    small explicit batches. The previous set stays for a reader mid-read.
     """
+    status, previous_ids = _previous_chunk_ids(session, table, headers)
+    if status == MISSING_TABLE:
+        return [MISSING_TABLE]
+    skip_delete = status is not None
+    if skip_delete:
+        print(f"    ! {status}; leaving old chunks in place", flush=True)
+
     chunks = [(row_id, chunk) for row_id, chunk in plan if row_id != 1]
     _row_id, manifest = next(row for row in plan if row[0] == 1)
     print(f"    … {table} writing {len(chunks)} chunks", flush=True)
@@ -583,11 +797,63 @@ def publish_snapshot_chunks(session, table, plan, headers, updated_at=None):
     err = _upsert_snapshot_row(session, table, 1, manifest, headers, updated_at)
     if err:
         return [err]
-    keep_ids = [1, *[row_id for row_id, _chunk in chunks]]
-    err = _delete_snapshot_tail(session, table, keep_ids, headers)
+    if skip_delete:
+        return []
+    existing = _list_snapshot_ids(session, table, headers)
+    if existing == MISSING_TABLE:
+        return [MISSING_TABLE]
+    if existing is None:
+        return [f"{table} could not list rows to clean up"]
+    current_ids = [row_id for row_id, _chunk in chunks]
+    stale = stale_chunk_ids(existing, current_ids, previous_ids)
+    print(
+        f"    … {table} deleting {len(stale)} old chunk(s); "
+        f"keeping {len(previous_ids)} previous",
+        flush=True,
+    )
+    err = _delete_explicit_ids(session, table, stale, headers)
     if err:
         return [err]
     return []
+
+
+def reader_supports_snapshot_chunks(session, url=None, timeout=10):
+    """True only when the live site answers the snapshot-chunks capability.
+
+    Anything else (old reader, HTML, timeout, a board payload) is false, and
+    the publish stays a single id=1 row. No manual flag.
+    """
+    target = url or READER_CAPABILITY_URL
+    print(f"  … reader capability {target}", flush=True)
+    try:
+        response = session.get(
+            target,
+            headers={"Accept": "application/json", "Cache-Control": "no-cache"},
+            timeout=timeout,
+        )
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        print(f"  … reader capability unavailable ({type(exc).__name__}); single-row publish", flush=True)
+        return False
+    if getattr(response, "status_code", None) != 200:
+        code = getattr(response, "status_code", None)
+        print(f"  … reader capability HTTP {code}; single-row publish", flush=True)
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        print("  … reader capability was not json; single-row publish", flush=True)
+        return False
+    ready = (
+        isinstance(body, dict)
+        and body.get("snapshotChunks") == 1
+        and body.get("capability") == READER_CAPABILITY
+        and "data" not in body
+    )
+    if ready:
+        print("  … reader supports snapshot chunks", flush=True)
+    else:
+        print("  … reader has no snapshot-chunks marker; single-row publish", flush=True)
+    return ready
 
 
 def fetch_snapshot_payload(session, table, headers, timeout=120):
@@ -838,6 +1104,9 @@ def main():
     published_at = published_moment.isoformat()
 
     print(f"📡 Publishing snapshots to Supabase via REST API: {SUPABASE_URL}\n")
+    # Chunk only after www.cgpropz.com is serving the reader that reassembles.
+    # The next NHL run may check out this commit before Vercel deploys it.
+    chunk_writes = reader_supports_snapshot_chunks(session)
 
     for filename, table in tables.items():
         # NFL snapshots and the WNBA Unabated match file live at the repo root.
@@ -929,7 +1198,7 @@ def main():
                     failures.append(msg)
                 continue
 
-            plan = chunked_publish_plan(table, data, published_at)
+            plan = snapshot_publish_plan(table, data, published_at, chunk_writes)
             if plan:
                 result = publish_snapshot_chunks(session, table, plan, headers, published_at)
                 if result == [MISSING_TABLE]:

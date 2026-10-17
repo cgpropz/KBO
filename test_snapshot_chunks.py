@@ -261,6 +261,204 @@ class _Response:
         return self._body
 
 
+class ChunkCleanupTests(unittest.TestCase):
+    def _plan(self):
+        board = [_sample(str(i)) for i in range(4)]
+        return publish.snapshot_rows(
+            board,
+            max_bytes=publish._posted_bytes(board) - 1,
+            version=VERSION,
+            id_base=80_000,
+        )
+
+    def test_stale_ids_keep_the_current_and_previous_sets(self):
+        stale = publish.stale_chunk_ids([1, 50, 100, 200, 101, 50], [200, 201], [100, 101])
+        self.assertEqual(stale, [50])
+        self.assertEqual(
+            publish.chunk_delete_batches([50, 51, 52, 53, 54]),
+            [[50, 51], [52, 53], [54]],
+        )
+        self.assertEqual(publish.chunk_delete_batches([]), [])
+
+    def test_old_chunks_are_deleted_by_id_and_the_previous_set_stays(self):
+        old = "2026-10-16T00:00:00+00:00"
+
+        def wrapped(player):
+            return {
+                "version": old,
+                "generated_at": old,
+                "index": 0,
+                "kind": "list",
+                "rows": [_sample(player)],
+            }
+
+        store = _Store({
+            1: {"snapshotChunks": {"version": old, "generated_at": old, "kind": "list", "ids": [100, 101]}},
+            100: wrapped("prev-a"),
+            101: wrapped("prev-b"),
+            50: wrapped("old-50"),
+            51: wrapped("old-51"),
+            52: wrapped("old-52"),
+            53: wrapped("old-53"),
+            54: wrapped("old-54"),
+        })
+        plan = self._plan()
+        new_ids = [row_id for row_id, _chunk in plan if row_id != 1]
+        result = publish.publish_snapshot_chunks(store, "nhl_projections", plan, {})
+        self.assertEqual(result, [])
+        self.assertEqual(store.rows[1]["snapshotChunks"]["ids"], new_ids)
+        for row_id in (100, 101, *new_ids):
+            self.assertIn(row_id, store.rows)
+        for row_id in (50, 51, 52, 53, 54):
+            self.assertNotIn(row_id, store.rows)
+        deletes = [params for kind, params in store.calls if kind == "DELETE"]
+        self.assertEqual(deletes, ["in.(50,51)", "in.(52,53)", "in.(54)"])
+        self.assertTrue(all("not.in" not in params for params in deletes))
+        self.assertLess(len(deletes[0].split(",")), 8)
+        kinds = [kind for kind, _params in store.calls]
+        first_post = kinds.index("POST")
+        self.assertLess(first_post, kinds.index("DELETE"))
+        self.assertEqual(store.calls[0], ("GET", {"select": "id", "order": "id.asc", "limit": "1000", "offset": "0"}))
+        manifest_reads = [
+            index for index, (kind, params) in enumerate(store.calls)
+            if kind == "GET" and params.get("select") == "data"
+        ]
+        self.assertEqual(manifest_reads, [1])
+        self.assertLess(manifest_reads[0], first_post)
+        posted = [params for kind, params in store.calls if kind == "POST"]
+        self.assertEqual(posted[-1], 1)
+        self.assertEqual(posted[:-1], new_ids)
+
+    def test_a_single_row_board_is_not_read_and_nothing_is_deleted(self):
+        store = _Store({1: [_sample("only"), _sample("two")]})
+        plan = self._plan()
+        result = publish.publish_snapshot_chunks(store, "nfl_projections", plan, {})
+        self.assertEqual(result, [])
+        self.assertTrue(all(params.get("select") == "id" for kind, params in store.calls if kind == "GET"))
+        self.assertFalse(any(kind == "DELETE" for kind, _params in store.calls))
+        self.assertIn(1, store.rows)
+        self.assertIn("snapshotChunks", store.rows[1])
+
+    def test_an_unreadable_previous_manifest_is_not_deleted(self):
+        store = _Store({
+            1: {"snapshotChunks": {"version": "old", "generated_at": "old", "kind": "list", "ids": [100]}},
+            100: {"version": "old"},
+            50: {"version": "older"},
+        })
+        store.fail_manifest = True
+        result = publish.publish_snapshot_chunks(store, "wnba_projections_standard", self._plan(), {})
+        self.assertEqual(result, [])
+        self.assertIn(50, store.rows)
+        self.assertIn(100, store.rows)
+        self.assertFalse(any(kind == "DELETE" for kind, _params in store.calls))
+
+    def test_a_missing_optional_table_is_not_written(self):
+        class Missing:
+            def __init__(self):
+                self.posts = 0
+
+            def get(self, url, params=None, headers=None, timeout=None):
+                return _Response(404, {"code": "PGRST205", "message": "Could not find the table"})
+
+            def post(self, url, **kwargs):
+                self.posts += 1
+                return _Response(201, "")
+
+        session = Missing()
+        result = publish.publish_snapshot_chunks(session, "nhl_projections", self._plan(), {})
+        self.assertEqual(result, [publish.MISSING_TABLE])
+        self.assertEqual(session.posts, 0)
+
+
+class _Store:
+    def __init__(self, rows):
+        self.rows = dict(rows)
+        self.calls = []
+        self.fail_manifest = False
+
+    def get(self, url, params=None, headers=None, timeout=None):
+        params = dict(params or {})
+        self.calls.append(("GET", params))
+        if self.fail_manifest and params.get("select") == "data":
+            return _Response(500, {"message": "timeout"})
+        if params.get("select") == "id":
+            ids = sorted(self.rows)
+            offset = int(params.get("offset") or 0)
+            limit = int(params.get("limit") or 1000)
+            return _Response(200, [{"id": row_id} for row_id in ids[offset:offset + limit]])
+        if params.get("id") == "eq.1":
+            return _Response(200, [{"id": 1, "data": self.rows.get(1)}])
+        return _Response(200, [])
+
+    def post(self, url, params=None, json=None, headers=None, timeout=None, **kwargs):
+        self.calls.append(("POST", json["id"]))
+        self.rows[json["id"]] = json["data"]
+        return _Response(201, "")
+
+    def delete(self, url, params=None, headers=None, timeout=None):
+        listed = params["id"]
+        self.calls.append(("DELETE", listed))
+        if not listed.startswith("in.(") or "not.in" in listed:
+            raise AssertionError(listed)
+        for part in listed[len("in.("):-1].split(","):
+            self.rows.pop(int(part), None)
+        return _Response(204, "")
+
+
+class CapabilityTests(unittest.TestCase):
+    def test_chunks_wait_until_the_live_reader_answers(self):
+        board = [_sample(str(i)) for i in range(4)]
+        self.assertEqual(
+            publish.READER_CAPABILITY_URL,
+            "https://www.cgpropz.com/api/data?capability=snapshot-chunks",
+        )
+
+        class Session:
+            def __init__(self, body, status=200, exc=None):
+                self.body = body
+                self.status = status
+                self.exc = exc
+                self.url = None
+
+            def get(self, url, headers=None, timeout=None):
+                self.url = url
+                self.timeout = timeout
+                if self.exc:
+                    raise self.exc
+                return _Response(self.status, self.body)
+
+        ready = Session({"snapshotChunks": 1, "capability": "snapshot-chunks"})
+        self.assertTrue(publish.reader_supports_snapshot_chunks(ready))
+        self.assertEqual(ready.url, publish.READER_CAPABILITY_URL)
+        self.assertLessEqual(ready.timeout, 15)
+        forced = publish.snapshot_publish_plan(
+            "nhl_projections",
+            board,
+            VERSION,
+            True,
+            id_base=60_000,
+            max_bytes=publish._posted_bytes(board) - 1,
+        )
+        self.assertGreater(len(forced), 1)
+        self.assertIsNone(publish.snapshot_publish_plan("nba_players", board, VERSION, True))
+
+        for body in (
+            {"error": "Unknown dataset"},
+            {"data": board, "snapshotChunks": 1, "capability": "snapshot-chunks"},
+            {"snapshotChunks": 1},
+            {"capability": "snapshot-chunks"},
+            "<html>old site</html>",
+            None,
+        ):
+            self.assertFalse(publish.reader_supports_snapshot_chunks(Session(body)))
+        self.assertFalse(publish.reader_supports_snapshot_chunks(Session("", status=503)))
+        self.assertFalse(
+            publish.reader_supports_snapshot_chunks(Session("", exc=publish.requests.Timeout("slow")))
+        )
+        self.assertIsNone(publish.snapshot_publish_plan("wnba_projections_standard", board, VERSION, False))
+        self.assertIsNone(publish.snapshot_publish_plan("nfl_projections", board, VERSION, False))
+
+
 class PublishLogTests(unittest.TestCase):
     def test_each_attempt_is_flushed_before_the_request(self):
         buf = io.StringIO()
