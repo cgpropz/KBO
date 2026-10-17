@@ -201,6 +201,53 @@ class NhlBoardMoveTests(_Memory):
         self.assertNotIn("demon", blob)
         self.assertNotIn("Auston Matthews", blob)
 
+    def test_superseded_dup_is_not_counted_as_a_void(self):
+        self._nhl_board([
+            _nhl_row("John Tavares", "Points", "standard", 0.5, 0.8, "111"),
+            _nhl_row("William Nylander", "Points", "standard", 0.5, 1.0, "999"),
+        ])
+        freeze_slate.freeze_nhl(now=T1)
+        self._nhl_board([
+            _nhl_row("John Tavares", "Points", "standard", 1.5, 1.8, "555"),
+            _nhl_row(
+                "John Tavares", "Points", "standard", 0.5, 0.8, "111",
+                removed=True, pp_status="removed", removed_reason="superseded_dup",
+            ),
+            _nhl_row(
+                "William Nylander", "Points", "standard", 0.5, 1.0, "999",
+                removed=True, pp_status="removed", removed_reason="pp_pull",
+            ),
+        ])
+        freeze_slate.freeze_nhl(now=T2)
+        props = self._slate("nhl")["props"]
+        by_id = {p["projection_id"]: p for p in props}
+        self.assertEqual(by_id["111"]["removed_reason"], "superseded_dup")
+        self.assertTrue(by_id["111"]["removed"])
+        self.assertEqual(by_id["555"].get("removed"), None)
+        self.assertNotIn("removed_reason", by_id["555"])
+        self.assertEqual(by_id["999"]["removed_reason"], "pp_pull")
+
+        live, voids = grade_nhl_day._standard_rows(props)
+        self.assertEqual({row["projection_id"] for row in live}, {"555"})
+        self.assertEqual({row["projection_id"] for row in voids}, {"999"})
+
+        result = grade_nhl_day.grade_day(DAY, actuals={
+            "final_teams": {"TOR"},
+            "players": {
+                ("TOR", "johntavares"): {"sog": 3, "points": 2, "ppp": 0, "saves": None, "played": True},
+                ("TOR", "williamnylander"): {"sog": 2, "points": 0, "ppp": 0, "saves": None, "played": True},
+            },
+        })
+        self.assertEqual(result["voids"], 1)
+        self.assertEqual(result["props_graded"], 2)
+        self.assertEqual(result["hits"], 1)
+        self.assertEqual(result["misses"], 0)
+        recap = json.loads((common.memory_dir("nhl", DAY) / "recap.json").read_text())
+        self.assertEqual({row["projection_id"] for row in recap["props"]}, {"555", "999"})
+        summary = json.loads((common.memory_dir("nhl", DAY) / "summary.json").read_text())
+        self.assertEqual(summary["voids"], 1)
+        self.assertNotIn("111", json.dumps(summary))
+
     def test_started_game_is_not_superseded_when_a_later_freeze_omits_it(self):
         early = "2027-06-15T16:00:00Z"
         self._nhl_board([
@@ -334,6 +381,9 @@ class SummaryFilterTests(_Memory):
              "recommendation": "OVER", "result": "OVER", "model_result": "HIT"},
             {"player": "Pulled", "stat": "Points", "odds_type": "standard", "line": 0.5, "actual": 1,
              "removed": True, "pp_status": "removed", "recommendation": "OVER", "result": "OVER", "model_result": "HIT"},
+            {"player": "Dup", "stat": "Points", "odds_type": "standard", "line": 0.5, "actual": 1,
+             "removed": True, "pp_status": "removed", "removed_reason": "superseded_dup",
+             "recommendation": "OVER", "result": "OVER", "model_result": "HIT"},
             {"player": "Old", "stat": "Points", "odds_type": "standard", "line": 0.5, "actual": 0,
              "superseded_at": T1_ISO, "recommendation": "OVER", "result": "UNDER", "model_result": "MISS"},
         ]
@@ -344,6 +394,7 @@ class SummaryFilterTests(_Memory):
         self.assertEqual(summary["props_graded"], 2)
         self.assertEqual([row["player"] for row in summary["props_hit"]], ["Live"])
         self.assertEqual(summary["props_miss"], [])
+        self.assertNotIn("Dup", json.dumps(summary))
 
 
 if __name__ == "__main__":

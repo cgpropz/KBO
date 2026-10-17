@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from nhl.availability import REMOVED_REASONS, removed_reason_counts
 from pipeline.snapshot_consistency import parse_iso_ts
 
 ET = ZoneInfo("America/New_York")
@@ -97,6 +98,17 @@ def load_status(path: Path = STATUS_PATH) -> list[dict]:
     return [row for row in rows if isinstance(row, dict) and row.get("sport") in SPORTS]
 
 
+def copy_removed_reasons(value: Any) -> dict[str, int] | None:
+    """The five NHL labels, or nothing. Other sports do not carry this field."""
+    if not isinstance(value, dict):
+        return None
+    counts = {}
+    for reason in REMOVED_REASONS:
+        raw = value.get(reason, 0)
+        counts[reason] = raw if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0 else 0
+    return counts
+
+
 def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) -> dict:
     """One entry per sport. `updates` replaces only the sports just published."""
     prior = {row["sport"]: row for row in previous if isinstance(row, dict) and row.get("sport")}
@@ -109,18 +121,23 @@ def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) 
             injury = update.get("injuries_checked_at")
             count = update.get("prop_count")
             count = int(count) if isinstance(count, int) and not isinstance(count, bool) else 0
+            reasons = copy_removed_reasons(update.get("removed_reasons"))
         else:
             raw = prev.get("board_updated_at")
             injury = prev.get("injuries_checked_at")
             count = prev.get("prop_count")
             count = int(count) if isinstance(count, int) and not isinstance(count, bool) else 0
-        boards.append({
+            reasons = copy_removed_reasons(prev.get("removed_reasons"))
+        entry = {
             "sport": sport,
             "board_updated_at": iso_with_et_offset(raw),
             "injuries_checked_at": iso_with_et_offset(injury),
             "prop_count": count,
             "stale": is_stale(raw, sport, now),
-        })
+        }
+        if reasons is not None:
+            entry["removed_reasons"] = reasons
+        boards.append(entry)
     return {"boards": boards}
 
 
@@ -155,6 +172,9 @@ def prefer_fresher(local: list[dict], remote: list[dict], now: datetime) -> dict
             "injuries_checked_at": chosen.get("injuries_checked_at"),
             "prop_count": int(count) if isinstance(count, int) and not isinstance(count, bool) else 0,
         }
+        reasons = copy_removed_reasons(chosen.get("removed_reasons"))
+        if reasons is not None:
+            updates[sport]["removed_reasons"] = reasons
     return merge_status([], updates, now)
 
 
@@ -166,8 +186,11 @@ def apply_published(updates: dict[str, dict], now: datetime | None = None, path:
 
 
 def record_from_payload(sport: str, data: Any, published_at: str) -> dict:
-    return {
+    record = {
         "board_updated_at": published_at,
         "injuries_checked_at": injury_checked_at(data),
         "prop_count": prop_count(sport, data),
     }
+    if sport == "nhl":
+        record["removed_reasons"] = removed_reason_counts(data if isinstance(data, list) else [])
+    return record

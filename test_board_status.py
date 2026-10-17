@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from pipeline.board_freshness_file import record_sport
 from pipeline.board_status import (
     ENTRY_KEYS,
     SPORTS,
@@ -17,6 +18,7 @@ from pipeline.board_status import (
     merge_status,
     prefer_fresher,
     prop_count,
+    record_from_payload,
 )
 
 
@@ -131,6 +133,57 @@ class ShapeTests(unittest.TestCase):
         self.assertEqual(wnba["board_updated_at"], "2026-10-11T10:30:00-04:00")
         self.assertEqual(nfl["prop_count"], 40)
         self.assertEqual(nfl["board_updated_at"], "2026-10-11T10:00:00-04:00")
+
+    def test_nhl_status_and_freshness_count_removed_reasons(self):
+        rows = [
+            {"player": "Live", "removed": False},
+            {"player": "Old", "removed": True, "removed_reason": "superseded_dup"},
+            {"player": "Pulled", "removed": True, "removed_reason": "pp_pull"},
+            {"player": "Pulled Demon", "removed": True, "removed_reason": "pp_pull"},
+        ]
+        update = record_from_payload("nhl", rows, PUBLISHED)
+        nfl = record_from_payload("nfl", rows, PUBLISHED)
+        self.assertEqual(update["prop_count"], 4)
+        self.assertEqual(update["removed_reasons"], {
+            "pp_pull": 2,
+            "superseded_dup": 1,
+            "manual_out": 0,
+            "news_out": 0,
+            "lineup_out": 0,
+        })
+        self.assertNotIn("removed_reasons", nfl)
+        document = merge_status([], {"nhl": update, "nfl": nfl}, NOW)
+        nhl = next(row for row in document["boards"] if row["sport"] == "nhl")
+        nfl_row = next(row for row in document["boards"] if row["sport"] == "nfl")
+        kbo = document["boards"][0]
+        self.assertEqual(tuple(kbo), ENTRY_KEYS)
+        self.assertEqual(nhl["removed_reasons"]["pp_pull"], 2)
+        self.assertNotIn("removed_reasons", nfl_row)
+        kept = prefer_fresher(
+            [{
+                "sport": "nhl",
+                "board_updated_at": PUBLISHED,
+                "injuries_checked_at": None,
+                "prop_count": 4,
+                "removed_reasons": update["removed_reasons"],
+            }],
+            [{
+                "sport": "nhl",
+                "board_updated_at": "2026-10-11T12:00:00+00:00",
+                "injuries_checked_at": None,
+                "prop_count": 1,
+                "removed_reasons": {"pp_pull": 9, "superseded_dup": 0, "manual_out": 0, "news_out": 0, "lineup_out": 0},
+            }],
+            NOW,
+        )
+        fresher = next(row for row in kept["boards"] if row["sport"] == "nhl")
+        self.assertEqual(fresher["prop_count"], 4)
+        self.assertEqual(fresher["removed_reasons"]["pp_pull"], 2)
+        fresh = record_sport({"boards": {}}, "nhl", rows, NOW)
+        self.assertEqual(fresh["boards"]["nhl"]["removed_reasons"]["superseded_dup"], 1)
+        nfl_fresh = record_sport({"boards": {"nhl": fresh["boards"]["nhl"]}}, "nfl", [{"player": "Back"}], NOW)
+        self.assertEqual(nfl_fresh["boards"]["nhl"]["removed_reasons"]["pp_pull"], 2)
+        self.assertNotIn("removed_reasons", nfl_fresh["boards"]["nfl"])
 
 
 if __name__ == "__main__":

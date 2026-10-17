@@ -35,3 +35,14 @@ class SiteDeployCheckTests(unittest.TestCase):
         row = _clocks()
         row["boards"][2]["props"] = [{"player": "Paid Player"}]
         self.assertIsNotNone(status_document_error(row))
+        counted = _clocks()
+        counted["boards"][4]["removed_reasons"] = {
+            "pp_pull": 1,
+            "superseded_dup": 0,
+            "manual_out": 0,
+            "news_out": 0,
+            "lineup_out": 0,
+        }
+        self.assertIsNone(status_document_error(counted))
+        counted["boards"][2]["removed_reasons"] = counted["boards"][4]["removed_reasons"]
+        self.assertIsNotNone(status_document_error(counted))

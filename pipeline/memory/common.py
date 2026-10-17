@@ -209,7 +209,19 @@ def attach_board_identity(entry: dict, *sources: dict) -> dict:
             entry["removed"] = _truthy_flag(source.get("removed"))
         if "pp_status" not in entry and source.get("pp_status") not in (None, ""):
             entry["pp_status"] = source.get("pp_status")
+        if "removed_reason" not in entry and source.get("removed_reason"):
+            entry["removed_reason"] = source.get("removed_reason")
     return entry
+
+
+def superseded_duplicate(prop: dict) -> bool:
+    """An old id kept beside a live card for the same player, stat, and odds type.
+
+    Those rows are history. They are not a scratch and must not grade as Void.
+    """
+    if not isinstance(prop, dict):
+        return False
+    return str(prop.get("removed_reason") or "").strip() == "superseded_dup"
 
 
 def gradeable_slate_prop(prop: dict) -> bool:
@@ -592,13 +604,16 @@ def postponed_matchups(sport: str, d: date) -> set[frozenset[str]]:
 def _summary_row(sport: str, prop: dict) -> dict | None:
     """Row that belongs in an NHL or WNBA summary, or None to leave it out.
 
-    NHL removed standard lines are kept as Void. WNBA pulled lines are
-    skipped. Superseded and non-standard rows are excluded for both.
+    NHL removed standard lines are kept as Void, except an old id labeled
+    superseded_dup. WNBA pulled lines are skipped. Superseded and
+    non-standard rows are excluded for both.
     """
     if not isinstance(prop, dict):
         return None
     odds = str(prop.get("odds_type") or "standard").strip().lower()
     if odds != "standard":
+        return None
+    if superseded_duplicate(prop):
         return None
     if pulled_status(prop):
         if sport != "nhl":
@@ -630,7 +645,8 @@ def build_day_summary(
     graded = list(props or [])
     # Demon/goblin and superseded cards stay out of the NHL and WNBA hit
     # rate. An NHL standard line marked removed is Void, not a hit or a
-    # miss. WNBA still skips pulled rows. KBO and NFL keep every graded row.
+    # miss, unless it is a superseded_dup. WNBA still skips pulled rows.
+    # KBO and NFL keep every graded row.
     if sport in ("nhl", "wnba"):
         graded = [row for row in (_summary_row(sport, prop) for prop in graded) if row]
     stats = compute_hit_rate_stats(graded)
@@ -828,6 +844,9 @@ def _apply_pull_flags(
         target["removed"] = True
         status = pulled_status(src) or src.get("pp_status") or "removed"
         target["pp_status"] = status
+        reason = src.get("removed_reason")
+        if reason:
+            target["removed_reason"] = reason
         if pid and not projection_id_of(target):
             target["projection_id"] = pid
         if not target.get("superseded_at"):

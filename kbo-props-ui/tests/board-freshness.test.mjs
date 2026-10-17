@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { publicBoardStatus } from '../api/_boardStatus.js'
 import {
   STALE_AFTER_HOURS,
   boardStatusLine,
@@ -95,6 +96,62 @@ test('status document is one entry per board and has no prop rows', () => {
   assert.equal(document.boards[2].prop_count, 40)
   assert.equal(document.boards[2].stale, false)
   assert.equal(propCountFor('nhl', [{}, {}, {}]), 3)
+})
+
+test('nhl status keeps removed reason counts and other sports do not', () => {
+  const reasons = {
+    pp_pull: 2,
+    superseded_dup: 1,
+    manual_out: 0,
+    news_out: 0,
+    lineup_out: 0,
+  }
+  const document = buildBoardStatus({
+    now: NOW,
+    previous: [{
+      sport: 'nhl',
+      board_updated_at: '2026-10-11T08:00:00-04:00',
+      prop_count: 4,
+      removed_reasons: reasons,
+    }],
+    snapshots: {
+      nfl: { publishedAt: PUBLISHED, data: [{ player: 'Secret Back' }] },
+    },
+  })
+  const nhl = document.boards.find((board) => board.sport === 'nhl')
+  const nfl = document.boards.find((board) => board.sport === 'nfl')
+  assert.deepEqual(nhl.removed_reasons, reasons)
+  assert.equal(Object.hasOwn(nfl, 'removed_reasons'), false)
+  const rebuilt = buildBoardStatus({
+    now: NOW,
+    snapshots: {
+      nhl: {
+        publishedAt: PUBLISHED,
+        data: [
+          { player: 'Live' },
+          { player: 'Old', removed: true, removed_reason: 'superseded_dup' },
+          { player: 'Pulled', removed: true, removed_reason: 'pp_pull' },
+        ],
+      },
+    },
+  })
+  assert.equal(rebuilt.boards.find((board) => board.sport === 'nhl').removed_reasons.pp_pull, 1)
+  assert.equal(rebuilt.boards.find((board) => board.sport === 'nhl').prop_count, 3)
+  const served = publicBoardStatus({
+    boards: [{
+      sport: 'nhl',
+      board_updated_at: PUBLISHED,
+      injuries_checked_at: null,
+      prop_count: 3,
+      stale: false,
+      removed_reasons: reasons,
+      props: [{ player: 'Secret' }],
+    }],
+  })
+  const servedNhl = served.boards.find((board) => board.sport === 'nhl')
+  assert.deepEqual(servedNhl.removed_reasons, reasons)
+  assert.equal(Object.hasOwn(servedNhl, 'props'), false)
+  assert.equal(JSON.stringify(served).includes('Secret'), false)
 })
 
 test('cheat sheet warning names the largest gap over 60 minutes', () => {

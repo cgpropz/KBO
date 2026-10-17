@@ -34,6 +34,7 @@ from pipeline.memory.common import (  # noqa: E402
     model_result,
     parse_cli_date,
     pulled_status,
+    superseded_duplicate,
     today_et,
     utc_now_iso,
     write_meta,
@@ -132,7 +133,8 @@ def _standard_rows(props: list) -> tuple[list[dict], list[dict]]:
     """Split a slate into live standard rows and removed standard rows.
 
     Demon, goblin, and superseded rows stay out. A removed standard row is
-    voided rather than dropped, so a late scratch still has a grade.
+    voided rather than dropped, so a late scratch still has a grade. An old
+    id labeled superseded_dup is the exception: it is not a Void.
     """
     live: list[dict] = []
     voids: list[dict] = []
@@ -144,6 +146,9 @@ def _standard_rows(props: list) -> tuple[list[dict], list[dict]]:
             continue
         # A removed line is Void even when the freeze also stamped
         # superseded_at. A superseded line that was not removed is history.
+        # superseded_dup is that old id beside a live sibling, so it is neither.
+        if superseded_duplicate(prop):
+            continue
         if pulled_status(prop):
             voids.append(prop)
         elif prop.get("superseded_at"):
@@ -270,7 +275,8 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
             write_meta("nhl", d, status="waiting", props_total=0, props_graded=0, missing=["no slate.json — freeze the board first"])
         return {"status": "waiting", "reason": "no slate", "slate_date": format_mmddyyyy(d)}
     # Live standard lines are scored. Demon/goblin are research-only.
-    # Superseded cards are not scored. A removed standard line is Void.
+    # Superseded cards, including a removed superseded_dup, are not scored.
+    # A removed standard line with any other reason is Void.
     live, pulled = _standard_rows(slate["props"])
     if not live and not pulled:
         if not dry_run:
