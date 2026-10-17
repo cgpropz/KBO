@@ -46,8 +46,9 @@ export default defineConfig({
     timeout: 180_000,
     // The edge board is behind the member plan check. A preview build with no
     // Supabase URL cannot finish that check, so the grid never paints. This
-    // fake project is only the card-fit server. The suite mocks every
-    // supabase.co request. Production deploys do not use these values.
+    // fake project is only the card-fit server, which rebuilds with these
+    // values. The suite mocks every supabase.co request. Production deploys
+    // and the phone-width bundle do not use them.
     env: {
       VITE_SUPABASE_URL: 'https://e2e-slip.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'e2e-card-fit-anon-key',

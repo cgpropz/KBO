@@ -96,9 +96,11 @@ jobs:
           PHONE_SKIP_BUILD: "1"
           CI: "true"
       - name: Phone card fit at 320 and 390
+        # Rebuild. The card-fit config inlines a fake Supabase URL so the
+        # member fixture can finish the plan check and the edge grid paints.
+        # The phone-width build above stays a normal production bundle.
         run: npx playwright test -c playwright.card-fit.config.js
         env:
-          PHONE_SKIP_BUILD: "1"
           CI: "true"
       - name: Save board screenshots
         if: always()
