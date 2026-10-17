@@ -9,8 +9,6 @@ const FILE_TO_DATASET = {
   'nba/dvp_pf.json': 'nba_dvp_pf',
   'nba/dvp_c.json': 'nba_dvp_c',
   'nba/projections_standard.json': 'nba_projections_standard',
-  'nba/projections_demon.json': 'nba_projections_demon',
-  'nba/projections_goblin.json': 'nba_projections_goblin',
 }
 
 export async function fetchNbaSnapshot(path, { player } = {}) {

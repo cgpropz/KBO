@@ -1,5 +1,8 @@
 """NHL sharp odds keep standard PrizePicks lines only."""
 
+import json
+
+from nfl.sharp_odds import load_pp_rows
 from nhl.sharp_odds import board_rows, stamp_nhl_line_types
 
 
@@ -60,3 +63,19 @@ def test_board_rows_filter_like_nfl_and_drop_unknown():
     assert counts["dropped"]["unknown"] == 2
     assert counts["after"] == 1
     assert counts["before"] == 6
+
+
+def test_load_pp_rows_keeps_tavares_standard_when_goblin_is_first(tmp_path):
+    raw = [
+        {"id": 9, "player": "John Tavares", "prop": "Points", "line": 0.5, "oddsType": "goblin"},
+        {"id": 15852321, "player": "John Tavares", "prop": "Points", "line": 0.5, "oddsType": "standard"},
+        {"id": 2, "player": "John Tavares", "prop": "Points", "line": 1.5, "line_type": "standard"},
+        {"id": 3, "player": "John Tavares", "prop": "Points", "line": 1.5, "line_type": "demon"},
+    ]
+    path = tmp_path / "projections.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    rows = load_pp_rows(path)
+    assert [(row["id"], row["pp_line"]) for row in rows] == [(15852321, 0.5), (2, 1.5)]
+    ranked, counts = board_rows(rows, raw)
+    assert [row["id"] for row in ranked] == [15852321, 2]
+    assert counts["dropped"].get("goblin", 0) == 0

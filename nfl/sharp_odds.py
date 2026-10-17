@@ -424,6 +424,19 @@ def _optional_text(value):
     return text or None
 
 
+def _pp_type_text(item):
+    for key in ("line_type", "odds_type", "oddsType", "lineType"):
+        text = _optional_text(item.get(key))
+        if text:
+            return text
+    return None
+
+
+def _is_standard_pp(item):
+    text = _pp_type_text(item)
+    return text is not None and text.lower() == "standard"
+
+
 def load_pp_rows(path):
     if not path.exists():
         return None
@@ -431,7 +444,8 @@ def load_pp_rows(path):
     if not isinstance(payload, list):
         raise ValueError(f"{path} is not a projections list")
     rows = []
-    seen = set()
+    index_by_key = {}
+    kept_standard = {}
     for item in payload:
         if not isinstance(item, dict):
             continue
@@ -441,16 +455,12 @@ def load_pp_rows(path):
         if not player or not prop or line is None:
             continue
         key = (name_key(player), prop, line)
-        if key in seen:
-            continue
-        seen.add(key)
         projection = item.get("projection")
         try:
             projection = round(float(projection), 1) if projection is not None else None
         except (TypeError, ValueError):
             projection = None
-        rows.append(
-            {
+        row = {
                 "id": item.get("id"),
                 "player": player,
                 "player_key": name_key(player),
@@ -476,8 +486,19 @@ def load_pp_rows(path):
                 "gamesL20": item.get("gamesL20"),
                 "hitRateL30": item.get("hitRateL30"),
                 "gamesL30": item.get("gamesL30"),
-            }
-        )
+        }
+        # The same player, prop, and line can appear as a goblin and a standard
+        # row. Keep the standard id when it shows up later in the file.
+        slot = index_by_key.get(key)
+        standard = _is_standard_pp(item)
+        if slot is not None:
+            if standard and not kept_standard[key]:
+                rows[slot] = row
+                kept_standard[key] = True
+            continue
+        index_by_key[key] = len(rows)
+        kept_standard[key] = standard
+        rows.append(row)
     return rows
 
 

@@ -461,6 +461,28 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
   }
 })
 
+test('nba goblin and demon datasets are not served', async () => {
+  const nba = readFileSync(new URL('../src/nba/nbaData.js', import.meta.url), 'utf8')
+  assert.equal(nba.includes('nba_projections_goblin'), false)
+  assert.equal(nba.includes('nba_projections_demon'), false)
+  assert.equal(nba.includes('projections_goblin.json'), false)
+  assert.equal(nba.includes('projections_demon.json'), false)
+  for (const ds of ['nba_projections_goblin', 'nba_projections_demon']) {
+    for (const token of [undefined, 'tok-owner']) {
+      const client = mockClient()
+      const res = mockRes()
+      await handleDataRequest(
+        { method: 'GET', query: { ds }, headers: token ? { authorization: bearer(token) } : {} },
+        res,
+        client,
+      )
+      assert.equal(res.statusCode, 404, `${ds} ${token || 'anon'}`)
+      assert.equal(res.body.error, 'Dataset not served')
+      assert.equal(client.calls.tables.includes(ds), false)
+    }
+  }
+})
+
 test('wnba goblin and demon datasets are not served', async () => {
   const wnba = readFileSync(new URL('../src/wnba/wnbaData.js', import.meta.url), 'utf8')
   assert.equal(wnba.includes('wnba_projections_goblin'), false)
