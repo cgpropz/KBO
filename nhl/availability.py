@@ -199,7 +199,8 @@ def news_out_status(details) -> str | None:
         return "OUT"
     if "week to week" in text or "week-to-week" in text:
         return "WEEK-TO-WEEK"
-    if re.search(r"\bis out\b", text):
+    # "is out of the protocol" and "is out of the walking boot" are not outs.
+    if re.search(r"\bis out\b(?!\s+of\b)", text):
         return "OUT"
     return None
 
@@ -273,6 +274,19 @@ def fetch_dfo_injury_news(fetch_json=None) -> list[dict]:
     return parse_dfo_injury_news(payload)
 
 
+def _undated_news_limit(item) -> int:
+    """How many days an undated note still covers.
+
+    Week-to-week and "remains out" stay for two weeks. OUT, "will not play",
+    and scratched notes that name no weekday cover only that day and the next.
+    """
+    status = str((item or {}).get("status") or "")
+    details = " ".join(str((item or {}).get("details") or "").lower().split())
+    if status == "WEEK-TO-WEEK" or re.search(r"\bremains? out\b", details):
+        return 14
+    return 1
+
+
 def news_status_for_row(row, items) -> str | None:
     """Fallback status when this row's game is the one the note is about."""
     if not items:
@@ -302,7 +316,7 @@ def news_status_for_row(row, items) -> str | None:
         if weekdays:
             if game_date.strftime("%A").lower() not in weekdays or not -1 <= delta <= 6:
                 continue
-        elif not 0 <= delta <= 14:
+        elif not 0 <= delta <= _undated_news_limit(item):
             continue
         return item.get("status") or "OUT"
     return None
