@@ -16,11 +16,15 @@
  * running Node server.
  */
 import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const require = createRequire(import.meta.url)
+const { dropStartedProjectionProps } = require('./backend/schedule.js')
+const PP_STAT_MAP = require('./backend/ppStatMap.js')
 const OUT_DIR = resolve(__dirname, '..', 'kbo-props-ui', 'public', 'data', 'wnba')
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5050'
 const LINE_TYPES = ['standard', 'demon', 'goblin']
@@ -91,9 +95,28 @@ async function retainPreviousPropLines(file, projections) {
   }
 }
 
+// Schedule events from the backend (ESPN scoreboard). Empty when unavailable;
+// the date and start_time rules still apply without it.
+async function fetchScheduleEvents() {
+  try {
+    const events = await fetchJson(`${BACKEND_URL}/api/schedule`)
+    return Array.isArray(events) ? events : []
+  } catch (err) {
+    console.warn(`  ! schedule unavailable (${err.message}); finished-game check uses dates and start times only`)
+    return []
+  }
+}
+
+// Lines carried forward from the last published board can belong to a game
+// that has since finished (e.g. a goblin board with no new lines yet).
+export function dropFinishedRetained(projections, events, now = new Date()) {
+  return dropStartedProjectionProps(projections, { events, now, statMap: PP_STAT_MAP })
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const failures = []
+  const scheduleEvents = await fetchScheduleEvents()
 
   for (const lineType of LINE_TYPES) {
     const url = `${BACKEND_URL}/api/projections/v2?lineType=${lineType}`
@@ -107,9 +130,11 @@ async function main() {
       const count = propCount(data)
       const file = resolve(OUT_DIR, `projections_${lineType}.json`)
       if (count === 0) {
-        const merged = await retainPreviousPropLines(file, data)
+        const retained = await retainPreviousPropLines(file, data)
+        const { rows: merged, dropped } = dropFinishedRetained(retained, scheduleEvents)
         await writeFile(file, JSON.stringify(merged), 'utf-8')
         console.warn(`  ! projections_${lineType}.json: no props returned; retained existing lines while refreshing gamelogs`)
+        if (dropped) console.warn(`  ! projections_${lineType}.json: dropped ${dropped} retained prop(s) whose game is final, live or past tip`)
         continue
       }
       await writeFile(file, JSON.stringify(data), 'utf-8')
@@ -153,4 +178,6 @@ async function main() {
   console.log('\n\u2705 WNBA snapshots exported.')
 }
 
-main()
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main()
+}

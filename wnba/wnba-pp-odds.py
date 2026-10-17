@@ -44,6 +44,7 @@ def load_snapshot_rows(odds_type='standard'):
                 'Prizepicks': prop.get('line', 'N/A'),
                 'Odds Type': 'standard',
                 'GameDate': prop.get('gameDate', ''),
+                'StartTime': prop.get('start_time', ''),
             })
     return rows
 
@@ -99,6 +100,19 @@ def parse_game_date(raw_start):
     except Exception:
         return str(raw_start)[:10]
 
+def parse_start_time(raw_start):
+    """PrizePicks start time as a UTC ISO string, or '' when missing/unparseable."""
+    if not raw_start:
+        return ''
+    try:
+        dt = datetime.fromisoformat(str(raw_start).replace('Z', '+00:00'))
+    except ValueError:
+        return ''
+    if dt.tzinfo is None:
+        return ''
+    return dt.astimezone(ZoneInfo('UTC')).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
 def dfs_scraper(odds_type='standard'):
     logging.info("Starting data scrape from PrizePicks API")
     try:
@@ -138,6 +152,7 @@ def dfs_scraper(odds_type='standard'):
             "Versus": attrs.get('description', 'N/A'),
             "Odds Type": attrs.get('odds_type', 'N/A'),
             "GameDate": game_date,
+            "StartTime": parse_start_time(raw_start),
         }
         pplist.append(ppinfo)
 
@@ -152,9 +167,9 @@ def dfs_scraper(odds_type='standard'):
         del element['name_id']
 
     df = pd.DataFrame([
-        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''), e.get('Image URL', ''))
+        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''), e.get('StartTime', ''), e.get('Image URL', ''))
         for e in pplist if e['League'] == 'WNBA' and '+' not in e['Name']
-    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate', 'Image URL'])
+    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate', 'StartTime', 'Image URL'])
 
     if not df.empty:
         parsed_dates = pd.to_datetime(df['GameDate'], errors='coerce').dropna()
