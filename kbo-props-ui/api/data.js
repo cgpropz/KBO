@@ -17,8 +17,8 @@ import { presentBoardPayload } from './_boardPayload.js';
 
 // Members may reuse a response for half a minute. It stays private, so the
 // edge never stores a paid board. Anonymous previews keep the public cache.
-export const PRIVATE_DATA_CACHE = 'private, max-age=30, stale-while-revalidate=60';
-export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300';
+export const PRIVATE_DATA_CACHE = 'private, max-age=30, stale-while-revalidate=60, stale-if-error=600';
+export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300, stale-if-error=86400';
 
 // Anonymous public previews (and fully public datasets) can sit on the edge.
 // A request with Authorization, or a full member snapshot, must not.
@@ -73,6 +73,11 @@ function getClient() {
 // decided per request.
 const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map();
+// When Supabase is slow, serve the last good row this instance read (up to
+// 30 min old) instead of a 503. Identical reads share one in-flight request so
+// a burst does not pile multi-MB reads onto the PostgREST pool.
+export const STALE_MAX_MS = 30 * 60 * 1000;
+const inflight = new Map();
 
 // Hard ceiling on Supabase snapshot reads. Without this, an eastern-US latency
 // incident leaves Vercel functions hung and the UI stuck on "Loading…".
@@ -181,6 +186,16 @@ async function readNbaPlayers(client) {
 async function readSnapshot(client, table) {
   const hit = cache.get(table);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.row;
+  if (inflight.has(table)) return inflight.get(table);
+  const pending = readSnapshotFresh(client, table).catch((err) => {
+    if (hit && hit.row && Date.now() - hit.at < STALE_MAX_MS) return hit.row;
+    throw err;
+  }).finally(() => inflight.delete(table));
+  inflight.set(table, pending);
+  return pending;
+}
+
+async function readSnapshotFresh(client, table) {
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeouts.snapshotReadMs);
