@@ -19,6 +19,30 @@
   <meta name="twitter:description" content="That URL is not a CGPropz page." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."}]}</script>
   <style>
     :root { color-scheme: dark; }

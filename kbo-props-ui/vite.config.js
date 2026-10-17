@@ -1,10 +1,14 @@
 import { existsSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { cssLayerPlugin } from './cssLayerPlugin.js'
 import { PAID_DATA_DIRS, PAID_DATA_FILES } from './paidDataFiles.js'
+import { applyXPixelHtml } from './scripts/xPixelSnippet.mjs'
+
+const appRoot = fileURLToPath(new URL('.', import.meta.url))
 
 // Vite copies everything in public/ into the build. The pipeline still writes
 // paid snapshots into public/data locally (git-ignored working state), so strip
@@ -102,6 +106,7 @@ function previewCleanUrls() {
     '/states-not-available': '/states-not-available.html',
     '/guides/start-here': '/guides/start-here.html',
     '/guides/cg-score': '/guides/cg-score.html',
+    '/x': '/x.html',
   }
   const rewriteCleanUrl = (req) => {
     const raw = String(req.url || '')
@@ -150,8 +155,25 @@ function previewCleanUrls() {
   }
 }
 
+function xPixelHtmlPlugin() {
+  return {
+    name: 'x-pixel-html',
+    transformIndexHtml(html) {
+      return applyXPixelHtml(html, process.env)
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [cssLayerPlugin(), react(), stripPaidData(), previewCleanUrls(), devMembershipPreview()],
+  plugins: [cssLayerPlugin(), react(), xPixelHtmlPlugin(), stripPaidData(), previewCleanUrls(), devMembershipPreview()],
+  build: {
+    rollupOptions: {
+      input: {
+        index: resolve(appRoot, 'index.html'),
+        x: resolve(appRoot, 'x.html'),
+      },
+    },
+  },
   // For GitHub Pages: set base to repo name, or '/' for custom domain
   base: process.env.GITHUB_PAGES ? '/KBO/' : '/',
 })

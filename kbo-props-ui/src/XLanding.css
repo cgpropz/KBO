@@ -1,0 +1,158 @@
+.x-landing {
+  min-height: 100vh;
+  background:
+    radial-gradient(50% 42% at 50% 0%, rgba(34, 197, 94, 0.16), transparent 70%),
+    #070a08;
+  color: #f4f4f5;
+  font-family: Inter, "Inter Fallback", system-ui, sans-serif;
+}
+
+.x-header,
+.x-main,
+.x-footer {
+  width: min(760px, calc(100% - 32px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.x-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1120px, calc(100% - 32px));
+  padding: 14px 0 8px;
+}
+
+.x-wordmark {
+  color: #fff;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.x-wordmark span { color: #22c55e; }
+
+.x-login {
+  border: 0;
+  background: transparent;
+  color: #a1a1aa;
+  font: 700 14px inherit;
+  cursor: pointer;
+  padding: 8px 2px;
+}
+
+.x-kicker {
+  margin: 4px 0;
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.x-main h1 {
+  margin: 0 0 6px;
+  font-size: clamp(32px, 7vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.x-lead {
+  margin: 0 0 4px;
+  color: #a1a1aa;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.x-landing .ff-picks {
+  margin-bottom: 12px;
+}
+
+/* The page h1 already names today's free top 3. The component's own heading
+   repeats it and pushes the three rows below the first screen. */
+.x-landing .ff-picks-head { display: none; }
+
+.x-landing .ff-pick {
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+/* Phone: the three rows and the checkout button share the first screen.
+   The score explainer stays one tap away on wider layouts. */
+@media (max-width: 700px) {
+  .x-header { padding: 8px 0 2px; }
+  .x-main h1 { font-size: 30px; margin-bottom: 2px; }
+  .x-lead { font-size: 14px; margin-bottom: 0; }
+  .x-landing .ff-picks { margin-bottom: 8px; }
+  .x-landing .ff-picks-card { padding: 10px; border-radius: 16px; }
+  .x-landing .ff-picks-meta { padding-bottom: 6px; }
+  .x-landing .ff-pick-list { gap: 6px; }
+  .x-landing .ff-pick { padding: 6px 8px; row-gap: 2px; }
+  .x-landing .ff-pick-why { display: none; }
+  .x-cta { padding: 12px 14px; font-size: 15px; }
+  .x-rg { margin-top: 8px; }
+}
+
+
+.x-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #22c55e;
+  color: #04150a;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+}
+
+.x-cta:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.x-rg,
+.x-footer {
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.x-rg { margin: 12px 0 0; }
+
+.x-tools {
+  margin: 14px 0 0;
+  padding-left: 1.15em;
+  color: #e4e4e7;
+  font-size: 14px;
+}
+
+.x-tools li + li { margin-top: 4px; }
+
+.x-footer {
+  padding: 28px 0 40px;
+}
+
+.x-footer p { margin: 0 0 8px; }
+
+.x-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.x-footer-links a {
+  color: #a1a1aa;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (min-width: 900px) {
+  .x-main { padding-top: 18px; }
+  .x-cta { font-size: 18px; }
+}

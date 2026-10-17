@@ -18,6 +18,30 @@
   <meta name="twitter:description" content="NFL player props on CGPropz: what the pro football board covers, how to read CG Score, and where pricing lives. No prop rows on this page." />
   <meta name="twitter:image" content="https://www.cgpropz.com/og-image.jpg" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"NFL player props","item":"https://www.cgpropz.com/nfl-player-props"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this page list today's NFL props?","acceptedAnswer":{"@type":"Answer","text":"This page does not list prop rows. NFL lines on the live board are part of All-Access. The free preview described on the pricing page does not include NFL."}},{"@type":"Question","name":"Where is pricing?","acceptedAnswer":{"@type":"Answer","text":"All-Access plans are on the pricing page."}},{"@type":"Question","name":"What does CG Score mean?","acceptedAnswer":{"@type":"Answer","text":"CG Score compares the CGPropz projection with the posted line. The method stated on the site is projection divided by the line, multiplied by 50. A score of 50 means the projection equals the line. It is not a probability, and a higher score is not a claim that the prop hits more often."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }

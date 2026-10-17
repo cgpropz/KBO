@@ -19,6 +19,30 @@
   <meta name="twitter:description" content="CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+." />
   <meta name="twitter:image" content="https://www.cgpropz.com/images/how-cg-score-works-featured.png" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"How CG Score Works","item":"https://www.cgpropz.com/guides/cg-score"}]},{"@type":"Article","headline":"How CG Score Works","description":"CG Score shows how far the CGPropz projection sits from a prop line. Learn how to read it, what 50 means, and what it doesn't tell you. 21+.","datePublished":"2026-10-11T13:10:00-04:00","dateModified":"2026-10-11T13:10:00-04:00","author":{"@type":"Organization","name":"CGPropz","url":"https://www.cgpropz.com/"},"publisher":{"@id":"https://www.cgpropz.com/#organization"},"mainEntityOfPage":"https://www.cgpropz.com/guides/cg-score"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is CG Score?","acceptedAnswer":{"@type":"Answer","text":"A number that shows how far the CGPropz projection sits from a prop's line. On NHL, 50 means they're equal; on WNBA and NFL, the same holds when the line is at or above that stat's minimum. Above 50 the projection is over, below 50 it's under. KBO may show a stored score on a different basis."}},{"@type":"Question","name":"How is CG Score calculated?","acceptedAnswer":{"@type":"Answer","text":"Projection divided by line, multiplied by 50. WNBA and NFL use a minimum line for each stat when the posted line is lower, and KBO shows its stored score when one exists. See the by-sport table."}},{"@type":"Question","name":"Is a higher CG Score more likely to hit?","acceptedAnswer":{"@type":"Answer","text":"Not necessarily. The score measures the gap between projection and line, not the chance of a hit. Read it with hit rates, sample sizes and the latest news."}},{"@type":"Question","name":"What does a CG Score below 50 mean?","acceptedAnswer":{"@type":"Answer","text":"The projection is under the line. The further below 50, the further under the line the model projects the player."}},{"@type":"Question","name":"Is CG Score the same for every sport?","acceptedAnswer":{"@type":"Answer","text":"Not exactly. The core is projection compared with the line, but WNBA and NFL apply a minimum line per stat, and KBO shows a stored score when one exists. Check the by-sport section of this guide."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }

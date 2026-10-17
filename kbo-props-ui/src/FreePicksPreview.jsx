@@ -163,7 +163,7 @@ function updatedLabel(iso) {
   return `Updated ${new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 }
 
-export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) {
+export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans, showActions = true }) {
   const [boards, setBoards] = useState({});
   const [selected, setSelected] = useState(null);
 
@@ -275,7 +275,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                 );
               })}
             </ol>
-            {state.lockedCount > 0 && (
+            {showActions && state.lockedCount > 0 && (
               <button className="ff-unlock" onClick={onSeePlans}>
                 <span aria-hidden="true">🔒</span>
                 <span>
@@ -285,14 +285,16 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                 <span className="ff-unlock-arrow" aria-hidden="true">→</span>
               </button>
             )}
-            <div className="ff-picks-actions">
-              <button className="ff-btn ff-btn-primary" onClick={onSignUp}>Sign up free</button>
-              <button className="ff-btn ff-btn-ghost" onClick={() => onOpenBoard?.(activeBoard.id)}>Open the free {activeBoard.label} board →</button>
-            </div>
+            {showActions && (
+              <div className="ff-picks-actions">
+                <button className="ff-btn ff-btn-primary" onClick={onSignUp}>Sign up free</button>
+                <button className="ff-btn ff-btn-ghost" onClick={() => onOpenBoard?.(activeBoard.id)}>Open the free {activeBoard.label} board →</button>
+              </div>
+            )}
           </>
         )}
       </div>
-      <p className="ff-disclaimer">For entertainment purposes only. Lines move; always check the current line before you play.</p>
+      {showActions && <p className="ff-disclaimer">For entertainment purposes only. Lines move; always check the current line before you play.</p>}
     </section>
   );
 }

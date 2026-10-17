@@ -7,17 +7,20 @@
  *   rules, so they can be appended to the payment link (Stripe records them on
  *   the payment and passes them back on the after-payment redirect).
  * - trackPurchaseOnce(): fires the X purchase event exactly once per Stripe
- *   Checkout Session, using the session id as conversion_id so X can
- *   de-duplicate it against the server-side Conversions API report sent from
- *   api/stripe-webhook.js.
+ *   Checkout Session. The session id is stored in localStorage and
+ *   sessionStorage before the call, and sent as conversion_id so a reload
+ *   cannot double-fire and X can de-duplicate the browser event against the
+ *   server-side Conversions API report from api/stripe-webhook.js.
  */
 
 import { STRIPE_LINKS } from './pricingTiers.js';
+import { DEFAULT_X_PURCHASE_EVENT_ID, activeXPurchaseEventId } from './xPixelIds.js';
 
-export const X_PURCHASE_EVENT = 'tw-pul9k-pul9m';
+export const X_PURCHASE_EVENT = DEFAULT_X_PURCHASE_EVENT_ID;
 
 const ATTRIBUTION_KEY = 'cg_attribution';
 const PURCHASES_KEY = 'cg_x_purchases_sent';
+const PURCHASE_SESSION_KEY = 'cg_x_purchase_sessions';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 // Stripe Payment Links accept alphanumerics, dashes and underscores, <= 150 chars.
 const UTM_VALUE_RE = /^[A-Za-z0-9_-]{1,150}$/;
@@ -33,6 +36,25 @@ function readJson(key, fallback) {
 
 function writeJson(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ }
+}
+
+function readIdList(storage, key) {
+  try {
+    const raw = storage?.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberId(storage, key, sessionId) {
+  if (!storage || !sessionId) return;
+  try {
+    const prev = readIdList(storage, key);
+    if (prev.includes(sessionId)) return;
+    storage.setItem(key, JSON.stringify([...prev, sessionId].slice(-20)));
+  } catch { /* storage unavailable */ }
 }
 
 // Last-touch attribution: a visit with new UTM codes replaces the old ones.
@@ -62,6 +84,50 @@ export function utmParams() {
     if (UTM_VALUE_RE.test(stored[key] || '')) out[key] = stored[key];
   }
   return out;
+}
+
+// UTM codes on a landing URL. Values that fail Stripe's metadata rules are dropped.
+export function utmFromSearch(search = '') {
+  const params = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+  const out = {};
+  for (const key of UTM_KEYS) {
+    const value = (params.get(key) || '').trim();
+    if (UTM_VALUE_RE.test(value)) out[key] = value;
+  }
+  return out;
+}
+
+// The landing URL wins over an older stored visit.
+export function campaignUtm(search = '') {
+  return { ...utmParams(), ...utmFromSearch(search) };
+}
+
+// Checkout fields the existing weekly flow sets itself. prefilled_promo_code
+// is omitted on purpose: Stripe Payment Links reject XWEEK in that field.
+const CHECKOUT_OWNED_PARAMS = new Set([
+  'client_reference_id',
+  'prefilled_email',
+  'prefilled_promo_code',
+]);
+
+// Copy every incoming query param onto a checkout URL, without replacing
+// params the checkout URL already has.
+export function carryQueryParams(url, search = '') {
+  const target = new URL(url);
+  const incoming = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+  for (const [key, value] of incoming.entries()) {
+    const name = String(key || '').trim();
+    const trimmed = String(value || '').trim().slice(0, 500);
+    if (!name || !trimmed || CHECKOUT_OWNED_PARAMS.has(name)) continue;
+    if (!target.searchParams.has(name)) target.searchParams.set(name, trimmed);
+  }
+  return target.toString();
+}
+
+// Weekly Payment Link (or a ready XWEEK Checkout Session) plus the landing query.
+export function campaignCheckoutHref({ link, user, search = '', sessionUrl = '' } = {}) {
+  const base = sessionUrl || buildCheckoutUrl(link, user);
+  return carryQueryParams(base, search);
 }
 
 /*
@@ -203,25 +269,42 @@ export async function resolvePlanCheckoutUrl(tier, user, options = {}) {
 }
 
 export function purchaseAlreadyTracked(sessionId) {
-  const sent = readJson(PURCHASES_KEY, []);
-  return Array.isArray(sent) && sent.includes(sessionId);
+  if (!sessionId) return false;
+  if (readIdList(globalThis.localStorage, PURCHASES_KEY).includes(sessionId)) return true;
+  return readIdList(globalThis.sessionStorage, PURCHASE_SESSION_KEY).includes(sessionId);
 }
 
-// Fire the X purchase event once per checkout session. Returns true if fired.
-export function trackPurchaseOnce({ sessionId, value, plan }) {
-  if (!sessionId || !(Number(value) > 0)) return false;
+function rememberPurchase(sessionId) {
+  rememberId(globalThis.localStorage, PURCHASES_KEY, sessionId);
+  rememberId(globalThis.sessionStorage, PURCHASE_SESSION_KEY, sessionId);
+}
+
+function purchaseCurrency(currency) {
+  const code = String(currency || 'USD').trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : 'USD';
+}
+
+// Fire the X purchase event once per Stripe Checkout Session. The session id
+// is both the reload guard (localStorage + sessionStorage) and conversion_id.
+// No email, name, or customer id. Returns true if this call fired the event.
+export function trackPurchaseOnce({ sessionId, value, currency, plan, eventId } = {}) {
+  const id = String(eventId == null ? activeXPurchaseEventId() : eventId).trim();
+  if (!sessionId || !id) return false;
   if (purchaseAlreadyTracked(sessionId)) return false;
-  // Record first so a double-mounted effect (React StrictMode) cannot double-fire.
-  const sent = readJson(PURCHASES_KEY, []);
-  writeJson(PURCHASES_KEY, [...(Array.isArray(sent) ? sent : []), sessionId].slice(-20));
   if (typeof window === 'undefined' || typeof window.twq !== 'function') return false;
-  const amount = Number(Number(value).toFixed(2));
-  window.twq('event', X_PURCHASE_EVENT, {
-    value: amount,
-    currency: 'USD',
-    conversion_id: sessionId,
-    contents: plan ? [{ content_id: plan, content_name: `CGPropz ${plan} plan`, content_price: amount, num_items: 1 }] : undefined,
-  });
+  // Record first so a double-mounted effect (React StrictMode) cannot double-fire.
+  rememberPurchase(sessionId);
+  const payload = { conversion_id: sessionId };
+  const amount = Number(value);
+  if (Number.isFinite(amount) && amount > 0) {
+    const priced = Number(amount.toFixed(2));
+    payload.value = priced;
+    payload.currency = purchaseCurrency(currency);
+    if (plan) {
+      payload.contents = [{ content_id: plan, content_name: `CGPropz ${plan} plan`, content_price: priced, num_items: 1 }];
+    }
+  }
+  window.twq('event', id, payload);
   return true;
 }
 

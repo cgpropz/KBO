@@ -1,6 +1,7 @@
 // Shared pieces for the static public pages (home shell, sport hubs, pricing,
 // guides, 404). The React app is not rendered here.
 
+import { xPixelSnippetForEnv } from './xPixelSnippet.mjs';
 import {
   AFFILIATION_LINE,
   AGE_LINE,
@@ -218,6 +219,7 @@ export function renderDocument({
   const url = pageUrl(path);
   const graph = [organizationNode(), ...schemas];
   const robotsMeta = robots ? `\n  <meta name="robots" content="${escapeHtml(robots)}" />` : '';
+  const pixel = xPixelSnippetForEnv();
   const imageUrl = image || `${SITE}/og-image.jpg`;
   const imageAltMeta = imageAlt ? `\n  <meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />` : '';
   return `<!doctype html>
@@ -240,6 +242,7 @@ export function renderDocument({
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  ${pixel}
   ${jsonLdScript(graph)}
   <style>${PAGE_CSS}
   </style>

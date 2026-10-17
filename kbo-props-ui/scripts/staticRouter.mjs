@@ -8,6 +8,7 @@ import { join } from 'node:path';
 export function collectSiteFiles(uiRoot) {
   const files = new Set();
   if (existsSync(join(uiRoot, 'index.html'))) files.add('/index.html');
+  if (existsSync(join(uiRoot, 'x.html'))) files.add('/x.html');
   const walk = (dir, prefix) => {
     if (!existsSync(dir)) return;
     for (const name of readdirSync(dir, { withFileTypes: true })) {
@@ -101,7 +102,7 @@ function contentType(file) {
 }
 
 function readSiteFile(uiRoot, urlPath) {
-  if (urlPath === '/index.html') return readFileSync(join(uiRoot, 'index.html'));
+  if (urlPath === '/index.html' || urlPath === '/x.html') return readFileSync(join(uiRoot, urlPath.slice(1)));
   return readFileSync(join(uiRoot, 'public', urlPath.slice(1)));
 }
 

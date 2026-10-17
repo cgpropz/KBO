@@ -19,6 +19,30 @@
   <meta name="twitter:description" content="WNBA player props on CGPropz, including the 2026 Finals hub for Valkyries vs Dream. No prop rows on this page." />
   <meta name="twitter:image" content="https://www.cgpropz.com/images/wnba-finals-featured.png" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      if (window.__cgXPixelConfigured) return;
+      window.__cgXPixelConfigured = "pul9k";
+      window.twq = window.twq || function () {
+        window.twq.exe ? window.twq.exe.apply(window.twq, arguments) : window.twq.queue.push(arguments);
+      };
+      window.twq.version = '1.1';
+      window.twq.queue = window.twq.queue || [];
+      twq('config', window.__cgXPixelConfigured);
+      function cgLoadTwitter() {
+        if (document.querySelector('script[src*="static.ads-twitter.com/uwt.js"]')) return;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://static.ads-twitter.com/uwt.js';
+        document.body.appendChild(script);
+      }
+      function cgArmTwitter() {
+        setTimeout(cgLoadTwitter, 4000);
+      }
+      if (document.readyState === 'complete') cgArmTwitter();
+      else window.addEventListener('load', cgArmTwitter, { once: true });
+    })();
+    </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.cgpropz.com/#organization","name":"CGPropz","url":"https://www.cgpropz.com/","logo":"https://www.cgpropz.com/favicon.svg","description":"CGPropz publishes player-prop projections and boards for entertainment. It is not a sportsbook and does not take wagers."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.cgpropz.com/"},{"@type":"ListItem","position":2,"name":"WNBA player props","item":"https://www.cgpropz.com/wnba-player-props"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this page list today's WNBA props?","acceptedAnswer":{"@type":"Answer","text":"This page does not list prop rows. The app can show a free preview of the top 3 lines on the WNBA board. The rest of the live board is All-Access."}},{"@type":"Question","name":"Where is pricing?","acceptedAnswer":{"@type":"Answer","text":"All-Access plans are on the pricing page."}},{"@type":"Question","name":"What does CG Score mean?","acceptedAnswer":{"@type":"Answer","text":"CG Score compares the CGPropz projection with the posted line. The method stated on the site is projection divided by the line, multiplied by 50. A score of 50 means the projection equals the line. It is not a probability, and a higher score is not a claim that the prop hits more often."}},{"@type":"Question","name":"Is CGPropz affiliated with PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"No. CGPropz is an independent data and analysis site and is not affiliated with PrizePicks or Underdog."}},{"@type":"Question","name":"When do the 2026 WNBA Finals start?","acceptedAnswer":{"@type":"Answer","text":"Game 1 is Saturday, Oct 17, at 3:30 PM ET at Chase Center. Games 5, 6 and 7 are played only if needed, with Game 7 on Saturday, Oct 31."}},{"@type":"Question","name":"Who is playing in the 2026 WNBA Finals?","acceptedAnswer":{"@type":"Answer","text":"The Golden State Valkyries and the Atlanta Dream. Both swept their semifinal series, and neither franchise has won a WNBA title."}},{"@type":"Question","name":"Where are the free WNBA Finals player props?","acceptedAnswer":{"@type":"Answer","text":"On this page, in the section for each game, once the CGPropz board for that game is built. Each game gets the three props from the free preview of the WNBA board."}},{"@type":"Question","name":"What is CG Score?","acceptedAnswer":{"@type":"Answer","text":"It shows how far the CGPropz projection sits from the line. At 50 they're equal when the line is at or above that stat's minimum; the further from 50, the bigger the gap. It isn't a win probability."}},{"@type":"Question","name":"Why are hit rates less reliable in the Finals?","acceptedAnswer":{"@type":"Answer","text":"Rotations tighten, minutes shift, and head-to-head samples are only a few games. Read every hit rate with its sample size and check the latest injury news."}},{"@type":"Question","name":"Can I use these props on PrizePicks or Underdog?","acceptedAnswer":{"@type":"Answer","text":"The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog."}}]}]}</script>
   <style>
     :root { color-scheme: dark; }
