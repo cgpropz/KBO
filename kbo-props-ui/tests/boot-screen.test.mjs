@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { BOOT_LINES, BOOT_SLOW_MS, bootIsSlow, bootShowsLoader } from '../src/bootPhase.js'
-import { parseCachedSession, supabaseStorageKey } from '../src/supabaseClient.js'
+import { parseCachedSession, readCachedSession, supabaseStorageKey } from '../src/supabaseClient.js'
 
 test('the compact loader waits until about 1.5s', () => {
   assert.equal(BOOT_SLOW_MS, 1500)
@@ -50,4 +50,22 @@ test('a cached supabase session reads the project storage key', () => {
   assert.equal(parsed.expiresAt, 1_900_000_000)
   assert.equal(parseCachedSession('nope'), null)
   assert.equal(parseCachedSession('{}'), null)
+})
+
+test('a member session stored under another project key still signs the board in', () => {
+  const raw = JSON.stringify({
+    access_token: 'tok',
+    expires_at: 1_900_000_000,
+    user: { id: 'u1', email: 'a@b.c' },
+  })
+  const storage = {
+    getItem(key) { return Object.prototype.hasOwnProperty.call(this, key) ? this[key] : null },
+    'sb-otherproject-auth-token': raw,
+    'sb-otherproject-auth-token-code-verifier': 'ignore-me',
+    'not-a-session': raw,
+  }
+  const parsed = readCachedSession(storage)
+  assert.equal(parsed?.user?.id, 'u1')
+  assert.equal(parsed?.accessToken, 'tok')
+  assert.equal(readCachedSession({ getItem() { return null } }), null)
 })

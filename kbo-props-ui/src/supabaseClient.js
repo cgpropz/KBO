@@ -32,15 +32,39 @@ export function parseCachedSession(raw) {
   }
 }
 
-export function readCachedSession(storage = typeof localStorage === 'undefined' ? null : localStorage) {
-  if (!storage) return null
-  const key = supabaseStorageKey()
-  if (!key) return null
+function isAuthTokenKey(name) {
+  return typeof name === 'string' && /^sb-[a-z0-9-]+-auth-token$/.test(name)
+}
+
+function storageKeyNames(storage) {
   try {
-    return parseCachedSession(storage.getItem(key))
+    if (typeof storage.keys === 'function') return [...storage.keys()]
+    return Object.keys(storage)
   } catch {
-    return null
+    return []
   }
+}
+
+// Prefer the key for this build. A preview whose bundle did not inline the
+// project URL still has to see the session the proof (or an older build)
+// stored under sb-<ref>-auth-token, or the member stays on the free paywall.
+export function readCachedSession(storage = typeof localStorage === 'undefined' ? null : localStorage) {
+  if (!storage || typeof storage.getItem !== 'function') return null
+  const preferred = supabaseStorageKey()
+  const names = []
+  if (preferred) names.push(preferred)
+  for (const name of storageKeyNames(storage)) {
+    if (isAuthTokenKey(name) && !names.includes(name)) names.push(name)
+  }
+  for (const name of names) {
+    try {
+      const parsed = parseCachedSession(storage.getItem(name))
+      if (parsed) return parsed
+    } catch {
+      /* try the next key */
+    }
+  }
+  return null
 }
 
 // A still-valid cached access token lets paid data start before the client

@@ -305,7 +305,7 @@ async function clientAuthStorageKeys(base, bypass) {
     if (!response?.ok) continue
     take(await response.text())
   }
-  return [...keys]
+  return { keys: [...keys], foundInBundle }
 }
 
 async function pageHint(page) {
@@ -313,51 +313,56 @@ async function pageHint(page) {
     return await page.evaluate(() => {
       const heading = (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
       const paywall = Boolean(document.querySelector('.pw-title'))
-      const sessionKeys = Object.keys(localStorage).filter((key) => key.startsWith('sb-'))
-      const parsed = sessionKeys.some((key) => {
-        try { return Boolean(JSON.parse(localStorage.getItem(key) || 'null')?.user?.id) } catch { return false }
-      })
-      const tier = (() => { try { return JSON.parse(sessionStorage.getItem('cg_tier') || 'null')?.tier || 'none' } catch { return 'bad' } })()
-      return ` h1=${heading || 'none'} paywall=${paywall} session=${parsed} tier=${tier}`
+      const keys = Object.keys(localStorage).filter((key) => /^sb-[a-z0-9-]+-auth-token$/.test(key))
+      let session = false
+      let tierMatch = false
+      let tier = 'none'
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('cg_tier') || 'null')
+        tier = typeof cached?.tier === 'string' ? cached.tier : 'none'
+        for (const key of keys) {
+          const id = JSON.parse(localStorage.getItem(key) || 'null')?.user?.id
+          if (!id) continue
+          session = true
+          if (cached?.userId === id) tierMatch = true
+        }
+      } catch {
+        tier = 'bad'
+      }
+      return ` h1=${heading || 'none'} paywall=${paywall} session=${session} tier=${tier} tierMatch=${tierMatch} keys=${keys.length}`
     })
   } catch {
     return ''
   }
 }
 
-async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSession, userId }) {
+function memberStorageState(base, storageKeys, storedSession) {
+  const origin = new URL(base).origin
+  return {
+    cookies: [],
+    origins: storageKeys.length
+      ? [{ origin, localStorage: storageKeys.map((name) => ({ name, value: storedSession })) }]
+      : [],
+  }
+}
+
+async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSession }) {
   const context = await browser.newContext({
     viewport: PHONE,
     extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
+    storageState: memberStorageState(base, storageKeys, storedSession),
   })
   let page
   try {
-    const tierValue = JSON.stringify({ userId, tier: 'combined' })
-    await context.addInitScript(({ keys, value, tierKey, tierJson }) => {
+    // sessionStorage is not part of storageState. Derive the cached tier from
+    // the session user id in the page so the two cannot drift apart.
+    await context.addInitScript(({ keys, value }) => {
       try {
         for (const key of keys) localStorage.setItem(key, value)
-        sessionStorage.setItem(tierKey, tierJson)
-      } catch { /* ignore */ }
-    }, { keys: storageKeys, value: storedSession, tierKey: 'cg_tier', tierJson: tierValue })
-    const boot = `<script>(${function seed(keys, value, tierKey, tierJson) {
-      try {
-        for (const key of keys) localStorage.setItem(key, value)
-        sessionStorage.setItem(tierKey, tierJson)
+        const userId = JSON.parse(value)?.user?.id
+        if (userId) sessionStorage.setItem('cg_tier', JSON.stringify({ userId, tier: 'combined' }))
       } catch { /* the page still loads logged out */ }
-    }})(${JSON.stringify(storageKeys)},${JSON.stringify(storedSession)},${JSON.stringify('cg_tier')},${JSON.stringify(tierValue)})</script>`
-    await context.route('**/*', async (route) => {
-      if (route.request().resourceType() !== 'document') return route.continue()
-      const response = await route.fetch()
-      const headers = { ...response.headers() }
-      const type = headers['content-type'] || ''
-      if (!type.includes('text/html')) return route.fulfill({ response })
-      const body = await response.text()
-      delete headers['content-length']
-      const next = /<head[^>]*>/i.test(body)
-        ? body.replace(/<head[^>]*>/i, (head) => `${head}${boot}`)
-        : `${boot}${body}`
-      await route.fulfill({ status: response.status(), headers, body: next })
-    })
+    }, { keys: storageKeys, value: storedSession })
     page = await context.newPage()
     const started = performance.now()
     const target = new URL(path, base)
@@ -395,13 +400,13 @@ async function timeColdPage(browser, { base, path, bypass, storageKeys, storedSe
   }
 }
 
-async function timeHost(browser, { label, base, bypass, storageKeys, storedSession, userId }) {
+async function timeHost(browser, { label, base, bypass, storageKeys, storedSession }) {
   const pages = {}
   for (const [name, path] of PAGE_PATHS) {
     const runs = []
     for (let index = 0; index < 3; index += 1) {
       try {
-        runs.push(await timeColdPage(browser, { base, path, bypass, storageKeys, storedSession, userId }))
+        runs.push(await timeColdPage(browser, { base, path, bypass, storageKeys, storedSession }))
       } catch (err) {
         const message = err instanceof Error ? err.message : 'page failed'
         runs.push({ error: bypass ? message.split(bypass).join('[bypass]') : message })
@@ -465,7 +470,7 @@ async function main() {
       oneHub(bypass, session.access_token, groups),
     ])
     const storedSession = sessionJson(session)
-    const [prodKeys, previewKeys] = await Promise.all([
+    const [prodAuth, previewAuth] = await Promise.all([
       clientAuthStorageKeys(prodUrl, null),
       clientAuthStorageKeys(previewUrl, bypass),
     ])
@@ -478,14 +483,15 @@ async function main() {
         preview: await nhlOddsCounts(previewUrl, { bypass, accessToken: session.access_token }),
       }
       browserReport = {
-        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKeys: prodKeys, storedSession, userId }),
-        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKeys: previewKeys, storedSession, userId }),
+        prod: await timeHost(browser, { label: 'prod', base: prodUrl, storageKeys: prodAuth.keys, storedSession }),
+        preview: await timeHost(browser, { label: 'preview', base: previewUrl, bypass, storageKeys: previewAuth.keys, storedSession }),
       }
     } finally {
       await browser.close()
     }
     const report = {
       viewport: PHONE,
+      authBundle: { prod: prodAuth.foundInBundle, preview: previewAuth.foundInBundle },
       cold: { nhl, nfl },
       burst: burst.map((hub) => ({
         wallMs: hub.wallMs,
