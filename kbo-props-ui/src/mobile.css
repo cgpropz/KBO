@@ -614,6 +614,45 @@
     grid-template-columns: 1fr !important;
   }
 
+  /* NFL edge cards only. Two across through 480px so the name and the
+     DVP / season / hit-rate labels can wrap. Wider phones stay one column.
+     Desktop, iPad, and the NHL board keep the rules above and in nfl.css. */
+  @media (max-width: 480px) {
+    .nfl-root:not(.nhl-root) .nfl-edge-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(.nfl-card-metrics, .nfl-card-meta) {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 6px !important;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(
+      .nfl-card-player h2,
+      .nfl-card-player p,
+      .nfl-card-player p em,
+      .nfl-card-prop,
+      .nfl-card-topline,
+      .nfl-history-label,
+      .nfl-history-label span,
+      .nfl-card-metrics small,
+      .nfl-card-meta small
+    ) {
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(.nfl-card-player p, .nfl-card-topline, .nfl-history-label) {
+      flex-wrap: wrap !important;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card .nfl-card-player > div {
+      min-width: 0;
+    }
+  }
+
   :is(.nfl-card-metrics, .nfl-metrics, .edge-stats-row, .nfl-player-summary, .kbo-player-summary, .wnba-player-summary) {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
