@@ -13,11 +13,13 @@ name: Refresh NBA PrizePicks Lines (hourly)
 #
 # Hourly cron, not a slept chain. A 60-minute sleep would bill the wait, and
 # a chain with no sleep would scrape again as soon as this job finished.
-# The :17 tick covers the UTC hours an NBA window can be open. The :22/:52
-# cron stays as the off-day backup. A run exits after checkout unless it is
-# a manual dispatch, the scoreboard is inside the window (5 hours before
-# through 3 hours after), and no successful scrape finished in the last 50
-# minutes.
+# The :17 tick covers the UTC hours an NBA window can be open. :07 and :37
+# during those hours cover a dropped :17. The :22/:52 cron stays as the
+# off-day backup. Outside the window the gate logs
+# "skipped: gate (outside game window)" and the refresh job is skipped.
+# Inside the window a public board clock older than 110 minutes always
+# refreshes. Otherwise a run scrapes only when no successful scrape finished
+# in the last 50 minutes.
 #
 # One tip, about 8 scrapes × ~1 min of work (measured 0.6-0.9), plus about
 # one minute for every other tick (71 starts: 23 hourly hours + 48 backup).
@@ -28,6 +30,8 @@ on:
   schedule:
     # Early tips through west-coast finals, both EST and EDT.
     - cron: "17 0-9,11-23 * * *"
+    # Same hours, offset from :17, so a dropped GitHub tick still lands this hour.
+    - cron: "7,37 0-9,11-23 * * *"
     # Off-day backup. A run inside 50 minutes of a real scrape exits early.
     - cron: "22,52 * * * *" # every 30 minutes (UTC)
   workflow_dispatch:
@@ -49,10 +53,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  refresh-nba-props:
+  gate:
+    name: Decide whether this run should refresh
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    outputs:
+      due: ${{ steps.gate.outputs.due }}
+      reason: ${{ steps.gate.outputs.reason }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -65,27 +72,39 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash .github/scripts/refresh-due.sh nba-props-refresh.yml nba
 
+      - name: "skipped: gate (outside game window)"
+        if: steps.gate.outputs.reason == 'outside'
+        run: |
+          echo "skipped: gate (outside game window)"
+
+  refresh-nba-props:
+    name: Refresh NBA PrizePicks lines
+    needs: gate
+    if: github.ref == 'refs/heads/main' && needs.gate.outputs.due == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Set up Python
-        if: steps.gate.outputs.due == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
       - name: Install Python dependencies
-        if: steps.gate.outputs.due == 'true'
         run: pip install requests pandas
 
       - name: Generate five-position NBA DVP tables
-        if: steps.gate.outputs.due == 'true'
         run: python nba/generate_nba_dvp.py
 
       - name: Verify NBA DVP
-        if: steps.gate.outputs.due == 'true'
         run: python nba/verify_nba_dvp.py
 
       - name: Restore last published NBA snapshots (paid data is not in git)
-        if: steps.gate.outputs.due == 'true'
         run: python pipeline/restore_snapshots.py --prefix nba/
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
@@ -93,7 +112,6 @@ jobs:
 
       - name: Fetch NBA PrizePicks lines
         id: lines
-        if: steps.gate.outputs.due == 'true'
         run: |
           set -o pipefail
           python nba/nba-pp-odds.py | tee "$RUNNER_TEMP/nba-pp.txt"
@@ -112,7 +130,6 @@ jobs:
           fi
 
       - name: Fill NBA projections and edges
-        if: steps.gate.outputs.due == 'true'
         run: |
           set +e
           python nba/generate_nba_projections.py
@@ -128,12 +145,12 @@ jobs:
           exit "$status"
 
       - name: Build NBA prop correlations
-        if: steps.gate.outputs.due == 'true' && steps.lines.outputs.has_lines == 'true'
+        if: steps.lines.outputs.has_lines == 'true'
         continue-on-error: true
         run: python pipeline/build_correlations.py --sport nba
 
       - name: Publish NBA prop lines to Supabase
-        if: steps.gate.outputs.due == 'true' && steps.lines.outputs.has_lines == 'true'
+        if: steps.lines.outputs.has_lines == 'true'
         timeout-minutes: 10
         run: python publish_supabase.py
         env:
@@ -142,7 +159,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Publish public board status
-        if: steps.gate.outputs.due == 'true' && always()
+        if: always()
         continue-on-error: true
         run: |
           bash pipeline/commit_status.sh "chore: nba board status"
