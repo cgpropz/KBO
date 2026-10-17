@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-17T21:27:39Z",
+  "checked_at": "2026-10-17T21:34:02Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-17T21:22:46.892027+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-17T21:06:27.525489+00:00",
-      "prop_count": 999,
+      "generated_at": "2026-10-17T21:34:02.388722+00:00",
+      "prop_count": 952,
       "started_removed": 0,
       "removals": [
         {
@@ -22,6 +22,15 @@
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "goblin",
+          "projection": 2.15,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Blake Coleman",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
           "projection": 2.15,
           "reason": "line pulled"
         },
@@ -44,10 +53,28 @@
           "reason": "line pulled"
         },
         {
+          "player": "Kirill Kaprizov",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 6.5,
+          "odds_type": "demon",
+          "projection": 2.94,
+          "reason": "line pulled"
+        },
+        {
           "player": "Matt Boldy",
           "team": "MIN",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 3.02,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Matt Boldy",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 6.5,
           "odds_type": "demon",
           "projection": 3.02,
           "reason": "line pulled"
@@ -69,11 +96,20 @@
           "odds_type": "goblin",
           "projection": 1.81,
           "reason": "line pulled"
+        },
+        {
+          "player": "Ryan Hartman",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.81,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 65,
-        "superseded_dup": 91,
+        "pp_pull": 66,
+        "superseded_dup": 42,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 1
