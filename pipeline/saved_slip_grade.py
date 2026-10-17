@@ -133,17 +133,20 @@ def explicit_leg_date(leg: dict) -> date | None:
 
 
 def nearest_date(candidates, anchor: date, window: int = DATE_WINDOW_DAYS) -> date | None:
+    """Earliest game on or after the slip date, within `window` days.
+
+    A final from earlier in the week is not this slip's game. If nothing
+    on or after the slip date is known yet, the leg stays pending.
+    """
     best = None
-    best_dist = None
     for when in candidates:
         if not isinstance(when, date):
             continue
-        dist = abs((when - anchor).days)
-        if dist > window:
+        ahead = (when - anchor).days
+        if ahead < 0 or ahead > window:
             continue
-        if best is None or dist < best_dist or (dist == best_dist and when > best):
+        if best is None or when < best:
             best = when
-            best_dist = dist
     return best
 
 
@@ -497,43 +500,13 @@ def _leg_date(leg: dict, sport: str, anchor: date | None, sources) -> date | Non
         return found
     if anchor is None:
         return None
+    # KBO slips were saved on the game date. Do not search backward or forward.
+    if sport == "kbo":
+        return anchor
     finder = getattr(sources, "team_game_date", None)
     if finder is None:
         return None
     return finder(sport, str(leg.get("team") or ""), anchor)
-
-
-def team_on_day(sport: str, day, team: str, iso: str) -> bool:
-    """True when this loaded day shows the team played, is scheduled, or was postponed."""
-    if not str(team or "").strip() or day is None or isinstance(day, DayUnavailable):
-        return False
-    if isinstance(day, NflDay):
-        if _team_in(team, day.scheduled) or _team_in(team, day.finals):
-            return True
-        return _indexed_team(day.actuals, iso, team, "nfl")
-    if isinstance(day, WnbaDay):
-        return _indexed_team(day.box, iso, team, "wnba")
-    if isinstance(day, NhlDay):
-        from nhl.teams import team_abbr
-
-        return team_abbr(team) in set((day.actuals or {}).get("final_teams") or [])
-    if isinstance(day, KboDay):
-        if _indexed_team(day.actuals, iso, team, "kbo"):
-            return True
-        want = team_key(team)
-        for pair in list(day.scheduled or []) + list(day.postponed or []):
-            if want in pair:
-                return True
-    return False
-
-
-def _indexed_team(lookup, iso: str, team: str, sport: str) -> bool:
-    for (day, _), row in (lookup or {}).items():
-        if day != iso or not isinstance(row, dict):
-            continue
-        if str(row.get("team") or "").strip() and _teams_agree(sport, team, row.get("team")):
-            return True
-    return False
 
 
 def grade_slip(slip: dict, sources) -> dict:
@@ -655,12 +628,26 @@ def missing_data_void(payload: dict) -> bool:
     return bool(reasons) and all(reason in MISSING_DATA_VOIDS for reason in reasons)
 
 
+def _missing_data_leg(leg: dict) -> bool:
+    return (leg.get("result") or "") == "push" and str(leg.get("void_reason") or "") in MISSING_DATA_VOIDS
+
+
 def downgrade_blocked(slip: dict, payload: dict) -> bool:
-    """A graded slip must not fall back to pending, ungradeable, or a missing-data void."""
+    """A graded slip must not fall back to pending, ungradeable, or a missing-data void.
+
+    One leg flipping from hit or miss to a missing-data void is enough. The
+    other legs staying decided does not make that void safe to write.
+    """
     if not slip.get("graded"):
         return False
     if not payload.get("graded") or payload.get("ungradeable") or payload.get("result") == "pending":
         return True
+    before = [leg if isinstance(leg, dict) else {} for leg in legs_of(slip)]
+    after = [leg if isinstance(leg, dict) else {} for leg in (payload.get("legs") or [])]
+    if len(before) == len(after):
+        for old, new in zip(before, after):
+            if (old.get("result") or "") in {"hit", "miss"} and _missing_data_leg(new):
+                return True
     return missing_data_void(payload)
 
 
@@ -764,7 +751,7 @@ class LiveSources:
         self._nhl: dict = {}
 
     def team_game_date(self, sport: str, team: str, anchor: date) -> date | None:
-        """Nearest game for this team within 7 days of the slip date."""
+        """Earliest game on or after the slip date, within 7 days. Never a previous final."""
         if not str(team or "").strip():
             return None
         try:
@@ -774,8 +761,6 @@ class LiveSources:
                 return nearest_date(self._wnba_team_dates(team, anchor), anchor)
             if sport == "nhl":
                 return nearest_date(self._nhl_team_dates(team, anchor), anchor)
-            if sport == "kbo":
-                return nearest_date(self._kbo_team_dates(team, anchor), anchor)
         except (Exception, SystemExit) as exc:  # noqa: BLE001 - a lookup miss stays pending
             self._note(sport, anchor, exc)
         return None
@@ -839,11 +824,17 @@ class LiveSources:
             self._nfl_games = frame.to_dict("records")
         return self._nfl_games
 
+    def _on_or_after(self, when: date | None, anchor: date) -> bool:
+        if when is None:
+            return False
+        ahead = (when - anchor).days
+        return 0 <= ahead <= DATE_WINDOW_DAYS
+
     def _nfl_team_dates(self, team: str, anchor: date) -> list[date]:
         found = []
         for game in self._games():
             when = parse_date(game.get("gameday"))
-            if when is None:
+            if not self._on_or_after(when, anchor):
                 continue
             sides = {str(game.get("away_team") or "").upper(), str(game.get("home_team") or "").upper()}
             sides.discard("")
@@ -852,7 +843,6 @@ class LiveSources:
         return found
 
     def _wnba_team_dates(self, team: str, anchor: date) -> list[date]:
-        del anchor
         if self._wnba_box is None:
             from pipeline.memory.grade_wnba_day import load_boxscores
 
@@ -863,33 +853,7 @@ class LiveSources:
             if not isinstance(row, dict) or cutoff.wnba_team(row.get("team")) != want:
                 continue
             when = parse_date(iso)
-            if when:
-                found.append(when)
-        return found
-
-    def _kbo_team_dates(self, team: str, anchor: date) -> list[date]:
-        from pipeline.memory.common import postponed_matchups, scheduled_matchups
-        from pipeline.memory.grade_kbo_day import build_actuals
-
-        if self._kbo_actuals is None:
-            self._kbo_actuals = build_actuals()
-        want = team_key(team)
-        found = []
-        for (iso, _), row in (self._kbo_actuals or {}).items():
-            if isinstance(row, dict) and team_key(row.get("team")) == want:
-                when = parse_date(iso)
-                if when:
-                    found.append(when)
-        for offset in range(-DATE_WINDOW_DAYS, DATE_WINDOW_DAYS + 1):
-            when = anchor + timedelta(days=offset)
-            pairs = []
-            postponed = postponed_matchups("kbo", when)
-            scheduled = scheduled_matchups("kbo", when)
-            if postponed:
-                pairs.extend(postponed)
-            if scheduled:
-                pairs.extend(scheduled)
-            if any(want in pair for pair in pairs):
+            if self._on_or_after(when, anchor):
                 found.append(when)
         return found
 
@@ -899,7 +863,7 @@ class LiveSources:
 
         want = team_abbr(team)
         found = []
-        for offset in range(-DATE_WINDOW_DAYS, DATE_WINDOW_DAYS + 1):
+        for offset in range(0, DATE_WINDOW_DAYS + 1):
             when = anchor + timedelta(days=offset)
             iso = format_iso(when)
             if iso not in self._nhl:

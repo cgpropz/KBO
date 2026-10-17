@@ -17,12 +17,35 @@ from pipeline.saved_slip_grade import (
     grade_batch,
     grade_slip,
     nearest_date,
-    team_on_day,
 )
 from pipeline.saved_slip_sport import format_sport_counts, infer_slip_sport, plan_sport_updates
 
 TODAY = date(2026, 10, 17)
 PAST = "2026-10-12"
+
+
+def _team_played(sport, day, team):
+    """Fixture stand-in for a team appearing on one loaded day."""
+    if not str(team or "").strip() or day is None:
+        return False
+    if isinstance(day, NflDay):
+        return _team_in(team, day.scheduled) or _team_in(team, day.finals)
+    if isinstance(day, WnbaDay):
+        want = str(team).strip().upper()
+        return any(str((row or {}).get("team") or "").strip().upper() == want for row in (day.box or {}).values())
+    if isinstance(day, NhlDay):
+        return str(team).strip().upper() in {str(code).upper() for code in (day.actuals or {}).get("final_teams") or []}
+    if isinstance(day, KboDay):
+        from pipeline.memory.common import team_key
+
+        want = team_key(team)
+        for row in (day.actuals or {}).values():
+            if isinstance(row, dict) and team_key(row.get("team")) == want:
+                return True
+        for pair in list(day.scheduled or []) + list(day.postponed or []):
+            if want in pair:
+                return True
+    return False
 
 
 class Sources:
@@ -39,7 +62,7 @@ class Sources:
             if sp != sport:
                 continue
             when = date.fromisoformat(iso)
-            if team_on_day(sport, day, team, iso):
+            if _team_played(sport, day, team):
                 found.append(when)
         for game in self.games:
             when = parse_date(game.get("gameday"))
@@ -459,6 +482,60 @@ class LegDateTests(SlipGradeTests):
         self.assertEqual(nhl_legacy["result"], "hit")
         self.assertNotEqual(nhl_legacy["result"], "pending")
 
+    def test_an_earlier_final_inside_the_window_is_not_this_slip(self):
+        self.assertEqual(nearest_date([date(2026, 10, 11), date(2026, 10, 18)], date(2026, 10, 14)), date(2026, 10, 18))
+        self.assertIsNone(nearest_date([date(2026, 10, 11)], date(2026, 10, 14)))
+        # Board QA: Wed 10/14 BUF must not grade Sun 10/11, and a 10/17 LVA
+        # slip must not take a HIT off the 10/15 box.
+        nfl = Sources({
+            ("nfl", "2026-10-11"): NflDay(
+                actuals={("2026-10-11", nfl_name_key("Josh Allen")): {
+                    "player": "Josh Allen", "team": "BUF", "passing_yards": 300, "present": True,
+                }},
+                scheduled={"BUF"},
+                finals={"BUF"},
+            ),
+            ("nfl", "2026-10-18"): NflDay(actuals={}, scheduled={"BUF"}, finals=set()),
+        })
+        buf = grade_slip(slip("2026-10-14", [leg("Josh Allen", "Pass Yards", 200.5, team="BUF")], sport="nfl"), nfl)
+        self.assertEqual(buf["result"], "pending")
+        self.assertFalse(buf["graded"])
+        self.assertIsNone(buf["legs"][0].get("actual"))
+        self.assertNotEqual(buf["legs"][0].get("actual"), 300)
+
+        wnba = Sources({
+            ("wnba", "2026-10-15"): WnbaDay(box={
+                ("2026-10-15", "aja"): {"player": "A'ja Wilson", "team": "LVA", "pts": 30, "present": True},
+            }),
+        })
+        lva = grade_slip(slip("2026-10-17", [leg("A'ja Wilson", "Points", 22.5, team="LVA")], sport="wnba"), wnba)
+        self.assertEqual(lva["result"], "pending")
+        self.assertFalse(lva["graded"])
+        self.assertNotEqual(lva["legs"][0].get("actual"), 30)
+
+        nhl = Sources({
+            ("nhl", "2026-10-15"): NhlDay(actuals={
+                "final_teams": {"EDM"},
+                "players": {("EDM", "stored"): {"name": "Connor McDavid", "team": "EDM", "sog": 6, "played": True}},
+            }),
+        })
+        edm = grade_slip(slip("2026-10-17", [leg("Connor McDavid", "Shots On Goal", 3.5, team="EDM")], sport="nhl"), nhl)
+        self.assertEqual(edm["result"], "pending")
+        self.assertFalse(edm["graded"])
+        self.assertNotEqual(edm["legs"][0].get("actual"), 6)
+
+        earlier = "2026-10-10"
+        kbo = Sources({
+            ("kbo", earlier): KboDay(actuals={(earlier, name_match_key("Kim Hitter")): {
+                "type": "batter", "team": "Doosan", "opponent": "Hanwha", "present": True, "player": "Kim Hitter", "hrr": 5,
+            }}, scheduled=None),
+            ("kbo", PAST): KboDay(actuals={}, scheduled=None),
+        })
+        bears = grade_slip(slip(PAST, [leg("Kim Hitter", "Hits+Runs+RBIs", 1.5, team="Doosan", opponent="Hanwha")], sport="kbo"), kbo)
+        self.assertEqual(bears["result"], "pending")
+        self.assertFalse(bears["graded"])
+        self.assertNotEqual(bears["legs"][0].get("actual"), 5)
+
     def test_name_lookup_requires_the_team_when_both_sides_have_one(self):
         iso = PAST
         actuals = {(iso, nfl_name_key("Justin Jefferson")): {
@@ -515,6 +592,13 @@ class BackfillSafetyTests(unittest.TestCase):
         text = format_summary(change_summary, dry_run=True)
         self.assertIn("miss→hit=1", text)
         self.assertNotIn("should-not-be-logged", text)
+        one_leg = slip(PAST, [
+            leg("Patrick Mahomes", "Pass Yards", 250.5, team="KC", result="hit", actual=280),
+            leg("Isiah Pacheco", "Rush Yards", 40.5, team="KC", result="miss", actual=20),
+        ], sport="nfl", graded=True, result="partial", hits=1, misses=1)
+        flipped, flipped_summary = grade_batch([one_leg], sources, TODAY)
+        self.assertEqual(flipped, [])
+        self.assertEqual(flipped_summary["kept_graded"], 1)
 
     def test_backfill_defaults_to_ungraded_and_pages_past_ungradeable(self):
         from pathlib import Path
