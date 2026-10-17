@@ -77,4 +77,8 @@ test('the image route refuses anything that is not a public headshot or logo', (
   }
   assert.equal(parseImageQuery('https://a.espncdn.com/i/teamlogos/nba/500/ny.png', 80)?.width, 80)
   assert.equal(parseImageQuery('https://a.espncdn.com/i/teamlogos/nba/500/ny.png', 81), null)
+  const nfl = 'https://static.www.nfl.com/image/private/f_auto,q_auto/league/abc123'
+  assert.equal(parseImageQuery(nfl, 160)?.width, 128)
+  assert.equal(parseImageQuery(nfl, '160')?.width, 128)
+  assert.match(fitImage(nfl, 72), /&w=128$/)
 })

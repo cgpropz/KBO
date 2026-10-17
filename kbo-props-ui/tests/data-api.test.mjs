@@ -3,7 +3,7 @@
 // Run: npm run test:api
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
-import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, boardReadBudgetMs, stepBudgetMs, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _setTimeouts, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, PRIVATE_DATA_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FREE_ROW_LIMIT,
@@ -609,6 +609,8 @@ test('snapshot reads finish in time for last-good inside the 12s client window',
   // A split board is a head read plus a chunk read. Those two slices plus
   // last-good would pass 12s if each used its own full timer.
   assert.ok(SNAPSHOT_READ_MS * 2 + DEFAULT_TIMEOUTS.lastGoodReadMs >= CLIENT_FETCH_MS)
+  assert.equal(BOARD_READ_BUDGET_MS, 10_500)
+  assert.equal(boardReadBudgetMs(), BOARD_READ_BUDGET_MS)
   assert.ok(boardReadBudgetMs() < CLIENT_FETCH_MS)
   const start = 0
   const deadline = start + boardReadBudgetMs()
@@ -618,6 +620,112 @@ test('snapshot reads finish in time for last-good inside the 12s client window',
   const lastMs = stepBudgetMs(deadline, DEFAULT_TIMEOUTS.lastGoodReadMs, afterChunks)
   assert.ok(afterChunks + lastMs - start < CLIENT_FETCH_MS)
   assert.ok(afterChunks + lastMs <= deadline)
+})
+
+test('a slow head and an out-of-budget chunk read serve last-good or 503, never a partial board', async () => {
+  const prev = { ...timeouts }
+  _setTimeouts({ snapshotReadMs: 80, lastGoodReadMs: 80, tierLookupMs: 400 })
+  const version = '2026-10-17T12:00:00Z'
+  const stored = [
+    { player: 'StoredOnly', projection: 4, line: 2.5, rankEligible: true, generated_at: new Date().toISOString() },
+    { player: 'Second', projection: 3, line: 2.5, rankEligible: true },
+  ]
+  const partial = [{ player: 'PartialOnly', projection: 9, line: 1, rankEligible: true }]
+  function client({ storage }) {
+    let chunkStarted = false
+    return {
+      chunkStarted: () => chunkStarted,
+      auth: {
+        async getUser() {
+          return { data: { user: { id: 'u-owner', email: 'owner@example.com' } }, error: null }
+        },
+      },
+      storage,
+      from(table) {
+        const chain = {
+          select() { return chain },
+          eq() { return chain },
+          in() { return chain },
+          abortSignal() { return chain },
+          maybeSingle() {
+            if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+            return new Promise((resolve) => {
+              setTimeout(() => resolve({
+                data: {
+                  id: 1,
+                  updated_at: version,
+                  data: {
+                    snapshotChunks: { version, generated_at: version, kind: 'list', ids: [10, 11] },
+                  },
+                },
+                error: null,
+              }), 40)
+            })
+          },
+          then(resolve, reject) {
+            chunkStarted = true
+            return new Promise((done) => {
+              setTimeout(() => done({
+                data: [{
+                  id: 10,
+                  updated_at: version,
+                  data: { version, generated_at: version, index: 0, kind: 'list', rows: partial },
+                }],
+                error: null,
+              }), 400)
+            }).then(resolve, reject)
+          },
+        }
+        return chain
+      },
+    }
+  }
+  try {
+    const withStorage = client({
+      storage: {
+        from() {
+          return {
+            async download() {
+              return {
+                data: { text: async () => JSON.stringify({ data: stored, updated_at: new Date().toISOString() }) },
+                error: null,
+              }
+            },
+          }
+        },
+      },
+    })
+    const storedRes = mockRes()
+    const started = Date.now()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      storedRes,
+      withStorage,
+    )
+    assert.equal(withStorage.chunkStarted(), true)
+    assert.equal(storedRes.statusCode, 200)
+    assert.equal(storedRes.body.preview, false)
+    assert.deepEqual(storedRes.body.data.map((row) => row.player), ['StoredOnly', 'Second'])
+    assert.equal(JSON.stringify(storedRes.body).includes('PartialOnly'), false)
+    assert.ok(Date.now() - started < 2000)
+
+    _clearCache()
+    const withoutStorage = client({ storage: undefined })
+    const emptyRes = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'nhl_projections' }, headers: { authorization: 'Bearer tok-owner' } },
+      emptyRes,
+      withoutStorage,
+    )
+    assert.equal(withoutStorage.chunkStarted(), true)
+    assert.equal(emptyRes.statusCode, 503)
+    assert.equal(emptyRes.body.code, 'upstream_timeout')
+    assert.equal(emptyRes.body.data, undefined)
+    assert.equal(JSON.stringify(emptyRes.body).includes('PartialOnly'), false)
+  } finally {
+    _setTimeouts(prev)
+    _clearCache()
+  }
 })
 
 test('the snapshot read starts before the tier lookup finishes', async () => {
@@ -981,6 +1089,90 @@ test('a stale nba_players refresh stores the joined player list', async () => {
     await handleDataRequest(req, third, client)
     assert.deepEqual(third.body.data.map((row) => row.athleteId), ['a2', 'b'])
     assert.equal(chunkReads, 2)
+  } finally {
+    cacheWindows.freshMs = prevFresh
+  }
+})
+
+test('a failed nba_players refresh keeps the last good in-memory copy for the fallback', async () => {
+  let phase = 'good'
+  let chunkReads = 0
+  const client = {
+    auth: {
+      async getUser() {
+        return { data: { user: { id: 'u-owner', email: 'CGPropz@gmail.com' } }, error: null }
+      },
+    },
+    storage: {
+      from() {
+        return {
+          async download() {
+            return {
+              data: {
+                text: async () => JSON.stringify({
+                  data: [{ athleteId: 'stored' }],
+                  updated_at: new Date().toISOString(),
+                }),
+              },
+              error: null,
+            }
+          },
+        }
+      },
+    },
+    from(table) {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        gt() { return chain },
+        order() { return chain },
+        abortSignal() { return chain },
+        maybeSingle() {
+          if (table === 'user_profiles') return Promise.resolve({ data: { tier: 'owner' }, error: null })
+          if (table === 'app_flags') return Promise.resolve({ data: { value: false }, error: null })
+          return Promise.resolve({
+            data: { data: { nbaPlayerChunks: 2 }, updated_at: '2026-10-07T00:00:00Z' },
+            error: null,
+          })
+        },
+        then(resolve, reject) {
+          chunkReads += 1
+          const rows = phase === 'good'
+            ? [
+              { id: 2, data: [{ athleteId: 'a' }], updated_at: '2026-10-07T00:00:00Z' },
+              { id: 3, data: [{ athleteId: 'b' }], updated_at: '2026-10-07T00:00:00Z' },
+            ]
+            : [{ id: 2, data: { version: 'other', players: [{ athleteId: 'partial' }] }, updated_at: '2026-10-07T00:00:00Z' }]
+          return Promise.resolve({ data: rows, error: null }).then(resolve, reject)
+        },
+      }
+      return chain
+    },
+  }
+  const req = { method: 'GET', query: { ds: 'nba_players' }, headers: { authorization: 'Bearer tok-owner' } }
+  const first = mockRes()
+  await handleDataRequest(req, first, client)
+  assert.deepEqual(first.body.data.map((row) => row.athleteId), ['a', 'b'])
+
+  const prevFresh = cacheWindows.freshMs
+  cacheWindows.freshMs = 0
+  phase = 'bad'
+  try {
+    const second = mockRes()
+    await handleDataRequest(req, second, client)
+    assert.deepEqual(second.body.data.map((row) => row.athleteId), ['a', 'b'])
+    const started = Date.now()
+    while (chunkReads < 2) {
+      if (Date.now() - started > 1000) throw new Error('background refresh did not read chunks')
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const third = mockRes()
+    await handleDataRequest(req, third, client)
+    assert.equal(third.statusCode, 200)
+    assert.deepEqual(third.body.data.map((row) => row.athleteId), ['a', 'b'])
+    assert.equal(JSON.stringify(third.body).includes('partial'), false)
+    assert.equal(JSON.stringify(third.body).includes('stored'), false)
   } finally {
     cacheWindows.freshMs = prevFresh
   }

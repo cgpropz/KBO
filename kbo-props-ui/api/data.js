@@ -102,10 +102,12 @@ export const SNAPSHOT_READ_MS = 4_500;
 export const timeouts = { snapshotReadMs: SNAPSHOT_READ_MS, tierLookupMs: 4_000, lastGoodReadMs: 6_000 };
 
 // Head + chunks + last-good. Two full snapshot slices plus last-good is
-// 15s, which is past the client. The shared budget stays strictly under 12s.
+// 15s, which is past the client. Cap the shared budget near 10.5s so a slow
+// head and a chunk read still leave room for last-good inside the 12s fetch.
+export const BOARD_READ_BUDGET_MS = 10_500;
 export function boardReadBudgetMs(limits = timeouts) {
   const split = (Number(limits.snapshotReadMs) * 2) + Number(limits.lastGoodReadMs);
-  return Math.min(split, CLIENT_FETCH_MS - 1);
+  return Math.min(split, BOARD_READ_BUDGET_MS);
 }
 
 export function stepBudgetMs(deadline, cap, now = Date.now()) {
@@ -134,15 +136,29 @@ function withTimeout(promise, ms, message) {
   ]).finally(() => clearTimeout(timer));
 }
 
+function nbaManifestVersion(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !Object.hasOwn(data, 'version')) {
+    return null;
+  }
+  const version = data.version;
+  if (typeof version !== 'string' || !version) return false;
+  if (data.generated_at != null && data.generated_at !== version) return false;
+  return version;
+}
+
 // nba_players may be one id=1 array, or a manifest plus id=2..n slices.
 // The prop board needs every game log, so publish splits the row instead of
-// trimming it. Callers always receive the joined player list.
+// trimming it. Callers always receive the joined player list. A manifest
+// version requires every chunk to carry that same version, so two publishes
+// are never joined. Array slices with no version stay valid.
 export function assembleNbaPlayerRows(head, extraRows) {
   if (!head) return null;
   const marker = head.data && typeof head.data === 'object' && !Array.isArray(head.data)
     ? head.data.nbaPlayerChunks
     : null;
   if (marker == null) return head;
+  const version = nbaManifestVersion(head.data);
+  if (version === false) throw new Error('nba_players chunk set is mixed');
   const chunkIds = Array.isArray(marker)
     ? marker
     : (Number.isInteger(marker) && marker >= 1
@@ -157,10 +173,23 @@ export function assembleNbaPlayerRows(head, extraRows) {
   for (let index = 0; index < chunkIds.length; index += 1) {
     const id = chunkIds[index];
     const row = byId.get(id);
-    if (!row || !Array.isArray(row.data)) {
-      throw new Error(`nba_players is missing chunk ${index + 1} of ${chunkIds.length}`);
+    const missing = `nba_players is missing chunk ${index + 1} of ${chunkIds.length}`;
+    if (!row) throw new Error(missing);
+    if (version) {
+      const chunk = row.data;
+      const chunkVersion = chunk && typeof chunk === 'object' && !Array.isArray(chunk) ? chunk.version : null;
+      if (chunkVersion !== version || (chunk.generated_at != null && chunk.generated_at !== version)) {
+        throw new Error('nba_players chunk set is mixed');
+      }
+      if (!Array.isArray(chunk.players)) throw new Error(missing);
+      players.push(...chunk.players);
+    } else if (Array.isArray(row.data)) {
+      players.push(...row.data);
+    } else if (row.data && typeof row.data === 'object' && row.data.version) {
+      throw new Error('nba_players chunk set is mixed');
+    } else {
+      throw new Error(missing);
     }
-    players.push(...row.data);
     if (row.updated_at && (!updated || row.updated_at > updated)) updated = row.updated_at;
   }
   return { data: players, updated_at: updated };
@@ -229,12 +258,6 @@ function rememberBoard(table, row, version = boardCacheVersion(row), at = Date.n
   if (prev !== undefined && prev !== version) cache.delete(cacheKey(table, prev));
   latestVersion.set(table, version);
   cache.set(cacheKey(table, version), { at, version, row });
-}
-
-function forgetBoard(table) {
-  const version = latestVersion.get(table);
-  if (version !== undefined) cache.delete(cacheKey(table, version));
-  latestVersion.delete(table);
 }
 
 function currentBoard(table) {
@@ -445,14 +468,11 @@ async function readSnapshotResolved(client, table, deadline) {
     return assembled;
   }
   if (isNbaPlayerManifest(table, head)) {
-    try {
-      const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client, deadline));
-      rememberBoard(table, assembled);
-      return assembled;
-    } catch (err) {
-      forgetBoard(table);
-      throw err;
-    }
+    // A failed join must not drop the previous good list. The fallback
+    // below this read still checks that in-memory copy before Storage.
+    const assembled = assembleNbaPlayerRows(head, await readNbaPlayerChunks(client, deadline));
+    rememberBoard(table, assembled);
+    return assembled;
   }
   rememberBoard(table, head);
   return head;
