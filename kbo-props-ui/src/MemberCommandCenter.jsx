@@ -15,6 +15,8 @@ import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
+  nextGameday,
+  scopeToGameday,
 } from './memberHub';
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
@@ -251,6 +253,12 @@ function useBoards(access, nbaOpen) {
     return () => { alive = false; };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   return useMemo(() => {
     const out = {};
     SPORTS.forEach((sport) => {
@@ -258,24 +266,28 @@ function useBoards(access, nbaOpen) {
       if (!b) { out[sport.id] = { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] }; return; }
       if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
       const raw = sport.id === 'kbo' ? sport.toRows(b.raw, photos || {}) : sport.toRows(b.raw, rosters[sport.id]);
-      const all = playableRows(
+      const playable = playableRows(
         raw,
         unavailableFromLineups(sport.id, lineups[sport.id]),
         confirmedGoalieStarters(lineups[sport.id]),
       );
+      // One slate: tomorrow's games stay off tonight's top 3, L10 and counts.
+      const gameday = nextGameday(playable, now);
+      const all = scopeToGameday(playable, gameday);
       const shown = countPlayable(all);
       out[sport.id] = {
         status: all.length ? 'ready' : 'empty',
         rows: topHubRows(all, 12),
         all,
-        games: hubGames(sport.id, all, lineups[sport.id]),
+        games: scopeToGameday(hubGames(sport.id, all, lineups[sport.id]), gameday),
+        gameday,
         count: shown + (b.preview ? Number(b.lockedCount) || 0 : 0),
         updatedAt: b.updatedAt,
         lineups: lineups[sport.id] || [],
       };
     });
     return out;
-  }, [boards, photos, rosters, lineups]);
+  }, [boards, photos, rosters, lineups, now]);
 }
 
 function emptyCopy(status, sport) {
