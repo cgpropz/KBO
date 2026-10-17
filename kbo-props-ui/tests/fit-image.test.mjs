@@ -36,7 +36,9 @@ test('nfl and wnba board headshots go through the resizer at display size', () =
   const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1628273.png'
   assert.equal(fetchableImageUrl(nfl), thumb)
   assert.equal(fetchableImageUrl(sized), sized)
+  assert.equal(fetchableImageUrl(thumb), thumb)
   assert.equal(fitImage(nfl, 42), `/api/img?src=${encodeURIComponent(thumb)}&w=80`)
+  assert.equal(fitImage(thumb, 42), `/api/img?src=${encodeURIComponent(thumb)}&w=80`)
   assert.equal(fitImage(wnba, 30), `/api/img?src=${encodeURIComponent(wnba)}&w=64`)
   assert.equal(isRemoteHeadshotOrLogo(`${nfl}?x=1`), false)
   assert.equal(isRemoteHeadshotOrLogo('https://static.www.nfl.com/image/private/../../secret'), false)
