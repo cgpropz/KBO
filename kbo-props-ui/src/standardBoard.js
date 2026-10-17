@@ -295,16 +295,37 @@ export function nhlSharpMatchedType(record, oddsById) {
   return type || 'unknown'
 }
 
+// Rows the member board still shows, minus held and other unranked lines.
+// Sharp odds uses this same set in the API and in nhl/sharp_odds.py.
+function rankableSharpRows(rows) {
+  return prepareBoardRows(rows).filter((row) => row?.rankEligible !== false)
+}
+
+// A Map is the same projection rows, keyed by id. Values may be the row.
+// A bare odds-type string still has to carry id so a pulled or unranked row
+// can be dropped before the type match.
+function rowsFromSharpInput(projections) {
+  if (!(projections instanceof Map)) return projections
+  const rows = []
+  for (const [key, value] of projections) {
+    if (value && typeof value === 'object') {
+      const id = projectionRowId(value) || String(key).trim()
+      rows.push(id && value.id == null && value.projection_id == null ? { ...value, id } : value)
+    } else {
+      rows.push({ id: key, oddsType: value })
+    }
+  }
+  return rows
+}
+
 // Safety net for a published sharp-odds snapshot whose line_type is null.
-// Only rows that match a standard projection members can still play stay.
-// That is the same set prepareBoardRows keeps: PrizePicks pulled lines and
-// Points overs under 0.69 are out. Unknown and non-standard types are
-// removed before the free top 3 is chosen.
+// Only a standard id in the rankable member set stays. That drops PrizePicks
+// pulled lines, Points overs under 0.69, and rankEligible false rows.
+// Unknown and non-standard types are removed before the free top 3 is chosen.
 export function filterNhlSharpOdds(payload, projections) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
   if (!Array.isArray(payload.records)) return payload
-  const playable = projections instanceof Map ? projections : prepareBoardRows(projections)
-  const oddsById = playable instanceof Map ? playable : nhlProjectionOddsById(playable)
+  const oddsById = nhlProjectionOddsById(rankableSharpRows(rowsFromSharpInput(projections)))
   let changed = false
   const records = []
   for (const row of payload.records) {

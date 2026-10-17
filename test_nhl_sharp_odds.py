@@ -97,6 +97,41 @@ def test_board_rows_drop_pulled_standard_id():
     assert counts["after"] == 1
 
 
+def test_board_rows_keep_the_rankable_id_set():
+    projections = [
+        _projection(100, "Live", "Shots On Goal", "standard"),
+        {
+            **_projection(104, "Held", "Points", "standard"),
+            "line": 0.5,
+            "projection": 0.74,
+        },
+        {
+            **_projection(105, "Goalie", "Goalie Saves", "standard", rank_eligible=False),
+        },
+        {
+            **_projection(15863634, "Pulled", "Points", "standard"),
+            "removed": True,
+            "pp_status": "removed",
+            "line": 0.5,
+            "projection": 0.9,
+        },
+        {
+            **_projection(106, "Same", "Shots On Goal", "standard", rank_eligible=False),
+        },
+        _projection(107, "Same", "Shots On Goal", "standard"),
+    ]
+    pp_rows = [
+        _pp(100, "Live", "Shots On Goal"),
+        _pp(104, "Held", "Points"),
+        _pp(105, "Goalie", "Goalie Saves"),
+        _pp(15863634, "Pulled", "Points"),
+        _pp(106, "Same", "Shots On Goal"),
+        _pp(107, "Same", "Shots On Goal"),
+    ]
+    ranked, _counts = board_rows(pp_rows, projections)
+    assert [row["id"] for row in ranked] == [100, 107]
+
+
 def test_load_pp_rows_keeps_tavares_standard_when_goblin_is_first(tmp_path):
     raw = [
         {"id": 9, "player": "John Tavares", "prop": "Points", "line": 0.5, "oddsType": "goblin"},
