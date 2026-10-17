@@ -43,9 +43,48 @@ export function landingPreviewBody(ds, row) {
   };
 }
 
+const READ_TIMEOUT_MS = 60_000;
+const READ_ATTEMPTS = 4;
+
+async function readOnce(client, table) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
+  try {
+    const { data, error } = await client.from(table).select('data, updated_at').eq('id', 1)
+      .abortSignal(controller.signal).maybeSingle();
+    if (error) throw new Error(error.message || 'read error');
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function readLastGood(client, table) {
+  try {
+    const { data, error } = await client.storage.from('board-last-good').download(`${table}.json`);
+    if (error || !data) return null;
+    return JSON.parse(await data.text());
+  } catch {
+    return null;
+  }
+}
+
 async function readSnapshot(client, table) {
-  const { data, error } = await client.from(table).select('data, updated_at').eq('id', 1).maybeSingle();
-  if (error) throw new Error(`${table} read failed`);
+  let data = null;
+  for (let attempt = 1; attempt <= READ_ATTEMPTS; attempt += 1) {
+    try {
+      data = await readOnce(client, table);
+      break;
+    } catch {
+      console.warn(`${table} read attempt ${attempt}/${READ_ATTEMPTS} failed`);
+      if (attempt < READ_ATTEMPTS) await new Promise((r) => setTimeout(r, 5_000 * attempt));
+    }
+  }
+  if (!data) {
+    data = await readLastGood(client, table);
+    if (data) console.warn(`${table} baked from last-good copy`);
+  }
+  if (!data) throw new Error(`${table} read failed`);
   if (!data?.data) throw new Error(`${table} is not published`);
   return data;
 }

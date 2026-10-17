@@ -18,7 +18,7 @@ import { presentBoardPayload } from './_boardPayload.js';
 // Members may reuse a response for half a minute. It stays private, so the
 // edge never stores a paid board. Anonymous previews keep the public cache.
 export const PRIVATE_DATA_CACHE = 'private, max-age=30, stale-while-revalidate=60, stale-if-error=600';
-export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300, stale-if-error=86400';
+export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800';
 
 // Anonymous public previews (and fully public datasets) can sit on the edge.
 // A request with Authorization, or a full member snapshot, must not.
@@ -82,7 +82,7 @@ const inflight = new Map();
 // Hard ceiling on Supabase snapshot reads. Without this, an eastern-US latency
 // incident leaves Vercel functions hung and the UI stuck on "Loading…".
 // Mutable so unit tests can shrink the window without waiting a real 8s.
-export const timeouts = { snapshotReadMs: 8_000, tierLookupMs: 4_000 };
+export const timeouts = { snapshotReadMs: 8_000, tierLookupMs: 4_000, lastGoodReadMs: 6_000 };
 export function _setTimeouts(partial) {
   Object.assign(timeouts, partial);
 }
@@ -187,12 +187,40 @@ async function readSnapshot(client, table) {
   const hit = cache.get(table);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.row;
   if (inflight.has(table)) return inflight.get(table);
-  const pending = readSnapshotFresh(client, table).catch((err) => {
+  const pending = readSnapshotFresh(client, table).catch(async (err) => {
     if (hit && hit.row && Date.now() - hit.at < STALE_MAX_MS) return hit.row;
+    // Cold instance: fall back to the private last-good copy the publish job
+    // writes to Storage. Read with the server key only; never a public URL.
+    const lastGood = await readLastGood(client, table);
+    if (lastGood) {
+      cache.set(table, { at: Date.now() - CACHE_TTL_MS + 15_000, row: lastGood });
+      return lastGood;
+    }
     throw err;
   }).finally(() => inflight.delete(table));
   inflight.set(table, pending);
   return pending;
+}
+
+export const LAST_GOOD_BUCKET = 'board-last-good';
+
+export async function readLastGood(client, table) {
+  try {
+    const storage = client?.storage?.from?.(LAST_GOOD_BUCKET);
+    if (!storage || typeof storage.download !== 'function') return null;
+    const { data, error } = await withTimeout(
+      storage.download(`${table}.json`),
+      timeouts.lastGoodReadMs,
+      'Last-good read timed out'
+    );
+    if (error || !data) return null;
+    const parsed = JSON.parse(typeof data.text === 'function' ? await data.text() : String(data));
+    if (!parsed || parsed.data == null) return null;
+    console.warn(`[api/data] ${table} served from last-good copy (${parsed.updated_at || 'unknown time'})`);
+    return { data: parsed.data, updated_at: parsed.updated_at || null };
+  } catch {
+    return null;
+  }
 }
 
 async function readSnapshotFresh(client, table) {

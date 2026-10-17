@@ -161,7 +161,7 @@ beforeEach(() => _clearCache())
 test('anonymous caller gets only the top 3 KBO board lines + locked count', async () => {
   const res = await call('prizepicks_props')
   assert.equal(res.statusCode, 200)
-  assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=86400')
+  assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
   assert.equal(res.body.preview, true)
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
@@ -183,7 +183,7 @@ test('member snapshots and signed-in previews are not edge cached', async () => 
   assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
   const publicRankings = await call('pitcher_rankings')
   assert.equal(publicRankings.body.preview, false)
-  assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=86400')
+  assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
 })
 
 test('board payloads keep the last 10 chart games and omit the rest of the log', async () => {
