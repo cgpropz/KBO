@@ -80,7 +80,7 @@ Board updated: {{FROM BOARD QA LEDGER}} ET. Result after the game: {{FROM BOARD 
 
 ## How to read the board: CG Score and hit rates
 
-**CG Score** ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only. The WNBA board shows demon and goblin lines alongside standard lines. The board treats a prop as an over when the projection is at or above the line. [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
+**CG Score** shows how far the CGPropz projection sits from the posted line. Around 50 means the projection and the line are roughly even, above 50 leans over, and below 50 leans under. A bigger gap from 50 means a bigger gap between the model and the line. Scores on low lines can run higher. It's a measure of that gap, not a probability, and not a claim that higher scores hit more often. The board treats a prop as an over when the projection is at or above the line. [How CG Score works →](/guides/cg-score) {{URL PENDING GIT BOT}}
 
 **Hit rates** count how often a player has cleared today's line in a recent window. The CGPropz WNBA board shows several:
 - **L10:** the player's last ten games against today's line.
@@ -139,7 +139,7 @@ The Golden State Valkyries and the Atlanta Dream. Both swept their semifinal ser
 On this page, in the section for each game, once the CGPropz board for that game is built. Each game gets the three props from the free preview of the WNBA board.
 
 **What is CG Score?**
-CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
+It shows how far the CGPropz projection sits from the line. Around 50 they're roughly even; above 50 leans over, below 50 leans under, and the further from 50, the bigger the gap. It isn't a win probability.
 
 **Why are hit rates less reliable in the Finals?**
 Rotations tighten, minutes shift, and head-to-head samples are only a few games. Read every hit rate with its sample size and check the latest injury news.
@@ -171,7 +171,7 @@ The lines on CGPropz are the lines at the time the board was updated. Confirm th
     {
       "@type": "Question",
       "name": "What is CG Score?",
-      "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." }
+      "acceptedAnswer": { "@type": "Answer", "text": "It shows how far the CGPropz projection sits from the line. Around 50 they're roughly even; above 50 leans over, below 50 leans under, and the further from 50, the bigger the gap. It isn't a win probability." }
     },
     {
       "@type": "Question",

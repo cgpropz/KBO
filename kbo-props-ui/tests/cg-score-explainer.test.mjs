@@ -129,7 +129,7 @@ test('the capped line shows only when the NFL Middle cap changes the score', () 
     recentValues: [20, 22, 19, 30, 10, 25, 16, 21, 14, 18],
   })
   assert.equal(nflMiddleCapChanged('Receiving Yards', 23.7, 2.5), true)
-  assert.match(explainerText(capped), /Score capped because the line is small\./)
+  assert.match(explainerText(capped), /Scores on very small lines are adjusted\./)
   assert.match(explainerText(capped), /CG Score 76\.5\./)
 
   const atFloor = note({ line: 15.5, projection: 20, score: nflCgScore(20, 15.5, 'Receiving Yards') })

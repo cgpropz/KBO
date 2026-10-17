@@ -15,7 +15,6 @@ const FORBIDDEN = [
   'divided by',
   'multiplied by',
   'max(line',
-  '50 means',
   'per-stat floor',
   'minimum',
   'L3 50%',
@@ -54,6 +53,24 @@ function textForPhrase(path, text, phrase) {
   return scan
 }
 
+const STANDARD_LINE_FORBIDDEN = [
+  'demon and goblin lines alongside',
+  'separate tabs',
+  '{{',
+]
+
+function lineTypeHits(files) {
+  const hits = []
+  for (const path of files) {
+    if (!path.endsWith('.html')) continue
+    const text = readFileSync(path, 'utf8')
+    for (const phrase of STANDARD_LINE_FORBIDDEN) {
+      if (text.includes(phrase)) hits.push(`${relative(root, path)}: ${phrase}`)
+    }
+  }
+  return hits
+}
+
 function formulaHits(files) {
   const hits = []
   for (const path of files) {
@@ -74,13 +91,51 @@ test('public pages, guides, and the page generator keep the score formula privat
   ]
   assert.deepEqual(formulaHits(files), [])
   const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
-  assert.match(guide, /adjusted for the matchup and recent form/)
-  assert.match(guide, /Check an extreme score/)
-  assert.match(guide, /under side of the projection vs the line/)
-  assert.match(guide, /No\. It is tuned by sport\. It is still projection vs line, adjusted for matchup\./)
-  assert.equal(guide.includes('how far does our projection sit from the line'), false)
-  assert.equal(guide.includes('very low line'), false)
+  assert.match(guide, /how far does our projection sit from the line/)
+  assert.match(guide, /How to read a CG Score: below, around and above 50/)
+  assert.match(guide, /src="\/images\/cg-score-scale-v2\.png"/)
+  assert.match(guide, /<h2>What the number means<\/h2>/)
+  assert.equal(guide.includes('How the score is calculated'), false)
+  assert.match(guide, /name="description" content="CG Score ranks every prop by how strongly the model projection disagrees with the line\. Higher score means a bigger model edge\. 21\+\."/)
+  assert.match(guide, /property="og:image:alt" content="How CG Score works: a higher score is a bigger gap between projection and line\."/)
+  const article = guide.match(/"@type":"Article","headline":"How CG Score Works","description":"([^"]+)"/)
+  assert.ok(article)
+  assert.match(article[1], /bigger gap between projection and line/)
+  assert.equal(article[1].includes('bigger model edge'), false)
+  assert.equal(guide.includes('how-cg-score-diagram'), false)
+  assert.equal(guide.includes('A+ through C'), false)
   assert.equal(guide.includes('smaller model edge'), false)
+
+  const explainerJsx = readFileSync(join(root, 'src', 'CgScoreExplainer.jsx'), 'utf8')
+  const explainerJs = readFileSync(join(root, 'src', 'cgScoreExplainer.js'), 'utf8')
+  assert.match(explainerJsx, /Scores on very small lines are adjusted\./)
+  assert.match(explainerJs, /Scores on very small lines are adjusted\./)
+  assert.equal(explainerJsx.includes('Score capped because the line is small.'), false)
+  assert.equal(explainerJs.includes('Score capped because the line is small.'), false)
+})
+
+test('built public pages show standard lines only and publish no placeholders', () => {
+  const files = walk(join(root, 'public'), []).filter((path) => path.endsWith('.html'))
+  assert.deepEqual(lineTypeHits(files), [])
+
+  const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
+  assert.match(guide, /Every CGPropz board shows standard lines only\. Demon and goblin lines aren't on the boards\./)
+  assert.match(guide, /On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score\./)
+  assert.match(guide, /KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board\./)
+  assert.match(guide, /NFL and NBA have no free top 3 right now\. The NBA board opens Tuesday, Oct 20\./)
+
+  const nba = readFileSync(join(root, 'public', 'nba-player-props.html'), 'utf8')
+  assert.match(nba, /<strong>Line types:<\/strong> The board shows standard lines only\./)
+  assert.match(nba, /The board shows standard lines only, with every prop available to All-Access members\./)
+  assert.equal(nba.includes('Double-Double'), false)
+  assert.equal(nba.includes('Triple-Double'), false)
+
+  const wnba = readFileSync(join(root, 'public', 'wnba-player-props.html'), 'utf8')
+  assert.equal(wnba.includes('alongside standard lines'), false)
+
+  const start = readFileSync(join(root, 'public', 'guides', 'start-here.html'), 'utf8')
+  assert.match(start, /A goblin \(green icon\) is an easier projection with a lower payout\./)
+  assert.match(start, /A demon \(red icon\) is a harder projection with a higher potential payout\./)
 })
 
 test('the built site JS does not publish the score formula', () => {
@@ -92,4 +147,5 @@ test('the built site JS does not publish the score formula', () => {
   const files = walk(dist, [], { suffixes: ['.js', '.html'] })
   assert.equal(files.length > 0, true)
   assert.deepEqual(formulaHits(files), [])
+  assert.deepEqual(lineTypeHits(files), [])
 })

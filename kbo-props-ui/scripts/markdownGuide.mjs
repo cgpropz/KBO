@@ -298,11 +298,11 @@ export function hideUnresolved(markdown) {
 const BODY_IMAGES = {
   '/guides/start-here': {
     anchor: '**Example only. The player and every number below are made up to show the layout. This is not a real prop.**',
-    image: '![Annotated example of a CGPropz board row for a made-up points prop. Labels point to the player, line, projection, CG Score, hit rates, and defense versus position.](/images/start-here-board-row.png)',
+    image: '![How to read a CGPropz board row (example, not a real pick)](/images/start-here-board-row-v2.png)',
   },
   '/guides/cg-score': {
-    anchor: "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.",
-    image: '![CG Score ranks every prop by how strongly the model projection disagrees with the line.](/images/how-cg-score-diagram.png)',
+    anchor: "A bigger gap from 50 means a bigger gap between the model and the line. It's a measure of that gap, not a probability, and not a claim that higher scores hit more often.",
+    image: '![How to read a CG Score: below, around and above 50](/images/cg-score-scale-v2.png)',
   },
 };
 
@@ -313,7 +313,7 @@ export const PAGE_IMAGES = {
   },
   '/guides/cg-score': {
     src: '/images/how-cg-score-works-featured.png',
-    alt: 'How CG Score works: a higher score is a bigger model edge.',
+    alt: 'How CG Score works: a higher score is a bigger gap between projection and line.',
   },
   '/wnba-player-props': {
     src: '/images/wnba-finals-featured.png',
@@ -384,6 +384,10 @@ export function guideFromMarkdown(markdown, fallbackSlug) {
 }
 
 function renderGuideHtml({ title, description, path, body, faqs, faqPage, h1, datePublished, dateModified }) {
+  // The live meta description stays. The Article node uses the formula-free wording.
+  const articleDescription = path === '/guides/cg-score'
+    ? description.replaceAll('bigger model edge', 'bigger gap between projection and line')
+    : description
   const schemas = [
     breadcrumbNode([
       { name: 'Home', url: pageUrl('/') },
@@ -391,7 +395,7 @@ function renderGuideHtml({ title, description, path, body, faqs, faqPage, h1, da
     ]),
     articleNode({
       headline: h1,
-      description,
+      description: articleDescription,
       url: pageUrl(path),
       datePublished,
       dateModified,

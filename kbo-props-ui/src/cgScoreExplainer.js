@@ -144,7 +144,7 @@ export function explainerText(note) {
   const lines = [`CG Score ${note.score}. ${note.lead}`]
   if (note.recent) lines.push(note.recent)
   if (note.smallSample) lines.push('Small sample, so give this less weight.')
-  if (note.capped) lines.push('Score capped because the line is small.')
+  if (note.capped) lines.push('Scores on very small lines are adjusted.')
   lines.push(note.disclaimer)
   return lines.join('\n')
 }
