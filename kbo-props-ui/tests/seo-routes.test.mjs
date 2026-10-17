@@ -113,12 +113,13 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.match(guide, /"@type":"FAQPage"/)
     assert.match(guide, /<h2>FAQ<\/h2>/)
     assert.match(guide, /<h3>What is CG Score\?<\/h3>/)
-    assert.match(guide, /Higher score = bigger model edge/)
+    assert.match(guide, /how far does our projection sit from the line/)
     assert.equal(guide.includes('projection ÷ line'), false)
     assert.equal(guide.includes('× 50'), false)
     assert.equal(guide.includes('{{'), false)
     assert.equal(guide.includes('<td>NBA</td>'), false)
-    assert.match(guide, /src="\/images\/how-cg-score-diagram.png"/)
+    assert.match(guide, /src="\/images\/cg-score-scale-v2.png"/)
+    assert.match(guide, /How to read a CG Score: below, around and above 50/)
     assert.match(guide, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/how-cg-score-works-featured.png"/)
     assert.match(guide, /name="twitter:image" content="https:\/\/www\.cgpropz\.com\/images\/how-cg-score-works-featured.png"/)
     assert.equal(guide.includes('Pass yards'), false)
@@ -137,9 +138,10 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
     assert.match(startHere, /"@type":"BreadcrumbList"/)
     assert.match(startHere, /"@type":"FAQPage"/)
     assert.equal(startHere.includes('{{'), false)
-    assert.match(startHere, /src="\/images\/start-here-board-row.png"/)
+    assert.match(startHere, /src="\/images\/start-here-board-row-v2.png"/)
+    assert.match(startHere, /How to read a CGPropz board row \(example, not a real pick\)/)
     assert.match(startHere, /property="og:image" content="https:\/\/www\.cgpropz\.com\/images\/start-here-featured.png"/)
-    assert.match(startHere, /Higher score = bigger model edge/)
+    assert.match(startHere, /how far the CGPropz projection sits from the line/)
     assert.equal(startHere.includes('× 50'), false)
     assert.equal(startHere.includes('projection ÷'), false)
     assert.equal(/times 50/i.test(startHere), false)
@@ -184,9 +186,9 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
 
     for (const image of [
       '/images/start-here-featured.png',
-      '/images/start-here-board-row.png',
+      '/images/start-here-board-row-v2.png',
       '/images/how-cg-score-works-featured.png',
-      '/images/how-cg-score-diagram.png',
+      '/images/cg-score-scale-v2.png',
       '/images/wnba-finals-featured.png',
     ]) {
       const response = await fetch(server.url + image)

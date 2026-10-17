@@ -62,9 +62,11 @@ The live KBO board in the app lines a model number up with the posted prop. The 
 
 ## What CG Score means on KBO
 
-CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
+CG Score shows how far the CGPropz projection sits from the posted line. Around 50 means the projection and the line are roughly even, above 50 leans over, and below 50 leans under. A bigger gap from 50 means a bigger gap between the model and the line, and scores on low lines can run higher.
 
-[How CG Score works](/guides/cg-score) is the full guide.
+Sports can calculate it a bit differently. KBO can show its own stored score, so read KBO scores on their own terms rather than comparing them directly with other sports.
+
+The score is not a probability, and a higher score is not a claim that the prop hits more often. [How CG Score works](/guides/cg-score) is the full guide.
 
 ## FAQ
 
@@ -78,7 +80,7 @@ Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM
 In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order.
 
 **What does CG Score mean on KBO?**
-CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.
+CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often.
 
 **Where is pricing?**
 All-Access plans are on the pricing page.
@@ -94,7 +96,7 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
     { "@type": "Question", "name": "Are there KBO player props during the playoffs?", "acceptedAnswer": { "@type": "Answer", "text": "The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. When lines are posted, the KBO board covers them, and the free top 3 appears on the homepage." } },
     { "@type": "Question", "name": "What time do KBO playoff games start in ET?", "acceptedAnswer": { "@type": "Answer", "text": "Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET." } },
     { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order." } },
-    { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only." } },
+    { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often." } },
     { "@type": "Question", "name": "Where is pricing?", "acceptedAnswer": { "@type": "Answer", "text": "All-Access plans are on the pricing page." } },
     { "@type": "Question", "name": "Is CGPropz affiliated with PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "No. CGPropz is not affiliated with PrizePicks or Underdog." } }
   ]

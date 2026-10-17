@@ -15,7 +15,6 @@ const FORBIDDEN = [
   'divided by',
   'multiplied by',
   'max(line',
-  '50 means',
   'per-stat floor',
   'minimum',
   'L3 50%',
@@ -74,12 +73,11 @@ test('public pages, guides, and the page generator keep the score formula privat
   ]
   assert.deepEqual(formulaHits(files), [])
   const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
-  assert.match(guide, /adjusted for the matchup and recent form/)
-  assert.match(guide, /Check an extreme score/)
-  assert.match(guide, /under side of the projection vs the line/)
-  assert.match(guide, /No\. It is tuned by sport\. It is still projection vs line, adjusted for matchup\./)
-  assert.equal(guide.includes('how far does our projection sit from the line'), false)
-  assert.equal(guide.includes('very low line'), false)
+  assert.match(guide, /how far does our projection sit from the line/)
+  assert.match(guide, /How to read a CG Score: below, around and above 50/)
+  assert.match(guide, /src="\/images\/cg-score-scale-v2\.png"/)
+  assert.equal(guide.includes('how-cg-score-diagram'), false)
+  assert.equal(guide.includes('A+ through C'), false)
   assert.equal(guide.includes('smaller model edge'), false)
 })
 
