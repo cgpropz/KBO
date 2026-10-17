@@ -230,6 +230,33 @@ def missing_table_message(table):
     )
 
 
+LAST_GOOD_BUCKET = "board-last-good"
+
+
+def upload_last_good(session, table, payload, headers):
+    """Copy a published row to the private board-last-good bucket.
+
+    api/data reads it with the server key when the REST API times out, so a
+    cold function never 503s. The bucket is private (never a public URL).
+    Failure only warns: the table publish already succeeded.
+    """
+    try:
+        body = json.dumps({"data": payload.get("data"), "updated_at": payload.get("updated_at")}, ensure_ascii=False)
+        response = session.post(
+            f"{SUPABASE_URL}/storage/v1/object/{LAST_GOOD_BUCKET}/{table}.json",
+            data=body.encode("utf-8"),
+            headers={**{k: v for k, v in headers.items() if k.lower() in ("apikey", "authorization")},
+                     "Content-Type": "application/json", "x-upsert": "true", "Cache-Control": "no-store"},
+            timeout=120,
+        )
+        if response.status_code in (200, 201):
+            print(f"    ✓ last-good copy saved ({table}.json)")
+        else:
+            print(f"    ! last-good copy for {table} HTTP {response.status_code}")
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        print(f"    ! last-good copy for {table} failed: {type(exc).__name__}")
+
+
 def _upsert_snapshot_row(session, table, row_id, data, headers, updated_at=None):
     """POST one id row. Returns an error string, or None on success."""
     response = post_with_retry(
@@ -605,6 +632,7 @@ def main():
 
             if response.status_code in (200, 201, 204):
                 print(f"  ✓ {table:30} updated")
+                upload_last_good(session, table, payload, headers)
                 sport = BOARD_TABLES.get(table)
                 if sport:
                     status_updates[sport] = record_from_payload(sport, data, published_at)
