@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 import urllib.request
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -125,6 +126,24 @@ def _name_key(name: str | None) -> str:
     text = str(name or "").lower()
     text = re.sub(r"\s+(jr|sr|ii|iii|iv|v)\.?$", "", text.strip())
     return re.sub(r"[^a-z0-9]", "", text)
+
+
+def _name_keys(name: str | None) -> set[str]:
+    """Every key one spelling can match on.
+
+    Sources disagree on accents. PrizePicks writes "Juraj Slafkovský",
+    Daily Faceoff "Juraj Slafkovsky", and the MoneyPuck logs drop the letter
+    ("Juraj Slafkovsk"). _name_key strips accented letters, which matches the
+    logs but missed the lineup sheet, so he had no line or power-play unit.
+    The second key folds accents to plain letters ("ý" -> "y").
+    """
+    folded = unicodedata.normalize("NFKD", str(name or ""))
+    folded = "".join(ch for ch in folded if not unicodedata.combining(ch))
+    return {key for key in (_name_key(name), _name_key(folded)) if key}
+
+
+def _same_person(left: str | None, right: str | None) -> bool:
+    return bool(_name_keys(left) & _name_keys(right))
 
 
 def _get(url: str, timeout: int = 40, browser: bool = False):
@@ -591,22 +610,49 @@ def _ranks(rates: dict[str, dict]) -> dict[str, dict[str, int]]:
     return {"sog": rank("sa60"), "points": rank("xga60"), "saves": rank("sf_per_game")}
 
 
+def _split_name(name: str | None) -> tuple[str, set[str]]:
+    parts = str(name or "").strip().split(None, 1)
+    if len(parts) < 2:
+        return "", _name_keys(name)
+    first = sorted(_name_keys(parts[0]))
+    return (first[0][:1] if first else ""), _name_keys(parts[1])
+
+
+def _lineup_rows(name: str, lineup: dict | None) -> list[dict]:
+    """This player's rows on his team's lineup sheet.
+
+    Exact name first (accents folded). Otherwise one person on that team with
+    the same last name and first initial, so "Gabe Perreault" finds
+    "Gabriel Perreault" and "Alexander Kerfoot" finds "Alex Kerfoot". Two
+    people who fit leave him unmatched rather than guessing.
+    """
+    players = (lineup or {}).get("players") or []
+    exact = [row for row in players if _same_person(row.get("name"), name)]
+    if exact:
+        return exact
+    initial, last = _split_name(name)
+    if not initial or not last:
+        return []
+    close = []
+    for row in players:
+        row_initial, row_last = _split_name(row.get("name"))
+        if row_initial == initial and row_last & last:
+            close.append(row)
+    if len({_name_key(row.get("name")) for row in close}) != 1:
+        return []
+    return close
+
+
 def _usage(name: str, lineup: dict | None) -> dict:
     if not lineup:
         return {"line": None, "ppUnit": None, "source": None}
-    key = _name_key(name)
-    matches = [
-        row for row in lineup.get("players") or []
-        if _name_key(row.get("name")) == key
-    ]
-    return usage_role(matches, lineup.get("source"))
+    return usage_role(_lineup_rows(name, lineup), lineup.get("source"))
 
 
 def _pp_role(name: str, lineup: dict | None) -> str | None:
     if not lineup:
         return None
-    key = _name_key(name)
-    groups = {row["group"] for row in lineup.get("players") or [] if _name_key(row.get("name")) == key and row.get("category") == "pp"}
+    groups = {row["group"] for row in _lineup_rows(name, lineup) if row.get("category") == "pp"}
     if "pp1" in groups:
         return "pp1"
     if "pp2" in groups:
@@ -1015,7 +1061,7 @@ def build(root: Path, out_dir: Path) -> int:
                     continue
                 goalie = goalies.get(card["team"]) if card["prop"] == PROP_SAVES else None
                 if card["prop"] == PROP_SAVES:
-                    listed = goalie and _name_key(goalie["name"]) == _name_key(card["player"])
+                    listed = goalie and _same_person(goalie["name"], card["player"])
                     status = goalie["status"] if listed else "probable"
                     eligible = bool(listed and goalie["confirmed"])
                 else:
