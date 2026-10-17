@@ -934,6 +934,43 @@
   .prop-line-card > .hit-rate-extra {
     display: block !important;
   }
+
+  /* Names and DVP / season / hit-rate labels on the narrow NFL edge cards.
+     The two-column grid itself lives in nfl.css, where the other edge
+     column rules are layered important and would otherwise stay one column.
+     This block stays last in the phone query so a source scan of that query
+     still sees the slip note rules above. */
+  @media (max-width: 480px) {
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(.nfl-card-metrics, .nfl-card-meta) {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 6px !important;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(
+      .nfl-card-player h2,
+      .nfl-card-player p,
+      .nfl-card-player p em,
+      .nfl-card-prop,
+      .nfl-card-topline,
+      .nfl-history-label,
+      .nfl-history-label span,
+      .nfl-card-metrics small,
+      .nfl-card-meta small
+    ) {
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card :is(.nfl-card-player p, .nfl-card-topline, .nfl-history-label) {
+      flex-wrap: wrap !important;
+    }
+
+    .nfl-root:not(.nhl-root) .nfl-edge-card .nfl-card-player > div {
+      min-width: 0;
+    }
+  }
 }
 
 /* A mouse window in this range is not a phone, so the desktop table stays.

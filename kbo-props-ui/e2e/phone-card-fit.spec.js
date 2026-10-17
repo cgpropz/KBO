@@ -309,6 +309,169 @@ test('Copy picks and Open PrizePicks stay apart on the slip sheet', async ({ pag
   }
 })
 
+const edgeRows = [
+  {
+    id: 'edge-xavier',
+    player: 'Xavier Legette',
+    team: 'CAR',
+    opponent: 'HOU',
+    position: 'WR',
+    prop: 'Receiving Yards',
+    line: 64.5,
+    projection: 78.4,
+    seasonAverage: 48.2,
+    snapCount: 78,
+    dvpRank: 8,
+    dvpRatio: 1.1,
+    hitRate: 70,
+    recent: [80, 70, 90, 40, 75, 88, 30, 95, 20, 72],
+    line_type: 'standard',
+  },
+  {
+    id: 'edge-amon',
+    player: 'Amon-Ra St. Brown',
+    team: 'DET',
+    opponent: 'CHI',
+    position: 'WR',
+    prop: 'Rec Targets',
+    line: 7.5,
+    projection: 8.6,
+    seasonAverage: 7.4,
+    snapCount: 91,
+    dvpRank: 14,
+    dvpRatio: 0.9,
+    hitRate: 60,
+    recent: [9, 8, 4, 10, 6, 8, 3, 9, 11, 5],
+    line_type: 'standard',
+  },
+  {
+    id: 'edge-kimani',
+    player: 'Kimani Vidal',
+    team: 'LAC',
+    opponent: 'DEN',
+    position: 'RB',
+    prop: 'Rush Yards',
+    line: 45.5,
+    projection: 58.2,
+    seasonAverage: 52.1,
+    snapCount: 64,
+    dvpRank: 22,
+    dvpRatio: 1.2,
+    hitRate: 70,
+    recent: [60, 50, 20, 70, 48, 10, 55, 80, 30, 62],
+    line_type: 'standard',
+  },
+  {
+    id: 'edge-hopkins',
+    player: 'DeAndre Hopkins',
+    team: 'TEN',
+    opponent: 'IND',
+    position: 'WR',
+    prop: 'Receptions',
+    line: 4.5,
+    projection: 5.4,
+    seasonAverage: 4.8,
+    snapCount: 55,
+    dvpRank: 3,
+    dvpRatio: 0.7,
+    hitRate: 80,
+    recent: [6, 5, 3, 7, 8, 6, 6, 5, 2, 7],
+    line_type: 'standard',
+  },
+]
+
+const edgeLabels = ['LINE', 'MODEL', 'SCORE', 'DVP RANK', 'SEASON AVG', 'HIT RATE', 'GAMES']
+
+test('NFL edge board uses two cards per row without clipping names or labels', async ({ page }) => {
+  for (const row of edgeRows) {
+    expect(row.hitRate, `${row.player} hit rate scale`).toBeGreaterThan(1)
+    expect(row.hitRate, `${row.player} hit rate scale`).toBeLessThanOrEqual(100)
+  }
+  await installFixtures(page, 'member')
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    const data = ds === 'nfl_projections'
+      ? edgeRows
+      : (Object.prototype.hasOwnProperty.call(fixtures, ds) ? fixtures[ds] : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data,
+        updatedAt: '2026-10-17T20:00:00Z',
+        preview: false,
+        lockedCount: 0,
+        tier: 'combined',
+      }),
+    })
+  })
+  await installMember(page)
+  await page.goto('/?sport=nfl&page=projections', { waitUntil: 'domcontentloaded' })
+  const cards = page.locator('.nfl-edge-card')
+  await expect(cards).toHaveCount(edgeRows.length)
+  await expect(page.locator('.nfl-board-meta')).toContainText('LIVE MODEL / DVP ADJUSTED')
+  const fit = await page.locator('.nfl-edge-grid').evaluate((grid, labels) => {
+    const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean)
+    const cardNodes = [...grid.querySelectorAll('.nfl-edge-card')]
+    const boxOf = (node) => {
+      const box = node.getBoundingClientRect()
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }
+    }
+    const clipped = (node) => {
+      if (!node) return true
+      const style = getComputedStyle(node)
+      const ellipsis = style.textOverflow === 'ellipsis' && (style.whiteSpace === 'nowrap' || style.whiteSpace === 'pre')
+      return ellipsis || node.scrollWidth > node.clientWidth + 1
+    }
+    return {
+      tracks,
+      innerWidth: window.innerWidth,
+      scrollWidth: Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0),
+      cards: cardNodes.map((card) => {
+        const cardBox = boxOf(card)
+        const name = card.querySelector('.nfl-card-player h2')
+        const meta = card.querySelector('.nfl-card-player p')
+        const prop = card.querySelector('.nfl-card-prop')
+        const labelNodes = [...card.querySelectorAll('.nfl-card-metrics small, .nfl-card-meta small')]
+        const pieces = [name, meta, prop, ...labelNodes].filter(Boolean).map((node) => {
+          const box = boxOf(node)
+          return {
+            text: (node.textContent || '').replace(/\s+/g, ' ').trim(),
+            clipped: clipped(node),
+            sticksOut: box.right > cardBox.right + 1 || box.left < cardBox.left - 1,
+          }
+        })
+        return {
+          name: (name?.textContent || '').replace(/\s+/g, ' ').trim(),
+          box: cardBox,
+          pieces,
+          labels: labelNodes.map((node) => (node.textContent || '').replace(/\s+/g, ' ').trim()),
+          hitRate: [...card.querySelectorAll('.nfl-card-meta div')].find((node) => (node.querySelector('small')?.textContent || '').trim() === 'HIT RATE')?.querySelector('strong')?.textContent?.trim() || '',
+        }
+      }),
+      expectedLabels: labels,
+    }
+  }, edgeLabels)
+  expect(fit.tracks, `columns ${fit.tracks.join(' | ')}`).toHaveLength(2)
+  expect(fit.scrollWidth, 'edge board scrollWidth').toBeLessThanOrEqual(fit.innerWidth + 1)
+  const boxes = fit.cards.map((card) => card.box)
+  expect(boxes[0].top, 'first row').toBeLessThanOrEqual(boxes[1].top + 1)
+  expect(boxes[1].top, 'first row').toBeLessThanOrEqual(boxes[0].top + 1)
+  expect(boxes[0].right, 'two cards share the row').toBeLessThanOrEqual(boxes[1].left + 1)
+  expect(boxes[2].top, 'third card wraps').toBeGreaterThan(boxes[0].bottom - 1)
+  expect(boxes[1].right, 'row stays in the viewport').toBeLessThanOrEqual(fit.innerWidth + 1)
+  const names = fit.cards.map((card) => card.name)
+  expect(names).toEqual(expect.arrayContaining(edgeRows.map((row) => row.player)))
+  for (const card of fit.cards) {
+    expect(card.labels, card.name).toEqual(edgeLabels)
+    for (const piece of card.pieces) {
+      expect(piece.clipped, `${card.name} clips ${piece.text}`).toBe(false)
+      expect(piece.sticksOut, `${card.name} ${piece.text} leaves the card`).toBe(false)
+    }
+    expect(card.hitRate, `${card.name} hit rate`).toMatch(/^(60|70|80)%$/)
+  }
+})
+
 for (const mode of ['free', 'member']) {
   test(`${mode} cards keep the name, tag, line, and odds button apart`, async ({ page }) => {
     await installFixtures(page, mode)
