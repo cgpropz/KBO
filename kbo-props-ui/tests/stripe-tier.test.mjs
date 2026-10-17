@@ -374,6 +374,13 @@ test('live discord price ids and product metadata never grant site access', asyn
   const site = mockStripe()
   assert.equal(await tierForStripePrice(site, { id: WEEKLY, product: 'prod_all_access' }), 'combined')
   assert.equal(site.calls.some((c) => c.op === 'price'), false)
+
+  const broken = mockStripe()
+  assert.equal(await tierForStripePrice(broken, { id: 'price_unknown_live' }), 'combined')
+  await assert.rejects(
+    () => tierForStripePrice(broken, { id: 'price_unknown_live' }, { strict: true }),
+    /missing price/,
+  )
 })
 
 test('a $99.99 charge on the discord product is not lifetime', async () => {

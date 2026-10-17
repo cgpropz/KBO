@@ -252,8 +252,9 @@ export function resolvePurchaseTier({ priceId, price, product, metadata, env = p
 // Classify a Stripe price. Known site and Discord price ids resolve locally.
 // Any other id is retrieved once so product metadata tier=discord_only (or
 // the Discord Only product id) cannot fall through to All-Access. A failed
-// lookup keeps the unknown-price combined fallback.
-export async function tierForStripePrice(stripe, priceOrId, { metadata, env = process.env } = {}) {
+// lookup keeps the unknown-price combined fallback unless the caller asks
+// to fail closed (the webhook).
+export async function tierForStripePrice(stripe, priceOrId, { metadata, env = process.env, strict = false } = {}) {
   const price = priceOrId && typeof priceOrId === 'object' ? priceOrId : null;
   const priceId = price?.id || (typeof priceOrId === 'string' ? priceOrId : null);
   const direct = resolvePurchaseTier({ priceId, price, metadata, env });
@@ -265,8 +266,9 @@ export async function tierForStripePrice(stripe, priceOrId, { metadata, env = pr
     try {
       const full = await stripe.prices.retrieve(priceId, { expand: ['product'] });
       return resolvePurchaseTier({ priceId: full?.id || priceId, price: full, metadata, env });
-    } catch {
-      // Leave the combined fallback in place when Stripe can't be asked.
+    } catch (err) {
+      // The webhook asks again. Sync and reconcile keep the combined fallback.
+      if (strict) throw err;
     }
   }
   return direct;
@@ -769,7 +771,7 @@ async function listCustomerCharges(stripe, customerId) {
 // discordOnly means an active Discord-only subscription is present. It can be
 // true alongside a site tier (All-Access + Discord Only → both roles).
 // Email matching is case-insensitive (see customersForEmail).
-export async function computeStripeAccess(stripe, email, env = process.env) {
+export async function computeStripeAccess(stripe, email, env = process.env, { strict = false } = {}) {
   const sports = new Set();
   let hasSite = false;
   let discordOnly = false;
@@ -785,7 +787,7 @@ export async function computeStripeAccess(stripe, email, env = process.env) {
       // Other active plans are still counted below.
       if (await subscriptionPeriodBlocked(stripe, s, charges)) continue;
       const rawPrice = s.items?.data?.[0]?.price;
-      const t = await tierForStripePrice(stripe, rawPrice, { metadata: s.metadata, env });
+      const t = await tierForStripePrice(stripe, rawPrice, { metadata: s.metadata, env, strict });
       if (t === 'discord') {
         discordOnly = true;
         continue;

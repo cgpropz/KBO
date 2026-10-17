@@ -174,7 +174,7 @@ export async function clearTierByCustomer(customerId, deps = {}) {
     const resolved = await resolveWebhookUser(customerId, deps);
     if (resolved.failure) return resolved.failure;
     if (!resolved.user) return null;
-    const access = await computeStripeAccess(resolved.stripeClient, resolved.email);
+    const access = await computeStripeAccess(resolved.stripeClient, resolved.email, process.env, { strict: true });
     return persistResolvedTier(resolved.user, access.tier, access.discordOnly, resolved.db);
   });
 }
@@ -196,7 +196,7 @@ export async function clearTierByEmail(email, deps = {}) {
       console.warn('[webhook] no Supabase user for charge email');
       return null;
     }
-    const access = await computeStripeAccess(stripeApi, target);
+    const access = await computeStripeAccess(stripeApi, target, process.env, { strict: true });
     return persistResolvedTier(user, access.tier, access.discordOnly, db);
   });
 }
@@ -364,7 +364,7 @@ function discordMetadata(metas) {
 // tier=discord_only) and, if it is still unknown, the subscription itself so
 // a Discord-only renewal cannot be granted the site. Known All-Access and
 // legacy price ids skip the extra calls.
-async function tierForInvoice(obj) {
+async function tierForInvoice(obj, stripeApi = getStripe()) {
   const line = obj.lines?.data?.[0];
   const rawPrice = line?.price;
   const priceId = rawPrice?.id || (typeof rawPrice === 'string' ? rawPrice : null);
@@ -374,19 +374,16 @@ async function tierForInvoice(obj) {
     obj.parent?.subscription_details?.metadata,
     line?.metadata,
   ];
-  let tier = await tierForStripePrice(getStripe(), rawPrice || priceId, { metadata: discordMetadata(metas) });
+  let tier = await tierForStripePrice(stripeApi, rawPrice || priceId, { metadata: discordMetadata(metas), strict: true });
   const knownSitePrice = Boolean(priceId && TIER_BY_PRICE[priceId]);
   if (tier !== 'discord' && !knownSitePrice && obj.subscription) {
-    try {
-      const subscriptionId = typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id;
-      const sub = await getStripe().subscriptions.retrieve(subscriptionId);
-      const subPrice = sub.items?.data?.[0]?.price;
-      tier = await tierForStripePrice(getStripe(), subPrice || rawPrice || priceId, {
-        metadata: discordMetadata([sub.metadata, ...metas]),
-      });
-    } catch (err) {
-      console.error('[webhook] could not confirm invoice plan:', err.message);
-    }
+    const subscriptionId = typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id;
+    const sub = await stripeApi.subscriptions.retrieve(subscriptionId);
+    const subPrice = sub.items?.data?.[0]?.price;
+    tier = await tierForStripePrice(stripeApi, subPrice || rawPrice || priceId, {
+      metadata: discordMetadata([sub.metadata, ...metas]),
+      strict: true,
+    });
   }
   return tier;
 }
@@ -457,7 +454,7 @@ export default async function handler(req, res) {
     }
     // Lifetime ($249.99 and Founders $99.99) and Yearly ($149.99) resolve here
     // by price id / product id, including taxed totals that are not the list price.
-    const tier = await tierForStripePrice(getStripe(), price, { metadata: obj.metadata });
+    const tier = await tierForStripePrice(getStripe(), price, { metadata: obj.metadata, strict: true });
 
     let replayBlocked = false;
     if (obj.subscription) {
@@ -499,7 +496,7 @@ export default async function handler(req, res) {
       if (failure) return res.status(failure.status).json(failure.body);
     } else {
       const rawPrice = obj.items?.data?.[0]?.price;
-      const tier = await tierForStripePrice(getStripe(), rawPrice, { metadata: obj.metadata });
+      const tier = await tierForStripePrice(getStripe(), rawPrice, { metadata: obj.metadata, strict: true });
       const customer = await getStripe().customers.retrieve(obj.customer);
       if (customer.email) {
         const grantFailure = await setTierByEmail(customer.email, tier);
@@ -553,7 +550,7 @@ export async function handleInvoicePaymentSucceeded(obj, deps = {}) {
       console.log(`[webhook] invoice ${obj.id || ''} charge is refunded or disputed`);
       return clearTierByCustomer(obj.customer, deps);
     }
-    const tier = await tierForInvoice(obj);
+    const tier = await tierForInvoice(obj, stripeApi);
     const customer = await stripeApi.customers.retrieve(obj.customer);
     if (customer?.email) {
       const failure = await setTierByEmail(customer.email, tier);

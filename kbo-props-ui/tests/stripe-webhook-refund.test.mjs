@@ -825,3 +825,21 @@ test('a checkout charge read error does not re-grant a lifetime session', async 
   }
   assert.equal(await sessionGrantsLifetime(clear, session), true)
 })
+
+test('a Stripe price lookup error on the webhook returns 500', async () => {
+  const sub = plan('sub_unknown', 'price_unknown_live', PERIOD, null)
+  const stripe = entitlementStripe({ subs: [sub] })
+  stripe.prices = {
+    async retrieve() {
+      throw Object.assign(new Error('stripe down'), { type: 'StripeAPIError' })
+    },
+  }
+  const db = mockDb()
+  const failure = await clearTierByCustomer('cus_1', { stripe, supabase: db })
+  assert.equal(failure.status, 500)
+  assert.deepEqual(failure.body, { error: 'stripe read failed' })
+  assert.equal(JSON.stringify(failure.body).includes(EMAIL), false)
+  assert.equal(db.state.upserts.length, 0)
+  assert.equal(db.state.claimWrites.length, 0)
+  assert.equal(db.state.metadata.tier, 'combined')
+})
