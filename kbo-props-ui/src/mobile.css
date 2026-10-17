@@ -61,9 +61,31 @@
 @media (--phone-board) {
   html,
   body {
-    max-width: 100%;
+    width: min(100%, var(--phone-screen, 100%));
+    max-width: var(--phone-screen, 100%);
+    min-width: 0;
     overflow-x: clip;
     background: #050506;
+  }
+
+  #root,
+  :is(.kbo-app-root, .nfl-root, .wnba-root, .nfl-content, .wnba-content, .kbo-app-content, .nfl-lines-page) {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  body :is(div, section, main, nav, header, footer, ul, ol, form, article) {
+    min-width: 0;
+  }
+
+  table {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  [data-testid="prop-line-table"] {
+    display: none !important;
   }
 
   body {
@@ -478,7 +500,6 @@
   }
 
   .hit-rate-strip,
-  :is(.kbo-prop-tabs, .nfl-lines-tabs, .wnba-lines-tabs, .kbo-player-tabs, .nfl-player-tabs, .wnba-player-tabs),
   .nfl-sharp-books {
     display: flex !important;
     flex-flow: row nowrap !important;
@@ -488,8 +509,19 @@
     min-width: 0 !important;
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    contain: inline-size;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+  }
+
+  :is(.kbo-prop-tabs, .nfl-lines-tabs, .wnba-lines-tabs, .kbo-player-tabs, .nfl-player-tabs, .wnba-player-tabs) {
+    display: flex !important;
+    flex-flow: row wrap !important;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+    overflow-x: clip;
   }
 
   .hit-rate-strip::-webkit-scrollbar,
@@ -604,8 +636,18 @@
   }
 
   .ff-preview-bar {
+    position: static;
+    top: auto;
     box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
     padding: 8px 16px;
+  }
+
+  .ff-preview-bar ~ .kbo-app-root .kbo-app-nav,
+  .ff-preview-bar ~ .nfl-root .nfl-nav,
+  .ff-preview-bar ~ .wnba-root .wnba-nav {
+    top: 0;
   }
 
   .nfl-lines-lock-card {
