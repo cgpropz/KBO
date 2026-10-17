@@ -31,3 +31,33 @@ test('readLastGood refuses copies past the max age', async () => {
   assert.equal(await readLastGood(mk(h(24 * 8)), 'nfl_projections'), null);
   assert.equal(await readLastGood(mk('bad'), 'nfl_projections'), null);
 });
+
+import { lastGoodTimestamp } from '../api/data.js';
+import { readFileSync, existsSync } from 'node:fs';
+
+test('age prefers data[0].generated_at, then top-level generated_at, then updated_at', () => {
+  const a = '2026-10-17T00:28:31Z', b = '2026-10-16T00:00:00Z';
+  assert.equal(lastGoodTimestamp({ data: [{ generated_at: a }], updated_at: b }), Date.parse(a));
+  assert.equal(lastGoodTimestamp({ data: { generated_at: a }, updated_at: b }), Date.parse(a));
+  assert.equal(lastGoodTimestamp({ data: [{}], updated_at: b }), Date.parse(b));
+  assert.ok(Number.isNaN(lastGoodTimestamp({ data: [{}] })));
+});
+
+test('stale updated_at does not hide a fresh generated_at', async () => {
+  const fresh = new Date(Date.now() - 3600_000).toISOString();
+  const old = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const client = { storage: { from: () => ({ download: async () => ({ data: blob({ data: [{ generated_at: fresh }], updated_at: old }), error: null }) }) } };
+  assert.ok(await readLastGood(client, 'nhl_projections'));
+});
+
+test('nfl_sharp_odds and nfl_game_markets use 6 h; other NFL boards 7 d', async () => {
+  const h = (n) => new Date(Date.now() - n * 3600_000).toISOString();
+  const mk = (iso) => ({ storage: { from: () => ({ download: async () => ({ data: blob({ data: [{ generated_at: iso }] }), error: null }) }) } });
+  for (const t of ['nfl_sharp_odds', 'nfl_game_markets']) {
+    assert.equal(await readLastGood(mk(h(7)), t), null);
+    assert.ok(await readLastGood(mk(h(5)), t));
+  }
+  for (const t of ['nfl_projections', 'nfl_lineups', 'correlations_nfl']) {
+    assert.ok(await readLastGood(mk(h(72)), t));
+  }
+});
