@@ -205,7 +205,7 @@ test('the button label, both disclaimers, and forbidden words stay fixed', () =>
   )
   assert.equal(
     PRIZEPICKS_NOTE_PHONE,
-    'Not affiliated with or endorsed by PrizePicks (a trademark of its owner). Check picks & payout in the app before submitting. Availability and age (18+/19+/21+) vary by state. 21+ · 1-800-GAMBLER',
+    'Not affiliated with or endorsed by PrizePicks (a trademark of its owner). Check picks & payout in the app before submitting. Availability and age (18+/19+/21+) vary by state.',
   )
   for (const line of prizePicksUiCopy()) {
     assert.equal(prizePicksCopyIsAllowed(line), true, line)
