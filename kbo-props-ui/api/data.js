@@ -292,16 +292,49 @@ async function boardAfterReadError(client, table, err, deadline, primed) {
   throw err;
 }
 
-// These three KBO tables are published by the odds refresh, which does not
-// upload a Storage copy. Prime that read on its own timer so a slow snapshot
-// cannot spend the shared budget before Storage, and write the next good row.
+// Odds refresh uploads these three when it publishes. The API also writes the
+// next good row, without waiting on Storage, whenever the board version or
+// updated_at changes. An empty board is never stored.
 const KBO_FALLBACK_TABLES = new Set([
   'prizepicks_props',
   'strikeout_projections',
   'batter_projections',
 ]);
+const LAST_GOOD_WRITE_MS = 1000;
+const LAST_GOOD_ROW_KEYS = ['cards', 'projections', 'players', 'rows', 'matchups', 'pairs', 'records', 'games'];
 const lastGoodWrites = new Map();
-const lastGoodSaved = new Set();
+const lastGoodSaved = new Map();
+let lastGoodEpoch = 0;
+
+function lastGoodSignature(row) {
+  return `${boardCacheVersion(row)}\0${String(row?.updated_at || '')}`;
+}
+
+function lastGoodHasRows(row) {
+  const data = row?.data;
+  if (data == null || snapshotChunkManifest(data)) return false;
+  if (Array.isArray(data)) return data.length > 0;
+  if (typeof data !== 'object') return false;
+  const present = LAST_GOOD_ROW_KEYS.filter((key) => Array.isArray(data[key]));
+  if (present.length) return present.some((key) => data[key].length > 0);
+  return false;
+}
+
+function settleWithin(promise, ms) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve({ error: { message: 'last-good write exceeded 1s' } }), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        resolve({ error: err });
+      },
+    );
+  });
+}
 
 async function writeLastGood(client, table, row) {
   try {
@@ -311,11 +344,11 @@ async function writeLastGood(client, table, row) {
       data: row.data,
       updated_at: row.updated_at || null,
     }));
-    const { error } = await storage.upload(`${table}.json`, body, {
+    const { error } = await settleWithin(storage.upload(`${table}.json`, body, {
       contentType: 'application/json',
       upsert: true,
       cacheControl: '0',
-    });
+    }), LAST_GOOD_WRITE_MS);
     if (error) {
       console.warn(`[api/data] ${table} last-good write failed:`, error.message || error);
       return false;
@@ -328,21 +361,27 @@ async function writeLastGood(client, table, row) {
 }
 
 function scheduleLastGoodWrite(client, table, row) {
-  if (!KBO_FALLBACK_TABLES.has(table) || !row || row.data == null) return Promise.resolve();
-  if (lastGoodSaved.has(table)) return Promise.resolve();
+  if (!KBO_FALLBACK_TABLES.has(table) || !lastGoodHasRows(row)) return Promise.resolve();
+  const signature = lastGoodSignature(row);
+  if (lastGoodSaved.get(table) === signature) return Promise.resolve();
   const existing = lastGoodWrites.get(table);
-  if (existing) return existing;
+  if (existing?.signature === signature) return existing.promise;
+  const epoch = lastGoodEpoch;
   const pending = writeLastGood(client, table, row).then((ok) => {
-    if (ok) lastGoodSaved.add(table);
+    if (!ok || epoch !== lastGoodEpoch) return;
+    const inflightWrite = lastGoodWrites.get(table);
+    if (inflightWrite && inflightWrite.promise !== pending) return;
+    lastGoodSaved.set(table, signature);
   }).finally(() => {
-    if (lastGoodWrites.get(table) === pending) lastGoodWrites.delete(table);
+    if (lastGoodWrites.get(table)?.promise === pending) lastGoodWrites.delete(table);
   });
-  lastGoodWrites.set(table, pending);
+  pending.catch(() => {});
+  lastGoodWrites.set(table, { signature, promise: pending });
   return pending;
 }
 
 export function _lastGoodWrite(table) {
-  return lastGoodWrites.get(table) || Promise.resolve();
+  return lastGoodWrites.get(table)?.promise || Promise.resolve();
 }
 
 function startBoardRead(client, table) {
@@ -542,7 +581,7 @@ async function readSnapshotResolved(client, table, deadline) {
     const extra = await fetchSnapshotRows(client, table, ids, deadline);
     const assembled = assembleSnapshotRows(head, extra);
     rememberBoard(table, assembled, head.data.snapshotChunks.version);
-    await scheduleLastGoodWrite(client, table, assembled);
+    scheduleLastGoodWrite(client, table, assembled);
     return assembled;
   }
   if (isNbaPlayerManifest(table, head)) {
@@ -553,7 +592,7 @@ async function readSnapshotResolved(client, table, deadline) {
     return assembled;
   }
   rememberBoard(table, head);
-  await scheduleLastGoodWrite(client, table, head);
+  scheduleLastGoodWrite(client, table, head);
   return head;
 }
 
@@ -959,6 +998,7 @@ export function _clearCache() {
   cache.clear();
   latestVersion.clear();
   inflight.clear();
+  lastGoodEpoch += 1;
   lastGoodWrites.clear();
   lastGoodSaved.clear();
   clearMemberTierCache();

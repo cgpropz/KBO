@@ -10,11 +10,12 @@ import { createHmac, createPublicKey, timingSafeEqual, verify as cryptoVerify } 
 
 export const PAID_TIER_TTL_MS = 5 * 60 * 1000;
 const JWKS_TTL_MS = 10 * 60 * 1000;
+const JWKS_FORCE_REFRESH_MS = 60 * 1000;
 const SECRET_ENV_KEYS = ['SUPABASE_JWT_SECRET', 'JWT_SECRET'];
 
 const paidTiers = new Map();
 const inflightLookups = new Map();
-let jwksCache = { url: '', at: 0, keys: [] };
+let jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
 
 function envOf(options) {
   return options.env || process.env;
@@ -99,29 +100,35 @@ function verifyWithJwk(signingInput, signaturePart, jwk) {
   }
 }
 
-async function loadJwks(env, fetchImpl) {
+async function loadJwks(env, fetchImpl, { force = false, now = Date.now } = {}) {
   const issuer = expectedIssuer(env);
   if (!issuer) return [];
-  const now = Date.now();
-  if (jwksCache.url === issuer && jwksCache.keys.length && now - jwksCache.at < JWKS_TTL_MS) {
+  const clock = typeof now === 'function' ? now() : Date.now();
+  const sameUrl = jwksCache.url === issuer;
+  const fresh = sameUrl && jwksCache.keys.length && clock - jwksCache.at < JWKS_TTL_MS;
+  if (fresh && !force) return jwksCache.keys;
+  if (force && sameUrl && clock - jwksCache.forcedAt < JWKS_FORCE_REFRESH_MS) {
     return jwksCache.keys;
   }
+  if (force) jwksCache = { ...jwksCache, forcedAt: clock };
   const anon = String(env?.VITE_SUPABASE_ANON_KEY || env?.SUPABASE_ANON_KEY || '').trim();
   const response = await fetchImpl(`${issuer}/.well-known/jwks.json`, {
     headers: anon ? { apikey: anon } : {},
     signal: AbortSignal.timeout(2000),
   });
-  if (!response?.ok) return [];
+  if (!response?.ok) return jwksCache.keys;
   const body = await response.json();
   const keys = Array.isArray(body?.keys) ? body.keys : [];
-  if (keys.length) jwksCache = { url: issuer, at: now, keys };
-  return keys;
+  if (keys.length) {
+    jwksCache = { url: issuer, at: clock, keys, forcedAt: force ? clock : jwksCache.forcedAt };
+  }
+  return keys.length ? keys : jwksCache.keys;
 }
 
 export function clearMemberTierCache() {
   paidTiers.clear();
   inflightLookups.clear();
-  jwksCache = { url: '', at: 0, keys: [] };
+  jwksCache = { url: '', at: 0, keys: [], forcedAt: 0 };
 }
 
 function prunePaidTiers(now) {
@@ -208,15 +215,21 @@ export async function verifyAccessToken(authorization, options = {}) {
   if (!header || !payload) return null;
   const signingInput = `${parts[0]}.${parts[1]}`;
   let signed = false;
+  if (header.alg === 'none' || header.alg == null) return null;
   if (header.alg === 'HS256') {
     const secret = options.secret ?? jwtSecret(envOf(options));
     if (!secret) return null;
     signed = verifyHs256(token, secret);
   } else if (header.alg === 'ES256' || header.alg === 'RS256') {
-    const keys = Array.isArray(options.jwks)
+    const fetchImpl = options.fetchImpl || globalThis.fetch;
+    let keys = Array.isArray(options.jwks)
       ? options.jwks
-      : await loadJwks(envOf(options), options.fetchImpl || globalThis.fetch).catch(() => []);
-    const jwk = keys.find((key) => key && key.kid === header.kid);
+      : await loadJwks(envOf(options), fetchImpl, { now: options.now }).catch(() => []);
+    let jwk = keys.find((key) => key && key.kid === header.kid);
+    if (!jwk && !Array.isArray(options.jwks)) {
+      keys = await loadJwks(envOf(options), fetchImpl, { force: true, now: options.now }).catch(() => keys);
+      jwk = keys.find((key) => key && key.kid === header.kid);
+    }
     if (!jwk) return null;
     signed = verifyWithJwk(signingInput, parts[2], jwk);
   }

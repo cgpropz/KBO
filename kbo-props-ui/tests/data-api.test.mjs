@@ -1369,6 +1369,126 @@ test('the next good KBO read writes one last-good copy and a later timeout serve
   }
 })
 
+test('an empty KBO board is not saved as a last-good copy', async () => {
+  let uploads = 0
+  const client = mockClient()
+  const original = client.from.bind(client)
+  client.from = (table) => {
+    if (table !== 'prizepicks_props' && table !== 'strikeout_projections') return original(table)
+    const chain = {
+      select() { return chain },
+      eq() { return chain },
+      async maybeSingle() {
+        const data = table === 'prizepicks_props'
+          ? { generated_at: NOW, cards: [] }
+          : { generated_at: NOW, projections: [] }
+        return { data: { data, updated_at: NOW }, error: null }
+      },
+    }
+    return chain
+  }
+  client.storage = {
+    from() {
+      return { upload() { uploads += 1; return Promise.resolve({ error: null }) } }
+    },
+  }
+  for (const ds of ['prizepicks_props', 'strikeout_projections']) {
+    _clearCache()
+    uploads = 0
+    const res = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds }, headers: { authorization: bearer('tok-kbo') } },
+      res,
+      client,
+    )
+    await _lastGoodWrite(ds)
+    assert.equal(res.statusCode, 200, ds)
+    assert.equal(uploads, 0, ds)
+  }
+})
+
+test('a changed board version or updated_at rewrites the last-good copy', async () => {
+  const prevFresh = cacheWindows.freshMs
+  cacheWindows.freshMs = 0
+  let uploads = 0
+  let generated = '2026-10-17T12:00:00.000Z'
+  let updated = generated
+  const client = mockClient()
+  const original = client.from.bind(client)
+  client.from = (table) => {
+    if (table !== 'prizepicks_props') return original(table)
+    const chain = {
+      select() { return chain },
+      eq() { return chain },
+      async maybeSingle() {
+        return {
+          data: {
+            data: { generated_at: generated, cards: [{ name: 'A', props: [{ stat: 'Strikeouts', line: 5.5, projection: 6 }] }] },
+            updated_at: updated,
+          },
+          error: null,
+        }
+      },
+    }
+    return chain
+  }
+  client.storage = {
+    from() {
+      return { upload() { uploads += 1; return Promise.resolve({ error: null }) } }
+    },
+  }
+  const read = async () => {
+    const res = mockRes()
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+      res,
+      client,
+    )
+    await new Promise((resolve) => setImmediate(resolve))
+    await _lastGoodWrite('prizepicks_props')
+    return res
+  }
+  try {
+    _clearCache()
+    await read()
+    assert.equal(uploads, 1)
+    await read()
+    assert.equal(uploads, 1)
+    generated = '2026-10-17T13:00:00.000Z'
+    await read()
+    assert.equal(uploads, 2)
+    updated = '2026-10-17T13:00:01.000Z'
+    await read()
+    assert.equal(uploads, 3)
+  } finally {
+    cacheWindows.freshMs = prevFresh
+    _clearCache()
+  }
+})
+
+test('a slow last-good upload does not delay the response', async () => {
+  let release
+  const hung = new Promise((resolve) => { release = () => resolve({ error: null }) })
+  const client = mockClient()
+  client.storage = {
+    from() {
+      return { upload() { return hung } }
+    },
+  }
+  const started = Date.now()
+  const res = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    res,
+    client,
+  )
+  const elapsed = Date.now() - started
+  release()
+  await _lastGoodWrite('prizepicks_props')
+  assert.equal(res.statusCode, 200)
+  assert.ok(elapsed < 500, `response waited ${elapsed}ms`)
+})
+
 test('board clocks fall back when the status table is missing', async () => {
   const client = {
     from() {
