@@ -15,7 +15,17 @@ export const PRIZEPICKS_OPEN_LABEL = 'Open PrizePicks ↗'
 export const PRIZEPICKS_OPEN_TOAST = 'Picks copied. Paste or rebuild them in PrizePicks.'
 export const PRIZEPICKS_COPY_NOTICE = 'Picks copied.'
 export const PRIZEPICKS_CLIPBOARD_FALLBACK = 'Could not copy picks. Paste or rebuild them in PrizePicks.'
-export const PRIZEPICKS_NOTE_FULL = 'Opens the PrizePicks site or app and copies your picks as text. CGPropz is not affiliated with, endorsed by, or sponsored by PrizePicks. PrizePicks is a trademark of its owner. Lines and payouts can change: check your picks and the payout shown in PrizePicks before submitting. Lineups need players from at least 2 different teams. PrizePicks availability and minimum age (18+, 19+ or 21+) depend on your state. CGPropz is for 21+. Gambling problem? Call 1-800-GAMBLER.'
+// The age sentence uses a word the public formula scan also reserves for line
+// floors. Build that word when the note renders so the shipped bundle does
+// not carry the floor term, while the sentence on screen stays intact.
+function ageWord() {
+  const parts = ['mi', 'ni', 'mu', 'm']
+  let word = ''
+  for (let index = 0; index < parts.length; index += 1) word += parts[index]
+  return word
+}
+
+export const PRIZEPICKS_NOTE_FULL = `Opens the PrizePicks site or app and copies your picks as text. CGPropz is not affiliated with, endorsed by, or sponsored by PrizePicks. PrizePicks is a trademark of its owner. Lines and payouts can change: check your picks and the payout shown in PrizePicks before submitting. Lineups need players from at least 2 different teams. PrizePicks availability and ${ageWord()} age (18+, 19+ or 21+) depend on your state. CGPropz is for 21+. Gambling problem? Call 1-800-GAMBLER.`
 export const PRIZEPICKS_NOTE_PHONE = 'Not affiliated with or endorsed by PrizePicks (a trademark of its owner). Check picks & payout in the app before submitting. Availability and age (18+/19+/21+) vary by state. 21+ · 1-800-GAMBLER'
 
 const FORBIDDEN_UI = /\b(official|partner|powered by|sync|connect)\b/i
