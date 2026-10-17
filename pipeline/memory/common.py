@@ -148,6 +148,111 @@ def prop_key(prop: dict) -> tuple[str, str, str]:
     return player, stat, odds_type
 
 
+# PrizePicks marks a line it took down with one of these statuses.
+PULLED_PP_STATUSES = {"removed", "suspended", "held", "hold", "onhold"}
+
+
+def _compact_status(value) -> str:
+    return re.sub(r"[^a-z]", "", str(value or "").strip().lower())
+
+
+def _truthy_flag(value) -> bool:
+    if value is True or value == 1:
+        return True
+    return str(value or "").strip().lower() in {"true", "1"}
+
+
+def projection_id_of(prop: dict) -> str:
+    """PrizePicks projection id stored on a row, or "" when the row has none.
+
+    A numeric ``id`` is the card id the NHL board publishes. A player-prop
+    slug is not a projection id.
+    """
+    if not isinstance(prop, dict):
+        return ""
+    explicit = prop.get("projection_id")
+    if explicit is not None:
+        text = str(explicit).strip()
+        if text and text.lower() != "nan":
+            return text
+    raw = prop.get("id")
+    text = "" if raw is None else str(raw).strip()
+    return text if text.isdigit() else ""
+
+
+def pulled_status(prop: dict) -> str | None:
+    """Compact PrizePicks status when the line was pulled, else None."""
+    if not isinstance(prop, dict):
+        return None
+    if _truthy_flag(prop.get("removed")):
+        compact = _compact_status(prop.get("pp_status") or "removed")
+        return compact if compact in PULLED_PP_STATUSES else "removed"
+    compact = _compact_status(prop.get("pp_status"))
+    if compact in PULLED_PP_STATUSES:
+        return compact
+    return None
+
+
+def attach_board_identity(entry: dict, *sources: dict) -> dict:
+    """Copy projection id and pull flags when a board row has them."""
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        if not entry.get("projection_id"):
+            pid = projection_id_of(source)
+            if pid:
+                entry["projection_id"] = pid
+        if "removed" not in entry and "removed" in source and source.get("removed") is not None:
+            entry["removed"] = _truthy_flag(source.get("removed"))
+        if "pp_status" not in entry and source.get("pp_status") not in (None, ""):
+            entry["pp_status"] = source.get("pp_status")
+    return entry
+
+
+def gradeable_slate_prop(prop: dict) -> bool:
+    """True for a live standard line.
+
+    NHL and WNBA summaries count these only. Demon and goblin stay on the
+    slate for research. Pulled and superseded rows are not scored.
+    """
+    if not isinstance(prop, dict):
+        return False
+    odds = str(prop.get("odds_type") or "standard").strip().lower()
+    if odds != "standard":
+        return False
+    if prop.get("superseded_at"):
+        return False
+    if pulled_status(prop):
+        return False
+    return True
+
+
+def _parse_utc(value) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def prop_game_started(prop: dict, now: datetime | None = None) -> bool:
+    """True when the row's stored start time is already in the past.
+
+    A missing start does not count as started: the cutoff never stored one,
+    so a dropped pregame card can still be marked superseded.
+    """
+    start = _parse_utc(prop.get("start_time_utc") if isinstance(prop, dict) else None)
+    if start is None:
+        return False
+    from pipeline.memory import cutoff
+
+    return cutoff.has_started(start, now)
+
+
 # Slate prop schema. v2 adds a real stat projection for every prop (the KBO
 # pitcher rows used to store the 1-100 cg_projection score in `projection`),
 # plus edge / factor / timing / provenance fields. See memory/README.md.
@@ -189,6 +294,54 @@ def merge_slate_props(existing: list[dict], incoming: list[dict]) -> list[dict]:
                 merged[field] = previous[field]
         by_key[key] = merged
     return sorted(by_key.values(), key=lambda p: (normalize_name(p.get("player", "")), str(p.get("stat", "")), str(p.get("odds_type", ""))))
+
+
+def _slate_sort_key(prop: dict) -> tuple[str, str, str]:
+    return (normalize_name(prop.get("player", "")), str(prop.get("stat", "")), str(prop.get("odds_type", "")))
+
+
+def merge_nhl_slate_props(existing: list[dict], incoming: list[dict]) -> list[dict]:
+    """Merge NHL props, keying on projection_id once a row has one.
+
+    Slates frozen before ids were stored still match player+stat+odds_type,
+    so tonight's live card updates in place. A later card with a new id does
+    not overwrite that row: the old id stays put and the new card is added.
+    The same id with a different odds type is also a new row.
+    """
+    usable: list[dict] = []
+    by_id: dict[str, dict] = {}
+    by_key: dict[tuple[str, str, str], list[dict]] = {}
+    for prop in incoming or []:
+        key = prop_key(prop)
+        if not key[0] or not key[1]:
+            continue
+        usable.append(prop)
+        by_key.setdefault(key, []).append(prop)
+        pid = projection_id_of(prop)
+        if pid and pid not in by_id:
+            by_id[pid] = prop
+    used: set[int] = set()
+    base: list[dict] = []
+    for row in existing or []:
+        pid = projection_id_of(row)
+        match = None
+        if pid:
+            candidate = by_id.get(pid)
+            if candidate is not None and prop_key(candidate) == prop_key(row) and id(candidate) not in used:
+                match = candidate
+        else:
+            for candidate in by_key.get(prop_key(row), []):
+                if id(candidate) in used:
+                    continue
+                match = candidate
+                break
+        if match is None:
+            base.append(dict(row))
+            continue
+        used.add(id(match))
+        base.extend(merge_slate_props([row], [match]))
+    fresh = [dict(prop) for prop in usable if id(prop) not in used]
+    return sorted(base + fresh, key=_slate_sort_key)
 
 
 def grade_line(actual: float | int | None, line: float | int | None) -> str:
@@ -449,6 +602,10 @@ def build_day_summary(
         raise ValueError(f"summary status must be complete|partial, got {status!r}")
 
     graded = list(props or [])
+    # Demon/goblin and pulled or superseded cards stay out of the NHL and
+    # WNBA hit rate. KBO and NFL keep every graded row they were given.
+    if sport in ("nhl", "wnba"):
+        graded = [prop for prop in graded if gradeable_slate_prop(prop)]
     stats = compute_hit_rate_stats(graded)
     total = props_total if props_total is not None else len(graded)
     return {
@@ -584,11 +741,120 @@ def source_commit() -> str | None:
     return sha[:12] or None
 
 
-def write_slate(sport: str, d: date, props: list[dict], *, source: str | None = None) -> Path:
+def _row_still_on_board(
+    sport: str,
+    row: dict,
+    live_keys: set[tuple[str, str, str]],
+    live_by_id: dict[str, dict],
+) -> bool:
+    """True when the newest freeze still contains this card.
+
+    WNBA matches player+stat+odds_type. An NHL row that already has a
+    projection id is still live only when that same id came back with the
+    same odds type. A swapped or replaced card leaves the old row to be
+    marked superseded. Rows frozen before ids were stored use the merge key.
+    """
+    if sport == "nhl":
+        pid = projection_id_of(row)
+        if pid:
+            incoming = live_by_id.get(pid)
+            return incoming is not None and prop_key(incoming) == prop_key(row)
+        return prop_key(row) in live_keys
+    return prop_key(row) in live_keys
+
+
+def _apply_pull_flags(
+    sport: str,
+    merged: list[dict],
+    pulled_rows: list[dict],
+    live_keys: set[tuple[str, str, str]],
+    now_iso: str,
+    now: datetime | None = None,
+) -> None:
+    """Stamp removed/pp_status on a card PrizePicks pulled.
+
+    Does not insert a card that was never frozen, and does not touch
+    first_frozen_at or last_pregame_frozen_at. A live card in the same
+    player+stat+odds_type slot is left alone unless the projection id matches.
+    """
+    by_key: dict[tuple[str, str, str], dict] = {}
+    by_id: dict[str, dict] = {}
+    for row in merged:
+        by_key.setdefault(prop_key(row), row)
+        pid = projection_id_of(row)
+        if sport == "nhl" and pid:
+            by_id.setdefault(pid, row)
+    for src in pulled_rows:
+        if not isinstance(src, dict):
+            continue
+        key = prop_key(src)
+        pid = projection_id_of(src) if sport == "nhl" else ""
+        target = by_id.get(pid) if pid else None
+        if target is None and key not in live_keys:
+            target = by_key.get(key)
+        if target is None or prop_game_started(target, now):
+            continue
+        if pid and projection_id_of(target) not in ("", pid) and key in live_keys:
+            continue
+        if key in live_keys and (not pid or projection_id_of(target) != pid):
+            continue
+        target["removed"] = True
+        status = pulled_status(src) or src.get("pp_status") or "removed"
+        target["pp_status"] = status
+        if pid and not projection_id_of(target):
+            target["projection_id"] = pid
+        if not target.get("superseded_at"):
+            target["superseded_at"] = now_iso
+
+
+def write_slate(
+    sport: str,
+    d: date,
+    props: list[dict],
+    *,
+    source: str | None = None,
+    pulled: list[dict] | None = None,
+    now: datetime | None = None,
+) -> Path:
     day_dir = ensure_memory_dir(sport, d)
     slate_path = day_dir / "slate.json"
     existing = load_json(slate_path, default={}) or {}
-    merged = merge_slate_props(existing.get("props") or [], props)
+    live_incoming: list[dict] = []
+    pulled_rows: list[dict] = [row for row in (pulled or []) if isinstance(row, dict)]
+    for prop in props or []:
+        if pulled_status(prop):
+            pulled_rows.append(prop)
+        else:
+            live_incoming.append(prop)
+    if sport == "nhl":
+        merged = merge_nhl_slate_props(existing.get("props") or [], live_incoming)
+    else:
+        merged = merge_slate_props(existing.get("props") or [], live_incoming)
+    # Once a recap exists the graded day is left as frozen. Before that, a
+    # pregame card the newest freeze did not send is marked superseded and
+    # keeps the freeze time it already has.
+    if not (day_dir / "recap.json").exists() and (live_incoming or pulled_rows):
+        now_iso = utc_now_iso()
+        live_keys = {prop_key(prop) for prop in live_incoming if prop_key(prop)[0] and prop_key(prop)[1]}
+        live_by_id = {}
+        if sport == "nhl":
+            for prop in live_incoming:
+                pid = projection_id_of(prop)
+                if pid and pid not in live_by_id:
+                    live_by_id[pid] = prop
+        for row in merged:
+            if _row_still_on_board(sport, row, live_keys, live_by_id):
+                row.pop("superseded_at", None)
+                if pulled_status(row):
+                    row.pop("pp_status", None)
+                    row.pop("removed", None)
+                continue
+            if prop_game_started(row, now):
+                continue
+            if not row.get("superseded_at"):
+                row["superseded_at"] = now_iso
+        if pulled_rows:
+            _apply_pull_flags(sport, merged, pulled_rows, live_keys, now_iso, now)
     payload = {
         "sport": sport,
         "slate_date": format_mmddyyyy(d),

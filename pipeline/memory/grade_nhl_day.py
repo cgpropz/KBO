@@ -27,6 +27,7 @@ from pipeline.memory.common import (  # noqa: E402
     format_iso,
     format_mmddyyyy,
     grade_line,
+    gradeable_slate_prop,
     load_json,
     memory_dir,
     model_result,
@@ -230,19 +231,39 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
         if not dry_run:
             write_meta("nhl", d, status="waiting", props_total=0, props_graded=0, missing=["no slate.json — freeze the board first"])
         return {"status": "waiting", "reason": "no slate", "slate_date": format_mmddyyyy(d)}
+    # Standard lines still on the board. Demon/goblin are research-only.
+    # Pulled and superseded cards are not scored and do not block the day.
+    props = [prop for prop in slate["props"] if gradeable_slate_prop(prop)]
+    if not props:
+        if not dry_run:
+            write_meta(
+                "nhl",
+                d,
+                status="waiting",
+                props_total=0,
+                props_graded=0,
+                missing=["no live standard props"],
+            )
+        return {
+            "status": "waiting",
+            "reason": "no live standard props",
+            "slate_date": format_mmddyyyy(d),
+            "props_total": 0,
+            "props_graded": 0,
+        }
     if actuals is None:
         try:
             actuals = load_actuals(d)
         except Exception as exc:  # noqa: BLE001 - a failed download skips the night
             if not dry_run:
-                write_meta("nhl", d, status="waiting", props_total=len(slate["props"]), props_graded=0, missing=[f"box score unavailable: {exc}"])
+                write_meta("nhl", d, status="waiting", props_total=len(props), props_graded=0, missing=[f"box score unavailable: {exc}"])
             return {"status": "waiting", "reason": "box score unavailable", "slate_date": format_mmddyyyy(d)}
 
     final_teams = set(actuals.get("final_teams") or [])
     players = actuals.get("players") or {}
     graded = []
     missing = []
-    for prop in slate["props"]:
+    for prop in props:
         team = team_abbr(prop.get("team"))
         stat = prop.get("stat") or ""
         key = STAT_KEYS.get(stat)
@@ -284,7 +305,7 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
             "graded_at": utc_now_iso(),
         })
 
-    total = len(slate["props"])
+    total = len(props)
     counts = _counts(graded, missing)
     if missing:
         if not dry_run:

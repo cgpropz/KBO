@@ -22,6 +22,7 @@ from pipeline.memory.common import (
     PUBLIC_DATA,
     REPO_ROOT,
     SLATE_PROP_SCHEMA,
+    attach_board_identity,
     ensure_memory_dir,
     format_iso,
     format_mmddyyyy,
@@ -33,6 +34,7 @@ from pipeline.memory.common import (
     parse_cli_date,
     parse_date,
     prop_key,
+    pulled_status,
     save_json,
     scheduled_matchups,
     source_commit,
@@ -54,11 +56,32 @@ def slate_is_locked(sport: str, d: date) -> bool:
     return meta.get("status") == "complete" and (day_dir / "recap.json").exists()
 
 
-def write_slate(sport: str, d: date, props: list[dict], *, source: str | None = None) -> Path:
+def write_slate(
+    sport: str,
+    d: date,
+    props: list[dict],
+    *,
+    source: str | None = None,
+    pulled: list[dict] | None = None,
+    now: datetime | None = None,
+) -> Path:
     """common.write_slate, except graded (locked) days are never touched."""
     if slate_is_locked(sport, d):
         return memory_dir(sport, d) / "slate.json"
-    return _write_slate_unlocked(sport, d, props, source=source)
+    return _write_slate_unlocked(sport, d, props, source=source, pulled=pulled, now=now)
+
+
+def _pulled_marker(player, stat, odds_type, line, status: str, *sources: dict) -> dict:
+    """Identity of a PrizePicks line that was pulled. Not a live freeze."""
+    marker = {
+        "player": player,
+        "stat": stat,
+        "odds_type": odds_type or "standard",
+        "line": line,
+        "removed": True,
+        "pp_status": status,
+    }
+    return attach_board_identity(marker, *sources)
 
 
 def _now(now: datetime | None) -> datetime:
@@ -346,6 +369,7 @@ def freeze_wnba(
         "goblin": PUBLIC_DATA / "wnba" / "projections_goblin.json",
     }
     by_date: dict[date, list[dict]] = defaultdict(list)
+    pulled_by_date: dict[date, list[dict]] = defaultdict(list)
     for odds_type, path in boards.items():
         rows = load_json(path, default=[]) or []
         for row in rows:
@@ -364,6 +388,13 @@ def freeze_wnba(
                     cutoff.has_started(start, now) or cutoff.played_on(log_dates, gamedate, parse_date)
                 ):
                     skipped_started[gamedate] += 1
+                    continue
+                pulled = pulled_status(prop) or pulled_status(row)
+                if pulled:
+                    # PrizePicks took the card down. Do not freeze it as live.
+                    pulled_by_date[gamedate].append(
+                        _pulled_marker(row.get("name"), prop.get("stat"), odds_type, prop.get("line"), pulled, prop, row)
+                    )
                     continue
                 entry = {
                     "player": row.get("name"),
@@ -389,6 +420,7 @@ def freeze_wnba(
                     "dvp_opponent": row.get("dvpOpponent"),
                     "spread": row.get("spread"),
                 }
+                attach_board_identity(entry, prop, row)
                 if ignore_cutoff:
                     entry["cutoff_ignored"] = True
                 _formula_fields(entry, prop, row)
@@ -396,7 +428,8 @@ def freeze_wnba(
 
     skipped = {format_mmddyyyy(d): n for d, n in sorted(skipped_past.items())}
     started = {format_mmddyyyy(d): n for d, n in sorted(skipped_started.items())}
-    if not by_date:
+    slate_dates = set(by_date) | set(pulled_by_date)
+    if not slate_dates:
         out = {"sport": "wnba", "dates": 0, "props": 0, "note": "no pregame ppAllProps with gameDate"}
         if skipped:
             out["skipped_past_dates"] = skipped
@@ -405,7 +438,9 @@ def freeze_wnba(
         return out
 
     summaries = []
-    for d, props in sorted(by_date.items()):
+    for d in sorted(slate_dates):
+        props = by_date.get(d) or []
+        pulled = pulled_by_date.get(d) or []
         if dry_run:
             summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "dry_run": True})
             continue
@@ -414,6 +449,8 @@ def freeze_wnba(
             d,
             props,
             source="kbo-props-ui/public/data/wnba/projections_*.json",
+            pulled=pulled,
+            now=now,
         )
         summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)})
     out = {"sport": "wnba", "dates": len(summaries), "results": summaries}
@@ -805,6 +842,7 @@ def freeze_nhl(
     if not projections:
         return {"sport": "nhl", "skipped": "no projections", "path": str(projections_path)}
     by_date: dict[date, list[dict]] = defaultdict(list)
+    pulled_by_date: dict[date, list[dict]] = defaultdict(list)
     skipped_started: dict[date, int] = defaultdict(int)
     for row in projections:
         gameday = parse_date(row.get("gameday") or row.get("date")) or slate_date or today_et()
@@ -816,6 +854,14 @@ def freeze_nhl(
             continue
         projection = row.get("projection")
         line = row.get("line")
+        odds_type = row.get("oddsType") or "standard"
+        pulled = pulled_status(row)
+        if pulled:
+            # PrizePicks took the card down. Do not freeze it as a live line.
+            pulled_by_date[gameday].append(
+                _pulled_marker(row.get("player"), row.get("prop"), odds_type, line, pulled, row)
+            )
+            continue
         entry = {
             "player": row.get("player"),
             "team": row.get("team"),
@@ -823,7 +869,7 @@ def freeze_nhl(
             "position": row.get("position"),
             "stat": row.get("prop"),
             "line": line,
-            "odds_type": row.get("oddsType") or "standard",
+            "odds_type": odds_type,
             "recommendation": "OVER" if (projection or 0) >= (line or 0) else "UNDER",
             "projection": projection,
             "projection_source": "nhl/build_board.py" if projection is not None else None,
@@ -835,16 +881,19 @@ def freeze_nhl(
             "goalie_status": row.get("goalieStatus"),
             "rank_eligible": row.get("rankEligible", True),
         }
+        attach_board_identity(entry, row)
         if ignore_cutoff:
             entry["cutoff_ignored"] = True
         _formula_fields(entry, row)
         by_date[gameday].append(_stamp(entry, start, start_source, now, commit))
     summaries = []
-    for d, props in sorted(by_date.items()):
+    for d in sorted(set(by_date) | set(pulled_by_date)):
+        props = by_date.get(d) or []
+        pulled_rows = pulled_by_date.get(d) or []
         if dry_run:
             summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "dry_run": True})
             continue
-        path = write_slate("nhl", d, props, source="nhl/projections.json")
+        path = write_slate("nhl", d, props, source="nhl/projections.json", pulled=pulled_rows, now=now)
         summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)})
     out = {"sport": "nhl", "dates": len(summaries), "results": summaries}
     if skipped_started:
