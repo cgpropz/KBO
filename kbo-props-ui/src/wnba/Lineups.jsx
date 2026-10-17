@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { fetchWnbaData } from './wnbaData'
 import { posColor } from './utils/formatters'
+import { wnbaLineupColumns } from './lineupColumns'
 
 const TEAM_COLORS = {
   LVA: '#C9A84C', MIN: '#236192', IND: '#C8102E', PHX: '#E56020',
@@ -84,11 +85,7 @@ function PlayerRow({ player }) {
 
 function TeamColumn({ team, side }) {
   const tc = TEAM_COLORS[team.abbr] || '#FF6900'
-  const expected = (team.players || []).filter(p => p.status !== 'out')
-  const out = [
-    ...(team.players || []).filter(p => p.status === 'out'),
-    ...(team.inactive || []),
-  ].filter((v, i, a) => a.findIndex(x => x.name === v.name) === i)
+  const { expected, out } = wnbaLineupColumns(team)
 
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
