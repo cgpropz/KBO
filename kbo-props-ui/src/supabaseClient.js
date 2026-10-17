@@ -5,6 +5,13 @@
 const viteEnv = import.meta.env ?? {}
 
 let clientPromise = null
+let clientFactory = null
+
+// Tests stand in for the dynamic import. Production leaves this unset.
+export function _setSupabaseClientFactory(factory) {
+  clientPromise = null
+  clientFactory = typeof factory === 'function' ? factory : null
+}
 
 export function supabaseStorageKey(url = viteEnv.VITE_SUPABASE_URL || '') {
   try {
@@ -101,14 +108,15 @@ export async function boundedAccessToken({ fresh = false, waitMs = TOKEN_WAIT_MS
 export function loadSupabase() {
   const url = viteEnv.VITE_SUPABASE_URL || ''
   const key = viteEnv.VITE_SUPABASE_ANON_KEY || ''
-  if (!url || !key) return Promise.resolve(null)
+  if (!clientFactory && (!url || !key)) return Promise.resolve(null)
   if (!clientPromise) {
-    clientPromise = import('@supabase/supabase-js')
-      .then(({ createClient }) => createClient(url, key))
-      .catch((err) => {
-        clientPromise = null
-        throw err
-      })
+    const pending = clientFactory
+      ? Promise.resolve().then(() => clientFactory())
+      : import('@supabase/supabase-js').then(({ createClient }) => createClient(url, key))
+    clientPromise = pending.catch((err) => {
+      clientPromise = null
+      throw err
+    })
   }
   return clientPromise
 }

@@ -156,18 +156,20 @@ export async function refreshFullBoard(ds, opts, {
   }
 }
 
-async function requestDataset(ds, { priority, player, fresh = false, timeoutMs } = {}) {
+async function requestDataset(ds, { priority, player, fresh = false, timeoutMs, retried = false, suppliedToken } = {}) {
   const budget = Number.isFinite(timeoutMs)
     ? Math.min(FETCH_TIMEOUT_MS, Math.max(1, timeoutMs))
     : FETCH_TIMEOUT_MS;
-  const token = await accessToken({ fresh });
+  // A token from the hub load is reused. fresh still refreshes when the
+  // caller did not already supply one.
+  const token = suppliedToken !== undefined ? suppliedToken : await accessToken({ fresh });
   const params = new URLSearchParams({ ds });
   if (player) params.set('player', player);
   const res = await fetch(`/api/data?${params}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     signal: AbortSignal.timeout(budget),
     // A retry must not reuse the browser's cached copy of the bad answer.
-    ...(fresh ? { cache: 'no-store' } : {}),
+    ...(fresh || retried ? { cache: 'no-store' } : {}),
     ...(priority ? { priority } : {}),
   });
   const type = res.headers.get('content-type') || '';
@@ -218,8 +220,8 @@ async function loadDataset(ds, opts, managed) {
   }
 }
 
-export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs, retried = false } = {}) {
-  const opts = { devStaticPath, priority, player, fresh, timeoutMs, retried };
+export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs, retried = false, accessToken: suppliedToken } = {}) {
+  const opts = { devStaticPath, priority, player, fresh, timeoutMs, retried, suppliedToken };
   const key = inflightKey(ds, opts);
   const existing = inflight.get(key);
   if (existing) return existing;

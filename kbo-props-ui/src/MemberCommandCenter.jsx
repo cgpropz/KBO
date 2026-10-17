@@ -3,7 +3,8 @@ import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { loadHubSports, loadMemberBoard } from './memberBoardLoad';
+import { beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch, nextSportRetry, sportRetryStillCurrent } from './memberBoardLoad';
+import { boundedAccessToken, cachedAccessToken } from './supabaseClient';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
 import { teamColor as nflTeamColor, teamLogoUrl as nflLogo } from './nfl/nflTeams';
@@ -225,6 +226,9 @@ function useBoards(access, nbaOpen, selectedId) {
   nbaOpenRef.current = nbaOpen;
   const generation = useRef(0);
   const loadSportRef = useRef(async () => {});
+  const boardLoad = useRef({});
+  const hubTokenRef = useRef(undefined);
+  const retryTicket = useRef({});
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -237,7 +241,10 @@ function useBoards(access, nbaOpen, selectedId) {
     let slot = 0;
     const loadSport = async (sport) => {
       if (!alive()) return;
-      const mine = slot;
+      const seq = (boardLoad.current[sport.id] || 0) + 1;
+      boardLoad.current[sport.id] = seq;
+      const mine = () => alive() && boardLoad.current[sport.id] === seq;
+      const place = slot;
       slot += 1;
       const open = nbaOpenRef.current;
       const allowed = sport.id === 'nba' ? open === true : accessRef.current[sport.id];
@@ -245,49 +252,78 @@ function useBoards(access, nbaOpen, selectedId) {
         setBoards((b) => ({ ...b, [sport.id]: { status: sport.id === 'nba' && open !== true ? 'closed' : 'locked', raw: null } }));
         return;
       }
+      const dataset = (ds, opts = {}) => fetchApiDataset(ds, {
+        ...opts,
+        ...(hubTokenRef.current ? { accessToken: hubTokenRef.current } : {}),
+        fresh: false,
+      });
+      const writeBoard = (snap) => {
+        if (!mine()) return;
+        setBoards((b) => {
+          const patch = memberBoardPatch(b[sport.id], snap);
+          if (!patch) return b;
+          return { ...b, [sport.id]: patch };
+        });
+      };
       const extras = [];
       if (sport.roster) {
         extras.push(
-          fetchApiDataset(sport.roster, { devStaticPath: sport.rosterDev })
-            .then((snap) => { if (alive()) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
+          dataset(sport.roster, { devStaticPath: sport.rosterDev })
+            .then((snap) => { if (mine()) setRosters((r) => ({ ...r, [sport.id]: snap.data })); })
             .catch(() => {}),
         );
       }
       if (sport.lineups) {
         extras.push(
-          fetchApiDataset(sport.lineups, { devStaticPath: sport.lineupsDev })
-            .then((snap) => { if (alive()) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
-            .catch(() => { if (alive()) setLineups((s) => ({ ...s, [sport.id]: null })); }),
+          dataset(sport.lineups, { devStaticPath: sport.lineupsDev })
+            .then((snap) => { if (mine()) setLineups((s) => ({ ...s, [sport.id]: snap.data })); })
+            .catch(() => { if (mine()) setLineups((s) => ({ ...s, [sport.id]: null })); }),
         );
       }
-      const board = loadMemberBoard(sport, fetchApiDataset, undefined, {
-        slot: mine,
-        priority: mine === 0 ? 'high' : undefined,
+      const board = loadMemberBoard(sport, dataset, undefined, {
+        slot: place,
+        priority: place === 0 ? 'high' : undefined,
+        alive: mine,
+        onUnresolved: writeBoard,
       }).then((snap) => {
-        if (!alive()) return;
-        // A preview is the free board. This hub only loads sports in the
-        // plan, so a preview is not the member board.
-        if (snap?.preview) {
-          setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null, preview: true } }));
-          return;
-        }
-        setBoards((b) => ({
-          ...b,
-          [sport.id]: { status: 'ready', raw: snap.data, updatedAt: snap.updatedAt, preview: false, lockedCount: snap.lockedCount },
-        }));
-      }).catch(() => { if (alive()) setBoards((b) => ({ ...b, [sport.id]: { status: 'error', raw: null } })); });
+        writeBoard(snap);
+      }).catch((err) => { writeBoard({ error: err }); });
       await Promise.all([board, ...extras]);
     };
     loadSportRef.current = loadSport;
-    loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
-    return () => { generation.current += 1; };
+    // One capped refresh for this hub load. A hang or a failed client
+    // download still starts the sports. Background retries reuse the token.
+    let stopped = false;
+    beginHubLoad(
+      (token) => {
+        if (token) hubTokenRef.current = token;
+        return loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
+      },
+      () => boundedAccessToken({ fresh: true }),
+      () => !stopped && alive(),
+    );
+    return () => {
+      stopped = true;
+      generation.current += 1;
+      retryTicket.current = {};
+    };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retrySport = (id) => {
     const sport = SPORTS.find((item) => item.id === id);
     if (!sport) return;
+    const started = nextSportRetry(retryTicket.current, id);
+    retryTicket.current = started.tickets;
+    const ticket = started.ticket;
     setBoards((b) => ({ ...b, [id]: { status: 'loading', raw: null } }));
-    loadSportRef.current(sport);
+    hubTokenForRetry(hubTokenRef.current, {
+      cached: () => cachedAccessToken(),
+      refresh: () => boundedAccessToken({ fresh: true }),
+    }).then((token) => {
+      if (!sportRetryStillCurrent(retryTicket.current, id, ticket)) return;
+      hubTokenRef.current = token;
+      loadSportRef.current(sport);
+    });
   };
 
   const [now, setNow] = useState(() => new Date());

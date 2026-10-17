@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
 import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js';
-import { clearMemberTierCache, lookupMemberTier, verifyAccessToken } from '../api/_memberTier.js';
+import { PROFILE_ABORT_MS, clearMemberTierCache, lookupMemberTier, verifyAccessToken } from '../api/_memberTier.js';
 import { bearerFor, installJwtSecret, signAccessToken, TEST_JWT_SECRET } from './access-token.mjs';
 
 installJwtSecret();
@@ -403,6 +403,46 @@ test('a cached KBO tier stays on the NFL and NHL preview when the profile times 
     _clearCache();
     clearMemberTierCache();
   }
+});
+
+test('a hung profile fetch aborts, the shared lookup settles, and the next request is new', async () => {
+  clearMemberTierCache();
+  assert.equal(PROFILE_ABORT_MS, 3_000);
+  let aborted = 0;
+  const hung = {
+    calls: { profiles: 0 },
+    from() {
+      const chain = {
+        select() { return chain; },
+        eq() { return chain; },
+        abortSignal(signal) {
+          signal.addEventListener('abort', () => { aborted += 1; });
+          return chain;
+        },
+        maybeSingle() {
+          hung.calls.profiles += 1;
+          return new Promise(() => {});
+        },
+      };
+      return chain;
+    },
+  };
+  const auth = `Bearer ${bearerFor('tok-fan')}`;
+  const first = lookupMemberTier(hung, auth, { budgetMs: 4_000, profileAbortMs: 40 });
+  const second = lookupMemberTier(hung, auth, { budgetMs: 4_000, profileAbortMs: 40 });
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(a, b);
+  assert.equal(a.pending, true);
+  assert.equal(a.source, 'timeout');
+  assert.equal(a.userId, 'u-fan');
+  assert.ok(aborted >= 1);
+  assert.ok(hung.calls.profiles >= 1 && hung.calls.profiles <= 2);
+  const next = profileClient(async () => ({ data: { tier: 'combined' }, error: null }));
+  const fresh = await lookupMemberTier(next, auth, { budgetMs: 400 });
+  assert.equal(fresh.source, 'profile');
+  assert.equal(fresh.tier, 'combined');
+  assert.equal(next.calls.profiles, 1);
+  clearMemberTierCache();
 });
 
 function mockRes() {
