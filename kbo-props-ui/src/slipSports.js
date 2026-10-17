@@ -44,14 +44,6 @@ function num(value) {
   return Number.isFinite(n) ? n : null
 }
 
-function firstText(...values) {
-  for (const value of values) {
-    const text = String(value ?? '').trim()
-    if (text) return text
-  }
-  return ''
-}
-
 export { isPromoLine, isStandardLine, matchImportedPick, oddsTypeOf } from './slipLines'
 
 function sportDate(timeZone) {
@@ -72,6 +64,14 @@ function kboShort(prop) {
 
 function byCg(a, b) {
   return compareSlipRows(a, b, true)
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    const text = String(value ?? '').trim()
+    if (text) return text
+  }
+  return ''
 }
 
 function slipFields(row, extra = {}) {
