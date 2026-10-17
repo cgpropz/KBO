@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { mergeTier, computeStripeAccess, metadataSignalsDiscord, tierForStripePrice, TIER_BY_PRICE } from './_stripeTier.js';
 import { reportPurchaseToX } from './_xConversions.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
+import { subscriptionDeletedClaimResult, writeTierClaim } from './_tierClaim.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -58,6 +59,7 @@ async function setTierById(userId, incoming) {
     .upsert({ id: userId, tier }, { onConflict: 'id' });
   if (error) console.error(`[webhook] upsert by ID failed for ${userId}:`, error);
   else console.log(`[webhook] ${userId}: ${current} + ${incoming} → ${tier}`);
+  if (!error) await writeTierClaim(supabase, userId, tier);
   // Discord-only sets the flag and never clears a site tier (mergeTier).
   // A Discord API failure is logged inside safeDiscordSync and does not throw.
   if (!error && incoming === 'discord') await setDiscordOnlyFlag(supabase, userId, true);
@@ -89,9 +91,16 @@ async function clearTierByCustomer(customerId) {
   if (error) console.error(`[webhook] recompute failed for ${email}:`, error);
   else console.log(`[webhook] recomputed ${email} → ${access.tier} (subscription change)`);
   if (!error) {
+    const wrote = await writeTierClaim(supabase, user.id, access.tier);
+    const failure = subscriptionDeletedClaimResult(wrote);
+    if (failure) {
+      console.error(`[webhook] tier claim failed for ${user.id}`);
+      return failure;
+    }
     await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
     await safeDiscordSync(supabase, user.id);
   }
+  return null;
 }
 
 function discordMetadata(metas) {
@@ -238,7 +247,8 @@ export default async function handler(req, res) {
   // ── customer.subscription.deleted ──────────────────────────────────────
   // Fires when a subscription is cancelled/expires. Revoke access.
   else if (event.type === 'customer.subscription.deleted') {
-    await clearTierByCustomer(obj.customer);
+    const failure = await clearTierByCustomer(obj.customer);
+    if (failure) return res.status(failure.status).json(failure.body);
   }
 
   return res.status(200).json({ received: true });

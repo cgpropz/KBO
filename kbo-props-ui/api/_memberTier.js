@@ -1,10 +1,12 @@
 import { createHmac, createPublicKey, timingSafeEqual, verify as cryptoVerify } from 'node:crypto';
+import { claimUnlocksSport } from './_tierClaim.js';
 
 // Member tier lookup that does not call auth.getUser.
 // A valid signed access token yields the user id locally (HS256 secret when
-// one is configured, otherwise the project's JWKS). The profile row is read
-// beside the board. A paid tier is remembered for five minutes and used only
-// when that read times out. A resolved non-paid tier drops the cache.
+// one is configured, otherwise the project's JWKS). A claim is trusted only
+// when it unlocks a sport. free, discord, and a missing claim read the
+// profile beside the board. A paid tier is remembered for five minutes and
+// used only when that read times out. A resolved non-paid tier drops the cache.
 // #203's handler-level recentTiers should call this helper instead of adding
 // a second cache.
 
@@ -56,6 +58,11 @@ function projectBase(env) {
 function expectedIssuer(env) {
   const base = projectBase(env);
   return base ? `${base}/auth/v1` : '';
+}
+
+function claimedTier(payload) {
+  const raw = payload?.app_metadata?.tier;
+  return typeof raw === 'string' ? raw.trim() : '';
 }
 
 function audienceOk(aud) {
@@ -274,6 +281,7 @@ export async function verifyAccessToken(authorization, options = {}) {
   return {
     userId: payload.sub.trim(),
     email: typeof payload.email === 'string' ? payload.email : '',
+    tier: claimedTier(payload),
   };
 }
 
@@ -361,6 +369,16 @@ export async function lookupMemberTier(client, authorization, options = {}) {
   const verified = options.verified || await verifyAccessToken(authorization, options);
   if (!verified?.userId) {
     return { tier: 'free', userId: null, email: '', source: 'invalid', timedOut: false, pending: false };
+  }
+  if (claimUnlocksSport(verified.tier)) {
+    return {
+      tier: verified.tier,
+      userId: verified.userId,
+      email: verified.email,
+      source: 'jwt',
+      timedOut: false,
+      pending: false,
+    };
   }
   const existing = inflightLookups.get(verified.userId);
   if (existing) return existing;

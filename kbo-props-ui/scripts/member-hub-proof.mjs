@@ -143,6 +143,36 @@ async function profileTier(id) {
   return Array.isArray(rows) ? (rows[0]?.tier || '') : ''
 }
 
+function accessTokenTier(accessToken) {
+  const segment = String(accessToken || '').split('.')[1]
+  if (!segment) return null
+  try {
+    const payload = JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'))
+    const tier = payload?.app_metadata?.tier
+    return typeof tier === 'string' ? tier.trim() : ''
+  } catch {
+    return null
+  }
+}
+
+async function clearTierClaim(id) {
+  const current = await fetch(`${supabaseUrl}/auth/v1/admin/users/${id}`, {
+    headers: serviceHeaders(),
+    signal: AbortSignal.timeout(8_000),
+  })
+  if (!current.ok) throw new Error(`tier claim read failed (${current.status} ${await errorCode(current)})`)
+  const user = await current.json()
+  const metadata = user?.app_metadata && typeof user.app_metadata === 'object' ? { ...user.app_metadata } : {}
+  delete metadata.tier
+  const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${id}`, {
+    method: 'PUT',
+    headers: serviceHeaders(),
+    body: JSON.stringify({ app_metadata: metadata }),
+    signal: AbortSignal.timeout(8_000),
+  })
+  if (!response.ok) throw new Error(`tier claim clear failed (${response.status} ${await errorCode(response)})`)
+}
+
 async function upsertTier(id) {
   const headers = {
     ...serviceHeaders(),
@@ -479,9 +509,17 @@ async function main() {
 
   try {
     userId = await createUser()
-    const tokenHash = await generateLink()
-    const session = await verify(tokenHash)
+    await clearTierClaim(userId)
+    let session = await verify(await generateLink())
+    if (session.user?.id && session.user.id !== userId) {
+      userId = session.user.id
+      await clearTierClaim(userId)
+      session = await verify(await generateLink())
+    }
     userId = session.user.id || userId
+    if (accessTokenTier(session.access_token) !== '') {
+      throw new Error('proof access token includes a tier claim')
+    }
     await upsertTier(userId)
     const bypass = await automationBypass()
     const nhl = await timedFetch('nhl_projections', { bypass, accessToken: session.access_token })
@@ -542,8 +580,11 @@ async function main() {
     }
     await writeFile(new URL('./timings.json', outDir), `${JSON.stringify(report, null, 2)}\n`)
     const previewFalse = [nhl, nfl].filter((call) => call.preview === false && call.status === 200).length
+    const paidFallback = nhl.status === 200 && nfl.status === 200 && nhl.preview === false && nfl.preview === false
     const summary = {
       coldLoads: COLD_LOADS,
+      noClaim: true,
+      paidFallback,
       previewFalse,
       cold: { nhl: { ms: nhl.ms, status: nhl.status, rows: nhl.rows, preview: nhl.preview }, nfl: { ms: nfl.ms, status: nfl.status, rows: nfl.rows, preview: nfl.preview } },
       burst: report.burst.map((hub) => ({ wallMs: hub.wallMs, nflMs: hub.nflMs, nhlMs: hub.nhlMs })),
@@ -565,7 +606,7 @@ async function main() {
     })
     summary.prodFailed = decision.prodFailed
     console.log(JSON.stringify(summary))
-    if (decision.fail) process.exitCode = 1
+    if (decision.fail || !paidFallback) process.exitCode = 1
   } finally {
     await cleanup()
   }
