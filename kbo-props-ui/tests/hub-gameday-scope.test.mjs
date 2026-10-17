@@ -41,3 +41,14 @@ test('undated rows stay; no future game leaves rows untouched', () => {
   assert.equal(nextGameday([undated], now), null)
   assert.equal(scopeToGameday([undated, tonight], null).length, 2)
 })
+
+test('NFL keeps the whole week; daily sports scope to the next gameday', async () => {
+  const { hubGamedayFor } = await import('../src/memberHub.js')
+  const sun = { start: '2026-10-18T13:00:00-04:00' }
+  const mon = { start: '2026-10-19T20:15:00-04:00' }
+  assert.equal(hubGamedayFor('nfl', [sun, mon], now), null)
+  assert.equal(scopeToGameday([sun, mon], hubGamedayFor('nfl', [sun, mon], now)).length, 2)
+  for (const sport of ['nhl', 'wnba', 'kbo', 'nba']) {
+    assert.equal(hubGamedayFor(sport, [sun, mon], now), '2026-10-18')
+  }
+})

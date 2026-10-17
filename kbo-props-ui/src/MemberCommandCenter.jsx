@@ -15,7 +15,7 @@ import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
-  nextGameday,
+  hubGamedayFor,
   scopeToGameday,
 } from './memberHub';
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
@@ -271,8 +271,8 @@ function useBoards(access, nbaOpen) {
         unavailableFromLineups(sport.id, lineups[sport.id]),
         confirmedGoalieStarters(lineups[sport.id]),
       );
-      // One slate: tomorrow's games stay off tonight's top 3, L10 and counts.
-      const gameday = nextGameday(playable, now);
+      // One slate for daily sports (NFL keeps its week): tomorrow's games stay off tonight's top 3, L10 and counts.
+      const gameday = hubGamedayFor(sport.id, playable, now);
       const all = scopeToGameday(playable, gameday);
       const shown = countPlayable(all);
       out[sport.id] = {

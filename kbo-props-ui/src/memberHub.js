@@ -607,6 +607,12 @@ export function nextGameday(items, now = new Date()) {
 
 // Keep the hub on one slate. Items with no usable start can't be placed on a
 // day and stay in; everything dated on another gameday is dropped.
+// NFL is a weekly slate (Sunday through Monday night), so it is never scoped.
+export const WEEKLY_SLATE_SPORTS = new Set(['nfl'])
+export function hubGamedayFor(sport, items, now = new Date()) {
+  return WEEKLY_SLATE_SPORTS.has(sport) ? null : nextGameday(items, now)
+}
+
 export function scopeToGameday(items, day) {
   if (!day) return items || []
   return (items || []).filter((item) => {
