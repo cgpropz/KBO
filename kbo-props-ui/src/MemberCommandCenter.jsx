@@ -262,24 +262,10 @@ function useBoards(access, nbaOpen, activeId) {
   };
 
   useEffect(() => {
-    let alive = true;
+    // Only the open sport. KBO, WNBA, NHL, and NBA (and their rosters and
+    // lineups) wait until that tab is selected. A saved choice is that tab.
     const active = SPORTS.find((sport) => sport.id === activeId);
     if (active) loadSport(active);
-    // The other leagues wait until the active board has had time to paint.
-    // Selecting one loads it immediately. Next-gameday scoping happens after
-    // the rows are built, not by dropping games out of this fetch.
-    const timers = [];
-    const idle = setTimeout(() => {
-      if (!alive) return;
-      SPORTS.forEach((sport, index) => {
-        timers.push(setTimeout(() => { if (alive) loadSport(sport); }, index * 600));
-      });
-    }, 8000);
-    return () => {
-      alive = false;
-      clearTimeout(idle);
-      timers.forEach((id) => clearTimeout(id));
-    };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [now, setNow] = useState(() => new Date());
@@ -295,7 +281,17 @@ function useBoards(access, nbaOpen, activeId) {
       return;
     }
     const b = boards[sport.id];
-    if (!b) { out[sport.id] = { status: 'loading', rows: [], all: [], games: [], count: 0, lineups: [] }; return; }
+    if (!b) {
+      out[sport.id] = {
+        status: sport.id === activeId ? 'loading' : 'idle',
+        rows: [],
+        all: [],
+        games: [],
+        count: 0,
+        lineups: [],
+      };
+      return;
+    }
     if (b.status !== 'ready') { out[sport.id] = { status: b.status, rows: [], all: [], games: [], count: 0, lineups: lineups[sport.id] || [] }; return; }
     const raw = rowsFromBoard(sport, b.raw, photos);
     const playable = playableRows(
@@ -329,6 +325,7 @@ function emptyCopy(status, sport) {
 }
 
 function sportStatus(sport, board, nbaOpen) {
+  if (board?.status === 'idle') return 'Open';
   if (!board || board.status === 'loading') return 'Loading';
   if (board.status === 'locked') return 'Locked';
   if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'Opens soon';

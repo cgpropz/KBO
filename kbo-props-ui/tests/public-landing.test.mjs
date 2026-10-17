@@ -13,6 +13,7 @@ import {
 
 const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url), 'utf8')
 const hub = readFileSync(new URL('../src/CgpropzLanding.jsx', import.meta.url), 'utf8')
+const memberHub = readFileSync(new URL('../src/MemberCommandCenter.jsx', import.meta.url), 'utf8')
 
 function log(length, value) {
   return Array.from({ length }, () => value)
@@ -80,4 +81,21 @@ test('free visitors use the public landing and paid members keep the Sports Hub'
   assert.match(hub, /if \(isPaid\)/)
   assert.match(hub, /<PublicLanding/)
   assert.equal(hub.includes('Testimonials'), false)
+})
+
+test('signed-out landing fetches only the NFL free board', () => {
+  assert.match(landing, /loadDataset\(HERO_SPORT\.ds/)
+  assert.equal(landing.includes('nfl_game_markets'), false)
+  assert.equal(landing.includes('whenVisibleOrIdle'), false)
+  assert.equal(landing.includes('sport.lineups'), false)
+  assert.equal(landing.includes('HERO_SPORT.lineups'), false)
+  assert.match(landing, /status: 'locked'/)
+  assert.match(landing, /publicSwitcherRows\(boards\.nfl\?\.rows \|\| \[\], 3\)/)
+})
+
+test('the member hub loads the open sport and does not prefetch the rest', () => {
+  assert.equal(memberHub.includes('8000'), false)
+  assert.equal(/SPORTS\.forEach\(\(sport, index\)/.test(memberHub), false)
+  assert.match(memberHub, /status: sport\.id === activeId \? 'loading' : 'idle'/)
+  assert.match(memberHub, /if \(active\) loadSport\(active\)/)
 })
