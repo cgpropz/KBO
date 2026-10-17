@@ -124,23 +124,25 @@ test('L10, headshot, and logo fallbacks stay on the row', () => {
   const nfl = 'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/abc123'
   const teamPhoto = 'https://static.prizepicks.com/images/teams/nfl/NFL_team_x/19.webp'
   const manual = 'https://static.prizepicks.com/images/manual/Baseball-Asset.webp'
+  const kim = 'https://static.prizepicks.com/images/manual/Kim Do-yeong.png'
   const naver = 'https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/person/middle/2026/79365.jpg'
   const wnba = 'https://cdn.wnba.com/headshots/wnba/latest/1040x760/1631007.png'
   const wnbaPp = 'https://static.prizepicks.com/images/players/WNBA/Veronica_Burton_WNBA_player_abc.webp'
   assert.equal(headshotFor('nhl', { imageUrl: photo, playerId: '8471214' }), photo)
   assert.match(headshotFor('nhl', { playerId: '8471214' }), /8471214/)
   assert.equal(headshotFor('nfl', { ppImageUrl: photo, imageUrl: espn }), photo)
-  assert.equal(headshotFor('nfl', { ppImageUrl: teamPhoto, imageUrl: nfl }), 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_200,c_limit/league/abc123')
+  assert.equal(headshotFor('nfl', { ppImageUrl: teamPhoto, imageUrl: nfl }), nfl)
   assert.equal(headshotFor('nfl', { imageUrl: 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_80/league/abc123' }), 'https://static.www.nfl.com/image/upload/f_auto,q_auto,w_80/league/abc123')
   assert.equal(headshotFor('nfl', { imageUrl: espn }), espn)
   assert.equal(headshotFor('nfl', { ppImageUrl: teamPhoto }), '')
+  assert.equal(headshotFor('kbo', { ppImageUrl: kim, imageUrl: naver }), kim)
   assert.equal(headshotFor('kbo', { ppImageUrl: manual, imageUrl: naver }), naver)
   assert.equal(headshotFor('kbo', { ppImageUrl: manual }), '')
   assert.equal(headshotFor('wnba', { ppImageUrl: wnbaPp, image: wnba }), wnbaPp)
   assert.equal(headshotFor('wnba', { image: wnba }), wnba)
   assert.equal(headshotFor('nba', { image: 'https://a.espncdn.com/i/headshots/nba/players/full/2.png' }), 'https://a.espncdn.com/i/headshots/nba/players/full/2.png')
   const sized = markSources('nfl', { imageUrl: nfl, team: 'DEN' }, 36)
-  assert.match(sized.head, /\/api\/img\?/)
+  assert.match(decodeURIComponent(sized.head), /c_thumb,w_200/)
   assert.match(decodeURIComponent(sized.logo), /nfl\/500\/den/)
   const logoOnly = markSources('nfl', { team: 'DEN', ppImageUrl: teamPhoto }, 36)
   assert.equal(logoOnly.head, '')

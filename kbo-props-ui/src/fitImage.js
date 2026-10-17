@@ -11,19 +11,53 @@ export const IMAGE_WIDTHS = [48, 64, 80, 96, 128, 160]
 // board row still carries an ESPN, league, or team CDN headshot.
 export const PRIZEPICKS_HEADSHOT = /^https:\/\/static\.prizepicks\.com\/images\/players\/[A-Za-z0-9]+\/[A-Za-z0-9_-]+\.webp$/
 
+// Hand-uploaded PrizePicks player art. Filenames keep spaces and hyphens
+// (Kim Do-yeong.png). The query parser hands the proxy a decoded space, and
+// a client may also send the same name already encoded as %20.
+export const PRIZEPICKS_MANUAL = /^https:\/\/static\.prizepicks\.com\/images\/manual\/[A-Za-z0-9._~% -]+\.png$/
+
+const NFL_IMAGE = /^https:\/\/static\.www\.nfl\.com\/image\/(private|upload)\/(.+)$/i
+
 const REMOTE_HOSTS = [
   /^https:\/\/a\.espncdn\.com\/i\/(?:teamlogos|headshots)\/[a-z0-9/_-]+\.(?:png|jpe?g|webp)$/i,
   /^https:\/\/assets\.nhle\.com\/mugs\/nhl\/[a-z0-9]+\/\d+\.png$/i,
   /^https:\/\/6ptotvmi5753\.edge\.naverncp\.com\/KBO_IMAGE\/person\/[a-z0-9/_-]+\.(?:png|jpe?g)$/i,
   /^https:\/\/mykbostats\.com\/system\/players\/photos\/\d{3}\/\d{3}\/\d{3}\/original\/\d+\.jpe?g$/i,
   PRIZEPICKS_HEADSHOT,
+  PRIZEPICKS_MANUAL,
   /^https:\/\/static\.www\.nfl\.com\/image\/(?:private|upload)\/[a-z0-9,_./=-]+$/i,
   /^https:\/\/cdn\.wnba\.com\/headshots\/wnba\/latest\/\d+x\d+\/\d+\.png$/i,
 ]
 
+function safeImageUrl(url) {
+  return typeof url === 'string' && !url.includes('..') && !url.includes('\\') && !url.includes('@')
+}
+
 export function isPrizePicksHeadshot(url) {
-  if (typeof url !== 'string' || url.includes('..') || url.includes('\\') || url.includes('@')) return false
+  if (!safeImageUrl(url)) return false
   return PRIZEPICKS_HEADSHOT.test(url)
+}
+
+export function manualPlayerPng(url) {
+  const value = String(url || '').trim()
+  if (!safeImageUrl(value) || !PRIZEPICKS_MANUAL.test(value)) return ''
+  return value
+}
+
+// nfl.com originals are about 3400×2450, past the proxy's pixel cap. Ask for a
+// 200px thumbnail first. Spaces are not legal in fetch(), so encode them.
+export function fetchableImageUrl(url) {
+  let value = String(url || '').trim().replace(/ /g, '%20')
+  if (!value) return ''
+  const match = value.match(NFL_IMAGE)
+  if (!match) return value
+  const [, kind, rest] = match
+  if (/(^|[/,])(?:w_\d+|c_thumb)(?:,|\/|$)/.test(rest)) return value
+  const parts = rest.split('/')
+  const first = parts[0]
+  if (first.includes(',') || /^(?:[fcgwqe]_|e_)/i.test(first)) parts[0] = `${first},c_thumb,w_200`
+  else parts.unshift('c_thumb,w_200')
+  return `https://static.www.nfl.com/image/${kind}/${parts.join('/')}`
 }
 
 export function snapWidth(cssPx) {
@@ -55,7 +89,8 @@ export function fitImage(url, cssPx = 40) {
     const prefix = url.startsWith('/') ? '/team-logos/' : 'team-logos/'
     return `${prefix}${local[1].toLowerCase()}.webp`
   }
-  if (!isRemoteHeadshotOrLogo(url)) return url
+  const next = fetchableImageUrl(url)
+  if (!isRemoteHeadshotOrLogo(next)) return url
   const width = snapWidth(cssPx)
-  return `/api/img?src=${encodeURIComponent(url)}&w=${width}`
+  return `/api/img?src=${encodeURIComponent(next)}&w=${width}`
 }

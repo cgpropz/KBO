@@ -3,6 +3,7 @@
 // Scores match the sport boards: KBO cg_projection (falls back to rating),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
+import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
@@ -264,6 +265,12 @@ function availabilityLabel(source) {
   return null
 }
 
+function kboCardImage(card, named) {
+  const fromCard = String(card?.image_url || card?.ppImageUrl || '').trim()
+  if (manualPlayerPng(fromCard)) return fromCard
+  return named || null
+}
+
 export function kboHubRows(data, photos = {}) {
   const lookup = {}
   for (const [name, url] of Object.entries(photos || {})) lookup[normalizePlayerName(name)] = url
@@ -288,7 +295,7 @@ export function kboHubRows(data, photos = {}) {
         projection: prop.projection ?? prop.avg,
         side,
         score,
-        image: photos?.[card.name] || lookup[normalizePlayerName(card.name)] || null,
+        image: kboCardImage(card, photos?.[card.name] || lookup[normalizePlayerName(card.name)]),
         ppImageUrl: card.image_url || card.ppImageUrl || null,
         start: card.start_time || card.game_time || null,
         recent,
@@ -402,8 +409,8 @@ function basketballRows(data, scoreFn, roster, sport) {
         projection: prop.projection,
         side,
         score: num(scoreFn(prop)),
-        image: imageFor(player) || player.image || null,
-        ppImageUrl: player.ppImageUrl || null,
+        image: imageFor(player) || player.image || player.imageUrl || null,
+        ppImageUrl: player.ppImageUrl || player.image_url || null,
         start: prop.start_time || prop.gameDate || null,
         recent,
         ...l10ForRow(recent, prop.line, side, pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
