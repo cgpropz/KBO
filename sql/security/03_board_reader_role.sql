@@ -5,10 +5,12 @@
 -- to mark PrizePicks lines that vanished from a good fetch. anon is revoked on
 -- these paid tables, and the service role is too broad for a read.
 --
--- board_reader: LOGIN, no inheritance, no BYPASSRLS, SELECT on exactly
+-- board_reader: LOGIN, no inheritance, no BYPASSRLS, SELECT on
 -- nhl_projections and nfl_projections, plus one SELECT-only RLS policy per
 -- table scoped to this role. Its password is set out of band (never committed)
 -- and stored only as the GitHub Actions secret BOARD_READER_DB_URL.
+-- Also: 05_board_reader_news_log.sql grants SELECT on public.news_log;
+-- 06_board_reader_set_option.sql enables SET ROLE board_reader from postgres.
 -- ============================================================================
 
 do $$
