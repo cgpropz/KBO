@@ -470,7 +470,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate, initialP
         <label className="hub-matchup-filter">
           <span>Matchup:</span>
           <select value={matchup} onChange={(event) => { setMatchup(event.target.value); setFocus(null); }} disabled={!games.length}>
-            <option value="">{games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
+            <option value="">{state.status === 'loading' ? 'Loading' : games.length ? `All ${games.length} game${games.length === 1 ? '' : 's'}` : 'No games'}</option>
             {games.map((game) => (
               <option key={gameKey(game)} value={gameKey(game)}>
                 {game.opponent ? `${game.team} vs ${game.opponent}` : game.team}
@@ -559,7 +559,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate, initialP
                     <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
                   </button>
                 )) : null}
-                {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (
+                {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && state.status !== 'loading' && (
                   <button type="button" className="hub-open" onClick={() => onEnterSport(selected.id, { view: 'board' })}>
                     Open full board ({state.count} props) →
                   </button>
