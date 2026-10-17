@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import { fitImage } from '../fitImage.js'
+import { nbaLogoUrl } from './nbaPropLines'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 
 const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
 const MINUTE_TABS = [
@@ -189,7 +192,7 @@ export default function NbaEdge() {
         <h1 className="edge-title">NBA PrizePicks Edge</h1>
         <BoardStatus sport="nba" updatedAt={updatedAt} />
         <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
-          Live PrizePicks lines{activeSlateDate ? ` for ${activeSlateDate}` : ''}. Projection is the last 3/7/15 per-minute rates (0.5/0.3/0.2) times last-10 minutes times a PG/SG/SF/PF/C DVP factor clamped to 0.85–1.15. Edge is (projection / line) × 50.
+          Live model / DvP adjusted{activeSlateDate ? ` · ${activeSlateDate}` : ''}.
         </p>
       </div>
 
@@ -287,7 +290,7 @@ export default function NbaEdge() {
                   <td>{card.player.position || '—'}</td>
                   <td>{card.stat}</td>
                   <td>{card.line}</td>
-                  <td>{card.opponent ? `vs ${card.opponent}` : (card.versus || '—')}</td>
+                  <td>{card.opponent ? opponentLabel(card.opponent) : (card.versus || '—')}</td>
                   <td className={formatProjection(card.projection) == null ? 'nba-edge-pending' : ''}>
                     {formatProjection(card.projection) ?? 'pending'}
                   </td>
@@ -308,7 +311,7 @@ export default function NbaEdge() {
             <div key={`skeleton-${index}`} className="edge-card nba-edge-card" style={{ minHeight: 180, opacity: 0.55 }} />
           ))}
           {!loading && cards.map((card) => {
-            const matchupTag = card.opponent ? `vs ${card.opponent}` : (card.versus || 'vs —')
+            const matchupTag = card.opponent ? opponentLabel(card.opponent) : (card.versus || 'vs —')
             const initials = card.player.name?.split(' ').map((word) => word[0]).join('').slice(0, 2) || '?'
             return (
               <article key={card.key} className="edge-card nba-edge-card">
@@ -331,7 +334,7 @@ export default function NbaEdge() {
                   <div>
                     <p className="edge-name">{card.player.name}</p>
                     <div className="edge-tags">
-                      <span className="edge-team-tag" style={{ background: card.player.teamColor || '#1f2937' }}>{card.player.team}</span>
+                      <span className="edge-team-tag" style={{ background: card.player.teamColor || '#1f2937' }}><CardTeamLogo team={card.player.team} src={nbaLogoUrl(card.player.team) ? fitImage(nbaLogoUrl(card.player.team), 16) : ''} />{card.player.team}</span>
                       <span className="edge-vs-tag" title={card.versus || matchupTag}>{matchupTag}</span>
                       {card.player.position ? <span className="edge-vs-tag">{card.player.position}</span> : null}
                     </div>

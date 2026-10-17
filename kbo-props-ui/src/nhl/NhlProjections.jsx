@@ -5,6 +5,9 @@ import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
 import { fitImage } from '../fitImage.js'
+import { teamLogoUrl } from './nhlTeams'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 import { cgScore, lineMatchesStat } from '../cgScore'
 import { prepareBoardRows } from './pointsGate.js'
 import { BoardLoadError } from '../BoardLoadError'
@@ -38,7 +41,7 @@ function Card({ item, onSelectPlayer }) {
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
         <div>
           <h2 className="nfl-player-link" onClick={() => onSelectPlayer(item)}>{item.player}</h2>
-          <p><b>{item.position}</b><span>{item.team}</span><em>vs {item.opponent}</em></p>
+          <p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p>
         </div>
       </div>
       <div className="nfl-card-prop">{item.prop}</div>

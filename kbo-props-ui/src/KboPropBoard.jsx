@@ -19,6 +19,9 @@ import { usePhoneBoard } from './usePhoneBoard'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
 import { previewLockedCount, useFullBoardRefresh } from './useFullBoardRefresh'
 import { BoardLoadError } from './BoardLoadError'
+import { opponentLabel } from './cardMark'
+import { CardTeamLogo } from './CardTeamLogo'
+import { kboLogoUrl } from './slipBoardModel.js'
 
 const FREE_ROW_LIMIT = 3
 const SORT_OPTIONS = ['CG Score', 'L10 Hit Rate', 'Full Hit Rate', 'Player Name']
@@ -176,7 +179,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
               <div className="kbo-avatar">{photo ? <img src={fitImage(photo, 42)} alt="" loading="lazy" /> : initials(card.name)}</div>
               <div>
                 <strong>{card.name}</strong>
-                <small>{card.team}, {card.type}</small>
+                <small><CardTeamLogo team={card.team} src={kboLogoUrl(card.team)} />{card.team}, {card.type}</small>
                 <b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b>
               </div>
             </div>
@@ -195,7 +198,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
           />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={hitPills} /> },
-        { node: <div className="kbo-matchup"><span>{card.team}</span><i>vs</i><span>{card.opponent}</span></div> },
+        { node: <div className="kbo-matchup">{card.opponent ? <span className="board-vs">{opponentLabel(card.opponent)}</span> : null}</div> },
       ]}
       after={(
         <>

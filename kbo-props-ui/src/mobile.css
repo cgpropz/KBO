@@ -22,6 +22,30 @@
   text-align: center;
 }
 
+.board-team-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.nfl-lines-tag,
+.wnba-lines-tag,
+.kbo-player-cell small,
+.edge-team-tag,
+.team-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.board-vs {
+  color: #78918a;
+  font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .cg-menu-btn { display: none; }
 .cg-page-menu { display: contents; }
 .pl-header > .sport-switcher,

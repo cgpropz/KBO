@@ -8,6 +8,9 @@ import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
 import { BoardLoadError } from './BoardLoadError';
+import { opponentLabel } from './cardMark';
+import { CardTeamLogo } from './CardTeamLogo';
+import { kboLogoUrl } from './slipBoardModel.js';
 
 const TEAMS = {
   Doosan:  '#9595d3',
@@ -815,13 +818,13 @@ function BatterProjections() {
                         title="Show last 10 game log"
                       >
                         <span>{p.name}</span>
-                        <span className="bp-mobile-matchup">{p.team} vs {p.opponent}</span>
+                        <span className="bp-mobile-matchup"><CardTeamLogo team={p.team} src={kboLogoUrl(p.team)} />{p.team} {opponentLabel(p.opponent)}</span>
                       </button>
                     </div>
                   </td>
-                  <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}>{p.team}</span></td>
+                  <td><span className="team-text" style={{ color: TEAMS[p.team] || '#999' }}><CardTeamLogo team={p.team} src={kboLogoUrl(p.team)} />{p.team}</span></td>
                   <td className={`col-center mono ${!p.batter_hand || p.batter_hand === 'UNK' ? 'cell-na' : ''}`}>{p.batter_hand && p.batter_hand !== 'UNK' ? p.batter_hand : 'UNK'}</td>
-                  <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{p.opponent}</span></td>
+                  <td><span className="team-text" style={{ color: TEAMS[p.opponent] || '#999' }}>{opponentLabel(p.opponent)}</span></td>
                   <td className="col-player">{p.opp_pitcher || '—'}</td>
                   <td className={`col-center mono ${!p.opp_pitcher_hand || p.opp_pitcher_hand === 'UNK' ? 'cell-na' : ''}`}>{p.opp_pitcher_hand && p.opp_pitcher_hand !== 'UNK' ? p.opp_pitcher_hand : 'UNK'}</td>
                   {(() => {
@@ -948,15 +951,6 @@ function BatterProjections() {
           </div>
         </div>
 
-        <div className="bp-formula-bar">
-          <span className="bp-formula-icon">ƒ</span>
-          {propFilter === 'Total Bases'
-            ? <code>TB/G × (Opp Team TB/G ÷ League Avg TB/G)</code>
-            : propFilter === 'Fantasy Score'
-              ? <code>FS = 3×1B + 5×2B + 8×3B + 10×HR + 2×R + 2×RBI + 2×BB + 2×HBP + 2×SB</code>
-              : <code>HRR/G × (Opp Team HRR/G ÷ League Avg HRR/G)</code>
-          }
-        </div>
       </main>
     </div>
   );

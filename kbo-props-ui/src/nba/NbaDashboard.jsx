@@ -25,6 +25,8 @@ import {
   nbaLogoUrl,
 } from './nbaPropLines'
 import { fitImage } from '../fitImage.js'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
 
 const FREE_ROW_LIMIT = 3
 
@@ -72,12 +74,6 @@ function hitColor(pct) {
   const lerp = (a, b, t) => Math.round(a + (b - a) * Math.max(0, Math.min(1, t)))
   const [start, end, t] = pct <= 50 ? [from, mid, pct / 50] : [mid, to, (pct - 50) / 50]
   return `rgb(${lerp(start[0], end[0], t)},${lerp(start[1], end[1], t)},${lerp(start[2], end[2], t)})`
-}
-
-function TeamLogo({ team, className }) {
-  const url = nbaLogoUrl(team)
-  if (!url) return null
-  return <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
 }
 
 function FilterIcon() {
@@ -129,7 +125,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
-              <span className="wnba-lines-tag">{item.team}{item.position ? `, ${item.position}` : ''}</span>
+              <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
             </div>
           </div>
@@ -142,7 +138,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
         { node: (
           <div className="wnba-lines-matchup">
-            <TeamLogo team={item.opponent} className="wnba-lines-matchup-logo" />
+            {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
             <span className={`wnba-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
           </div>
         ) },

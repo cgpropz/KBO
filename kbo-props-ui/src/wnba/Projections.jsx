@@ -7,6 +7,9 @@ import ProjectionTable from './components/ProjectionTable'
 import L10HitRateChart from './components/L10HitRateChart'
 import { slateDateLabel } from '../wnbaBoard'
 import { fitImage } from '../fitImage.js'
+import { opponentLabel } from '../cardMark'
+import { CardTeamLogo } from '../CardTeamLogo'
+import { wnbaLogoUrl } from '../slipBoardModel.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const MINUTE_TABS = [
@@ -282,9 +285,7 @@ export default function Projections({ onSelectPlayer }) {
       <div style={{ marginBottom: 18, position: 'relative' }}>
         <h1 className="edge-title">WNBA PrizePicks Edge</h1>
         <BoardStatus sport="wnba" updatedAt={updatedAt} />
-        <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>
-          Formula: L3 x 0.5 + L7 x 0.3 + L15 x 0.2, then multiplied by expected minutes and DVP
-        </p>
+        <p style={{ margin: '6px 0 0', color: '#8b94a9', fontSize: 12 }}>Live model / DvP adjusted</p>
       </div>
 
       <div className="edge-controls" style={{ marginBottom: 18 }}>
@@ -375,7 +376,7 @@ export default function Projections({ onSelectPlayer }) {
 
           {!loading && cards.map(card => {
             const { player, line, standardLine, projection, stat, score, dvpFactor, spread, opponent, versus, recentGames, sharpOdds, sharpSide } = card
-            const matchupTag = opponent ? `vs ${opponent}` : (versus || 'vs —')
+            const matchupTag = opponent ? opponentLabel(opponent) : (versus || 'vs —')
             return (
               <article
                 key={card.key}
@@ -408,7 +409,7 @@ export default function Projections({ onSelectPlayer }) {
                   <div>
                     <p className="edge-name">{player.name}</p>
                     <div className="edge-tags">
-                      <span className="edge-team-tag">{player.team}</span>
+                      <span className="edge-team-tag"><CardTeamLogo team={player.team} src={wnbaLogoUrl(player.team) ? fitImage(wnbaLogoUrl(player.team), 16) : ''} />{player.team}</span>
                       <span className="edge-vs-tag" title={versus || matchupTag}>{matchupTag}</span>
                     </div>
                   </div>
@@ -454,7 +455,6 @@ export default function Projections({ onSelectPlayer }) {
 
       <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
         {[
-          { color: '#7efc6a', label: 'Score = (Projection / Line) × 50' },
           { color: '#38bdf8', label: `${lineType} PrizePicks feed active` },
           { color: '#facc15', label: 'DVP uses separate Guard, Forward, Center opponent files' },
         ].map(({ color, label }) => (
