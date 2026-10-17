@@ -21,12 +21,12 @@ test('an expected starter listed again as inactive stays out of the out column',
   assert.deepEqual(out.map((player) => player.name), ['Tina Charles'])
 })
 
-test('a starter name does not hide that player OUT row', () => {
+test('a starter who also has an OUT row shows only under out', () => {
   const { expected, out } = wnbaLineupColumns({
     players: [{ name: 'Naz Hillmon', pos: 'F', status: 'expected' }],
     inactive: [{ name: 'Naz Hillmon', pos: 'F', status: 'out' }],
   })
-  assert.deepEqual(expected.map((player) => player.name), ['Naz Hillmon'])
+  assert.deepEqual(expected.map((player) => player.name), [])
   assert.deepEqual(out.map((player) => [player.name, player.status]), [['Naz Hillmon', 'out']])
 })
 
