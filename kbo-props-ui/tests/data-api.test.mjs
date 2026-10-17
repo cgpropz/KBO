@@ -179,7 +179,8 @@ test('member snapshots and signed-in previews are not edge cached', async () => 
   assert.equal(paid.headers['cache-control'], PRIVATE_DATA_CACHE)
   const authedFree = await call('prizepicks_props', 'tok-free')
   assert.equal(authedFree.body.preview, true)
-  assert.equal(authedFree.headers['cache-control'], PRIVATE_DATA_CACHE)
+  // A preview to a signed-in caller may be a lookup blip; the browser must not keep it.
+  assert.equal(authedFree.headers['cache-control'], 'private, no-store, max-age=0')
   const publicRankings = await call('pitcher_rankings')
   assert.equal(publicRankings.body.preview, false)
   assert.equal(publicRankings.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300')
