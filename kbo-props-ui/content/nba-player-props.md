@@ -128,5 +128,5 @@ SOURCES (accessed Fri Oct 16, 2026; 1 lookup used of 5)
   https://cdn.nba.com/manage/2026/08/2026-27-NBA-Regular-Season-Schedule-By-Date.pdf
 - AP News 2026-27 schedule by date: cross-check of Oct 20-21 ET times.
   https://apnews.com/article/los-angeles-lakers-dallas-los-angeles-clippers-sacramento-memphis-8f39af2f0d87d11bbe75ea4dd438b33f
-- Board QA README, '## NBA' (verified 2026-10-16 ~12:07 PM ET): no homepage free top 3; hit pills L5/L10/L20/H2H/Season (L10 default sort); standard/demon/goblin tabs; 12 standard stats, demon adds Double-Double/Triple-Double; board gated until Oct 20. Fantasy Score deliberately not mentioned. Prop counts deliberately not cited.
+- Superseded Oct 17, 2026: all CGPropz boards show standard lines only.
 -->

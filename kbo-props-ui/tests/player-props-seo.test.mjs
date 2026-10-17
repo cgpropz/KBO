@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { appBoardPath } from '../src/appSport.js'
 import { buildResultDays, discoverSummaryFiles, renderKboPage, sitemapEntries } from '../scripts/kboSeoPage.mjs'
-import { renderNbaPlayerPropsPage } from '../scripts/publicPages.mjs'
+import { renderNbaPlayerPropsPage, renderSportPages } from '../scripts/publicPages.mjs'
 import { organizationNode } from '../scripts/seoShared.mjs'
 
 const memoryRoot = fileURLToPath(new URL('../../memory/kbo', import.meta.url))
@@ -126,6 +126,31 @@ test('KBO page keeps the playoff guide and leaves the results table off', () => 
   const source = readFileSync(fileURLToPath(new URL('../content/kbo-player-props.md', import.meta.url)), 'utf8')
   assert.equal(source.includes('{{QA: not verified in ledger}}'), false)
   assert.equal(html.includes('{{'), false)
+})
+
+test('NFL, NHL, and WNBA pages call a higher score a gap, not a model edge', () => {
+  const sentence = "The further the score is from 50, the bigger the gap between projection and line. Above 50 leans over, below 50 leans under. It isn't a win probability."
+  const opening = "CG Score compares the CGPropz projection to the line. The board also shows DVP and recent hit rates as matchup and form context."
+  const pages = renderSportPages().filter((page) =>
+    ['/nfl-player-props', '/nhl-player-props', '/wnba-player-props'].includes(page.path),
+  )
+  assert.equal(pages.length, 3)
+  for (const page of pages) {
+    const built = readFileSync(fileURLToPath(new URL(`../public${page.path}.html`, import.meta.url)), 'utf8')
+    for (const html of [page.html, built]) {
+      assert.equal(html.includes(opening), true, page.path)
+      assert.equal(html.includes(sentence), true, page.path)
+      assert.equal(html.includes('A higher score means a bigger gap'), false, page.path)
+      assert.equal(html.includes('bigger model edge'), false, page.path)
+      assert.equal(html.includes('adjusted for matchup (DvP) and recent form'), false, page.path)
+    }
+    const data = graph(page.html)
+    const faq = data['@graph'].find((node) => node['@type'] === 'FAQPage')
+    const answer = faq.mainEntity.find((item) => item.name === 'What does CG Score mean?').acceptedAnswer.text
+    const visible = visibleFaqs(page.html).find((item) => item.q === 'What does CG Score mean?')
+    assert.equal(visible.a, answer, page.path)
+    assert.equal(answer.includes(sentence), true, page.path)
+  }
 })
 
 function count(html, token) {

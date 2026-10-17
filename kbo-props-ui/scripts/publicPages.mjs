@@ -43,7 +43,7 @@ import {
 
 const SCORE_FAQ = {
   q: 'What does CG Score mean?',
-  a: "CG Score ranks every prop by how strongly our model's projection disagrees with the line, adjusted for matchup (DvP) and recent form. Higher score = bigger model edge. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.",
+  a: "CG Score compares the CGPropz projection to the line. The board also shows DVP and recent hit rates as matchup and form context. The further the score is from 50, the bigger the gap between projection and line. Above 50 leans over, below 50 leans under. It isn't a win probability. A+ through C grades are based on the score. It's a ranking tool, not a guarantee. 21+ · Play responsibly · Entertainment only.",
 };
 
 const AFFILIATION_FAQ = {

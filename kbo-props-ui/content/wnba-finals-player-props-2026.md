@@ -207,7 +207,7 @@ SOURCES (fetched/searched Sun Oct 11, 2026; schedule still {{CONFIRM SCHEDULE}} 
   https://www.tsn.ca/wnba/article/a-first-time-wnba-champion-awaits-as-valkyries-face-dream-in-finals/
 - NBC Sports and Sporting News 2026 playoff schedule pages: cross-check of ET times and venues.
 - Board fields (L10 / season / H2H hit rate, CG Score, DVP): CGPropz WNBA board UI (site repo src/wnba/Dashboard.jsx sort options). Not a stat source.
-- Demon/goblin lines on the WNBA board: verified by Board QA (relayed Oct 11, 2:27 PM ET).
+- Superseded Oct 17, 2026: all CGPropz boards show standard lines only.
 - WNBA Game 1 free top 3: NOT filled on purpose; can change before lock (Oct 17).
 - WNBA free top 3 is the top three on the full board. 'Points - 1st 3 Minutes' props can appear in the free preview.
 -->
