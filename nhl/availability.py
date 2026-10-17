@@ -199,10 +199,42 @@ def news_out_status(details) -> str | None:
         return "OUT"
     if "week to week" in text or "week-to-week" in text:
         return "WEEK-TO-WEEK"
-    # "is out of the protocol" and "is out of the walking boot" are not outs.
-    if re.search(r"\bis out\b(?!\s+of\b)", text):
+    if _is_out(text):
         return "OUT"
     return None
+
+
+# Tails of "is out of …" that still mean the player will not dress.
+# "the protocol" and "the walking boot" are left off on purpose.
+_OUT_OF_ALLOW = (
+    "the lineup",
+    "action",
+    "tonight's game",
+)
+
+
+def _is_out(text: str) -> bool:
+    """Whether an "is out" clause means the player will not dress.
+
+    Bare "is out" and "is out tonight" count. So do "is out of the lineup",
+    "is out of action", and "is out of tonight's game". "is out of the
+    protocol" and "is out of the walking boot" do not.
+    """
+    normalized = str(text or "").replace("\u2019", "'").replace("\u2018", "'")
+    cursor = 0
+    while cursor < len(normalized):
+        match = re.search(r"\bis out\b", normalized[cursor:])
+        if not match:
+            return False
+        rest = normalized[cursor + match.end():]
+        of_match = re.match(r"\s+of\b\s*([^.,;]*)", rest)
+        if of_match is None:
+            return True
+        tail = " ".join(of_match.group(1).split())
+        if any(re.match(rf"{re.escape(phrase)}\b", tail) for phrase in _OUT_OF_ALLOW):
+            return True
+        cursor += match.end()
+    return False
 
 
 def _out_weekdays(details) -> tuple[str, ...]:
