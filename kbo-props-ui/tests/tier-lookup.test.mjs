@@ -445,6 +445,100 @@ test('a hung profile fetch aborts, the shared lookup settles, and the next reque
   clearMemberTierCache();
 });
 
+test('only a claim that unlocks a sport is trusted; free, discord, and a missing claim read the profile', async () => {
+  clearMemberTierCache();
+  const hanging = profileClient(() => new Promise(() => {}));
+  const paid = await lookupMemberTier(
+    hanging,
+    `Bearer ${bearerFor('tok-fan', { app_metadata: { provider: 'email', tier: 'combined' } })}`,
+    { budgetMs: 400, profileAbortMs: 40 },
+  );
+  assert.equal(paid.tier, 'combined');
+  assert.equal(paid.source, 'jwt');
+  assert.equal(paid.pending, false);
+  assert.equal(hanging.calls.profiles, 0);
+
+  for (const tier of ['kbo', 'wnba', 'monthly']) {
+    const sport = await lookupMemberTier(
+      hanging,
+      `Bearer ${bearerFor('tok-fan', { app_metadata: { tier } })}`,
+      { budgetMs: 400, profileAbortMs: 40 },
+    );
+    assert.equal(sport.source, 'jwt', tier);
+    assert.equal(sport.tier, tier);
+  }
+  assert.equal(hanging.calls.profiles, 0);
+
+  const profile = profileClient(async () => ({ data: { tier: 'combined' }, error: null }));
+  const freeClaim = await lookupMemberTier(
+    profile,
+    `Bearer ${bearerFor('tok-fan', { app_metadata: { tier: 'free' } })}`,
+    { budgetMs: 400 },
+  );
+  assert.equal(freeClaim.source, 'profile');
+  assert.equal(freeClaim.tier, 'combined');
+  assert.equal(profile.calls.profiles, 1);
+
+  const discordProfile = profileClient(async () => ({ data: { tier: 'kbo' }, error: null }));
+  const discordClaim = await lookupMemberTier(
+    discordProfile,
+    `Bearer ${bearerFor('tok-fan', { app_metadata: { tier: 'discord' } })}`,
+    { budgetMs: 400 },
+  );
+  assert.equal(discordClaim.source, 'profile');
+  assert.equal(discordClaim.tier, 'kbo');
+  assert.equal(discordProfile.calls.profiles, 1);
+
+  const missing = profileClient(async () => ({ data: { tier: 'kbo' }, error: null }));
+  const fallback = await lookupMemberTier(missing, `Bearer ${bearerFor('tok-kbo')}`, { budgetMs: 400 });
+  assert.equal(fallback.source, 'profile');
+  assert.equal(fallback.tier, 'kbo');
+  assert.equal(missing.calls.profiles, 1);
+
+  clearMemberTierCache();
+  const freeHung = profileClient(() => new Promise(() => {}));
+  const hungFree = await lookupMemberTier(
+    freeHung,
+    `Bearer ${bearerFor('tok-fan', { app_metadata: { tier: 'free' } })}`,
+    { budgetMs: 400, profileAbortMs: 40 },
+  );
+  assert.equal(hungFree.source, 'timeout');
+  assert.equal(hungFree.pending, true);
+  assert.ok(freeHung.calls.profiles >= 1);
+
+  const forged = signAccessToken({
+    aud: 'authenticated',
+    role: 'authenticated',
+    sub: 'u-fan',
+    email: 'fan@example.com',
+    exp: Math.floor(Date.now() / 1000) + 600,
+    app_metadata: { tier: 'owner' },
+  }, 'wrong-secret');
+  const rejected = await lookupMemberTier(hanging, `Bearer ${forged}`, { budgetMs: 400, profileAbortMs: 40 });
+  assert.equal(rejected.source, 'invalid');
+  assert.equal(hanging.calls.profiles, 0);
+
+  const prev = { ...timeouts };
+  _setTimeouts({ tierLookupMs: 400 });
+  try {
+    _clearCache();
+    const res = mockRes();
+    await handleDataRequest(
+      { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: `Bearer ${bearerFor('tok-fan', { app_metadata: { tier: 'combined' } })}` } },
+      res,
+      hanging,
+    );
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.preview, false);
+    assert.equal(res.body.tier, 'combined');
+    assert.equal(hanging.calls.profiles, 0);
+  } finally {
+    _setTimeouts(prev);
+    _clearCache();
+    clearMemberTierCache();
+  }
+});
+
 function mockRes() {
   return {
     statusCode: 200,

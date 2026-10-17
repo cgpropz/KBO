@@ -1,0 +1,43 @@
+name: Backfill tier claim
+
+# Copy paid user_profiles.tier values into the access-token app_metadata.
+# Paid means the tier unlocks a sport. free and discord are skipped.
+# Code Green approves this. Dispatch it only between midnight and 6 AM
+# America/New_York, after the JWT tier change is deployed. It does not run
+# on pull requests. The service key is an env var and is not printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Count users that need a claim and do not write
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse outside midnight to 6 AM ET
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          if [ "$hour" -ge 6 ]; then
+            echo "backfill runs only between midnight and 6 AM America/New_York"
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Backfill app_metadata.tier
+        working-directory: kbo-props-ui
+        run: node scripts/backfill-tier-claim.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}

@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { computeStripeAccess } from './_stripeTier.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
+import { profileTierClaim, writeTierClaim } from './_tierClaim.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -53,6 +54,7 @@ export default async function handler(req, res) {
   // Discord-only falls through: an All-Access purchase can upgrade it, and a
   // lapsed Discord-only plan can return to free.
   if (currentTier && currentTier !== 'free' && currentTier !== 'discord') {
+    await writeTierClaim(supabase, user.id, currentTier);
     await safeDiscordSync(supabase, user.id);
     return res.status(200).json({ tier: currentTier, synced: false });
   }
@@ -82,10 +84,12 @@ export default async function handler(req, res) {
         console.error('[sync-subscription] clear discord tier failed:', clearError);
         return res.status(500).json({ error: 'DB write failed' });
       }
+      await writeTierClaim(supabase, user.id, 'free');
       await setDiscordOnlyFlag(supabase, user.id, false);
       await safeDiscordSync(supabase, user.id);
       return res.status(200).json({ tier: 'free', synced: true });
     }
+    await writeTierClaim(supabase, user.id, profileTierClaim(currentTier));
     await safeDiscordSync(supabase, user.id);
     return res.status(200).json({ tier: 'free', synced: false });
   }
@@ -101,6 +105,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'DB write failed' });
   }
 
+  await writeTierClaim(supabase, user.id, tier);
   await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
   await safeDiscordSync(supabase, user.id);
   console.log(`[sync-subscription] granted ${tier} to ${user.email}`);

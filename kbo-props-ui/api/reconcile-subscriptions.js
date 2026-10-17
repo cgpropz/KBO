@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { mergeTier, tierForStripePrice, signalsLifetimePurchase } from './_stripeTier.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
+import { writeTierClaim } from './_tierClaim.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -178,6 +179,7 @@ async function reconcileDiscordFlags(discordEmails) {
         .from('user_profiles')
         .upsert({ id: user.id, tier: next }, { onConflict: 'id' });
       if (upsertError) continue;
+      await writeTierClaim(supabase, user.id, next);
     }
     if (await setDiscordOnlyFlag(supabase, user.id, true)) summary.flagged += 1;
   }
@@ -204,7 +206,10 @@ async function reconcileDiscordFlags(discordEmails) {
       const { error: clearError } = await supabase
         .from('user_profiles')
         .upsert({ id: row.id, tier: 'free' }, { onConflict: 'id' });
-      if (!clearError) summary.lapsedDiscordTier += 1;
+      if (!clearError) {
+        summary.lapsedDiscordTier += 1;
+        await writeTierClaim(supabase, row.id, 'free');
+      }
     }
     if (row.discord_only === true && await setDiscordOnlyFlag(supabase, row.id, false)) {
       summary.cleared += 1;
@@ -265,6 +270,7 @@ async function setTierByEmail(email, tier) {
     return { status: 'error', email, error: upsertError.message };
   }
 
+  await writeTierClaim(supabase, userId, next);
   return { status: 'patched', email, tier: next };
 }
 

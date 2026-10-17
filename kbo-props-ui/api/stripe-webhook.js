@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { mergeTier, computeStripeAccess, metadataSignalsDiscord, tierForStripePrice, TIER_BY_PRICE } from './_stripeTier.js';
 import { reportPurchaseToX } from './_xConversions.js';
 import { safeDiscordSync, setDiscordOnlyFlag } from './_discordSync.js';
+import { subscriptionDeletedClaimResult, writeTierClaim } from './_tierClaim.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -56,12 +57,17 @@ async function setTierById(userId, incoming) {
   const { error } = await supabase
     .from('user_profiles')
     .upsert({ id: userId, tier }, { onConflict: 'id' });
-  if (error) console.error(`[webhook] upsert by ID failed for ${userId}:`, error);
-  else console.log(`[webhook] ${userId}: ${current} + ${incoming} → ${tier}`);
+  if (error) {
+    console.error(`[webhook] tier update failed for ${userId}`);
+    return { status: 500, body: { error: 'tier update failed' } };
+  }
+  console.log(`[webhook] ${userId}: ${current} + ${incoming} → ${tier}`);
+  await writeTierClaim(supabase, userId, tier);
   // Discord-only sets the flag and never clears a site tier (mergeTier).
   // A Discord API failure is logged inside safeDiscordSync and does not throw.
-  if (!error && incoming === 'discord') await setDiscordOnlyFlag(supabase, userId, true);
-  if (!error) await safeDiscordSync(supabase, userId);
+  if (incoming === 'discord') await setDiscordOnlyFlag(supabase, userId, true);
+  await safeDiscordSync(supabase, userId);
+  return null;
 }
 
 // Look up Supabase user by email, then grant (merge) their tier.
@@ -71,7 +77,7 @@ async function setTierByEmail(email, tier) {
     console.warn(`[webhook] no Supabase user for email ${email} — tier will be set on first login via sync`);
     return;
   }
-  await setTierById(user.id, tier);
+  return setTierById(user.id, tier);
 }
 
 // Recompute a user's tier authoritatively from their live Stripe state when a
@@ -86,12 +92,20 @@ async function clearTierByCustomer(customerId) {
   const { error } = await supabase
     .from('user_profiles')
     .upsert({ id: user.id, tier: access.tier }, { onConflict: 'id' });
-  if (error) console.error(`[webhook] recompute failed for ${email}:`, error);
-  else console.log(`[webhook] recomputed ${email} → ${access.tier} (subscription change)`);
-  if (!error) {
-    await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
-    await safeDiscordSync(supabase, user.id);
+  if (error) {
+    console.error(`[webhook] tier update failed for ${user.id}`);
+    return { status: 500, body: { error: 'tier update failed' } };
   }
+  console.log(`[webhook] ${user.id} → ${access.tier}`);
+  const wrote = await writeTierClaim(supabase, user.id, access.tier);
+  const failure = subscriptionDeletedClaimResult(wrote);
+  if (failure) {
+    console.error(`[webhook] tier claim failed for ${user.id}`);
+    return failure;
+  }
+  await setDiscordOnlyFlag(supabase, user.id, access.discordOnly);
+  await safeDiscordSync(supabase, user.id);
+  return null;
 }
 
 function discordMetadata(metas) {
@@ -197,13 +211,15 @@ export default async function handler(req, res) {
     // by price id / product id, including taxed totals that are not the list price.
     const tier = await tierForStripePrice(stripe, price, { metadata: obj.metadata });
 
+    let grantFailure = null;
     if (userId) {
-      await setTierById(userId, tier);
+      grantFailure = await setTierById(userId, tier);
     } else if (email) {
-      await setTierByEmail(email, tier);
+      grantFailure = await setTierByEmail(email, tier);
     } else {
       console.error('[webhook] checkout.session.completed: no user ID or email');
     }
+    if (grantFailure) return res.status(grantFailure.status).json(grantFailure.body);
 
     // Server-side X purchase conversion (same Event ID + conversion_id = session
     // id as the browser pixel, so X de-duplicates). No-op unless the X_* env
@@ -221,7 +237,10 @@ export default async function handler(req, res) {
     const rawPrice = obj.items?.data?.[0]?.price;
     const tier = await tierForStripePrice(stripe, rawPrice, { metadata: obj.metadata });
     const customer = await stripe.customers.retrieve(obj.customer);
-    if (customer.email) await setTierByEmail(customer.email, tier);
+    if (customer.email) {
+      const grantFailure = await setTierByEmail(customer.email, tier);
+      if (grantFailure) return res.status(grantFailure.status).json(grantFailure.body);
+    }
   }
 
   // ── invoice.payment_succeeded ───────────────────────────────────────────
@@ -231,14 +250,18 @@ export default async function handler(req, res) {
     if (obj.billing_reason === 'subscription_create' || obj.billing_reason === 'subscription_cycle') {
       const tier = await tierForInvoice(obj);
       const customer = await stripe.customers.retrieve(obj.customer);
-      if (customer.email) await setTierByEmail(customer.email, tier);
+      if (customer.email) {
+        const grantFailure = await setTierByEmail(customer.email, tier);
+        if (grantFailure) return res.status(grantFailure.status).json(grantFailure.body);
+      }
     }
   }
 
   // ── customer.subscription.deleted ──────────────────────────────────────
   // Fires when a subscription is cancelled/expires. Revoke access.
   else if (event.type === 'customer.subscription.deleted') {
-    await clearTierByCustomer(obj.customer);
+    const failure = await clearTierByCustomer(obj.customer);
+    if (failure) return res.status(failure.status).json(failure.body);
   }
 
   return res.status(200).json({ received: true });

@@ -656,7 +656,7 @@ export async function resolveNbaCaller(client, authorization) {
       pending: true,
     };
   }
-  const tierResolved = result.source === 'profile' || result.source === 'cache';
+  const tierResolved = result.source === 'profile' || result.source === 'cache' || result.source === 'jwt';
   return {
     emailResolved: true,
     email: result.email,
