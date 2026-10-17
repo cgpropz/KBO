@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BOARD_RETRY_WINDOW_MS, FETCH_BUDGET_MS, MEMBER_BOARD_ATTEMPTS, TILE_ATTEMPT_MS, beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch, retryDelayWithin } from '../src/memberBoardLoad.js';
+import { BOARD_RETRY_WINDOW_MS, FETCH_BUDGET_MS, MEMBER_BOARD_ATTEMPTS, TILE_ATTEMPT_MS, beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch, nextSportRetry, retryDelayWithin, sportRetryStillCurrent } from '../src/memberBoardLoad.js';
 import { _setSupabaseClientFactory, boundedAccessToken } from '../src/supabaseClient.js';
 import { readOpenFlag } from '../src/openFlag.js';
 import { previewForSignedIn } from '../api/data.js';
@@ -258,6 +258,42 @@ test('a hung refresh or a rejected client import still opens the hub', async () 
     _setSupabaseClientFactory(null);
     globalThis.localStorage = previous;
   }
+});
+
+test('retrying sport B does not cancel an in-flight retry of sport A', async () => {
+  let tickets = {};
+  const sportA = nextSportRetry(tickets, 'nhl');
+  tickets = sportA.tickets;
+  let releaseA;
+  const refreshA = new Promise((resolve) => { releaseA = resolve; });
+  const loadA = hubTokenForRetry('expired-a', {
+    cached: () => null,
+    refresh: () => refreshA,
+  }).then((token) => {
+    if (!sportRetryStillCurrent(tickets, 'nhl', sportA.ticket)) return 'cancelled-a';
+    return token;
+  });
+
+  const sportB = nextSportRetry(tickets, 'nfl');
+  tickets = sportB.tickets;
+  const loadedB = await hubTokenForRetry('expired-b', {
+    cached: () => null,
+    refresh: async () => 'token-b',
+  }).then((token) => {
+    if (!sportRetryStillCurrent(tickets, 'nfl', sportB.ticket)) return 'cancelled-b';
+    return token;
+  });
+  assert.equal(loadedB, 'token-b');
+  assert.equal(sportRetryStillCurrent(tickets, 'nhl', sportA.ticket), true);
+
+  releaseA('token-a');
+  assert.equal(await loadA, 'token-a');
+
+  const againA = nextSportRetry(tickets, 'nhl');
+  assert.equal(sportRetryStillCurrent(againA.tickets, 'nhl', sportA.ticket), false);
+  assert.equal(sportRetryStillCurrent(againA.tickets, 'nfl', sportB.ticket), true);
+  assert.match(hubSource, /nextSportRetry\(/);
+  assert.match(hubSource, /sportRetryStillCurrent\(/);
 });
 
 test('a manual retry refreshes the hub token only after it expires', async () => {

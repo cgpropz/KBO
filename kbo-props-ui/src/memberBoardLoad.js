@@ -159,6 +159,21 @@ export async function beginHubLoad(loadHub, readToken, isAlive = () => true) {
   }
 }
 
+// Each sport has its own retry ticket. Refreshing the token for sport A can
+// take up to 2s. A retry or a tap of sport B during that wait must not drop
+// A's ticket, or A stays on loading with no Retry button. A newer retry of
+// the same sport still supersedes the older one. Clearing the map on hub
+// reload cancels every in-flight retry.
+export function nextSportRetry(tickets, id) {
+  const current = tickets && typeof tickets === 'object' ? tickets : {};
+  const ticket = (current[id] || 0) + 1;
+  return { tickets: { ...current, [id]: ticket }, ticket };
+}
+
+export function sportRetryStillCurrent(tickets, id, ticket) {
+  return Boolean(tickets && tickets[id] === ticket);
+}
+
 // A manual Retry reuses the hub token while it is still valid. An expired
 // token is refreshed first. A failed refresh keeps the token already in hand.
 export async function hubTokenForRetry(current, { cached, refresh }) {

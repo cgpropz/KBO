@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { sportAccess } from './entitlements';
 import { useNbaOpen } from './useNbaOpen';
 import { fetchApiDataset } from './apiData';
-import { beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch } from './memberBoardLoad';
+import { beginHubLoad, hubTokenForRetry, loadHubSports, loadMemberBoard, memberBoardPatch, nextSportRetry, sportRetryStillCurrent } from './memberBoardLoad';
 import { boundedAccessToken, cachedAccessToken } from './supabaseClient';
 import { fetchDataSnapshot } from './dataUrl';
 import { fitImage } from './fitImage';
@@ -228,7 +228,7 @@ function useBoards(access, nbaOpen, selectedId) {
   const loadSportRef = useRef(async () => {});
   const boardLoad = useRef({});
   const hubTokenRef = useRef(undefined);
-  const retryTicket = useRef(0);
+  const retryTicket = useRef({});
 
   useEffect(() => {
     fetchDataSnapshot('player_photos.json').then((s) => setPhotos(s?.data || {})).catch(() => setPhotos({}));
@@ -305,21 +305,22 @@ function useBoards(access, nbaOpen, selectedId) {
     return () => {
       stopped = true;
       generation.current += 1;
-      retryTicket.current += 1;
+      retryTicket.current = {};
     };
   }, [access.kbo, access.wnba, access.nfl, access.nhl, nbaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retrySport = (id) => {
     const sport = SPORTS.find((item) => item.id === id);
     if (!sport) return;
-    const ticket = retryTicket.current + 1;
-    retryTicket.current = ticket;
+    const started = nextSportRetry(retryTicket.current, id);
+    retryTicket.current = started.tickets;
+    const ticket = started.ticket;
     setBoards((b) => ({ ...b, [id]: { status: 'loading', raw: null } }));
     hubTokenForRetry(hubTokenRef.current, {
       cached: () => cachedAccessToken(),
       refresh: () => boundedAccessToken({ fresh: true }),
     }).then((token) => {
-      if (ticket !== retryTicket.current) return;
+      if (!sportRetryStillCurrent(retryTicket.current, id, ticket)) return;
       hubTokenRef.current = token;
       loadSportRef.current(sport);
     });
