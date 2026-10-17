@@ -6,8 +6,9 @@ scrape in the last 50 minutes. A fast exit (the install step skipped) does
 not count, or an off-window success would block the first run of the window.
 
 Inside the window, a public board clock older than 110 minutes refreshes
-anyway. That is the backstop when a tick is dropped or a scrape succeeds
-without moving the board.
+anyway, unless a heavy scrape already succeeded in the last 25 minutes.
+That backstop covers a dropped tick without scraping every offset cron
+while PrizePicks has no lines and the clock stays still.
 
 The clock is an hourly cron. Sleeping on the runner until the next hour
 would bill that wait, and queueing the next run with no wait would scrape
@@ -24,6 +25,7 @@ from urllib.request import Request, urlopen
 
 FRESH_MINUTES = 50
 STALE_MINUTES = 110
+STALE_FLOOR_MINUTES = 25
 HEAVY_STEP = "Install Python dependencies"
 BOARD_STATUS_URL = "https://www.cgpropz.com/api/data?ds=board_status"
 
@@ -73,14 +75,15 @@ def should_refresh(
     inside_window: bool,
     recent_heavy_success: bool,
     board_stale: bool = False,
+    stale_floor_hit: bool = False,
 ) -> bool:
     if forced:
         return True
     if not inside_window:
         return False
-    # A board older than the backstop refreshes even when a scrape just succeeded.
+    # A stale clock refreshes unless a heavy scrape succeeded inside the floor.
     if board_stale:
-        return True
+        return not stale_floor_hit
     return not recent_heavy_success
 
 
@@ -147,12 +150,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidates", action="store_true")
     parser.add_argument("--current", default="")
     parser.add_argument("--now", default="")
+    parser.add_argument("--minutes", type=int, default=0)
     parser.add_argument("--decide", action="store_true")
     parser.add_argument("--forced", type=int, default=0)
     parser.add_argument("--inside", type=int, default=0)
     parser.add_argument("--recent-heavy", type=int, default=0)
     parser.add_argument("--board-stale", action="store_true")
     parser.add_argument("--stale", type=int, default=0)
+    parser.add_argument("--stale-floor", type=int, default=0)
     parser.add_argument("--sport", default="")
     args = parser.parse_args(argv)
     if args.board_stale:
@@ -163,7 +168,8 @@ def main(argv: list[str] | None = None) -> int:
         now = parse_github_time(args.now) if args.now else datetime.now(timezone.utc)
         if now is None:
             now = datetime.now(timezone.utc)
-        for run_id in candidate_run_ids(runs, now, args.current):
+        span = args.minutes if args.minutes > 0 else FRESH_MINUTES
+        for run_id in candidate_run_ids(runs, now, args.current, minutes=span):
             print(run_id)
         return 0
     if args.decide:
@@ -172,6 +178,7 @@ def main(argv: list[str] | None = None) -> int:
             bool(args.inside),
             bool(args.recent_heavy),
             board_stale=bool(args.stale),
+            stale_floor_hit=bool(args.stale_floor),
         )
         print("true" if due else "false")
         return 0

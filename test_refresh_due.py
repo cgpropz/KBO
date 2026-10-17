@@ -1,4 +1,5 @@
 """Hourly props crons scrape once per hour inside the game window."""
+import json
 import os
 import stat
 import subprocess
@@ -89,6 +90,14 @@ class RefreshDueTests(unittest.TestCase):
 
         self.assertEqual(board_clock_state("wnba", NOW, fetch=boom), "unknown")
 
+    def test_stale_floor_holds_a_scrape_from_the_last_25_minutes(self):
+        self.assertFalse(should_refresh(False, True, False, board_stale=True, stale_floor_hit=True))
+        self.assertTrue(should_refresh(False, True, True, board_stale=True))
+        held = [{"databaseId": 7, "conclusion": "success", "updatedAt": stamp(NOW - timedelta(minutes=10))}]
+        released = [{"databaseId": 8, "conclusion": "success", "updatedAt": stamp(NOW - timedelta(minutes=25))}]
+        self.assertEqual(candidate_run_ids(held, NOW, minutes=25), ["7"])
+        self.assertEqual(candidate_run_ids(released, NOW, minutes=25), [])
+
     def test_candidates_are_successes_inside_fifty_minutes(self):
         runs = [
             {"databaseId": 1, "conclusion": "success", "updatedAt": stamp(NOW - timedelta(minutes=10))},
@@ -133,6 +142,9 @@ fi
 if [ "$1" = "-m" ] && [ "$2" = "pipeline.refresh_due" ]; then
   shift 2
   for arg in "$@"; do
+    if [ "$arg" = "--candidates" ]; then
+      exec /usr/bin/python3 -m pipeline.refresh_due "$@"
+    fi
     if [ "$arg" = "--board-stale" ]; then
       printf '%s\\n' "${BOARD_STALE:-fresh}"
       exit 0
@@ -149,6 +161,14 @@ exit 99
 """
 
 GH_STUB = """#!/bin/sh
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+  printf '%s' "${GH_RUNS_JSON:-[]}"
+  exit 0
+fi
+if [ "$1" = "run" ] && [ "$2" = "view" ]; then
+  printf '%s' "${GH_HEAVY:-success}"
+  exit 0
+fi
 printf '%s' '[]'
 exit 0
 """
@@ -207,11 +227,45 @@ class RefreshDueScriptTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr or stdout)
         self.assertIn("due=true", output)
         self.assertIn("reason=stale", output)
+        self.assertNotIn("reason=stale_recent", output)
         self.assertIn("older than 110 minutes", stdout)
         self.assertNotIn("skipped: gate (outside game window)", summary)
+        self.assertNotIn("stale after successful scrape (board clock not moving)", summary)
+
+    def test_stale_clock_and_a_heavy_run_ten_minutes_ago_holds(self):
+        now = datetime.now(timezone.utc)
+        held = json.dumps([{
+            "databaseId": 42,
+            "conclusion": "success",
+            "updatedAt": stamp(now - timedelta(minutes=10)),
+        }])
+        code, output, stdout, stderr, summary = _run_gate(
+            0, board_stale="stale", decide_out="false", gh_runs=held,
+        )
+        detail = f"stdout={stdout}\nstderr={stderr}\noutput={output}"
+        self.assertEqual(code, 0, detail)
+        self.assertIn("due=false", output)
+        self.assertIn("reason=stale_recent", output)
+        self.assertIn("stale after successful scrape (board clock not moving)", summary)
+        self.assertIn("stale after successful scrape (board clock not moving)", stdout)
+
+        released = json.dumps([{
+            "databaseId": 43,
+            "conclusion": "success",
+            "updatedAt": stamp(now - timedelta(minutes=30)),
+        }])
+        code, output, stdout, stderr, summary = _run_gate(
+            0, board_stale="stale", decide_out="false", gh_runs=released,
+        )
+        detail = f"stdout={stdout}\nstderr={stderr}\noutput={output}"
+        self.assertEqual(code, 0, detail)
+        self.assertIn("due=true", output, detail)
+        self.assertIn("reason=stale", output)
+        self.assertNotIn("reason=stale_recent", output)
+        self.assertNotIn("stale after successful scrape (board clock not moving)", summary)
 
 
-def _run_gate(window_exit, command=None, real_python=False, board_stale="fresh", decide_out="true"):
+def _run_gate(window_exit, command=None, real_python=False, board_stale="fresh", decide_out="true", gh_runs=None):
     command = command or "bash .github/scripts/refresh-due.sh wnba-props-refresh.yml wnba"
     with tempfile.TemporaryDirectory() as tmp:
         bin_dir = Path(tmp) / "bin"
@@ -228,6 +282,8 @@ def _run_gate(window_exit, command=None, real_python=False, board_stale="fresh",
         env["GITHUB_RUN_ID"] = "0"
         env["BOARD_STALE"] = board_stale
         env["DECIDE_OUT"] = decide_out
+        if gh_runs is not None:
+            env["GH_RUNS_JSON"] = gh_runs
         env.pop("PYTHONPATH", None)
         if not real_python:
             _write_exe(bin_dir / "python3", PYTHON_STUB)
