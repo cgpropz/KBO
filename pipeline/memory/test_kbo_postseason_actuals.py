@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import date
 from pathlib import Path
 
@@ -82,6 +83,10 @@ class _Case(unittest.TestCase):
         ]})
         self.index = {common.name_match_key(n): p for n, p in (
             ("Carlos Carrasco", "56103"), ("Austin Dean", "53123"), ("Song Chan-eui", "68110"))}
+        self.boxes = {}
+        self._box_patch = mock.patch.object(kpa, "fetch_box_scores", lambda d: self.boxes)
+        self._box_patch.start()
+        self.addCleanup(self._box_patch.stop)
 
     def tearDown(self):
         common.MEMORY_ROOT, common.REPO_ROOT, grade_kbo_day.REPO_ROOT = self._saved
@@ -211,16 +216,75 @@ class IdentityTests(unittest.TestCase):
 
 
 class MoonJeongBinIdTests(unittest.TestCase):
-    """Regression: 63408 is a blank KBO page; Moon Jeong-bin (LG IF, b. 2003-08-15) is 52121."""
+    """Regression: 63408 is a blank KBO page; Moon Jeong-bin (LG IF, b. 2003-08-15) is 52121.
+
+    The repo maps keep 63408 until #289 (needs Code Green's OK: it changes
+    what batterlog scrapes). Grading remaps it inside the postseason fetch only.
+    """
 
     def test_index_resolves_52121(self):
         self.assertEqual(kpa.build_pcode_index(REPO)[common.name_match_key("Moon Jeong-bin")], "52121")
 
-    def test_old_id_is_gone_from_rosters_and_maps(self):
-        for rel in ("Batters-Data/batterlog.py", "Batters-Data/kbo_batter_hands.csv",
-                    "Batters-Data/mykbostats_hitter_map.json", "kbo-props-ui/public/data/player_photos.json"):
-            self.assertNotIn("63408", (REPO / rel).read_text(encoding="utf-8"), rel)
-        self.assertNotIn("Moon Jeong-bin", kpa.PCODE_OVERRIDES)  # fixed at the source, not pinned
+    def test_remap_is_grading_only(self):
+        self.assertEqual(kpa.PCODE_REMAP["63408"], "52121")
+        self.assertNotIn("Moon Jeong-bin", kpa.PCODE_OVERRIDES)
+        index = kpa.build_pcode_index(REPO)
+        self.assertNotIn("63408", set(index.values()))
+
+
+class BoxScoreDnpTests(_Case):
+    PAGES = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": EMPTY_HTML.replace("구분", "AVG1")}
+    LINEUP = ["오스틴", "홍창기", "박해민", "문보경", "오지환", "박동원", "구본혁", "이재원", "신민재"]
+
+    def _box(self, appeared, final=True, hitters=None):
+        return {"LG": {"game_id": "20261006LGNC0", "final": final,
+                       "hitters": len(appeared) if hitters is None else hitters,
+                       "appeared_ko": sorted(set(appeared) | {"카라스코"})}}
+
+    def test_verified_player_left_out_of_final_box_score_is_dnp(self):
+        self.boxes = self._box(self.LINEUP)  # 송찬의 not in it
+        kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES), index=self.index)
+        result = grade_kbo_day.grade_day(WC)
+        self.assertEqual(result["status"], "complete")
+        recap = {(p["player"], p["stat"]): p for p in json.loads((common.memory_dir("kbo", WC) / "recap.json").read_text())["props"]}
+        song = recap[("Song Chan-eui", "Hits+Runs+RBIs")]
+        self.assertEqual((song["result"], song["dnp_reason"]), ("DNP", "not_in_box_score"))
+
+    def test_player_in_box_score_without_page_row_stays_missing(self):
+        self.boxes = self._box(self.LINEUP + ["송찬의"])
+        kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES), index=self.index)
+        self.assertEqual(grade_kbo_day.grade_day(WC)["status"], "partial")
+        self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_no_row")})
+
+    def test_unfinished_or_short_box_score_never_confirms_dnp(self):
+        for box in (self._box(self.LINEUP, final=False), self._box(self.LINEUP[:5])):
+            self.boxes = box
+            kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES), index=self.index)
+            self.assertEqual(grade_kbo_day.grade_day(WC)["status"], "partial")
+            self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_no_row")})
+
+    def test_unverified_page_is_never_dnp_even_when_absent_from_box(self):
+        self.boxes = self._box(self.LINEUP)
+        ids = {**self.IDS, "68110": ("", "")}  # blank page: identity unverified
+        kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES, ids), index=self.index)
+        self.assertEqual(grade_kbo_day.grade_day(WC)["status"], "partial")
+        self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_not_fetched")})
+
+    def test_box_score_failure_is_recorded_not_fatal(self):
+        def boom(d):
+            raise RuntimeError("timeout")
+        out = kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES), index=self.index, fetch_box=boom, dry_run=True)
+        self.assertEqual(out["errors"], 1)
+
+    def test_parse_box_score(self):
+        cell = lambda t: {"Text": t}
+        hitters = [{"table1": json.dumps({"rows": [{"row": [cell("1"), cell("우"), cell("홍창기")]}]})},
+                   {"table1": json.dumps({"rows": [{"row": [cell("1"), cell("유"), cell("박찬호")]}]})}]
+        pitchers = [{"table": json.dumps({"rows": [{"row": [cell("톨허스트")]}, {"row": [cell("TOTAL")]}]})},
+                    {"table": json.dumps({"rows": [{"row": [cell("네일")]}]})}]
+        away, home = kpa.parse_box_score({"arrHitter": hitters, "arrPitcher": pitchers})
+        self.assertEqual(away, ["톨허스트", "홍창기"])
+        self.assertEqual(home, ["네일", "박찬호"])
 
 
 class WorkflowTests(unittest.TestCase):

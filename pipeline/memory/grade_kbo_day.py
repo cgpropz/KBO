@@ -187,6 +187,32 @@ def build_actuals() -> dict[tuple[str, str], dict]:
 POSTSEASON_FILE = "postseason_actuals.json"
 
 
+POSTSEASON_MIN_BOX_HITTERS = 9
+
+
+def postseason_box_dnps(payload: dict) -> set[str]:
+    """Name keys confirmed DNP by the official box score.
+
+    All must hold: the player's page identity was verified (Korean name and
+    team), his team's game is final, its box score lists at least a full
+    lineup, and his verified Korean name is not among the hitters or pitchers
+    who appeared. Anything less stays missing.
+    """
+    out: set[str] = set()
+    boxes = {team_key(team): box for team, box in (payload.get("box_scores") or {}).items() if isinstance(box, dict)}
+    for player, ident in (payload.get("identities") or {}).items():
+        if not player or not isinstance(ident, dict) or not ident.get("name_ko"):
+            continue
+        name_ko = ident["name_ko"]
+        box = boxes.get(team_key(ident.get("team") or ""))
+        if not box or not box.get("final") or int(box.get("hitters") or 0) < POSTSEASON_MIN_BOX_HITTERS:
+            continue
+        if name_ko in set(box.get("appeared_ko") or []):
+            continue
+        out.add(name_match_key(player))
+    return out
+
+
 def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[str]] | None:
     """Grading-only postseason lines for one KBO day, or None when there is no file.
 
@@ -221,7 +247,8 @@ def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[s
             lookup[(iso, key)] = {**base, "type": "batter", "h": h, "r": r, "rbi": rbi, "hrr": h + r + rbi,
                                   "tb": h + d2 + 2 * d3 + 3 * hr, "fs": hitter_fantasy_score(fs_row)}
     fetched = {name_match_key(name) for name in payload.get("fetched_players") or [] if name}
-    return lookup, fetched
+    benched = postseason_box_dnps(payload)
+    return lookup, fetched, benched
 
 
 def _void_prop(prop: dict, reason: str) -> dict:
@@ -255,8 +282,9 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
     iso = format_iso(d)
     postseason = load_postseason_actuals(d)
     postseason_fetched: set[str] | None = None
+    postseason_benched: set[str] = set()
     if postseason is not None:
-        post_lookup, postseason_fetched = postseason
+        post_lookup, postseason_fetched, postseason_benched = postseason
         for key, row in post_lookup.items():
             actuals.setdefault(key, row)
     props = slate["props"]
@@ -300,10 +328,21 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
         if not stats:
             prop_team = team_key(prop.get("team") or "")
+            if postseason_fetched is not None and name_match_key(player) in postseason_benched:
+                # Verified player, team's final box score, and he is not in it.
+                graded.append({
+                    **prop,
+                    "actual": None,
+                    "result": RESULT_DNP,
+                    "model_result": model_result(RESULT_DNP, prop.get("recommendation")),
+                    "dnp_reason": "not_in_box_score",
+                    "graded_at": utc_now_iso(),
+                })
+                continue
             if postseason_fetched is not None:
-                # Postseason days are never DNP from absence: a blank, wrong or
-                # unread page, or a player missing from his page's stat table,
-                # is unknown. It stays missing until a verified row arrives.
+                # Otherwise postseason days are never DNP from absence: a blank,
+                # wrong or unread page, or a player missing from his page's stat
+                # table, is unknown. It stays missing until a verified row arrives.
                 reason = (
                     "postseason_no_row" if name_match_key(player) in postseason_fetched
                     else "postseason_not_fetched"

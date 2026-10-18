@@ -69,7 +69,26 @@ PCODE_OVERRIDES = {
     "Kim Tae-gun": "78122",  # 김태군, KIA C
     "Park Jung-woo": "67609",  # 박정우, KIA OF (65620 is a KIA IF with no 2026 games)
 }
+# Wrong ids in the repo rosters, corrected for this grading fetch only. The
+# repo-map fix (which also changes what batterlog scrapes for the model) is a
+# separate PR that needs Code Green's OK (#289).
+PCODE_REMAP = {
+    "63408": "52121",  # Moon Jeong-bin (문정빈, LG IF): 63408 is a blank KBO page
+}
 DEFAULT_CATCH_UP_DAYS = 3
+GAME_LIST_URL = "https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList"
+BOX_SCORE_URL = "https://www.koreabaseball.com/ws/Schedule.asmx/GetBoxScoreScroll"
+WS_HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx",
+    "Origin": "https://www.koreabaseball.com",
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+}
+KBO_TEAM_CODES = {"HT": "Kia", "OB": "Doosan", "LT": "Lotte", "SS": "Samsung", "SK": "SSG", "NC": "NC",
+                  "WO": "Kiwoom", "KT": "KT", "LG": "LG", "HH": "Hanwha"}
+GAME_FINAL = "3"
+MIN_BOX_HITTERS = 9
 REQUEST_PAUSE_SECONDS = 0.5
 
 
@@ -131,6 +150,9 @@ def build_pcode_index(repo_root: Path | None = None) -> dict[str, str]:
         with starters.open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
                 add(row.get("Player"), row.get("Pcode") or row.get("pcode"))
+    for key, pcode in list(index.items()):
+        if pcode in PCODE_REMAP:
+            index[key] = PCODE_REMAP[pcode]
     return index
 
 
@@ -338,6 +360,72 @@ def fetch_postseason_rows(pcode: str, kind: str, season: int, *, session=None) -
     return identity, out
 
 
+# ------------------------------------------------------------------ box score
+def _table_rows(raw) -> list[list[str]]:
+    table = json.loads(raw) if isinstance(raw, str) else (raw or {})
+    return [[str(c.get("Text") or "").strip() for c in r.get("row") or []] for r in table.get("rows") or []]
+
+
+def parse_box_score(payload: dict) -> tuple[list[str], list[str]]:
+    """(away appeared, home appeared): Korean names of every hitter and pitcher used.
+
+    arrHitter/arrPitcher are [away, home]. Hitter table1 rows are
+    [order, position, name]; pitcher rows start with the name and end with a
+    totals row (TOTAL / 합계) that is not a player.
+    """
+    sides: list[set[str]] = [set(), set()]
+    hitters = payload.get("arrHitter") or []
+    pitchers = payload.get("arrPitcher") or []
+    for i in (0, 1):
+        if i < len(hitters):
+            for row in _table_rows(hitters[i].get("table1")):
+                if len(row) >= 3 and row[2]:
+                    sides[i].add(row[2])
+        if i < len(pitchers):
+            for row in _table_rows(pitchers[i].get("table")):
+                if row and row[0] and row[0].upper() not in ("TOTAL", "합계", "계"):
+                    sides[i].add(row[0])
+    return sorted(sides[0]), sorted(sides[1])
+
+
+def _hitter_count(payload: dict, side: int) -> int:
+    hitters = payload.get("arrHitter") or []
+    if side >= len(hitters):
+        return 0
+    return sum(1 for row in _table_rows(hitters[side].get("table1")) if len(row) >= 3 and row[2])
+
+
+def fetch_box_scores(d: date, *, session=None) -> dict[str, dict]:
+    """team -> {game_id, final, hitters, appeared_ko} for every KBO game on d (KST)."""
+    import requests
+
+    session = session or requests.Session()
+    resp = session.post(GAME_LIST_URL, headers=WS_HEADERS, timeout=30,
+                        data={"leId": "1", "srId": "0,1,3,4,5,6,7,8,9", "date": d.strftime("%Y%m%d")})
+    resp.raise_for_status()
+    out: dict[str, dict] = {}
+    for game in (resp.json() or {}).get("game") or []:
+        away, home = KBO_TEAM_CODES.get(game.get("AWAY_ID")), KBO_TEAM_CODES.get(game.get("HOME_ID"))
+        if not away or not home:
+            continue
+        final = str(game.get("GAME_STATE_SC")) == GAME_FINAL and str(game.get("CANCEL_SC_ID") or "0") == "0"
+        entry = {"game_id": game.get("G_ID"), "final": final}
+        if not final:
+            out[away] = {**entry, "hitters": 0, "appeared_ko": []}
+            out[home] = {**entry, "hitters": 0, "appeared_ko": []}
+            continue
+        time.sleep(REQUEST_PAUSE_SECONDS)
+        box = session.post(BOX_SCORE_URL, headers=WS_HEADERS, timeout=30,
+                           data={"leId": str(game.get("LE_ID") or 1), "srId": str(game.get("SR_ID")),
+                                 "seasonId": str(game.get("SEASON_ID") or d.year), "gameId": game.get("G_ID")})
+        box.raise_for_status()
+        payload = box.json() or {}
+        away_ko, home_ko = parse_box_score(payload)
+        out[away] = {**entry, "hitters": _hitter_count(payload, 0), "appeared_ko": away_ko}
+        out[home] = {**entry, "hitters": _hitter_count(payload, 1), "appeared_ko": home_ko}
+    return out
+
+
 # ---------------------------------------------------------------------- day
 def _slate_players(slate: dict) -> list[dict]:
     seen: dict[tuple[str, str], dict] = {}
@@ -353,7 +441,8 @@ def _slate_players(slate: dict) -> list[dict]:
     return list(seen.values())
 
 
-def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] | None = None, dry_run: bool = False) -> dict:
+def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] | None = None, dry_run: bool = False,
+                fetch_box="default") -> dict:
     day_dir = memory_dir("kbo", d)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
@@ -363,6 +452,7 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
     index = build_pcode_index() if index is None else index
     iso = format_iso(d)
     rows, fetched, unresolved, errors = [], [], [], []
+    identities: dict[str, dict] = {}
     for entry in _slate_players(slate):
         pcode = index.get(name_match_key(entry["player"]))
         if not pcode:
@@ -376,6 +466,7 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
                            "error": f"{type(exc).__name__}: {exc}"[:200]})
             continue
         fetched.append(entry["player"])
+        identities[entry["player"]] = {"name_ko": identity.get("name_ko") or "", "team": entry["team"]}
         for row in found:
             if row.get("date") != iso:
                 continue
@@ -384,6 +475,14 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
                 continue
             rows.append({**row, "player": entry["player"], "pcode": pcode, "team": entry["team"],
                          "name_ko": identity.get("name_ko")})
+    box_scores: dict[str, dict] = {}
+    if fetch_box == "default":
+        fetch_box = fetch_box_scores  # looked up at call time so tests can stub it
+    if fetch_box is not None:
+        try:
+            box_scores = fetch_box(d)
+        except Exception as exc:  # noqa: BLE001 - box scores only confirm DNPs
+            errors.append({"player": None, "pcode": None, "error": f"box score: {type(exc).__name__}: {exc}"[:200]})
     payload = {
         "schema": SCHEMA,
         "sport": "kbo",
@@ -394,6 +493,11 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
         "fetched_at": utc_now_iso(),
         "rows": rows,
         "fetched_players": sorted(fetched),
+        # Verified Korean name and slate team per fetched player (page name and team matched).
+        "identities": identities,
+        # Official box score per team: who appeared. Only used to confirm a
+        # DNP for a verified player whose team's final box score omits him.
+        "box_scores": box_scores,
         "unresolved_players": sorted(unresolved),
         "errors": errors,
     }
