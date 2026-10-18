@@ -100,10 +100,11 @@ export function displayScoreText(score, side, digits = 1) {
 }
 
 // ── Rank eligibility ────────────────────────────────────────────────────
-// Games played in the board's own window: NFL `gamesPlayed` (L10 decided
-// games), falling back to the length of the logged series.
+// Games played in the board's own window: the NFL builder's `gamesPlayed`
+// (kept as `boardGamesPlayed` where a board view reuses that name for its
+// L10 pill count), falling back to the length of the logged series.
 export function gamesPlayed(row) {
-  const games = toNum(row?.gamesPlayed ?? row?.games_played)
+  const games = toNum(row?.boardGamesPlayed ?? row?.gamesPlayed ?? row?.games_played)
   if (Number.isFinite(games)) return games
   return Array.isArray(row?.recent) ? row.recent.length : 0
 }

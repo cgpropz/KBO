@@ -124,3 +124,8 @@ test('a member never gets the pilot even with the query string', () => {
   assert.equal(symmetricRankOn('nfl'), false)
   setSymmetricRankViewer('')
 })
+
+test('board views that reuse gamesPlayed for the L10 pill keep the builder count', () => {
+  assert.equal(rankBlock(row({ gamesPlayed: 0, boardGamesPlayed: 6 })), null)
+  assert.equal(rankBlock(row({ gamesPlayed: 9, boardGamesPlayed: 3 })), 'games')
+})

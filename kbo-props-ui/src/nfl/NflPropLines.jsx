@@ -350,6 +350,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       return {
         ...item,
         hitPills: pills,
+        // Pilot rank input (src/sideRank.js): the builder's games window.
+        boardGamesPlayed: item.gamesPlayed,
         hitRate: byId.l10?.rate ?? 0,
         gamesPlayed: byId.l10?.games ?? 0,
         seasonHitRate: byId.season?.rate ?? null,
