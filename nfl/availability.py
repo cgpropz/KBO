@@ -110,9 +110,12 @@ def fetch_espn_unavailable(get=None) -> set[tuple[str, str]]:
         response.raise_for_status()
         blocked = parse_espn_injuries(response.json())
     except Exception as exc:  # noqa: BLE001 - ESPN down must not block the board
+        # ::error:: makes the run summary show it; the build still publishes.
+        print(f'::error title=NFL OUT filter::ESPN NFL injury report unavailable ({type(exc).__name__}); OUT filter uses manual list only.')
         print(f'WARNING: ESPN NFL injury report unavailable ({type(exc).__name__}); OUT filter uses manual list only.')
         return set()
     if not blocked:
+        print('::error title=NFL OUT filter::ESPN NFL injury report returned no Out/IR players; OUT filter uses manual list only.')
         print('WARNING: ESPN NFL injury report returned no Out/IR players; OUT filter uses manual list only.')
     return blocked
 
@@ -157,5 +160,6 @@ def apply_out_filter(records: list[dict], get=None, manual_path: Path = MANUAL_O
         blocked = fetch_espn_unavailable(get) | load_manual_out(manual_path)
         return mark_unavailable(records, blocked)
     except Exception as exc:  # noqa: BLE001 - the filter must never block a publish
+        print(f'::error title=NFL OUT filter::OUT filter failed ({type(exc).__name__}); board published without it.')
         print(f'WARNING: OUT filter failed ({type(exc).__name__}); board published without it.')
         return []

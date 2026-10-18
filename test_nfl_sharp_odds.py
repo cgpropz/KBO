@@ -717,3 +717,29 @@ def test_filter_standard_lines_drops_goblin_demon_and_unknown():
     kept, counts = filter_standard_lines(rows)
     assert len(kept) == 2
     assert counts == {"before": 5, "after": 2, "dropped": {"demon": 1, "goblin": 1, "unknown": 1}}
+
+
+class PulledAndOutRowsTests(unittest.TestCase):
+    def _rows(self, payload):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "projections.json"
+            path.write_text(json.dumps(payload))
+            return sharp.load_pp_rows(path)
+
+    def test_out_and_pulled_rows_never_reach_sharp_odds(self):
+        base = {"team": "NYG", "line_type": "standard", "projection": 30.0}
+        payload = [
+            {**base, "id": "1", "player": "Theo Johnson", "prop": "Receiving Yards", "line": 7.5, "removed": True, "pp_status": "out"},
+            {**base, "id": "2", "player": "Theo Johnson", "prop": "Rec Targets", "line": 1.5, "pp_status": "out"},
+            {**base, "id": "3", "player": "Old Line", "prop": "Receiving Yards", "line": 12.5, "removed": True, "pp_status": "removed"},
+            {**base, "id": "4", "player": "Swapped", "prop": "Receptions", "line": 2.5, "pp_status": "Superseded"},
+            {**base, "id": "5", "player": "Darius Slayton", "prop": "Receiving Yards", "line": 30.5, "removed": False, "pp_status": None},
+            {**base, "id": "6", "player": "Questionable Guy", "prop": "Receptions", "line": 3.5, "injury": "Questionable"},
+        ]
+        rows = self._rows(payload)
+        self.assertEqual([row["id"] for row in rows], ["5", "6"])
+
+    def test_pulled_status_list_matches_the_member_board(self):
+        js = (Path(__file__).parent / "kbo-props-ui" / "src" / "nhl" / "pointsGate.js").read_text()
+        for status in sharp.PULLED_PP_STATUSES:
+            self.assertIn(f"'{status}'", js)

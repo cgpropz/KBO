@@ -437,6 +437,23 @@ def _is_standard_pp(item):
     return text is not None and text.lower() == "standard"
 
 
+# Same pulled statuses the member board drops (kbo-props-ui/src/nhl/pointsGate.js
+# PULLED_PP_STATUSES). "out" is the ESPN / nfl/manual_out.json OUT stamp from
+# nfl/availability.py; replaced / superseded are swapped lines. Those rows stay
+# in projections.json on purpose and are not lines a member can play.
+PULLED_PP_STATUSES = {"removed", "suspended", "held", "hold", "onhold", "out", "replaced", "superseded"}
+
+
+def prizepicks_pulled(item) -> bool:
+    if not isinstance(item, dict):
+        return False
+    if item.get("removed") is True:
+        return True
+    raw = item.get("pp_status", item.get("ppStatus"))
+    compact = "".join(ch for ch in str(raw or "").lower() if ch.isalpha())
+    return compact in PULLED_PP_STATUSES
+
+
 def load_pp_rows(path):
     if not path.exists():
         return None
@@ -446,8 +463,14 @@ def load_pp_rows(path):
     rows = []
     index_by_key = {}
     kept_standard = {}
+    dropped = []
     for item in payload:
         if not isinstance(item, dict):
+            continue
+        # A player ruled OUT, or a line PrizePicks pulled, never reaches sharp
+        # odds (2026-10-18: Theo Johnson, NYG, OUT, was still on sharp odds).
+        if prizepicks_pulled(item):
+            dropped.append(item)
             continue
         player = str(item.get("player") or "").strip()
         prop = str(item.get("prop") or "").strip()
@@ -499,6 +522,10 @@ def load_pp_rows(path):
         index_by_key[key] = len(rows)
         kept_standard[key] = standard
         rows.append(row)
+    out_players = sorted({f"{d.get('player')} ({d.get('team')})" for d in dropped
+                          if str(d.get("pp_status") or "").lower() == "out"})
+    print(f"Sharp odds skipped {len(dropped)} pulled/OUT PrizePicks rows"
+          + (f"; OUT: {', '.join(out_players)}" if out_players else "."))
     return rows
 
 
