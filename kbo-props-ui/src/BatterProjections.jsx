@@ -4,7 +4,7 @@ import { fetchDataSnapshot } from './dataUrl';
 import BoardStatus from './BoardStatus';
 import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
-import { pregameSide } from './kboBoardScore';
+import { capKboRating, compareKboRating, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
 import { BoardLoadError } from './BoardLoadError';
@@ -515,6 +515,8 @@ function BatterProjections() {
         // No live batter board right now: keep snapshot line/rating so UI remains usable.
         return {
           ...p,
+          rating: capKboRating(p.rating),
+          rawRating: kboRawRating(p.projection, p.line, p.prop) ?? (p.rating == null ? null : Number(p.rating)),
           team,
           opponent: opp,
           home_team: home,
@@ -554,9 +556,8 @@ function BatterProjections() {
       line: liveLine,
       odds_type: oddsType,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
-      rating: Number.isFinite(projection) && liveLine
-        ? Number(((projection / liveLine) * 50).toFixed(1))
-        : null,
+      rating: liveLine ? kboRating(projection, liveLine, p.prop) : null,
+      rawRating: liveLine ? kboRawRating(projection, liveLine, p.prop) : null,
       recommendation,
     };
   });
@@ -590,6 +591,7 @@ function BatterProjections() {
     if (aVal == null) return 1;
     if (bVal == null) return -1;
     if (typeof aVal === 'string') return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    if (sortField === 'rating') return compareKboRating(a, b, sortDir);
     return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
   });
 
@@ -918,7 +920,7 @@ function BatterProjections() {
                   >
                     {p.hit_rate_full != null ? `${p.hit_rate_full.toFixed(1)}%` : '—'}
                   </td>
-                  <td className={`col-num mono ${p.rating != null ? (p.rating >= 75 ? 'rate-high' : p.rating < 30 ? 'rate-low' : p.rating >= 50 ? 'rate-mid' : 'rate-cool') : ''}`}>
+                  <td className={`col-num mono ${kboRatingClass(p.rating, p.rawRating)}`}>
                     {p.rating != null ? p.rating.toFixed(1) : ''}
                   </td>
                   <td className={`col-num mono ${p.cg_projection == null ? 'cell-na' : ''}`} style={{ color: getCgProjectionColor(p.cg_projection), fontWeight: 800 }}>

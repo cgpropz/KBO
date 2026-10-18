@@ -3,8 +3,8 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import './PlayerPropsUI.css';
 import { fetchDataSnapshot } from './dataUrl';
-import { cgScore } from './cgScore';
-import { pregameSide, scoreFor } from './kboBoardScore';
+import { boundCg, cgScore } from './cgScore';
+import { kboRawRating, pregameSide, scoreFor } from './kboBoardScore';
 import { fitImage } from './fitImage.js';
 import { lineWord } from './lineCount';
 
@@ -95,7 +95,9 @@ const PlayerPropsUI = () => {
       if (sortBy === 'hit_rate') {
         const scoreA = scoreFor(a.prop) ?? -Infinity;
         const scoreB = scoreFor(b.prop) ?? -Infinity;
-        return scoreB - scoreA;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        // Ties at 100 break on the uncapped score.
+        return (kboRawRating(b.prop.projection, b.prop.line, b.prop.stat) ?? -Infinity) - (kboRawRating(a.prop.projection, a.prop.line, a.prop.stat) ?? -Infinity);
       }
       if (sortBy === 'edge') {
         const edgeOf = (prop) => (prop.projection == null || prop.projection === '' ? -Infinity : Number(prop.projection) - Number(prop.line));
@@ -189,7 +191,8 @@ function PropCard({ card, photoUrl, matchup }) {
   const edge = hasProjection ? Number(prop.projection) - Number(prop.line) : null;
   let rec = String(prop.recommendation || '').toUpperCase();
   if (rec !== 'OVER' && rec !== 'UNDER') rec = pregameSide(hasProjection ? prop.projection : null, prop.line);
-  const score = hasProjection ? cgScore(prop.projection, prop.line, prop.stat) : null;
+  // Same 0-100 cap as the board cell (scoreFor).
+  const score = hasProjection ? boundCg(cgScore(prop.projection, prop.line, prop.stat)) : null;
   const [imageFailed, setImageFailed] = useState(false);
   const [chartPeriod, setChartPeriod] = useState(null);
   const [flipped, setFlipped] = useState(false);
