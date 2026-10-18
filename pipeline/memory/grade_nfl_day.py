@@ -34,7 +34,7 @@ from pipeline.memory.common import (
     write_partial_progress,
     write_recap,
 )
-from pipeline.memory.common import MODEL_NA, RESULT_VOID, pulled_status
+from pipeline.memory.common import MODEL_NA, RESULT_VOID, nfl_left_board_pregame
 
 # Today plus the 14 days before it. A slate dated exactly 14 days ago is included.
 LOOKBACK_DAYS = 14
@@ -269,9 +269,9 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         stat = prop.get("stat") or ""
         line = prop.get("line")
         # Same rule as #238: a standard line that left the board (pulled by
-        # PrizePicks, or OUT/inactive) before the last pregame freeze is Void.
-        # The freeze only stamps removed on pregame cards.
-        if pulled_status(prop):
+        # PrizePicks, OUT/inactive, or just gone from the board read) before
+        # kickoff is Void. The freeze only stamps removed on pregame cards.
+        if nfl_left_board_pregame(prop):
             graded.append(
                 {
                     **prop,

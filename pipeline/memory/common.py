@@ -864,6 +864,44 @@ def _apply_pull_flags(
             target["superseded_at"] = now_iso
 
 
+NFL_DROPPED_REASON = "dropped_from_board"
+
+
+def stamp_nfl_dropped(row: dict, now_iso: str) -> None:
+    """Mark an NFL pregame card that vanished from the board as removed.
+
+    PrizePicks does not always flag a pulled line; often the row is just gone
+    from the next board read. Without a stamp the card grades as a live
+    hit/miss. A card PrizePicks already flagged keeps its own label.
+    """
+    if pulled_status(row):
+        if not row.get("removed_at"):
+            row["removed_at"] = row.get("superseded_at") or now_iso
+        return
+    row["removed"] = True
+    row["pp_status"] = "removed"
+    row["removed_reason"] = NFL_DROPPED_REASON
+    if not row.get("removed_at"):
+        row["removed_at"] = row.get("superseded_at") or now_iso
+
+
+def nfl_left_board_pregame(prop: dict) -> bool:
+    """True when an NFL card left the board before its game started.
+
+    Covers rows stamped removed by the freeze and older rows that only carry
+    superseded_at (the freeze saw them gone before kickoff but did not stamp
+    removed). A superseded_at at or after kickoff, or with no stored start,
+    does not count.
+    """
+    if not isinstance(prop, dict):
+        return False
+    if pulled_status(prop):
+        return True
+    gone = _parse_utc(prop.get("superseded_at"))
+    start = _parse_utc(prop.get("start_time_utc"))
+    return gone is not None and start is not None and gone < start
+
+
 def _open_pregame_count(rows: list, now: datetime | None) -> int:
     """Pregame rows that are still live on the slate."""
     count = 0
@@ -932,11 +970,16 @@ def write_slate(
                     if pulled_status(row):
                         row.pop("pp_status", None)
                         row.pop("removed", None)
+                    if sport == "nfl" and row.get("removed_reason") == NFL_DROPPED_REASON:
+                        row.pop("removed_reason", None)
+                        row.pop("removed_at", None)
                     continue
                 if prop_game_started(row, now):
                     continue
                 if not row.get("superseded_at"):
                     row["superseded_at"] = now_iso
+                if sport == "nfl":
+                    stamp_nfl_dropped(row, now_iso)
         if pulled_rows:
             _apply_pull_flags(sport, merged, pulled_rows, live_keys, now_iso, now)
     payload = {
