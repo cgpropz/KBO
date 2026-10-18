@@ -10,6 +10,7 @@ let clientFactory = null
 // Tests stand in for the dynamic import. Production leaves this unset.
 export function _setSupabaseClientFactory(factory) {
   clientPromise = null
+  loadedClient = null
   clientFactory = typeof factory === 'function' ? factory : null
 }
 
@@ -117,21 +118,41 @@ export function loadSupabase() {
       clientPromise = null
       throw err
     })
+    clientPromise.then(notifyLoaded, () => {})
   }
   return clientPromise
 }
 
-// Forces a token refresh. Used when the server answered a signed-in request
-// as logged out (revoked or rejected access token that has not expired yet).
-export async function refreshedAccessToken() {
-  const client = await loadSupabase()
-  if (!client) return null
-  try {
-    const { data, error } = await client.auth.refreshSession()
-    if (!error && data?.session?.access_token) return data.session.access_token
-  } catch {
-    /* fall through to the stored session */
+// AuthContext skips the client download for logged-out visitors. When the
+// sign-in form loads the client, AuthContext still has to hear SIGNED_IN, or
+// the page stays on the form until a reload.
+const loadedListeners = new Set()
+let loadedClient = null
+
+function notifyLoaded(client) {
+  if (!client) return
+  loadedClient = client
+  for (const fn of [...loadedListeners]) {
+    try { fn(client) } catch { /* a listener error must not block sign-in */ }
   }
+}
+
+export function onSupabaseLoaded(fn) {
+  if (typeof fn !== 'function') return () => {}
+  if (loadedClient) {
+    fn(loadedClient)
+    return () => {}
+  }
+  loadedListeners.add(fn)
+  return () => loadedListeners.delete(fn)
+}
+
+// Callers that want a "fresh" token get the stored session. getSession()
+// already refreshes an expired token through the library's own lock, and
+// auto-refresh keeps it current. Forcing refreshSession() here fired several
+// refreshes per board load, which hit Supabase's 429 rate limit; the library
+// then dropped the session and signed the member out (SEV-1, Oct 18).
+export async function refreshedAccessToken() {
   return sessionAccessToken()
 }
 
