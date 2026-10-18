@@ -1,6 +1,6 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
-import { nflCgScore } from '../src/nfl/nflLineFloors.js';
+import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
@@ -184,9 +184,17 @@ function nbaPropScore(player, prop) {
 // NFL Prop Lines preview score.
 // Receiving and rushing yards use the Middle floors (15.5 and 18.5).
 // A yardage line at or below 0.5 still does not score.
+// Exactly 50 is no pick (projection on the line, or a short over the floor
+// holds at 50), so it never takes a free slot.
 function nflScore(row) {
   const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
-  return score == null ? -Infinity : score;
+  return score == null || score === 50 ? -Infinity : score;
+}
+
+// Tie-break for rows that share a shown score (several at the 100 cap).
+function nflRaw(row) {
+  const raw = nflRawScore(row?.projection, row?.line, row?.prop ?? row?.stat);
+  return raw == null ? -Infinity : raw;
 }
 
 function nflPlayerKey(row, index) {
@@ -203,15 +211,16 @@ function previewNflProjections(payload) {
   const bestByPlayer = new Map();
   rows.forEach((item, index) => {
     const score = nflScore(item);
+    const raw = nflRaw(item);
     const key = nflPlayerKey(item, index);
     const current = bestByPlayer.get(key);
-    if (!current || score > current.score || (score === current.score && index < current.index)) {
-      bestByPlayer.set(key, { item, index, score });
+    if (!current || score > current.score || (score === current.score && (raw > current.raw || (raw === current.raw && index < current.index)))) {
+      bestByPlayer.set(key, { item, index, score, raw });
     }
   });
   const kept = [...bestByPlayer.values()]
     .filter((row) => Number.isFinite(row.score))
-    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .sort((a, b) => (b.score - a.score) || (b.raw === a.raw ? 0 : b.raw - a.raw) || (a.index - b.index))
     .slice(0, FREE_ROW_LIMIT)
     .map(({ item }) => item);
   return { data: kept, lockedCount: Math.max(0, rows.length - kept.length) };

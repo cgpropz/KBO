@@ -52,10 +52,10 @@ test('the free-preview ranker floors small lines and still drops 0.5 yardage', (
   assert.deepEqual(res.data.map((row) => [row.player, row.prop, row.line]), [
     ['Theo Johnson', 'Receiving Yards', 2.5],
     ['Tee Higgins', 'Receiving Yards', 64.5],
-    ['Tanner Hudson', 'Receptions', 0.5],
   ])
   assert.equal(res.data[0].projection, 23.7)
-  assert.equal(res.lockedCount, 0)
+  // Tanner Hudson Receptions 0.5 holds at 50 (no pick) and stays off the free list.
+  assert.equal(res.lockedCount, 1)
 })
 
 test('the free preview skips a game whose start_time has already passed', () => {
@@ -75,14 +75,12 @@ test('the free preview skips a game whose start_time has already passed', () => 
     { player: 'Raheim Sanders', prop: 'Rush Yards', projection: 15.9, line: 5.5, start_time: upcoming },
     { player: 'Sterling Shepard', prop: 'Receiving Yards', projection: 15.1, line: 5.5, start_time: upcoming },
   ])
+  // Raheim Sanders and Sterling Shepard hold at 50 (no pick), so they take no free slot.
   assert.deepEqual(res.data.map((row) => [row.player, row.prop]), [
     ['Calvin Ridley', 'Receiving Yards'],
     ['Theo Johnson', 'Receiving Yards'],
-    // Both short overs hold at 50; the earlier row wins the tie.
-    ['Raheim Sanders', 'Rush Yards'],
   ])
-  assert.equal(res.data[2].line, 5.5)
-  assert.equal(res.lockedCount, 1)
+  assert.equal(res.lockedCount, 2)
 })
 
 test('the free preview keeps one prop per player, the highest score', () => {
@@ -108,8 +106,9 @@ test('the free preview keeps one prop per player, the highest score', () => {
 test('a tie keeps the earlier prop for that player', () => {
   const preview = DATASETS.nfl_projections.free
   const res = preview([
-    { player: 'Same Score', prop: 'Receptions', projection: 3, line: 3, id: 'first' },
-    { player: 'Same Score', prop: 'Rec Targets', projection: 4, line: 4, id: 'second' },
+    // Equal shown and raw scores (66.7). Exactly 50 would be no pick.
+    { player: 'Same Score', prop: 'Receptions', projection: 4, line: 3, id: 'first' },
+    { player: 'Same Score', prop: 'Rec Targets', projection: 4, line: 3, id: 'second' },
     { player: 'Other', prop: 'Pass TDs', projection: 1, line: 2 },
   ])
   assert.equal(res.data[0].id, 'first')

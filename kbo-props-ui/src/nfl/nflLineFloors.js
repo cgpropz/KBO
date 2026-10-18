@@ -29,6 +29,29 @@ export const NFL_LINE_FLOORS = {
   'Rush+Rec Yds': 30.5,
 }
 
+// Uncapped, unheld floored ratio score. Only a tie-break key: two rows that
+// both show 100 rank by how far past the cap they were.
+export function nflRawScore(projection, line, stat) {
+  if (!lineMatchesStat(stat, line)) return null
+  const p = Number(projection)
+  const l = Number(line)
+  if (!Number.isFinite(p) || !(l > 0)) return null
+  const floor = NFL_LINE_FLOORS[stat]
+  const denom = Number.isFinite(floor) ? Math.max(l, floor) : l
+  return (p / denom) * 50
+}
+
+// Higher shown score first, then higher raw score. Callers add their own
+// final tie-break (board order, name).
+export function compareNflScores(aScore, aRaw, bScore, bRaw) {
+  const as = Number.isFinite(aScore) ? aScore : -Infinity
+  const bs = Number.isFinite(bScore) ? bScore : -Infinity
+  if (as !== bs) return bs - as
+  const ar = Number.isFinite(aRaw) ? aRaw : -Infinity
+  const br = Number.isFinite(bRaw) ? bRaw : -Infinity
+  return ar === br ? 0 : br - ar
+}
+
 export function nflCgScore(projection, line, stat) {
   if (!lineMatchesStat(stat, line)) return null
   const p = Number(projection)

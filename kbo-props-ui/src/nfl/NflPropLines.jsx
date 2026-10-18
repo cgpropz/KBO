@@ -12,8 +12,8 @@ import { fitImage } from '../fitImage.js'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
-import { lineMatchesStat } from '../cgScore'
-import { nflCgScore } from './nflLineFloors'
+import { cgSide, lineMatchesStat } from '../cgScore'
+import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
@@ -101,7 +101,9 @@ function MiniChart({ recent, line }) {
 
 function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
-  const isOver = item.projection >= item.line
+  // Side from the CG Score. Exactly 50 is no pick: no O/U letter, no color.
+  const side = cgSide(item.score)
+  const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
   const grade = dvpGrade(item.dvpRank)
   const stripId = `nfl-board-odds-${String(item.id).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
   const scoreNote = buildCgScoreExplainer({
@@ -140,13 +142,13 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} />{item.team}, {item.position}</span>
-              <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+              <div className={`nfl-lines-line ${sideClass}`}>{side ? <b>{side === 'OVER' ? 'O' : 'U'}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
-        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+        { className: `hit-rate-score ${sideClass}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
@@ -347,7 +349,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         seasonHitRate: byId.season?.rate ?? null,
         h2hHitRate: byId.h2h?.rate ?? null,
         score: nflCgScore(item.projection, item.line, item.prop) ?? 0,
-        isOver: item.projection >= item.line,
+        rawScore: nflRawScore(item.projection, item.line, item.prop),
+        side: cgSide(nflCgScore(item.projection, item.line, item.prop)),
       }
     })
     const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
@@ -357,7 +360,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
     const filtered = withScore
       .filter((item) => propTab === 'All Props' || item.prop === propTab)
-      .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.isOver : !item.isOver))
+      .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.side === 'OVER' : item.side === 'UNDER'))
       .filter((item) => item.hitRate >= filters.minHitRate)
       .filter((item) => item.gamesPlayed >= filters.minGames)
       .filter((item) => filters.position === 'All' || item.position === filters.position)
@@ -370,7 +373,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       })
 
     return filtered.sort((a, b) => {
-      if (filters.sortBy === 'CG Score') return b.score - a.score
+      if (filters.sortBy === 'CG Score') return compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
       if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
       if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)

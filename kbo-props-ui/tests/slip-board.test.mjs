@@ -72,17 +72,22 @@ test('NFL slip scores use the board floors so short rush and receiving lines do 
   assert.equal(shownCg(hutchinson), 100)
   assert.equal(shownCg(atFloor), (30.3 / 18.5) * 50)
   assert.notEqual(shownCg(mccarthy), (15.9 / 2.5) * 50)
-  assert.equal(naturalSide(mccarthy), 'MORE')
+  // Held at 50 is no pick: EVEN, not MORE.
+  assert.equal(naturalSide(mccarthy), 'EVEN')
+  assert.equal(naturalSide(atFloor), 'MORE')
   const board = boardRows([penix, mccarthy, missingType, cousins, hutchinson, atFloor], { standardOnly: true, sortDesc: true })
-  // Hutchinson and No Type both hit the 100 bound; the 50s tie and break by name.
+  // Hutchinson (raw 115.8) and No Type (raw 108.1) both show 100; the raw
+  // score breaks the tie. The 50s also order by raw score, not by name.
   assert.deepEqual(board.map((row) => row.name), [
-    'No Type',
     'Xavier Hutchinson',
+    'No Type',
     'Keaton Mitchell',
     'J.J. McCarthy',
-    'Kirk Cousins',
     'Michael Penix Jr.',
+    'Kirk Cousins',
   ])
+  const more = boardRows([penix, mccarthy, cousins, hutchinson, atFloor], { standardOnly: true, moreOnly: true })
+  assert.deepEqual(more.map((row) => row.name), ['Xavier Hutchinson', 'Keaton Mitchell'])
 })
 
 test('equal CG scores break ties by name, prop, and line', () => {

@@ -26,6 +26,20 @@ export function boundCg(score) {
   return Math.min(CG_MAX, Math.max(CG_MIN, value))
 }
 
+// Exactly 50 is no pick: no side, no color, and never in a top list.
+export const NEUTRAL_CG = 50
+
+export function cgSide(score) {
+  if (score == null) return null
+  const value = Number(score)
+  if (!Number.isFinite(value) || value === NEUTRAL_CG) return null
+  return value > NEUTRAL_CG ? 'OVER' : 'UNDER'
+}
+
+export function isNeutralCg(score) {
+  return score != null && Number(score) === NEUTRAL_CG
+}
+
 export function cgScore(projection, line, stat) {
   if (!lineMatchesStat(stat, line)) return null
   const p = Number(projection)
