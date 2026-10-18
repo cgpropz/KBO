@@ -101,6 +101,15 @@ jobs:
         continue-on-error: true
         run: python -m nhl.hits_log --only lines
 
+      # Admin-only Hits grading (#276). Writes memory/nhl_hits/board/ only:
+      # never the board, Supabase, slate, recap, summary, or status.
+      # NHL_HITS_BOARD and NHL_HITS_PUBLIC stay unset.
+      - name: Private NHL hits projections (admin-only)
+        continue-on-error: true
+        env:
+          NHL_HITS_GRADE: "1"
+        run: python -m nhl.hits_grade snapshot
+
       - name: Publish memory/nhl slate freeze
         if: success()
         continue-on-error: true

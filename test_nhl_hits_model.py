@@ -125,27 +125,66 @@ def test_build_board_skips_hits_cards_unless_flag(monkeypatch):
     assert len(hits) == 1 and hits[0]["oddsType"] == "standard"
 
 
-def test_grader_leaves_hits_out_unless_flag(monkeypatch):
+def test_public_grader_never_grades_hits(monkeypatch):
     from pipeline.memory import grade_nhl_day as g
     props = [{"stat": "Hits", "odds_type": "standard", "player": "A", "line": 2.5},
              {"stat": "Shots On Goal", "odds_type": "standard", "player": "B", "line": 2.5}]
-    monkeypatch.delenv("NHL_HITS_GRADE", raising=False)
-    live, _ = g._standard_rows(props)
-    assert [p["stat"] for p in live] == ["Shots On Goal"]
-    assert "Hits" not in g.stat_keys()
+    for flag in ("", "1"):
+        monkeypatch.setenv("NHL_HITS_GRADE", flag)
+        live, voids = g._standard_rows(props)
+        assert [p["stat"] for p in live] == ["Shots On Goal"] and voids == []
+    assert "Hits" not in g.STAT_KEYS
+
+
+def test_freeze_skips_hits_rows():
+    import inspect
+    from pipeline.memory import freeze_slate
+    assert '"Hits"' in inspect.getsource(freeze_slate.freeze_nhl)
+
+
+def _line(pid, player, team, opp, line, start, last_seen):
+    return {"pp_player_id": pid, "player": player, "team": team, "opponent": opp, "line_type": "standard",
+            "closing_line": line, "first_line": line, "game_start": start, "last_seen": last_seen, "changes": []}
+
+
+def test_private_grader_writes_only_under_nhl_hits(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+    import nhl.hits_grade as hg
+    start = "2026-10-17T19:00:00.000-04:00"
+    lines = {"props": {
+        "1|a": _line("1", "Matt Rempe", "NYR", "NJD", 2.5, start, "2026-10-17T22:40:00+00:00"),
+        "2|a": _line("2", "Will Cuylle", "NYR", "NJD", 2.0, start, "2026-10-17T22:40:00+00:00"),
+        "3|a": _line("3", "Pulled Guy", "NYR", "NJD", 1.5, start, "2026-10-17T18:00:00+00:00"),
+        "4|a": _line("4", "Scratch Guy", "NYR", "NJD", 1.5, start, "2026-10-17T22:40:00+00:00"),
+    }}
+    (tmp_path / "lines").mkdir()
+    (tmp_path / "lines" / "2026-10-17.json").write_text(json.dumps(lines))
+    hist = []
+    for pid, name in ((7, "Matt Rempe"), (8, "Will Cuylle"), (9, "Pulled Guy"), (10, "Scratch Guy")):
+        hist += [_g(pid, f"2026-10-0{i}", 3 if pid == 7 else 2, gid=i * 100 + pid, name=name) for i in range(1, 8)]
+    board = HitsBoard("20262027", "20252026", today="2026-10-17", rows=hist)
     monkeypatch.setenv("NHL_HITS_GRADE", "1")
-    live, _ = g._standard_rows(props)
-    assert [p["stat"] for p in live] == ["Hits", "Shots On Goal"]
-    assert g.stat_keys()["Hits"] == "hits"
-    assert "Hits" not in g.STAT_KEYS  # saved-slip grading map unchanged
+    now = datetime(2026, 10, 17, 16, 0, tzinfo=timezone.utc)
+    assert hg.snapshot(tmp_path, now=now, board=board) == 4
+    games = [dict(_g(7, "2026-10-17", 3, gid=1), player="Matt Rempe"),
+             dict(_g(8, "2026-10-17", 2, gid=1), player="Will Cuylle")]
+    out = hg.grade_date("2026-10-17", tmp_path, games=games)
+    results = {r["player"]: r["result"] for r in out["rows"]}
+    assert results["Pulled Guy"] == "void"
+    assert results["Scratch Guy"] == "dnp"
+    assert results["Will Cuylle"] in {"push", "hit", "miss"}
+    assert out["admin_only"] is True
+    summary = hg.write_summary(tmp_path)
+    assert summary["admin_only"] is True
+    written = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*.json"))
+    assert written == ["board/2026-10-17.json", "grades/2026-10-17.json", "grades/summary.json", "lines/2026-10-17.json"]
+    # A started game is frozen: a later snapshot does not overwrite it.
+    late = datetime(2026, 10, 17, 23, 30, tzinfo=timezone.utc)
+    assert hg.snapshot(tmp_path, now=late, board=board) == 0
 
 
-def test_grader_reads_hits_from_boxscore(monkeypatch):
-    from pipeline.memory import grade_nhl_day as g
-    score = {"games": [{"id": 1, "gameType": 2, "gameState": "OFF", "awayTeam": {"abbrev": "NJD"}, "homeTeam": {"abbrev": "NYR"}}]}
-    box = {"playerByGameStats": {"homeTeam": {"forwards": [{"playerId": 5, "sog": 1, "points": 0, "hits": 4, "name": {"default": "M. Rempe"}}]},
-                                 "awayTeam": {}}}
-    pbp = {"rosterSpots": [{"playerId": 5, "firstName": {"default": "Matt"}, "lastName": {"default": "Rempe"}}], "plays": []}
-    fetch = lambda url: pbp if "play-by-play" in url else box  # noqa: E731
-    actuals = g.actuals_from_score(score, fetch=fetch)
-    assert actuals["players"][("id", 5)]["hits"] == 4.0
+def test_private_grader_is_off_without_flag(tmp_path, monkeypatch):
+    import nhl.hits_grade as hg
+    monkeypatch.delenv("NHL_HITS_GRADE", raising=False)
+    assert hg.main(["grade", "--base", str(tmp_path)]) == 0
+    assert list(tmp_path.rglob("*")) == []

@@ -41,7 +41,6 @@ from pipeline.memory.common import (  # noqa: E402
     write_partial_progress,
     write_recap,
 )
-from nhl.hits_model import PROP_HITS, hits_grade_enabled  # noqa: E402
 from nhl.teams import team_abbr  # noqa: E402
 
 SCORE_URL = "https://api-web.nhle.com/v1/score/{iso}"
@@ -54,13 +53,10 @@ STAT_KEYS = {
     "Power Play Points": "ppp",
     "Goalie Saves": "saves",
 }
-# Hits is graded only with NHL_HITS_GRADE=1. Off, a frozen Hits row is left
-# out of the slate entirely (not graded, not Void, not in the recap).
-HITS_STAT_KEYS = {PROP_HITS: "hits"}
-
-
-def stat_keys() -> dict:
-    return {**STAT_KEYS, **HITS_STAT_KEYS} if hits_grade_enabled() else dict(STAT_KEYS)
+# NHL Hits is never graded here. This grader writes the public recap and
+# summary. Hits lines are graded privately by nhl/hits_grade.py into
+# memory/nhl_hits/grades/ (admin-only).
+PRIVATE_STATS = frozenset({"Hits"})
 
 
 def _plain(value) -> str:
@@ -148,11 +144,10 @@ def _standard_rows(props: list) -> tuple[list[dict], list[dict]]:
     """
     live: list[dict] = []
     voids: list[dict] = []
-    grade_hits = hits_grade_enabled()
     for prop in props or []:
         if not isinstance(prop, dict):
             continue
-        if not grade_hits and str(prop.get("stat") or "") == PROP_HITS:
+        if str(prop.get("stat") or "").strip() in PRIVATE_STATS:
             continue
         odds = str(prop.get("odds_type") or "standard").strip().lower()
         if odds != "standard":
@@ -254,7 +249,6 @@ def actuals_from_score(score: dict, fetch=_get_json) -> dict:
                         "sog": float(player.get("sog") or 0),
                         "points": float(player.get("points") or 0),
                         "ppp": None if ppp is None else float(ppp.get(player_id, 0) if player_id else 0),
-                        "hits": None if player.get("hits") is None else float(player.get("hits")),
                         "saves": None,
                         "played": True,
                     }
@@ -269,7 +263,6 @@ def actuals_from_score(score: dict, fetch=_get_json) -> dict:
                     "sog": None,
                     "points": None,
                     "ppp": None,
-                    "hits": None,
                     "saves": None if not played else float(player.get("saves") or 0),
                     "played": played,
                 }
@@ -345,13 +338,12 @@ def grade_day(d: date, *, dry_run: bool = False, actuals: dict | None = None) ->
 
     final_teams = set(actuals.get("final_teams") or [])
     players = actuals.get("players") or {}
-    keys = stat_keys()
     graded = []
     missing = []
     for prop in props:
         team = team_abbr(prop.get("team"))
         stat = prop.get("stat") or ""
-        key = keys.get(stat)
+        key = STAT_KEYS.get(stat)
         if team not in final_teams:
             missing.append({"player": prop.get("player"), "stat": stat, "reason": "game_not_final"})
             continue
