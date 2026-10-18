@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -283,11 +284,22 @@ class WnbaRefreshWorkflowTests(unittest.TestCase):
 
     def test_memory_steps_still_run_after_a_failed_push(self):
         text = WORKFLOW.read_text(encoding="utf-8")
-        for name in ("Freeze WNBA slate into memory/", "Grade WNBA memory for yesterday if complete",
-                     "Publish memory/ updates"):
+        for name in ("Grade WNBA memory for yesterday if complete", "Publish memory/ updates"):
             block = text[text.index(f"- name: {name}"):]
             block = block[: block.index("run:")]
             self.assertIn("if: ${{ !cancelled() }}", block, name)
+
+    def test_freeze_requires_a_successful_supabase_publish(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        publish = text[text.index("- name: Publish WNBA snapshots to Supabase"):]
+        publish = publish[: publish.index("run:")]
+        self.assertIn("id: publish_supabase", publish)
+        self.assertNotIn("continue-on-error", publish)
+        freeze = text[text.index("- name: Freeze WNBA slate into memory/"):]
+        freeze = freeze[: freeze.index("run:")]
+        self.assertIn("if: ${{ !cancelled() && steps.publish_supabase.outcome == 'success' }}", freeze)
+        # the freeze runs after the publish it is gated on
+        self.assertLess(text.index("id: publish_supabase"), text.index("- name: Freeze WNBA slate into memory/"))
 
     # Real git: a bare "origin" plus a runner checkout, and the step script itself.
     def setUp(self):
@@ -327,7 +339,8 @@ class WnbaRefreshWorkflowTests(unittest.TestCase):
 
     def _run_step(self):
         script = _step_script("Commit WNBA snapshot updates")
-        return subprocess.run(["bash", "-e", "-c", script], cwd=self.runner, capture_output=True, text=True)
+        env = {**os.environ, "PUSH_BACKOFF_SECONDS": "0"}
+        return subprocess.run(["bash", "-e", "-c", script], cwd=self.runner, capture_output=True, text=True, env=env)
 
     def test_non_fast_forward_with_unstaged_changes_pushes_box_scores(self):
         result = self._run_step()
@@ -343,7 +356,23 @@ class WnbaRefreshWorkflowTests(unittest.TestCase):
         hook.chmod(0o755)
         result = self._run_step()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("::error::", result.stdout)
+        self.assertIn("::error::All 3 push attempts failed", result.stdout)
+        self.assertIn("rejected; waiting", result.stdout)
+
+    def test_push_retries_until_a_later_attempt_lands(self):
+        # Attempt 1 is non-fast-forward (main moved); the hook rejects attempt 2
+        # and accepts attempt 3.
+        counter = self.origin / "rejects"
+        hook = self.origin / "hooks" / "pre-receive"
+        hook.write_text(
+            "#!/bin/sh\nn=$(cat '%s' 2>/dev/null || echo 0)\nn=$((n+1))\necho $n > '%s'\n"
+            "[ $n -ge 2 ] || exit 1\nexit 0\n" % (counter, counter), encoding="utf-8")
+        hook.chmod(0o755)
+        result = self._run_step()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Push succeeded on attempt 3", result.stdout)
+        _git(self.other, "fetch", "-q", "origin")
+        self.assertIn("10/17/2026", _git(self.other, "show", "origin/main:wnba/wnba_boxscores_postseason.csv").stdout)
 
     def test_autostash_conflict_exits_non_zero(self):
         # main changes the same generated file the runner left dirty
