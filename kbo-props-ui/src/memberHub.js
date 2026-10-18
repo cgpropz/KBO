@@ -52,7 +52,8 @@ export function blockedAvailability(value) {
   return null
 }
 
-const HELD_STATUS = new Set(['held', 'hold', 'onhold', 'suspended', 'removed'])
+// Same pulled statuses as the server (PULLED_PP_STATUSES in src/nhl/pointsGate.js).
+const HELD_STATUS = new Set(['held', 'hold', 'onhold', 'suspended', 'removed', 'out', 'replaced', 'superseded'])
 
 function statusText(value) {
   return String(value || '').toLowerCase().replace(/[^a-z]/g, '')

@@ -41,13 +41,26 @@ export function applyPointsOverGate(row) {
   return row
 }
 
-const PULLED = new Set(['removed', 'suspended', 'held', 'hold', 'onhold'])
+// pp_status values that mean the line is off the board, compared after
+// lowercasing and dropping non-letters ("On Hold" -> "onhold"). `out` is the
+// NFL ESPN/manual OUT stamp (#251); `replaced` / `superseded` are a line
+// PrizePicks swapped for a new one. A row with one of these is pulled even
+// when the removed flag is missing. Keep in sync with HELD_STATUS in
+// src/memberHub.js.
+export const PULLED_PP_STATUSES = new Set(['removed', 'suspended', 'held', 'hold', 'onhold', 'out', 'replaced', 'superseded'])
 
-function prizepicksPulled(row) {
+export function compactPpStatus(value) {
+  return String(value ?? '').toLowerCase().replace(/[^a-z]/g, '')
+}
+
+export function isPulledPpStatus(value) {
+  return PULLED_PP_STATUSES.has(compactPpStatus(value))
+}
+
+export function prizepicksPulled(row) {
   if (!row || typeof row !== 'object') return false
   if (row.removed === true) return true
-  const compact = String(row.pp_status ?? row.ppStatus ?? '').toLowerCase().replace(/[^a-z]/g, '')
-  return PULLED.has(compact)
+  return isPulledPpStatus(row.pp_status ?? row.ppStatus)
 }
 
 // PrizePicks pulled and removed lines. This is every paid board, not the
