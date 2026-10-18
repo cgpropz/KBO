@@ -147,13 +147,123 @@ export function onSupabaseLoaded(fn) {
   return () => loadedListeners.delete(fn)
 }
 
-// Callers that want a "fresh" token get the stored session. getSession()
-// already refreshes an expired token through the library's own lock, and
-// auto-refresh keeps it current. Forcing refreshSession() here fired several
-// refreshes per board load, which hit Supabase's 429 rate limit; the library
-// then dropped the session and signed the member out (SEV-1, Oct 18).
+// A "fresh" token is asked for when the server answered a signed-in request
+// as logged out. Most of the time the stored session is still right, so the
+// stored token comes back. Only when the stored token has NOT expired (so the
+// library will not refresh it on its own) and the server still rejected it,
+// one real refresh runs:
+//   - one per page per REFRESH_COOLDOWN_MS; callers inside the window reuse
+//     the stored session,
+//   - concurrent callers share the refresh already in flight,
+//   - a 429, 5xx or network error keeps the stored session and the tier.
+// Forcing a refresh on every board load hit Supabase's 429 rate limit and the
+// library then signed the member out (SEV-1, Oct 18, #268).
+export const REFRESH_COOLDOWN_MS = 60_000
+
+let refreshInFlight = null
+let lastRefreshAt = -Infinity
+let refreshGuard = null
+let nowFn = () => Date.now()
+
+// Tests only.
+export function _resetRefreshState({ now } = {}) {
+  refreshInFlight = null
+  lastRefreshAt = -Infinity
+  refreshGuard = null
+  nowFn = typeof now === 'function' ? now : () => Date.now()
+}
+
+// auth-js removes the stored session and emits SIGNED_OUT on any refresh error
+// that is not a 5xx/network error, 429 included. While our refresh runs,
+// AuthContext hands a SIGNED_OUT here instead of applying it. It is applied
+// only if the refresh turns out to be a real rejection (revoked session).
+export function deferSignOutDuringRefresh(apply) {
+  if (!refreshGuard || typeof apply !== 'function') return false
+  refreshGuard.deferred.push(apply)
+  return true
+}
+
+export function isTransientAuthError(err) {
+  if (!err) return false
+  const status = Number(err.status)
+  if (status === 429 || status >= 500) return true
+  if (err.code === 'over_request_rate_limit') return true
+  if (err.name === 'AuthRetryableFetchError') return true
+  // A thrown fetch failure has no status at all.
+  return !status
+}
+
+function storedSessionEntry(storage) {
+  if (!storage || typeof storage.getItem !== 'function') return null
+  const preferred = supabaseStorageKey()
+  const names = []
+  if (preferred) names.push(preferred)
+  for (const name of storageKeyNames(storage)) {
+    if (isAuthTokenKey(name) && !names.includes(name)) names.push(name)
+  }
+  for (const name of names) {
+    try {
+      const raw = storage.getItem(name)
+      if (parseCachedSession(raw)) return { name, raw }
+    } catch {
+      /* next key */
+    }
+  }
+  return null
+}
+
+function restoreStoredSession(storage, entry) {
+  if (!entry || !storage || typeof storage.setItem !== 'function') return
+  try {
+    if (storage.getItem(entry.name) !== entry.raw) storage.setItem(entry.name, entry.raw)
+  } catch {
+    /* storage full or blocked: nothing more to do */
+  }
+}
+
+async function runGuardedRefresh(cached) {
+  const storage = typeof localStorage === 'undefined' ? null : localStorage
+  const entry = storedSessionEntry(storage)
+  const guard = { deferred: [] }
+  refreshGuard = guard
+  let transient = true
+  try {
+    const client = await loadSupabase()
+    if (!client) return cached.accessToken
+    const { data, error } = await client.auth.refreshSession()
+    if (!error && data?.session?.access_token) {
+      transient = false
+      guard.deferred = []
+      return data.session.access_token
+    }
+    transient = error ? isTransientAuthError(error) : true
+    if (transient) return cached.accessToken
+    return null
+  } catch {
+    return cached.accessToken
+  } finally {
+    if (refreshGuard === guard) refreshGuard = null
+    if (transient) {
+      restoreStoredSession(storage, entry)
+    } else {
+      for (const apply of guard.deferred) {
+        try { apply() } catch { /* keep going */ }
+      }
+    }
+  }
+}
+
 export async function refreshedAccessToken() {
-  return sessionAccessToken()
+  if (refreshInFlight) return refreshInFlight
+  const cached = readCachedSession()
+  // Logged out, or an expired token the library refreshes itself.
+  if (!cached?.accessToken || !cachedAccessToken(nowFn())) return sessionAccessToken()
+  if (nowFn() - lastRefreshAt < REFRESH_COOLDOWN_MS) return sessionAccessToken()
+  lastRefreshAt = nowFn()
+  refreshInFlight = runGuardedRefresh(cached).finally(() => {
+    refreshInFlight = null
+  })
+  return refreshInFlight
 }
 
 export async function sessionAccessToken() {

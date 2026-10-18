@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
-import { loadSupabase, onSupabaseLoaded, readCachedSession } from './supabaseClient';
+import { deferSignOutDuringRefresh, loadSupabase, onSupabaseLoaded, readCachedSession } from './supabaseClient';
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 import { settlePlanCheck } from './planCheck.js';
 
@@ -208,7 +208,7 @@ export function AuthProvider({ children }) {
     const subscribe = (client) => {
       if (!client || cancelled || subscribed) return;
       subscribed = true;
-      const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      const onAuthEvent = (event, session) => {
         if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
         const previousId = userRef.current?.id || null;
         const u = session?.user ?? null;
@@ -225,6 +225,12 @@ export function AuthProvider({ children }) {
           setDiscord(EMPTY_DISCORD);
           clearCachedTier();
         }
+      };
+      const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+        // A SIGNED_OUT raised by our own token refresh (429, 5xx) waits for the
+        // refresh result. A transient error keeps the session and the tier.
+        if (event === 'SIGNED_OUT' && deferSignOutDuringRefresh(() => onAuthEvent(event, session))) return;
+        onAuthEvent(event, session);
       });
       if (cancelled) subscription.unsubscribe();
       else unsubscribe = () => subscription.unsubscribe();
