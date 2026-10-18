@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T17:25:39Z",
+  "checked_at": "2026-10-18T17:34:22Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T17:25:39.513194+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 1
     },
     "nhl": {
-      "generated_at": "2026-10-18T17:06:55.067166+00:00",
-      "prop_count": 173,
+      "generated_at": "2026-10-18T17:34:22.855343+00:00",
+      "prop_count": 179,
       "started_removed": 0,
       "removals": [
         {
@@ -122,6 +122,24 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.48,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Brandon Bussi",
+          "team": "CAR",
+          "stat": "Goalie Saves",
+          "line": 21.5,
+          "odds_type": "standard",
+          "projection": 21.26,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Brandon Bussi",
+          "team": "CAR",
+          "stat": "Goalie Saves",
+          "line": 32.5,
+          "odds_type": "demon",
+          "projection": 21.26,
           "reason": "line pulled"
         },
         {
@@ -237,6 +255,15 @@
           "team": "MIN",
           "stat": "Shots On Goal",
           "line": 4.5,
+          "odds_type": "demon",
+          "projection": 2.52,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Joel Eriksson Ek",
+          "team": "MIN",
+          "stat": "Shots On Goal",
+          "line": 5.5,
           "odds_type": "demon",
           "projection": 2.52,
           "reason": "line pulled"
@@ -789,19 +816,10 @@
           "odds_type": "demon",
           "projection": 1.15,
           "reason": "line pulled"
-        },
-        {
-          "player": "Zayne Parekh",
-          "team": "CGY",
-          "stat": "Shots On Goal",
-          "line": 3.5,
-          "odds_type": "demon",
-          "projection": 1.15,
-          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 14,
+        "pp_pull": 13,
         "superseded_dup": 12,
         "manual_out": 0,
         "news_out": 0,
