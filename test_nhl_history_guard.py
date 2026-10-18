@@ -203,15 +203,17 @@ class PartialHistoryTests(unittest.TestCase):
             calls[url] = calls.get(url, 0) + 1
             return read(url, calls[url])
 
-        saved = (fetch._read, fetch._sleep, fetch.ROOT)
+        saved = (fetch._read, fetch._sleep, fetch.ROOT, fetch._record_status_failure)
+        self.recorded = []
         out, err = io.StringIO(), io.StringIO()
         with tempfile.TemporaryDirectory() as root:
             fetch._read, fetch._sleep, fetch.ROOT = fake_read, (lambda _seconds: None), root
+            fetch._record_status_failure = self.recorded.append
             try:
                 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                     code = fetch.main()
             finally:
-                fetch._read, fetch._sleep, fetch.ROOT = saved
+                fetch._read, fetch._sleep, fetch.ROOT, fetch._record_status_failure = saved
         return code, calls, out.getvalue(), err.getvalue()
 
     @staticmethod
@@ -231,6 +233,7 @@ class PartialHistoryTests(unittest.TestCase):
         self.assertEqual(code, 1, "a partial history must fail the step so build and publish do not run")
         self.assertIn("moneypuck missing teams after retries: 2025/skaters/VGK", out)
         self.assertIn("last-good NHL board stays live", err)
+        self.assertEqual(self.recorded, [["2025/skaters/VGK"]])
 
     def test_prior_season_404_that_recovers_publishes(self):
         def read(url, attempt):
