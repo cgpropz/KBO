@@ -12,6 +12,7 @@ import {
   cardView,
   edgeRank,
   finite,
+  scoreText,
 } from './gameCardModel'
 
 const SORT_OPTIONS = ['Kickoff', 'Edge', 'Spread edge', 'Total edge']
@@ -61,22 +62,18 @@ function GameCard({ game, hideTotalEdge = false }) {
       <div className="nfl-market-top">
         <span className="nfl-market-pill">{view.status}</span>
       </div>
+      {/* One grid, two arrangements (nfl.css): wide cards keep clubs left and
+          right with the CG number between; narrow cards stack logo HOU @ JAX
+          logo, then the label, then each score under its team. */}
       <div className="nfl-market-matchup">
-        <div className="nfl-market-club">
+        <div className="nfl-market-club is-away">
           <TeamMark team={view.away} />
           <span>
             <b>{view.away}</b>
             <small>away</small>
           </span>
         </div>
-        <div className="nfl-market-ours">
-          <small>CG NUMBER</small>
-          {view.scoreLine && (
-            <div>
-              <b>{view.scoreLine}</b>
-            </div>
-          )}
-        </div>
+        <span className="nfl-market-at" aria-hidden="true">@</span>
         <div className="nfl-market-club is-home">
           <span>
             <b>{view.home}</b>
@@ -84,6 +81,14 @@ function GameCard({ game, hideTotalEdge = false }) {
           </span>
           <TeamMark team={view.home} />
         </div>
+        <small className="nfl-market-cg-label">CG NUMBER</small>
+        {view.scores && (
+          <>
+            <b className="nfl-market-score is-away" aria-label={`${view.away} ${scoreText(view.scores.away)}`}>{scoreText(view.scores.away)}</b>
+            <span className="nfl-market-score-sep" aria-hidden="true">–</span>
+            <b className="nfl-market-score is-home" aria-label={`${view.home} ${scoreText(view.scores.home)}`}>{scoreText(view.scores.home)}</b>
+          </>
+        )}
       </div>
       {view.wins && (
         <div className="nfl-market-prob">
