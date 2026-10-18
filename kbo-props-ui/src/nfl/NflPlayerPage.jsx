@@ -86,9 +86,13 @@ function dvpColor(rank) {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+// Hide the mark if it fails to load, so its alt text never shows as a broken image.
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
-  return url ? <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" /> : null
+  const src = url ? fitImage(url, 22) : ''
+  const [failedSrc, setFailedSrc] = useState('')
+  if (!src || src === failedSrc) return null
+  return <img className={className} src={src} alt="" aria-hidden="true" loading="lazy" onError={() => setFailedSrc(src)} />
 }
 
 function sortProps(rows) {

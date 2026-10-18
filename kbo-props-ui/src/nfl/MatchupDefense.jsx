@@ -14,6 +14,7 @@ function gradeClass(grade) {
 function Note({ entries, payload }) {
   return (
     <span className="nfl-adj-note" role="note">
+      <b className="nfl-adj-note-title">Adj matchup <small>(not DvP · 32 = easiest)</small></b>
       {entries.map((entry) => <span key={entry.split}>{matchupTooltip(entry, payload)}</span>)}
       <a href={MATCHUP_CREDIT_URL} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()}>Data: nflverse</a>
     </span>
@@ -55,9 +56,9 @@ export function AdjMatchupStat({ payload, prop, position, opponent }) {
   return (
     <div className="nfl-adj-stat">
       <button type="button" className="nfl-adj-stat-btn" title={title} aria-label={title} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-        <small>ADJ. MATCHUP <span aria-hidden="true">ⓘ</span></small>
+        <small>ADJ MATCHUP <span aria-hidden="true">ⓘ</span></small>
         <strong>{first.rank}<i> /32</i></strong>
-        <span className={`nfl-adj-sub ${gradeClass(first.grade)}`}>{first.shortLabel} · {first.grade}{first.smallSample ? ' · small sample' : ''}</span>
+        <span className={`nfl-adj-sub ${gradeClass(first.grade)}`}>Adj {first.grade} · {first.shortLabel}{first.smallSample ? ' · small sample' : ''}</span>
       </button>
       {open && <Note entries={entries} payload={payload} />}
     </div>
