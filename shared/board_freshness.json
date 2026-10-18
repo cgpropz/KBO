@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T19:34:12Z",
+  "checked_at": "2026-10-18T19:50:27Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T19:34:12.828274+00:00",
@@ -12,12 +12,58 @@
       "started_removed": 7
     },
     "nhl": {
-      "generated_at": "2026-10-18T19:23:09.899211+00:00",
-      "prop_count": 257,
+      "generated_at": "2026-10-18T19:50:27.450884+00:00",
+      "prop_count": 277,
       "started_removed": 0,
-      "removals": [],
+      "removals": [
+        {
+          "player": "Anders Lee",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.83,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Clayton Keller",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.39,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Dylan Guenther",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "goblin",
+          "projection": 2.95,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Mikhail Sergachev",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.89,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Nick Schmaltz",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.38,
+          "reason": "line pulled"
+        }
+      ],
       "removed_reasons": {
-        "pp_pull": 12,
+        "pp_pull": 11,
         "superseded_dup": 11,
         "manual_out": 0,
         "news_out": 0,
