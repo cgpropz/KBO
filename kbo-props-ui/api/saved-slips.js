@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     // An EVEN leg (no side picked) must not be stored as OVER.
     const incomingLegs = Array.isArray(req.body?.legs) ? req.body.legs : [];
     if (incomingLegs.some(legHasUnchosenSide)) {
-      return res.status(400).json({ error: 'Pick MORE or LESS for every leg before saving.' });
+      return res.status(400).json({ error: 'Tap OVER or UNDER on every EVEN leg to save.' });
     }
     const row = buildSavedSlipRow(req.body || {});
 
