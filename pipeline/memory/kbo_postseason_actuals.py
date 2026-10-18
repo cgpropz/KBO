@@ -57,6 +57,11 @@ KOR_TEAM = {
     "삼성": "Samsung", "두산": "Doosan", "한화": "Hanwha", "KIA": "Kia", "키움": "Kiwoom",
     "KT": "KT", "LG": "LG", "롯데": "Lotte", "NC": "NC", "SSG": "SSG",
 }
+KOR_TEAM_FULL = {
+    "삼성 라이온즈": "Samsung", "두산 베어스": "Doosan", "한화 이글스": "Hanwha", "KIA 타이거즈": "Kia",
+    "키움 히어로즈": "Kiwoom", "KT 위즈": "KT", "LG 트윈스": "LG", "롯데 자이언츠": "Lotte",
+    "NC 다이노스": "NC", "SSG 랜더스": "SSG",
+}
 STARTER_ROLE = "선발"
 # Slate players missing from every scraper roster. Verified 10/18/2026 on the
 # KBO player search plus each page's 2026 regular-season rows (KIA, through 10/12).
@@ -129,6 +134,92 @@ def build_pcode_index(repo_root: Path | None = None) -> dict[str, str]:
     return index
 
 
+# ------------------------------------------------------------------ identity
+# Korean page names are Hangul (natives: full name; foreign players: usually
+# one transliterated name). Both sides reduce to a consonant skeleton so
+# 문정빈 ~ "Moon Jeong-bin", 박동원 ~ "Dong Won Park", 카라스코 ~ "Carlos Carrasco".
+_INITIAL = ["K", "K", "N", "T", "T", "L", "M", "P", "P", "S", "S", "", "J", "J", "J", "K", "T", "P", ""]
+_FINAL = ["", "K", "K", "KS", "N", "NJ", "N", "T", "L", "LK", "LM", "LP", "LS", "LT", "LP", "L", "M", "P",
+          "PS", "S", "S", "NK", "J", "J", "K", "T", "P", ""]
+# Surnames whose usual romanization does not follow the skeleton.
+_SURNAME_ALIASES = {
+    "이": {"lee", "yi", "rhee", "i", "rhie"}, "리": {"lee", "ri"}, "류": {"ryu", "yoo", "yu", "ryoo"},
+    "유": {"yoo", "yu", "ryu"}, "노": {"roh", "noh", "no"}, "임": {"lim", "im", "yim"},
+    "라": {"ra", "na"}, "나": {"na", "ra"}, "오": {"oh", "o"}, "우": {"woo", "u"},
+}
+
+
+def _collapse(text: str) -> str:
+    out = []
+    for ch in text:
+        if not out or out[-1] != ch:
+            out.append(ch)
+    return "".join(out)
+
+
+def hangul_skeleton(text: str) -> str:
+    out = []
+    for ch in str(text or ""):
+        code = ord(ch) - 0xAC00
+        if 0 <= code < 11172:
+            out.append(_INITIAL[code // 588] + _FINAL[code % 28])
+    return _collapse("".join(out))
+
+
+def latin_skeleton(text: str) -> str:
+    t = common.normalize_name(text)
+    for a, b in (("ch", "j"), ("ph", "p"), ("ck", "k"), ("qu", "k"), ("th", "t"), ("x", "ks"), ("sh", "s")):
+        t = t.replace(a, b)
+    letters = [c for c in t if c.isalpha()]
+    out = []
+    for i, c in enumerate(letters):
+        nxt = letters[i + 1] if i + 1 < len(letters) else ""
+        if c == "r" and (not nxt or nxt not in "aeiouy"):
+            continue  # non-rhotic r: Park ~ 박, Tolhurst ~ 톨허스트
+        cls = {"c": "K", "g": "K", "k": "K", "q": "K", "b": "P", "p": "P", "f": "P", "v": "P",
+               "d": "T", "t": "T", "j": "J", "z": "J", "s": "S", "l": "L", "r": "L", "m": "M", "n": "N"}.get(c, "")
+        out.append(cls)
+    return _collapse("".join(out))
+
+
+def names_match(korean: str, english: str) -> bool:
+    """Loose Hangul/English name check used to reject a wrong or blank pcode page."""
+    korean = "".join(str(korean or "").split())
+    tokens = [tok for tok in common.normalize_name(english).replace("-", " ").split() if tok]
+    if not korean or not tokens:
+        return False
+    target = hangul_skeleton(korean)
+    if not target:
+        return False
+    candidates = {latin_skeleton(" ".join(tokens))}
+    candidates.update(latin_skeleton(tok) for tok in tokens)
+    for i, surname in enumerate(tokens):
+        rest = " ".join(tokens[:i] + tokens[i + 1:])
+        candidates.add(_collapse(latin_skeleton(surname) + latin_skeleton(rest)))
+        aliases = _SURNAME_ALIASES.get(korean[0])
+        if aliases and surname in aliases and hangul_skeleton(korean[1:]) == latin_skeleton(rest):
+            return True
+    return target in candidates
+
+
+class IdentityError(RuntimeError):
+    """The pcode page does not show the slate player."""
+
+
+def check_identity(identity: dict, player: str, team: str) -> None:
+    name_ko = (identity or {}).get("name_ko") or ""
+    team_ko = (identity or {}).get("team_ko") or ""
+    if not name_ko:
+        raise IdentityError("no player on page (blank or wrong pcode)")
+    page_team = KOR_TEAM_FULL.get(team_ko, KOR_TEAM.get(team_ko.split(" ")[0] if team_ko else "", ""))
+    if team and page_team and team_key(page_team) != team_key(team):
+        raise IdentityError(f"team mismatch: page {team_ko!r} vs slate {team!r}")
+    if not page_team:
+        raise IdentityError(f"no team on page ({team_ko!r})")
+    if not names_match(name_ko, player):
+        raise IdentityError(f"name mismatch: page {name_ko!r} vs slate {player!r}")
+
+
 # -------------------------------------------------------------------- parsing
 def _int(text) -> int:
     try:
@@ -196,8 +287,21 @@ def parse_daily_table(html: str, kind: str, season: int) -> list[dict]:
 
 
 # ------------------------------------------------------------------- fetching
-def fetch_postseason_rows(pcode: str, kind: str, season: int, *, session=None) -> list[dict]:
-    """All postseason rows for one player and season (one GET plus one postback per series)."""
+def page_identity(soup) -> dict:
+    name = soup.select_one("span[id$='playerProfile_lblName']")
+    team = soup.select_one(".player_info .team") or soup.select_one(".team")
+    return {
+        "name_ko": name.get_text(strip=True) if name else "",
+        "team_ko": team.get_text(strip=True) if team else "",
+    }
+
+
+def fetch_postseason_rows(pcode: str, kind: str, season: int, *, session=None) -> tuple[dict, list[dict]]:
+    """(page identity, postseason rows) for one player and season.
+
+    One GET plus one postback per series. The identity (Korean name and team
+    from the profile box) lets the caller reject a blank or wrong-player page.
+    """
     import requests
     from bs4 import BeautifulSoup
 
@@ -207,6 +311,9 @@ def fetch_postseason_rows(pcode: str, kind: str, season: int, *, session=None) -
     resp = session.get(url, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
+    identity = page_identity(soup)
+    if not identity["name_ko"]:
+        return identity, []
     series = soup.select_one("select[id$='ddlSeries']")
     year = soup.select_one("select[id$='ddlYear']")
     if series is None:
@@ -228,7 +335,7 @@ def fetch_postseason_rows(pcode: str, kind: str, season: int, *, session=None) -
         for row in parse_daily_table(page.text, kind, season):
             row["series"] = label
             out.append(row)
-    return out
+    return identity, out
 
 
 # ---------------------------------------------------------------------- day
@@ -262,9 +369,11 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
             unresolved.append(entry["player"])
             continue
         try:
-            found = fetch(pcode, entry["kind"], d.year)
+            identity, found = fetch(pcode, entry["kind"], d.year)
+            check_identity(identity, entry["player"], entry["team"])
         except Exception as exc:  # noqa: BLE001 - one player must not block the day
-            errors.append({"player": entry["player"], "error": f"{type(exc).__name__}: {exc}"[:200]})
+            errors.append({"player": entry["player"], "pcode": pcode,
+                           "error": f"{type(exc).__name__}: {exc}"[:200]})
             continue
         fetched.append(entry["player"])
         for row in found:
@@ -273,7 +382,8 @@ def collect_day(d: date, *, fetch=fetch_postseason_rows, index: dict[str, str] |
             # The row's opponent must be this slate game's opponent.
             if team_key(row.get("opponent")) != team_key(entry["opponent"]):
                 continue
-            rows.append({**row, "player": entry["player"], "pcode": pcode, "team": entry["team"]})
+            rows.append({**row, "player": entry["player"], "pcode": pcode, "team": entry["team"],
+                         "name_ko": identity.get("name_ko")})
     payload = {
         "schema": SCHEMA,
         "sport": "kbo",

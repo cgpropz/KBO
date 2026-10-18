@@ -300,14 +300,15 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
         if not stats:
             prop_team = team_key(prop.get("team") or "")
-            if (
-                postseason_fetched is not None
-                and prop_team in teams_done
-                and name_match_key(player) not in postseason_fetched
-            ):
-                # Postseason rows exist for this game but this player's page
-                # was not read: unknown, not a DNP.
-                missing.append({"player": player, "stat": stat, "odds_type": prop.get("odds_type"), "reason": "postseason_not_fetched"})
+            if postseason_fetched is not None:
+                # Postseason days are never DNP from absence: a blank, wrong or
+                # unread page, or a player missing from his page's stat table,
+                # is unknown. It stays missing until a verified row arrives.
+                reason = (
+                    "postseason_no_row" if name_match_key(player) in postseason_fetched
+                    else "postseason_not_fetched"
+                )
+                missing.append({"player": player, "stat": stat, "odds_type": prop.get("odds_type"), "reason": reason})
                 continue
             if prop_team and prop_team in teams_done:
                 # Team has finals for this date but player has no log row → DNP

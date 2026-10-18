@@ -87,12 +87,22 @@ class _Case(unittest.TestCase):
         common.MEMORY_ROOT, common.REPO_ROOT, grade_kbo_day.REPO_ROOT = self._saved
         self._tmp.cleanup()
 
-    def fake_fetch(self, pages):
+    IDS = {"56103": ("카라스코", "LG 트윈스"), "53123": ("오스틴", "LG 트윈스"), "68110": ("송찬의", "LG 트윈스")}
+
+    def fake_fetch(self, pages, ids=None):
+        ids = self.IDS if ids is None else ids
+
         def fetch(pcode, kind, season):
             if pcode not in pages:
                 raise RuntimeError("timeout")
-            return kpa.parse_daily_table(pages[pcode], kind, season)
+            name_ko, team_ko = ids.get(pcode, ("", ""))
+            identity = {"name_ko": name_ko, "team_ko": team_ko}
+            return identity, (kpa.parse_daily_table(pages[pcode], kind, season) if name_ko else [])
         return fetch
+
+    def meta_missing(self):
+        meta = json.loads((common.memory_dir("kbo", WC) / "meta.json").read_text())
+        return {(m["player"], m["reason"]) for m in meta["missing"]}
 
 
 class GradeTests(_Case):
@@ -101,7 +111,7 @@ class GradeTests(_Case):
         self.assertEqual(result["status"], "waiting")
 
     def test_after_postseason_file_grades_the_day(self):
-        pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": EMPTY_HTML.replace("구분", "AVG1")}
+        pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": HITTER_HTML}
         kpa.collect_day(WC, fetch=self.fake_fetch(pages), index=self.index)
         result = grade_kbo_day.grade_day(WC)
         self.assertEqual(result["status"], "complete")
@@ -110,25 +120,47 @@ class GradeTests(_Case):
         self.assertEqual(recap[("Carlos Carrasco", "Pitcher Strikeouts")]["model_result"], "HIT")
         self.assertEqual(recap[("Austin Dean", "Total Bases")]["actual"], 4)  # HR
         self.assertEqual(recap[("Austin Dean", "Hitter Fantasy Score")]["actual"], 16.0)  # HR 10 + R 1x2 + RBI 2x2
-        # Song's page was read and has no 10/14 row while LG played: DNP.
-        self.assertEqual(recap[("Song Chan-eui", "Hits+Runs+RBIs")]["result"], "DNP")
+        self.assertNotIn("DNP", {p["result"] for p in recap.values()})
 
     def test_player_whose_page_failed_is_missing_not_dnp(self):
         pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML}  # Song's fetch errors
         kpa.collect_day(WC, fetch=self.fake_fetch(pages), index=self.index)
         result = grade_kbo_day.grade_day(WC)
         self.assertEqual(result["status"], "partial")
-        meta = json.loads((common.memory_dir("kbo", WC) / "meta.json").read_text())
-        self.assertEqual([m["reason"] for m in meta["missing"]], ["postseason_not_fetched"])
+        self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_not_fetched")})
+
+    def test_player_absent_from_stat_table_is_missing_not_dnp(self):
+        pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": EMPTY_HTML.replace("구분", "AVG1")}
+        kpa.collect_day(WC, fetch=self.fake_fetch(pages), index=self.index)
+        result = grade_kbo_day.grade_day(WC)
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_no_row")})
+
+    def test_blank_page_is_an_error_never_dnp(self):
+        # Moon Jeong-bin's old pcode 63408: the page loads with an empty profile.
+        pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": HITTER_HTML}
+        ids = dict(self.IDS, **{"68110": ("", "")})
+        out = kpa.collect_day(WC, fetch=self.fake_fetch(pages, ids), index=self.index)
+        self.assertEqual(out["errors"], 1)
+        saved = json.loads((common.memory_dir("kbo", WC) / kpa.FILE_NAME).read_text())
+        self.assertNotIn("Song Chan-eui", saved["fetched_players"])
+        self.assertIn("no player on page", saved["errors"][0]["error"])
+        grade_kbo_day.grade_day(WC)
+        self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_not_fetched")})
+
+    def test_name_or_team_mismatch_is_an_error(self):
+        pages = {"56103": PITCHER_HTML, "53123": HITTER_HTML, "68110": HITTER_HTML}
+        for wrong in (("김태군", "LG 트윈스"), ("송찬의", "KIA 타이거즈")):
+            ids = dict(self.IDS, **{"68110": wrong})
+            out = kpa.collect_day(WC, fetch=self.fake_fetch(pages, ids), index=self.index, dry_run=True)
+            self.assertEqual(out["errors"], 1, wrong)
+            self.assertEqual(out["rows"], 2, wrong)
 
     def test_relief_outing_is_not_graded_as_a_start(self):
-        pages = {"56103": PITCHER_HTML.replace("선발", "구원"), "53123": HITTER_HTML,
-                 "68110": EMPTY_HTML.replace("구분", "AVG1")}
+        pages = {"56103": PITCHER_HTML.replace("선발", "구원"), "53123": HITTER_HTML, "68110": HITTER_HTML}
         kpa.collect_day(WC, fetch=self.fake_fetch(pages), index=self.index)
         grade_kbo_day.grade_day(WC)
-        recap = json.loads((common.memory_dir("kbo", WC) / "recap.json").read_text())
-        carrasco = next(p for p in recap["props"] if p["player"] == "Carlos Carrasco")
-        self.assertEqual(carrasco["result"], "DNP")
+        self.assertIn(("Carlos Carrasco", "postseason_no_row"), self.meta_missing())
 
     def test_wrong_opponent_row_is_ignored(self):
         pages = {"56103": PITCHER_HTML.replace("두산", "삼성"), "53123": HITTER_HTML,
@@ -149,6 +181,46 @@ class GradeTests(_Case):
         common.save_json(common.memory_dir("kbo", WC) / "recap.json", {"props": [{"player": "x"}]})
         out = kpa.collect_day(WC, fetch=lambda *a: self.fail("fetched a locked day"), index=self.index)
         self.assertEqual(out["status"], "skipped")
+
+
+class IdentityTests(unittest.TestCase):
+    PAGES = [  # (Korean profile name on the KBO page, slate name), checked 10/18/2026
+        ("오스틴", "Austin Dean"), ("카라스코", "Carlos Carrasco"), ("곽빈", "Gwak Been"),
+        ("박찬호", "Park Chan-ho"), ("박해민", "Park Hae-min"), ("송찬의", "Song Chan-eui"),
+        ("양의지", "Yang Eui-ji"), ("양석환", "Yang Suk-hwan"), ("세베리노", "Yunior Severino"),
+        ("톨허스트", "Anders Tolhurst"), ("박동원", "Dong Won Park"), ("카스트로", "Harold Castro"),
+        ("네일", "James Naile"), ("김도영", "Kim Do-yeong"), ("김태군", "Kim Tae-gun"),
+        ("문정빈", "Moon Jeong-bin"), ("박재현", "Park Jae-hyun"), ("박정우", "Park Jung-woo"),
+    ]
+
+    def test_slate_players_match_their_pages(self):
+        for korean, english in self.PAGES:
+            self.assertTrue(kpa.names_match(korean, english), (korean, english))
+
+    def test_other_players_do_not_match(self):
+        for korean, english in (("김태군", "Park Jung-woo"), ("문정빈", "Song Chan-eui"),
+                                ("오스틴", "Carlos Carrasco"), ("", "Moon Jeong-bin")):
+            self.assertFalse(kpa.names_match(korean, english), (korean, english))
+
+    def test_check_identity(self):
+        kpa.check_identity({"name_ko": "문정빈", "team_ko": "LG 트윈스"}, "Moon Jeong-bin", "LG")
+        for identity in ({"name_ko": "", "team_ko": ""}, {"name_ko": "문정빈", "team_ko": "KIA 타이거즈"},
+                         {"name_ko": "박해민", "team_ko": "LG 트윈스"}):
+            with self.assertRaises(kpa.IdentityError):
+                kpa.check_identity(identity, "Moon Jeong-bin", "LG")
+
+
+class MoonJeongBinIdTests(unittest.TestCase):
+    """Regression: 63408 is a blank KBO page; Moon Jeong-bin (LG IF, b. 2003-08-15) is 52121."""
+
+    def test_index_resolves_52121(self):
+        self.assertEqual(kpa.build_pcode_index(REPO)[common.name_match_key("Moon Jeong-bin")], "52121")
+
+    def test_old_id_is_gone_from_rosters_and_maps(self):
+        for rel in ("Batters-Data/batterlog.py", "Batters-Data/kbo_batter_hands.csv",
+                    "Batters-Data/mykbostats_hitter_map.json", "kbo-props-ui/public/data/player_photos.json"):
+            self.assertNotIn("63408", (REPO / rel).read_text(encoding="utf-8"), rel)
+        self.assertNotIn("Moon Jeong-bin", kpa.PCODE_OVERRIDES)  # fixed at the source, not pinned
 
 
 class WorkflowTests(unittest.TestCase):
