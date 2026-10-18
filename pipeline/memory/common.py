@@ -846,6 +846,14 @@ def _apply_pull_flags(
             continue
         target["removed"] = True
         status = pulled_status(src) or src.get("pp_status") or "removed"
+        if sport == "nfl":
+            # Keep the board's own label ("out" from nfl/availability.py,
+            # "removed" for a pulled line) and when the freeze first saw it.
+            raw = _compact_status(src.get("pp_status"))
+            if raw:
+                status = raw
+            if not target.get("removed_at"):
+                target["removed_at"] = now_iso
         target["pp_status"] = status
         reason = src.get("removed_reason")
         if reason:

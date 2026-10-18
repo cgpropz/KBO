@@ -34,6 +34,7 @@ from pipeline.memory.common import (
     write_partial_progress,
     write_recap,
 )
+from pipeline.memory.common import MODEL_NA, RESULT_VOID, pulled_status
 
 # Today plus the 14 days before it. A slate dated exactly 14 days ago is included.
 LOOKBACK_DAYS = 14
@@ -63,6 +64,7 @@ def _counts(graded: list[dict], ungraded: list) -> dict:
         "misses": stats["misses"],
         "pushes": stats["pushes"],
         "dnps": stats["dnps"],
+        "voids": stats["voids"],
         "missing": stats["missing"],
         "ungraded": len(ungraded),
     }
@@ -266,6 +268,21 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         player = prop.get("player") or ""
         stat = prop.get("stat") or ""
         line = prop.get("line")
+        # Same rule as #238: a standard line that left the board (pulled by
+        # PrizePicks, or OUT/inactive) before the last pregame freeze is Void.
+        # The freeze only stamps removed on pregame cards.
+        if pulled_status(prop):
+            graded.append(
+                {
+                    **prop,
+                    "actual": None,
+                    "result": RESULT_VOID,
+                    "model_result": MODEL_NA,
+                    "void_reason": "left board before last pregame freeze",
+                    "graded_at": utc_now_iso(),
+                }
+            )
+            continue
         stats = actuals.get((iso, name_key(player)))
         if not stats:
             if finalized:
