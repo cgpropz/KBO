@@ -8,7 +8,7 @@
 
 import { confirmedGoalieStarters, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
-import { kickoffInstant, statusPill } from './nfl/gameCardModel.js'
+import { formatPoints, formatSpread, kickoffInstant, statusPill } from './nfl/gameCardModel.js'
 import { publicFaqs } from './publicFaqs.js'
 
 const GOAL_SCORER = /goal\s*scorers?/i
@@ -87,6 +87,22 @@ export function featuredGame(payload, now = new Date()) {
     const right = kickoffInstant(b)?.getTime()
     return (Number.isFinite(left) ? left : Infinity) - (Number.isFinite(right) ? right : Infinity)
   })[0] || null
+}
+
+// Landing matchup sheet: name the team on the spread (book and CG) the same way
+// the game cards do, so a CG pick'em reads "PK" instead of a bare "0.0" next to
+// an unlabeled book line. Display only; the projection itself is untouched.
+export function matchupMarketText(game) {
+  return {
+    spread: {
+      line: formatSpread(game, game?.spread?.line) ?? '—',
+      projection: formatSpread(game, game?.spread?.projection) ?? '—',
+    },
+    total: {
+      line: formatPoints(game?.total?.line),
+      projection: formatPoints(game?.total?.projection),
+    },
+  }
 }
 
 export function rowsForGame(rows, game) {
