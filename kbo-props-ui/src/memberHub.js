@@ -2,7 +2,7 @@
 // the few standard-line rows the hub shows. Pure functions, no fetching.
 // Scores match the sport boards: KBO cg_projection (falls back to rating),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
-import { cgScore, lineMatchesStat } from './cgScore.js'
+import { boundCg, cgScore, lineMatchesStat } from './cgScore.js'
 import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
@@ -406,7 +406,12 @@ function basketballRows(data, scoreFn, roster, sport) {
         ? wnbaHitPills({ games, stat: prop.stat, line: prop.line, opponent: prop.opponent || prop.versus })
         : nbaHitPills(games, prop.stat, prop.line, prop.opponent || prop.versus, storedL10Values(prop))
       const recent = chartValues(series, true)
-      const side = sideFor(prop.projection, prop.line)
+      // Hub CG Score is bounded 0-100 (same as NFL/KBO in #253). The uncapped
+      // value is kept as rawScore and breaks ties at 100 in topHubRows.
+      const rawScore = num(scoreFn(prop))
+      const score = boundCg(rawScore)
+      const neutral = score === 50
+      const side = neutral ? null : sideFor(prop.projection, prop.line)
       rows.push({
         player: player.name,
         team: player.team,
@@ -415,7 +420,9 @@ function basketballRows(data, scoreFn, roster, sport) {
         line: prop.line,
         projection: prop.projection,
         side,
-        score: num(scoreFn(prop)),
+        score,
+        neutral,
+        rawScore,
         image: imageFor(player) || player.image || player.imageUrl || null,
         ppImageUrl: player.ppImageUrl || player.image_url || null,
         start: prop.start_time || prop.gameDate || null,
