@@ -74,32 +74,22 @@ class NflAwaitingSlateTests(unittest.TestCase):
             ],
             source="test",
         )
-        iso = "2026-10-11"
-        lookup = {
-            (iso, grade_nfl_day.name_key("Nan Player")): grade_nfl_day.attach_combo_yards({
-                "present": True,
-                "player": "Nan Player",
-                "passing_yards": float("nan"),
-                "rushing_yards": 12,
-                "receiving_yards": 0,
-            }),
-            (iso, grade_nfl_day.name_key("Real Player")): grade_nfl_day.attach_combo_yards({
-                "present": True,
-                "player": "Real Player",
-                "passing_yards": 300,
-                "rushing_yards": 0,
-                "receiving_yards": 0,
-            }),
-            (iso, grade_nfl_day.name_key("Zero Player")): grade_nfl_day.attach_combo_yards({
-                "present": True,
-                "player": "Zero Player",
-                "passing_yards": 10,
-                "rushing_yards": None,
-                "receiving_yards": 0,
-            }),
-        }
+        day = grade_nfl_day.NflDay(d)
+        day.team_games = {"KC": {"season": 2026, "week": 6, "final": True, "opponent": "LV"}}
+        day.teams_with_snaps = {"KC"}
+        for i, (name, stats) in enumerate((
+            ("Nan Player", {"passing_yards": float("nan"), "rushing_yards": 12, "receiving_yards": 0}),
+            ("Real Player", {"passing_yards": 300, "rushing_yards": 0, "receiving_yards": 0}),
+            ("Zero Player", {"passing_yards": 10, "rushing_yards": None, "receiving_yards": 0}),
+        )):
+            first, last = name.split()
+            gsis = f"00-{i}"
+            day.roster.setdefault("KC", []).append({"full_name": name, "first_name": first, "last_name": last,
+                                                    "football_name": first, "gsis_id": gsis, "pfr_id": f"P{i}",
+                                                    "status": "ACT"})
+            day.stats_by_id[gsis] = grade_nfl_day.attach_combo_yards({"present": True, "player": name, **stats})
         saved = grade_nfl_day.load_actuals_for_date
-        grade_nfl_day.load_actuals_for_date = lambda _d: (lookup, True)
+        grade_nfl_day.load_actuals_for_date = lambda _d, _teams=None: day
         try:
             result = grade_nfl_day.grade_day(d, dry_run=True)
         finally:
@@ -109,7 +99,7 @@ class NflAwaitingSlateTests(unittest.TestCase):
         self.assertEqual(result["pushes"], 0)
         self.assertEqual(result["hits"], 1)
         self.assertEqual(result["misses"], 1)
-        self.assertIsNone(lookup[(iso, grade_nfl_day.name_key("Nan Player"))]["pass_rush"])
+        self.assertIsNone(day.stats_by_id["00-0"]["pass_rush"])
         self.assertEqual(grade_nfl_day.actual_for_stat({"passing_yards": None}, "Pass Yards"), 0.0)
         self.assertEqual(grade_nfl_day.actual_for_stat({"passing_yards": 250}, "Pass Yards"), 250.0)
 

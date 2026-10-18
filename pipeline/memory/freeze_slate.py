@@ -612,6 +612,10 @@ def freeze_nfl(
         if ignore_cutoff:
             entry["cutoff_ignored"] = True
         _formula_fields(entry, row)
+        # removed / pp_status / projection id from the board row. A pulled or
+        # OUT row (removed true) goes to write_slate as a pull marker: it
+        # stamps the card already frozen and is never frozen as live.
+        attach_board_identity(entry, row)
         by_date[gameday].append(_stamp(entry, start, start_source, now, commit))
         hist = {
             "ts": now_iso,
@@ -636,7 +640,7 @@ def freeze_nfl(
         if dry_run:
             summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "dry_run": True})
             continue
-        path = write_slate("nfl", d, props, source="nfl/projections.json")
+        path = write_slate("nfl", d, props, source="nfl/projections.json", now=now)
         item = {"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)}
         if write_history and not slate_is_locked("nfl", d):
             hist_path, n = append_nfl_history(d, history[d])

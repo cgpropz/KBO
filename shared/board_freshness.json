@@ -1,24 +1,70 @@
 {
-  "checked_at": "2026-10-18T18:17:01Z",
+  "checked_at": "2026-10-18T19:59:56Z",
   "boards": {
     "nfl": {
-      "generated_at": "2026-10-18T18:17:01.874984+00:00",
-      "prop_count": 261,
+      "generated_at": "2026-10-18T19:59:56.748357+00:00",
+      "prop_count": 269,
       "started_removed": 0
     },
     "nfl_game_markets": {
-      "generated_at": "2026-10-18T18:05:00.439892+00:00",
+      "generated_at": "2026-10-18T19:25:44.651892+00:00",
       "prop_count": 0,
       "started_removed": 7
     },
     "nhl": {
-      "generated_at": "2026-10-18T18:01:43.800380+00:00",
-      "prop_count": 192,
+      "generated_at": "2026-10-18T19:50:27.450884+00:00",
+      "prop_count": 277,
       "started_removed": 0,
-      "removals": [],
+      "removals": [
+        {
+          "player": "Anders Lee",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.83,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Clayton Keller",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.39,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Dylan Guenther",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "goblin",
+          "projection": 2.95,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Mikhail Sergachev",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.89,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Nick Schmaltz",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.38,
+          "reason": "line pulled"
+        }
+      ],
       "removed_reasons": {
-        "pp_pull": 13,
-        "superseded_dup": 12,
+        "pp_pull": 11,
+        "superseded_dup": 11,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
