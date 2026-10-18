@@ -87,3 +87,44 @@ test('member recap is empty until a day has a corrected standard-only summary', 
     rmSync(root, { recursive: true, force: true })
   }
 })
+
+test('correction.json beside a stale summary replaces that summary', () => {
+  const root = mkdtempSync(join(tmpdir(), 'member-recap-'))
+  const now = new Date('2026-10-17T17:00:00Z')
+  try {
+    writeDay(root, 'nhl', '2026-10-16', 'recap.json', {
+      props: [
+        { odds_type: 'standard', model_result: 'HIT' },
+        { odds_type: 'demon', model_result: 'HIT' },
+      ],
+    })
+    writeDay(root, 'nhl', '2026-10-16', 'summary.json', {
+      slate_date_iso: '2026-10-16',
+      hits: 135,
+      misses: 40,
+      pushes: 5,
+      updated_at: '2026-10-17T14:00:00Z',
+    })
+    writeDay(root, 'nhl', '2026-10-16', 'correction.json', {
+      slate_date_iso: '2026-10-16',
+      hits: 10,
+      misses: 14,
+      pushes: 5,
+      voids: 2,
+      graded_at: '2026-10-17T21:30:00Z',
+      correction: 'Corrected 2026-10-17. Live standard lines only.',
+    })
+    const recap = buildMemberRecap(root, now)
+    assert.deepEqual(recap.sports, {
+      nhl: {
+        slate_date_iso: '2026-10-16',
+        graded_at: '2026-10-17T21:30:00Z',
+        hits: 10,
+        misses: 14,
+        pushes: 5,
+      },
+    })
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})

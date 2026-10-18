@@ -1,0 +1,1678 @@
+{
+  "sport": "nhl",
+  "slate_date": "10/14/2026",
+  "slate_date_iso": "2026-10-14",
+  "timezone_basis": "ET",
+  "status": "complete",
+  "correction": "Corrected 2026-10-17 from the frozen slate. summary.json and recap.json are unchanged. The record is live standard lines. Demon and goblin lines are excluded. A standard line that left the board before the last pregame freeze is Void, whether it was pulled outright or replaced only by a goblin or demon. An older standard duplicate that still sits beside a live standard line is excluded from every count. A live standard line whose player did not dress in the official box score is Void. Excluded 148 non-standard lines and 0 superseded duplicates. 14 replaced standard lines, 2 pulled standard lines, and 0 did-not-dress lines count as Void.",
+  "hits": 13,
+  "misses": 7,
+  "pushes": 1,
+  "voids": 16,
+  "dnps": 0,
+  "missing": 0,
+  "hit_rate": 0.65,
+  "hit_rate_pct": 65.0,
+  "props_total": 37,
+  "props_graded": 37,
+  "ungraded_live": 0,
+  "graded_at": "2026-10-17T21:30:00+00:00",
+  "updated_at": "2026-10-17T21:30:00+00:00",
+  "before": {
+    "hits": 150,
+    "misses": 28,
+    "pushes": 1,
+    "voids": 0,
+    "hit_rate": 0.842697,
+    "hit_rate_pct": 84.3,
+    "props_graded": 185,
+    "props_total": 185
+  },
+  "excluded_research": 148,
+  "excluded_duplicate": 0,
+  "replaced_standard": 14,
+  "pulled_standard": 2,
+  "dnp_standard": 0,
+  "rows_changed": [
+    {
+      "player": "Adam Engstrom",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Newhook",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Newhook",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Newhook",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Ovechkin",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Ovechkin",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Ovechkin",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Tuch",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Tuch",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Alex Tuch",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alex Tuch",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alexandre Carrier",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alexandre Texier",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alexandre Texier",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Alexandre Texier",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliaksei Protas",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Aliaksei Protas",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Beauvillier",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Anthony Beauvillier",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Arber Xhekaj",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Arttu Hyry",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Artturi Lehkonen",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Boone Jenner",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Boone Jenner",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Boone Jenner",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Boone Jenner",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Brent Burns",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brent Burns",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brent Burns",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brett Kulak",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Brock Nelson",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chris Kreider",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chris Kreider",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Chris Kreider",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cole Caufield",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cole Caufield",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cole Caufield",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cole Caufield",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Cole Hutson",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Cole Hutson",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Colin Blackwell",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Colin Blackwell",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "goblin",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Devon Toews",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Strome",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Strome",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Strome",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Dylan Strome",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Esa Lindell",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ethen Frank",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ethen Frank",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Gabriel Landeskog",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ilya Protas",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ilya Protas",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ilya Protas",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jaden Schwartz",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jake Evans",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jake Oettinger",
+      "team": "DAL",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "before": "dnp",
+      "after": "void",
+      "reason": "pulled"
+    },
+    {
+      "player": "Jakob Chychrun",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jakob Chychrun",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jakob Chychrun",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jakob Chychrun",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Jakub Dobes",
+      "team": "MTL",
+      "stat": "Goalie Saves",
+      "odds_type": "demon",
+      "line": 37.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jamie Benn",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jamie Benn",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jamie Benn",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Jason Robertson",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jason Robertson",
+      "team": "DAL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jason Robertson",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 6.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Jordan Kyrou",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Josh Anderson",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Anderson",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Josh Manson",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Juraj Slafkovsk\u00fd",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Juraj Slafkovsk\u00fd",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Juraj Slafkovsk\u00fd",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Justin Hryckowian",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Justin Hryckowian",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Justin Sourdif",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Justin Sourdif",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kaiden Guhle",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kirby Dach",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Kirby Dach",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lane Hutson",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lane Hutson",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lane Hutson",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Lian Bichsel",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mackenzie Blackwood",
+      "team": "COL",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 21.5,
+      "before": "dnp",
+      "after": "void",
+      "reason": "pulled"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Martin Necas",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mikko Rantanen",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mikko Rantanen",
+      "team": "DAL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Mikko Rantanen",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Miro Heiskanen",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Miro Heiskanen",
+      "team": "DAL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Miro Heiskanen",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Miro Heiskanen",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 7.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nazem Kadri",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "before": "hit",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Nick Suzuki",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 3.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nick Suzuki",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nick Suzuki",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nicolas Roy",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Nils Lundkvist",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Dobson",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Dobson",
+      "team": "MTL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Dobson",
+      "team": "MTL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Noah Juulsen",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Owen Beck",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Parker Kelly",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Phillip Danault",
+      "team": "MTL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Radek Faksa",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Roope Hintz",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Roope Hintz",
+      "team": "DAL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Roope Hintz",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Leonard",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Leonard",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "before": "miss",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Ryan Leonard",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Ryan Leonard",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Malinski",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Malinski",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Steel",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Sam Steel",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "T.J. Hughes",
+      "team": "COL",
+      "stat": "Shots On Goal",
+      "odds_type": "goblin",
+      "line": 1.5,
+      "before": "miss",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Thomas Harley",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Thomas Harley",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Thomas Harley",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "before": "miss",
+      "after": "void",
+      "reason": "replaced"
+    },
+    {
+      "player": "Timothy Liljegren",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tom Wilson",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 2.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tom Wilson",
+      "team": "WSH",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tom Wilson",
+      "team": "WSH",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 5.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyler Myers",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyler Seguin",
+      "team": "DAL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyler Seguin",
+      "team": "DAL",
+      "stat": "Power Play Points",
+      "odds_type": "demon",
+      "line": 1.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Tyler Seguin",
+      "team": "DAL",
+      "stat": "Shots On Goal",
+      "odds_type": "demon",
+      "line": 4.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Vincent Desharnais",
+      "team": "WSH",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "hit",
+      "after": "excluded",
+      "reason": "research"
+    },
+    {
+      "player": "Zachary L'Heureux",
+      "team": "COL",
+      "stat": "Points",
+      "odds_type": "demon",
+      "line": 0.5,
+      "before": "missing",
+      "after": "excluded",
+      "reason": "research"
+    }
+  ]
+}
