@@ -9,6 +9,7 @@ import { savedLegFromProp } from './savedSlipPayload.js';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
 import { formatBreakEvenRate } from './prizepicksBreakeven';
+import { isZeroEdge } from './edgeTone.js';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 const SLIP_SPORT_KEY = 'cg_slip_sports';
@@ -472,7 +473,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                         >
                           {side}
                         </span>
-                        <span className={`so-leg-edge ${p.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                        <span className={`so-leg-edge ${isZeroEdge(p.edge) ? 'edge-zero' : p.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                           {(side === 'OVER' ? p.edge : -p.edge) > 0 ? '+' : ''}{(side === 'OVER' ? p.edge : -p.edge).toFixed(2)}
                         </span>
                         <button className="so-leg-remove" onClick={() => toggleSelect(idx)}>×</button>
@@ -488,11 +489,11 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                   </div>
                   <div className="so-slip-stat">
                     <span className="so-stat-label">Avg Edge</span>
-                    <span className={`so-stat-val ${slipScore.avgEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.avgEdge > 0 ? '+' : ''}{slipScore.avgEdge}</span>
+                    <span className={`so-stat-val ${isZeroEdge(slipScore.avgEdge) ? 'edge-zero' : slipScore.avgEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.avgEdge > 0 ? '+' : ''}{slipScore.avgEdge}</span>
                   </div>
                   <div className="so-slip-stat">
                     <span className="so-stat-label">Total Edge</span>
-                    <span className={`so-stat-val ${slipScore.totalEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.totalEdge > 0 ? '+' : ''}{slipScore.totalEdge}</span>
+                    <span className={`so-stat-val ${isZeroEdge(slipScore.totalEdge) ? 'edge-zero' : slipScore.totalEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>{slipScore.totalEdge > 0 ? '+' : ''}{slipScore.totalEdge}</span>
                   </div>
                   <div className="so-slip-stat">
                     <span className="so-stat-label">Games</span>
@@ -589,7 +590,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     >
                       {side}
                     </span>
-                    <span className={`so-prop-edge ${sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                    <span className={`so-prop-edge ${isZeroEdge(sideEdge) ? 'edge-zero' : sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                       {sideEdge > 0 ? '+' : ''}{sideEdge.toFixed(2)}
                     </span>
                   </div>
@@ -678,7 +679,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                           <span className="so-auto-prop">{p.propShort}</span>
                           <span className="so-auto-line"><span className="pp-mini">P</span>{p.line}</span>
                           <span className={`so-auto-side ${side === 'OVER' ? 'side-over' : 'side-under'}`}>{side}</span>
-                          <span className={`so-auto-edge ${sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                          <span className={`so-auto-edge ${isZeroEdge(sideEdge) ? 'edge-zero' : sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                             {sideEdge > 0 ? '+' : ''}{sideEdge.toFixed(2)}
                           </span>
                           {usage > 1 && (
@@ -787,7 +788,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                                 {leg.actual}
                               </span>
                             )}
-                            <span className={`so-auto-edge ${(leg.edge || 0) > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                            <span className={`so-auto-edge ${isZeroEdge(leg.edge) ? 'edge-zero' : (leg.edge || 0) > 0 ? 'edge-pos' : 'edge-neg'}`}>
                               {leg.edge != null ? (leg.edge > 0 ? '+' : '') + Number(leg.edge).toFixed(2) : ''}
                             </span>
                             {legResult !== 'pending' && (
