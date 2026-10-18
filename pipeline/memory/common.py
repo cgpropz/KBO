@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import unicodedata
+from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -853,7 +854,9 @@ def _apply_pull_flags(
             if raw:
                 status = raw
             if not target.get("removed_at"):
-                target["removed_at"] = now_iso
+                target["removed_at"] = target.get("board_missing_since") or now_iso
+            for field in _NFL_MISSING_FIELDS:
+                target.pop(field, None)
         target["pp_status"] = status
         reason = src.get("removed_reason")
         if reason:
@@ -867,22 +870,91 @@ def _apply_pull_flags(
 NFL_DROPPED_REASON = "dropped_from_board"
 
 
+# A card must be missing from this many consecutive full board reads before
+# the freeze stamps it removed (one bad read must not void a valid pick).
+NFL_DROP_CONFIRM_READS = 2
+_NFL_MISSING_FIELDS = ("board_missing_since", "board_missing_reads")
+
+
+def _nfl_game_key(row: dict):
+    pair = matchup_pair(row.get("team"), row.get("opponent"))
+    if pair:
+        return pair
+    return ("start", row.get("start_time_utc"), team_key(row.get("team")))
+
+
+def _clear_nfl_removed(row: dict) -> None:
+    """A card back on the board is live: drop every removal field."""
+    row.pop("superseded_at", None)
+    for field in ("pp_status", "removed", "removed_at", "removed_reason", *_NFL_MISSING_FIELDS):
+        row.pop(field, None)
+
+
 def stamp_nfl_dropped(row: dict, now_iso: str) -> None:
     """Mark an NFL pregame card that vanished from the board as removed.
 
     PrizePicks does not always flag a pulled line; often the row is just gone
-    from the next board read. Without a stamp the card grades as a live
-    hit/miss. A card PrizePicks already flagged keeps its own label.
+    from the board read. Without a stamp the card grades as a live hit/miss.
+    A card PrizePicks already flagged keeps its own label. The removal time is
+    the first read the card was seen missing.
     """
+    since = row.get("board_missing_since") or row.get("superseded_at") or now_iso
+    for field in _NFL_MISSING_FIELDS:
+        row.pop(field, None)
+    if not row.get("superseded_at"):
+        row["superseded_at"] = since
     if pulled_status(row):
         if not row.get("removed_at"):
-            row["removed_at"] = row.get("superseded_at") or now_iso
+            row["removed_at"] = since
         return
     row["removed"] = True
     row["pp_status"] = "removed"
     row["removed_reason"] = NFL_DROPPED_REASON
     if not row.get("removed_at"):
-        row["removed_at"] = row.get("superseded_at") or now_iso
+        row["removed_at"] = since
+
+
+def _nfl_board_pass(d, merged, live_keys, live_by_id, now_iso, now) -> None:
+    """Superseded/removed pass for one NFL slate on a non-thin board read.
+
+    * A card on the board clears every removal field.
+    * A whole game whose open pregame cards are all missing is treated as a
+      partial read for that game: nothing in it is counted or stamped.
+    * Any other missing pregame card is counted; it is stamped removed (and
+      superseded) only after NFL_DROP_CONFIRM_READS consecutive full reads.
+    """
+    open_by_game: dict = defaultdict(list)
+    for row in merged:
+        if prop_game_started(row, now) or row.get("superseded_at") or pulled_status(row):
+            continue
+        open_by_game[_nfl_game_key(row)].append(row)
+    vanished_games = {
+        key
+        for key, rows in open_by_game.items()
+        if rows and not any(_row_still_on_board("nfl", r, live_keys, live_by_id) for r in rows)
+    }
+    if vanished_games:
+        LOGGER.warning(
+            "NFL %s: %s game(s) missing every open pregame card from this read; not stamping them",
+            format_iso(d),
+            len(vanished_games),
+        )
+    for row in merged:
+        if _row_still_on_board("nfl", row, live_keys, live_by_id):
+            _clear_nfl_removed(row)
+            continue
+        if prop_game_started(row, now):
+            continue
+        if row.get("superseded_at") or pulled_status(row):
+            continue  # already stamped (or legacy superseded): keep its first time
+        if _nfl_game_key(row) in vanished_games:
+            continue
+        reads = int(row.get("board_missing_reads") or 0) + 1
+        if not row.get("board_missing_since"):
+            row["board_missing_since"] = now_iso
+        row["board_missing_reads"] = reads
+        if reads >= NFL_DROP_CONFIRM_READS:
+            stamp_nfl_dropped(row, now_iso)
 
 
 def nfl_left_board_pregame(prop: dict) -> bool:
@@ -963,6 +1035,8 @@ def write_slate(
                 len(live_incoming),
                 current_open,
             )
+        elif sport == "nfl":
+            _nfl_board_pass(d, merged, live_keys, live_by_id, now_iso, now)
         else:
             for row in merged:
                 if _row_still_on_board(sport, row, live_keys, live_by_id):
@@ -970,16 +1044,11 @@ def write_slate(
                     if pulled_status(row):
                         row.pop("pp_status", None)
                         row.pop("removed", None)
-                    if sport == "nfl" and row.get("removed_reason") == NFL_DROPPED_REASON:
-                        row.pop("removed_reason", None)
-                        row.pop("removed_at", None)
                     continue
                 if prop_game_started(row, now):
                     continue
                 if not row.get("superseded_at"):
                     row["superseded_at"] = now_iso
-                if sport == "nfl":
-                    stamp_nfl_dropped(row, now_iso)
         if pulled_rows:
             _apply_pull_flags(sport, merged, pulled_rows, live_keys, now_iso, now)
     payload = {

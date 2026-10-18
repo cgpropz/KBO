@@ -94,19 +94,61 @@ class NflDroppedFromBoardTests(NflCutoffHistoryTests):
         return [nfl_record("Jeremiyah Love", "SF", 44.5, 50.0), nfl_record("Stay A", "SF", 40.5, 41.0),
                 nfl_record("Stay B", "NYG", 60.5, 64.0), nfl_record("Stay C", "NYG", 30.5, 33.0)]
 
-    def test_vanished_row_is_stamped_removed_with_time(self):
+    def test_vanished_row_is_stamped_only_after_two_full_reads(self):
         board = self._board()
         self.freeze(board, utc(2026, 9, 27, 14))
         self.freeze(board[1:], utc(2026, 9, 27, 15, 8))  # Love gone, nothing flagged
         love = self._rows()["Jeremiyah Love"]
+        self.assertFalse(common.pulled_status(love))
+        self.assertNotIn("superseded_at", love)
+        self.assertFalse(common.nfl_left_board_pregame(love))
+        self.assertEqual(love["board_missing_reads"], 1)
+        first_seen = love["board_missing_since"]
+        self.freeze(board[1:], utc(2026, 9, 27, 15, 40))  # second full read: confirmed
+        love = self._rows()["Jeremiyah Love"]
         self.assertTrue(love["removed"])
         self.assertEqual(love["pp_status"], "removed")
         self.assertEqual(love["removed_reason"], common.NFL_DROPPED_REASON)
-        self.assertTrue(love["removed_at"].startswith("20"))
-        stamped = love["removed_at"]
+        self.assertEqual(love["removed_at"], first_seen)
+        self.assertNotIn("board_missing_reads", love)
         self.freeze(board[1:], utc(2026, 9, 27, 16))
-        self.assertEqual(self._rows()["Jeremiyah Love"]["removed_at"], stamped)
+        self.assertEqual(self._rows()["Jeremiyah Love"]["removed_at"], first_seen)
         self.assertFalse(common.pulled_status(self._rows()["Stay A"]))
+
+    def test_one_missed_read_then_back_is_never_stamped(self):
+        board = self._board()
+        self.freeze(board, utc(2026, 9, 27, 14))
+        self.freeze(board[1:], utc(2026, 9, 27, 15))
+        self.freeze(board, utc(2026, 9, 27, 15, 30))
+        self.freeze(board[1:], utc(2026, 9, 27, 16))  # a new single miss starts over
+        love = self._rows()["Jeremiyah Love"]
+        self.assertFalse(common.pulled_status(love))
+        self.assertEqual(love["board_missing_reads"], 1)
+
+    def test_read_missing_a_whole_game_stamps_nothing_in_that_game(self):
+        # 6 rows across two games; the NYG game (2 rows) vanishes. That is
+        # above the half-board thin guard, so only the game guard protects it.
+        board = self._board() + [nfl_record("Stay D", "SF", 20.5, 22.0), nfl_record("Stay E", "SF", 25.5, 27.0)]
+        self.freeze(board, utc(2026, 9, 27, 14))
+        no_nyg = [r for r in board if r["team"] != "NYG"]
+        self.freeze(no_nyg, utc(2026, 9, 27, 15))
+        self.freeze(no_nyg, utc(2026, 9, 27, 16))
+        rows = self._rows()
+        for name in ("Stay B", "Stay C"):
+            self.assertFalse(common.pulled_status(rows[name]), name)
+            self.assertFalse(common.nfl_left_board_pregame(rows[name]), name)
+            self.assertNotIn("board_missing_reads", rows[name])
+
+    def test_pp_flagged_row_back_on_board_clears_removed_at_and_reason(self):
+        board = self._board()
+        self.freeze(board, utc(2026, 9, 27, 14))
+        self.freeze([{**pulled(board[0], "out"), "removed_reason": "inactive"}] + board[1:], utc(2026, 9, 27, 15))
+        love = self._rows()["Jeremiyah Love"]
+        self.assertEqual((love["pp_status"], love["removed_reason"]), ("out", "inactive"))
+        self.freeze(board, utc(2026, 9, 27, 16))
+        love = self._rows()["Jeremiyah Love"]
+        for field in ("removed", "pp_status", "removed_at", "removed_reason", "superseded_at"):
+            self.assertNotIn(field, love)
 
     def test_vanished_row_that_comes_back_is_live_again(self):
         board = self._board()
@@ -137,6 +179,7 @@ class NflDroppedFromBoardTests(NflCutoffHistoryTests):
         board = self._board()
         self.freeze(board, utc(2026, 9, 27, 14))
         self.freeze(board[1:], utc(2026, 9, 27, 15))
+        self.freeze(board[1:], utc(2026, 9, 27, 15, 30))
         with mock.patch.object(grade_nfl_day, "load_actuals_for_date", return_value=({}, False)):
             out = grade_nfl_day.grade_day(SUNDAY, dry_run=True)
         self.assertEqual(out["voids"], 1)
