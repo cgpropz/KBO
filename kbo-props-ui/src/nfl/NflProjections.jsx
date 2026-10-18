@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
+import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
 import BoardStatus from '../BoardStatus'
@@ -50,18 +51,20 @@ function ProjectionCard({ item, onSelectPlayer }) {
   // Side comes from the score: exactly 50 is no pick (no side, no color).
   const side = cgSide(item.score)
   const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
+  // NFL admin pilot: an under shows its same-side strength. Score unchanged.
+  const shownScore = symmetricRankOn('nfl') && side ? displayScoreText(item.score, side) : item.score.toFixed(1)
   const l10 = overHitRate(recent.slice(-10), item.line)
   const shown = overHitRate(recent, item.line)
 
   return (
     <article className="nfl-edge-card">
-      <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{item.score.toFixed(1)}</b></div>
+      <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{shownScore}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p></div>
       </div>
       <div className="nfl-card-prop">{item.prop}</div>
-      <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{item.score.toFixed(1)}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
+      <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{shownScore}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
       <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{formatValue(item.seasonAverage)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
       <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
       <div className="nfl-history-bars" aria-label={`Last ${recent.length} games for ${item.player}`}>
@@ -137,7 +140,10 @@ export default function NflProjections({ onSelectPlayer }) {
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
     .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => sort === 'CG Score' ? compareNflScores(a.score, a.rawScore, b.score, b.rawScore) : b.hitRate - a.hitRate), [matchup, position, projections, prop, query, sort])
+    .sort((a, b) => {
+      if (sort !== 'CG Score') return b.hitRate - a.hitRate
+      return symmetricRankOn('nfl') ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
+    }), [matchup, position, projections, prop, query, sort])
 
   return (
     <section className="nfl-edge-board">

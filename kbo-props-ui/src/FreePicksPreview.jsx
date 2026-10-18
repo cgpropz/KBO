@@ -89,6 +89,10 @@ function projectionRows(data, pillsFor, scoreFn = nflFreeScore, noteScore = (row
     tag: null,
     score: scoreFn(row),
     rawScore: scoreFn === nflFreeScore ? nflRawScore(row.projection, row.line, row.prop ?? row.stat) : null,
+    // NFL pilot rank inputs (src/sideRank.js). Not rendered.
+    gamesPlayed: row.gamesPlayed,
+    wagerTypes: row.wagerTypes ?? null,
+    line_type: row.line_type,
     start_time: row.start_time || row.start_time_utc || row.kickoff_at,
     game_date: row.gameday || row.game_date || row.gameDate || row.game_date_iso,
     started: row.started === true,

@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import './CgScoreExplainer.css'
+import { displayScoreText, sideOfScore } from './sideRank'
 
 export function CgScoreNote({ note }) {
   if (!note) return null
   return (
     <div className="cg-score-note">
-      <p><strong>CG Score {note.score}.</strong> {note.lead}</p>
+      <p><strong>CG Score {note.score}{note.sideLabel ? ` ${note.sideLabel}` : ''}.</strong> {note.lead}</p>
       {note.recent && <p>{note.recent}</p>}
       {note.smallSample && <p>Small sample, so give this less weight.</p>}
       {note.capped && <p>Scores on very small lines are adjusted.</p>}
@@ -40,10 +41,23 @@ export function WhyThisScore({ note, defaultOpen = false, className = '' }) {
   )
 }
 
-export function CgScoreCell({ scoreText, note, open, onToggle }) {
+// `symmetric` (NFL admin pilot, src/sideRank.js): an under shows its
+// same-side strength (100 minus the score) behind an UNDER tag, and an over
+// gets an OVER tag. Otherwise scoreText shows, as today.
+export function CgScoreCell({ scoreText, note, open, onToggle, score, side, symmetric = false }) {
+  const finite = score != null && Number.isFinite(Number(score))
+  const pickSide = finite ? (side || sideOfScore(score)) : null
+  const sided = symmetric && finite && pickSide
   return (
     <div className="cg-score-cell">
-      <span>{scoreText}</span>
+      {sided
+        ? (
+          <span className={`cg-score-sided ${pickSide === 'UNDER' ? 'under' : 'over'}`} data-side={pickSide}>
+            <em className="cg-score-side-tag">{pickSide === 'UNDER' ? 'UNDER' : 'OVER'}</em>
+            {displayScoreText(score, pickSide)}
+          </span>
+        )
+        : <span>{scoreText}</span>}
       {note && (
         <button
           type="button"

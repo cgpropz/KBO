@@ -3,6 +3,7 @@
 // filter, so a started row does not take a slot that a live row should fill.
 
 import { pointsOverDisposition } from './nhl/pointsGate.js'
+import { compareSymmetric, rankable, symmetricRankOn } from './sideRank.js'
 
 function etDay(now) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -42,9 +43,19 @@ export function isLiveFreePick(row, sport, now = new Date()) {
   return true
 }
 
-export function selectFreeTop3(rows, sport, now = new Date()) {
-  return (Array.isArray(rows) ? rows : [])
+// NFL admin pilot (src/sideRank.js): a strong under ranks with a strong over,
+// and rows that do not rank (projection 0 or less, an under under 5 games or
+// not offered) take no slot. Every other sport is unchanged.
+export function selectFreeTop3(rows, sport, now = new Date(), { symmetric = symmetricRankOn(sport) } = {}) {
+  const live = (Array.isArray(rows) ? rows : [])
     .filter((row) => isLiveFreePick(row, sport, now))
+  if (symmetric) {
+    return live
+      .filter((row) => rankable(row))
+      .sort((a, b) => compareSymmetric(a, b))
+      .slice(0, 3)
+  }
+  return live
     // Same shown score (several NFL rows at the 100 cap): the uncapped score decides.
     .sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
     .slice(0, 3)

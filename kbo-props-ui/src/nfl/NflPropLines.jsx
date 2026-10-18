@@ -16,6 +16,7 @@ import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
 import { cgSide, lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
+import { compareSymmetric, symmetricRankOn } from '../sideRank'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardSkeleton } from '../BootScreen.jsx'
@@ -115,6 +116,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
     stat: item.prop,
     score: item.score,
     recentValues: recent,
+    symmetric: symmetricRankOn('nfl'),
   })
 
   const note = whyOpen && !locked && scoreNote
@@ -151,7 +153,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
         ) },
         { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
         { className: `hit-rate-score ${sideClass}`, node: (
-          <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={item.side} symmetric={symmetricRankOn('nfl')} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: <><span className="nfl-dvp-label">DvP</span> {item.dvpRank ? ordinal(item.dvpRank) : '—'}</> },
@@ -376,8 +378,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         return grade && grade[0] === filters.grade
       })
 
+    const symmetric = symmetricRankOn('nfl')
     return filtered.sort((a, b) => {
-      if (filters.sortBy === 'CG Score') return compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
+      if (filters.sortBy === 'CG Score') return symmetric ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
       if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
       if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)

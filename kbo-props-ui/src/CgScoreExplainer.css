@@ -113,3 +113,9 @@ table.hit-rate-board > tbody > tr.cg-score-note-row > td {
     padding: 0;
   }
 }
+
+/* Symmetric CG preview (admin flag): side tag before the same-side score. */
+.cg-score-sided { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.cg-score-side-tag { font-style: normal; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.04em; padding: 1px 4px; border-radius: 4px; }
+.cg-score-sided.over .cg-score-side-tag { color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.55); }
+.cg-score-sided.under .cg-score-side-tag { color: #f87171; border: 1px solid rgba(248, 113, 113, 0.55); }

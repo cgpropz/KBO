@@ -9,6 +9,7 @@ import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
 import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
 import { nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { compareSymmetric, rankable } from './sideRank.js'
 
 const num = (v) => {
   const n = Number(v)
@@ -334,6 +335,10 @@ export function nflHubRows(data) {
         score,
         neutral,
         rawScore: nflRawScore(row.projection, row.line, row.prop ?? row.stat),
+        // NFL pilot rank inputs (src/sideRank.js): board games window and
+        // PrizePicks wager types when the board carries them.
+        gamesPlayed: finiteOrNull(row.gamesPlayed),
+        wagerTypes: row.wagerTypes ?? null,
         image: row.imageUrl || null,
         ppImageUrl: row.ppImageUrl || row.imageUrl || null,
         start: row.start_time || null,
@@ -447,10 +452,14 @@ export function isNeutralHubRow(row) {
 }
 
 // Highest CG Score first, one row per player so the list is not one star's props.
-export function topHubRows(rows, limit = 5) {
-  const valid = playableRows(rows)
+// `symmetric` (NFL admin pilot, src/sideRank.js): same-side strength order,
+// and rows that do not rank take no slot.
+export function topHubRows(rows, limit = 5, { symmetric = false } = {}) {
+  const base = playableRows(rows)
     .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score) && !isNeutralHubRow(r))
-    .sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
+  const valid = symmetric
+    ? base.filter((r) => rankable(r)).sort((a, b) => compareSymmetric(a, b))
+    : base.sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
   const seen = new Set()
   const out = []
   for (const row of valid) {
