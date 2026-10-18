@@ -3,6 +3,7 @@
 // filter, so a started row does not take a slot that a live row should fill.
 
 import { pointsOverDisposition } from './nhl/pointsGate.js'
+import { isHitsRow } from './nhl/hitsGate.js'
 
 function etDay(now) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -34,6 +35,8 @@ export function isLiveFreePick(row, sport, now = new Date()) {
   if (!Number.isFinite(row.score) || row.score === -Infinity) return false
   if (row.rankEligible === false || row.removed === true) return false
   if (pickHasStarted(row, now)) return false
+  // NHL Hits is never in the free top 3.
+  if (sport === 'nhl' && isHitsRow(row)) return false
   if (sport === 'nhl' && pointsOverDisposition({
     prop: row.stat,
     projection: row.projection,

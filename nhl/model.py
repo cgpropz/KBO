@@ -24,6 +24,9 @@ PROP_SOG = "Shots On Goal"
 PROP_SAVES = "Goalie Saves"
 PROP_POINTS = "Points"
 PROP_PPP = "Power Play Points"
+# Hits is built by nhl/hits_model.py and is flag-gated (nhl.hits_model.hits_board_enabled).
+# It is not in LAUNCH_PROPS, never ranked, and never in the free top 3.
+PROP_HITS = "Hits"
 
 # Points overs. A 2025-26 walk-forward lost money below 0.69 and was
 # comfortable only from 0.86 up. Overs under 0.69 leave the board. Overs
