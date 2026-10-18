@@ -1,0 +1,73 @@
+name: NHL AGS Odds Daily Pull
+
+# Daily NHL anytime-goalscorer (AGS) odds plus game/team totals, research only.
+# Takes over Sniper Bot's 11:07 AM ET routine. Same script, same files:
+#   shared/lab/nhl_ags_odds/data/YYYY-MM-DD_ags.csv
+#   shared/lab/nhl_ags_odds/data/YYYY-MM-DD_games.csv
+#   shared/lab/nhl_ags_odds/athlete_cache.json, collect.log
+# Source: ESPN public JSON (DraftKings odds as shown by ESPN). No API key.
+# The date is the ET calendar day; games already started are skipped.
+
+on:
+  schedule:
+    # 15:07 UTC = 11:07 AM EDT. After DST ends (Sun Nov 1, 2026) this fires at
+    # 10:07 AM EST; move it to "7 16 * * *" then to keep 11:07 AM ET.
+    - cron: "7 15 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-collect even if today's files exist (overwrites today's CSVs)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-ags-odds
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect NHL AGS odds and game/team totals
+        run: |
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            python shared/lab/nhl_ags_odds/collect.py --force
+          else
+            python shared/lab/nhl_ags_odds/collect.py
+          fi
+
+      - name: Commit shared/lab/nhl_ags_odds
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add shared/lab/nhl_ags_odds
+          if git diff --cached --quiet; then
+            echo "No NHL AGS odds changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: nhl ags odds $(TZ=America/New_York date +%Y-%m-%d)"
+          # Only this job writes shared/lab/nhl_ags_odds, so a rebase onto a
+          # newer main cannot conflict there. Up to 3 pushes with backoff.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt ${attempt}"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((10 * attempt))
+              git pull --rebase origin main || { git rebase --abort || true; echo "::error::rebase failed"; exit 1; }
+            fi
+          done
+          echo "::error::NHL AGS odds were collected but could not be pushed to main"
+          exit 1
