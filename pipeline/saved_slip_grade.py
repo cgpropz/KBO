@@ -10,6 +10,7 @@ a partial. A leg whose game is not final stays pending.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
@@ -262,6 +263,32 @@ def _find_row(lookup: dict, iso: str, name: str, team: str = "", sport: str = ""
     return None
 
 
+def _find_kbo_row(lookup: dict, iso: str, leg: dict):
+    """KBO row for this leg's player and date.
+
+    The KBO stat files can still carry a player's old club in the team column.
+    When the team disagrees, the row is still this leg's game if its opponent
+    is the leg's opponent (same date, same name). The row's team must not be
+    the leg's opponent, so a namesake on the other side is never used.
+    """
+    name = leg.get("name") or ""
+    row = _find_row(lookup, iso, name, leg.get("team") or "", "kbo")
+    if row:
+        return row
+    opponent = team_key(leg.get("opponent") or "")
+    if not opponent:
+        return None
+    for alias in (nfl_name_key(name), name_match_key(name), normalize_name(name)):
+        if not alias:
+            continue
+        row = lookup.get((iso, alias))
+        if not isinstance(row, dict):
+            continue
+        if team_key(row.get("opponent") or "") == opponent and team_key(row.get("team") or "") != opponent:
+            return row
+    return None
+
+
 def _kbo_teams_done(actuals: dict, iso: str, legs: list[dict]) -> set[str]:
     slate_pairs = {
         pair
@@ -291,7 +318,7 @@ def grade_kbo_legs(legs: list[dict], game_date: date, day: KboDay) -> list[dict]
         if day.scheduled is not None and pair is not None and pair not in day.scheduled:
             graded.append(_void(leg, "not_on_slate"))
             continue
-        stats = _find_row(actuals, iso, leg.get("name") or "", leg.get("team") or "", "kbo")
+        stats = _find_kbo_row(actuals, iso, leg)
         if stats:
             stat_key = _mapped(KBO_STAT_KEY, leg)
             if not stat_key:
@@ -633,10 +660,24 @@ def _missing_data_leg(leg: dict) -> bool:
     return (leg.get("result") or "") == "push" and str(leg.get("void_reason") or "") in MISSING_DATA_VOIDS
 
 
+def _decided_leg(leg: dict) -> bool:
+    """A hit or miss, or an exact-line push that has a real actual."""
+    result = leg.get("result") or ""
+    if result in {"hit", "miss"}:
+        return True
+    if result != "push":
+        return False
+    try:
+        return math.isfinite(float(leg.get("actual")))
+    except (TypeError, ValueError):
+        return False
+
+
 def downgrade_blocked(slip: dict, payload: dict) -> bool:
     """A graded slip must not fall back to pending, ungradeable, or a missing-data void.
 
-    One leg flipping from hit or miss to a missing-data void is enough. The
+    One leg flipping from hit, miss, or a push with an actual to a
+    missing-data void is enough. The
     other legs staying decided does not make that void safe to write.
     """
     if not slip.get("graded"):
@@ -647,7 +688,7 @@ def downgrade_blocked(slip: dict, payload: dict) -> bool:
     after = [leg if isinstance(leg, dict) else {} for leg in (payload.get("legs") or [])]
     if len(before) == len(after):
         for old, new in zip(before, after):
-            if (old.get("result") or "") in {"hit", "miss"} and _missing_data_leg(new):
+            if _decided_leg(old) and _missing_data_leg(new):
                 return True
     return missing_data_void(payload)
 
@@ -874,8 +915,9 @@ def _has_score(value) -> bool:
     if value is None or value == "":
         return False
     try:
-        float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return False
-    return True
+    # pandas reads an unplayed game's blank score as NaN. NaN is not a score.
+    return math.isfinite(number)
 
