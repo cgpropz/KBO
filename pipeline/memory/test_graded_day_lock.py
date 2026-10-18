@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -253,11 +254,119 @@ class OtherSportLockTests(_LockCase):
         self.assertEqual(self.snapshot("nhl", d), before)
 
 
+WORKFLOW = REPO / ".github" / "workflows" / "wnba-refresh.yml"
+
+
+def _step_script(name: str) -> str:
+    """The `run: |` body of one workflow step (no yaml dependency)."""
+    lines = WORKFLOW.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, line in enumerate(lines) if line.strip() == f"- name: {name}")
+    run = next(i for i in range(start, len(lines)) if lines[i].strip() == "run: |")
+    body = []
+    for line in lines[run + 1:]:
+        if line.strip().startswith("- name:"):
+            break
+        body.append(line[10:] if line.startswith(" " * 10) else line.strip())
+    return "\n".join(body).rstrip() + "\n"
+
+
+def _git(cwd, *args, check=True):
+    return subprocess.run(["git", *args], cwd=cwd, check=check, capture_output=True, text=True)
+
+
 class WnbaRefreshWorkflowTests(unittest.TestCase):
     def test_box_score_commit_rebase_autostashes(self):
-        text = (REPO / ".github" / "workflows" / "wnba-refresh.yml").read_text(encoding="utf-8")
+        text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("git pull --rebase --autostash origin main", text)
         self.assertNotIn("if git pull --rebase origin main; then", text)
+        self.assertNotIn("force-with-lease", text)
+
+    def test_memory_steps_still_run_after_a_failed_push(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        for name in ("Freeze WNBA slate into memory/", "Grade WNBA memory for yesterday if complete",
+                     "Publish memory/ updates"):
+            block = text[text.index(f"- name: {name}"):]
+            block = block[: block.index("run:")]
+            self.assertIn("if: ${{ !cancelled() }}", block, name)
+
+    # Real git: a bare "origin" plus a runner checkout, and the step script itself.
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        root = Path(self._tmp.name)
+        self.origin = root / "origin.git"
+        self.runner = root / "runner"
+        self.other = root / "other"
+        _git(root, "init", "-q", "--bare", "-b", "main", str(self.origin))
+        _git(root, "clone", "-q", str(self.origin), str(self.other))
+        for repo in (self.other,):
+            _git(repo, "config", "user.email", "t@example.com")
+            _git(repo, "config", "user.name", "t")
+        (self.other / "wnba").mkdir()
+        (self.other / "wnba" / "mappings").mkdir()
+        for name in ("wnba_boxscores_2025_2026.csv", "wnba_boxscores_postseason.csv", "mappings/player_positions.json",
+                     "wnbaGUARDdvp.csv", "wnbaFORWARDdvp.csv", "wnbaCENTERdvp.csv",
+                     "wnba_player_prop_odds.json", "wnba_pp_line_matched_odds.json"):
+            (self.other / "wnba" / name).write_text("Player,Game Date\n", encoding="utf-8")
+        (self.other / "generated.json").write_text("{}\n", encoding="utf-8")
+        _git(self.other, "add", "-A")
+        _git(self.other, "commit", "-q", "-m", "base")
+        _git(self.other, "push", "-q", "origin", "HEAD:main")
+        _git(root, "clone", "-q", str(self.origin), str(self.runner))
+        # main moves on after the runner checked out -> first push is non-fast-forward
+        (self.other / "memory.txt").write_text("other run\n", encoding="utf-8")
+        _git(self.other, "add", "-A")
+        _git(self.other, "commit", "-q", "-m", "other")
+        _git(self.other, "push", "-q", "origin", "HEAD:main")
+        # the refresh wrote new box scores and also dirtied an unrelated generated file
+        (self.runner / "wnba" / "wnba_boxscores_postseason.csv").write_text(
+            "Player,Game Date\nA,10/17/2026\n", encoding="utf-8")
+        (self.runner / "generated.json").write_text('{"dirty": true}\n', encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _run_step(self):
+        script = _step_script("Commit WNBA snapshot updates")
+        return subprocess.run(["bash", "-e", "-c", script], cwd=self.runner, capture_output=True, text=True)
+
+    def test_non_fast_forward_with_unstaged_changes_pushes_box_scores(self):
+        result = self._run_step()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        shown = _git(self.other, "fetch", "-q", "origin")
+        shown = _git(self.other, "show", "origin/main:wnba/wnba_boxscores_postseason.csv").stdout
+        self.assertIn("10/17/2026", shown)
+        self.assertEqual(_git(self.runner, "stash", "list").stdout, "")
+
+    def test_final_push_failure_exits_non_zero_with_error(self):
+        hook = self.origin / "hooks" / "pre-receive"
+        hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        hook.chmod(0o755)
+        result = self._run_step()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("::error::", result.stdout)
+
+    def test_autostash_conflict_exits_non_zero(self):
+        # main changes the same generated file the runner left dirty
+        (self.other / "generated.json").write_text('{"main": true}\n', encoding="utf-8")
+        _git(self.other, "commit", "-q", "-am", "main touches generated")
+        _git(self.other, "push", "-q", "origin", "HEAD:main")
+        result = self._run_step()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("::error::", result.stdout)
+
+
+class FreezeLockTests(_LockCase):
+    def test_recapped_day_with_reset_meta_cannot_be_refrozen(self):
+        from pipeline.memory import freeze_slate
+
+        self.graded_wnba_day()
+        meta = self.read("meta.json")
+        meta["status"] = "waiting"  # the WNBA 10/17 state on main
+        common.save_json(self.day_dir() / "meta.json", meta)
+        self.assertTrue(freeze_slate.slate_is_locked("wnba", DAY))
+        slate_before = (self.day_dir() / "slate.json").read_bytes()
+        freeze_slate.write_slate("wnba", DAY, [_wnba_prop("Breanna Stewart", "Points", 30.5, "UNDER")])
+        self.assertEqual((self.day_dir() / "slate.json").read_bytes(), slate_before)
 
 
 if __name__ == "__main__":

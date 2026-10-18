@@ -165,18 +165,14 @@ jobs:
             exit 0
           fi
 
+          # Attempt 2: rebase onto latest main and push. --autostash: the
+          # refresh leaves other generated files modified in the checkout.
+          # Without it the rebase aborts ("cannot pull with rebase: You have
+          # unstaged changes") and box scores never reach main, so the
+          # standalone WNBA grader reads stale CSVs (WNBA 10/17/2026).
           echo "Push rejected; fetching latest and rebasing..."
-          # --autostash: the refresh leaves other generated files modified in
-          # the checkout. Without it the rebase aborts ("cannot pull with
-          # rebase: You have unstaged changes") and box scores never reach
-          # main, so the standalone WNBA grader reads stale CSVs.
-          if git pull --rebase --autostash origin main; then
-            git push origin HEAD:main \
-              && echo "Push succeeded after clean rebase" \
-              || git push --force-with-lease origin HEAD:main \
-              && echo "Push succeeded with --force-with-lease" \
-              || echo "All push attempts failed — snapshots still published to Supabase"
-          else
+          STASHES_BEFORE=$(git stash list | wc -l)
+          if ! git pull --rebase --autostash origin main; then
             # Conflicts here would only be within wnba/ data; take our fresh version.
             CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
             if [ -n "$CONFLICTS" ]; then
@@ -184,28 +180,45 @@ jobs:
               echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
               echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
             fi
-            GIT_EDITOR=true git rebase --continue \
-              && git push origin HEAD:main \
-              && echo "Push succeeded after conflict auto-resolution" \
-              || {
-                git rebase --abort >/dev/null 2>&1 || true
-                echo "Push failed after conflict resolution — snapshots still published to Supabase"
-              }
+            if ! GIT_EDITOR=true git rebase --continue; then
+              git rebase --abort >/dev/null 2>&1 || true
+              echo "::error::WNBA data commit could not be rebased onto main; box scores were NOT pushed"
+              exit 1
+            fi
           fi
+
+          # pull --autostash returns 0 even when re-applying the stash
+          # conflicts. Treat leftover conflicts or a stranded autostash as failure.
+          if [ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]; then
+            echo "::error::Unresolved conflicts after rebase/autostash: $(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+            exit 1
+          fi
+          if [ "$(git stash list | wc -l)" -gt "$STASHES_BEFORE" ]; then
+            echo "::error::git left an autostash entry after the rebase (stash re-apply conflicted)"
+            git stash list | head -5
+            exit 1
+          fi
+
+          if git push origin HEAD:main; then
+            echo "Push succeeded after rebase"
+            exit 0
+          fi
+          echo "::error::All push attempts failed; box scores were NOT pushed to main (snapshots are still in Supabase)"
+          exit 1
 
 
       - name: Freeze WNBA slate into memory/
-        if: success()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: python pipeline/memory/freeze_slate.py --sport wnba
 
       - name: Grade WNBA memory for yesterday if complete
-        if: success()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: python pipeline/memory/grade_wnba_day.py
 
       - name: Publish memory/ updates
-        if: success()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: wnba memory update"
