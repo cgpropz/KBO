@@ -33,6 +33,21 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install deps
+        run: pip install requests beautifulsoup4
+
+      # Game-log scrapers carry the regular season only. Postseason lines for
+      # slate players are fetched into memory/kbo/.../postseason_actuals.json
+      # (grading-only; never read by projections). Never fails the job.
+      - name: Fetch KBO postseason lines for grading
+        continue-on-error: true
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python pipeline/memory/kbo_postseason_actuals.py --date "${{ github.event.inputs.date }}"
+          else
+            python pipeline/memory/kbo_postseason_actuals.py
+          fi
+
       - name: Grade KBO memory day
         run: |
           if [ -n "${{ github.event.inputs.date }}" ]; then

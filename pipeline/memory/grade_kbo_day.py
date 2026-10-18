@@ -184,6 +184,46 @@ def build_actuals() -> dict[tuple[str, str], dict]:
     return lookup
 
 
+POSTSEASON_FILE = "postseason_actuals.json"
+
+
+def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[str]] | None:
+    """Grading-only postseason lines for one KBO day, or None when there is no file.
+
+    The game-log scrapers carry the regular season only, so postseason games
+    are fetched per slate player into memory/kbo/.../postseason_actuals.json
+    (pipeline/memory/kbo_postseason_actuals.py). Returns (lookup, fetched)
+    where fetched is the name keys whose pages were read successfully.
+    """
+    payload = load_json(memory_dir("kbo", d) / POSTSEASON_FILE)
+    if not isinstance(payload, dict):
+        return None
+    iso = format_iso(d)
+    lookup: dict[tuple[str, str], dict] = {}
+    for row in payload.get("rows") or []:
+        if not isinstance(row, dict) or row.get("date") != iso:
+            continue
+        key = name_match_key(row.get("player", ""))
+        if not key:
+            continue
+        base = {"team": row.get("team") or "", "opponent": row.get("opponent") or "", "present": True,
+                "source": "postseason", "series": row.get("series")}
+        if row.get("type") == "pitcher":
+            if row.get("role") != "SP":
+                continue  # relief outing is not a start, same as the regular-season logs
+            lookup[(iso, key)] = {**base, "type": "pitcher", "so": row.get("so", 0), "ha": row.get("ha", 0),
+                                  "outs": row.get("outs", 0), "ip": round((row.get("outs") or 0) / 3, 2)}
+        else:
+            h, r, rbi = int(row.get("h") or 0), int(row.get("r") or 0), int(row.get("rbi") or 0)
+            d2, d3, hr = int(row.get("2b") or 0), int(row.get("3b") or 0), int(row.get("hr") or 0)
+            fs_row = {"H": h, "2B": d2, "3B": d3, "HR": hr, "R": r, "RBI": rbi,
+                      "Walks": row.get("bb", 0), "HBP": row.get("hbp", 0), "SB": row.get("sb", 0)}
+            lookup[(iso, key)] = {**base, "type": "batter", "h": h, "r": r, "rbi": rbi, "hrr": h + r + rbi,
+                                  "tb": h + d2 + 2 * d3 + 3 * hr, "fs": hitter_fantasy_score(fs_row)}
+    fetched = {name_match_key(name) for name in payload.get("fetched_players") or [] if name}
+    return lookup, fetched
+
+
 def _void_prop(prop: dict, reason: str) -> dict:
     """Graded VOID: out of the W-L and the hit rate, but the prop is graded."""
     return {
@@ -213,6 +253,12 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
     actuals = build_actuals()
     iso = format_iso(d)
+    postseason = load_postseason_actuals(d)
+    postseason_fetched: set[str] | None = None
+    if postseason is not None:
+        post_lookup, postseason_fetched = postseason
+        for key, row in post_lookup.items():
+            actuals.setdefault(key, row)
     props = slate["props"]
     graded = []
     missing = []
@@ -254,6 +300,15 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
         if not stats:
             prop_team = team_key(prop.get("team") or "")
+            if (
+                postseason_fetched is not None
+                and prop_team in teams_done
+                and name_match_key(player) not in postseason_fetched
+            ):
+                # Postseason rows exist for this game but this player's page
+                # was not read: unknown, not a DNP.
+                missing.append({"player": player, "stat": stat, "odds_type": prop.get("odds_type"), "reason": "postseason_not_fetched"})
+                continue
             if prop_team and prop_team in teams_done:
                 # Team has finals for this date but player has no log row → DNP
                 entry = {
