@@ -5,11 +5,12 @@ import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 import { inferSlipSport, slipGradeLabel } from './slipSportInfer.js';
-import { savedLegFromProp } from './savedSlipPayload.js';
+import { PICK_SIDE_HINT, savedLegFromProp } from './savedSlipPayload.js';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
 import { formatBreakEvenRate } from './prizepicksBreakeven';
 import { isZeroEdge } from './edgeTone.js';
+import { edgeSide } from './pickSide.js';
 
 const debugLog = (...args) => { if (typeof window !== 'undefined') console.log('[SlipOptimizer]', ...args); };
 const SLIP_SPORT_KEY = 'cg_slip_sports';
@@ -123,7 +124,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   }, [getAuthToken, config.id]);
 
   const saveCurrentSlip = async () => {
-    if (selectedArr.length === 0) return;
+    if (selectedArr.length === 0 || needsSide(selectedArr)) return;
     await saveSlipToDb({
       game_date: gameDate,
       sport: config.id,
@@ -137,6 +138,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   };
 
   const saveAutoSlip = async (slipData) => {
+    if (needsSide(slipData.indices)) return;
     await saveSlipToDb({
       game_date: gameDate,
       sport: config.id,
@@ -206,7 +208,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
             matched.add(idx);
             const p = props[idx];
             const promo = isPromoLine(p);
-            if (!promo && pk.side && pk.side !== (p.edge >= 0 ? 'OVER' : 'UNDER')) {
+            if (!promo && (pk.side === 'OVER' || pk.side === 'UNDER') && pk.side !== (edgeSide(p.edge) || 'OVER')) {
               overrides[idx] = pk.side;
             }
           }
@@ -226,7 +228,10 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
 
   // Determine the natural side for a prop (demon/goblin are over-only)
   const isPromo = (p) => isPromoLine(p);
-  const naturalSide = (p) => isPromo(p) ? 'OVER' : (p.edge >= 0 ? 'OVER' : 'UNDER');
+  // Edge exactly 0 is EVEN (no pick): no side color until the member picks one.
+  const naturalSide = (p) => isPromo(p) ? 'OVER' : (edgeSide(p.edge) || 'OVER');
+  // An EVEN leg has no side yet. Saving waits until the member picks one.
+  const needsSide = (indices) => indices.some((idx) => getSide(idx) === 'EVEN');
   const getSide = (idx) => {
     const p = allProps[idx];
     if (isPromo(p)) return 'OVER'; // demon/goblin locked to OVER
@@ -467,7 +472,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                           <span className="pp-mini">P</span>{p.line}
                         </span>
                         <span
-                          className={`so-leg-side ${side === 'OVER' ? 'side-over' : 'side-under'}${isPromo(p) ? ' so-side-fixed' : ''}`}
+                          className={`so-leg-side ${side === 'OVER' ? 'side-over' : side === 'UNDER' ? 'side-under' : 'side-even'}${isPromo(p) ? ' so-side-fixed' : ''}`}
                           onClick={() => toggleSide(idx)}
                           title={isPromo(p) ? 'More only' : 'Click to flip'}
                         >
@@ -500,9 +505,10 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <span className="so-stat-val">{slipScore.uniqueGames}</span>
                   </div>
                 </div>
-                <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user}>
+                <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user || needsSide(selectedArr)}>
                   {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
                 </button>
+                {needsSide(selectedArr) ? <p className="so-side-hint" role="status" data-testid="slip-pick-side">{PICK_SIDE_HINT}</p> : null}
                 <div className="so-corr">
                   <div className="so-corr-col" data-testid="slip-pairs-well">
                     <h3 className="so-corr-title">Pairs well</h3>
@@ -584,7 +590,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <span className="so-prop-line"><span className="pp-mini">P</span>{p.line}</span>
                     <span className="so-prop-proj">{formatProjection(p.projection)}</span>
                     <span
-                      className={`so-prop-side ${side === 'OVER' ? 'side-over' : 'side-under'}${isPromo(p) ? ' so-side-fixed' : ''}`}
+                      className={`so-prop-side ${side === 'OVER' ? 'side-over' : side === 'UNDER' ? 'side-under' : 'side-even'}${isPromo(p) ? ' so-side-fixed' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggleSide(p.idx); }}
                       title={isPromo(p) ? 'More only' : 'Click to flip side'}
                     >
@@ -678,7 +684,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                           <span className="so-auto-player">{p.name}</span>
                           <span className="so-auto-prop">{p.propShort}</span>
                           <span className="so-auto-line"><span className="pp-mini">P</span>{p.line}</span>
-                          <span className={`so-auto-side ${side === 'OVER' ? 'side-over' : 'side-under'}`}>{side}</span>
+                          <span className={`so-auto-side ${side === 'OVER' ? 'side-over' : side === 'UNDER' ? 'side-under' : 'side-even'}`}>{side}</span>
                           <span className={`so-auto-edge ${isZeroEdge(sideEdge) ? 'edge-zero' : sideEdge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                             {sideEdge > 0 ? '+' : ''}{sideEdge.toFixed(2)}
                           </span>
@@ -709,9 +715,12 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <button
                       className="so-auto-save"
                       onClick={() => saveAutoSlip(slip)}
+                      disabled={needsSide(slip.indices)}
+                      title={needsSide(slip.indices) ? PICK_SIDE_HINT : undefined}
                     >
                       💾 Save
                     </button>
+                    {needsSide(slip.indices) ? <span className="so-side-hint" role="status">Pick a side on EVEN legs (Use This Slip)</span> : null}
                   </div>
                 </div>
               ))}

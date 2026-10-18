@@ -15,6 +15,8 @@ import { MemberBoardStatus } from './MemberBoardStatus';
 import { QuietMemberPreview } from './QuietMemberPreview';
 import { useMemberBoardPhase } from './useMemberBoardPhase';
 import { useFullBoardRefresh } from './useFullBoardRefresh';
+import { edgeSide } from './pickSide.js';
+import { PICK_SIDE_HINT, slipNeedsSide } from './savedSlipPayload.js';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -208,7 +210,8 @@ function StrikeoutProjections({ onNavigate }) {
       setParlayPicks(prev => prev.filter(pk => pickKey(pk) !== key));
     } else {
       const isPromo = p.odds_type === 'demon' || p.odds_type === 'goblin';
-      const side = isPromo ? 'OVER' : (p.edge != null && p.edge >= 0) ? 'OVER' : 'UNDER';
+      // Edge exactly 0 is EVEN (no pick) until the member chooses a side.
+      const side = isPromo ? 'OVER' : (edgeSide(p.edge) || 'UNDER');
       setParlayPicks(prev => [...prev, {
         name: p.name, team: p.team, opponent: p.opponent,
         prop: p.prop, line: p.line, projection: p.projection,
@@ -218,6 +221,7 @@ function StrikeoutProjections({ onNavigate }) {
   };
 
   const sendToSlipBuilder = () => {
+    if (slipNeedsSide(parlayPicks)) return;
     try { localStorage.setItem('kbo_parlay_import', JSON.stringify(parlayPicks)); } catch {}
     if (onNavigate) onNavigate('optimizer');
   };
@@ -986,7 +990,7 @@ function StrikeoutProjections({ onNavigate }) {
                   <span className="parlay-tray-name">{pk.name}</span>
                   <span className="parlay-tray-prop">{pk.prop === 'Strikeouts' ? 'K' : pk.prop === 'Hits Allowed' ? 'HA' : 'OUTS'}</span>
                   <span className="parlay-tray-line"><span className="pp-icon-sm">P</span>{pk.line != null ? pk.line.toFixed(1) : '—'}</span>
-                  <span className={`parlay-tray-side ${pk.side === 'OVER' ? 'side-over' : 'side-under'}`}
+                  <span className={`parlay-tray-side ${pk.side === 'OVER' ? 'side-over' : pk.side === 'UNDER' ? 'side-under' : 'side-even'}`}
                     onClick={() => setParlayPicks(prev => prev.map((p, j) => j === i ? { ...p, side: p.side === 'OVER' ? 'UNDER' : 'OVER' } : p))}
                   >{pk.side}</span>
                   <span className={`parlay-tray-edge ${isZeroEdge(pk.edge, 1) ? 'edge-zero' : pk.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
@@ -996,7 +1000,8 @@ function StrikeoutProjections({ onNavigate }) {
                 </div>
               ))}
             </div>
-            <button className="parlay-tray-send" onClick={sendToSlipBuilder}>
+            {slipNeedsSide(parlayPicks) ? <p className="parlay-tray-hint" role="status" data-testid="tray-pick-side">{PICK_SIDE_HINT}</p> : null}
+            <button className="parlay-tray-send" onClick={sendToSlipBuilder} disabled={slipNeedsSide(parlayPicks)}>
               Send to Slip Builder →
             </button>
           </div>

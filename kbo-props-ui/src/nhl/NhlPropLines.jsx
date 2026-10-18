@@ -24,6 +24,7 @@ import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { countedLines, lineClause } from '../lineCount'
+import { pickSide, sideClass, sideLetter } from '../pickSide.js'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 const SORT_OPTIONS = ['CG Score', 'Hit Rate', 'Season', 'H2H', 'DVP']
@@ -86,7 +87,7 @@ export function sortBoard(rows, sortBy) {
 function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const score = rowScore(item)
-  const isOver = Number(item.projection) >= Number(item.line)
+  const side = pickSide(item.projection, item.line, score)
   const [whyOpen, setWhyOpen] = useState(false)
   const scoreNote = buildCgScoreExplainer({
     player: item.player,
@@ -112,15 +113,15 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
               {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
               {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogo ? fitImage(teamLogo, 16) : ''} />{item.team}, {item.position}</span>
-              <div className={`nfl-lines-line ${isOver ? 'over' : 'under'}`}>
-                <b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}
+              <div className={`nfl-lines-line ${sideClass(side)}`}>
+                {side ? <b>{sideLetter(side)}</b> : null} {formatValue(item.line)} {item.prop}
               </div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={Number(item.line)} /> },
-        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+        { className: `hit-rate-score ${sideClass(side)}`, node: (
           <CgScoreCell
             scoreText={score == null ? '—' : score.toFixed(1)}
             note={scoreNote}

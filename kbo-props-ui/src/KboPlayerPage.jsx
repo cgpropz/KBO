@@ -293,7 +293,6 @@ export default function KboPlayerPage({ playerName, onBack }) {
   const chartLine = slider.line ?? line
   const hitColor = rateTextColor(currentRange?.pct, currentRange?.games)
   const model = currentProp.projection ?? currentProp.avg ?? null
-  const isOver = model != null && line != null && model >= line
   const headerBadge = playerHeaderBadge(currentProp)
   const modelDelta = model != null && line != null ? model - line : null
 
