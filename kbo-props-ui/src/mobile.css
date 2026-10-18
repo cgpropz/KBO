@@ -120,6 +120,12 @@
     font-size: 12px !important;
   }
 
+  /* "Data: nflverse" footer credit: the smallest size the phone floor allows. */
+  body footer :is(.data-credit, .data-credit a) {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+  }
+
   body .pl-landing :is(.pl-lead, .pl-price-note, .pl-checkout-note, .pl-faq-item p) {
     font-size: 15px !important;
   }

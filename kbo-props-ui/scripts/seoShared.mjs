@@ -8,6 +8,7 @@ import {
   OPERATOR_DISCLAIMER,
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
+import { DATA_CREDIT_NAME, DATA_CREDIT_PREFIX, DATA_CREDIT_URL } from '../src/dataCredit.js';
 
 export const SITE = 'https://www.cgpropz.com';
 export const PUBLISHED_ON = '2026-10-11';
@@ -133,6 +134,11 @@ const FOOTER_LINKS = [
   ['/states-not-available', "Where CGPropz isn't available"],
 ];
 
+// Tiny "Data: nflverse" credit, last line of every static footer.
+export function renderDataCredit() {
+  return `<p class="data-credit">${escapeHtml(DATA_CREDIT_PREFIX)} <a href="${DATA_CREDIT_URL}" target="_blank" rel="noopener noreferrer">${escapeHtml(DATA_CREDIT_NAME)}</a></p>`;
+}
+
 export function renderFooter() {
   const links = FOOTER_LINKS.map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
   return `<footer class="site-footer">
@@ -144,6 +150,7 @@ export function renderFooter() {
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
       <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
+      ${renderDataCredit()}
     </footer>`;
 }
 
@@ -193,6 +200,8 @@ const PAGE_CSS = `
     }
     .footer-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
     .footer-links a { font-weight: 700; }
+    .site-footer .data-credit { margin: 4px 0 0; color: #71717a; font-size: 11px; line-height: 1.3; }
+    .site-footer .data-credit a { color: inherit; font-weight: 400; text-decoration: underline; }
     .state-list { margin: 0; padding-left: 1.3em; }
     @media (min-width: 640px) {
       .state-list { columns: 2; max-width: 520px; }
