@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T00:12:52Z",
+  "checked_at": "2026-10-18T00:18:44Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T00:12:52.321875+00:00",
@@ -12,10 +12,19 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-17T23:51:25.352043+00:00",
-      "prop_count": 336,
+      "generated_at": "2026-10-18T00:18:44.185780+00:00",
+      "prop_count": 294,
       "started_removed": 0,
       "removals": [
+        {
+          "player": "Andrei Svechnikov",
+          "team": "CAR",
+          "stat": "Shots On Goal",
+          "line": 4.5,
+          "odds_type": "demon",
+          "projection": 2.74,
+          "reason": "line pulled"
+        },
         {
           "player": "Blake Coleman",
           "team": "MIN",
@@ -80,6 +89,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Matt Coronato",
+          "team": "CGY",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.52,
+          "reason": "line pulled"
+        },
+        {
           "player": "Maxim Shabanov",
           "team": "MIN",
           "stat": "Points",
@@ -123,11 +141,47 @@
           "odds_type": "standard",
           "projection": 1.81,
           "reason": "line pulled"
+        },
+        {
+          "player": "Sebastian Aho",
+          "team": "CAR",
+          "stat": "Shots On Goal",
+          "line": 4.5,
+          "odds_type": "demon",
+          "projection": 2.37,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Shayne Gostisbehere",
+          "team": "CAR",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.77,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Shayne Gostisbehere",
+          "team": "CAR",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.02,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Yegor Sharangovich",
+          "team": "CGY",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.41,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 1,
-        "superseded_dup": 0,
+        "pp_pull": 0,
+        "superseded_dup": 2,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
