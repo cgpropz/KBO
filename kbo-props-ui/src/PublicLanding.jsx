@@ -3,7 +3,7 @@ import { fetchApiDataset } from './apiData';
 import { useAgeGate } from './ageGateContext';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
 import { fitImage } from './fitImage';
-import { formatPoints, kickoffLabel } from './nfl/gameCardModel';
+import { kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
 import { STRIPE_LINKS } from './pricingTiers';
@@ -345,8 +345,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                     <TeamMark team={game.homeTeam} name={game.homeName} />
                   </div>
                   <div className="pl-markets">
-                    <Market label="Spread" line={game.spread?.line} projection={game.spread?.projection} />
-                    <Market label="Total" line={game.total?.line} projection={game.total?.projection} />
+                    <Market label="Spread" {...boardApi.matchupMarketText(game).spread} />
+                    <Market label="Total" {...boardApi.matchupMarketText(game).total} />
                   </div>
                   {gameRows.length ? <BoardTable rows={gameRows} sport="nfl" /> : (
                     <p className="pl-empty">Player props for this game are on the full board.</p>
@@ -535,8 +535,8 @@ function Market({ label, line, projection }) {
   return (
     <div>
       <span>{label}</span>
-      <b className="pl-num">{formatPoints(line)}</b>
-      <small>CG {formatPoints(projection)}</small>
+      <b className="pl-num">{line}</b>
+      <small>CG {projection}</small>
     </div>
   );
 }

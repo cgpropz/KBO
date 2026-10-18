@@ -81,3 +81,20 @@ test('free visitors use the public landing and paid members keep the Sports Hub'
   assert.match(hub, /<PublicLanding/)
   assert.equal(hub.includes('Testimonials'), false)
 })
+
+test('landing matchup sheet labels the spread team and shows a CG pick-em as PK', async () => {
+  const { matchupMarketText } = await import('../src/publicBoard.js')
+  const carPhi = { awayTeam: 'CAR', homeTeam: 'PHI', awayScore: 22, homeScore: 22, spread: { line: -3, projection: 0 }, total: { line: 39, projection: 44 } }
+  assert.deepEqual(matchupMarketText(carPhi), {
+    spread: { line: 'CAR -3.0', projection: 'PK' },
+    total: { line: '39.0', projection: '44.0' },
+  })
+  const houJax = { awayTeam: 'HOU', homeTeam: 'JAX', spread: { line: 2.5, projection: 3 }, total: { line: 42, projection: 45 } }
+  assert.deepEqual(matchupMarketText(houJax).spread, { line: 'JAX -2.5', projection: 'JAX -3.0' })
+  const missing = { awayTeam: 'NO', homeTeam: 'NYG', spread: { line: null, projection: null }, total: {} }
+  assert.deepEqual(matchupMarketText(missing), {
+    spread: { line: '—', projection: '—' },
+    total: { line: '—', projection: '—' },
+  })
+  assert.match(landing, /boardApi\.matchupMarketText\(game\)\.spread/)
+})
