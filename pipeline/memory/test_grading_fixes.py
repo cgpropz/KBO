@@ -166,7 +166,8 @@ class KboGradeFixTests(_MemoryCase):
         self.write_json("memory/starter_matchups.json", {
             "matchups": [{"sport": "kbo", "date": "2026-09-25", "games": [["KT", "Doosan"]]}],
         })
-        result = grade_kbo_day.grade_day(date(2026, 9, 25))
+        # The day is recapped (locked); an explicit regrade replaces it with a complete result.
+        result = grade_kbo_day.grade_day(date(2026, 9, 25), regrade=True)
         self.assertEqual(result["status"], "complete")
         summary = json.loads((common.memory_dir("kbo", date(2026, 9, 25)) / "summary.json").read_text())
         self.assertEqual(summary["voids"], 1)

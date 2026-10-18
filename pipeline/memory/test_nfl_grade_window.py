@@ -119,7 +119,7 @@ class NflAwaitingSlateTests(unittest.TestCase):
             self._slate(d)
         called = []
 
-        def fake(d, *, dry_run=False):
+        def fake(d, *, dry_run=False, regrade=False):
             called.append((d, dry_run))
             return {"status": "waiting", "slate_date": common.format_mmddyyyy(d), "dry_run": dry_run}
 
@@ -147,7 +147,7 @@ class NflAwaitingSlateTests(unittest.TestCase):
             self._slate(d)
         called = []
 
-        def fake(d, *, dry_run=False):
+        def fake(d, *, dry_run=False, regrade=False):
             called.append((d, dry_run))
             return {"status": "complete", "slate_date": common.format_mmddyyyy(d), "dry_run": dry_run}
 

@@ -166,7 +166,11 @@ jobs:
           fi
 
           echo "Push rejected; fetching latest and rebasing..."
-          if git pull --rebase origin main; then
+          # --autostash: the refresh leaves other generated files modified in
+          # the checkout. Without it the rebase aborts ("cannot pull with
+          # rebase: You have unstaged changes") and box scores never reach
+          # main, so the standalone WNBA grader reads stale CSVs.
+          if git pull --rebase --autostash origin main; then
             git push origin HEAD:main \
               && echo "Push succeeded after clean rebase" \
               || git push --force-with-lease origin HEAD:main \
