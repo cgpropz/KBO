@@ -2,7 +2,7 @@
 // position from nflverse play-by-play, next to the existing DvP grade.
 // Context only. It is not part of CG Score or projections.
 import { useState } from 'react'
-import { MATCHUP_CREDIT_URL, matchupEntries, matchupSummary, matchupTitle, matchupTooltip, smallSampleNote } from './matchupDefenseModel.js'
+import { MATCHUP_CREDIT_URL, chipAriaLabel, matchupEntries, matchupSummary, matchupTitle, matchupTooltip, smallSampleNote } from './matchupDefenseModel.js'
 import './matchupDefenseChip.css'
 
 // Own class names: the global .grade-* classes paint solid backgrounds.
@@ -22,27 +22,22 @@ function Note({ entries, payload }) {
   )
 }
 
-// Compact chip for board rows: "Adj B+". Tap or hover for the detail.
+// Compact chip for board rows: "Adj B+" (with "*" / "*RB" on small samples).
+// Display only: no tap, hover title or explanation box. The detail lives on
+// the player-page ADJ MATCHUP tile; the nflverse credit is in the site footer.
 export function AdjMatchupChip({ payload, prop, position, opponent }) {
-  const [open, setOpen] = useState(false)
   const entries = matchupEntries(payload, { prop, position, opponent })
   if (!entries.length) return null
   const summary = matchupSummary(entries)
-  const title = matchupTitle(entries, payload)
   return (
     <span className="nfl-adj-wrap">
-      <button
-        type="button"
+      <span
         className={`nfl-adj-chip ${gradeClass(summary.grade)}${summary.smallSample ? ' small-sample' : ''}`}
-        title={title}
-        aria-label={title}
-        aria-expanded={open}
-        onClick={(event) => { event.stopPropagation(); setOpen((value) => !value) }}
-        onKeyDown={(event) => event.stopPropagation()}
+        role="img"
+        aria-label={chipAriaLabel(summary)}
       >
-        <small>Adj</small> {summary.grade}{summary.marker ? <sup className="nfl-adj-mark">{summary.marker}</sup> : null}
-      </button>
-      {open && <Note entries={entries} payload={payload} />}
+        <small aria-hidden="true">Adj</small> <span aria-hidden="true">{summary.grade}</span>{summary.marker ? <sup className="nfl-adj-mark" aria-hidden="true">{summary.marker}</sup> : null}
+      </span>
     </span>
   )
 }

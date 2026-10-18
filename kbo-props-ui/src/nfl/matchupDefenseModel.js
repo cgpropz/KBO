@@ -107,7 +107,14 @@ export function matchupSummary(entries) {
   }
 }
 
-// Title / aria-label: every split's line, the small-sample note, then the
+// Short screen-reader label for the board chip, e.g. "Adj matchup B-" or
+// "Adj matchup A+, small sample". The chip has no hover title.
+export function chipAriaLabel(summary) {
+  if (!summary?.grade) return ''
+  return `Adj matchup ${summary.grade}${summary.smallSample ? ', small sample' : ''}`
+}
+
+// Player-page tile title / aria-label: every split's line, the small-sample note, then the
 // credit once (two-split chips used to repeat it).
 export function matchupTitle(entries, payload) {
   const list = Array.isArray(entries) ? entries : []
