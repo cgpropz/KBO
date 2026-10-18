@@ -51,6 +51,7 @@ declare
     'wnba_sharp_odds',
     -- NFL
     'nfl_projections', 'nfl_lineups', 'nfl_sharp_odds', 'nfl_game_markets',
+    'nfl_matchup_defense',
     -- NBA
     'nba_players', 'nba_teams',
     'nba_dvp_pg', 'nba_dvp_sg', 'nba_dvp_sf', 'nba_dvp_pf', 'nba_dvp_c',

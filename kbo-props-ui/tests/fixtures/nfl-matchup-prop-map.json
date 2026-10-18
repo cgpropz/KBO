@@ -1,0 +1,25 @@
+{
+  "_comment": "Prop -> matchup split cases. Checked by test_nfl_matchup_defense.py (nfl/matchup_defense.py) and tests/nfl-matchup-defense.test.mjs (src/nfl/matchupDefenseModel.js) so both sides map the same way.",
+  "cases": [
+    { "prop": "Pass Yards", "position": "QB", "splits": ["pass"] },
+    { "prop": "Pass Attempts", "position": "QB", "splits": ["pass"] },
+    { "prop": "Pass Completions", "position": "QB", "splits": ["pass"] },
+    { "prop": "Pass TDs", "position": "QB", "splits": ["pass"] },
+    { "prop": "Pass+Rush Yds", "position": "QB", "splits": ["pass"] },
+    { "prop": "Rush Yards", "position": "RB", "splits": ["run"] },
+    { "prop": "Rush Yards", "position": "QB", "splits": ["run"] },
+    { "prop": "Rush Attempts", "position": "RB", "splits": ["run"] },
+    { "prop": "Receiving Yards", "position": "WR", "splits": ["WR"] },
+    { "prop": "Receiving Yards", "position": "TE", "splits": ["TE"] },
+    { "prop": "Receiving Yards", "position": "RB", "splits": ["RB"] },
+    { "prop": "Receiving Yards", "position": "FB", "splits": ["RB"] },
+    { "prop": "Receiving Yards", "position": "CB", "splits": ["WR"] },
+    { "prop": "Receptions", "position": "TE", "splits": ["TE"] },
+    { "prop": "Rec Targets", "position": "RB", "splits": ["RB"] },
+    { "prop": "Rush+Rec Yds", "position": "RB", "splits": ["run", "RB"] },
+    { "prop": "Rush+Rec Yds", "position": "WR", "splits": ["WR"] },
+    { "prop": "Rush+Rec Yds", "position": "QB", "splits": ["run"] },
+    { "prop": "Fantasy Score", "position": "WR", "splits": [] },
+    { "prop": "FG Made", "position": "K", "splits": [] }
+  ]
+}

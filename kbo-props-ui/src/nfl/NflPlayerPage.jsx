@@ -14,6 +14,8 @@ import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
+import { AdjMatchupStat } from './MatchupDefense'
+import { useNflMatchupDefense } from './useNflMatchupDefense'
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
 
@@ -84,9 +86,13 @@ function dvpColor(rank) {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+// Hide the mark if it fails to load, so its alt text never shows as a broken image.
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
-  return url ? <img className={className} src={fitImage(url, 22)} alt={team} loading="lazy" /> : null
+  const src = url ? fitImage(url, 22) : ''
+  const [failedSrc, setFailedSrc] = useState('')
+  if (!src || src === failedSrc) return null
+  return <img className={className} src={src} alt="" aria-hidden="true" loading="lazy" onError={() => setFailedSrc(src)} />
 }
 
 function sortProps(rows) {
@@ -129,6 +135,7 @@ function ChartFilterChip({ label, valueLabel, valueColor, open, onToggle, childr
 }
 
 export default function NflPlayerPage({ player, prop, onBack }) {
+  const matchupDefense = useNflMatchupDefense()
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -309,6 +316,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div><small>MODEL</small><strong>{formatValue(currentRow.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></div>
         <div><small>SEASON AVG</small><strong>{formatValue(currentRow.seasonAverage)}</strong></div>
         <div><small>DVP RANK</small><strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'}>{currentRow.dvpRank}<i> /32</i></strong></div>
+        <AdjMatchupStat payload={matchupDefense} prop={currentRow.prop} position={currentRow.position} opponent={currentRow.opponent} />
         <div><small>SNAPS</small><strong>{currentRow.snapCount > 0 ? `${currentRow.snapCount}%` : 'N/A'}</strong></div>
         {(currentRow.position === 'WR' || currentRow.position === 'TE') && currentRow.targetsPerGame != null && (
           <div><small>TARGETS/GM</small><strong>{formatValue(currentRow.targetsPerGame)}</strong></div>

@@ -1,0 +1,60 @@
+name: NFL Matchup Defense (nflverse)
+
+# Opponent-adjusted defense-vs-position matchup context from nflverse
+# play-by-play. Display only: it does not feed CG Score, projections,
+# nfl/build_projection_data.py, nfl/projections.json or the NFL totals ranking.
+# Data: nflverse (CC BY 4.0). FTN charting / participation data is never read.
+#
+# In season (Sep-Feb) only:
+#   Tue ~11:23 AM ET  after MNF lands in nflverse's daily refresh
+#   Thu ~11:23 AM ET  Wed-Thu stat corrections, before TNF
+#   Sun ~10:23 AM ET  before the 1 PM kickoffs
+# UTC crons, off the top of the hour. After DST ends (Nov 1) they run one hour
+# earlier in ET, still after nflverse's morning refresh (~9 AM ET).
+#
+# Stale nflverse (a finished game missing from pbp) or a failed download writes
+# no file, and the publish step then leaves the last good snapshot live.
+# The publish is one single-row upsert to nfl_matchup_defense (no heavy SQL).
+
+on:
+  schedule:
+    - cron: "23 15 * 9-12,1,2 2"
+    - cron: "23 15 * 9-12,1,2 4"
+    - cron: "23 14 * 9-12,1,2 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-matchup-defense
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install pandas pyarrow requests pytest
+
+      - name: Matchup defense tests (FTN-column guard, mapping, metric)
+        run: python -m pytest -q -p no:cacheprovider test_nfl_matchup_defense.py
+
+      - name: Build opponent-adjusted matchup defense from nflverse
+        timeout-minutes: 8
+        run: python nfl/matchup_defense.py
+
+      - name: Publish nfl_matchup_defense (keeps the last good snapshot when no file was written)
+        timeout-minutes: 5
+        run: python nfl/publish_matchup_defense.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

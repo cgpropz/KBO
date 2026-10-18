@@ -8,6 +8,8 @@ import { computeCgOdds } from './cgOdds'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
+import { AdjMatchupChip } from './MatchupDefense'
+import { useNflMatchupDefense } from './useNflMatchupDefense'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from './BookOddsStrip'
 import {
   finiteNumber,
@@ -204,7 +206,7 @@ function CgOddsCell({ item, mode }) {
   )
 }
 
-function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle, showCg }) {
+function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle, showCg, matchupDefense }) {
   const side = item.recommendation === 'UNDER' ? 'under' : 'over'
   const label = item.recommendation === 'UNDER' ? 'UNDER' : item.recommendation === 'OVER' ? 'OVER' : 'LINE'
   const edge = activeEdge(item, mode)
@@ -253,7 +255,12 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
         <td><Quote quote={item.best_over} baselineAmerican={baselineAmerican} /></td>
         <td><Quote quote={item.best_under} baselineAmerican={baselineAmerican} /></td>
         <td>{formatValue(item.projection)}</td>
-        <td><span className={`nfl-grade ${gradeClass(matchup)}`}>{matchup || '—'}</span></td>
+        <td>
+          <div className="nfl-sharp-matchup-cell">
+            <span className={`nfl-grade ${gradeClass(matchup)}`}>{matchup || '—'}</span>
+            <AdjMatchupChip payload={matchupDefense} prop={item.prop} position={item.position} opponent={item.opponent} />
+          </div>
+        </td>
         <td><HitRate rate={item.hitRateL5} /></td>
         <td><HitRate rate={item.hitRate} /></td>
         <td className="nfl-sharp-edge">
@@ -281,6 +288,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
 }
 
 export default function NflSharpOdds({ onSelectPlayer }) {
+  const matchupDefense = useNflMatchupDefense()
   const [payload, setPayload] = useState(null)
   const [records, setRecords] = useState([])
   const [error, setError] = useState('')
@@ -502,6 +510,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                     open={openId === id}
                     onToggle={() => setOpenId((current) => current === id ? null : id)}
                     showCg={showCg}
+                    matchupDefense={matchupDefense}
                   />
                 )
               })}

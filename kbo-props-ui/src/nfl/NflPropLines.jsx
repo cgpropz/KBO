@@ -7,6 +7,8 @@ import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { previewLockedCount, useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { dvpGrade } from './matchupGrade'
+import { AdjMatchupChip } from './MatchupDefense'
+import { useNflMatchupDefense } from './useNflMatchupDefense'
 import { teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from './BoardOddsPanel'
@@ -99,7 +101,7 @@ function MiniChart({ recent, line }) {
   )
 }
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
+function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone, matchupDefense }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   // Side from the CG Score. Exactly 50 is no pick: no O/U letter, no color.
   const side = cgSide(item.score)
@@ -152,11 +154,12 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
-        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(item.dvpRank) : '—' },
+        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: <><span className="nfl-dvp-label">DvP</span> {item.dvpRank ? ordinal(item.dvpRank) : '—'}</> },
         { node: (
           <div className="nfl-lines-matchup">
             {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
             <span className={`nfl-grade ${gradeClass(grade)}`}>{grade || '—'}</span>
+            {!locked && <AdjMatchupChip payload={matchupDefense} prop={item.prop} position={item.position} opponent={item.opponent} />}
           </div>
         ) },
       ]}
@@ -270,6 +273,7 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 }
 
 export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
+  const matchupDefense = useNflMatchupDefense()
   const [projections, setProjections] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -469,6 +473,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
                 odds={matched.odds}
                 seen={matched.seen}
                 oddsState={oddsState}
+                matchupDefense={matchupDefense}
               />
             )
           })}
