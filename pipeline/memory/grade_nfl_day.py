@@ -37,6 +37,7 @@ from pipeline.memory.common import (
     write_partial_progress,
     write_recap,
 )
+from pipeline.memory.common import MODEL_NA, RESULT_VOID, nfl_left_board_pregame
 
 # Today plus the 14 days before it. A slate dated exactly 14 days ago is included.
 LOOKBACK_DAYS = 14
@@ -66,6 +67,7 @@ def _counts(graded: list[dict], ungraded: list) -> dict:
         "misses": stats["misses"],
         "pushes": stats["pushes"],
         "dnps": stats["dnps"],
+        "voids": stats["voids"],
         "missing": stats["missing"],
         "ungraded": len(ungraded),
     }
@@ -386,16 +388,32 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         player = prop.get("player") or ""
         stat = prop.get("stat") or ""
         line = prop.get("line")
+        # Same rule as #238 (runs first, before any matching/DNP logic): a
+        # standard line that left the board (pulled by PrizePicks, OUT/inactive,
+        # or gone from the board read) before kickoff is Void.
+        if nfl_left_board_pregame(prop):
+            graded.append(
+                {
+                    **prop,
+                    "actual": None,
+                    "result": RESULT_VOID,
+                    "model_result": MODEL_NA,
+                    "void_reason": "left board before last pregame freeze",
+                    "graded_at": utc_now_iso(),
+                }
+            )
+            continue
         team = nfl_team(prop.get("team"))
         pair = matchup_pair(team, nfl_team(prop.get("opponent")))
         game = day.game_for(team)
-        if (pair and pair in postponed) or (day.team_games and game is None):
-            # Postponed / moved off this gameday: Void, so one game cannot hold
-            # the day open for the whole lookback window.
+        if pair and pair in postponed:
+            # Listed in memory/postponements.json: Void.
             graded.append(_void(prop, "postponed"))
             continue
         if game is None:
-            _miss(prop, "no_schedule")
+            # No game for this team on this gameday in the schedule. That is
+            # unknown (moved, bad team code, schedule lag), never a Void.
+            _miss(prop, "no_game_found" if day.team_games else "no_schedule")
             continue
         row = day.resolve(player, team)
         if row is None:

@@ -170,17 +170,18 @@ class FinalityTests(_Case):
         self.assertEqual(result["status"], "waiting")
         self.assertEqual(missing, {"Jaxon Smith-Njigba": "game_not_final"})
 
-    def test_postponed_game_voids_instead_of_holding_the_day_open(self):
-        # SEA-DEN moved off 10/15 (not on that gameday in the schedule); KC-LV final.
+    def test_team_with_no_game_found_is_missing_not_void(self):
+        # SEA-DEN is not on 10/15 in the schedule (moved); KC-LV final.
         games = [_game("KC", "LV", 20, 17), _game("SEA", "DEN", None, None, gameday="2026-10-21", week=7)]
         roster = self.ROSTER + [_roster_row("Travis Kelce", "KC", "00-9", "KelcTr00")]
         stats = [_stat("KC", "00-9", "Travis Kelce", receptions=6)]
-        result, recap, _ = self.grade(
+        result, recap, missing = self.grade(
             [_prop("Jaxon Smith-Njigba", "SEA", "DEN"), _prop("Travis Kelce", "KC", "LV", line=4.5)],
             games, stats, roster, [_snap("KC", "KelcTr00", off=50)])
-        self.assertEqual(result["status"], "complete")
-        self.assertEqual(recap["Jaxon Smith-Njigba"]["result"], "VOID")
-        self.assertEqual(recap["Jaxon Smith-Njigba"]["void_reason"], "postponed")
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(missing, {"Jaxon Smith-Njigba": "no_game_found"})
+        self.assertNotIn("Jaxon Smith-Njigba", recap)
+        self.assertEqual(result["hits"], 1)
 
     def test_postponements_file_voids(self):
         common.save_json(Path(common.REPO_ROOT) / "memory" / "postponements.json", {"postponements": [
