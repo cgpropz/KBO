@@ -19,6 +19,8 @@ from pipeline.memory.common import (
     format_mmddyyyy,
     grade_line,
     load_json,
+    locked_day_result,
+    recap_locked,
     matchup_pair,
     memory_dir,
     model_result,
@@ -184,6 +186,89 @@ def build_actuals() -> dict[tuple[str, str], dict]:
     return lookup
 
 
+POSTSEASON_FILE = "postseason_actuals.json"
+
+
+POSTSEASON_MIN_BOX_HITTERS = 9
+
+
+def postseason_box_dnps(payload: dict) -> set[str]:
+    """Name keys confirmed DNP by the official box score.
+
+    All must hold: the player's page identity was verified (Korean name and
+    team), his team's game is final, its box score lists at least a full
+    lineup, and no hitter or pitcher who appeared matches his verified Korean
+    name. A box-score name counts as a match when it is the same text or has
+    the same hangul_skeleton (spelling variants, spacing). Anything less stays
+    missing.
+    """
+    from pipeline.memory.kbo_postseason_actuals import hangul_skeleton
+
+    def _same(a: str, b: str) -> bool:
+        a, b = str(a or "").strip(), str(b or "").strip()
+        if not a or not b:
+            return False
+        if a == b:
+            return True
+        sa, sb = hangul_skeleton(a), hangul_skeleton(b)
+        return bool(sa) and sa == sb
+
+    out: set[str] = set()
+    boxes = {team_key(team): box for team, box in (payload.get("box_scores") or {}).items() if isinstance(box, dict)}
+    for player, ident in (payload.get("identities") or {}).items():
+        if not player or not isinstance(ident, dict) or not ident.get("name_ko"):
+            continue
+        name_ko = ident["name_ko"]
+        box = boxes.get(team_key(ident.get("team") or ""))
+        if not box or not box.get("final") or int(box.get("hitters") or 0) < POSTSEASON_MIN_BOX_HITTERS:
+            continue
+        if any(_same(name_ko, seen) for seen in box.get("appeared_ko") or []):
+            continue
+        out.add(name_match_key(player))
+    return out
+
+
+def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[str], set[str]] | None:
+    """Grading-only postseason lines for one KBO day, or None when there is no file.
+
+    The game-log scrapers carry the regular season only, so postseason games
+    are fetched per slate player into memory/kbo/.../postseason_actuals.json
+    (pipeline/memory/kbo_postseason_actuals.py). Returns three values,
+    (lookup, fetched, benched): lookup maps (iso, name key) to the stat line,
+    fetched is the name keys whose pages were read and verified, and benched
+    is the name keys confirmed DNP by the final box score
+    (postseason_box_dnps).
+    """
+    payload = load_json(memory_dir("kbo", d) / POSTSEASON_FILE)
+    if not isinstance(payload, dict):
+        return None
+    iso = format_iso(d)
+    lookup: dict[tuple[str, str], dict] = {}
+    for row in payload.get("rows") or []:
+        if not isinstance(row, dict) or row.get("date") != iso:
+            continue
+        key = name_match_key(row.get("player", ""))
+        if not key:
+            continue
+        base = {"team": row.get("team") or "", "opponent": row.get("opponent") or "", "present": True,
+                "source": "postseason", "series": row.get("series")}
+        if row.get("type") == "pitcher":
+            if row.get("role") != "SP":
+                continue  # relief outing is not a start, same as the regular-season logs
+            lookup[(iso, key)] = {**base, "type": "pitcher", "so": row.get("so", 0), "ha": row.get("ha", 0),
+                                  "outs": row.get("outs", 0), "ip": round((row.get("outs") or 0) / 3, 2)}
+        else:
+            h, r, rbi = int(row.get("h") or 0), int(row.get("r") or 0), int(row.get("rbi") or 0)
+            d2, d3, hr = int(row.get("2b") or 0), int(row.get("3b") or 0), int(row.get("hr") or 0)
+            fs_row = {"H": h, "2B": d2, "3B": d3, "HR": hr, "R": r, "RBI": rbi,
+                      "Walks": row.get("bb", 0), "HBP": row.get("hbp", 0), "SB": row.get("sb", 0)}
+            lookup[(iso, key)] = {**base, "type": "batter", "h": h, "r": r, "rbi": rbi, "hrr": h + r + rbi,
+                                  "tb": h + d2 + 2 * d3 + 3 * hr, "fs": hitter_fantasy_score(fs_row)}
+    fetched = {name_match_key(name) for name in payload.get("fetched_players") or [] if name}
+    benched = postseason_box_dnps(payload)
+    return lookup, fetched, benched
+
+
 def _void_prop(prop: dict, reason: str) -> dict:
     """Graded VOID: out of the W-L and the hit rate, but the prop is graded."""
     return {
@@ -196,8 +281,12 @@ def _void_prop(prop: dict, reason: str) -> dict:
     }
 
 
-def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = False) -> dict:
+def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = False, regrade: bool = False) -> dict:
     day_dir = memory_dir("kbo", d)
+    # Recapped days are locked, for scheduled and manual --date runs alike.
+    # --regrade re-reads finals, but only a complete result can replace the recap.
+    if recap_locked("kbo", d) and not regrade:
+        return locked_day_result("kbo", d, dry_run=dry_run)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
         if not dry_run:
@@ -213,6 +302,13 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
     actuals = build_actuals()
     iso = format_iso(d)
+    postseason = load_postseason_actuals(d)
+    postseason_fetched: set[str] | None = None
+    postseason_benched: set[str] = set()
+    if postseason is not None:
+        post_lookup, postseason_fetched, postseason_benched = postseason
+        for key, row in post_lookup.items():
+            actuals.setdefault(key, row)
     props = slate["props"]
     graded = []
     missing = []
@@ -254,6 +350,27 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
 
         if not stats:
             prop_team = team_key(prop.get("team") or "")
+            if postseason_fetched is not None and name_match_key(player) in postseason_benched:
+                # Verified player, team's final box score, and he is not in it.
+                graded.append({
+                    **prop,
+                    "actual": None,
+                    "result": RESULT_DNP,
+                    "model_result": model_result(RESULT_DNP, prop.get("recommendation")),
+                    "dnp_reason": "not_in_box_score",
+                    "graded_at": utc_now_iso(),
+                })
+                continue
+            if postseason_fetched is not None:
+                # Otherwise postseason days are never DNP from absence: a blank,
+                # wrong or unread page, or a player missing from his page's stat
+                # table, is unknown. It stays missing until a verified row arrives.
+                reason = (
+                    "postseason_no_row" if name_match_key(player) in postseason_fetched
+                    else "postseason_not_fetched"
+                )
+                missing.append({"player": player, "stat": stat, "odds_type": prop.get("odds_type"), "reason": reason})
+                continue
             if prop_team and prop_team in teams_done:
                 # Team has finals for this date but player has no log row → DNP
                 entry = {
@@ -383,6 +500,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--date", help="KST slate date mm/dd/YYYY or YYYY-MM-DD (default: yesterday KST)")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--regrade",
+        action="store_true",
+        help="Re-grade a day that already has recap.json. Only a complete result is written; waiting/partial never replaces a graded day.",
+    )
+    parser.add_argument(
         "--catch-up-days",
         type=int,
         default=None,
@@ -397,8 +519,8 @@ def main(argv: list[str] | None = None) -> int:
     catch_up = args.catch_up_days
     if catch_up is None:
         catch_up = 0 if args.date else DEFAULT_CATCH_UP_DAYS
-    results = [grade_day(prior, dry_run=args.dry_run) for prior in catch_up_dates(d, catch_up)]
-    results.append(grade_day(d, dry_run=args.dry_run))
+    results = [grade_day(prior, dry_run=args.dry_run, regrade=args.regrade) for prior in catch_up_dates(d, catch_up)]
+    results.append(grade_day(d, dry_run=args.dry_run, regrade=args.regrade))
     result = results if len(results) > 1 else results[0]
     print(json.dumps(result, indent=2))
     # Non-zero only on hard failure; waiting/partial are normal

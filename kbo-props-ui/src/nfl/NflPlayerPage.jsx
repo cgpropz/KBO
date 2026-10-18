@@ -16,6 +16,13 @@ import { CgScoreNote } from '../CgScoreExplainer'
 import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
 import { AdjMatchupStat } from './MatchupDefense'
 import { useNflMatchupDefense } from './useNflMatchupDefense'
+import { nflSeasonAverage } from './seasonAverage'
+
+// This season's per-game average, or '—' (src/nfl/seasonAverage.js).
+function seasonAvgText(row) {
+  const season = nflSeasonAverage(row)
+  return season ? formatValue(season.average) : '—'
+}
 
 const PROP_PRIORITY = ['Pass Yards', 'Pass+Rush Yds', 'Pass Completions', 'Pass Attempts', 'Pass TDs', 'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds', 'Receiving Yards', 'Receptions', 'Rec Targets', 'Touchdowns', 'Interceptions']
 
@@ -314,7 +321,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div className="nfl-player-hitrate" aria-live="polite"><small>HIT RATE</small><strong style={hitColor ? { color: hitColor } : undefined}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong><span>{chartHit.games ? `(${chartHit.hits}/${chartHit.games}${slider.moved ? ` over ${formatLineValue(slider.line)}` : ''})` : ''}</span></div>
         <div><small>LINE</small><strong>{formatValue(currentRow.line)}</strong></div>
         <div><small>MODEL</small><strong>{formatValue(currentRow.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></div>
-        <div><small>SEASON AVG</small><strong>{formatValue(currentRow.seasonAverage)}</strong></div>
+        <div><small>SEASON AVG</small><strong>{seasonAvgText(currentRow)}</strong></div>
         <div><small>DVP RANK</small><strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'}>{currentRow.dvpRank}<i> /32</i></strong></div>
         <AdjMatchupStat payload={matchupDefense} prop={currentRow.prop} position={currentRow.position} opponent={currentRow.opponent} />
         <div><small>SNAPS</small><strong>{currentRow.snapCount > 0 ? `${currentRow.snapCount}%` : 'N/A'}</strong></div>
