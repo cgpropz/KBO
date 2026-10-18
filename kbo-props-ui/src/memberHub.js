@@ -453,13 +453,22 @@ export function countPlayable(rows) {
   return playableRows(rows).filter((r) => r.player && Number.isFinite(r.score)).length
 }
 
+// O / U letter for a row's side. No side (a neutral 50) shows no letter.
+export function sideLetter(side) {
+  if (side === 'UNDER') return 'U'
+  if (side === 'OVER') return 'O'
+  return ''
+}
+
 // Highest L10 hit rate on the board. The sample is the chart's decided games
 // (pushes already left out). A log shorter than 10, or a window with no
 // decided game, is not an L10 and stays off the list.
 export function topHitRateRows(rows, limit = 10) {
   const ranked = playableRows(rows)
     .filter((row) => (
-      row?.player
+      // A neutral row (CG exactly 50) is no pick, so it is not a hit leader.
+      row?.neutral !== true
+      && row?.player
       && row?.stat
       && Array.isArray(row.recent)
       && row.recent.length >= 10

@@ -58,3 +58,25 @@ test('free top 3 breaks equal shown scores on rawScore', () => {
   ]
   assert.deepEqual(selectFreeTop3(rows, 'nfl').map((r) => r.player), ['B', 'A', 'C'])
 })
+
+test('hit leaders skip a neutral 50 row even with a 90% L10', async () => {
+  const { topHitRateRows, sideLetter } = await import('../src/memberHub.js')
+  // Austin Hooper Rec Yds 3.5, projection 15.5: the floor holds it at exactly 50.
+  const hooperRecent = [10, 12, 8, 15, 9, 20, 11, 14, 2, 13]
+  const otherRecent = [6, 7, 5, 8, 6, 3, 7, 6, 5, 2]
+  const rows = nflHubRows([
+    { player: 'Austin Hooper', prop: 'Receiving Yards', projection: 15.5, line: 3.5, line_type: 'standard', start_time: later(), recent: hooperRecent },
+    { player: 'Other Guy', prop: 'Receptions', projection: 5.5, line: 4.5, line_type: 'standard', start_time: later(), recent: otherRecent },
+  ])
+  const hooper = rows.find((r) => r.player === 'Austin Hooper')
+  assert.equal(hooper.score, 50)
+  assert.equal(hooper.neutral, true)
+  assert.equal(hooper.side, null)
+  assert.equal(hooper.hitRate, 90)
+  const leaders = topHitRateRows(rows)
+  assert.equal(leaders.some((r) => r.player === 'Austin Hooper'), false)
+  assert.equal(leaders.some((r) => r.player === 'Other Guy'), true)
+  assert.equal(sideLetter(null), '')
+  assert.equal(sideLetter('OVER'), 'O')
+  assert.equal(sideLetter('UNDER'), 'U')
+})
