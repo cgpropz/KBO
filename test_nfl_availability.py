@@ -174,3 +174,26 @@ class LoudFeedFailureTests(unittest.TestCase):
             with contextlib.redirect_stdout(out):
                 self.assertEqual(fetch_espn_unavailable(get), set())
             self.assertIn("::error title=NFL OUT filter::", out.getvalue())
+
+
+class ManualOutAlreadyPulledTest(unittest.TestCase):
+    def test_logs_manual_match_on_a_row_already_pulled(self):
+        import contextlib
+        import io
+
+        rows = [
+            {'player': 'Tyler Warren', 'team': 'IND', 'prop': 'Receiving Yards', 'removed': True, 'pp_status': 'removed'},
+            {'player': 'Quinshon Judkins', 'team': 'CLE', 'prop': 'Rush Yards'},
+        ] + [{'player': f'Filler {i}', 'team': 'KC', 'prop': 'Receptions'} for i in range(20)]
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'manual_out.json'
+            path.write_text(json.dumps([
+                {'player': 'Tyler Warren', 'team': 'IND'},
+                {'player': 'Quinshon Judkins', 'team': 'CLE'},
+            ]))
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                flagged = apply_out_filter(rows, get=stub(espn()), manual_path=path)
+        self.assertEqual(flagged, ['Quinshon Judkins (CLE) Rush Yards'])
+        self.assertIn('manual_out.json matched 1 row(s) already pulled: Tyler Warren (IND) Receiving Yards', out.getvalue())
+        self.assertEqual(rows[0]['pp_status'], 'removed')  # an already-pulled row is not re-stamped
