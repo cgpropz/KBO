@@ -154,10 +154,31 @@ def mark_unavailable(records: list[dict], blocked: set[tuple[str, str]], max_sha
     return [f"{r.get('player')} ({r.get('team')}) {r.get('prop')}" for r in hits]
 
 
+def manual_already_pulled(records: list[dict], manual: set[tuple[str, str]]) -> list[str]:
+    """'player (team) prop' for manual_out.json matches PrizePicks already pulled."""
+    if not manual:
+        return []
+    return [
+        f"{r.get('player')} ({r.get('team')}) {r.get('prop')}"
+        for r in records
+        if r.get('removed') is True and is_unavailable(r.get('player'), r.get('team'), manual)
+    ]
+
+
+def log_manual_already_pulled(records: list[dict], manual: set[tuple[str, str]]) -> list[str]:
+    """Print manual_out.json names that matched rows already off the board, so the log shows them."""
+    labels = manual_already_pulled(records, manual)
+    if labels:
+        print(f'OUT filter: manual_out.json matched {len(labels)} row(s) already pulled: {", ".join(labels)}')
+    return labels
+
+
 def apply_out_filter(records: list[dict], get=None, manual_path: Path = MANUAL_OUT_PATH) -> list[str]:
     """ESPN + manual override, applied in place. Never raises."""
     try:
-        blocked = fetch_espn_unavailable(get) | load_manual_out(manual_path)
+        manual = load_manual_out(manual_path)
+        log_manual_already_pulled(records, manual)
+        blocked = fetch_espn_unavailable(get) | manual
         return mark_unavailable(records, blocked)
     except Exception as exc:  # noqa: BLE001 - the filter must never block a publish
         print(f'::error title=NFL OUT filter::OUT filter failed ({type(exc).__name__}); board published without it.')
