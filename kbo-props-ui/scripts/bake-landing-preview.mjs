@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { gameAlreadyStarted, shapeForTier, sportAccess } from '../api/_dataAccess.js';
+import { gameAlreadyStarted, gameMarketHasPrices, shapeForTier, sportAccess } from '../api/_dataAccess.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from '../api/_snapshotChunks.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,6 +29,7 @@ export function landingPreviewBody(ds, row) {
     if (games.some((game) => game?.total && Object.hasOwn(game.total, 'edge'))) {
       throw new Error('NFL preview includes a total edge');
     }
+    if (games.some(gameMarketHasPrices)) throw new Error('NFL preview includes book prices');
   }
   if (ds === 'nhl_projections') {
     const rows = Array.isArray(shaped.data) ? shaped.data : [];

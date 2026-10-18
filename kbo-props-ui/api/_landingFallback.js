@@ -2,7 +2,7 @@
 // file is empty. Preview and production deploys overwrite it with the free
 // top 3 only. Paid requests never receive it.
 import baked from './_landingPreview.json' with { type: 'json' };
-import { gameAlreadyStarted } from './_dataAccess.js';
+import { gameAlreadyStarted, gameMarketHasPrices } from './_dataAccess.js';
 
 const MAX_ROWS = 3;
 
@@ -20,6 +20,7 @@ export function acceptLandingFallback(ds, body, authorization = '') {
     const games = body.data?.games;
     if (!Array.isArray(games) || games.length > MAX_ROWS) return null;
     if (games.some((game) => game?.total && Object.hasOwn(game.total, 'edge'))) return null;
+    if (games.some(gameMarketHasPrices)) return null;
     return body;
   }
   if (ds === 'nhl_projections') {
