@@ -95,10 +95,20 @@ def name_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", stripped)
 
 
+TEAM_ALIASES = {"JAC": "JAX", "LAR": "LA", "WSH": "WAS", "OAK": "LV", "SD": "LAC", "STL": "LA"}
+
+
+def nfl_team(code) -> str:
+    text = str(code or "").strip().upper()
+    return TEAM_ALIASES.get(text, text)
+
+
 def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bool]:
     """
     Returns (lookup keyed by (iso_date, name_key), game_finalized).
-    game_finalized is True when schedule shows scores for that gameday.
+    game_finalized is True only when every game on that gameday has both
+    scores. One final game used to be enough, which could mark players from a
+    game still in progress (or not yet in nflverse stats) as DNP.
     """
     try:
         import pandas as pd
@@ -111,10 +121,8 @@ def load_actuals_for_date(target: date) -> tuple[dict[tuple[str, str], dict], bo
     if day_games.empty:
         return {}, False
 
-    finalized = bool(day_games["home_score"].notna().any() and day_games["away_score"].notna().any())
-    # Prefer fully scored games: at least one game that day has both scores
     finalized = bool(
-        ((day_games["home_score"].notna()) & (day_games["away_score"].notna())).any()
+        ((day_games["home_score"].notna()) & (day_games["away_score"].notna())).all()
     )
 
     seasons = sorted({int(s) for s in day_games["season"].dropna().unique()} | set(HISTORY_SEASONS))
@@ -261,6 +269,9 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
     props = slate["props"]
     graded = []
     missing = []
+    # A team counts as done only when nflverse has stat rows for it that day.
+    # Final scores with no weekly stats yet must not turn the slate into DNPs.
+    teams_with_stats = {nfl_team(row.get("team")) for row in actuals.values() if row.get("team")}
 
     for prop in props:
         player = prop.get("player") or ""
@@ -268,7 +279,7 @@ def grade_day(d: date, *, dry_run: bool = False) -> dict:
         line = prop.get("line")
         stats = actuals.get((iso, name_key(player)))
         if not stats:
-            if finalized:
+            if finalized and nfl_team(prop.get("team")) in teams_with_stats:
                 graded.append(
                     {
                         **prop,

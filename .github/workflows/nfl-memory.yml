@@ -1,11 +1,15 @@
 name: NFL Props Memory Grade
 
-# Grades completed NFL gamedays after nflverse weekly stats catch up
-# (typically Tue/Wed).
+# Grades completed NFL gamedays after nflverse weekly stats catch up.
+# Daily, so Thursday and Monday games are graded the next morning instead of
+# waiting for Tuesday (TNF 10/15/2026 sat ungraded for 3+ days). Unfinished
+# days are left waiting: a day is final only when every game has a score and
+# a player is DNP only when his team has nflverse stat rows. Off the hour
+# because GitHub drops on-the-hour schedules.
 
 on:
   schedule:
-    - cron: "0 14 * * 2,3" # 10:00 AM ET Tue/Wed
+    - cron: "23 14 * * *" # 10:23 AM ET daily (9:23 AM ET after DST ends)
   workflow_dispatch:
     inputs:
       date:
