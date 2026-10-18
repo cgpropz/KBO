@@ -18,6 +18,7 @@ import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 import { fitImage } from '../fitImage.js'
+import { pickSide, sideClass } from '../pickSide.js'
 
 const PROP_PRIORITY = [
   'Points', 'Rebounds', 'Assists', '3-PT Made', 'Pts+Rebs+Asts', 'Pts+Rebs', 'Pts+Asts', 'Rebs+Asts',
@@ -341,7 +342,8 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
   const scaleMax = Math.max(slider.max || 0, 1)
   const chartLine = slider.line ?? line
   const hitColor = rateTextColor(currentRange?.pct, currentRange?.games)
-  const isOver = currentProp.projection != null && line != null && currentProp.projection >= line
+  // Exactly on the line, or a rating of exactly 50, is no pick: no side, no color.
+  const side = pickSide(currentProp.projection, line, currentProp.rating)
   const modelDelta = currentProp.projection != null && line != null ? currentProp.projection - line : null
 
   const seasonAvg = getValue
@@ -375,7 +377,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
           <div className="wnba-player-prop-pill">
             <span>{formatValue(line)} {currentProp.stat}</span>
             {currentProp.rating != null && (
-              <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {currentProp.rating.toFixed(1)}</b>
+              <b className={sideClass(side)}>{side ? `${side} ` : ''}{currentProp.rating.toFixed(1)}</b>
             )}
           </div>
         </div>

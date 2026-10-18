@@ -14,6 +14,7 @@ import { CardTeamLogo } from '../CardTeamLogo'
 import { cgScore, lineMatchesStat } from '../cgScore'
 import { prepareBoardRows } from './pointsGate.js'
 import { BoardLoadError } from '../BoardLoadError'
+import { pickSide, sideClass } from '../pickSide.js'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -32,13 +33,13 @@ function Card({ item, onSelectPlayer }) {
   const dates = Array.isArray(item.gameDates) ? item.gameDates : []
   const seasons = Array.isArray(item.chartSeasons) ? item.chartSeasons : []
   const score = cgScore(item.projection, item.line, item.prop)
-  const isOver = item.projection >= item.line
+  const side = pickSide(item.projection, item.line, score)
   const maxValue = Math.max(item.line, ...recent, 1)
   return (
     <article className="nfl-edge-card">
       <div className="nfl-card-topline">
         <span>{item.goalieStatus === 'probable' ? <b className="nhl-probable">PROBABLE</b> : (typeof item.oddsType === 'string' && item.oddsType && item.oddsType !== 'standard' ? item.oddsType.toUpperCase() : 'FULL GAME')}</span>
-        <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {score == null ? '—' : score.toFixed(1)}</b>
+        <b className={sideClass(side)}>{side ? `${side} ` : ''}{score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
@@ -51,7 +52,7 @@ function Card({ item, onSelectPlayer }) {
       <div className="nfl-card-metrics">
         <div><small>LINE</small><strong>{formatValue(item.line)}</strong></div>
         <div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div>
-        <div><small>SCORE</small><strong className={isOver ? 'over' : 'under'}>{score == null ? '—' : score.toFixed(1)}</strong></div>
+        <div><small>SCORE</small><strong className={sideClass(side)}>{score == null ? '—' : score.toFixed(1)}</strong></div>
         <div><small>DVP</small><strong>{item.dvpRank || '—'}<i> /32</i></strong></div>
       </div>
       <div className="nfl-card-meta">

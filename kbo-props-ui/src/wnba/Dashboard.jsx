@@ -24,6 +24,7 @@ import { BoardLoadError } from '../BoardLoadError'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { wnbaLogoUrl } from '../slipBoardModel.js'
+import { pickSide, sideClass, sideLetter } from '../pickSide.js'
 
 const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
@@ -168,7 +169,7 @@ function MiniChart({ recent, line }) {
 
 function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
-  const isOver = item.isOver
+  const side = item.side
   const grade = dvpGrade(item.dvpRank)
   const scoreNote = buildCgScoreExplainer({
     player: item.player,
@@ -196,13 +197,13 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={wnbaLogoUrl(item.team) ? fitImage(wnbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
-              <div className={`wnba-lines-line ${isOver ? 'over' : 'under'}`}><b>{isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+              <div className={`wnba-lines-line ${sideClass(side)}`}>{side ? <b>{sideLetter(side)}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
-        { className: `hit-rate-score ${isOver ? 'over' : 'under'}`, node: (
+        { className: `hit-rate-score ${sideClass(side)}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
@@ -525,7 +526,8 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
           line,
           projection,
           score,
-          isOver: projection >= line,
+          side: pickSide(projection, line, score),
+          isOver: pickSide(projection, line, score) === 'OVER',
           recent,
           hitRate: l10 ? l10.rate : 0,
           gamesPlayed: l10 ? l10.games : 0,
@@ -554,7 +556,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
 
     const filtered = allRows
       .filter(item => propTab === 'All Props' || item.prop === propTab)
-      .filter(item => filters.side === 'All' || (filters.side === 'Overs' ? item.isOver : !item.isOver))
+      .filter(item => filters.side === 'All' || (filters.side === 'Overs' ? item.side === 'OVER' : item.side === 'UNDER'))
       .filter(item => item.hitRate >= filters.minHitRate)
       .filter(item => item.gamesPlayed >= filters.minGames)
       .filter(item => filters.position === 'All' || item.position === filters.position)

@@ -23,7 +23,9 @@ function sideFor(projection, line, rec) {
   const p = num(projection)
   const l = num(line)
   if (!Number.isFinite(p) || !Number.isFinite(l)) return null
-  return p >= l ? 'OVER' : 'UNDER'
+  // On the line is no pick: no side (and no O/U letter in the hub).
+  if (p === l) return null
+  return p > l ? 'OVER' : 'UNDER'
 }
 
 // Same normalisation the KBO board (PlayerPropsUI) uses for player_photos.json keys.

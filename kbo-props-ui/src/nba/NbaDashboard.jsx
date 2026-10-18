@@ -31,6 +31,7 @@ import {
 import { fitImage } from '../fitImage.js'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { sideClass, sideLetter } from '../pickSide.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -130,12 +131,12 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
-              <div className={`wnba-lines-line ${item.isOver ? 'over' : 'under'}`}><b>{item.isOver ? 'O' : 'U'}</b> {formatValue(item.line)} {item.prop}</div>
+              <div className={`wnba-lines-line ${sideClass(item.side)}`}>{item.side ? <b>{sideLetter(item.side)}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
-        { className: `hit-rate-score ${item.isOver ? 'over' : 'under'}`, node: (
+        { className: `hit-rate-score ${sideClass(item.side)}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },

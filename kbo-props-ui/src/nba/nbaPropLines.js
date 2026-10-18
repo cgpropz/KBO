@@ -4,6 +4,7 @@
 
 import { windowPills } from '../hitRateStrip.js'
 import { cgScore } from '../cgScore.js'
+import { pickSide } from '../pickSide.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 export const NBA_TEAM_COUNT = 30
@@ -328,7 +329,8 @@ export function buildPropRows(projections, players) {
         line,
         projection,
         score,
-        isOver: projection >= line,
+        side: pickSide(projection, line, score),
+        isOver: pickSide(projection, line, score) === 'OVER',
         recent,
         hitRate: l10Obj ? Math.round(l10Obj.pct) : (storedL10 ?? 0),
         gamesPlayed,
@@ -353,7 +355,7 @@ export function filterAndSortRows(allRows, propTab, filters) {
 
   const filtered = allRows
     .filter((item) => propTab === 'All Props' || item.prop === propTab)
-    .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.isOver : !item.isOver))
+    .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.side === 'OVER' : item.side === 'UNDER'))
     .filter((item) => item.hitRate >= filters.minHitRate)
     .filter((item) => item.gamesPlayed >= filters.minGames)
     .filter((item) => filters.position === 'All' || item.position === filters.position)

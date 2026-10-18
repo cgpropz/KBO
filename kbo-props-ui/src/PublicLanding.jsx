@@ -18,6 +18,7 @@ import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import './PublicLanding.css';
+import { sideLetter } from './pickSide.js';
 
 // O / U for a row's side. A neutral row (CG exactly 50) has no side and no letter.
 function sideLetter(side) {
