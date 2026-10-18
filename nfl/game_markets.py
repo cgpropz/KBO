@@ -500,6 +500,12 @@ def markets_from_rows(rows, sources, away_id, home_id):
     under_quotes = [quote for quote in grouped[BET_TOTAL] if quote["side"] == 1 and quote["points"] is not None]
     under = None if total is None else _same_book_quote(under_quotes, total["book_key"], points=total["points"])
     away_price = None if moneyline is None else _same_book_quote(away_ml, moneyline["book_key"])
+    # Home side of the posted spread: same book's si1 quote at the negated number.
+    home_spread_quotes = [
+        quote for quote in grouped[BET_SPREAD]
+        if (quote["side"] == 1 or (quote["side"] is None and quote["team_id"] == home_id)) and quote["points"] is not None
+    ]
+    home_spread = None if spread is None else _same_book_quote(home_spread_quotes, spread["book_key"], points=-spread["points"])
     return {
         "spread": None if spread is None else {
             "line": round1(spread["points"]),
@@ -507,6 +513,7 @@ def markets_from_rows(rows, sources, away_id, home_id):
             "price": _price(spread),
             # Spread quotes are the away side (si0), so the line and price are the away team's.
             "priceSide": "away",
+            "homePrice": _price(home_spread),
         },
         "total": None if total is None else {
             "line": round1(total["points"]),
@@ -658,6 +665,7 @@ def build_games(schedule, history, markets, today=None):
                 # Prices for grading picks in units. Not used by edges or the card.
                 "price": (posted.get("spread") or {}).get("price"),
                 "priceSide": (posted.get("spread") or {}).get("priceSide"),
+                "homePrice": (posted.get("spread") or {}).get("homePrice"),
             },
             "total": {
                 "line": total_line,

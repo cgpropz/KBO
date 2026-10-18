@@ -400,7 +400,7 @@ function withoutTotalEdge(game) {
 // Book prices on game markets are for member grading (units). The free
 // preview never carries them.
 export const NFL_GAME_MARKET_PRICE_FIELDS = Object.freeze({
-  spread: ['price', 'priceSide'],
+  spread: ['price', 'priceSide', 'homePrice'],
   total: ['overPrice', 'underPrice'],
   moneyline: ['homePrice', 'awayPrice'],
 });
