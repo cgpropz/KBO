@@ -11,7 +11,12 @@
 .nfl-adj-chip.adj-a { color: #7fff68; border-color: rgba(127, 255, 104, 0.45); }
 .nfl-adj-chip.adj-b { color: #d9f99d; }
 .nfl-adj-chip.adj-c, .nfl-adj-chip.adj-d { color: #ff7b79; border-color: rgba(255, 123, 121, 0.45); }
-.nfl-adj-chip.small-sample { opacity: 0.75; }
+/* Small sample: muted grade colour (not just opacity) plus a visible "*". */
+.nfl-adj-chip.small-sample,
+.nfl-adj-chip.small-sample:is(.adj-a, .adj-b, .adj-c, .adj-d) { color: #a1a1aa; border-color: rgba(161, 161, 170, 0.35); }
+.nfl-adj-mark { margin-left: 1px; font-size: 10px; line-height: 0; color: #fbbf24; font-weight: 700; }
+.nfl-adj-stat.small-sample .nfl-adj-sub { color: #a1a1aa; }
+.nfl-adj-note .nfl-adj-note-small { color: #fbbf24; }
 .nfl-adj-note {
   display: block; max-width: 260px; padding: 6px 8px; border-radius: 8px;
   background: #111114; border: 1px solid #27272a; color: #a1a1aa;

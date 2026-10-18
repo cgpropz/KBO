@@ -7,6 +7,7 @@ import { dvpGrade } from './matchupGrade.js'
 
 export const MATCHUP_CREDIT = 'Data: nflverse'
 export const MATCHUP_CREDIT_URL = 'https://github.com/nflverse'
+export const SMALL_SAMPLE_PLAYS = 30
 
 const PASS_PROPS = new Set(['Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds'])
 const RUN_PROPS = new Set(['Rush Yards', 'Rush Attempts'])
@@ -86,12 +87,44 @@ export function matchupEntries(payload, { prop, position, opponent } = {}) {
     .filter(Boolean)
 }
 
-export function matchupTooltip(entry, payload) {
+// Chip-level summary. The chip shows the first split's grade, but the
+// small-sample flag is set when ANY split behind it is small (e.g. an RB's
+// Rush+Rec Yds uses Run D and RB targets; thin RB targets must still flag).
+export function matchupSummary(entries) {
+  const list = Array.isArray(entries) ? entries : []
+  if (!list.length) return null
+  const small = list.filter((entry) => entry.smallSample)
+  return {
+    grade: list[0].grade,
+    rank: list[0].rank,
+    smallSample: small.length > 0,
+    smallSplits: small.map((entry) => entry.shortLabel),
+    marker: small.length ? '*' : '',
+  }
+}
+
+// "through Week 5 (+ Thu Wk 6)" from the builder; falls back to the week number.
+export function coverageLabel(payload) {
+  const label = typeof payload?.weekLabel === 'string' ? payload.weekLabel.trim() : ''
+  if (label) return label
+  return payload?.throughWeek ? `through Week ${payload.throughWeek}` : ''
+}
+
+export function smallSampleNote(entries, minPlays = SMALL_SAMPLE_PLAYS) {
+  const small = (Array.isArray(entries) ? entries : []).filter((entry) => entry.smallSample)
+  if (!small.length) return ''
+  const parts = small.map((entry) => `${entry.shortLabel} ${entry.plays} plays`).join(', ')
+  return `* Small sample (under ${minPlays} plays: ${parts}). Grade is less reliable.`
+}
+
+
+export function matchupTooltip(entry, payload, { credit = true } = {}) {
   if (!entry) return ''
-  const through = payload?.throughWeek ? ` Through Week ${payload.throughWeek}.` : ''
-  const sample = entry.smallSample ? ' Small sample.' : ''
+  const label = coverageLabel(payload)
+  const through = label ? ` ${label[0].toUpperCase()}${label.slice(1)}.` : ''
+  const sample = entry.smallSample ? ' Small sample*.' : ''
   const success = Number.isFinite(Number(entry.success)) ? `${Math.round(Number(entry.success) * 100)}%` : '—'
   return `Adjusted matchup, ${entry.label}: ${entry.rank}/32 (32 = easiest). `
     + `EPA/play allowed ${signed(entry.epa)}, success rate allowed ${success}, ${entry.plays} plays, opponent-adjusted.`
-    + `${through}${sample} Context only; not part of CG Score. ${MATCHUP_CREDIT}.`
+    + `${through}${sample} Context only; not part of CG Score.${credit ? ` ${MATCHUP_CREDIT}.` : ''}`
 }

@@ -3,7 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { canonicalTeam, matchupEntries, matchupTooltip, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
+import { canonicalTeam, coverageLabel, matchupEntries, matchupSummary, matchupTooltip, smallSampleNote, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
 import { DATASETS, datasetIsFullyPublic, shapeForTier } from '../api/_dataAccess.js'
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/nfl-matchup-prop-map.json', import.meta.url), 'utf8'))
@@ -45,6 +45,64 @@ test('tooltip credits nflverse, flags small samples and says it is not in CG Sco
   assert.match(text, /Small sample/)
   assert.match(text, /not part of CG Score/)
   assert.match(text, /Through Week 6/)
+})
+
+// Board QA cases: NYG RB targets 17 plays (A+), WAS / LV 21-29 plays (A+ / A).
+const qaPayload = {
+  throughWeek: 6,
+  weekLabel: 'through Week 5 (+ Thu Wk 6)',
+  teams: {
+    NYG: { ...team(10), RB: { rank: 32, epa: 0.2, success: 0.5, plays: 17, smallSample: true } },
+    WAS: { ...team(10), RB: { rank: 30, epa: 0.2, success: 0.5, plays: 29, smallSample: true } },
+    LV: { ...team(10), RB: { rank: 28, epa: 0.2, success: 0.5, plays: 21, smallSample: true } },
+    DEN: team(5),
+  },
+}
+
+test('small-sample flag is set when ANY split behind the chip is small', () => {
+  // RB Rush+Rec: Run D (90 plays, fine) first, RB targets (17 plays) second.
+  const rushRec = matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'NYG' })
+  assert.deepEqual(rushRec.map((e) => e.split), ['run', 'RB'])
+  assert.equal(rushRec[0].smallSample, false)
+  const summary = matchupSummary(rushRec)
+  assert.equal(summary.smallSample, true)
+  assert.equal(summary.marker, '*')
+  assert.deepEqual(summary.smallSplits, ['RB tgts'])
+  assert.match(smallSampleNote(rushRec), /^\* Small sample \(under 30 plays: RB tgts 17 plays\)/)
+  for (const [opp, grade] of [['NYG', 'A+'], ['WAS', 'A+'], ['LV', 'A']]) {
+    const entries = matchupEntries(qaPayload, { prop: 'Receiving Yards', position: 'RB', opponent: opp })
+    const s = matchupSummary(entries)
+    assert.equal(s.grade, grade, opp)
+    assert.equal(s.marker, '*', opp)
+  }
+  const fine = matchupSummary(matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'DEN' }))
+  assert.equal(fine.smallSample, false)
+  assert.equal(fine.marker, '')
+  assert.equal(smallSampleNote(matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'DEN' })), '')
+  assert.equal(matchupSummary([]), null)
+})
+
+test('chip and tile render the marker and mute small-sample grades', () => {
+  const jsx = readFileSync(new URL('../src/nfl/MatchupDefense.jsx', import.meta.url), 'utf8')
+  assert.match(jsx, /matchupSummary\(entries\)/)
+  assert.match(jsx, /summary\.marker/)
+  assert.doesNotMatch(jsx, /first\.smallSample/)
+  const css = readFileSync(new URL('../src/nfl/matchupDefenseChip.css', import.meta.url), 'utf8')
+  assert.match(css, /\.nfl-adj-chip\.small-sample:is\(\.adj-a, \.adj-b, \.adj-c, \.adj-d\) \{ color: #a1a1aa;/)
+  assert.doesNotMatch(css, /small-sample \{ opacity/)
+})
+
+test('coverage label comes from the data, and the open note credits nflverse once', () => {
+  assert.equal(coverageLabel(qaPayload), 'through Week 5 (+ Thu Wk 6)')
+  assert.equal(coverageLabel({ throughWeek: 7 }), 'through Week 7')
+  assert.equal(coverageLabel({}), '')
+  const [entry] = matchupEntries(qaPayload, { prop: 'Pass Yards', position: 'QB', opponent: 'DEN' })
+  assert.match(matchupTooltip(entry, qaPayload), /Through Week 5 \(\+ Thu Wk 6\)\./)
+  assert.match(matchupTooltip(entry, qaPayload), /Data: nflverse/)
+  // The open note shows the credit as a link, so its text leaves it out.
+  assert.doesNotMatch(matchupTooltip(entry, qaPayload, { credit: false }), /nflverse/)
+  const jsx = readFileSync(new URL('../src/nfl/MatchupDefense.jsx', import.meta.url), 'utf8')
+  assert.equal((jsx.match(/Data: nflverse/g) || []).length, 1)
 })
 
 test('nfl_matchup_defense is a registered, fully free NFL dataset', () => {

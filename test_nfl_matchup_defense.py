@@ -197,6 +197,20 @@ class Freshness(unittest.TestCase):
             md.check_fresh(pbp, games, 2026, datetime.date(2026, 9, 16))
         self.assertEqual(md.check_fresh(pbp, games, 2026, datetime.date(2026, 9, 14)), 1)
 
+    def test_week_label_counts_only_games_in_pbp(self):
+        def g(gid, week, day):
+            return {'game_id': gid, 'season': 2026, 'game_type': 'REG', 'week': week, 'gameday': day, 'result': 1}
+        games = pd.DataFrame([g('a', 5, '2026-10-08'), g('b', 5, '2026-10-11'), g('c', 6, '2026-10-15'),
+                              g('d', 6, '2026-10-18'), g('e', 6, '2026-10-18')])
+        pbp = pd.DataFrame([{'game_id': x, 'season_type': 'REG', 'week': w} for x, w in (('a', 5), ('b', 5), ('c', 6))])
+        cov = md.week_coverage(pbp, games, 2026)
+        self.assertEqual(cov['label'], 'through Week 5 (+ Thu Wk 6)')
+        self.assertEqual((cov['completeWeek'], cov['partialWeek'], cov['partialGames'], cov['partialScheduled']), (5, 6, 1, 3))
+        pbp2 = pd.concat([pbp, pd.DataFrame([{'game_id': 'd', 'season_type': 'REG', 'week': 6}])])
+        self.assertEqual(md.week_coverage(pbp2, games, 2026)['label'], 'through Week 5 (+ 2 Wk 6 games)')
+        pbp3 = pd.concat([pbp2, pd.DataFrame([{'game_id': 'e', 'season_type': 'REG', 'week': 6}])])
+        self.assertEqual(md.week_coverage(pbp3, games, 2026)['label'], 'through Week 6')
+
     def test_stale_or_failed_fetch_writes_nothing(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / 'matchup_defense.json'

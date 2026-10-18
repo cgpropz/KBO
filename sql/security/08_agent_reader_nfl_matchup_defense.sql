@@ -15,6 +15,8 @@
 -- No INSERT/UPDATE/DELETE. anon, authenticated and board_reader are unchanged.
 -- The table holds only team-level nflverse aggregates (no player, member or
 -- paid data). Idempotent: safe to run twice.
+-- Note: 02_lock_down_rls.sql now lists nfl_matchup_defense and drops every
+-- policy on its tables; rerun this file after 02 if 02 is ever rerun.
 -- ============================================================================
 
 begin;

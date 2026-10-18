@@ -295,7 +295,7 @@ def rank_split(final):
     return {team: rank for rank, team in enumerate(order['team'], start=1)}
 
 
-def build(pbp, roster, prior_pbp=None, prior_roster=None, *, season, through_week, generated_at=None, pbp_updated_at=None):
+def build(pbp, roster, prior_pbp=None, prior_roster=None, *, season, through_week, generated_at=None, pbp_updated_at=None, coverage=None):
     assert_no_ftn(pbp.columns, 'pbp')
     assert_no_ftn(roster.columns, 'roster')
     plays = attach_target_position(scrimmage_plays(pbp), roster)
@@ -356,6 +356,8 @@ def build(pbp, roster, prior_pbp=None, prior_roster=None, *, season, through_wee
         'pbpUpdatedAt': pbp_updated_at,
         'season': int(season),
         'throughWeek': int(through_week),
+        'weekLabel': (coverage or {}).get('label') or f'through Week {int(through_week)}',
+        'coverage': coverage or None,
         'priorWeight': round(pw, 2),
         'method': {
             'adjustment': 'leave-one-out offense baseline',
@@ -387,6 +389,38 @@ def check_fresh(pbp, games, season, today):
     return int(pbp.loc[pbp['season_type'] == 'REG', 'week'].max())
 
 
+def week_coverage(pbp, games, season):
+    """Which weeks the numbers cover, from the games actually in pbp.
+
+    A week is complete when every scheduled REG game of that week is in pbp.
+    A later week with only some games in (e.g. Thursday night) is partial.
+    Returns completeWeek, partialWeek, partialGames, partialScheduled and a
+    short label such as 'through Week 5 (+ Thu Wk 6)'.
+    """
+    reg = games[(games['season'] == season) & (games['game_type'] == 'REG')]
+    have = set(pbp.loc[pbp['season_type'] == 'REG', 'game_id'].dropna())
+    complete, partial = 0, None
+    for week in sorted(int(w) for w in reg['week'].dropna().unique()):
+        week_games = reg[reg['week'] == week]
+        played = week_games[week_games['game_id'].isin(have)]
+        if len(played) == len(week_games):
+            complete = week
+            continue
+        if len(played):
+            partial = (week, played, len(week_games))
+        break
+    label = f'through Week {complete}'
+    out = {'completeWeek': complete, 'partialWeek': None, 'partialGames': 0, 'partialScheduled': 0}
+    if partial:
+        week, played, scheduled = partial
+        days = sorted(set(pd.to_datetime(played['gameday']).dt.strftime('%a')))
+        extra = f'{days[0]} Wk {week}' if len(days) == 1 else f'{len(played)} Wk {week} games'
+        label = f'{label} (+ {extra})' if complete else f'Week {week}: {len(played)} of {scheduled} games'
+        out.update(partialWeek=week, partialGames=int(len(played)), partialScheduled=int(scheduled))
+    out['label'] = label
+    return out
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Build nfl/matchup_defense.json from nflverse play-by-play.')
     parser.add_argument('--season', type=int, default=None)
@@ -404,6 +438,7 @@ def main(argv=None):
         pbp, modified = load_pbp(season, session)
         games = load_games(session)
         through_week = check_fresh(pbp, games, season, now_et.date())
+        coverage = week_coverage(pbp, games, season)
     except StaleData as exc:
         print(f'::warning::nflverse is stale, keeping the last published snapshot: {exc}')
         return 0
@@ -424,12 +459,12 @@ def main(argv=None):
             pbp_updated_at = pd.Timestamp(modified).tz_convert('UTC').isoformat()
         except Exception:  # noqa: BLE001
             pbp_updated_at = modified
-    payload = build(pbp, roster, prior_pbp, prior_roster, season=season, through_week=through_week, pbp_updated_at=pbp_updated_at)
+    payload = build(pbp, roster, prior_pbp, prior_roster, season=season, through_week=through_week, pbp_updated_at=pbp_updated_at, coverage=coverage)
     if len(payload['teams']) != TEAM_COUNT:
         print(f'::warning::expected {TEAM_COUNT} defenses, got {len(payload["teams"])}; not publishing')
         return 0
     args.output.write_text(json.dumps(payload, indent=1, allow_nan=False) + '\n')
-    print(f'Wrote {args.output} ({season} through Week {through_week}, prior weight {payload["priorWeight"]}).')
+    print(f'Wrote {args.output} ({season} {payload["weekLabel"]}, prior weight {payload["priorWeight"]}).')
     return 0
 
 

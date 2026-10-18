@@ -2,7 +2,7 @@
 // position from nflverse play-by-play, next to the existing DvP grade.
 // Context only. It is not part of CG Score or projections.
 import { useState } from 'react'
-import { MATCHUP_CREDIT_URL, matchupEntries, matchupTooltip } from './matchupDefenseModel.js'
+import { MATCHUP_CREDIT_URL, matchupEntries, matchupSummary, matchupTooltip, smallSampleNote } from './matchupDefenseModel.js'
 import './matchupDefenseChip.css'
 
 // Own class names: the global .grade-* classes paint solid backgrounds.
@@ -15,7 +15,8 @@ function Note({ entries, payload }) {
   return (
     <span className="nfl-adj-note" role="note">
       <b className="nfl-adj-note-title">Adj matchup <small>(not DvP · 32 = easiest)</small></b>
-      {entries.map((entry) => <span key={entry.split}>{matchupTooltip(entry, payload)}</span>)}
+      {entries.map((entry) => <span key={entry.split}>{matchupTooltip(entry, payload, { credit: false })}</span>)}
+      {smallSampleNote(entries) ? <span className="nfl-adj-note-small">{smallSampleNote(entries)}</span> : null}
       <a href={MATCHUP_CREDIT_URL} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()}>Data: nflverse</a>
     </span>
   )
@@ -26,20 +27,20 @@ export function AdjMatchupChip({ payload, prop, position, opponent }) {
   const [open, setOpen] = useState(false)
   const entries = matchupEntries(payload, { prop, position, opponent })
   if (!entries.length) return null
-  const [first] = entries
-  const title = entries.map((entry) => matchupTooltip(entry, payload)).join('\n')
+  const summary = matchupSummary(entries)
+  const title = [...entries.map((entry) => matchupTooltip(entry, payload)), smallSampleNote(entries)].filter(Boolean).join('\n')
   return (
     <span className="nfl-adj-wrap">
       <button
         type="button"
-        className={`nfl-adj-chip ${gradeClass(first.grade)}${first.smallSample ? ' small-sample' : ''}`}
+        className={`nfl-adj-chip ${gradeClass(summary.grade)}${summary.smallSample ? ' small-sample' : ''}`}
         title={title}
         aria-label={title}
         aria-expanded={open}
         onClick={(event) => { event.stopPropagation(); setOpen((value) => !value) }}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        <small>Adj</small> {first.grade}
+        <small>Adj</small> {summary.grade}{summary.marker ? <sup className="nfl-adj-mark">{summary.marker}</sup> : null}
       </button>
       {open && <Note entries={entries} payload={payload} />}
     </span>
@@ -52,13 +53,14 @@ export function AdjMatchupStat({ payload, prop, position, opponent }) {
   const entries = matchupEntries(payload, { prop, position, opponent })
   if (!entries.length) return null
   const [first] = entries
-  const title = entries.map((entry) => matchupTooltip(entry, payload)).join('\n')
+  const summary = matchupSummary(entries)
+  const title = [...entries.map((entry) => matchupTooltip(entry, payload)), smallSampleNote(entries)].filter(Boolean).join('\n')
   return (
-    <div className="nfl-adj-stat">
+    <div className={`nfl-adj-stat${summary.smallSample ? ' small-sample' : ''}`}>
       <button type="button" className="nfl-adj-stat-btn" title={title} aria-label={title} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <small>ADJ MATCHUP <span aria-hidden="true">ⓘ</span></small>
         <strong>{first.rank}<i> /32</i></strong>
-        <span className={`nfl-adj-sub ${gradeClass(first.grade)}`}>Adj {first.grade} · {first.shortLabel}{first.smallSample ? ' · small sample' : ''}</span>
+        <span className={`nfl-adj-sub ${gradeClass(first.grade)}`}>Adj {first.grade}{summary.marker} · {first.shortLabel}{summary.smallSample ? ' · small sample' : ''}</span>
       </button>
       {open && <Note entries={entries} payload={payload} />}
     </div>
