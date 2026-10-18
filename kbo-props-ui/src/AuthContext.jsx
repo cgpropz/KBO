@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
-import { loadSupabase, readCachedSession } from './supabaseClient';
+import { loadSupabase, onSupabaseLoaded, readCachedSession } from './supabaseClient';
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 import { settlePlanCheck } from './planCheck.js';
 
@@ -269,7 +269,16 @@ export function AuthProvider({ children }) {
     // refreshes immediately so a member reaches the Sports Hub. A recovery
     // link has no cached session yet; the client must start so the
     // PASSWORD_RECOVERY event can establish one.
-    if (!readCachedSession() && !passwordRecovery) return undefined;
+    if (!readCachedSession() && !passwordRecovery) {
+      // Still listen once the sign-in form loads the client, so SIGNED_IN
+      // opens the member view without a reload.
+      const stopWaiting = onSupabaseLoaded((client) => subscribe(client));
+      return () => {
+        cancelled = true;
+        stopWaiting();
+        unsubscribe();
+      };
+    }
     start();
     return () => {
       cancelled = true;
