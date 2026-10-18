@@ -128,7 +128,7 @@
 @media (max-width: 760px) { .nfl-nav { flex-wrap: wrap; height: auto; gap: 9px; padding: 8px 12px; }.nfl-nav-links { display: flex; flex: 1 0 100%; overflow-x: auto; }.nfl-nav-links button { white-space: nowrap; }.nfl-content { padding: 25px 12px 40px; }.nfl-hero, .nfl-board-header { align-items: start; flex-direction: column; gap: 12px; }.nfl-top-grid { grid-template-columns: 1fr; }.nfl-filters { flex-direction: column; }.nfl-filters input { min-width: 0; width: 100%; }.nfl-live { align-items: flex-start; flex-wrap: wrap; }.nfl-pro-badge { font-size: 9px; }.nfl-root .sport-switcher button { padding: 5px; font-size: 10px; } }.nfl-placeholder-row td { height: 58px; }
 .nfl-placeholder-bar { display: block; width: 70%; height: 14px; border-radius: 7px; background: linear-gradient(90deg, #143029, #1f4a40, #143029); }
 
-.nfl-game-page { min-width: 0; }
+.nfl-game-page { min-width: 0; container: nfl-games / inline-size; }
 .nfl-game-note { margin: -8px 0 16px; color: #78918a; font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; max-width: 760px; }
 .nfl-game-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .nfl-market-card {
@@ -152,17 +152,29 @@
   letter-spacing: .04em;
   white-space: nowrap;
 }
-.nfl-market-matchup { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; margin-top: 12px; }
+/* Wide cards: clubs left and right, CG number label over "21 – 24" between them. */
+.nfl-market-matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+  grid-template-areas: "away label label label home" "away s1 sep s2 home";
+  column-gap: 0;
+  row-gap: 6px;
+  align-items: center;
+  margin-top: 12px;
+}
 .nfl-market-club { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.nfl-market-club.is-home { justify-content: flex-end; text-align: right; }
+.nfl-market-club.is-away { grid-area: away; margin-right: 8px; }
+.nfl-market-club.is-home { grid-area: home; margin-left: 8px; justify-content: flex-end; text-align: right; }
 .nfl-market-club img, .nfl-market-fallback { flex: 0 0 auto; width: 40px; height: 40px; object-fit: contain; }
 .nfl-market-fallback { display: grid; place-items: center; border-radius: 50%; color: #fff; font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .nfl-market-club b { display: block; color: #fff; font: 700 15px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .02em; }
 .nfl-market-club small { display: block; margin-top: 3px; color: #a1a1aa; font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
-.nfl-market-ours { min-width: 72px; text-align: center; }
-.nfl-market-ours > small { display: block; color: #a1a1aa; font: 700 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
-.nfl-market-ours > div { display: flex; justify-content: center; gap: 10px; margin-top: 6px; }
-.nfl-market-ours b { color: #fff; font: 700 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.nfl-market-at { display: none; grid-area: at; }
+.nfl-market-cg-label { grid-area: label; display: block; min-width: 72px; color: #a1a1aa; text-align: center; font: 700 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
+.nfl-market-score, .nfl-market-score-sep { color: #fff; font: 700 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.nfl-market-score.is-away { grid-area: s1; text-align: right; }
+.nfl-market-score.is-home { grid-area: s2; text-align: left; }
+.nfl-market-score-sep { grid-area: sep; padding: 0 .6em; }
 .nfl-market-prob { margin-top: 14px; }
 .nfl-market-prob-bar { display: flex; height: 6px; overflow: hidden; border-radius: 999px; background: #3f3f46; }
 .nfl-market-prob-bar span { display: block; height: 100%; }
@@ -187,6 +199,49 @@
 .nfl-game-page .nfl-filter-row-body input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid #23443d; border-radius: 5px; color: #e8f4e6; background: #0b1c19; font: 12px monospace; }
 @media (max-width: 1180px) { .nfl-game-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .nfl-game-board { grid-template-columns: 1fr; } .nfl-market-tile strong { font-size: 20px; } }
+/* Phone layout keyed to the page's own width, not the viewport. Safari's
+   "Request Desktop Website" keeps a 980px viewport while index.html zooms
+   #root down to the phone width, so viewport media queries alone left two
+   narrow cards side by side with the header text overlapping. */
+@container nfl-games (max-width: 700px) {
+  .nfl-game-board { grid-template-columns: 1fr; }
+}
+@container nfl-games (max-width: 760px) {
+  /* Phone spacing: room between header rows, tiles and cards. */
+  .nfl-game-board { gap: 20px; }
+  .nfl-market-card { padding: 20px 20px 22px; border-radius: 22px; }
+  .nfl-market-matchup {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "away at home" "label label label" "s1 sep s2";
+    column-gap: 12px;
+    row-gap: 0;
+    margin-top: 18px;
+  }
+  .nfl-market-club { gap: 12px; }
+  .nfl-market-club.is-away { justify-self: end; margin: 0; }
+  .nfl-market-club.is-home { justify-self: start; margin: 0; }
+  .nfl-market-club img, .nfl-market-fallback { width: 36px; height: 36px; }
+  .nfl-market-club b { font-size: 18px; line-height: 1.2; letter-spacing: .04em; }
+  .nfl-market-club small { display: none; }
+  .nfl-market-at { display: block; color: #71717a; font: 700 14px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .nfl-market-cg-label { margin-top: 20px; font-size: 12px; line-height: 1.3; letter-spacing: .12em; }
+  .nfl-market-score, .nfl-market-score-sep { margin-top: 8px; font-size: 28px; line-height: 1.15; }
+  .nfl-market-score.is-away { justify-self: end; }
+  .nfl-market-score.is-home { justify-self: start; }
+  .nfl-market-score-sep { padding: 0; color: #52525b; }
+  .nfl-market-prob { margin-top: 20px; }
+  .nfl-market-grid { gap: 12px; margin-top: 22px; }
+  .nfl-market-tile { padding: 14px 16px 16px; border-radius: 14px; }
+  .nfl-market-tile small { font-size: 12px; line-height: 1.35; letter-spacing: .08em; }
+  .nfl-market-tile strong { margin-top: 10px; font-size: 22px; line-height: 1.15; }
+  .nfl-market-tile em { margin-top: 10px; font-size: 13px; line-height: 1.4; }
+  .nfl-market-foot { margin-top: 18px; font-size: 13px; line-height: 1.6; }
+  .nfl-market-share { min-width: 44px; min-height: 44px; margin-top: 14px; padding: 10px 18px; font-size: 13px; }
+}
+@container nfl-games (max-width: 480px) {
+  .nfl-market-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) { .nfl-market-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
   .nfl-root .nfl-nav-links { flex-wrap: wrap; overflow: visible; row-gap: 2px; }
 }

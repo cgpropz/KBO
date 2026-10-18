@@ -514,3 +514,166 @@ for (const mode of ['free', 'member']) {
     }
   })
 }
+
+// Code Green's phone: on the spread/total game cards the CG NUMBER label,
+// the projected score and the away/home tags sat on top of HOU JAX. The
+// header now stacks (logo HOU @ JAX logo, label, each score under its team)
+// whenever the page itself is phone-narrow. That includes Safari "Request
+// Desktop Website": a 980px viewport with #root zoomed to the phone width,
+// where viewport media queries still see a desktop.
+const gameMarkets = {
+  generated_at: '2026-10-18T09:00:00Z',
+  status: 'ok',
+  week: 7,
+  model: { label: 'Test model' },
+  games: [
+    { id: 'hou-jax', awayTeam: 'HOU', homeTeam: 'JAX', awayScore: 21, homeScore: 24, gameday: '2026-10-25', gametime: '09:30', spread: { line: -2.5, projection: -3, edge: -0.5 }, total: { line: 42, projection: 45, edge: 3 } },
+    { id: 'car-phi', awayTeam: 'CAR', homeTeam: 'PHI', awayScore: 22, homeScore: 22, gameday: '2026-10-25', gametime: '13:00', spread: { line: -3, projection: 0, edge: 3 }, total: { line: 39, projection: 44, edge: 5 } },
+  ],
+}
+
+async function openGameMarkets(page) {
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    const data = ds === 'nfl_game_markets' ? gameMarkets : (Object.prototype.hasOwnProperty.call(fixtures, ds) ? fixtures[ds] : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data, updatedAt: '2026-10-18T09:00:00Z', preview: false, lockedCount: 0, tier: 'combined' }),
+    })
+  })
+  await installMember(page)
+  await page.goto('/?sport=nfl', { waitUntil: 'domcontentloaded' })
+  const menu = page.locator('.cg-menu-btn')
+  if (await menu.waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false)) await menu.click()
+  await page.getByRole('button', { name: 'Game Markets' }).click()
+  await expect(page.locator('.nfl-market-card')).toHaveCount(gameMarkets.games.length)
+  await page.waitForTimeout(300)
+}
+
+async function gameHeaderLayout(page) {
+  return page.locator('.nfl-game-board').evaluate((board) => {
+    const boxOf = (node) => {
+      if (!node) return null
+      const box = node.getBoundingClientRect()
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }
+    }
+    const zoom = Number(getComputedStyle(document.getElementById('root')).zoom) || 1
+    const cards = [...board.querySelectorAll('.nfl-market-card')].map((card) => {
+      const head = card.querySelector('.nfl-market-matchup')
+      const part = (selector) => boxOf(head.querySelector(selector))
+      const tiles = [...card.querySelectorAll('.nfl-market-tile')].map((tile) => {
+        const value = tile.querySelector('strong, em')
+        return { inside: boxOf(value).right <= boxOf(tile).right - 4, clipped: value.scrollWidth > value.clientWidth + 1 }
+      })
+      return {
+        parts: {
+          awayLogo: part('.is-away img, .is-away .nfl-market-fallback'),
+          away: part('.is-away b'),
+          at: part('.nfl-market-at'),
+          home: part('.is-home b'),
+          homeLogo: part('.is-home img, .is-home .nfl-market-fallback'),
+          label: part('.nfl-market-cg-label'),
+          awayScore: part('.nfl-market-score.is-away'),
+          sep: part('.nfl-market-score-sep'),
+          homeScore: part('.nfl-market-score.is-home'),
+          awayTag: part('.is-away small'),
+          homeTag: part('.is-home small'),
+        },
+        tiles,
+        gridColumns: getComputedStyle(card.querySelector('.nfl-market-grid')).gridTemplateColumns.split(' ').filter(Boolean).length,
+        share: boxOf(card.querySelector('.nfl-market-share')),
+      }
+    })
+    return {
+      zoom,
+      boardColumns: getComputedStyle(board).gridTemplateColumns.split(' ').filter(Boolean).length,
+      scrolls: document.documentElement.scrollWidth > window.innerWidth + 1,
+      cards,
+    }
+  })
+}
+
+function expectStackedHeader(layout, label) {
+  expect(layout.scrolls, `${label} scrolls sideways`).toBe(false)
+  expect(layout.boardColumns, `${label} board columns`).toBe(1)
+  for (const [index, card] of layout.cards.entries()) {
+    const name = `${label} card ${index + 1}`
+    const { parts } = card
+    expect(parts.at, `${name} shows HOU @ JAX`).not.toBeNull()
+    expect(parts.at.width, `${name} shows HOU @ JAX`).toBeGreaterThan(0)
+    expect(parts.awayTag?.width || 0, `${name} hides the away tag`).toBe(0)
+    expect(parts.homeTag?.width || 0, `${name} hides the home tag`).toBe(0)
+    const shown = Object.entries(parts).filter(([, box]) => box && box.width > 0)
+    for (let i = 0; i < shown.length; i += 1) {
+      for (let j = i + 1; j < shown.length; j += 1) {
+        expect(overlaps(shown[i][1], shown[j][1]), `${name} ${shown[i][0]} overlaps ${shown[j][0]}`).toBe(false)
+      }
+    }
+    expect(parts.label.top, `${name} label sits under the teams`).toBeGreaterThanOrEqual(parts.away.bottom - 1)
+    expect(parts.awayScore.top, `${name} scores sit under the label`).toBeGreaterThanOrEqual(parts.label.bottom - 1)
+    expect(Math.abs(parts.awayScore.right - parts.away.right), `${name} away score under away team`).toBeLessThanOrEqual(2)
+    expect(Math.abs(parts.homeScore.left - parts.home.left), `${name} home score under home team`).toBeLessThanOrEqual(2)
+    expect(card.gridColumns, `${name} stat tiles in one column`).toBe(1)
+    for (const tile of card.tiles) {
+      expect(tile.inside, `${name} tile value touches its edge`).toBe(true)
+      expect(tile.clipped, `${name} tile value clips`).toBe(false)
+    }
+    // 44px tap target in CSS px, before the #root zoom is applied.
+    expect(card.share.height / layout.zoom, `${name} share height`).toBeGreaterThanOrEqual(43.5)
+    expect(card.share.width / layout.zoom, `${name} share width`).toBeGreaterThanOrEqual(43.5)
+  }
+}
+
+test('NFL game card header stacks without overlap on a phone', async ({ page }, testInfo) => {
+  await openGameMarkets(page)
+  expectStackedHeader(await gameHeaderLayout(page), testInfo.project.name)
+})
+
+test('NFL game card header stacks in Safari desktop-site mode', async ({ browser, browserName }, testInfo) => {
+  test.skip(!testInfo.project.name.endsWith('-390'), 'one desktop-site pass per engine')
+  const context = await browser.newContext({
+    baseURL: 'http://127.0.0.1:4173',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+    viewport: { width: 980, height: 844 },
+    screen: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 2,
+  })
+  const page = await context.newPage()
+  await openGameMarkets(page)
+  const layout = await gameHeaderLayout(page)
+  expect(layout.zoom, `${browserName} desktop-site zooms #root to the phone`).toBeGreaterThan(1.5)
+  expectStackedHeader(layout, `${browserName} desktop-site`)
+  await context.close()
+})
+
+test('NFL game card header keeps the wide layout on a desktop window', async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-390', 'one desktop pass')
+  // Spell out every phone option: contexts made here inherit the project's.
+  const context = await browser.newContext({
+    baseURL: 'http://127.0.0.1:4173',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    viewport: { width: 1280, height: 900 },
+    screen: { width: 1280, height: 900 },
+    isMobile: false,
+    hasTouch: false,
+    deviceScaleFactor: 1,
+  })
+  const page = await context.newPage()
+  await openGameMarkets(page)
+  const layout = await gameHeaderLayout(page)
+  expect(layout.zoom).toBe(1)
+  expect(layout.boardColumns).toBeGreaterThan(1)
+  for (const card of layout.cards) {
+    expect(card.parts.at.width, 'no @ row on desktop').toBe(0)
+    expect(card.parts.awayTag.width, 'away tag on desktop').toBeGreaterThan(0)
+    expect(card.gridColumns, 'two stat columns on desktop').toBe(2)
+    // Clubs left and right, CG number between them.
+    expect(card.parts.away.right).toBeLessThan(card.parts.label.left)
+    expect(card.parts.home.left).toBeGreaterThan(card.parts.label.right)
+    expect(Math.abs(card.parts.awayScore.top - card.parts.homeScore.top)).toBeLessThanOrEqual(1)
+  }
+  await context.close()
+})

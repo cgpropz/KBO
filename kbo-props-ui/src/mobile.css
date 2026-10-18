@@ -201,6 +201,16 @@
     font-size: 14px !important;
   }
 
+  /* NFL spread/total game cards. The body floor above would flatten every
+     line to 14px and the card reads bunched together. Spacing lives in
+     nfl.css (@container nfl-games); this is only the phone type scale. */
+  body .nfl-market-card .nfl-market-club b { font-size: 18px !important; line-height: 1.2; }
+  body .nfl-market-card .nfl-market-at { font-size: 14px !important; }
+  body .nfl-market-card :is(.nfl-market-cg-label, .nfl-market-pill, .nfl-market-tile small) { font-size: 12px !important; }
+  body .nfl-market-card :is(.nfl-market-score, .nfl-market-score-sep) { font-size: 28px !important; line-height: 1.15; }
+  body .nfl-market-card .nfl-market-tile strong { font-size: 22px !important; line-height: 1.15; }
+  body .nfl-market-card :is(.nfl-market-tile em, .nfl-market-foot, .nfl-market-share) { font-size: 13px !important; }
+
   body :is(button, a, summary, [role="button"], [role="tab"]) {
     min-height: 44px;
     min-width: 44px;
