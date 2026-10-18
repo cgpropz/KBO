@@ -1,4 +1,4 @@
-import { lineMatchesStat } from '../cgScore.js'
+import { boundCg, lineMatchesStat } from '../cgScore.js'
 
 // Denominator floors for the NFL CG Score. One floor per stat.
 //
@@ -36,5 +36,11 @@ export function nflCgScore(projection, line, stat) {
   if (!Number.isFinite(p) || !(l > 0)) return null
   const floor = NFL_LINE_FLOORS[stat]
   const denom = Number.isFinite(floor) ? Math.max(l, floor) : l
-  return (p / denom) * 50
+  const raw = (p / denom) * 50
+  // A floor above the line keeps a short line from leading, but it must not
+  // turn an over into a sub-50 score. An over the floor would push under 50
+  // holds at 50 (neutral); an exact tie is 50. Unders are already below 50.
+  // With no floor in play this is the same number as before, bounded 0-100.
+  const sided = p > l ? Math.max(raw, 50) : p === l ? 50 : Math.min(raw, 50)
+  return boundCg(sided)
 }

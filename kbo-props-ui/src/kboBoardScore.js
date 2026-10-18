@@ -1,4 +1,4 @@
-import { cgScore, lineMatchesStat } from './cgScore.js'
+import { boundCg, cgScore, lineMatchesStat } from './cgScore.js'
 
 // `cg_projection` is a separate 1-100 confidence score. It is high for a
 // strong under, so using it as the CG Score ranks below-line picks at 86-95.
@@ -33,7 +33,7 @@ export function scoreFor(prop) {
   if (!lineMatchesStat(prop?.stat, prop?.line)) return null
   const projection = modelProjection(prop)
   if (projection == null) return null
-  const score = cgScore(projection, prop.line, prop.stat)
+  const score = boundCg(cgScore(projection, prop.line, prop.stat))
   return Number.isFinite(score) ? score : null
 }
 

@@ -64,21 +64,24 @@ test('NFL slip scores use the board floors so short rush and receiving lines do 
   const atFloor = { name: 'Keaton Mitchell', prop: 'Rush Yards', line: 18.5, projection: 30.3, odds_type: 'standard', sport: 'nfl' }
   const missingType = { name: 'No Type', prop: 'Rush Yards', line: 1.5, projection: 40, sport: 'nfl' }
   assert.equal(shownCg(mccarthy), nflCgScore(15.9, 2.5, 'Rush Yards'))
-  assert.equal(shownCg(mccarthy), (15.9 / 18.5) * 50)
-  assert.equal(shownCg(cousins), (6.2 / 18.5) * 50)
-  assert.equal(shownCg(penix), (8.6 / 18.5) * 50)
-  assert.equal(shownCg(hutchinson), (35.9 / 15.5) * 50)
+  // Short overs the floor would push under 50 hold at 50 (still not leading).
+  assert.equal(shownCg(mccarthy), 50)
+  assert.equal(shownCg(cousins), 50)
+  assert.equal(shownCg(penix), 50)
+  // Bounded at 100.
+  assert.equal(shownCg(hutchinson), 100)
   assert.equal(shownCg(atFloor), (30.3 / 18.5) * 50)
   assert.notEqual(shownCg(mccarthy), (15.9 / 2.5) * 50)
   assert.equal(naturalSide(mccarthy), 'MORE')
   const board = boardRows([penix, mccarthy, missingType, cousins, hutchinson, atFloor], { standardOnly: true, sortDesc: true })
+  // Hutchinson and No Type both hit the 100 bound; the 50s tie and break by name.
   assert.deepEqual(board.map((row) => row.name), [
-    'Xavier Hutchinson',
     'No Type',
+    'Xavier Hutchinson',
     'Keaton Mitchell',
     'J.J. McCarthy',
-    'Michael Penix Jr.',
     'Kirk Cousins',
+    'Michael Penix Jr.',
   ])
 })
 

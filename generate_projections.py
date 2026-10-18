@@ -4,6 +4,7 @@ import csv
 import json
 import os
 from utils.cg_projection import calculate_cg_projection
+from pipeline.live_formula import cg_rating
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
@@ -1253,7 +1254,7 @@ def main():
             "prop_key": "strikeouts",
             "projection": round(strikeout_projection, 2),
             "edge": round(strikeout_edge, 2) if strikeout_edge is not None else None,
-            "rating": round((strikeout_projection / strikeout_line) * 50, 1) if strikeout_line else None,
+            "rating": cg_rating(strikeout_projection, strikeout_line) if strikeout_line else None,
             "recommendation": classify_recommendation(strikeout_edge, 0.45, strikeout_pp.get("odds_type", "standard") if strikeout_pp else "standard"),
             "cg_projection": calculate_cg_projection(strikeout_projection, strikeout_line, strikeout_edge, classify_recommendation(strikeout_edge, 0.45, strikeout_pp.get("odds_type", "standard") if strikeout_pp else "standard"), so_hr_l5, so_hr_full, stats["games"]),
             "so_per_ip": round(so_per_ip, 3),
@@ -1294,7 +1295,7 @@ def main():
             "prop_key": "hits_allowed",
             "projection": round(hits_projection, 2),
             "edge": round(hits_edge, 2) if hits_edge is not None else None,
-            "rating": round((hits_projection / hits_line) * 50, 1) if hits_line else None,
+            "rating": cg_rating(hits_projection, hits_line) if hits_line else None,
             "recommendation": classify_recommendation(hits_edge, 0.35, hits_pp.get("odds_type", "standard") if hits_pp else "standard"),
             "cg_projection": calculate_cg_projection(hits_projection, hits_line, hits_edge, classify_recommendation(hits_edge, 0.35, hits_pp.get("odds_type", "standard") if hits_pp else "standard"), ha_hr_l5, ha_hr_full, stats["games"]),
             "hits_per_ip": round(hits_per_ip, 3),
@@ -1339,7 +1340,7 @@ def main():
             "prop_key": "pitching_outs",
             "projection": round(outs_projection, 2),
             "edge": round(outs_edge, 2) if outs_edge is not None else None,
-            "rating": round((outs_projection / outs_line) * 50, 1) if outs_line else None,
+            "rating": cg_rating(outs_projection, outs_line) if outs_line else None,
             "recommendation": classify_recommendation(outs_edge, 1.0, outs_pp.get("odds_type", "standard") if outs_pp else "standard"),
             "cg_projection": calculate_cg_projection(outs_projection, outs_line, outs_edge, classify_recommendation(outs_edge, 1.0, outs_pp.get("odds_type", "standard") if outs_pp else "standard"), outs_hr_l5, outs_hr_full, stats["games"]),
             "ip_per_g": round(ip_per_g, 3),

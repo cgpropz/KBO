@@ -1,4 +1,4 @@
-import { cgScore, lineMatchesStat } from '../src/cgScore.js';
+import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
@@ -155,8 +155,9 @@ function kboProjectionScore(row) {
   const stat = row?.prop ?? row?.stat;
   if (!lineMatchesStat(stat, row?.line)) return -Infinity;
   const rating = num(row?.rating);
-  if (Number.isFinite(rating)) return rating;
-  return ratioScore(row?.projection, row?.line, stat);
+  if (Number.isFinite(rating)) return boundCg(rating);
+  const score = ratioScore(row?.projection, row?.line, stat);
+  return Number.isFinite(score) ? boundCg(score) : score;
 }
 
 // Shared player-prop preview score. `scoreFn` is the board's CG Score.

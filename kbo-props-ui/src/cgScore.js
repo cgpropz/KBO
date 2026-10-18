@@ -14,6 +14,18 @@ export function lineMatchesStat(stat, line) {
   return Number.isFinite(value) && value > 0.5
 }
 
+// KBO and NFL board scores are bounded 0-100. 50 is projection == line.
+// Order inside the range is unchanged; a score past either end pins there.
+export const CG_MIN = 0
+export const CG_MAX = 100
+
+export function boundCg(score) {
+  if (score == null) return score
+  const value = Number(score)
+  if (!Number.isFinite(value)) return value
+  return Math.min(CG_MAX, Math.max(CG_MIN, value))
+}
+
 export function cgScore(projection, line, stat) {
   if (!lineMatchesStat(stat, line)) return null
   const p = Number(projection)
