@@ -300,15 +300,16 @@ function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
       await Promise.all([board, ...extras]);
     };
     loadSportRef.current = loadSport;
-    // One capped refresh for this hub load. A hang or a failed client
-    // download still starts the sports. Background retries reuse the token.
+    // The hub uses the stored token (no forced refresh; an expired token is
+    // refreshed by the library). A hang or a failed client download still
+    // starts the sports. Background retries reuse the token.
     let stopped = false;
     beginHubLoad(
       (token) => {
         if (token) hubTokenRef.current = token;
         return loadHubSports(SPORTS, () => selectedRef.current, loadSport, alive);
       },
-      () => boundedAccessToken({ fresh: true }),
+      () => boundedAccessToken({ fresh: false }),
       () => !stopped && alive(),
     );
     return () => {
@@ -327,7 +328,7 @@ function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
     setBoards((b) => ({ ...b, [id]: { status: 'loading', raw: null } }));
     hubTokenForRetry(hubTokenRef.current, {
       cached: () => cachedAccessToken(),
-      refresh: () => boundedAccessToken({ fresh: true }),
+      refresh: () => boundedAccessToken({ fresh: false }),
     }).then((token) => {
       if (!sportRetryStillCurrent(retryTicket.current, id, ticket)) return;
       hubTokenRef.current = token;
