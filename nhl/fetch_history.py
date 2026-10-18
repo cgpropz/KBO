@@ -4,9 +4,12 @@
 Files land at ``{root}/{year}/{kind}/{TEAM}.csv`` (``skaters`` and ``goalies``).
 ``nhl.history`` reads that same layout. GitHub runners were only keeping the
 first ~32 of 128 files, so each file is retried on a rate limit or a dropped
-connection. A current-season file is retried again when the body is empty or
-HTML, and the run fails if one is still missing. A prior-season miss is counted
-and does not fail the night.
+connection. Every file, current and prior season, is retried again when the
+body is empty or HTML, or on a 404 or 403. If any team file is still missing
+after retries, the missing team codes are logged and the step fails, so the
+board is not built or published from a partial history and the last-good
+board stays live. (A prior-season gap once cut players to their current-season
+games only, e.g. 8 games instead of 78, in runs 38808226210 and 38825622362.)
 
     python nhl/fetch_history.py
 """
@@ -48,6 +51,28 @@ def download_jobs(teams: list[str], root: str) -> list[tuple[str, str]]:
 
 def is_current_season_path(path: str) -> bool:
     return CURRENT_YEAR in os.path.normpath(path).split(os.sep)
+
+
+def missing_files(results) -> list[str]:
+    """Destinations still missing after retries, any season."""
+    return [dest for status, dest in results if status == "missing"]
+
+
+def missing_team_codes(paths, root: str = ROOT) -> list[str]:
+    """``year/kind/TEAM`` for each missing destination, e.g. ``2025/skaters/VGK``."""
+    codes = []
+    for dest in paths:
+        parts = os.path.normpath(os.path.relpath(dest, root)).split(os.sep)
+        if len(parts) >= 3:
+            team = parts[-1][:-4] if parts[-1].endswith(".csv") else parts[-1]
+            codes.append(f"{parts[-3]}/{parts[-2]}/{team}")
+        else:
+            codes.append(dest)
+    return codes
+
+
+def _sleep(seconds: float) -> None:
+    time.sleep(seconds)
 
 
 def current_season_missing(results) -> list[str]:
@@ -159,7 +184,10 @@ def main() -> int:
         if os.path.exists(dest) and os.path.getsize(dest) > 100:
             return "cached", dest
         report = {}
-        data = _download(url, retry_missing=is_current_season_path(dest), report=report, deadline=deadline)
+        # Prior-season files get the same retries: a prior-season gap is a
+        # partial history too.
+        data = _download(url, retry_missing=True, report=report, deadline=deadline,
+                         sleep=lambda seconds: _sleep(seconds))
         if data is None:
             print(f"moneypuck missing {url} status={report.get('status', 'unknown')}", file=sys.stderr, flush=True)
             return "missing", dest
@@ -178,11 +206,16 @@ def main() -> int:
             else:
                 ok += 1
     print(f"moneypuck ok={ok} missing={miss}")
-    missing_now = current_season_missing(results)
+    missing_now = missing_files(results)
     if missing_now:
-        print("ERROR: current-season MoneyPuck file still missing after retries:", file=sys.stderr)
-        for dest in missing_now:
-            print(f"  {dest}", file=sys.stderr)
+        codes = missing_team_codes(missing_now)
+        # stdout so the team codes show in the run log next to the counts.
+        print(f"moneypuck missing teams after retries: {', '.join(codes)}")
+        print(
+            "ERROR: MoneyPuck team file still missing after retries; not building "
+            "or publishing a partial history. The last-good NHL board stays live.",
+            file=sys.stderr,
+        )
         return 1
     for year in YEARS:
         for kind in KINDS:

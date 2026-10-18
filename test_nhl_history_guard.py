@@ -183,6 +183,92 @@ class FetchHistoryTests(unittest.TestCase):
         )
 
 
+class PartialHistoryTests(unittest.TestCase):
+    """A prior-season 404 is retried, and a file still missing stops the publish."""
+
+    TEAMS = ["ANA", "BOS", "VGK"]
+
+    def _main(self, read):
+        import contextlib
+        import tempfile
+
+        import nhl.fetch_history as fetch
+
+        index = "".join(f'<a href="{team}.csv">{team}</a>' for team in self.TEAMS).encode()
+        calls = {}
+
+        def fake_read(url):
+            if url == fetch.INDEX:
+                return index
+            calls[url] = calls.get(url, 0) + 1
+            return read(url, calls[url])
+
+        saved = (fetch._read, fetch._sleep, fetch.ROOT)
+        out, err = io.StringIO(), io.StringIO()
+        with tempfile.TemporaryDirectory() as root:
+            fetch._read, fetch._sleep, fetch.ROOT = fake_read, (lambda _seconds: None), root
+            try:
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    code = fetch.main()
+            finally:
+                fetch._read, fetch._sleep, fetch.ROOT = saved
+        return code, calls, out.getvalue(), err.getvalue()
+
+    @staticmethod
+    def _vgk_2025_skaters(url):
+        return "/2025/regular/skaters/VGK.csv" in url
+
+    def test_prior_season_404_is_retried_and_stops_the_publish(self):
+        def read(url, _attempt):
+            if self._vgk_2025_skaters(url):
+                raise urllib.error.HTTPError(url, 404, "gone", None, io.BytesIO(b""))
+            return b"playerId,name\n1,A\n"
+
+        code, calls, out, err = self._main(read)
+        vgk = [url for url in calls if self._vgk_2025_skaters(url)]
+        self.assertEqual(len(vgk), 1)
+        self.assertGreater(calls[vgk[0]], 1, "the prior-season 404 was not retried")
+        self.assertEqual(code, 1, "a partial history must fail the step so build and publish do not run")
+        self.assertIn("moneypuck missing teams after retries: 2025/skaters/VGK", out)
+        self.assertIn("last-good NHL board stays live", err)
+
+    def test_prior_season_404_that_recovers_publishes(self):
+        def read(url, attempt):
+            if self._vgk_2025_skaters(url) and attempt < 3:
+                raise urllib.error.HTTPError(url, 404, "gone", None, io.BytesIO(b""))
+            return b"playerId,name\n1,A\n"
+
+        code, calls, out, _err = self._main(read)
+        self.assertEqual(code, 0)
+        self.assertIn("moneypuck ok=12 missing=0", out)
+        self.assertNotIn("missing teams", out)
+
+    def test_missing_team_codes(self):
+        from nhl.fetch_history import missing_team_codes
+
+        self.assertEqual(
+            missing_team_codes(["/r/2025/skaters/VGK.csv", "/r/2026/goalies/ANA.csv"], root="/r"),
+            ["2025/skaters/VGK", "2026/goalies/ANA"],
+        )
+
+    def test_refresh_does_not_build_or_publish_after_a_failed_download(self):
+        import re
+        from pathlib import Path
+
+        text = Path(__file__).with_name(".github").joinpath("workflows", "nhl-refresh.yml").read_text()
+        steps = re.split(r"\n      - ", text)
+        def step(name):
+            found = [chunk for chunk in steps if chunk.startswith(f"name: {name}")]
+            self.assertEqual(len(found), 1, name)
+            return found[0]
+        download = step("Download MoneyPuck game logs")
+        self.assertNotIn("continue-on-error", download)
+        for name in ("Build the NHL board and lineups", "Publish protected NHL snapshot", "Freeze NHL slate into memory/"):
+            body = step(name)
+            self.assertNotIn("if: always()", body, name)
+            self.assertNotIn("if: failure()", body, name)
+
+
 class BoardPublishTests(unittest.TestCase):
     def test_a_team_with_no_current_logs_keeps_its_last_rows(self):
         skaters = [
