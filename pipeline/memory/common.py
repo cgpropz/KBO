@@ -702,6 +702,58 @@ def write_day_summary(
     return path, summary
 
 
+class GradedDayLocked(RuntimeError):
+    """Raised when a write would replace a graded day with an empty result."""
+
+
+def recap_locked(sport: str, d: date) -> bool:
+    """A day with recap.json is graded and locked against non-complete writes."""
+    return (memory_dir(sport, d) / "recap.json").exists()
+
+
+def locked_day_result(sport: str, d: date, *, dry_run: bool = False) -> dict:
+    """Result for a recapped (locked) day; repairs meta.json if a run reset it.
+
+    Grading never re-reads box scores for a locked day, so a later run with
+    stale or missing finals cannot wipe it. When meta.json no longer says
+    complete (e.g. the WNBA 10/17/2026 meta reset by a run that could not see
+    the box score), it is rewritten from the day's own summary.json/recap.json.
+    recap.json and summary.json are never modified here.
+    """
+    day_dir = memory_dir(sport, d)
+    recap = load_json(day_dir / "recap.json", default={}) or {}
+    props = recap.get("props") or []
+    meta = load_json(day_dir / "meta.json", default={}) or {}
+    restored = False
+    if meta.get("status") != "complete" and not dry_run:
+        summary = load_json(day_dir / "summary.json", default={}) or {}
+        if summary.get("status") != "complete":
+            summary = build_day_summary(
+                sport, d, props, status="complete", props_total=len(props)
+            )
+        extra = hit_rate_meta_extra(summary)
+        extra["note"] = "meta restored from recap.json; recapped days are locked"
+        write_meta(
+            sport,
+            d,
+            status="complete",
+            props_total=len(props),
+            props_graded=len(props),
+            missing=[],
+            extra=extra,
+        )
+        restored = True
+    return {
+        "status": "complete",
+        "locked": True,
+        "meta_restored": restored,
+        "slate_date": format_mmddyyyy(d),
+        "props_total": len(props),
+        "props_graded": len(props),
+        "dry_run": dry_run,
+    }
+
+
 def write_partial_progress(
     sport: str,
     d: date,
@@ -713,8 +765,16 @@ def write_partial_progress(
     """
     Persist meta for waiting|partial days; write summary.json when any props graded.
 
-    Does not write recap.json (complete-only).
+    Does not write recap.json (complete-only). A day that already has a
+    recap.json is locked: nothing is written and the meta path is returned.
     """
+    if recap_locked(sport, d):
+        LOGGER.warning(
+            "Refusing partial/waiting write for %s %s: recap.json exists (graded day is locked)",
+            sport,
+            format_iso(d),
+        )
+        return memory_dir(sport, d) / "meta.json"
     n_graded = len(graded or [])
     status = "partial" if n_graded else "waiting"
     extra = None
@@ -745,6 +805,16 @@ def write_meta(
     extra: dict | None = None,
 ) -> Path:
     path = ensure_memory_dir(sport, d) / "meta.json"
+    if status != "complete" and recap_locked(sport, d):
+        # A later run (stale box scores, manual --date, slate refreeze) must
+        # never reset a recapped day to waiting/partial.
+        LOGGER.warning(
+            "Refusing to set %s %s meta to %r: recap.json exists (graded day is locked)",
+            sport,
+            format_iso(d),
+            status,
+        )
+        return path
     missing_list = list(missing or [])
     missing_truncated = False
     if len(missing_list) > 50:
@@ -1081,6 +1151,11 @@ def write_slate(
 
 def write_recap(sport: str, d: date, props: list[dict], *, missing: list[Any] | None = None) -> Path:
     day_dir = ensure_memory_dir(sport, d)
+    existing = load_json(day_dir / "recap.json", default=None)
+    if isinstance(existing, dict) and existing.get("props") and not props:
+        raise GradedDayLocked(
+            f"{sport} {format_iso(d)}: refusing to replace a graded recap with an empty result"
+        )
     payload = {
         "sport": sport,
         "slate_date": format_mmddyyyy(d),

@@ -19,6 +19,8 @@ from pipeline.memory.common import (
     format_mmddyyyy,
     grade_line,
     load_json,
+    locked_day_result,
+    recap_locked,
     matchup_pair,
     memory_dir,
     model_result,
@@ -196,8 +198,12 @@ def _void_prop(prop: dict, reason: str) -> dict:
     }
 
 
-def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = False) -> dict:
+def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = False, regrade: bool = False) -> dict:
     day_dir = memory_dir("kbo", d)
+    # Recapped days are locked, for scheduled and manual --date runs alike.
+    # --regrade re-reads finals, but only a complete result can replace the recap.
+    if recap_locked("kbo", d) and not regrade:
+        return locked_day_result("kbo", d, dry_run=dry_run)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
         if not dry_run:
@@ -383,6 +389,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--date", help="KST slate date mm/dd/YYYY or YYYY-MM-DD (default: yesterday KST)")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--regrade",
+        action="store_true",
+        help="Re-grade a day that already has recap.json. Only a complete result is written; waiting/partial never replaces a graded day.",
+    )
+    parser.add_argument(
         "--catch-up-days",
         type=int,
         default=None,
@@ -397,8 +408,8 @@ def main(argv: list[str] | None = None) -> int:
     catch_up = args.catch_up_days
     if catch_up is None:
         catch_up = 0 if args.date else DEFAULT_CATCH_UP_DAYS
-    results = [grade_day(prior, dry_run=args.dry_run) for prior in catch_up_dates(d, catch_up)]
-    results.append(grade_day(d, dry_run=args.dry_run))
+    results = [grade_day(prior, dry_run=args.dry_run, regrade=args.regrade) for prior in catch_up_dates(d, catch_up)]
+    results.append(grade_day(d, dry_run=args.dry_run, regrade=args.regrade))
     result = results if len(results) > 1 else results[0]
     print(json.dumps(result, indent=2))
     # Non-zero only on hard failure; waiting/partial are normal

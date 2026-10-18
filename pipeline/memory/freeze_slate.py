@@ -41,19 +41,19 @@ from pipeline.memory.common import (
     today_et,
     today_kst,
 )
+from pipeline.memory.common import recap_locked
 from pipeline.memory.common import write_slate as _write_slate_unlocked
 
 
 def slate_is_locked(sport: str, d: date) -> bool:
-    """True once a day has been graded complete (recap.json + meta complete).
+    """True once a day has a recap.json (same rule as the graders).
 
     Locked slates are immutable: re-freezing after grading would let
     post-game projections/recommendations overwrite the pregame picks the
-    recap was graded against.
+    recap was graded against. Keyed on recap existence alone, so a recapped
+    day whose meta.json was reset (WNBA 10/17/2026) is still locked.
     """
-    day_dir = memory_dir(sport, d)
-    meta = load_json(day_dir / "meta.json", default={}) or {}
-    return meta.get("status") == "complete" and (day_dir / "recap.json").exists()
+    return recap_locked(sport, d)
 
 
 def write_slate(

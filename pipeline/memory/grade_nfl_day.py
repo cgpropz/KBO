@@ -24,7 +24,9 @@ from pipeline.memory.common import (
     format_mmddyyyy,
     grade_line,
     load_json,
+    locked_day_result,
     matchup_pair,
+    recap_locked,
     memory_dir,
     model_result,
     normalize_name,
@@ -338,8 +340,12 @@ def actual_for_stat(stats: dict, stat: str):
     return number
 
 
-def grade_day(d: date, *, dry_run: bool = False) -> dict:
+def grade_day(d: date, *, dry_run: bool = False, regrade: bool = False) -> dict:
     day_dir = memory_dir("nfl", d)
+    # Recapped days are locked, for scheduled and manual --date runs alike.
+    # --regrade re-reads finals, but only a complete result can replace the recap.
+    if recap_locked("nfl", d) and not regrade:
+        return locked_day_result("nfl", d, dry_run=dry_run)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
         if not dry_run:
@@ -519,6 +525,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--date", help="One gameday, mm/dd/YYYY or YYYY-MM-DD. Default: every awaiting slate in the last 14 days.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--regrade",
+        action="store_true",
+        help="Re-grade a day that already has recap.json. Only a complete result is written; waiting/partial never replaces a graded day.",
+    )
+    parser.add_argument(
         "--lookback-days",
         type=int,
         default=LOOKBACK_DAYS,
@@ -533,7 +544,7 @@ def main(argv: list[str] | None = None) -> int:
     results = []
     for day in days:
         try:
-            results.append(grade_day(day, dry_run=args.dry_run))
+            results.append(grade_day(day, dry_run=args.dry_run, regrade=args.regrade))
         except Exception as exc:  # noqa: BLE001 - one slate must not block the rest
             results.append({"status": "waiting", "slate_date": format_iso(day), "reason": str(exc)})
     print(json.dumps(results if not args.date else results[0], indent=2))
