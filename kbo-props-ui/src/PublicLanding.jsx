@@ -11,6 +11,7 @@ import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
+import { DataCredit } from './SiteFooter'
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
 import { lineClause, lineWord } from './lineCount';
@@ -517,6 +518,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         <p>{STANDARD_LINE}</p>
         <p>{OPERATOR_DISCLAIMER}</p>
         <p>© {new Date().getFullYear()} cgpropz</p>
+        <DataCredit />
       </footer>
     </div>
   );

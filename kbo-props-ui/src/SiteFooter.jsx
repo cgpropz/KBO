@@ -1,5 +1,15 @@
 import { AFFILIATION_LINE, AGE_LINE, GAMBLER_HELP_URL, OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling.js';
+import { DATA_CREDIT_NAME, DATA_CREDIT_PREFIX, DATA_CREDIT_URL } from './dataCredit.js';
 import './SiteFooter.css';
+
+// Tiny, muted data credit. Rendered last in every footer.
+export function DataCredit() {
+  return (
+    <p className="data-credit">
+      {DATA_CREDIT_PREFIX} <a href={DATA_CREDIT_URL} target="_blank" rel="noopener noreferrer">{DATA_CREDIT_NAME}</a>
+    </p>
+  );
+}
 
 export function ResponsibleGamblingCopy() {
   return (
@@ -26,6 +36,7 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <ResponsibleGamblingCopy />
+      <DataCredit />
     </footer>
   );
 }

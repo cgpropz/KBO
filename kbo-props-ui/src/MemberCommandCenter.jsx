@@ -22,6 +22,7 @@ import {
 } from './memberHub';
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
+import { DataCredit } from './SiteFooter'
 
 /*
  * Paid-member landing, Option B Sports Hub.
@@ -730,6 +731,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
           <span className="hub-footer-sep" aria-hidden="true">·</span>
           <a href="/guides/start-here">Help</a>
         </nav>
+        <DataCredit />
       </footer>
     </div>
   );

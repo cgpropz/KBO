@@ -7,7 +7,7 @@ import {
   OPERATOR_DISCLAIMER,
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
-import { escapeHtml, jsonLdScript, organizationNode, pageUrl, websiteNode } from './seoShared.mjs';
+import { escapeHtml, jsonLdScript, organizationNode, pageUrl, renderDataCredit, websiteNode } from './seoShared.mjs';
 
 const NAV = [
   ['/kbo-player-props', 'KBO player props'],
@@ -37,6 +37,8 @@ const PRERENDER_CSS = `
     .seo-prerender h2 { font-size: 22px; margin: 28px 0 8px; }
     #free-top-3 { scroll-margin-top: 24px; }
     .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
+    .seo-prerender footer .data-credit { margin: 4px 0 0; color: #71717a; font-size: 11px; line-height: 1.3; }
+    .seo-prerender footer .data-credit a { color: inherit; font-weight: 400; text-decoration: underline; }
 `;
 
 export function homeRootInner() {
@@ -62,6 +64,7 @@ export function homeRootInner() {
       <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
+      ${renderDataCredit()}
     </footer>
     </div>`;
 }
