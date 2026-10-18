@@ -6,6 +6,7 @@ import { getCgProjectionColor } from './cgProjectionColor';
 import { pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
+import { isZeroEdge } from './edgeTone.js';
 import { BoardLoadError } from './BoardLoadError';
 import { opponentLabel } from './cardMark';
 import { CardTeamLogo } from './CardTeamLogo';
@@ -988,7 +989,7 @@ function StrikeoutProjections({ onNavigate }) {
                   <span className={`parlay-tray-side ${pk.side === 'OVER' ? 'side-over' : 'side-under'}`}
                     onClick={() => setParlayPicks(prev => prev.map((p, j) => j === i ? { ...p, side: p.side === 'OVER' ? 'UNDER' : 'OVER' } : p))}
                   >{pk.side}</span>
-                  <span className={`parlay-tray-edge ${pk.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
+                  <span className={`parlay-tray-edge ${isZeroEdge(pk.edge, 1) ? 'edge-zero' : pk.edge > 0 ? 'edge-pos' : 'edge-neg'}`}>
                     {pk.edge != null ? (pk.edge > 0 ? '+' : '') + pk.edge.toFixed(1) : ''}
                   </span>
                   <button className="parlay-tray-remove" onClick={() => setParlayPicks(prev => prev.filter((_, j) => j !== i))}>×</button>
