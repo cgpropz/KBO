@@ -195,9 +195,22 @@ def postseason_box_dnps(payload: dict) -> set[str]:
 
     All must hold: the player's page identity was verified (Korean name and
     team), his team's game is final, its box score lists at least a full
-    lineup, and his verified Korean name is not among the hitters or pitchers
-    who appeared. Anything less stays missing.
+    lineup, and no hitter or pitcher who appeared matches his verified Korean
+    name. A box-score name counts as a match when it is the same text or has
+    the same hangul_skeleton (spelling variants, spacing). Anything less stays
+    missing.
     """
+    from pipeline.memory.kbo_postseason_actuals import hangul_skeleton
+
+    def _same(a: str, b: str) -> bool:
+        a, b = str(a or "").strip(), str(b or "").strip()
+        if not a or not b:
+            return False
+        if a == b:
+            return True
+        sa, sb = hangul_skeleton(a), hangul_skeleton(b)
+        return bool(sa) and sa == sb
+
     out: set[str] = set()
     boxes = {team_key(team): box for team, box in (payload.get("box_scores") or {}).items() if isinstance(box, dict)}
     for player, ident in (payload.get("identities") or {}).items():
@@ -207,19 +220,22 @@ def postseason_box_dnps(payload: dict) -> set[str]:
         box = boxes.get(team_key(ident.get("team") or ""))
         if not box or not box.get("final") or int(box.get("hitters") or 0) < POSTSEASON_MIN_BOX_HITTERS:
             continue
-        if name_ko in set(box.get("appeared_ko") or []):
+        if any(_same(name_ko, seen) for seen in box.get("appeared_ko") or []):
             continue
         out.add(name_match_key(player))
     return out
 
 
-def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[str]] | None:
+def load_postseason_actuals(d: date) -> tuple[dict[tuple[str, str], dict], set[str], set[str]] | None:
     """Grading-only postseason lines for one KBO day, or None when there is no file.
 
     The game-log scrapers carry the regular season only, so postseason games
     are fetched per slate player into memory/kbo/.../postseason_actuals.json
-    (pipeline/memory/kbo_postseason_actuals.py). Returns (lookup, fetched)
-    where fetched is the name keys whose pages were read successfully.
+    (pipeline/memory/kbo_postseason_actuals.py). Returns three values,
+    (lookup, fetched, benched): lookup maps (iso, name key) to the stat line,
+    fetched is the name keys whose pages were read and verified, and benched
+    is the name keys confirmed DNP by the final box score
+    (postseason_box_dnps).
     """
     payload = load_json(memory_dir("kbo", d) / POSTSEASON_FILE)
     if not isinstance(payload, dict):

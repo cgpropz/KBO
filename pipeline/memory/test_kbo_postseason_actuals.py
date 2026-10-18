@@ -256,6 +256,21 @@ class BoxScoreDnpTests(_Case):
         self.assertEqual(grade_kbo_day.grade_day(WC)["status"], "partial")
         self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_no_row")})
 
+    def test_spelling_variant_in_box_score_counts_as_appeared(self):
+        # Box score spells 송찬의 as 송찬이 / "송 찬의": same hangul_skeleton, so he appeared.
+        for variant in ("송찬이", "송 찬의"):
+            self.boxes = self._box(self.LINEUP + [variant])
+            kpa.collect_day(WC, fetch=self.fake_fetch(self.PAGES), index=self.index)
+            self.assertEqual(grade_kbo_day.grade_day(WC)["status"], "partial", variant)
+            self.assertEqual(self.meta_missing(), {("Song Chan-eui", "postseason_no_row")}, variant)
+
+    def test_dnp_only_when_no_box_name_matches(self):
+        payload = {"identities": {"Song Chan-eui": {"name_ko": "송찬의", "team": "LG"}},
+                   "box_scores": self._box(self.LINEUP + ["손찬의"])}  # different skeleton
+        self.assertEqual(grade_kbo_day.postseason_box_dnps(payload), {common.name_match_key("Song Chan-eui")})
+        payload["box_scores"] = self._box(self.LINEUP + ["송찬이"])
+        self.assertEqual(grade_kbo_day.postseason_box_dnps(payload), set())
+
     def test_unfinished_or_short_box_score_never_confirms_dnp(self):
         for box in (self._box(self.LINEUP, final=False), self._box(self.LINEUP[:5])):
             self.boxes = box
