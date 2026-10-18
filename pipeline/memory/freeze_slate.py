@@ -845,6 +845,9 @@ def freeze_nhl(
     pulled_by_date: dict[date, list[dict]] = defaultdict(list)
     skipped_started: dict[date, int] = defaultdict(int)
     for row in projections:
+        # Hits is admin-only and never enters the public slate or recap.
+        if str(row.get("prop") or "").strip() == "Hits" or row.get("adminOnly") is True:
+            continue
         gameday = parse_date(row.get("gameday") or row.get("date")) or slate_date or today_et()
         if slate_date and gameday != slate_date:
             continue

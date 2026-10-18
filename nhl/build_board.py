@@ -25,8 +25,11 @@ from nhl.availability import (
 )
 from nhl.history import load_goalies, load_skaters, team_shot_games
 from nhl.profile import attach_baseline, build_baselines, profile_splits, usage_role
+from nhl.hits_board import HitsBoard, hits_row
+from nhl.hits_model import hits_board_enabled
 from nhl.model import (
     LAUNCH_PROPS,
+    PROP_HITS,
     PROP_PPP,
     PROP_POINTS,
     PROP_SAVES,
@@ -104,6 +107,15 @@ SHOW_STATS = {
     "power play points": PROP_PPP,
     "goalie saves": PROP_SAVES,
 }
+# Hits joins only with NHL_HITS_BOARD=1 (admin-only rows, never ranked).
+HITS_STATS = {"hits": PROP_HITS}
+
+
+def show_stats(include_hits: bool | None = None) -> dict:
+    include = hits_board_enabled() if include_hits is None else include_hits
+    return {**SHOW_STATS, **HITS_STATS} if include else dict(SHOW_STATS)
+
+
 ODDS_RANK = {"standard": 0, "demon": 1, "goblin": 2}
 # PrizePicks marks a line it took down with one of these statuses. The slip
 # builder already drops removed / suspended / held rows.
@@ -314,7 +326,8 @@ def fetch_prizepicks():
     return prizepicks_cards(payload), prizepicks_projection_ids(payload)
 
 
-def prizepicks_cards(payload):
+def prizepicks_cards(payload, include_hits: bool | None = None):
+    stats = show_stats(include_hits)
     included = {}
     for item in payload.get("included") or []:
         included[(item.get("type"), str(item.get("id")))] = item.get("attributes") or {}
@@ -322,7 +335,7 @@ def prizepicks_cards(payload):
     for item in payload.get("data") or []:
         attrs = item.get("attributes") or {}
         relations = item.get("relationships") or {}
-        stat = SHOW_STATS.get(str(attrs.get("stat_type") or "").strip().lower())
+        stat = stats.get(str(attrs.get("stat_type") or "").strip().lower())
         if not stat:
             continue
         if "combo" in str(attrs.get("stat_type") or "").lower():
@@ -348,6 +361,8 @@ def prizepicks_cards(payload):
             continue
         odds = str(attrs.get("odds_type") or "standard").lower()
         if odds not in ODDS_RANK:
+            continue
+        if stat == PROP_HITS and odds != "standard":
             continue
         rows.append({
             "id": str(item.get("id")),
@@ -738,7 +753,7 @@ def _season_label(season: str | None) -> str:
 
 
 def _stat_key(prop: str) -> str:
-    return {PROP_SOG: "sog", PROP_POINTS: "points", PROP_PPP: "ppp", PROP_SAVES: "saves"}[prop]
+    return {PROP_SOG: "sog", PROP_POINTS: "points", PROP_PPP: "ppp", PROP_SAVES: "saves", PROP_HITS: "hits"}[prop]
 
 
 def _project_row(card, history, league, opp_rates, team_rates, home, pp_role, goalie_history=None):
@@ -1045,12 +1060,26 @@ def build(root: Path, out_dir: Path) -> int:
                 by_team[team_abbr(row["team"])].append(row)
             rates = {team: _team_rates(rows) for team, rows in by_team.items()}
             ranks = _ranks(rates)
+            hits_board = None
+            if any(card["prop"] == PROP_HITS for card in cards):
+                try:
+                    hits_board = HitsBoard(CURRENT_SEASON, PRIOR_SEASON)
+                except Exception as exc:  # noqa: BLE001 - Hits must never break the board
+                    print(f"hits history failed, no Hits rows: {exc}")
             for card in cards:
                 game = by_team_game.get(card["team"])
                 if not game:
                     continue
                 home = card["team"] == game["home"]
                 opponent = game["away"] if home else game["home"]
+                if card["prop"] == PROP_HITS:
+                    row = hits_row(
+                        card, hits_board, game=game, home=home, opponent=opponent, chart=_chart,
+                        usage=_usage(card["player"], lines.get(card["team"])),
+                    ) if hits_board else None
+                    if row:
+                        projections.append(row)
+                    continue
                 history = _history_for(by_goalie if card["prop"] == PROP_SAVES else by_skater, card["player"], card["team"])
                 role = _pp_role(card["player"], lines.get(card["team"])) if card["prop"] in {PROP_SOG, PROP_PPP} else None
                 projection = _project_row(
@@ -1147,6 +1176,7 @@ def build(root: Path, out_dir: Path) -> int:
         "unavailable": removed,
         "removed_reasons": reasons,
         "saves": sum(1 for row in projections if row.get("prop") == PROP_SAVES),
+        "hits_admin_only": sum(1 for row in projections if row.get("prop") == PROP_HITS),
         "lineups": len(lineups),
         "line_labels": dict(labels),
         "props_kept": list(LAUNCH_PROPS),

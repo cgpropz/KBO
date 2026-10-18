@@ -3,6 +3,7 @@ import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
+import { dropHitsRows, hitsPublic, isHitsRow } from '../src/nhl/hitsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
@@ -261,6 +262,7 @@ function propStillLive(player, prop) {
 // and unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
   if (row?.rankEligible === false || gameAlreadyStarted(row)) return -Infinity;
+  if (isHitsRow(row)) return -Infinity;
   if (pointsOverDisposition(row) !== 'rank') return -Infinity;
   return ratioScore(row?.projection, row?.line, row?.stat ?? row?.prop);
 }
@@ -279,7 +281,9 @@ const MEMBER_BOARD_DATASETS = new Set([
 function memberBoardRows(ds, rows) {
   const live = dropPulledRows(rows);
   if (ds !== 'nhl_projections') return live;
-  return live.map(applyPointsOverGate).filter(Boolean);
+  // Hits is admin-only (src/nhl/hitsGate.js) until NHL_HITS_PUBLIC=1.
+  const gated = dropHitsRows(live, { allow: hitsPublic(process.env) });
+  return gated.map(applyPointsOverGate).filter(Boolean);
 }
 
 function sameRows(next, prev) {

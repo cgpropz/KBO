@@ -13,6 +13,7 @@ import HitRateStrip from '../HitRateStrip'
 import { nhlHitPills } from '../hitRateStrip'
 import { cgScore, lineMatchesStat } from '../cgScore'
 import { prepareBoardRows } from './pointsGate.js'
+import { HITS_PROP, dropHitsRows, hitsTabVisible } from './hitsGate.js'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import BoardStatus from '../BoardStatus'
@@ -27,6 +28,22 @@ import { countedLines, lineClause } from '../lineCount'
 import { pickSide, sideClass, sideLetter } from '../pickSide.js'
 
 const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
+
+function showHits() {
+  if (typeof window === 'undefined') return false
+  return hitsTabVisible(import.meta.env.DEV, window.location.search, import.meta.env.VITE_NHL_HITS)
+}
+
+// Read once on load. Off in production unless the build sets VITE_NHL_HITS=1.
+const HITS_ON = showHits()
+const VISIBLE_TABS = HITS_ON ? [...TABS, HITS_PROP] : TABS
+
+// Hits stays in its own admin tab. All Props keeps the four launch props.
+function tabRows(projections, tab) {
+  const allow = HITS_ON && tab === HITS_PROP
+  return prepareBoardRows(dropHitsRows(projections, { allow }))
+    .filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
+}
 const SORT_OPTIONS = ['CG Score', 'Hit Rate', 'Season', 'H2H', 'DVP']
 
 function formatValue(value) {
@@ -212,15 +229,12 @@ export default function NhlPropLines({ onSelectPlayer }) {
   }
 
   const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
-  const rows = useMemo(() => {
-    const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
-    return sortBoard(filtered, sortKey)
-  }, [projections, tab, sortKey])
+  const rows = useMemo(() => sortBoard(tabRows(projections, tab), sortKey), [projections, tab, sortKey])
 
   return (
     <section className="nfl-lines-page">
       <div className="nfl-lines-tabs">
-        {TABS.map((name) => (
+        {VISIBLE_TABS.map((name) => (
           <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>
         ))}
       </div>

@@ -53,6 +53,10 @@ STAT_KEYS = {
     "Power Play Points": "ppp",
     "Goalie Saves": "saves",
 }
+# NHL Hits is never graded here. This grader writes the public recap and
+# summary. Hits lines are graded privately by nhl/hits_grade.py into
+# memory/nhl_hits/grades/ (admin-only).
+PRIVATE_STATS = frozenset({"Hits"})
 
 
 def _plain(value) -> str:
@@ -142,6 +146,8 @@ def _standard_rows(props: list) -> tuple[list[dict], list[dict]]:
     voids: list[dict] = []
     for prop in props or []:
         if not isinstance(prop, dict):
+            continue
+        if str(prop.get("stat") or "").strip() in PRIVATE_STATS:
             continue
         odds = str(prop.get("odds_type") or "standard").strip().lower()
         if odds != "standard":
