@@ -188,3 +188,72 @@ class ShapeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LastFailureTests(unittest.TestCase):
+    def test_download_failure_is_recorded_and_cleared_by_the_next_publish(self):
+        import tempfile
+        from datetime import datetime, timezone
+        from pathlib import Path
+
+        from pipeline.board_status import apply_published, load_status, prefer_fresher, record_failure
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "status.json"
+            published = "2026-10-18T14:50:00+00:00"
+            apply_published({"nhl": {"board_updated_at": published, "prop_count": 249}},
+                            now=datetime(2026, 10, 18, 15, 0, tzinfo=timezone.utc), path=path)
+            record_failure("nhl", "download_failed", ["2025/skaters/VGK"],
+                           now=datetime(2026, 10, 18, 15, 20, tzinfo=timezone.utc), path=path)
+            nhl = {row["sport"]: row for row in load_status(path)}["nhl"]
+            self.assertEqual(nhl["prop_count"], 249)
+            self.assertEqual(nhl["board_updated_at"][:16], "2026-10-18T10:50")
+            self.assertEqual(nhl["last_failure"]["reason"], "download_failed")
+            self.assertEqual(nhl["last_failure"]["missing"], ["2025/skaters/VGK"])
+            self.assertTrue(nhl["last_failure"]["at"].startswith("2026-10-18T11:20"))
+
+            # commit_status.sh merge keeps it against an origin copy with the same clock.
+            merged = prefer_fresher(load_status(path), [], datetime(2026, 10, 18, 15, 21, tzinfo=timezone.utc))
+            nhl_merged = {row["sport"]: row for row in merged["boards"]}["nhl"]
+            self.assertEqual(nhl_merged["last_failure"]["missing"], ["2025/skaters/VGK"])
+
+            apply_published({"nhl": {"board_updated_at": "2026-10-18T15:45:00+00:00", "prop_count": 250}},
+                            now=datetime(2026, 10, 18, 15, 46, tzinfo=timezone.utc), path=path)
+            nhl = {row["sport"]: row for row in load_status(path)}["nhl"]
+            self.assertNotIn("last_failure", nhl)
+
+    def test_fetch_history_records_the_missing_teams_on_status(self):
+        import contextlib
+        import io
+        import tempfile
+        import urllib.error
+        from pathlib import Path
+
+        import nhl.fetch_history as fetch
+        import pipeline.board_status as status
+
+        index = b'<a href="ANA.csv"></a><a href="VGK.csv"></a>'
+
+        def read(url):
+            if url == fetch.INDEX:
+                return index
+            if "/2025/regular/skaters/VGK.csv" in url:
+                raise urllib.error.HTTPError(url, 404, "gone", None, io.BytesIO(b""))
+            return b"playerId,name\n1,A\n"
+
+        saved = (fetch._read, fetch._sleep, fetch.ROOT, status.STATUS_PATH)
+        with tempfile.TemporaryDirectory() as tmp:
+            status_path = Path(tmp) / "status.json"
+            fetch._read, fetch._sleep, fetch.ROOT = read, (lambda _s: None), str(Path(tmp) / "mp")
+            original_default = status.record_failure.__defaults__
+            status.record_failure.__defaults__ = (None, None, status_path)
+            try:
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(fetch.main(), 1)
+            finally:
+                fetch._read, fetch._sleep, fetch.ROOT, status.STATUS_PATH = saved
+                status.record_failure.__defaults__ = original_default
+            nhl = {row["sport"]: row for row in status.load_status(status_path)}["nhl"]
+            self.assertEqual(nhl["last_failure"], {
+                "reason": "download_failed", "missing": ["2025/skaters/VGK"], "at": nhl["last_failure"]["at"],
+            })

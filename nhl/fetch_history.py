@@ -71,6 +71,20 @@ def missing_team_codes(paths, root: str = ROOT) -> list[str]:
     return codes
 
 
+def _record_status_failure(codes) -> None:
+    """Put the reason on /status.json for the always() board-status commit. Never raises."""
+    try:
+        repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if repo not in sys.path:
+            sys.path.insert(0, repo)
+        from pipeline.board_status import record_failure
+
+        record_failure("nhl", "download_failed", codes)
+        print("board status: nhl last_failure download_failed recorded")
+    except Exception as exc:  # noqa: BLE001 - status must not change the exit code
+        print(f"board status: could not record the NHL download failure ({type(exc).__name__})")
+
+
 def _sleep(seconds: float) -> None:
     time.sleep(seconds)
 
@@ -211,6 +225,7 @@ def main() -> int:
         codes = missing_team_codes(missing_now)
         # stdout so the team codes show in the run log next to the counts.
         print(f"moneypuck missing teams after retries: {', '.join(codes)}")
+        _record_status_failure(codes)
         print(
             "ERROR: MoneyPuck team file still missing after retries; not building "
             "or publishing a partial history. The last-good NHL board stays live.",

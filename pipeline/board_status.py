@@ -30,6 +30,18 @@ BOARD_TABLES = {
 }
 INJURY_KEYS = ("injuries_checked_at", "injury_checked_at", "lineups_checked_at")
 ENTRY_KEYS = ("sport", "board_updated_at", "injuries_checked_at", "prop_count", "stale")
+# Optional on an entry: why the last run did not publish. Set by a failed
+# build step (e.g. nhl/fetch_history.py), cleared by the next publish.
+FAILURE_REASONS = ("download_failed",)
+
+
+def copy_failure(value: Any) -> dict | None:
+    """{reason, missing, at} with a known reason, or nothing."""
+    if not isinstance(value, dict) or value.get("reason") not in FAILURE_REASONS:
+        return None
+    missing = value.get("missing")
+    missing = [str(item) for item in missing if isinstance(item, str)] if isinstance(missing, list) else []
+    return {"reason": value["reason"], "missing": missing[:200], "at": iso_with_et_offset(value.get("at"))}
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STATUS_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "status.json"
@@ -122,12 +134,15 @@ def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) 
             count = update.get("prop_count")
             count = int(count) if isinstance(count, int) and not isinstance(count, bool) else 0
             reasons = copy_removed_reasons(update.get("removed_reasons"))
+            # A publish clears the failure; prefer_fresher passes it through.
+            failure = copy_failure(update.get("last_failure"))
         else:
             raw = prev.get("board_updated_at")
             injury = prev.get("injuries_checked_at")
             count = prev.get("prop_count")
             count = int(count) if isinstance(count, int) and not isinstance(count, bool) else 0
             reasons = copy_removed_reasons(prev.get("removed_reasons"))
+            failure = copy_failure(prev.get("last_failure"))
         entry = {
             "sport": sport,
             "board_updated_at": iso_with_et_offset(raw),
@@ -137,6 +152,8 @@ def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) 
         }
         if reasons is not None:
             entry["removed_reasons"] = reasons
+        if failure is not None:
+            entry["last_failure"] = failure
         boards.append(entry)
     return {"boards": boards}
 
@@ -175,7 +192,32 @@ def prefer_fresher(local: list[dict], remote: list[dict], now: datetime) -> dict
         reasons = copy_removed_reasons(chosen.get("removed_reasons"))
         if reasons is not None:
             updates[sport]["removed_reasons"] = reasons
+        failure = copy_failure(chosen.get("last_failure"))
+        if failure is not None:
+            updates[sport]["last_failure"] = failure
     return merge_status([], updates, now)
+
+
+def record_failure(sport: str, reason: str, missing=None, now: datetime | None = None,
+                   path: Path = STATUS_PATH) -> dict:
+    """Mark why `sport` did not publish. The board clock and counts stay as they were.
+
+    commit_status.sh (if: always()) then commits it, so Board QA's freshness
+    check can say why the board is stale.
+    """
+    moment = now or datetime.now(timezone.utc)
+    rows = load_status(path)
+    prior = {row["sport"]: row for row in rows}
+    updates = {}
+    for name in SPORTS:
+        row = dict(prior.get(name) or {})
+        if name == sport:
+            row["last_failure"] = {"reason": reason, "missing": list(missing or []), "at": moment.isoformat()}
+        updates[name] = row
+    # Keep each sport's own clock and counts: feed them as previous rows.
+    document = merge_status([updates[name] | {"sport": name} for name in SPORTS], {}, moment)
+    write_status(document, path)
+    return document
 
 
 def apply_published(updates: dict[str, dict], now: datetime | None = None, path: Path = STATUS_PATH) -> dict:

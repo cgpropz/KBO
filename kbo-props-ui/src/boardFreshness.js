@@ -197,6 +197,17 @@ export function buildBoardStatus({ snapshots = {}, previous = [], now = new Date
       const reasons = present ? removedReasonCounts(snap.data) : copyRemovedReasons(prev?.removed_reasons)
       if (reasons) entry.removed_reasons = reasons
     }
+    // Why the last run did not publish (pipeline/board_status.py
+    // record_failure). A build with no fresh snapshot keeps it; a publish
+    // (snapshot present) clears it.
+    const failure = prev?.last_failure
+    if (!present && failure && typeof failure === 'object' && failure.reason === 'download_failed') {
+      entry.last_failure = {
+        reason: failure.reason,
+        missing: Array.isArray(failure.missing) ? failure.missing.filter((item) => typeof item === 'string').slice(0, 200) : [],
+        at: failure.at ?? null,
+      }
+    }
     return entry
   })
   return { boards }
