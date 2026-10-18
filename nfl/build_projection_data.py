@@ -495,6 +495,19 @@ def slate_records(payload):
     return records
 
 
+def _same_season(season):
+    try:
+        return int(season) == CURRENT_SEASON
+    except (TypeError, ValueError):
+        return False
+
+
+def _current_season_average(values, seasons):
+    """Mean of this season's games, aligned with seasons; None when there are none."""
+    current = [value for value, season in zip(values, seasons) if _same_season(season)]
+    return round(sum(current) / len(current), 1) if current else None
+
+
 def _schedule_value(game, key):
     if isinstance(game, dict):
         value = game.get(key)
@@ -755,6 +768,12 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'formula_source': 'tuned' if tuned is not None else ('current' if len(values) >= 3 else 'no_history'),
         'formula_mode': formula_mode(),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
+        # Per-game average for the current season only (seasonAverage above is
+        # every game in the history window, 2025 included, and falls back to
+        # the line). The site's SEASON AVG tiles show this one; None when the
+        # player has no current-season game.
+        'currentSeasonAverage': _current_season_average(values, seasons),
+        'currentSeasonGames': sum(1 for season in seasons if _same_season(season)),
         'imageUrl': text_or_empty(player.get('headshot')),
         'ppImageUrl': text_or_empty(getattr(row, 'image_url', '')),
         'recent': [round(value, 1) for value in recent],
