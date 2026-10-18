@@ -351,9 +351,20 @@ def _team_in(team: str, teams: set[str] | None) -> bool:
     return bool(_nfl_forms(team) & teams)
 
 
+def _nfl_teams_with_stats(actuals: dict, iso: str) -> set[str]:
+    """Team codes that have at least one stat row for this date."""
+    teams: set[str] = set()
+    for key, row in (actuals or {}).items():
+        if not isinstance(key, tuple) or len(key) != 2 or key[0] != iso or not isinstance(row, dict):
+            continue
+        teams |= _nfl_forms(str(row.get("team") or ""))
+    return teams
+
+
 def grade_nfl_legs(legs: list[dict], game_date: date, day: NflDay) -> list[dict]:
     iso = format_iso(game_date)
     actuals = _expand_lookup(day.actuals)
+    with_stats = _nfl_teams_with_stats(day.actuals, iso)
     graded = []
     for leg in legs:
         prop = str(leg.get("prop") or leg.get("propShort") or "")
@@ -379,7 +390,9 @@ def grade_nfl_legs(legs: list[dict], game_date: date, day: NflDay) -> list[dict]
             graded.append(_pending(leg))
             continue
         if _team_in(team, day.finals):
-            graded.append(_void(leg, "dnp"))
+            # A final score alone is not a DNP: nflverse can publish stats
+            # hours after the game. Void only once that team has stat rows.
+            graded.append(_void(leg, "dnp") if _team_in(team, with_stats) else _pending(leg))
             continue
         # A slip saved on Saturday is not evidence the Sunday game was off the slate.
         graded.append(_pending(leg))

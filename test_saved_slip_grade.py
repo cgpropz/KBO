@@ -191,6 +191,7 @@ class SlipGradeTests(unittest.TestCase):
         iso = PAST
         mahomes = {
             "player": "Patrick Mahomes",
+            "team": "KC",
             "passing_yards": 280,
             "rushing_yards": 20,
             "receiving_yards": 0,
@@ -198,6 +199,7 @@ class SlipGradeTests(unittest.TestCase):
         }
         etienne = {
             "player": "Travis Etienne Jr.",
+            "team": "JAX",
             "rushing_yards": 74,
             "receiving_yards": 12,
             "present": True,
@@ -854,6 +856,32 @@ class GraderFixTests(unittest.TestCase):
         self.assertEqual(len(changed), 1)
         self.assertEqual(changed[0]["payload"]["result"], "hit")
 
+
+    def test_final_score_with_no_stats_yet_stays_pending(self):
+        sunday = "2026-10-18"
+        empty = NflDay(actuals={}, scheduled={"KC", "LAC"}, finals={"KC", "LAC"})
+        sources = Sources({("nfl", sunday): empty})
+        stored = slip(sunday, [leg("Isiah Pacheco", "Rush Yards", 40.5, team="KC", opponent="LAC")], sport="nfl")
+        graded = grade_slip(stored, sources)
+        self.assertEqual(graded["legs"][0]["result"], "pending")
+        self.assertFalse(graded["legs"][0].get("void_reason"))
+        self.assertEqual(graded["result"], "pending")
+        updates, _ = grade_batch([stored], sources, date(2026, 10, 19))
+        self.assertEqual(updates, [])
+        # Once that team has stat rows, a player missing from them is a DNP.
+        published = NflDay(
+            actuals={(sunday, nfl_name_key("Patrick Mahomes")): {
+                "player": "Patrick Mahomes", "team": "KC", "passing_yards": 280, "present": True,
+            }},
+            scheduled={"KC", "LAC"},
+            finals={"KC", "LAC"},
+        )
+        voided = grade_slip(stored, Sources({("nfl", sunday): published}))
+        self.assertEqual(voided["legs"][0]["void_reason"], "dnp")
+        # Another team's rows do not make this team's missing player a DNP.
+        other = grade_slip(slip(sunday, [leg("Justin Herbert", "Pass Yards", 250.5, team="LAC", opponent="KC")], sport="nfl"),
+                           Sources({("nfl", sunday): published}))
+        self.assertEqual(other["legs"][0]["result"], "pending")
 
 if __name__ == "__main__":
     unittest.main()
