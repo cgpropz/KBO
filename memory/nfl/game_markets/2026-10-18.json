@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-18T20:39:13Z",
+  "generated_at": "2026-10-18T22:36:38Z",
   "provider": "unabated",
   "status": "ok",
-  "message": "Posted lines from Unabated for 2 of 6 games.",
+  "message": "Posted lines from Unabated for 2 of 5 games.",
   "model": {
     "id": "opponent_adjusted_market_scores",
     "proven": false,
@@ -13,46 +13,6 @@
   "margin_sigma_source": "model_margin_residual_sd",
   "week": 6,
   "games": [
-    {
-      "id": "2026-10-18-PIT-TB",
-      "week": 6,
-      "gameday": "2026-10-18",
-      "weekday": "Sunday",
-      "gametime": "13:00",
-      "awayTeam": "PIT",
-      "homeTeam": "TB",
-      "awayName": "Steelers",
-      "homeName": "Buccaneers",
-      "awayScore": 22,
-      "homeScore": 22,
-      "spread": {
-        "line": null,
-        "projection": 0,
-        "edge": null,
-        "book": null,
-        "price": null,
-        "priceSide": null,
-        "homePrice": null
-      },
-      "total": {
-        "line": null,
-        "projection": 44,
-        "edge": null,
-        "book": null,
-        "overPrice": null,
-        "underPrice": null
-      },
-      "moneyline": {
-        "line": null,
-        "projection": 100,
-        "edge": null,
-        "book": null,
-        "fairProbability": null,
-        "modelProbability": 0.5,
-        "homePrice": null,
-        "awayPrice": null
-      }
-    },
     {
       "id": "2026-10-18-ARI-LA",
       "week": 6,
@@ -186,9 +146,9 @@
       "awayScore": 24,
       "homeScore": 25,
       "spread": {
-        "line": 1.0,
+        "line": 0.0,
         "projection": 1,
-        "edge": 0.0,
+        "edge": -1.0,
         "book": "Circa",
         "price": -110,
         "priceSide": "away",
@@ -203,14 +163,14 @@
         "underPrice": -110
       },
       "moneyline": {
-        "line": -115,
+        "line": -105,
         "projection": -113,
-        "edge": 2.3,
-        "book": "Circa",
-        "fairProbability": 0.507,
+        "edge": 3.3,
+        "book": "Bookmaker",
+        "fairProbability": 0.4972,
         "modelProbability": 0.5303,
-        "homePrice": -115,
-        "awayPrice": -105
+        "homePrice": -105,
+        "awayPrice": -110
       }
     },
     {
