@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T16:34:05Z",
+  "checked_at": "2026-10-18T16:39:36Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T16:34:05.904382+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 1
     },
     "nhl": {
-      "generated_at": "2026-10-18T16:12:34.179984+00:00",
-      "prop_count": 169,
+      "generated_at": "2026-10-18T16:39:36.532397+00:00",
+      "prop_count": 172,
       "started_removed": 0,
       "removals": [
         {
@@ -203,6 +203,15 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.32,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jesper Wallstedt",
+          "team": "MIN",
+          "stat": "Goalie Saves",
+          "line": 23.5,
+          "odds_type": "standard",
+          "projection": 26.27,
           "reason": "line pulled"
         },
         {
@@ -602,15 +611,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Ryan Hartman",
-          "team": "MIN",
-          "stat": "Shots On Goal",
-          "line": 5.5,
-          "odds_type": "demon",
-          "projection": 1.81,
-          "reason": "line pulled"
-        },
-        {
           "player": "Ryan Strome",
           "team": "CGY",
           "stat": "Points",
@@ -774,7 +774,7 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 9,
+        "pp_pull": 11,
         "superseded_dup": 12,
         "manual_out": 0,
         "news_out": 0,
