@@ -1,5 +1,5 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
-import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
+import { kboRawRating, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition } from '../src/nhl/pointsGate.js';
@@ -144,9 +144,16 @@ function ratioScore(projection, line, stat) {
 
 // KboPropBoard.scoreFor. Confidence (`cg_projection`) and the season mean
 // (`avg`) are not the CG Score.
+// Exactly 50 (projection on the line) is no pick and takes no free slot (#253).
 function kboPropScore(prop) {
   const score = kboBoardScore(prop);
-  return score == null ? -Infinity : score;
+  return score == null || score === 50 ? -Infinity : score;
+}
+
+// Uncapped KBO ratio: breaks ties at the 100 cap. Never shown.
+function kboPropRaw(prop) {
+  const raw = kboRawRating(prop?.projection, prop?.line, prop?.stat);
+  return raw == null ? -Infinity : raw;
 }
 
 // StrikeoutProjections / BatterProjections rows. `rating` is already the
@@ -432,11 +439,12 @@ function wnbaSharpScore(row) {
   return Number.isFinite(outcomes) ? outcomes : -Infinity;
 }
 
-function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
+// `rawFn` (optional) breaks equal shown scores on the uncapped score.
+function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
   return items
-    .map((item, index) => ({ item, index, score: scoreFn(item) }))
+    .map((item, index) => ({ item, index, score: scoreFn(item), raw: rawFn ? rawFn(item) : 0 }))
     .filter((row) => Number.isFinite(row.score))
-    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .sort((a, b) => (b.score - a.score) || ((b.raw - a.raw) || 0) || (a.index - b.index))
     .slice(0, n);
 }
 
@@ -479,7 +487,7 @@ function previewPrizepicks(payload) {
       flat.push({ cardIndex, prop });
     });
   });
-  const kept = topN(flat, ({ prop }) => kboPropScore(prop));
+  const kept = topN(flat, ({ prop }) => kboPropScore(prop), FREE_ROW_LIMIT, ({ prop }) => kboPropRaw(prop));
   const byCard = new Map();
   kept.forEach(({ item }) => {
     if (!byCard.has(item.cardIndex)) byCard.set(item.cardIndex, []);

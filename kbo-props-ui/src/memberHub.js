@@ -1,8 +1,9 @@
 // Paid-member Command Center (C5): turns each sport's live board snapshot into
 // the few standard-line rows the hub shows. Pure functions, no fetching.
-// Scores match the sport boards: KBO cg_projection (falls back to rating),
+// Scores match the sport boards: KBO capped CG rating (scoreFor),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
+import { kboRawRating, scoreFor as kboBoardScore } from './kboBoardScore.js'
 import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
@@ -283,13 +284,18 @@ export function kboHubRows(data, photos = {}) {
     for (const prop of Array.isArray(card?.props) ? card.props : []) {
       if (!isStandard(prop?.odds_type)) continue
       if (!lineMatchesStat(prop?.stat, prop?.line)) continue
-      const score = num(prop?.cg_projection ?? prop?.rating)
+      // Rank by the displayed capped CG rating (same as the KBO board), not
+      // cg_projection (a separate 1-100 confidence score). Exactly 50 is
+      // neutral; ties at 100 break on the uncapped ratio (#253).
+      const score = num(kboBoardScore(prop))
+      const rawScore = num(kboRawRating(prop?.projection, prop?.line, prop?.stat))
+      const neutral = score === 50
       const logged = Array.isArray(prop?.recent_values) && prop.recent_values.length
         ? prop.recent_values
         : kboLoggedValues(card.games, prop.stat)
       const pills = kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })
       const recent = chartValues(logged, true)
-      const side = sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation)
+      const side = neutral ? null : sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation)
       rows.push({
         player: card.name,
         team: card.team,
@@ -299,6 +305,8 @@ export function kboHubRows(data, photos = {}) {
         projection: prop.projection ?? prop.avg,
         side,
         score,
+        neutral,
+        rawScore,
         image: kboCardImage(card, photos?.[card.name] || lookup[normalizePlayerName(card.name)]),
         ppImageUrl: card.image_url || card.ppImageUrl || null,
         start: card.start_time || card.game_time || null,

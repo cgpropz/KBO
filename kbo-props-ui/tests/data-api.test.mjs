@@ -179,10 +179,11 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   assert.equal(res.body.tier, 'free')
   assert.equal(countProps(res.body.data), FREE_ROW_LIMIT)
   assert.equal(res.body.lockedCount, 18 - FREE_ROW_LIMIT)
-  // best model ratios are kept (Player 5: scores 50, 51, 52).
+  // best model ratios are kept (Player 5: 52, 51; its exact-50 row is
+  // neutral and takes no free slot, so Player 4's 42 is next).
   // The confidence-95 under on Player 0 is not one of them.
   const kept = res.body.data.cards.flatMap((c) => c.props.map((p) => p.cg_projection)).sort((a, b) => b - a)
-  assert.deepEqual(kept, [52, 51, 50])
+  assert.deepEqual(kept, [52, 51, 42])
   assert.equal(res.body.data.generated_at, NOW)
 })
 
