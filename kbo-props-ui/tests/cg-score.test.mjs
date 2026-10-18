@@ -30,10 +30,9 @@ test('NFL free preview drops unmatched yardage instead of ranking it first', () 
     { player: 'Tee Higgins', prop: 'Receiving Yards', projection: 70, line: 64.5 },
     { player: 'Tanner Hudson', prop: 'Receptions', projection: 1.5, line: 0.5 },
   ])
-  // Receptions at 0.5 scores against the 1.5 floor (50), under Higgins at 64.5.
+  // Receptions at 0.5 holds at 50 against the 1.5 floor: no pick, no free slot.
   assert.deepEqual(res.data.map((row) => [row.player, row.prop]), [
     ['Tee Higgins', 'Receiving Yards'],
-    ['Tanner Hudson', 'Receptions'],
   ])
-  assert.equal(res.lockedCount, 0)
+  assert.equal(res.lockedCount, 1)
 })

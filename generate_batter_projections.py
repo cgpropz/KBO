@@ -26,7 +26,7 @@ import unicodedata
 from datetime import datetime, timezone
 from difflib import get_close_matches
 
-from pipeline.live_formula import kbo_side, unprojected_fields
+from pipeline.live_formula import cg_rating, kbo_side, unprojected_fields
 from pipeline.snapshot_consistency import opponent_for_line
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -1186,7 +1186,7 @@ def build_hrr_projections():
         proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
         rec = kbo_side(edge, 0.3, pp_val.get("odds_type", "standard"))
-        rating = round((proj / line) * 50, 1) if line else None
+        rating = cg_rating(proj, line) if line else None
 
         projections.append({
             "name": pp_name, "team": team, "opponent": opp,
@@ -1325,7 +1325,7 @@ def build_tb_projections():
         proj = base * opp_factor * pf * split_factor * pitcher_factor
         edge = proj - line
         rec = kbo_side(edge, 0.3, pp_val.get("odds_type", "standard"))
-        rating = round((proj / line) * 50, 1) if line else None
+        rating = cg_rating(proj, line) if line else None
 
         projections.append({
             "name": pp_name, "team": team, "opponent": opp,
@@ -1581,7 +1581,7 @@ def build_fantasy_projections():
         proj = sum(adjusted_components[k] * score_weights[k] for k in score_weights)
         edge = (proj - line) if line is not None else None
         rec = kbo_side(edge, 0.5, pp_val.get("odds_type", "standard"))
-        rating = round((proj / line) * 50, 1) if line else None
+        rating = cg_rating(proj, line) if line else None
 
         projections.append({
             "name": pp_name, "team": team, "opponent": opp,

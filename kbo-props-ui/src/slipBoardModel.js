@@ -1,7 +1,7 @@
 import { cgScore } from './cgScore.js'
 import { fitImage, isPrizePicksHeadshot, isRemoteHeadshotOrLogo, manualPlayerPng } from './fitImage.js'
 import { inkOn, landingHeadshotUrl, landingTeamFill } from './playerMark.js'
-import { NFL_LINE_FLOORS, nflCgScore } from './nfl/nflLineFloors.js'
+import { NFL_LINE_FLOORS, nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { teamLogoUrl as nflLogo } from './nfl/nflTeams.js'
 import { nhlHeadshotUrl, teamLogoUrl as nhlLogo } from './nhl/nhlTeams.js'
 import { nbaLogoUrl } from './nba/nbaPropLines.js'
@@ -57,11 +57,23 @@ export function slipCg(row) {
     : cgScore(row?.projection, row?.line, stat)
 }
 
+// Side of the shown CG. Exactly 50 is no pick: EVEN, so it is not a MORE
+// (a held short NFL over or a projection on the line).
 export function naturalSide(row) {
   if (isPromoLine(row)) return 'MORE'
-  const score = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
+  const score = shownCg(row)
   if (score == null) return Number(row?.edge) >= 0 ? 'MORE' : 'LESS'
-  return score >= 50 ? 'MORE' : 'LESS'
+  if (score === 50) return 'EVEN'
+  return score > 50 ? 'MORE' : 'LESS'
+}
+
+// Uncapped score behind the shown one. Breaks ties at the 100 cap.
+export function rawSlipCg(row) {
+  const stat = row?.prop ?? row?.stat
+  const p = Number(row?.projection)
+  const l = Number(row?.line)
+  if (nflSlipRow(row)) return nflRawScore(row?.projection, row?.line, stat)
+  return Number.isFinite(p) && l > 0 ? (p / l) * 50 : null
 }
 
 export function shownCg(row) {
@@ -82,6 +94,10 @@ export function compareSlipRows(a, b, sortDesc = true) {
   const av = left == null ? (sortDesc ? -Infinity : Infinity) : left
   const bv = right == null ? (sortDesc ? -Infinity : Infinity) : right
   if (av !== bv) return sortDesc ? bv - av : av - bv
+  // Same shown score (e.g. two rows at the 100 cap): the uncapped score decides.
+  const ar = rawSlipCg(a)
+  const br = rawSlipCg(b)
+  if (Number.isFinite(ar) && Number.isFinite(br) && ar !== br) return sortDesc ? br - ar : ar - br
   const name = tieText(a, 'name', 'player').localeCompare(tieText(b, 'name', 'player'))
   if (name) return name
   const prop = tieText(a, 'prop', 'stat').localeCompare(tieText(b, 'prop', 'stat'))

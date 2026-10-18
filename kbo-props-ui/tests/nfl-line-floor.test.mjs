@@ -11,9 +11,22 @@ test('receiving and rushing yards use the Middle cap, and other floors stay put'
   assert.equal(NFL_LINE_FLOORS['Rush+Rec Yds'], 30.5)
   assert.equal(nflCgScore(23.7, 2.5, 'Receiving Yards'), (23.7 / 15.5) * 50)
   assert.equal(nflCgScore(18.9, 7.5, 'Receiving Yards'), (18.9 / 15.5) * 50)
-  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), (9.7 / 18.5) * 50)
-  assert.equal(nflCgScore(17.6, 8.5, 'Rush Yards'), (17.6 / 18.5) * 50)
+  // An over the floor would score below 50 holds at 50. It never reads as an under.
+  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), 50)
+  assert.equal(nflCgScore(17.6, 8.5, 'Rush Yards'), 50)
+  assert.equal(nflCgScore(1.8, 1.5, 'Receiving Yards'), 50)
   assert.equal(nflCgScore(1.5, 0.5, 'Receptions'), 50)
+  // Unders stay on the floored ratio, and an exact tie is 50.
+  assert.equal(nflCgScore(5, 8.5, 'Rush Yards'), (5 / 18.5) * 50)
+  assert.equal(nflCgScore(8.5, 8.5, 'Rush Yards'), 50)
+})
+
+test('NFL CG Score is bounded 0-100', () => {
+  assert.equal(nflCgScore(35.9, 14.5, 'Receiving Yards'), 100)
+  assert.equal(nflCgScore(37.1, 12.5, 'Rush Yards'), 100)
+  assert.equal(nflCgScore(300, 64.5, 'Receiving Yards'), 100)
+  assert.equal(nflCgScore(-5, 64.5, 'Receiving Yards'), 0)
+  assert.equal(nflCgScore(30, 15.5, 'Receiving Yards'), (30 / 15.5) * 50)
 })
 
 test('a line above the floor keeps projection / line, and a 0.5 yardage line does not score', () => {
@@ -39,10 +52,10 @@ test('the free-preview ranker floors small lines and still drops 0.5 yardage', (
   assert.deepEqual(res.data.map((row) => [row.player, row.prop, row.line]), [
     ['Theo Johnson', 'Receiving Yards', 2.5],
     ['Tee Higgins', 'Receiving Yards', 64.5],
-    ['Tanner Hudson', 'Receptions', 0.5],
   ])
   assert.equal(res.data[0].projection, 23.7)
-  assert.equal(res.lockedCount, 0)
+  // Tanner Hudson Receptions 0.5 holds at 50 (no pick) and stays off the free list.
+  assert.equal(res.lockedCount, 1)
 })
 
 test('the free preview skips a game whose start_time has already passed', () => {
@@ -62,13 +75,12 @@ test('the free preview skips a game whose start_time has already passed', () => 
     { player: 'Raheim Sanders', prop: 'Rush Yards', projection: 15.9, line: 5.5, start_time: upcoming },
     { player: 'Sterling Shepard', prop: 'Receiving Yards', projection: 15.1, line: 5.5, start_time: upcoming },
   ])
+  // Raheim Sanders and Sterling Shepard hold at 50 (no pick), so they take no free slot.
   assert.deepEqual(res.data.map((row) => [row.player, row.prop]), [
     ['Calvin Ridley', 'Receiving Yards'],
     ['Theo Johnson', 'Receiving Yards'],
-    ['Sterling Shepard', 'Receiving Yards'],
   ])
-  assert.equal(res.data[2].line, 5.5)
-  assert.equal(res.lockedCount, 1)
+  assert.equal(res.lockedCount, 2)
 })
 
 test('the free preview keeps one prop per player, the highest score', () => {
@@ -94,8 +106,9 @@ test('the free preview keeps one prop per player, the highest score', () => {
 test('a tie keeps the earlier prop for that player', () => {
   const preview = DATASETS.nfl_projections.free
   const res = preview([
-    { player: 'Same Score', prop: 'Receptions', projection: 3, line: 3, id: 'first' },
-    { player: 'Same Score', prop: 'Rec Targets', projection: 4, line: 4, id: 'second' },
+    // Equal shown and raw scores (66.7). Exactly 50 would be no pick.
+    { player: 'Same Score', prop: 'Receptions', projection: 4, line: 3, id: 'first' },
+    { player: 'Same Score', prop: 'Rec Targets', projection: 4, line: 3, id: 'second' },
     { player: 'Other', prop: 'Pass TDs', projection: 1, line: 2 },
   ])
   assert.equal(res.data[0].id, 'first')

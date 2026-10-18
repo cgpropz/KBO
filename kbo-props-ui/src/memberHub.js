@@ -5,7 +5,7 @@
 import { cgScore, lineMatchesStat } from './cgScore.js'
 import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
-import { nflCgScore } from './nfl/nflLineFloors.js'
+import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
 import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
 import { nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
@@ -316,7 +316,10 @@ export function nflHubRows(data) {
     .filter((row) => isStandard(row?.line_type ?? row?.oddsType))
     .map((row) => {
       const recent = chartValues(row.recent, false)
-      const side = sideFor(row.projection, row.line)
+      const score = num(nflCgScore(row.projection, row.line, row.prop ?? row.stat))
+      // Exactly 50 is no pick: no side, and it stays out of the top list.
+      const neutral = score === 50
+      const side = neutral ? null : sideFor(row.projection, row.line)
       return {
         player: row.player,
         team: row.team,
@@ -325,7 +328,9 @@ export function nflHubRows(data) {
         line: row.line,
         projection: row.projection,
         side,
-        score: num(nflCgScore(row.projection, row.line, row.prop ?? row.stat)),
+        score,
+        neutral,
+        rawScore: nflRawScore(row.projection, row.line, row.prop ?? row.stat),
         image: row.imageUrl || null,
         ppImageUrl: row.ppImageUrl || row.imageUrl || null,
         start: row.start_time || null,
@@ -431,8 +436,8 @@ export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.
 // Highest CG Score first, one row per player so the list is not one star's props.
 export function topHubRows(rows, limit = 5) {
   const valid = playableRows(rows)
-    .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score))
-    .sort((a, b) => b.score - a.score)
+    .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score) && r.neutral !== true)
+    .sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
   const seen = new Set()
   const out = []
   for (const row of valid) {
@@ -448,13 +453,22 @@ export function countPlayable(rows) {
   return playableRows(rows).filter((r) => r.player && Number.isFinite(r.score)).length
 }
 
+// O / U letter for a row's side. No side (a neutral 50) shows no letter.
+export function sideLetter(side) {
+  if (side === 'UNDER') return 'U'
+  if (side === 'OVER') return 'O'
+  return ''
+}
+
 // Highest L10 hit rate on the board. The sample is the chart's decided games
 // (pushes already left out). A log shorter than 10, or a window with no
 // decided game, is not an L10 and stays off the list.
 export function topHitRateRows(rows, limit = 10) {
   const ranked = playableRows(rows)
     .filter((row) => (
-      row?.player
+      // A neutral row (CG exactly 50) is no pick, so it is not a hit leader.
+      row?.neutral !== true
+      && row?.player
       && row?.stat
       && Array.isArray(row.recent)
       && row.recent.length >= 10

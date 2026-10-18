@@ -44,7 +44,7 @@ test('the NBA free preview does not use the WNBA line floor', () => {
 test('the NFL per-stat line floor still applies, and a 0.5 yardage line still does not score', () => {
   assert.equal(nflCgScore(1.5, 0.5, 'Receptions'), 50)
   assert.equal(nflCgScore(23.7, 2.5, 'Receiving Yards'), (23.7 / 15.5) * 50)
-  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), (9.7 / 18.5) * 50)
+  assert.equal(nflCgScore(9.7, 1.5, 'Rush Yards'), 50)
   assert.equal(nflCgScore(10.7, 0.5, 'Receiving Yards'), null)
 })
 

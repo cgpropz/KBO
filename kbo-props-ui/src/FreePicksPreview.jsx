@@ -6,7 +6,8 @@ import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
 import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip';
 import { wnbaCgScore } from './wnba/wnbaScore';
-import { nflCgScore } from './nfl/nflLineFloors';
+import { nflCgScore, nflRawScore } from './nfl/nflLineFloors';
+import { cgScore as plainCgScore } from './cgScore';
 import { freeTop3SectionState } from './freePreviewCopy';
 import { selectFreeTop3 } from './freeTopPicks';
 import './FreeFunnel.css';
@@ -66,7 +67,18 @@ function kboRows(data) {
   return rows;
 }
 
-function projectionRows(data, pillsFor) {
+// NFL uses the floored, bounded score; exactly 50 is no pick and takes no
+// free slot. NHL keeps its plain line ratio.
+function nflFreeScore(row) {
+  const score = nflCgScore(row.projection, row.line, row.prop ?? row.stat);
+  return score == null || score === 50 ? -Infinity : score;
+}
+
+function nhlFreeScore(row) {
+  return plainCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity;
+}
+
+function projectionRows(data, pillsFor, scoreFn = nflFreeScore, noteScore = (row) => nflCgScore(row.projection, row.line, row.prop ?? row.stat)) {
   return (Array.isArray(data) ? data : []).map((row) => ({
     player: row.player,
     matchup: [row.team, row.opponent].filter(Boolean).join(' vs '),
@@ -75,7 +87,8 @@ function projectionRows(data, pillsFor) {
     projection: row.projection,
     l10: l10Display(pillsFor(row)),
     tag: null,
-    score: nflCgScore(row.projection, row.line, row.prop ?? row.stat) ?? -Infinity,
+    score: scoreFn(row),
+    rawScore: scoreFn === nflFreeScore ? nflRawScore(row.projection, row.line, row.prop ?? row.stat) : null,
     start_time: row.start_time || row.start_time_utc || row.kickoff_at,
     game_date: row.gameday || row.game_date || row.gameDate || row.game_date_iso,
     started: row.started === true,
@@ -87,7 +100,7 @@ function projectionRows(data, pillsFor) {
       projection: row.projection,
       line: row.line,
       stat: row.prop ?? row.stat,
-      score: nflCgScore(row.projection, row.line, row.prop ?? row.stat),
+      score: noteScore(row),
       recentValues: row.recent,
     },
   }));
@@ -98,7 +111,7 @@ function nflRows(data) {
 }
 
 function nhlRows(data) {
-  return projectionRows(data, nhlHitPills);
+  return projectionRows(data, nhlHitPills, nhlFreeScore, (row) => plainCgScore(row.projection, row.line, row.prop ?? row.stat));
 }
 
 function wnbaRows(data) {

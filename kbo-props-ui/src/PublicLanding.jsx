@@ -19,6 +19,11 @@ import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import './PublicLanding.css';
 
+// O / U for a row's side. A neutral row (CG exactly 50) has no side and no letter.
+function sideLetter(side) {
+  return side === 'UNDER' ? 'U' : side === 'OVER' ? 'O' : '';
+}
+
 const FAQS = publicFaqs();
 const HERO_SPORT = LANDING_SPORTS.find((sport) => sport.id === HERO_LANDING_SPORT_ID) || LANDING_SPORTS[0];
 
@@ -62,7 +67,7 @@ function BoardTable({ rows, showHitRate, sport }) {
               <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}</small>
             </span>
           </span>
-          <span className="pl-num">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</span>
+          <span className="pl-num">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)}</span>
           <span className="pl-num pl-proj">{fmt(row.projection)}</span>
           <span className="pl-num">
             {showHitRate && Number.isFinite(row.hitRate) ? `${Math.round(row.hitRate)}%` : (Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? `${row.hitHits}/${row.hitGames}` : '—')}
@@ -85,7 +90,7 @@ function Phone({ rows, sport }) {
             <PlayerMark name={row.player} team={row.team} sport={sport} size={28} photo={false} />
             <span>
               <b>{row.player}</b>
-              <small>{row.stat} · {row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)}</small>
+              <small>{row.stat} · {sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)}</small>
             </span>
           </span>
           <em>{fmtScore(row.score)}</em>

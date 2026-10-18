@@ -62,6 +62,22 @@ WNBA_RATING_KEY = {
 }
 
 
+def cg_rating(projection, line) -> float | None:
+    """Board CG Score for a KBO row, bounded 0-100 (50 is projection == line).
+
+    A low line (Total Bases O0.5) no longer publishes 130+. Order inside the
+    range is unchanged.
+    """
+    try:
+        proj = float(projection)
+        posted = float(line)
+    except (TypeError, ValueError):
+        return None
+    if not posted > 0:
+        return None
+    return round(min(100.0, max(0.0, (proj / posted) * 50)), 1)
+
+
 def formula_mode() -> str:
     """tuned or current. Env wins over the committed config."""
     env = os.environ.get("CG_PROJECTION_FORMULA", "").strip().lower()
@@ -163,6 +179,9 @@ def attach_kbo_formula(row: dict, tuned: float | None, threshold: float, factors
     row["baseline_recommendation"] = row.get("recommendation")
     row["formula_mode"] = formula_mode()
     row["formula_applied"] = tuned is not None
+    # "current" is the standing formula (stats shadow kept on it, e.g. Total
+    # Bases); it still runs the full model and the bounded CG Score.
+    row["formula_source"] = "tuned" if tuned is not None else ("current" if row.get("projection") is not None else "none")
     if tuned is None:
         return row
     line = row.get("line")
@@ -176,7 +195,7 @@ def attach_kbo_formula(row: dict, tuned: float | None, threshold: float, factors
     row["projection"] = proj
     row["edge"] = round(edge, 2) if edge is not None else None
     row["recommendation"] = rec
-    row["rating"] = round((proj / float(line)) * 50, 1) if line else None
+    row["rating"] = cg_rating(proj, line) if line else None
     from utils.cg_projection import calculate_cg_projection
     row["cg_projection"] = calculate_cg_projection(
         proj, line, edge if edge is not None else None, rec,

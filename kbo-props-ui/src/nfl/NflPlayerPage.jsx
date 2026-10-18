@@ -9,7 +9,7 @@ import { teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
-import { lineMatchesStat } from '../cgScore'
+import { cgSide, lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
@@ -242,7 +242,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const defaultDvpThreshold = currentRow.dvpRank ?? 32
   const defaultSnapThreshold = validSnaps.length ? Math.round(average(validSnaps) * 10) / 10 : 0
   const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
-  const isOver = currentRow.projection >= currentRow.line
+  // Side from the CG Score, same as the Edge Board: exactly 50 is no pick.
+  const side = cgSide(currentRow.score)
+  const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
   const modelDelta = currentRow.projection - currentRow.line
   const currentSeason = nflCurrentSeason(currentRow) ?? new Date().getFullYear()
   const rangeLabels = {
@@ -291,7 +293,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div className="nfl-player-prop-pill">
           <TeamLogo team={currentRow.opponent} className="nfl-player-prop-icon" />
           <span>{formatValue(currentRow.line)} {currentRow.prop}</span>
-          <b className={isOver ? 'over' : 'under'}>{isOver ? 'OVER' : 'UNDER'} {currentRow.score.toFixed(1)}</b>
+          <b className={sideClass}>{side ? `${side} ` : ''}{currentRow.score.toFixed(1)}</b>
         </div>
       </div>
 

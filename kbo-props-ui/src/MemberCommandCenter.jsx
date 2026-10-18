@@ -16,7 +16,7 @@ import Results from './Results';
 import { barResult, hitRatePillColor } from './hitRateStrip';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
-  confirmedGoalieStarters, playableRows, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
+  confirmedGoalieStarters, playableRows, sameMatchup, sideLetter, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
   hubGamedayFor,
   scopeToGameday,
 } from './memberHub';
@@ -197,7 +197,7 @@ function L10Chart({ values, line, side }) {
         );
       })}
       <span className="hub-chart-line" style={{ bottom: `${linePct}%` }}>
-        <span className="hub-line-label hub-num">{side === 'UNDER' ? 'U' : 'O'} {fmt(target)}</span>
+        <span className="hub-line-label hub-num">{sideLetter(side)}{sideLetter(side) ? ' ' : ''}{fmt(target)}</span>
       </span>
     </div>
   );
@@ -586,7 +586,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <span className="hub-name">{row.player}</span>
                     <Matchup row={row} sport={selected} />
                     <span className="hub-chips">
-                      <span className="hub-mini">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                      <span className="hub-mini">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                       {row.hitRate != null && <span className="hub-mini hub-num">L10 {Math.round(row.hitRate)}%</span>}
                       <span className="hub-mini is-status">{row.statusLabel || (row.side === 'UNDER' ? 'Under' : 'Over')}</span>
                     </span>
@@ -616,7 +616,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <Avatar row={row} sport={selected} size={36} />
                     <span>
                       <span className="hub-name">{row.player}</span>
-                      <span className="hub-preview-meta">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                      <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                     </span>
                     <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
                   </button>
@@ -675,7 +675,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <span className="hub-hit-rank hub-num">{index + 1}</span>
                     <span className="hub-hit-copy">
                       <span className="hub-name">{row.player}</span>
-                      <span className="hub-preview-meta">{row.side === 'UNDER' ? 'U' : 'O'} {fmt(row.line)} {row.stat}</span>
+                      <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                     </span>
                     <span className="hub-hit-rate">
                       <strong className="hub-num" style={{ color: hitRatePillColor(row.hitRate) || undefined }}>{Math.round(row.hitRate)}%</strong>

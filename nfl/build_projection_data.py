@@ -749,6 +749,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
         'formula_applied': tuned is not None,
+        # Which formula produced projection. "tuned" is the Phase 2 fit,
+        # "current" is the standing formula for stats shadow kept on it, and
+        # "no_history" (under 3 games) publishes the line itself.
+        'formula_source': 'tuned' if tuned is not None else ('current' if len(values) >= 3 else 'no_history'),
         'formula_mode': formula_mode(),
         'seasonAverage': round(sum(values) / len(values), 1) if values else row.line,
         'imageUrl': text_or_empty(player.get('headshot')),

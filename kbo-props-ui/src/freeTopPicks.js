@@ -45,6 +45,7 @@ export function isLiveFreePick(row, sport, now = new Date()) {
 export function selectFreeTop3(rows, sport, now = new Date()) {
   return (Array.isArray(rows) ? rows : [])
     .filter((row) => isLiveFreePick(row, sport, now))
-    .sort((a, b) => b.score - a.score)
+    // Same shown score (several NFL rows at the 100 cap): the uncapped score decides.
+    .sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
     .slice(0, 3)
 }
