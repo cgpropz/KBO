@@ -191,6 +191,7 @@ class SlipGradeTests(unittest.TestCase):
         iso = PAST
         mahomes = {
             "player": "Patrick Mahomes",
+            "team": "KC",
             "passing_yards": 280,
             "rushing_yards": 20,
             "receiving_yards": 0,
@@ -198,6 +199,7 @@ class SlipGradeTests(unittest.TestCase):
         }
         etienne = {
             "player": "Travis Etienne Jr.",
+            "team": "JAX",
             "rushing_yards": 74,
             "receiving_yards": 12,
             "present": True,
@@ -776,6 +778,110 @@ class BackfillSafetyTests(unittest.TestCase):
         self.assertIn("Subscriber slip results are not an input", memory)
         self.assertNotIn("saved_slips", memory)
 
+
+class GraderFixTests(unittest.TestCase):
+    """Fixes from the 2026-10-18 regrade dry run."""
+
+    def test_blank_nfl_schedule_scores_are_not_final(self):
+        from pipeline.saved_slip_grade import nfl_teams_for_date
+
+        nan = float("nan")
+        games = [
+            {"gameday": "2026-10-18", "away_team": "HOU", "home_team": "JAX", "away_score": nan, "home_score": nan},
+            {"gameday": "2026-10-18", "away_team": "BUF", "home_team": "LV", "away_score": "", "home_score": None},
+            {"gameday": "2026-10-18", "away_team": "PIT", "home_team": "TB", "away_score": "nan", "home_score": "nan"},
+            {"gameday": "2026-10-18", "away_team": "KC", "home_team": "LAC", "away_score": 24.0, "home_score": 17.0},
+        ]
+        scheduled, finals = nfl_teams_for_date(games, date(2026, 10, 18))
+        self.assertTrue({"HOU", "JAX", "BUF", "LV", "PIT", "TB", "KC", "LAC"} <= scheduled)
+        self.assertEqual(finals, {"KC", "LAC"})
+
+        saturday, sunday = "2026-10-17", "2026-10-18"
+        day = NflDay(actuals={}, scheduled=scheduled, finals=finals)
+        sources = Sources({("nfl", sunday): day}, games=games)
+        legs = [
+            leg("Xavier Hutchinson", "Receiving Yards", 14.5, team="HOU", opponent="JAX"),
+            leg("Ty Johnson", "Receiving Yards", 15.5, team="BUF", opponent="LV"),
+        ]
+        graded = grade_slip(slip(saturday, legs, sport="nfl"), sources)
+        self.assertEqual(graded["result"], "pending")
+        self.assertFalse(graded["graded"])
+        self.assertEqual([item["result"] for item in graded["legs"]], ["pending", "pending"])
+        self.assertTrue(all(not item.get("void_reason") for item in graded["legs"]))
+        updates, summary = grade_batch([slip(saturday, legs, sport="nfl")], sources, date(2026, 10, 18))
+        self.assertEqual(updates, [])
+        self.assertEqual(summary["pending"], 1)
+
+    def test_kbo_old_team_row_counts_when_opponent_and_date_match(self):
+        actuals = kbo_actual("Kang Baek-ho", hrr=4, team="KT", opponent="NC")
+        actuals.update(kbo_actual("Kim Namesake", hrr=5, team="NC", opponent="Hanwha"))
+        actuals.update(kbo_actual("Park Elsewhere", hrr=5, team="KT", opponent="LG"))
+        day = KboDay(actuals=actuals, postponed=set(), scheduled=None)
+        sources = Sources({("kbo", PAST): day})
+        moved = grade_slip(slip(PAST, [leg("Kang Baek-ho", "Hits+Runs+RBIs", 1.5, team="Hanwha", opponent="NC")], sport="kbo"), sources)
+        self.assertEqual(moved["result"], "hit")
+        self.assertEqual(moved["legs"][0]["actual"], 4)
+        self.assertFalse(moved["legs"][0].get("void_reason"))
+        # A row from the other side of the same game is never used.
+        namesake = grade_slip(slip(PAST, [leg("Kim Namesake", "Hits+Runs+RBIs", 1.5, team="Hanwha", opponent="NC")], sport="kbo"), sources)
+        self.assertNotEqual(namesake["legs"][0]["result"], "hit")
+        self.assertIsNone(namesake["legs"][0]["actual"])
+        # Different opponent: a different game, so the row is not used.
+        other_game = grade_slip(slip(PAST, [leg("Park Elsewhere", "Hits+Runs+RBIs", 1.5, team="Hanwha", opponent="NC")], sport="kbo"), sources)
+        self.assertIsNone(other_game["legs"][0]["actual"])
+        self.assertNotEqual(other_game["legs"][0]["result"], "hit")
+
+    def test_regrade_blocks_push_with_actual_falling_to_missing_void(self):
+        day = NflDay(
+            actuals={(PAST, nfl_name_key("Patrick Mahomes")): {
+                "player": "Patrick Mahomes", "team": "KC", "passing_yards": 280, "present": True,
+            }},
+            scheduled={"KC"},
+            finals={"KC"},
+        )
+        sources = Sources({("nfl", PAST): day})
+        stored = slip(PAST, [
+            leg("Patrick Mahomes", "Pass Yards", 250.5, team="KC", result="hit", actual=280),
+            leg("Isiah Pacheco", "Rush Yards", 40, team="KC", result="push", actual=40),
+        ], sport="nfl", graded=True, result="hit", hits=1, pushes=1)
+        updates, summary = grade_batch([stored], sources, TODAY)
+        self.assertEqual(updates, [])
+        self.assertEqual(summary["kept_graded"], 1)
+        # A push that was already a missing-data void can still be rewritten.
+        void_before = slip(PAST, [
+            leg("Patrick Mahomes", "Pass Yards", 250.5, team="KC", result="miss", actual=200),
+            leg("Isiah Pacheco", "Rush Yards", 40, team="KC", result="push", actual=None, void_reason="dnp"),
+        ], sport="nfl", graded=True, result="miss", misses=1, pushes=1)
+        changed, _ = grade_batch([void_before], sources, TODAY)
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(changed[0]["payload"]["result"], "hit")
+
+
+    def test_final_score_with_no_stats_yet_stays_pending(self):
+        sunday = "2026-10-18"
+        empty = NflDay(actuals={}, scheduled={"KC", "LAC"}, finals={"KC", "LAC"})
+        sources = Sources({("nfl", sunday): empty})
+        stored = slip(sunday, [leg("Isiah Pacheco", "Rush Yards", 40.5, team="KC", opponent="LAC")], sport="nfl")
+        graded = grade_slip(stored, sources)
+        self.assertEqual(graded["legs"][0]["result"], "pending")
+        self.assertFalse(graded["legs"][0].get("void_reason"))
+        self.assertEqual(graded["result"], "pending")
+        updates, _ = grade_batch([stored], sources, date(2026, 10, 19))
+        self.assertEqual(updates, [])
+        # Once that team has stat rows, a player missing from them is a DNP.
+        published = NflDay(
+            actuals={(sunday, nfl_name_key("Patrick Mahomes")): {
+                "player": "Patrick Mahomes", "team": "KC", "passing_yards": 280, "present": True,
+            }},
+            scheduled={"KC", "LAC"},
+            finals={"KC", "LAC"},
+        )
+        voided = grade_slip(stored, Sources({("nfl", sunday): published}))
+        self.assertEqual(voided["legs"][0]["void_reason"], "dnp")
+        # Another team's rows do not make this team's missing player a DNP.
+        other = grade_slip(slip(sunday, [leg("Justin Herbert", "Pass Yards", 250.5, team="LAC", opponent="KC")], sport="nfl"),
+                           Sources({("nfl", sunday): published}))
+        self.assertEqual(other["legs"][0]["result"], "pending")
 
 if __name__ == "__main__":
     unittest.main()
