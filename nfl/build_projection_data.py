@@ -879,6 +879,11 @@ def main():
     records = flag_missing_seen_projections(
         _previous_projections(), records, fetched_ids, fetch_ok=True,
     )
+    # A player ruled OUT (ESPN, or nfl/manual_out.json) comes off the board
+    # even while PrizePicks still lists the line. The row stays, flagged.
+    from nfl.availability import fetch_espn_unavailable, load_manual_out, mark_unavailable
+    flagged_out = mark_unavailable(records, fetch_espn_unavailable() | load_manual_out())
+    print(f'OUT filter flagged {len(flagged_out)} rows removed' + (f': {", ".join(flagged_out)}' if flagged_out else '.'))
     OUTPUT_PATH.write_text(json.dumps(records, indent=2, allow_nan=False) + '\n')
     lineups = build_lineups()
     LINEUPS_OUTPUT_PATH.write_text(json.dumps(lineups, indent=2, allow_nan=False) + '\n')
