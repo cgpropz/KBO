@@ -55,3 +55,23 @@ export async function fetchNflSharpOdds({ fresh = false } = {}) {
     refreshing: !!snapshot.refreshing,
   }
 }
+
+// Opponent-adjusted defense vs position (nflverse). Free, team-level matchup
+// context. One shared request per page load; a failure resolves to null so the
+// board simply shows no "Adj" chip.
+let matchupDefensePromise = null
+
+export function fetchNflMatchupDefense() {
+  if (!matchupDefensePromise) {
+    matchupDefensePromise = fetchApiDataset('nfl_matchup_defense', { devStaticPath: 'nfl/matchup_defense.json' })
+      .then((snapshot) => {
+        const payload = snapshot?.data
+        return payload && typeof payload === 'object' && !Array.isArray(payload) && payload.teams ? payload : null
+      })
+      .catch(() => {
+        matchupDefensePromise = null
+        return null
+      })
+  }
+  return matchupDefensePromise
+}

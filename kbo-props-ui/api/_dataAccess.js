@@ -670,6 +670,9 @@ export const DATASETS = {
   nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewNflGameMarkets },
   correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
+  // Opponent-adjusted defense vs position (nflverse play-by-play). Team-level
+  // matchup context only, no player rows, CG Score or projections: free.
+  nfl_matchup_defense: { table: 'nfl_matchup_defense', sport: 'nfl', free: FULL },
   // NBA. The /api/data gate still denies these unless the caller is full access.
   // The free builder is only the preview path after nba_public is on.
   nba_players: { table: 'nba_players', sport: 'nba', free: previewList(() => 0) },

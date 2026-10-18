@@ -47,6 +47,7 @@ const DATASET_SPORT = {
   nfl_sharp_odds: 'nfl',
   nfl_game_markets: 'nfl',
   correlations_nfl: 'nfl',
+  nfl_matchup_defense: 'nfl',
   nba_players: 'nba',
   nba_teams: 'nba',
   nba_dvp_pg: 'nba',
