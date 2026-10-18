@@ -23,6 +23,7 @@ _line_buffer(sys.stderr)
 
 import requests
 
+from board_copy import upload_board_copy
 from pipeline.board_status import BOARD_TABLES, apply_published, record_from_payload
 
 # Boards that get a row in shared/board_freshness.json. Demon and goblin
@@ -536,6 +537,14 @@ def upload_last_good(session, table, payload, headers):
             print(f"    ! last-good copy for {table} HTTP {response.status_code}", flush=True)
     except (requests.ConnectionError, requests.Timeout) as exc:
         print(f"    ! last-good copy for {table} failed: {type(exc).__name__}", flush=True)
+
+
+def upload_vercel_copy(table, payload):
+    """Write the same full board to private Blob. A failure does not fail the publish."""
+    try:
+        upload_board_copy(table, payload)
+    except Exception as exc:
+        print(f"    ! {table} vercel copy failed: {type(exc).__name__}", flush=True)
 
 
 def _upsert_snapshot_row(session, table, row_id, data, headers, updated_at=None):
@@ -1184,12 +1193,9 @@ def main():
             def note_published(published_table, published_data, detail=""):
                 suffix = f" ({detail})" if detail else ""
                 print(f"  ✓ {published_table:30} updated{suffix}", flush=True)
-                upload_last_good(
-                    session,
-                    published_table,
-                    snapshot_record(1, published_data, published_at),
-                    headers,
-                )
+                record = snapshot_record(1, published_data, published_at)
+                upload_last_good(session, published_table, record, headers)
+                upload_vercel_copy(published_table, record)
                 sport = BOARD_TABLES.get(published_table)
                 if sport:
                     status_updates[sport] = record_from_payload(sport, published_data, published_at)
@@ -1198,9 +1204,13 @@ def main():
                     freshness_rows[freshness_key] = (published_data, dropped, removals)
 
             if table == "nba_players":
-                for msg in publish_nba_players(session, data, headers, published_at):
-                    print(f"  ✗ {msg}", flush=True)
-                    failures.append(msg)
+                player_errors = publish_nba_players(session, data, headers, published_at)
+                if player_errors:
+                    for msg in player_errors:
+                        print(f"  ✗ {msg}", flush=True)
+                        failures.append(msg)
+                    continue
+                upload_vercel_copy("nba_players", snapshot_record(1, data, published_at))
                 continue
 
             plan = snapshot_publish_plan(table, data, published_at, chunk_writes)

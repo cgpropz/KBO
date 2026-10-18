@@ -17,6 +17,7 @@ import {
   shapeForTier,
   _tierShapeFilters,
 } from '../api/_dataAccess.js'
+import { _setBoardCopyFetch } from '../api/_boardCopy.js'
 import { bearerFor, installJwtSecret } from './access-token.mjs'
 
 installJwtSecret()
@@ -169,7 +170,11 @@ async function call(ds, token, method = 'GET', query = {}) {
 
 const countProps = (board) => board.cards.reduce((n, c) => n + c.props.length, 0)
 
-beforeEach(() => _clearCache())
+beforeEach(() => {
+  _clearCache()
+  _setBoardCopyFetch(null)
+  delete process.env.BLOB_READ_WRITE_TOKEN
+})
 
 test('anonymous caller gets only the top 3 KBO board lines + locked count', async () => {
   const res = await call('prizepicks_props')
@@ -184,6 +189,7 @@ test('anonymous caller gets only the top 3 KBO board lines + locked count', asyn
   const kept = res.body.data.cards.flatMap((c) => c.props.map((p) => p.cg_projection)).sort((a, b) => b - a)
   assert.deepEqual(kept, [52, 51, 50])
   assert.equal(res.body.data.generated_at, NOW)
+  assert.equal(res.body.source, 'supabase')
 })
 
 test('member snapshots and signed-in previews are not edge cached', async () => {
@@ -1911,4 +1917,167 @@ test('a failed nba_players refresh keeps the last good in-memory copy for the fa
   } finally {
     cacheWindows.freshMs = prevFresh
   }
+})
+
+test('a fresh private vercel copy is served before supabase and stays gated', async () => {
+  const fresh = new Date().toISOString()
+  const board = {
+    generated_at: fresh,
+    cards: [{
+      name: 'James Naile',
+      props: [
+        { stat: 'Pitching Outs', line: 16.5, projection: 20, cg_projection: 99, odds_type: 'goblin', recommendation: 'OVER' },
+        { stat: 'Strikeouts', line: 5.5, projection: 6, cg_projection: 40, odds_type: 'standard', recommendation: 'OVER' },
+        { stat: 'Hits Allowed', line: 4.5, projection: 5, cg_projection: 30, odds_type: 'standard', recommendation: 'OVER' },
+        { stat: 'Walks', line: 1.5, projection: 2, cg_projection: 20, odds_type: 'standard', recommendation: 'OVER' },
+        { stat: 'Earned Runs', line: 2.5, projection: 3, cg_projection: 10, odds_type: 'standard', recommendation: 'OVER' },
+        { stat: 'Home Runs Allowed', line: 0.5, projection: 1, cg_projection: 8, odds_type: 'standard', recommendation: 'OVER' },
+      ],
+    }],
+  }
+  let fetches = 0
+  let supabaseReads = 0
+  process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_store123'
+  _setBoardCopyFetch(async (url, init) => {
+    fetches += 1
+    assert.match(String(url), /https:\/\/store123\.private\.blob\.vercel-storage\.com\/boards\/prizepicks_props\.json\?cache=0$/)
+    assert.equal(init.headers.authorization, 'Bearer vercel_blob_rw_store123')
+    return { ok: true, status: 200, json: async () => ({ data: board, updated_at: fresh }) }
+  })
+  const client = mockClient()
+  const original = client.from.bind(client)
+  client.from = (table) => {
+    const chain = original(table)
+    if (table !== 'prizepicks_props') return chain
+    return {
+      select() { return this },
+      eq() { return this },
+      abortSignal() { return this },
+      async maybeSingle() {
+        supabaseReads += 1
+        await new Promise((resolve) => setTimeout(resolve, 700))
+        return { data: { data: structuredClone(TABLES.prizepicks_props), updated_at: fresh }, error: null }
+      },
+    }
+  }
+  const started = Date.now()
+  const paid = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    paid,
+    client,
+  )
+  const copyMs = Date.now() - started
+  assert.equal(paid.statusCode, 200)
+  assert.equal(paid.body.source, 'vercel')
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.tier, 'kbo')
+  assert.equal(fetches, 1)
+  assert.equal(supabaseReads, 0)
+  assert.ok(copyMs < 400, `vercel copy took ${copyMs}ms`)
+  const paidProps = paid.body.data.cards.flatMap((card) => card.props)
+  assert.equal(paidProps.some((prop) => prop.odds_type === 'goblin'), false)
+  assert.equal(paidProps.length, 5)
+
+  _clearCache()
+  const free = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-free') } },
+    free,
+    client,
+  )
+  assert.equal(free.body.source, 'vercel')
+  assert.equal(free.body.preview, true)
+  assert.equal(free.body.tier, 'free')
+  assert.ok(free.body.lockedCount > 0)
+  assert.equal(free.body.data.cards.flatMap((card) => card.props).some((prop) => prop.odds_type === 'goblin'), false)
+
+  _clearCache()
+  delete process.env.BLOB_READ_WRITE_TOKEN
+  _setBoardCopyFetch(async () => {
+    throw new Error('blob should not be read without a token')
+  })
+  const slowStarted = Date.now()
+  const slow = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    slow,
+    client,
+  )
+  const supabaseMs = Date.now() - slowStarted
+  assert.equal(slow.body.source, 'supabase')
+  assert.equal(slow.body.preview, false)
+  assert.equal(supabaseReads, 1)
+  assert.ok(supabaseMs >= 700, `supabase read took ${supabaseMs}ms`)
+  console.log(`board copy timing: supabase ${supabaseMs}ms, vercel ${copyMs}ms`)
+})
+
+test('a stale or missing vercel copy falls through to supabase', async () => {
+  const stale = new Date(Date.now() - (13 * 60 * 60 * 1000)).toISOString()
+  let fetches = 0
+  process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_store123'
+  _setBoardCopyFetch(async () => {
+    fetches += 1
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: { generated_at: stale, cards: [{ name: 'Old', props: [{ stat: 'Strikeouts', line: 5.5, odds_type: 'standard' }] }] },
+        updated_at: stale,
+      }),
+    }
+  })
+  const res = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: { authorization: bearer('tok-kbo') } },
+    res,
+    mockClient(),
+  )
+  assert.equal(fetches, 1)
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.source, 'supabase')
+  assert.equal(res.body.data.generated_at, NOW)
+
+  _clearCache()
+  _setBoardCopyFetch(async () => ({ ok: false, status: 404, json: async () => ({}) }))
+  const missing = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'prizepicks_props' }, headers: {} },
+    missing,
+    mockClient(),
+  )
+  assert.equal(missing.body.source, 'supabase')
+  assert.equal(missing.body.preview, true)
+})
+
+test('nfl totals from the vercel copy keep the same ranking', async () => {
+  const fresh = new Date().toISOString()
+  const markets = structuredClone(TABLES.nfl_game_markets)
+  markets.generated_at = fresh
+  process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_store123'
+  _setBoardCopyFetch(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ data: markets, updated_at: fresh }),
+  }))
+  const free = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nfl_game_markets' }, headers: {} },
+    free,
+    mockClient(),
+  )
+  const ranked = previewNflGameMarkets(markets)
+  assert.equal(free.body.source, 'vercel')
+  assert.deepEqual(free.body.data.games.map((game) => game.id), ranked.data.games.map((game) => game.id))
+
+  _clearCache()
+  const paid = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nfl_game_markets' }, headers: { authorization: bearer('tok-owner') } },
+    paid,
+    mockClient(),
+  )
+  assert.equal(paid.body.preview, false)
+  assert.equal(paid.body.source, 'vercel')
+  assert.deepEqual(paid.body.data.games.map((game) => game.id), markets.games.map((game) => game.id))
 })

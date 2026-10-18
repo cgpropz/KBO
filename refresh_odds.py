@@ -151,6 +151,16 @@ def _upload_kbo_last_good(table, payload, updated_at):
         return False
 
 
+def _upload_vercel_copy(table, payload, updated_at):
+    """Copy a published board into private Blob. Failure only warns."""
+    try:
+        from board_copy import upload_board_copy
+
+        upload_board_copy(table, {"data": payload, "updated_at": updated_at})
+    except Exception as exc:
+        print(f"  ! {table} vercel copy failed: {type(exc).__name__}")
+
+
 def _publish_snapshot(client, filename, table, dry_run=False, optional=False, published_at=None):
     """Publish one JSON snapshot file to a Supabase table."""
     file_path = os.path.join(PUBLIC_DATA, filename)
@@ -188,6 +198,7 @@ def _publish_snapshot(client, filename, table, dry_run=False, optional=False, pu
         if isinstance(payload, dict):
             stamp = published_at or payload.get("published_at") or payload.get("generated_at")
         _upload_kbo_last_good(table, payload, stamp)
+        _upload_vercel_copy(table, payload, stamp)
         return True
     except Exception as exc:
         if optional:

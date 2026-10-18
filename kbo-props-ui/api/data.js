@@ -21,6 +21,7 @@ import { landingFallbackBody } from './_landingFallback.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
 import { clearMemberTierCache, lookupMemberTier } from './_memberTier.js';
+import { readBoardCopy } from './_boardCopy.js';
 
 export { assembleSnapshotRows, snapshotChunkManifest };
 
@@ -98,6 +99,19 @@ const latestVersion = new Map();
 export const STALE_MAX_MS = 30 * 60 * 1000;
 export const cacheWindows = { freshMs: CACHE_TTL_MS, staleMs: STALE_MAX_MS };
 const inflight = new Map();
+// Where the cached row was loaded from. Kept beside rememberBoard so that
+// shape stays { at, version, row }.
+const boardSources = new Map();
+
+function noteBoardSource(table, source) {
+  boardSources.set(table, source);
+}
+
+function servedBody(table, body) {
+  const source = boardSources.get(table) || 'supabase';
+  console.log(JSON.stringify({ event: 'board_source', table, source }));
+  return { ...body, source };
+}
 
 let standardFilterRuns = 0;
 
@@ -326,6 +340,7 @@ async function boardAfterReadError(client, table, err, deadline, primed) {
     if (primed) {
       console.warn(`[api/data] ${table} served from last-good copy (${lastGood.updated_at || 'unknown time'})`);
     }
+    noteBoardSource(table, 'last-good');
     rememberBoard(table, lastGood, boardCacheVersion(lastGood), lastGoodMemoryAt(table, lastGood));
     return lastGood;
   }
@@ -424,15 +439,51 @@ export function _lastGoodWrite(table) {
   return lastGoodWrites.get(table)?.promise || Promise.resolve();
 }
 
+const BOARD_COPY_READ_MS = 1500;
+
+// The publish job writes the full board to a private Blob. Serve that first.
+// A missing, unconfigured, or too-old copy falls through to Supabase, and a
+// Supabase timeout still uses the last-good Storage object. Age uses the same
+// lastGoodTimestamp / lastGoodMaxAgeMs cap as that Storage copy.
+async function readFreshBoardCopy(table) {
+  const parsed = await readBoardCopy(table, { timeoutMs: BOARD_COPY_READ_MS });
+  if (!parsed || parsed.data == null || snapshotChunkManifest(parsed.data)) return null;
+  const ts = lastGoodTimestamp(parsed);
+  if (!Number.isFinite(ts) || Date.now() - ts > lastGoodMaxAgeMs(table)) {
+    console.warn(`[api/data] ${table} vercel copy too old (${parsed.updated_at || 'no time'}); not served`);
+    return null;
+  }
+  return { data: parsed.data, updated_at: parsed.updated_at || null };
+}
+
+async function readBoardPreferCopy(client, table, deadline, startPrime) {
+  const copy = await readFreshBoardCopy(table);
+  if (copy) {
+    noteBoardSource(table, 'vercel');
+    rememberBoard(table, copy);
+    return copy;
+  }
+  const primed = startPrime();
+  try {
+    const row = await readSnapshotResolved(client, table, deadline);
+    noteBoardSource(table, 'supabase');
+    return row;
+  } catch (err) {
+    return boardAfterReadError(client, table, err, deadline, primed);
+  }
+}
+
 function startBoardRead(client, table) {
   if (inflight.has(table)) return inflight.get(table);
   const deadline = Date.now() + boardReadBudgetMs();
-  // Own deadline, not the shared 10.5s board budget. NHL stays sequential.
-  const primed = KBO_FALLBACK_TABLES.has(table)
-    ? readLastGood(client, table, Date.now() + timeouts.lastGoodReadMs, { announce: false })
-    : null;
-  const pending = readSnapshotResolved(client, table, deadline)
-    .catch((err) => boardAfterReadError(client, table, err, deadline, primed));
+  // Own deadline, not the shared 10.5s board budget. Started only after the
+  // Vercel copy misses, so a copy hit does not also read Storage.
+  const startPrime = () => (
+    KBO_FALLBACK_TABLES.has(table)
+      ? readLastGood(client, table, Date.now() + timeouts.lastGoodReadMs, { announce: false })
+      : null
+  );
+  const pending = readBoardPreferCopy(client, table, deadline, startPrime);
   inflight.set(table, pending);
   // Both handlers are attached so a background refresh cannot reject later
   // as an unhandled rejection. Callers that await `pending` still see it.
@@ -776,14 +827,14 @@ async function handleNbaRequest(req, res, client, ds) {
       ),
     board,
   );
-  return sendData(req, res, {
+  return sendData(req, res, servedBody(spec.table, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tier,
     access: sportAccess(caller.tier),
-  }, decision === 'full');
+  }), decision === 'full');
 }
 
 // Landing-card bit only. Same decision as handleNbaRequest, and never a snapshot.
@@ -914,14 +965,14 @@ async function handleNhlRequest(req, res, client, ds) {
     shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
     presented,
   );
-  return sendData(req, res, {
+  return sendData(req, res, servedBody(spec.table, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tierResolved === true ? caller.tier : 'free',
     access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
-  }, decision === 'full');
+  }), decision === 'full');
 }
 
 export async function nhlSectionOpen(req, client) {
@@ -951,7 +1002,9 @@ export async function resolveTier(client, authorization) {
 /**
  * GET /api/data?ds=<dataset>
  *
- * Returns { data, updatedAt, preview, lockedCount, tier, access }.
+ * Returns { data, updatedAt, preview, lockedCount, tier, access, source }.
+ * source is vercel, supabase, or last-good. The copy is read first; the
+ * member token is still what decides preview versus the full board.
  * Paid tiers get the full snapshot; free/anonymous callers get a preview
  * (top rows only) plus the number of locked rows. The tier is read from
  * user_profiles server-side with the service-role key — never trusted from
@@ -1113,14 +1166,14 @@ export async function handleDataRequest(req, res, client) {
     board,
   );
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
-  return sendData(req, res, {
+  return sendData(req, res, servedBody(spec.table, {
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier,
     access: sportAccess(tier),
-  }, memberGated);
+  }), memberGated);
 }
 
 export function _clearCache() {
@@ -1128,6 +1181,7 @@ export function _clearCache() {
   latestVersion.clear();
   inflight.clear();
   lastGoodEpoch += 1;
+  boardSources.clear();
   lastGoodWrites.clear();
   lastGoodSaved.clear();
   clearMemberTierCache();
