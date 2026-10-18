@@ -593,7 +593,7 @@ test('NFL game markets free preview strips book prices; paid keeps them', () => 
     id,
     awayTeam: 'PHI',
     homeTeam: 'DAL',
-    spread: { line: -7, projection: -9, edge, book: 'Pinnacle', price: -108, priceSide: 'away' },
+    spread: { line: -7, projection: -9, edge, book: 'Pinnacle', price: -108, priceSide: 'away', homePrice: -112 },
     total: { line: 44.5, projection: 47, edge: 2.5, book: 'Pinnacle', overPrice: -105, underPrice: null },
     moneyline: { line: 120, projection: 110, edge: 1, book: 'Pinnacle', homePrice: 120, awayPrice: -140 },
   })
@@ -603,7 +603,7 @@ test('NFL game markets free preview strips book prices; paid keeps them', () => 
     assert.equal(preview.data.games.length, 3)
     for (const game of preview.data.games) {
       assert.equal(gameMarketHasPrices(game), false)
-      for (const field of ['price', 'priceSide']) assert.equal(Object.hasOwn(game.spread, field), false)
+      for (const field of ['price', 'priceSide', 'homePrice']) assert.equal(Object.hasOwn(game.spread, field), false)
       for (const field of ['overPrice', 'underPrice']) assert.equal(Object.hasOwn(game.total, field), false)
       for (const field of ['homePrice', 'awayPrice']) assert.equal(Object.hasOwn(game.moneyline, field), false)
       // Lines and books stay.
@@ -614,13 +614,20 @@ test('NFL game markets free preview strips book prices; paid keeps them', () => 
   }
   // The shared cached snapshot is not mutated, and paid readers get the prices.
   assert.equal(payload.games[0].spread.price, -108)
+  assert.equal(payload.games[0].spread.homePrice, -112)
   const paid = shapeForTier('nfl_game_markets', payload, 'combined')
   assert.equal(paid.data.games[0].moneyline.awayPrice, -140)
+  assert.equal(paid.data.games[0].spread.homePrice, -112)
   assert.equal(paid.data.games[0].total.underPrice, null)
   // The landing fallback refuses a baked preview that still has prices.
   const body = { data: { games: [priced('a', 4)].map((game) => ({ ...game, total: { line: 44.5, overPrice: -105 } })) }, preview: true }
   assert.equal(acceptLandingFallback('nfl_game_markets', body), null)
   assert.notEqual(acceptLandingFallback('nfl_game_markets', { ...body, data: { games: body.data.games.map(withoutGameMarketPrices) } }), null)
+  // spread.homePrice alone is enough for the fallback (and the bake script) to refuse it.
+  const homeOnly = { data: { games: [{ id: 'h', spread: { line: -7, homePrice: -112 }, total: { line: 44.5 }, moneyline: { line: 120 } }] }, preview: true }
+  assert.equal(gameMarketHasPrices(homeOnly.data.games[0]), true)
+  assert.equal(acceptLandingFallback('nfl_game_markets', homeOnly), null)
+  assert.deepEqual(withoutGameMarketPrices(homeOnly.data.games[0]).spread, { line: -7 })
 })
 
 test('NFL game markets preview keeps the biggest edges and the model label', async () => {
