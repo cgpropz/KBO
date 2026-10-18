@@ -1,4 +1,4 @@
-import { boundCg, cgScore, lineMatchesStat } from './cgScore.js'
+import { boundCg, cgScore, isNeutralCg, lineMatchesStat } from './cgScore.js'
 
 // `cg_projection` is a separate 1-100 confidence score. It is high for a
 // strong under, so using it as the CG Score ranks below-line picks at 86-95.
@@ -35,6 +35,51 @@ export function scoreFor(prop) {
   if (projection == null) return null
   const score = boundCg(cgScore(projection, prop.line, prop.stat))
   return Number.isFinite(score) ? score : null
+}
+
+// KBO page rating (Batter and Strikeout projection pages). Same capped CG as
+// the board (scoreFor): (projection / line) * 50, bounded 0-100, 1 decimal.
+// rawRating keeps the uncapped value for tie-breaks only; it is never shown.
+export function kboRawRating(projection, line, stat) {
+  if (projection == null || projection === '' || line == null || line === '') return null
+  const p = Number(projection)
+  const l = Number(line)
+  if (!Number.isFinite(p) || !(l > 0)) return null
+  const raw = cgScore(p, l, stat)
+  return Number.isFinite(raw) ? raw : null
+}
+
+export function capKboRating(value) {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+  return Number(boundCg(n).toFixed(1))
+}
+
+export function kboRating(projection, line, stat) {
+  return capKboRating(kboRawRating(projection, line, stat))
+}
+
+// Exactly 50 (projection on the line) is neutral: no side color.
+export function isNeutralKboRating(rating, rawRating) {
+  if (rawRating != null && Number.isFinite(Number(rawRating))) return isNeutralCg(rawRating)
+  return isNeutralCg(rating)
+}
+
+export function kboRatingClass(rating, rawRating) {
+  if (rating == null) return ''
+  if (isNeutralKboRating(rating, rawRating)) return 'rate-neutral'
+  return rating >= 75 ? 'rate-high' : rating < 30 ? 'rate-low' : rating >= 50 ? 'rate-mid' : 'rate-cool'
+}
+
+// Rating sort with the raw-score tiebreak (ties at 100 keep uncapped order).
+export function compareKboRating(a, b, dir = 'desc') {
+  const sign = dir === 'asc' ? 1 : -1
+  const diff = (Number(a.rating) - Number(b.rating)) * sign
+  if (diff) return diff
+  const ra = Number.isFinite(Number(a.rawRating)) ? Number(a.rawRating) : Number(a.rating)
+  const rb = Number.isFinite(Number(b.rawRating)) ? Number(b.rawRating) : Number(b.rating)
+  return (ra - rb) * sign
 }
 
 // Player-page header. Same number and side as the board cell. `cg_projection`

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
-import { lineMatchesStat } from './cgScore';
+import { boundCg, lineMatchesStat } from './cgScore';
 import { scoreFor } from './kboBoardScore';
 import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
@@ -46,7 +46,7 @@ function kboRows(data) {
       projection: prop.projection ?? prop.avg,
       l10: l10Display(kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })),
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
-      score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : ratio(prop.projection ?? prop.avg, prop.line, prop.stat)),
+      score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : boundCg(ratio(prop.projection ?? prop.avg, prop.line, prop.stat))),
       start_time: prop.start_time || card.start_time,
       game_date: prop.game_date || card.game_date,
       started: prop.started === true || card.started === true,
