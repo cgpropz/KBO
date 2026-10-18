@@ -1,15 +1,17 @@
 -- ============================================================================
 -- Security · Migration 08: agent_reader may read public.nfl_matchup_defense
--- PROPOSED, NOT APPLIED. Needs Board QA's CONFIRM before it is applied by
--- hand to ocaqjkfdjqxszevtllew, as with 03, 05 and 07.
+-- APPLIED 2026-10-18 ~2:27 AM ET to ocaqjkfdjqxszevtllew on Board QA's
+-- CONFIRM, by hand as with 03, 05 and 07, and verified: agent_reader select
+-- = true, anon and authenticated select = false, one policy
+-- (agent_reader_select, SELECT, to agent_reader, using (true)).
 -- ============================================================================
 -- Why: parity with the other NFL snapshot tables. Read-only catalog check,
 -- 2026-10-18 ~2:25 AM ET:
 --   * public.nfl_game_markets: RLS on, acl {postgres, service_role,
 --     agent_reader=r}, one policy agent_reader_select
 --     (PERMISSIVE, SELECT, to agent_reader, using (true)).
---   * public.nfl_matchup_defense: RLS on, acl {postgres, service_role},
---     no policies, so agent_reader cannot read it today.
+--   * public.nfl_matchup_defense (before this file): RLS on, acl
+--     {postgres, service_role}; this file adds the same grant and policy.
 --
 -- SELECT only, plus one SELECT-only RLS policy scoped to agent_reader.
 -- No INSERT/UPDATE/DELETE. anon, authenticated and board_reader are unchanged.

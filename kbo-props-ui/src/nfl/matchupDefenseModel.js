@@ -23,6 +23,7 @@ export const SPLIT_LABELS = {
   RB: 'vs RB targets',
 }
 
+const SPLIT_CODES = { pass: 'Pass', run: 'Run', WR: 'WR', TE: 'TE', RB: 'RB' }
 const SHORT_LABELS = { pass: 'Pass D', run: 'Run D', WR: 'WR tgts', TE: 'TE tgts', RB: 'RB tgts' }
 
 function normPosition(position) {
@@ -99,8 +100,20 @@ export function matchupSummary(entries) {
     rank: list[0].rank,
     smallSample: small.length > 0,
     smallSplits: small.map((entry) => entry.shortLabel),
-    marker: small.length ? '*' : '',
+    // "*" when the shown grade's own split is thin; "*RB" (etc.) when a
+    // different split behind the chip is thin, e.g. an RB's Rush+Rec Yds
+    // showing the Run D grade while RB targets is the small sample.
+    marker: !small.length ? '' : (list[0].smallSample ? '*' : `*${small.map((entry) => SPLIT_CODES[entry.split] || entry.split).join('/')}`),
   }
+}
+
+// Title / aria-label: every split's line, the small-sample note, then the
+// credit once (two-split chips used to repeat it).
+export function matchupTitle(entries, payload) {
+  const list = Array.isArray(entries) ? entries : []
+  if (!list.length) return ''
+  return [...list.map((entry) => matchupTooltip(entry, payload, { credit: false })), smallSampleNote(list), `${MATCHUP_CREDIT}.`]
+    .filter(Boolean).join('\n')
 }
 
 // "through Week 5 (+ Thu Wk 6)" from the builder; falls back to the week number.

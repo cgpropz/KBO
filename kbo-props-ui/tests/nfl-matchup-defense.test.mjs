@@ -3,7 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { canonicalTeam, coverageLabel, matchupEntries, matchupSummary, matchupTooltip, smallSampleNote, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
+import { canonicalTeam, coverageLabel, matchupEntries, matchupSummary, matchupTitle, matchupTooltip, smallSampleNote, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
 import { DATASETS, datasetIsFullyPublic, shapeForTier } from '../api/_dataAccess.js'
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/nfl-matchup-prop-map.json', import.meta.url), 'utf8'))
@@ -66,8 +66,12 @@ test('small-sample flag is set when ANY split behind the chip is small', () => {
   assert.equal(rushRec[0].smallSample, false)
   const summary = matchupSummary(rushRec)
   assert.equal(summary.smallSample, true)
-  assert.equal(summary.marker, '*')
+  // The chip shows the Run D grade, so the asterisk names the thin split.
+  assert.equal(summary.marker, '*RB')
   assert.deepEqual(summary.smallSplits, ['RB tgts'])
+  const title = matchupTitle(rushRec, qaPayload)
+  assert.equal((title.match(/Data: nflverse\./g) || []).length, 1)
+  assert.match(title, /Run D: 23\/32[\s\S]*vs RB targets: 32\/32[\s\S]*Small sample \(under 30 plays: RB tgts 17 plays\)[\s\S]*Data: nflverse\.$/)
   assert.match(smallSampleNote(rushRec), /^\* Small sample \(under 30 plays: RB tgts 17 plays\)/)
   for (const [opp, grade] of [['NYG', 'A+'], ['WAS', 'A+'], ['LV', 'A']]) {
     const entries = matchupEntries(qaPayload, { prop: 'Receiving Yards', position: 'RB', opponent: opp })
@@ -78,6 +82,7 @@ test('small-sample flag is set when ANY split behind the chip is small', () => {
   const fine = matchupSummary(matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'DEN' }))
   assert.equal(fine.smallSample, false)
   assert.equal(fine.marker, '')
+  assert.equal(matchupTitle([], qaPayload), '')
   assert.equal(smallSampleNote(matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'DEN' })), '')
   assert.equal(matchupSummary([]), null)
 })
@@ -86,7 +91,10 @@ test('chip and tile render the marker and mute small-sample grades', () => {
   const jsx = readFileSync(new URL('../src/nfl/MatchupDefense.jsx', import.meta.url), 'utf8')
   assert.match(jsx, /matchupSummary\(entries\)/)
   assert.match(jsx, /summary\.marker/)
-  assert.doesNotMatch(jsx, /first\.smallSample/)
+  assert.equal((jsx.match(/matchupTitle\(entries, payload\)/g) || []).length, 2)
+  // The muted class comes from ANY split (summary), never only the first one.
+  assert.equal((jsx.match(/summary\.smallSample \? ' small-sample' : ''/g) || []).length, 2)
+  assert.doesNotMatch(jsx, /first\.smallSample \? ' small-sample'/)
   const css = readFileSync(new URL('../src/nfl/matchupDefenseChip.css', import.meta.url), 'utf8')
   assert.match(css, /\.nfl-adj-chip\.small-sample:is\(\.adj-a, \.adj-b, \.adj-c, \.adj-d\) \{ color: #a1a1aa;/)
   assert.doesNotMatch(css, /small-sample \{ opacity/)
