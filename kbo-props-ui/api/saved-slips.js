@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { buildSavedSlipRow, sportColumnMissing } from '../src/savedSlipPayload.js';
+import { buildSavedSlipRow, legHasUnchosenSide, sportColumnMissing } from '../src/savedSlipPayload.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -48,6 +48,11 @@ export default async function handler(req, res) {
 
   // ── POST: save a new slip ──
   if (req.method === 'POST') {
+    // An EVEN leg (no side picked) must not be stored as OVER.
+    const incomingLegs = Array.isArray(req.body?.legs) ? req.body.legs : [];
+    if (incomingLegs.some(legHasUnchosenSide)) {
+      return res.status(400).json({ error: 'Pick MORE or LESS for every leg before saving.' });
+    }
     const row = buildSavedSlipRow(req.body || {});
 
     if (!row.game_date || !Array.isArray(row.legs) || row.legs.length === 0) {

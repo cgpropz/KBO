@@ -435,10 +435,20 @@ function basketballRows(data, scoreFn, roster, sport) {
 export const wnbaHubRows = (data, roster) => basketballRows(data, (prop) => wnbaCgScore(prop.projection, prop), roster, 'wnba')
 export const nbaHubRows = (data, roster) => basketballRows(data, (prop) => prop.rating, roster, 'nba')
 
+// A row on the line (projection == line) or with a CG Score of exactly 50
+// is no pick. It never takes a top-list or hit-leader slot, in any sport.
+export function isNeutralHubRow(row) {
+  if (row?.neutral === true) return true
+  if (num(row?.score) === 50) return true
+  const p = num(row?.projection)
+  const l = num(row?.line)
+  return Number.isFinite(p) && Number.isFinite(l) && p === l
+}
+
 // Highest CG Score first, one row per player so the list is not one star's props.
 export function topHubRows(rows, limit = 5) {
   const valid = playableRows(rows)
-    .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score) && r.neutral !== true)
+    .filter((r) => r.player && r.stat && Number.isFinite(num(r.line)) && Number.isFinite(r.score) && !isNeutralHubRow(r))
     .sort((a, b) => (b.score - a.score) || ((Number.isFinite(b.rawScore) ? b.rawScore : 0) - (Number.isFinite(a.rawScore) ? a.rawScore : 0)))
   const seen = new Set()
   const out = []
@@ -468,8 +478,8 @@ export function sideLetter(side) {
 export function topHitRateRows(rows, limit = 10) {
   const ranked = playableRows(rows)
     .filter((row) => (
-      // A neutral row (CG exactly 50) is no pick, so it is not a hit leader.
-      row?.neutral !== true
+      // A neutral row (CG exactly 50, or on the line) is no pick, so it is not a hit leader.
+      !isNeutralHubRow(row)
       && row?.player
       && row?.stat
       && Array.isArray(row.recent)

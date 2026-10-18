@@ -16,6 +16,7 @@ import { QuietMemberPreview } from './QuietMemberPreview';
 import { useMemberBoardPhase } from './useMemberBoardPhase';
 import { useFullBoardRefresh } from './useFullBoardRefresh';
 import { edgeSide } from './pickSide.js';
+import { PICK_SIDE_HINT, slipNeedsSide } from './savedSlipPayload.js';
 
 // Hit rate color scale (matches BatterProjections)
 const HITRATE_MIN = 30;
@@ -220,6 +221,7 @@ function StrikeoutProjections({ onNavigate }) {
   };
 
   const sendToSlipBuilder = () => {
+    if (slipNeedsSide(parlayPicks)) return;
     try { localStorage.setItem('kbo_parlay_import', JSON.stringify(parlayPicks)); } catch {}
     if (onNavigate) onNavigate('optimizer');
   };
@@ -998,7 +1000,8 @@ function StrikeoutProjections({ onNavigate }) {
                 </div>
               ))}
             </div>
-            <button className="parlay-tray-send" onClick={sendToSlipBuilder}>
+            {slipNeedsSide(parlayPicks) ? <p className="parlay-tray-hint" role="status" data-testid="tray-pick-side">{PICK_SIDE_HINT}</p> : null}
+            <button className="parlay-tray-send" onClick={sendToSlipBuilder} disabled={slipNeedsSide(parlayPicks)}>
               Send to Slip Builder →
             </button>
           </div>

@@ -5,7 +5,7 @@ import { sessionAccessToken } from './supabaseClient';
 import { correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 import { inferSlipSport, slipGradeLabel } from './slipSportInfer.js';
-import { savedLegFromProp } from './savedSlipPayload.js';
+import { PICK_SIDE_HINT, savedLegFromProp } from './savedSlipPayload.js';
 import { isPromoLine, isStandardLine, matchImportedPick } from './slipLines';
 import { averageCg, legCg, payoutFor, playerKey, playersRepeat } from './slipRank';
 import { formatBreakEvenRate } from './prizepicksBreakeven';
@@ -124,7 +124,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   }, [getAuthToken, config.id]);
 
   const saveCurrentSlip = async () => {
-    if (selectedArr.length === 0) return;
+    if (selectedArr.length === 0 || needsSide(selectedArr)) return;
     await saveSlipToDb({
       game_date: gameDate,
       sport: config.id,
@@ -132,12 +132,13 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
       avg_edge: slipScore.avgEdge,
       total_edge: slipScore.totalEdge,
       unique_games: slipScore.uniqueGames,
-      legs: selectedArr.map(idx => savedLegFromProp(allProps[idx], savedSide(idx), config.id)),
+      legs: selectedArr.map(idx => savedLegFromProp(allProps[idx], getSide(idx), config.id)),
     });
     setMode('saved');
   };
 
   const saveAutoSlip = async (slipData) => {
+    if (needsSide(slipData.indices)) return;
     await saveSlipToDb({
       game_date: gameDate,
       sport: config.id,
@@ -145,7 +146,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
       avg_edge: slipData.score.avgEdge,
       total_edge: slipData.score.totalEdge,
       unique_games: slipData.score.uniqueGames,
-      legs: slipData.indices.map(idx => savedLegFromProp(allProps[idx], savedSide(idx), config.id)),
+      legs: slipData.indices.map(idx => savedLegFromProp(allProps[idx], getSide(idx), config.id)),
     });
   };
 
@@ -229,8 +230,8 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const isPromo = (p) => isPromoLine(p);
   // Edge exactly 0 is EVEN (no pick): no side color until the member picks one.
   const naturalSide = (p) => isPromo(p) ? 'OVER' : (edgeSide(p.edge) || 'OVER');
-  // Saved slips keep the previous default for an untouched EVEN leg.
-  const savedSide = (idx) => { const side = getSide(idx); return side === 'EVEN' ? 'OVER' : side; };
+  // An EVEN leg has no side yet. Saving waits until the member picks one.
+  const needsSide = (indices) => indices.some((idx) => getSide(idx) === 'EVEN');
   const getSide = (idx) => {
     const p = allProps[idx];
     if (isPromo(p)) return 'OVER'; // demon/goblin locked to OVER
@@ -504,9 +505,10 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <span className="so-stat-val">{slipScore.uniqueGames}</span>
                   </div>
                 </div>
-                <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user}>
+                <button className="so-save-btn" onClick={saveCurrentSlip} disabled={savingSlip || !user || needsSide(selectedArr)}>
                   {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
                 </button>
+                {needsSide(selectedArr) ? <p className="so-side-hint" role="status" data-testid="slip-pick-side">{PICK_SIDE_HINT}</p> : null}
                 <div className="so-corr">
                   <div className="so-corr-col" data-testid="slip-pairs-well">
                     <h3 className="so-corr-title">Pairs well</h3>
@@ -713,9 +715,12 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                     <button
                       className="so-auto-save"
                       onClick={() => saveAutoSlip(slip)}
+                      disabled={needsSide(slip.indices)}
+                      title={needsSide(slip.indices) ? PICK_SIDE_HINT : undefined}
                     >
                       💾 Save
                     </button>
+                    {needsSide(slip.indices) ? <span className="so-side-hint" role="status">Pick a side on EVEN legs (Use This Slip)</span> : null}
                   </div>
                 </div>
               ))}

@@ -44,6 +44,28 @@ export function legGameDate(leg) {
     || etGameDate(leg.gameday ?? leg.gameDate ?? leg.game_date)
 }
 
+// A leg with no chosen side (EVEN: projection on the line, or edge 0) must
+// not be saved. cleanSavedLeg would otherwise store it as OVER.
+const CHOSEN_SIDES = new Set(['OVER', 'UNDER', 'MORE', 'LESS'])
+const UNCHOSEN_SIDES = new Set(['EVEN', 'NEUTRAL', 'NONE', 'PUSH'])
+
+export function legNeedsSide(leg) {
+  const side = String(leg?.side ?? '').trim().toUpperCase()
+  return !CHOSEN_SIDES.has(side)
+}
+
+// Server guard: only an explicit no-pick side is refused, so a legacy
+// client that omits side keeps its old behavior.
+export function legHasUnchosenSide(leg) {
+  return UNCHOSEN_SIDES.has(String(leg?.side ?? '').trim().toUpperCase())
+}
+
+export function slipNeedsSide(legs) {
+  return (Array.isArray(legs) ? legs : []).some(legNeedsSide)
+}
+
+export const PICK_SIDE_HINT = 'Pick MORE or LESS on every EVEN leg to save.'
+
 export function cleanSavedLeg(leg, sport) {
   const sideRaw = String(leg?.side || '').toUpperCase()
   const side = sideRaw === 'UNDER' || sideRaw === 'LESS' ? 'UNDER' : 'OVER'
