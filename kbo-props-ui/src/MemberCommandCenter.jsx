@@ -22,7 +22,6 @@ import {
 } from './memberHub';
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
-import { sideLetter } from './pickSide.js';
 
 /*
  * Paid-member landing, Option B Sports Hub.
