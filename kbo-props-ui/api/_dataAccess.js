@@ -2,7 +2,7 @@ import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
-import { applyPointsOverGate, dropPulledRows, pointsOverDisposition } from '../src/nhl/pointsGate.js';
+import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
@@ -252,8 +252,9 @@ export function gameAlreadyStarted(row, now = new Date()) {
   return false;
 }
 
+// A pulled line (removed flag or a pulled pp_status) never enters a free pool.
 function propStillLive(player, prop) {
-  return !gameAlreadyStarted(prop) && !gameAlreadyStarted(player) && prop?.removed !== true && prop?.rankEligible !== false;
+  return !gameAlreadyStarted(prop) && !gameAlreadyStarted(player) && !prizepicksPulled(prop) && prop?.rankEligible !== false;
 }
 
 // Points overs under 0.69 are already gone. Held overs (0.69 up to 0.86)
