@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
-import { deferSignOutDuringRefresh, loadSupabase, onSupabaseLoaded, readCachedSession } from './supabaseClient';
+import { confirmSignOut, deferSignOutDuringRefresh, loadSupabase, markUserSignOut, onSupabaseLoaded, readCachedSession, shouldHoldSignOut } from './supabaseClient';
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 import { settlePlanCheck } from './planCheck.js';
 
@@ -226,10 +226,27 @@ export function AuthProvider({ children }) {
           clearCachedTier();
         }
       };
+      const applySignOut = (event, session) => {
+        // Applied: a later transient refresh result must not restore it.
+        markUserSignOut();
+        onAuthEvent(event, session);
+      };
       const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-        // A SIGNED_OUT raised by our own token refresh (429, 5xx) waits for the
-        // refresh result. A transient error keeps the session and the tier.
-        if (event === 'SIGNED_OUT' && deferSignOutDuringRefresh(() => onAuthEvent(event, session))) return;
+        if (event === 'SIGNED_OUT') {
+          // Raised by this tab's own refresh (429, 5xx): wait for its result.
+          if (deferSignOutDuringRefresh(() => applySignOut(event, session))) return;
+          // Raised by another tab's refresh (auth-js broadcasts SIGNED_OUT) or
+          // while the stored token is still good: recheck before clearing.
+          if (shouldHoldSignOut()) {
+            confirmSignOut(() => client.auth.getSession()).then((gone) => {
+              if (cancelled) return;
+              if (gone) applySignOut(event, null);
+            });
+            return;
+          }
+          applySignOut(event, session);
+          return;
+        }
         onAuthEvent(event, session);
       });
       if (cancelled) subscription.unsubscribe();
@@ -313,6 +330,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signOut() {
+    markUserSignOut();
     const client = await loadSupabase();
     if (client) await client.auth.signOut();
     setUser(null);

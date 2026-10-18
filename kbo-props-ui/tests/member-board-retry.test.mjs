@@ -196,7 +196,8 @@ test('an error tile shows a retry instead of staying on Loading', () => {
   assert.match(hubSource, /retrySport\(id\)/);
   assert.match(hubSource, /retryPlanCheck\(\)/);
   assert.match(hubSource, /Couldn\\'t load your member board/);
-  assert.match(hubSource, /boundedAccessToken\(\{ fresh: true \}\)/);
+  assert.match(hubSource, /boundedAccessToken\(\{ fresh: false \}\)/);
+  assert.equal(hubSource.includes('fresh: true'), false);
   assert.match(hubSource, /beginHubLoad\(/);
   assert.match(hubSource, /hubTokenForRetry\(/);
   assert.match(hubSource, /onUnresolved/);

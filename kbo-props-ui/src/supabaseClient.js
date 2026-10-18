@@ -147,40 +147,120 @@ export function onSupabaseLoaded(fn) {
   return () => loadedListeners.delete(fn)
 }
 
-// A "fresh" token is asked for when the server answered a signed-in request
-// as logged out. Most of the time the stored session is still right, so the
-// stored token comes back. Only when the stored token has NOT expired (so the
-// library will not refresh it on its own) and the server still rejected it,
-// one real refresh runs:
-//   - one per page per REFRESH_COOLDOWN_MS; callers inside the window reuse
-//     the stored session,
-//   - concurrent callers share the refresh already in flight,
-//   - a 429, 5xx or network error keeps the stored session and the tier.
+// refreshedAccessToken() is called only by the board paths in apiData.js that
+// run after a paid member was answered with a free preview (the server did
+// not accept the stored token). Hub loads and sport retries use the stored
+// token and never come here. In that case:
+//   - if the stored token has expired (or there is none) nothing is forced;
+//     getSession() lets the library refresh it on its own,
+//   - otherwise one real refreshSession() runs, at most once per tab per
+//     REFRESH_COOLDOWN_MS (the time is kept in sessionStorage, so a reload
+//     does not start a new window), and concurrent callers share it,
+//   - a 429, 5xx or network error puts the stored session back and keeps the
+//     tier, unless the member signed out meanwhile. Other tabs see a guard
+//     flag in localStorage and recheck before treating SIGNED_OUT as real.
 // Forcing a refresh on every board load hit Supabase's 429 rate limit and the
 // library then signed the member out (SEV-1, Oct 18, #268).
 export const REFRESH_COOLDOWN_MS = 60_000
+export const LAST_REFRESH_KEY = 'cg_auth_last_refresh'
+export const REFRESH_GUARD_KEY = 'cg_auth_refresh_guard'
+export const USER_SIGNOUT_KEY = 'cg_auth_user_signout'
+// A guard older than this is stale (tab closed mid-refresh).
+export const REFRESH_GUARD_TTL_MS = 15_000
 
 let refreshInFlight = null
-let lastRefreshAt = -Infinity
 let refreshGuard = null
 let nowFn = () => Date.now()
 
+function local() {
+  return typeof localStorage === 'undefined' ? null : localStorage
+}
+
+function session() {
+  return typeof sessionStorage === 'undefined' ? null : sessionStorage
+}
+
+function readNumber(storage, key) {
+  try {
+    const n = Number(storage?.getItem?.(key))
+    return Number.isFinite(n) && n > 0 ? n : 0
+  } catch {
+    return 0
+  }
+}
+
+function writeValue(storage, key, value) {
+  try {
+    if (value == null) storage?.removeItem?.(key)
+    else storage?.setItem?.(key, String(value))
+  } catch {
+    /* blocked storage: the in-memory state still applies */
+  }
+}
+
 // Tests only.
-export function _resetRefreshState({ now } = {}) {
+// keepStorage simulates a page reload: memory resets, storage survives.
+export function _resetRefreshState({ now, keepStorage = false } = {}) {
   refreshInFlight = null
-  lastRefreshAt = -Infinity
   refreshGuard = null
   nowFn = typeof now === 'function' ? now : () => Date.now()
+  if (keepStorage) return
+  writeValue(session(), LAST_REFRESH_KEY, null)
+  writeValue(local(), REFRESH_GUARD_KEY, null)
+  writeValue(local(), USER_SIGNOUT_KEY, null)
+}
+
+// The member signed out (this tab's Sign out, or a SIGNED_OUT that no
+// refresh of ours caused). A transient refresh result must not undo it.
+export function markUserSignOut() {
+  writeValue(local(), USER_SIGNOUT_KEY, nowFn())
+}
+
+function signedOutSince(startedAt) {
+  return readNumber(local(), USER_SIGNOUT_KEY) >= startedAt
+}
+
+// True while some tab runs a guarded refresh.
+export function crossTabRefreshActive(now = nowFn()) {
+  const at = readNumber(local(), REFRESH_GUARD_KEY)
+  return at > 0 && now - at < REFRESH_GUARD_TTL_MS
 }
 
 // auth-js removes the stored session and emits SIGNED_OUT on any refresh error
-// that is not a 5xx/network error, 429 included. While our refresh runs,
-// AuthContext hands a SIGNED_OUT here instead of applying it. It is applied
-// only if the refresh turns out to be a real rejection (revoked session).
+// that is not a 5xx/network error, 429 included. While this tab's refresh
+// runs, AuthContext hands a SIGNED_OUT here instead of applying it. It is
+// applied only if the refresh turns out to be a real rejection.
 export function deferSignOutDuringRefresh(apply) {
   if (!refreshGuard || typeof apply !== 'function') return false
   refreshGuard.deferred.push(apply)
   return true
+}
+
+// A SIGNED_OUT from another tab (BroadcastChannel) or the library: hold it if
+// the stored token is still good or a refresh is running somewhere.
+export function shouldHoldSignOut(now = nowFn()) {
+  if (signedOutSince(now - REFRESH_GUARD_TTL_MS) && !crossTabRefreshActive(now)) return false
+  return Boolean(cachedAccessToken(now)) || crossTabRefreshActive(now)
+}
+
+// Waits, then asks the client again. Resolves true when the member really is
+// signed out, false when a session came back (transient 429 in another tab).
+export async function confirmSignOut(getSession, {
+  waitMs = 500,
+  maxWaits = 8,
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+} = {}) {
+  for (let i = 0; i < maxWaits; i += 1) {
+    await sleep(waitMs)
+    if (crossTabRefreshActive()) continue
+    break
+  }
+  try {
+    const { data } = await getSession()
+    return !data?.session?.user
+  } catch {
+    return !readCachedSession()
+  }
 }
 
 export function isTransientAuthError(err) {
@@ -222,10 +302,12 @@ function restoreStoredSession(storage, entry) {
 }
 
 async function runGuardedRefresh(cached) {
-  const storage = typeof localStorage === 'undefined' ? null : localStorage
+  const storage = local()
   const entry = storedSessionEntry(storage)
   const guard = { deferred: [] }
+  const startedAt = nowFn()
   refreshGuard = guard
+  writeValue(storage, REFRESH_GUARD_KEY, startedAt)
   let transient = true
   try {
     const client = await loadSupabase()
@@ -237,19 +319,21 @@ async function runGuardedRefresh(cached) {
       return data.session.access_token
     }
     transient = error ? isTransientAuthError(error) : true
-    if (transient) return cached.accessToken
+    if (transient && !signedOutSince(startedAt)) return cached.accessToken
     return null
   } catch {
-    return cached.accessToken
+    return signedOutSince(startedAt) ? null : cached.accessToken
   } finally {
     if (refreshGuard === guard) refreshGuard = null
-    if (transient) {
+    const userLeft = signedOutSince(startedAt)
+    if (transient && !userLeft) {
       restoreStoredSession(storage, entry)
     } else {
       for (const apply of guard.deferred) {
         try { apply() } catch { /* keep going */ }
       }
     }
+    writeValue(storage, REFRESH_GUARD_KEY, null)
   }
 }
 
@@ -258,8 +342,9 @@ export async function refreshedAccessToken() {
   const cached = readCachedSession()
   // Logged out, or an expired token the library refreshes itself.
   if (!cached?.accessToken || !cachedAccessToken(nowFn())) return sessionAccessToken()
-  if (nowFn() - lastRefreshAt < REFRESH_COOLDOWN_MS) return sessionAccessToken()
-  lastRefreshAt = nowFn()
+  const last = readNumber(session(), LAST_REFRESH_KEY)
+  if (last && nowFn() - last < REFRESH_COOLDOWN_MS) return sessionAccessToken()
+  writeValue(session(), LAST_REFRESH_KEY, nowFn())
   refreshInFlight = runGuardedRefresh(cached).finally(() => {
     refreshInFlight = null
   })
