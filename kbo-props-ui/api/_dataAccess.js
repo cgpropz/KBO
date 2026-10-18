@@ -397,6 +397,32 @@ function withoutTotalEdge(game) {
   return { ...game, total };
 }
 
+// Book prices on game markets are for member grading (units). The free
+// preview never carries them.
+export const NFL_GAME_MARKET_PRICE_FIELDS = Object.freeze({
+  spread: ['price', 'priceSide'],
+  total: ['overPrice', 'underPrice'],
+  moneyline: ['homePrice', 'awayPrice'],
+});
+
+export function withoutGameMarketPrices(game) {
+  if (!game || typeof game !== 'object') return game;
+  const next = { ...game };
+  for (const [market, fields] of Object.entries(NFL_GAME_MARKET_PRICE_FIELDS)) {
+    if (!next[market] || typeof next[market] !== 'object') continue;
+    const copy = { ...next[market] };
+    for (const field of fields) delete copy[field];
+    next[market] = copy;
+  }
+  return next;
+}
+
+export function gameMarketHasPrices(game) {
+  return Object.entries(NFL_GAME_MARKET_PRICE_FIELDS).some(([market, fields]) => (
+    game?.[market] && typeof game[market] === 'object' && fields.some((field) => Object.hasOwn(game[market], field))
+  ));
+}
+
 // Free game-markets preview. Total edges stay off unless the flag is on.
 export function previewNflGameMarkets(payload, options = {}) {
   const totalEdges = Object.hasOwn(options, 'totalEdges')
@@ -408,8 +434,11 @@ export function previewNflGameMarkets(payload, options = {}) {
     'games',
     totalEdges ? nflGameMarketScore : nflGameMarketSpreadScore,
   )(live);
-  if (totalEdges) return preview;
-  const trimmed = Array.isArray(preview.data?.games) ? preview.data.games.map(withoutTotalEdge) : [];
+  if (totalEdges) {
+    const priced = Array.isArray(preview.data?.games) ? preview.data.games.map(withoutGameMarketPrices) : preview.data?.games;
+    return { ...preview, data: { ...preview.data, games: priced } };
+  }
+  const trimmed = Array.isArray(preview.data?.games) ? preview.data.games.map((game) => withoutGameMarketPrices(withoutTotalEdge(game))) : [];
   return {
     data: { ...preview.data, games: trimmed },
     lockedCount: preview.lockedCount,

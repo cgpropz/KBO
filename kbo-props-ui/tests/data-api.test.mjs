@@ -13,10 +13,13 @@ import {
   isNbaDataset,
   isNhlDataset,
   nflFreeTotalEdgesEnabled,
+  gameMarketHasPrices,
   previewNflGameMarkets,
   shapeForTier,
+  withoutGameMarketPrices,
   _tierShapeFilters,
 } from '../api/_dataAccess.js'
+import { acceptLandingFallback } from '../api/_landingFallback.js'
 import { bearerFor, installJwtSecret } from './access-token.mjs'
 
 installJwtSecret()
@@ -583,6 +586,41 @@ test('NFL free game markets withhold total edges unless the flag is on', () => {
     assert.equal(paid.data.games[0].total.edge, 9.5)
     assert.equal(paid.data.games.length, 4)
   }
+})
+
+test('NFL game markets free preview strips book prices; paid keeps them', () => {
+  const priced = (id, edge) => ({
+    id,
+    awayTeam: 'PHI',
+    homeTeam: 'DAL',
+    spread: { line: -7, projection: -9, edge, book: 'Pinnacle', price: -108, priceSide: 'away' },
+    total: { line: 44.5, projection: 47, edge: 2.5, book: 'Pinnacle', overPrice: -105, underPrice: null },
+    moneyline: { line: 120, projection: 110, edge: 1, book: 'Pinnacle', homePrice: 120, awayPrice: -140 },
+  })
+  const payload = { provider: 'unabated', games: [priced('a', 4), priced('b', 3), priced('c', 2), priced('d', 1)] }
+  for (const options of [{}, { totalEdges: true }]) {
+    const preview = previewNflGameMarkets(payload, options)
+    assert.equal(preview.data.games.length, 3)
+    for (const game of preview.data.games) {
+      assert.equal(gameMarketHasPrices(game), false)
+      for (const field of ['price', 'priceSide']) assert.equal(Object.hasOwn(game.spread, field), false)
+      for (const field of ['overPrice', 'underPrice']) assert.equal(Object.hasOwn(game.total, field), false)
+      for (const field of ['homePrice', 'awayPrice']) assert.equal(Object.hasOwn(game.moneyline, field), false)
+      // Lines and books stay.
+      assert.equal(game.spread.line, -7)
+      assert.equal(game.moneyline.line, 120)
+      assert.equal(game.total.book, 'Pinnacle')
+    }
+  }
+  // The shared cached snapshot is not mutated, and paid readers get the prices.
+  assert.equal(payload.games[0].spread.price, -108)
+  const paid = shapeForTier('nfl_game_markets', payload, 'combined')
+  assert.equal(paid.data.games[0].moneyline.awayPrice, -140)
+  assert.equal(paid.data.games[0].total.underPrice, null)
+  // The landing fallback refuses a baked preview that still has prices.
+  const body = { data: { games: [priced('a', 4)].map((game) => ({ ...game, total: { line: 44.5, overPrice: -105 } })) }, preview: true }
+  assert.equal(acceptLandingFallback('nfl_game_markets', body), null)
+  assert.notEqual(acceptLandingFallback('nfl_game_markets', { ...body, data: { games: body.data.games.map(withoutGameMarketPrices) } }), null)
 })
 
 test('NFL game markets preview keeps the biggest edges and the model label', async () => {

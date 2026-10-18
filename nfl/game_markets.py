@@ -495,16 +495,54 @@ def markets_from_rows(rows, sources, away_id, home_id):
     total = pick_posted(total_quotes, points=True)
     moneyline = pick_posted(home_ml, points=False)
     fair, fair_source = fair_home_probability(home_ml, away_ml)
+    # Prices come from the same quote (spread, over, home ML) or the same book's
+    # other side (under at the same total, away ML). Missing stays None.
+    under_quotes = [quote for quote in grouped[BET_TOTAL] if quote["side"] == 1 and quote["points"] is not None]
+    under = None if total is None else _same_book_quote(under_quotes, total["book_key"], points=total["points"])
+    away_price = None if moneyline is None else _same_book_quote(away_ml, moneyline["book_key"])
     return {
-        "spread": None if spread is None else {"line": round1(spread["points"]), "book": spread["book"]},
-        "total": None if total is None else {"line": round1(total["points"]), "book": total["book"]},
+        "spread": None if spread is None else {
+            "line": round1(spread["points"]),
+            "book": spread["book"],
+            "price": _price(spread),
+            # Spread quotes are the away side (si0), so the line and price are the away team's.
+            "priceSide": "away",
+        },
+        "total": None if total is None else {
+            "line": round1(total["points"]),
+            "book": total["book"],
+            "overPrice": _price(total),
+            "underPrice": _price(under),
+        },
         "moneyline": None if moneyline is None else {
             "line": int(moneyline["price"]),
             "book": moneyline["book"],
             "fair_probability": None if fair is None else round(fair, 4),
             "fair_source": fair_source,
+            "homePrice": _price(moneyline),
+            "awayPrice": _price(away_price),
         },
     }
+
+
+def _price(quote):
+    if not quote:
+        return None
+    try:
+        return int(quote["price"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _same_book_quote(quotes, book_key, points=None):
+    """First quote from that book (at that number when points is given), else None."""
+    for quote in quotes:
+        if quote["book_key"] != book_key:
+            continue
+        if points is not None and (quote.get("points") is None or abs(quote["points"] - points) > 1e-9):
+            continue
+        return quote
+    return None
 
 
 def index_unabated(payload):
@@ -617,12 +655,17 @@ def build_games(schedule, history, markets, today=None):
                 "projection": projected["spread"],
                 "edge": round1(spread_edge_value),
                 "book": (posted.get("spread") or {}).get("book"),
+                # Prices for grading picks in units. Not used by edges or the card.
+                "price": (posted.get("spread") or {}).get("price"),
+                "priceSide": (posted.get("spread") or {}).get("priceSide"),
             },
             "total": {
                 "line": total_line,
                 "projection": projected["total"],
                 "edge": round1(total_edge_value),
                 "book": (posted.get("total") or {}).get("book"),
+                "overPrice": (posted.get("total") or {}).get("overPrice"),
+                "underPrice": (posted.get("total") or {}).get("underPrice"),
             },
             "moneyline": {
                 "line": moneyline.get("line"),
@@ -631,6 +674,8 @@ def build_games(schedule, history, markets, today=None):
                 "book": moneyline.get("book"),
                 "fairProbability": moneyline.get("fair_probability"),
                 "modelProbability": home_prob,
+                "homePrice": moneyline.get("homePrice"),
+                "awayPrice": moneyline.get("awayPrice"),
             },
         })
     return games, week, sigma, sigma_source
@@ -750,9 +795,17 @@ def kickoff_utc(gameday, gametime):
     return local.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+PRICE_FIELDS = ("price", "priceSide", "overPrice", "underPrice", "homePrice", "awayPrice")
+
+
 def _posted_side(market):
     market = market or {}
-    return {"line": market.get("line"), "book": market.get("book")}
+    posted = {"line": market.get("line"), "book": market.get("book")}
+    # Prices ride along for unit grading when the board carried them.
+    for key in PRICE_FIELDS:
+        if key in market:
+            posted[key] = market[key]
+    return posted
 
 
 def line_capture(game, captured_at):

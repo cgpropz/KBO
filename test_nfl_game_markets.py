@@ -238,6 +238,12 @@ class PostedLineTests(unittest.TestCase):
         self.assertEqual(game["total"]["projection"], game["awayScore"] + game["homeScore"])
         self.assertEqual(game["spread"]["projection"], game["homeScore"] - game["awayScore"])
         self.assertNotEqual(game["spread"]["projection"], -99.0)
+        # Prices ride on the published game for unit grading.
+        self.assertEqual((game["spread"]["price"], game["spread"]["priceSide"]), (-110, "away"))
+        self.assertEqual((game["total"]["overPrice"], game["total"]["underPrice"]), (-110, -110))
+        self.assertEqual((game["moneyline"]["homePrice"], game["moneyline"]["awayPrice"]), (110, -130))
+        capture = markets.line_capture(game, snapshot["generated_at"])
+        self.assertEqual(capture["moneyline"], {"line": 110, "book": "Pinnacle", "homePrice": 110, "awayPrice": -130})
         self.assertIsNotNone(game["moneyline"]["projection"])
         self.assertAlmostEqual(game["spread"]["edge"], round(game["spread"]["line"] - game["spread"]["projection"], 1))
         self.assertAlmostEqual(game["total"]["edge"], round(game["total"]["projection"] - game["total"]["line"], 1))
@@ -362,3 +368,94 @@ class GameMarketArchiveTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PostedPriceTests(unittest.TestCase):
+    """Prices for unit grading. Same quote or same book as the line; never invented."""
+
+    def _rows(self, total_sides, ml_sides):
+        return [
+            _event_row(2, {
+                "si0:tid1": {"ms1": _quote(1, -110, -3.0), "ms2": _quote(2, -108, -2.5)},
+                "si1:tid21": {"ms1": _quote(1, -110, 3.0), "ms2": _quote(2, -112, 2.5)},
+            }),
+            _event_row(3, total_sides),
+            _event_row(1, ml_sides),
+        ]
+
+    def test_prices_survive_markets_from_rows(self):
+        rows = self._rows(
+            {"si0:tid1": {"ms1": _quote(1, -110, 47.5), "ms2": _quote(2, -105, 44.5)},
+             "si1:tid21": {"ms1": _quote(1, -110, 47.5), "ms2": _quote(2, -115, 44.5)}},
+            {"si0:tid1": {"ms2": _quote(2, -140, None), "ms1": _quote(1, -150, None)},
+             "si1:tid21": {"ms2": _quote(2, 120, None), "ms1": _quote(1, 130, None)}},
+        )
+        posted = markets.markets_from_rows(rows, SOURCES, 1, 21)
+        self.assertEqual(posted["spread"], {"line": -2.5, "book": "Pinnacle", "price": -108, "priceSide": "away"})
+        self.assertEqual(posted["total"], {"line": 44.5, "book": "Pinnacle", "overPrice": -105, "underPrice": -115})
+        moneyline = posted["moneyline"]
+        self.assertEqual(moneyline["line"], 120)
+        self.assertEqual(moneyline["book"], "Pinnacle")
+        self.assertEqual(moneyline["homePrice"], 120)
+        self.assertEqual(moneyline["awayPrice"], -140)
+        self.assertEqual(moneyline["fair_source"], "sharp_books")
+        self.assertIsNotNone(moneyline["fair_probability"])
+
+    def test_missing_other_side_stays_null_and_is_not_borrowed(self):
+        rows = self._rows(
+            # Pinnacle has no priced under at 44.5 (no price, then a different number).
+            # FanDuel's under is another book and another number, so it is not used.
+            {"si0:tid1": {"ms2": _quote(2, -105, 44.5), "ms1": _quote(1, -110, 47.5)},
+             "si1:tid21": {"ms2": _quote(2, None, 44.5), "ms1": _quote(1, -110, 47.5)}},
+            # Pinnacle posted only the home moneyline. FanDuel's away price is not borrowed.
+            {"si1:tid21": {"ms2": _quote(2, 120, None)},
+             "si0:tid1": {"ms1": _quote(1, -150, None)}},
+        )
+        posted = markets.markets_from_rows(rows, SOURCES, 1, 21)
+        self.assertEqual(posted["total"]["line"], 44.5)
+        self.assertEqual(posted["total"]["overPrice"], -105)
+        self.assertIsNone(posted["total"]["underPrice"])
+        self.assertEqual(posted["moneyline"]["line"], 120)
+        self.assertEqual(posted["moneyline"]["homePrice"], 120)
+        self.assertIsNone(posted["moneyline"]["awayPrice"])
+
+        other_number = self._rows(
+            {"si0:tid1": {"ms2": _quote(2, -105, 44.5)}, "si1:tid21": {"ms2": _quote(2, -115, 45.5)}},
+            {"si1:tid21": {"ms2": _quote(2, 120, None)}},
+        )
+        self.assertIsNone(markets.markets_from_rows(other_number, SOURCES, 1, 21)["total"]["underPrice"])
+
+    def test_existing_fields_are_unchanged(self):
+        rows = self._rows(
+            {"si0:tid1": {"ms2": _quote(2, -105, 44.5)}, "si1:tid21": {"ms2": _quote(2, -115, 44.5)}},
+            {"si0:tid1": {"ms2": _quote(2, -140, None)}, "si1:tid21": {"ms2": _quote(2, 120, None)}},
+        )
+        posted = markets.markets_from_rows(rows, SOURCES, 1, 21)
+        self.assertEqual({k: posted["spread"][k] for k in ("line", "book")}, {"line": -2.5, "book": "Pinnacle"})
+        self.assertEqual({k: posted["total"][k] for k in ("line", "book")}, {"line": 44.5, "book": "Pinnacle"})
+        self.assertEqual(
+            {k: posted["moneyline"][k] for k in ("line", "book", "fair_source")},
+            {"line": 120, "book": "Pinnacle", "fair_source": "sharp_books"},
+        )
+
+    def test_board_games_and_line_captures_carry_prices(self):
+        payload = {
+            "teams": {"1": {"abbreviation": "ARI", "id": 1}, "21": {"abbreviation": "NYG", "id": 21}},
+            "marketSources": list(SOURCES.values()),
+            "odds": {"lg1:pt1:pregame": self._rows(
+                {"si0:tid1": {"ms2": _quote(2, -105, 44.5)}, "si1:tid21": {"ms2": _quote(2, -115, 44.5)}},
+                {"si0:tid1": {"ms2": _quote(2, -140, None)}, "si1:tid21": {"ms2": _quote(2, 120, None)}},
+            )},
+        }
+        posted = markets.index_unabated(payload)
+        game = {
+            "id": "2026-10-25-ARI-NYG", "gameday": "2026-10-25", "gametime": "13:00",
+            "awayTeam": "ARI", "homeTeam": "NYG",
+            "spread": {"line": posted[("ARI", "NYG")]["spread"]["line"], "book": "Pinnacle", "price": -108, "priceSide": "away"},
+            "total": {"line": 44.5, "book": "Pinnacle", "overPrice": -105, "underPrice": -115},
+            "moneyline": {"line": 120, "book": "Pinnacle", "homePrice": 120, "awayPrice": None},
+        }
+        capture = markets.line_capture(game, "2026-10-25T12:00:00Z")
+        self.assertEqual(capture["spread"], {"line": -2.5, "book": "Pinnacle", "price": -108, "priceSide": "away"})
+        self.assertEqual(capture["total"], {"line": 44.5, "book": "Pinnacle", "overPrice": -105, "underPrice": -115})
+        self.assertEqual(capture["moneyline"], {"line": 120, "book": "Pinnacle", "homePrice": 120, "awayPrice": None})
