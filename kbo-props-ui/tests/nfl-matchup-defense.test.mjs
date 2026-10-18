@@ -3,7 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { canonicalTeam, coverageLabel, matchupEntries, matchupSummary, matchupTitle, matchupTooltip, smallSampleNote, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
+import { canonicalTeam, chipAriaLabel, coverageLabel, matchupEntries, matchupSummary, matchupTitle, matchupTooltip, smallSampleNote, splitsForProp } from '../src/nfl/matchupDefenseModel.js'
 import { DATASETS, datasetIsFullyPublic, shapeForTier } from '../api/_dataAccess.js'
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/nfl-matchup-prop-map.json', import.meta.url), 'utf8'))
@@ -91,7 +91,8 @@ test('chip and tile render the marker and mute small-sample grades', () => {
   const jsx = readFileSync(new URL('../src/nfl/MatchupDefense.jsx', import.meta.url), 'utf8')
   assert.match(jsx, /matchupSummary\(entries\)/)
   assert.match(jsx, /summary\.marker/)
-  assert.equal((jsx.match(/matchupTitle\(entries, payload\)/g) || []).length, 2)
+  // Only the player-page tile keeps a title; the board chip has none.
+  assert.equal((jsx.match(/matchupTitle\(entries, payload\)/g) || []).length, 1)
   // The muted class comes from ANY split (summary), never only the first one.
   assert.equal((jsx.match(/summary\.smallSample \? ' small-sample' : ''/g) || []).length, 2)
   assert.doesNotMatch(jsx, /first\.smallSample \? ' small-sample'/)
@@ -130,4 +131,30 @@ test('CG Score, projections and the totals ranking do not read the matchup data'
     const uses = src.split('\n').filter((line) => /matchupDefense|matchup_defense/.test(line) && !/nfl_matchup_defense: \{/.test(line) && !/^\s*\/\//.test(line))
     assert.deepEqual(uses, [], `${file} must not use matchup defense`)
   }
+})
+
+test('board chip is display only: no button, tap, hover title or explanation box', () => {
+  const jsx = readFileSync(new URL('../src/nfl/MatchupDefense.jsx', import.meta.url), 'utf8')
+  const start = jsx.indexOf('export function AdjMatchupChip')
+  const end = jsx.indexOf('export function AdjMatchupStat')
+  assert.ok(start >= 0 && end > start)
+  const chip = jsx.slice(start, end)
+  assert.doesNotMatch(chip, /<button|onClick|onKeyDown|tabIndex|title=|aria-expanded|useState|<Note/)
+  assert.match(chip, /aria-label=\{chipAriaLabel\(summary\)\}/)
+  assert.match(chip, /summary\.marker/)
+  assert.match(chip, /summary\.smallSample \? ' small-sample' : ''/)
+  // The player-page tile keeps its detail note.
+  assert.match(jsx.slice(end), /<Note entries=\{entries\} payload=\{payload\} \/>/)
+  // Board pages still render the chip.
+  for (const page of ['../src/nfl/NflPropLines.jsx', '../src/nfl/NflSharpOdds.jsx']) {
+    assert.match(readFileSync(new URL(page, import.meta.url), 'utf8'), /<AdjMatchupChip /, page)
+  }
+})
+
+test('chip aria-label is short', () => {
+  const nyg = matchupSummary(matchupEntries(qaPayload, { prop: 'Rush+Rec Yds', position: 'RB', opponent: 'NYG' }))
+  assert.equal(chipAriaLabel(nyg), `Adj matchup ${nyg.grade}, small sample`)
+  const den = matchupSummary(matchupEntries(qaPayload, { prop: 'Pass Yards', position: 'QB', opponent: 'DEN' }))
+  assert.equal(chipAriaLabel(den), `Adj matchup ${den.grade}`)
+  assert.equal(chipAriaLabel(null), '')
 })
