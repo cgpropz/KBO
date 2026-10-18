@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T12:18:57Z",
+  "checked_at": "2026-10-18T12:34:18Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T12:16:12.040961+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-18T12:06:46.107956+00:00",
-      "prop_count": 159,
+      "generated_at": "2026-10-18T12:34:18.975718+00:00",
+      "prop_count": 161,
       "started_removed": 0,
       "removals": [
         {
@@ -140,6 +140,15 @@
           "line": 2.5,
           "odds_type": "demon",
           "projection": 1.81,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Cole Sillinger",
+          "team": "CBJ",
+          "stat": "Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.43,
           "reason": "line pulled"
         },
         {
@@ -278,15 +287,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Kirill Kaprizov",
-          "team": "MIN",
-          "stat": "Shots On Goal",
-          "line": 6.5,
-          "odds_type": "demon",
-          "projection": 2.94,
-          "reason": "line pulled"
-        },
-        {
           "player": "Mark Jankowski",
           "team": "CAR",
           "stat": "Points",
@@ -345,6 +345,15 @@
           "team": "CGY",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 2.11,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Matt Coronato",
+          "team": "CGY",
+          "stat": "Shots On Goal",
+          "line": 4.5,
           "odds_type": "demon",
           "projection": 2.11,
           "reason": "line pulled"
@@ -417,6 +426,15 @@
           "team": "CGY",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.57,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Mikael Backlund",
+          "team": "CGY",
+          "stat": "Shots On Goal",
+          "line": 5.5,
           "odds_type": "demon",
           "projection": 1.57,
           "reason": "line pulled"
@@ -666,8 +684,8 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 6,
-        "superseded_dup": 9,
+        "pp_pull": 9,
+        "superseded_dup": 8,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
