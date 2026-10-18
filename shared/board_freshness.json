@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-18T00:38:41Z",
+  "checked_at": "2026-10-18T00:46:14Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-18T00:38:41.491229+00:00",
@@ -12,7 +12,7 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-18T00:18:44.185780+00:00",
+      "generated_at": "2026-10-18T00:46:14.069230+00:00",
       "prop_count": 294,
       "started_removed": 0,
       "removals": [
@@ -50,6 +50,15 @@
           "line": 2.5,
           "odds_type": "goblin",
           "projection": 2.52,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Joel Farabee",
+          "team": "CGY",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.64,
           "reason": "line pulled"
         },
         {
@@ -180,7 +189,7 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 0,
+        "pp_pull": 1,
         "superseded_dup": 2,
         "manual_out": 0,
         "news_out": 0,
