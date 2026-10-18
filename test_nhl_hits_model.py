@@ -169,13 +169,18 @@ def test_private_grader_writes_only_under_nhl_hits(tmp_path, monkeypatch):
     games = [dict(_g(7, "2026-10-17", 3, gid=1), player="Matt Rempe"),
              dict(_g(8, "2026-10-17", 2, gid=1), player="Will Cuylle")]
     out = hg.grade_date("2026-10-17", tmp_path, games=games)
-    results = {r["player"]: r["result"] for r in out["rows"]}
-    assert results["Pulled Guy"] == "void"
-    assert results["Scratch Guy"] == "dnp"
-    assert results["Will Cuylle"] in {"push", "hit", "miss"}
+    results = {r["pp_player_id"]: r["result"] for r in out["rows"]}
+    assert results["3"] == "void"  # Pulled Guy
+    assert results["4"] == "dnp"  # Scratch Guy
+    assert results["2"] in {"push", "hit", "miss"}  # Will Cuylle
     assert out["admin_only"] is True
+    allowed = {"player_id", "pp_player_id", "team", "opponent", "line", "side", "tier", "actual", "result", "reason"}
+    for row in out["rows"]:
+        assert set(row) <= allowed, row  # no projection, no raw CG score
     summary = hg.write_summary(tmp_path)
     assert summary["admin_only"] is True
+    blob = (tmp_path / "grades" / "2026-10-17.json").read_text() + (tmp_path / "grades" / "summary.json").read_text()
+    assert '"projection"' not in blob and '"cg"' not in blob
     written = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*.json"))
     assert written == ["board/2026-10-17.json", "grades/2026-10-17.json", "grades/summary.json", "lines/2026-10-17.json"]
     # A started game is frozen: a later snapshot does not overwrite it.
@@ -188,3 +193,24 @@ def test_private_grader_is_off_without_flag(tmp_path, monkeypatch):
     monkeypatch.delenv("NHL_HITS_GRADE", raising=False)
     assert hg.main(["grade", "--base", str(tmp_path)]) == 0
     assert list(tmp_path.rglob("*")) == []
+
+
+def test_void_keys_on_team_pair_not_start_text():
+    import nhl.hits_grade as hg
+    # Same game, start text formatted differently: still the same game.
+    a = _line("1", "A", "NYR", "NJD", 1.5, "2026-10-17T19:00:00-04:00", "2026-10-17T18:00:00+00:00")
+    b = _line("2", "B", "NJD", "NYR", 1.5, "2026-10-17T23:00:00.000Z", "2026-10-17T22:40:00+00:00")
+    other = _line("3", "C", "BOS", "TOR", 1.5, "2026-10-17T19:00:00-04:00", "2026-10-17T22:40:00+00:00")
+    assert hg._pulled(a, {"a": a, "b": b}) is True
+    assert hg._pulled(a, {"a": a, "c": other}) is False
+
+
+def test_private_hits_steps_gated_on_repo_variable():
+    from pathlib import Path
+    for wf in ("nhl-refresh.yml", "nhl-memory.yml"):
+        text = (Path(__file__).parent / ".github" / "workflows" / wf).read_text()
+        assert 'NHL_HITS_GRADE: "1"' not in text
+        step = text[text.index("Private NHL hits"):]
+        step = step[:step.index("run:")]
+        assert "if: vars.NHL_HITS_GRADE == '1'" in step
+        assert "NHL_HITS_GRADE: ${{ vars.NHL_HITS_GRADE }}" in step

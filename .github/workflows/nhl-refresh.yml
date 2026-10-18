@@ -104,10 +104,13 @@ jobs:
       # Admin-only Hits grading (#276). Writes memory/nhl_hits/board/ only:
       # never the board, Supabase, slate, recap, summary, or status.
       # NHL_HITS_BOARD and NHL_HITS_PUBLIC stay unset.
+      # Repo variable NHL_HITS_GRADE stays UNSET while the repo is public, so
+      # this step is skipped and no private hit-rate record is committed.
       - name: Private NHL hits projections (admin-only)
+        if: vars.NHL_HITS_GRADE == '1'
         continue-on-error: true
         env:
-          NHL_HITS_GRADE: "1"
+          NHL_HITS_GRADE: ${{ vars.NHL_HITS_GRADE }}
         run: python -m nhl.hits_grade snapshot
 
       - name: Publish memory/nhl slate freeze

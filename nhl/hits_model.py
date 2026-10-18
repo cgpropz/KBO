@@ -65,7 +65,7 @@ def hits_board_enabled() -> bool:
 
 
 def hits_grade_enabled() -> bool:
-    """NHL_HITS_GRADE=1 grades frozen Hits rows into the recap. Default off."""
+    """NHL_HITS_GRADE=1 grades Hits privately into memory/nhl_hits/grades/ (never the recap). Default off."""
     return _flag("NHL_HITS_GRADE")
 
 

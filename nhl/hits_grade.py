@@ -1,19 +1,24 @@
 """Private, admin-only grading of real standard PrizePicks NHL Hits lines.
 
-Runs only with NHL_HITS_GRADE=1. Nothing here touches the member board, the
+Runs only with NHL_HITS_GRADE=1. In CI that env comes from the repo
+variable NHL_HITS_GRADE, which stays unset while the repo is public, so the
+workflow steps are skipped and nothing is written. Nothing here touches the member board, the
 public slate, recap.json, summary.json, board status, the track record, or
 any Supabase table. Output stays under memory/nhl_hits/:
 
   board/<YYYY-MM-DD>.json   pre-game Hits projection per standard line
                             (frozen at puck drop; never published)
-  grades/<YYYY-MM-DD>.json  graded rows for that ET date
-  grades/summary.json       running totals by CG tier (admin-only)
+  grades/<YYYY-MM-DD>.json  graded rows for that ET date: tally fields only
+                            (player ids, team, opponent, line, side, tier
+                            bucket, actual hits, result); no projection and
+                            no raw CG score
+  grades/summary.json       running counts by tier bucket (admin-only)
 
 Lines come from memory/nhl_hits/lines/ (standard only, written by
 nhl/hits_log.py). Results come from memory/nhl_hits/games/ (api-web
 boxscores). A standard line that disappeared while other lines from the same
-game were still being captured before puck drop is Void (pulled), the same
-rule as the #238 re-grade. A player whose team finished but who has no
+game (same team pair) were still being captured before puck drop is Void
+(pulled), the same rule as the #238 re-grade. A player whose team finished but who has no
 boxscore row is DNP. A whole-number line that lands on the number is a push.
 Pick side is the board rule: CG Score above 50 is the over, below 50 the
 under, exactly 50 no pick.
@@ -120,6 +125,12 @@ def _prior(season: str) -> str:
     return f"{start}{start + 1}"
 
 
+def _same_game(a: dict, b: dict) -> bool:
+    """Same game = same team pair on the slate (matches #238), not game_start text."""
+    pa = {a.get("team"), a.get("opponent")}
+    return None not in pa and pa == {b.get("team"), b.get("opponent")}
+
+
 def _pulled(rec: dict, lines: dict[str, dict]) -> bool:
     """Gone while another line from the same game was still captured before puck drop."""
     start = _ts(rec.get("game_start"))
@@ -127,10 +138,11 @@ def _pulled(rec: dict, lines: dict[str, dict]) -> bool:
     if not start or not seen:
         return False
     for other in lines.values():
-        if other is rec or other.get("game_start") != rec.get("game_start"):
+        if other is rec or not _same_game(rec, other):
             continue
         other_seen = _ts(other.get("last_seen"))
-        if other_seen and seen + PULLED_GAP < other_seen < start:
+        other_start = _ts(other.get("game_start")) or start
+        if other_seen and seen + PULLED_GAP < other_seen < other_start:
             return True
     return False
 
@@ -150,9 +162,10 @@ def grade_date(iso: str, base: Path = BASE, games: list[dict] | None = None) -> 
         snap = board.get(key)
         if not snap:
             continue  # never projected pre-game
-        base_row = {"player": rec["player"], "team": rec.get("team"), "opponent": rec.get("opponent"),
-                    "line": rec.get("closing_line"), "projection": snap["projection"],
-                    "game_start": rec.get("game_start")}
+        # Tally fields only: no projection and no raw CG score in the record.
+        base_row = {"player_id": snap.get("player_id"), "pp_player_id": snap.get("pp_player_id"),
+                    "team": rec.get("team"), "opponent": rec.get("opponent"),
+                    "line": rec.get("closing_line")}
         if _pulled(rec, lines):
             rows.append({**base_row, "result": "void", "reason": "pulled_before_start"})
             continue
@@ -167,12 +180,12 @@ def grade_date(iso: str, base: Path = BASE, games: list[dict] | None = None) -> 
         score = hits_score(snap["projection"], line)
         tier = tier_of(score) if score is not None else None
         if tier is None:
-            rows.append({**base_row, "cg": score, "actual": actual["hits"], "result": "no_pick"})
+            rows.append({**base_row, "actual": actual["hits"], "result": "no_pick"})
             continue
         side = "OVER" if score > 50 else "UNDER"
         hits = actual["hits"]
         result = "push" if hits == line else ("hit" if (hits > line) == (side == "OVER") else "miss")
-        rows.append({**base_row, "cg": score, "tier": tier, "side": side, "actual": hits, "result": result})
+        rows.append({**base_row, "tier": tier, "side": side, "actual": hits, "result": result})
     payload = {"date": iso, "admin_only": True, "status": "partial" if waiting else "complete",
                "waiting": waiting, "rows": rows}
     _save(base / "grades" / f"{iso}.json", payload)
