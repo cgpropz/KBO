@@ -150,3 +150,27 @@ class NflAvailabilityTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class LoudFeedFailureTests(unittest.TestCase):
+    def test_empty_or_failed_espn_feed_is_a_run_error_annotation(self):
+        import contextlib
+        import io
+
+        from nfl.availability import fetch_espn_unavailable
+
+        class Empty:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"injuries": []}
+
+        def broken(*_args, **_kwargs):
+            raise ConnectionError("down")
+
+        for get in (lambda *_a, **_k: Empty(), broken):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(fetch_espn_unavailable(get), set())
+            self.assertIn("::error title=NFL OUT filter::", out.getvalue())
