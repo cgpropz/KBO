@@ -64,7 +64,7 @@ export function slipNeedsSide(legs) {
   return (Array.isArray(legs) ? legs : []).some(legNeedsSide)
 }
 
-export const PICK_SIDE_HINT = 'Pick MORE or LESS on every EVEN leg to save.'
+export const PICK_SIDE_HINT = 'Tap OVER or UNDER on every EVEN leg to save.'
 
 export function cleanSavedLeg(leg, sport) {
   const sideRaw = String(leg?.side || '').toUpperCase()
