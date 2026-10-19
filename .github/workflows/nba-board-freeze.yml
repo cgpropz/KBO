@@ -14,11 +14,6 @@ name: NBA board freeze (artifact)
 # Oct 20 opening night tips (ET): BOS@DET 3:00 PM, PHI@NY 7:00 PM, OKC@SA 9:30 PM.
 
 on:
-  # TEMPORARY: branch-only push so we can prove an artifact before the workflow
-  # exists on main (workflow_dispatch requires default-branch registration).
-  # Remove this push trigger after the proof run (do not leave it on the PR).
-  push:
-    branches: [gitbot/nba-board-freeze]
   schedule:
     - cron: "15 18 * * *"
     - cron: "15 22 * * *"
@@ -39,11 +34,8 @@ concurrency:
 
 jobs:
   freeze:
-    # Schedules only fire on the default branch. Dispatch/push can target this branch.
-    if: >
-      github.event_name == 'workflow_dispatch'
-      || github.event_name == 'push'
-      || github.ref == 'refs/heads/main'
+    # Schedules only fire on the default branch. Dispatch can target any branch.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -72,10 +64,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$NBA_BOARD_FREEZE_OUT"
           EXTRA=()
-          # Push proof and dispatch default: include next tip slate.
-          if [ "${{ github.event_name }}" = "push" ]; then
-            EXTRA+=(--include-upcoming)
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_upcoming }}" != "false" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_upcoming }}" != "false" ]; then
             EXTRA+=(--include-upcoming)
           fi
           python -m nba.board_freeze --out-dir "$NBA_BOARD_FREEZE_OUT" "${EXTRA[@]}"
