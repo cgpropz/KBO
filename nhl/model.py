@@ -25,12 +25,12 @@ PROP_SAVES = "Goalie Saves"
 PROP_POINTS = "Points"
 PROP_PPP = "Power Play Points"
 
-# Points overs. A 2025-26 walk-forward lost money below 0.69 and was
-# comfortable only from 0.86 up. Overs under 0.69 leave the board. Overs
-# from 0.69 up to 0.86 stay visible and are not ranked. Overs at 0.86 and
-# up can be promoted. Unders are not this rule.
+# Points overs. A 2025-26 walk-forward lost money below 0.69. Overs under
+# 0.69 leave the board. Overs from 0.69 up to 0.78 stay visible and are not
+# ranked. Overs at 0.78 and up can be promoted (lowered from 0.86 on
+# 2026-10-19 per the 2026-10-18 re-backtest). Unders are not this rule.
 POINTS_OVER_SHOW = 0.69
-POINTS_OVER_PROMOTE = 0.86
+POINTS_OVER_PROMOTE = 0.78
 
 # Hits. None means there is no rink term. The in-season rolling rink factor
 # and a prior-season arena factor both made the 2025-26 holdout worse.
@@ -207,7 +207,7 @@ def _hundredths(value) -> int | None:
 def points_over_disposition(prop, projection, line) -> str:
     """drop, hold, or rank for one board row.
 
-    Only a Points over is gated. 69 hundredths is 0.69 and 86 is 0.86.
+    Only a Points over is gated. 69 hundredths is 0.69 and 78 is 0.78.
     """
     if str(prop or "").strip().lower() != "points":
         return "rank"
@@ -225,7 +225,7 @@ def points_over_disposition(prop, projection, line) -> str:
 
 
 def apply_points_over_gate(rows) -> list:
-    """Drop Points overs under 0.69. Leave 0.69–0.86 on the board, unranked."""
+    """Drop Points overs under 0.69. Leave 0.69–0.78 on the board, unranked."""
     kept = []
     for row in rows or []:
         if not isinstance(row, dict):

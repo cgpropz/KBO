@@ -13,12 +13,15 @@ const board = [
   { player: 'Shots', prop: 'Shots On Goal', line: 2.5, projection: 3.1, oddsType: 'standard', rankEligible: true },
 ]
 
-test('points overs under 0.69 leave the board and 0.69 to 0.86 stay unranked', () => {
+test('points overs under 0.69 leave the board and 0.69 to 0.78 stay unranked', () => {
   assert.equal(pointsOverDisposition(board[0]), 'drop')
   assert.equal(pointsOverDisposition(board[1]), 'hold')
   assert.equal(pointsOverDisposition(board[2]), 'rank')
   assert.equal(pointsOverDisposition(board[3]), 'rank')
   assert.equal(pointsOverDisposition(board[4]), 'rank')
+  assert.equal(pointsOverDisposition({ ...board[1], projection: 0.77 }), 'hold')
+  assert.equal(pointsOverDisposition({ ...board[1], projection: 0.78 }), 'rank')
+  assert.equal(pointsOverDisposition({ ...board[1], projection: 0.82 }), 'rank')
   assert.equal(applyPointsOverGate(board[0]), null)
   const rows = prepareBoardRows(board)
   assert.deepEqual(rows.map((row) => row.player), ['Held', 'Ranked', 'Under', 'PPP', 'Shots'])

@@ -269,12 +269,14 @@ class ModelTests(unittest.TestCase):
         self.assertIn("python3 -m ml.shadow.score --sport", shadow)
         self.assertIn("python3 -m ml.shadow.grade --sport", shadow)
 
-    def test_points_overs_drop_below_0_69_and_hold_until_0_86(self):
+    def test_points_overs_drop_below_0_69_and_hold_until_0_78(self):
         self.assertEqual(POINTS_OVER_SHOW, 0.69)
-        self.assertEqual(POINTS_OVER_PROMOTE, 0.86)
+        self.assertEqual(POINTS_OVER_PROMOTE, 0.78)
         self.assertEqual(points_over_disposition("Points", 0.68, 0.5), "drop")
         self.assertEqual(points_over_disposition("Points", 0.69, 0.5), "hold")
-        self.assertEqual(points_over_disposition("Points", 0.85, 0.5), "hold")
+        self.assertEqual(points_over_disposition("Points", 0.77, 0.5), "hold")
+        self.assertEqual(points_over_disposition("Points", 0.78, 0.5), "rank")
+        self.assertEqual(points_over_disposition("Points", 0.85, 0.5), "rank")
         self.assertEqual(points_over_disposition("Points", 0.86, 0.5), "rank")
         self.assertEqual(points_over_disposition("Points", 0.4, 0.5), "rank")
         self.assertEqual(points_over_disposition("Power Play Points", 0.5, 0.5), "rank")

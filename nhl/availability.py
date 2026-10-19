@@ -883,7 +883,7 @@ def finish_board(projections, lineups, games, fetch_json=_json, manual=None, new
     """Filter, then rank. The saved board and the free top 3 both use this list.
 
     Points overs under 0.69 are dropped here. Points overs from 0.69 up to
-    0.86 stay on the list with rankEligible false, so they are visible and
+    0.78 stay on the list with rankEligible false, so they are visible and
     not promoted. Fallback holds sort after the playable rows.
     """
     kept = apply_points_over_gate(drop_unavailable(
