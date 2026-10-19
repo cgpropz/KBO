@@ -8,7 +8,6 @@ import { useAgeGate } from './ageGateContext';
 import AutoRenewalNote from './AutoRenewalNote';
 import { PAUSE_WEEK_ENABLED, PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
 import { noActivePlanNotice } from './manageSubscriptionCopy';
-import FoundersOffer from './FoundersOffer';
 import DiscordAccount from './DiscordAccount';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
 import './SubscriptionPage.css';
@@ -125,8 +124,8 @@ function SubscriptionPage() {
       }
       window.open(result.url, '_blank', 'noopener');
       setAwaitingPayment(true);
-    } catch (err) {
-      if (err?.reason === 'sold_out' || err?.reason === 'expired') throw err;
+    } catch {
+      /* checkout did not open; the button stays available */
     } finally {
       setOfferBusy(false);
     }
@@ -397,10 +396,6 @@ function SubscriptionPage() {
                 </div>
               ))}
             </div>
-
-            {tier.id === 'lifetime' && (
-              <FoundersOffer compact busy={offerBusy} onClaim={() => openOfferCheckout('founders')} />
-            )}
 
             <button
               className={`sub-cta sub-cta-${tier.ctaStyle}`}

@@ -1,20 +1,10 @@
-// Checkout Sessions for Lifetime ($249.99) and Founders ($99.99).
-// Not a route. Wired from api/checkout/[action].js.
-//
-// Founders is not a static Payment Link: the Payment Link's own 25-sale cap
-// and end date do not apply to a Checkout Session created here. The cap and
-// the 18 Oct 2026 11:59 PM ET deadline are enforced before a session is
-// created. Past 25 Founders purchases (in-site sessions, charges, and
-// Payment Link sales, one shared count), or after the deadline, the handler
-// refuses. It does not open a $249.99 Lifetime session in that case.
-// Neither Lifetime nor Founders has a free trial.
+// Checkout Sessions for Lifetime ($249.99). Not a route. Wired from
+// api/checkout/[action].js. One-time payment, no free trial.
 
 import crypto from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { foundersOfferState } from '../src/foundersOffer.js';
-import { customersForEmail, activeFoundersPriceId, activeLifetimePriceId } from './_stripeTier.js';
-import { countFoundersPurchases } from './_foundersCount.js';
+import { customersForEmail, activeLifetimePriceId } from './_stripeTier.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -89,19 +79,6 @@ async function stripeCustomerId(client, email) {
   }
 }
 
-export async function foundersOfferStatus(client, env = process.env, now = Date.now()) {
-  let sold = null;
-  try {
-    sold = await countFoundersPurchases(client, env);
-  } catch {
-    sold = null;
-  }
-  if (sold == null) {
-    return { ...foundersOfferState({ now, sold: 0 }), open: false, reason: 'unavailable', spotsLeft: 0, sold: null };
-  }
-  return foundersOfferState({ now, sold });
-}
-
 async function createPaymentSession(client, { priceId, plan, buyer, body }) {
   const metadata = { cg_plan: plan, tier: 'combined' };
   for (const key of UTM_KEYS) {
@@ -137,21 +114,9 @@ async function createPaymentSession(client, { priceId, plan, buyer, body }) {
   return { url, id: session.id };
 }
 
-function foundersClosedBody(offer) {
-  if (offer.reason === 'sold_out') {
-    return { status: 409, error: 'Founders deal has sold out', reason: 'sold_out' };
-  }
-  if (offer.reason === 'expired') {
-    return { status: 409, error: 'Founders deal has ended', reason: 'expired' };
-  }
-  return { status: 503, error: 'Checkout unavailable', reason: offer.reason || 'unavailable' };
-}
-
 /**
- * POST /api/checkout/lifetime and POST /api/checkout/founders.
+ * POST /api/checkout/lifetime.
  * One-time payment mode. No subscription and no free trial.
- * Founders past the cap or the deadline is refused. No Checkout Session
- * is created, and the $249.99 Lifetime price is not substituted.
  */
 export async function handleOfferCheckoutRequest(req, res, deps = {}) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -160,27 +125,12 @@ export async function handleOfferCheckoutRequest(req, res, deps = {}) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const requested = deps.plan === 'founders' ? 'founders' : 'lifetime';
+  const plan = 'lifetime';
   const client = deps.stripe || getStripe();
   if (!client) return res.status(503).json({ error: 'Checkout unavailable' });
 
   const env = deps.env || process.env;
-  const now = typeof deps.now === 'number' ? deps.now : Date.now();
-  const plan = requested;
-
-  if (requested === 'founders') {
-    const offer = await foundersOfferStatus(client, env, now);
-    if (!offer.open) {
-      const closed = foundersClosedBody(offer);
-      return res.status(closed.status).json({
-        error: closed.error,
-        reason: closed.reason,
-        open: false,
-      });
-    }
-  }
-
-  const priceId = plan === 'founders' ? activeFoundersPriceId(env) : activeLifetimePriceId(env);
+  const priceId = activeLifetimePriceId(env);
   const buyer = deps.user !== undefined ? deps.user : await optionalUser(req, deps.authenticate);
   try {
     const session = await createPaymentSession(client, {

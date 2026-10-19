@@ -115,5 +115,5 @@ test('dispatchers keep the existing handlers and reject an unknown action', asyn
   await checkoutHandler({ query: { action: 'no-such-plan' }, method: 'POST' }, checkout)
   assert.equal(checkout.statusCode, 404)
   assert.equal(typeof CHECKOUT_ACTIONS.lifetime, 'function')
-  assert.equal(typeof CHECKOUT_ACTIONS.founders, 'function')
+  assert.equal(CHECKOUT_ACTIONS.founders, undefined)
 })

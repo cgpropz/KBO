@@ -181,7 +181,6 @@ export function renderPricingPage() {
       <div class="plans">
         ${paid.map(planCard).join('\n')}
       </div>
-      <p class="note">While the Founders offer is open, the app can show a Founders lifetime price of $99.99 through Oct 18, 2026. That buy button appears only while the offer is open. If it is sold out or ended, the app does not offer it. Lifetime All-Access otherwise remains ${escapeHtml(paid.find((tier) => tier.id === 'lifetime')?.price || '$249.99')}.</p>
       <h2>Free</h2>
       ${planCard(free)}
       <h2>Discord Only</h2>

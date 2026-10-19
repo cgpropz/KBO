@@ -112,7 +112,7 @@ async function walkSubscriptions(status, { byEmail, discordEmails, recordSite })
   }
 }
 
-// One-time Lifetime and Founders purchases are not subscriptions. Scan recent
+// One-time Lifetime purchases (current and legacy $99.99) are not subscriptions. Scan recent
 // paid Checkout Sessions and grant combined when the price id, product id, or
 // one-time metadata says so. The legacy $49.99/yr KBO price is recurring and
 // is ignored here.

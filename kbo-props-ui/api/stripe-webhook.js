@@ -395,7 +395,7 @@ export async function handleCheckoutSessionCompleted(obj, deps = {}) {
     const userId = obj.client_reference_id;
     const email = obj.customer_details?.email || obj.customer_email;
     const price = await checkoutSessionPrice(stripeApi, obj);
-    // Lifetime, Founders, and Yearly resolve by price id or product id,
+    // Lifetime (current and legacy) and Yearly resolve by price id or product id,
     // including taxed totals that are not the list price.
     const tier = await tierForStripePrice(stripeApi, price, { metadata: obj.metadata, strict: true });
 

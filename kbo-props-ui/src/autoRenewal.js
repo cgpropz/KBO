@@ -23,7 +23,6 @@ export function autoRenewalStatement(env) {
     `Discord Only Weekly renews automatically at ${discordWeekly.price} every week until you cancel.`,
     `Discord Only Monthly renews automatically at ${discordMonthly.price} every month until you cancel.`,
     `Lifetime All-Access is a one-time payment of ${lifetime.price} and does not renew.`,
-    'The Founders price, while that offer is open, is a one-time payment and does not renew.',
     'You can cancel anytime. Access continues until the end of the current billing period.',
   ].join(' ');
 }

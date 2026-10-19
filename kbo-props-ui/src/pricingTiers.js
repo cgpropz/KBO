@@ -3,11 +3,10 @@
  * and prices, reused by SubscriptionPage.jsx (checkout) and PublicLanding.jsx
  * (marketing pricing preview) so the two never drift out of sync.
  *
- * Lifetime ($249.99) and Founders ($99.99) are Checkout Sessions, not Payment
- * Links, so the server can enforce the Founders cap and deadline. Yearly uses
+ * Lifetime ($249.99) is a Checkout Session, not a Payment Link. Yearly uses
  * its Payment Link. None of these plans include a free trial.
  */
-import { YEARLY_PAYMENT_LINK } from './foundersOffer.js';
+import { YEARLY_PAYMENT_LINK } from './stripePrices.js';
 import { freeTierPreviewFeature } from './freePreviewCopy.js';
 
 export const STRIPE_LINKS = {
