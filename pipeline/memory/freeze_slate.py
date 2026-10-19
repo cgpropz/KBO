@@ -41,19 +41,19 @@ from pipeline.memory.common import (
     today_et,
     today_kst,
 )
+from pipeline.memory.common import recap_locked
 from pipeline.memory.common import write_slate as _write_slate_unlocked
 
 
 def slate_is_locked(sport: str, d: date) -> bool:
-    """True once a day has been graded complete (recap.json + meta complete).
+    """True once a day has a recap.json (same rule as the graders).
 
     Locked slates are immutable: re-freezing after grading would let
     post-game projections/recommendations overwrite the pregame picks the
-    recap was graded against.
+    recap was graded against. Keyed on recap existence alone, so a recapped
+    day whose meta.json was reset (WNBA 10/17/2026) is still locked.
     """
-    day_dir = memory_dir(sport, d)
-    meta = load_json(day_dir / "meta.json", default={}) or {}
-    return meta.get("status") == "complete" and (day_dir / "recap.json").exists()
+    return recap_locked(sport, d)
 
 
 def write_slate(
@@ -612,6 +612,10 @@ def freeze_nfl(
         if ignore_cutoff:
             entry["cutoff_ignored"] = True
         _formula_fields(entry, row)
+        # removed / pp_status / projection id from the board row. A pulled or
+        # OUT row (removed true) goes to write_slate as a pull marker: it
+        # stamps the card already frozen and is never frozen as live.
+        attach_board_identity(entry, row)
         by_date[gameday].append(_stamp(entry, start, start_source, now, commit))
         hist = {
             "ts": now_iso,
@@ -636,7 +640,7 @@ def freeze_nfl(
         if dry_run:
             summaries.append({"slate_date": format_mmddyyyy(d), "props": len(props), "dry_run": True})
             continue
-        path = write_slate("nfl", d, props, source="nfl/projections.json")
+        path = write_slate("nfl", d, props, source="nfl/projections.json", now=now)
         item = {"slate_date": format_mmddyyyy(d), "props": len(props), "path": str(path)}
         if write_history and not slate_is_locked("nfl", d):
             hist_path, n = append_nfl_history(d, history[d])

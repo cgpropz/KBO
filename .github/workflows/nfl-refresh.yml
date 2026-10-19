@@ -12,6 +12,37 @@ on:
     # runs at :00/:30 under load (observed 2026-09-26..28: this "every 30 min"
     # job actually ran only every ~3-6 h). Same 30-minute cadence.
     - cron: "17,47 * * * *"
+    # Extra inactive-check runs on NFL game days (Sun; Mon for MNF; Thu for
+    # TNF) so a late ESPN Out comes off before lock. Each run is the full
+    # board build (about 1 minute), so it re-reads ESPN and
+    # nfl/manual_out.json. Cron is UTC. Day-of-week is the UTC day: a run
+    # after 8 PM ET (EDT) or 7 PM ET (EST) lands on the next UTC day
+    # (Sun night -> Mon, MNF -> Tue, TNF -> Fri).
+    # Pre-lock runs are timed to finish before kickoff:
+    #   12:38 PM ET for the 1:00 kicks
+    #   3:55 PM ET for the 4:05 kicks
+    #   4:12 PM ET for the 4:25 kicks
+    #   7:58 PM ET for the 8:15/8:20 kicks
+    # plus inactive checks at 11:45 AM and 7:32 PM ET. Off :00/:30 because
+    # GitHub drops more runs there.
+    # EDT (UTC-4, until Sun Nov 1, 2026):
+    - cron: "45 15 * * 0,1,4"
+    - cron: "38 16 * * 0,1,4"
+    - cron: "55 19 * * 0,1,4"
+    - cron: "12 20 * * 0,1,4"
+    - cron: "32 23 * * 0,1,4"
+    - cron: "58 23 * * 0,1,4"
+    # EST (UTC-5, from Nov 1, 2026): the same ET times, one UTC hour later.
+    # Both sets stay on, so nothing is missed at the switch. During EDT the
+    # EST set is an extra run an hour later; during EST the EDT set runs an
+    # hour early. GitHub can still delay any of these, and the :17/:47 chain
+    # above keeps running in between.
+    - cron: "45 16 * * 0,1,4"
+    - cron: "38 17 * * 0,1,4"
+    - cron: "55 20 * * 0,1,4"
+    - cron: "12 21 * * 0,1,4"
+    - cron: "32 0 * * 1,2,5"
+    - cron: "58 0 * * 1,2,5"
   workflow_dispatch:
   # A merge that changes the NFL builder or board used to wait on that flaky
   # cron. The site reads Supabase, so the push that lands the code has to

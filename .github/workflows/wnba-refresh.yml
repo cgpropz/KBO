@@ -122,6 +122,7 @@ jobs:
         run: python pipeline/build_correlations.py --sport wnba
 
       - name: Publish WNBA snapshots to Supabase
+        id: publish_supabase
         timeout-minutes: 10
         run: python publish_supabase.py
         env:
@@ -159,49 +160,75 @@ jobs:
 
           git commit -m "chore: auto-refresh WNBA data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-          # Attempt 1: direct push
-          if git push origin HEAD:main; then
-            echo "Push succeeded on first attempt"
-            exit 0
-          fi
-
-          echo "Push rejected; fetching latest and rebasing..."
-          if git pull --rebase origin main; then
-            git push origin HEAD:main \
-              && echo "Push succeeded after clean rebase" \
-              || git push --force-with-lease origin HEAD:main \
-              && echo "Push succeeded with --force-with-lease" \
-              || echo "All push attempts failed — snapshots still published to Supabase"
-          else
-            # Conflicts here would only be within wnba/ data; take our fresh version.
-            CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-            if [ -n "$CONFLICTS" ]; then
-              echo "Conflicted files: $CONFLICTS"
-              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
-              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+          # Up to PUSH_ATTEMPTS pushes. A rejected push (main moved) rebases onto
+          # the latest main and retries after a growing backoff. --autostash:
+          # the refresh leaves other generated files modified in the checkout.
+          # Without it the rebase aborts ("cannot pull with rebase: You have
+          # unstaged changes") and box scores never reach main, so the
+          # standalone WNBA grader reads stale CSVs (WNBA 10/17/2026).
+          PUSH_ATTEMPTS="${PUSH_ATTEMPTS:-3}"
+          PUSH_BACKOFF_SECONDS="${PUSH_BACKOFF_SECONDS:-10}"
+          attempt=1
+          while true; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt ${attempt}"
+              exit 0
             fi
-            GIT_EDITOR=true git rebase --continue \
-              && git push origin HEAD:main \
-              && echo "Push succeeded after conflict auto-resolution" \
-              || {
+            if [ "$attempt" -ge "$PUSH_ATTEMPTS" ]; then
+              echo "::error::All ${PUSH_ATTEMPTS} push attempts failed; box scores were NOT pushed to main (snapshots are still in Supabase)"
+              exit 1
+            fi
+            wait_s=$((PUSH_BACKOFF_SECONDS * attempt))
+            echo "Push attempt ${attempt} rejected; waiting ${wait_s}s, then rebasing onto latest main..."
+            sleep "$wait_s"
+            attempt=$((attempt + 1))
+
+            STASHES_BEFORE=$(git stash list | wc -l)
+            if ! git pull --rebase --autostash origin main; then
+              # Conflicts here would only be within wnba/ data; take our fresh version.
+              CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+              if [ -n "$CONFLICTS" ]; then
+                echo "Conflicted files: $CONFLICTS"
+                echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+                echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+              fi
+              if ! GIT_EDITOR=true git rebase --continue; then
                 git rebase --abort >/dev/null 2>&1 || true
-                echo "Push failed after conflict resolution — snapshots still published to Supabase"
-              }
-          fi
+                echo "::error::WNBA data commit could not be rebased onto main; box scores were NOT pushed"
+                exit 1
+              fi
+            fi
+
+            # pull --autostash returns 0 even when re-applying the stash
+            # conflicts. Leftover conflicts or a stranded autostash are fatal
+            # (no retry: the checkout is no longer clean).
+            if [ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]; then
+              echo "::error::Unresolved conflicts after rebase/autostash: $(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+              exit 1
+            fi
+            if [ "$(git stash list | wc -l)" -gt "$STASHES_BEFORE" ]; then
+              echo "::error::git left an autostash entry after the rebase (stash re-apply conflicted)"
+              git stash list | head -5
+              exit 1
+            fi
+          done
 
 
+      # Freeze only a board the site actually received: a failed Supabase
+      # publish must not freeze cards members never saw. Grading yesterday
+      # and publishing memory/ do not depend on today's freeze.
       - name: Freeze WNBA slate into memory/
-        if: success()
+        if: ${{ !cancelled() && steps.publish_supabase.outcome == 'success' }}
         continue-on-error: true
         run: python pipeline/memory/freeze_slate.py --sport wnba
 
       - name: Grade WNBA memory for yesterday if complete
-        if: success()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: python pipeline/memory/grade_wnba_day.py
 
       - name: Publish memory/ updates
-        if: success()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: wnba memory update"

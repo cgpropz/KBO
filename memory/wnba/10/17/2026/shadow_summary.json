@@ -1,0 +1,1851 @@
+{
+  "schema": 1,
+  "sport": "wnba",
+  "slate_date": "10/17/2026",
+  "slate_date_iso": "2026-10-17",
+  "period": "2026-10-17",
+  "graded_at": "2026-10-19T01:44:53+00:00",
+  "status": "graded",
+  "evaluation": {
+    "excluded": false
+  },
+  "sources": {
+    "shadow": "shadow.json",
+    "recap": "recap.json",
+    "recap_graded_at": "2026-10-18T08:46:52.805782+00:00"
+  },
+  "params": {
+    "sha256": "1ca37bc5a9730530",
+    "files": 22,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "d88a6b4df51e"
+  },
+  "definitions": {
+    "current": "pre-promotion formula (baseline_recommendation vs recap result) while the site is publishing the tuned formula; published_result is the site pick (recap model_result)",
+    "shadow": "shadow_side vs recap result (candidate stats: Phase 2 fit; other stats carry the current pick)",
+    "current_edge": "sign(current_projection - line) vs result (projection-only benchmark)",
+    "hit_rate": "hits / (hits + misses); pushes, DNPs, voids and no-pick rows excluded",
+    "paired": "only rows where BOTH current and shadow made a decided pick (apples-to-apples hit rate)",
+    "mae": "paired rows with an actual where both projections exist (legacy KBO pitcher cg scores excluded)",
+    "mae_shadow_all": "shadow MAE over every row with an actual (includes rows without a current projection)",
+    "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
+  },
+  "overall": {
+    "graded_props": 136,
+    "current": {
+      "hits": 54,
+      "misses": 75,
+      "pushes": 7,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.418605,
+      "hit_rate_pct": 41.9
+    },
+    "shadow": {
+      "hits": 52,
+      "misses": 77,
+      "pushes": 7,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.403101,
+      "hit_rate_pct": 40.3
+    },
+    "hit_rate_delta_pct_points": -1.6,
+    "paired": {
+      "n": 129,
+      "current_hits": 54,
+      "shadow_hits": 52,
+      "current_hit_rate_pct": 41.9,
+      "shadow_hit_rate_pct": 40.3
+    },
+    "current_edge": {
+      "hits": 54,
+      "misses": 75,
+      "pushes": 7,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.418605,
+      "hit_rate_pct": 41.9
+    },
+    "mae": {
+      "n": 136,
+      "current": 3.442,
+      "shadow": 3.7198,
+      "delta": 0.2778,
+      "sum_abs_current": 468.11,
+      "sum_abs_shadow": 505.89
+    },
+    "mae_shadow_all": {
+      "n": 136,
+      "shadow": 3.7198,
+      "sum_abs": 505.89
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 11,
+        "misses": 16,
+        "pushes": 2,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.407407,
+        "hit_rate_pct": 40.7
+      },
+      "shadow": {
+        "hits": 7,
+        "misses": 20,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.259259,
+        "hit_rate_pct": 25.9
+      }
+    }
+  },
+  "candidate_rows_only": {
+    "graded_props": 72,
+    "current": {
+      "hits": 32,
+      "misses": 39,
+      "pushes": 1,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.450704,
+      "hit_rate_pct": 45.1
+    },
+    "shadow": {
+      "hits": 30,
+      "misses": 41,
+      "pushes": 1,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.422535,
+      "hit_rate_pct": 42.3
+    },
+    "hit_rate_delta_pct_points": -2.8,
+    "paired": {
+      "n": 71,
+      "current_hits": 32,
+      "shadow_hits": 30,
+      "current_hit_rate_pct": 45.1,
+      "shadow_hit_rate_pct": 42.3
+    },
+    "current_edge": {
+      "hits": 32,
+      "misses": 39,
+      "pushes": 1,
+      "dnps": 0,
+      "voids": 0,
+      "no_pick": 0,
+      "hit_rate": 0.450704,
+      "hit_rate_pct": 45.1
+    },
+    "mae": {
+      "n": 72,
+      "current": 4.1404,
+      "shadow": 4.6651,
+      "delta": 0.5247,
+      "sum_abs_current": 298.11,
+      "sum_abs_shadow": 335.89
+    },
+    "mae_shadow_all": {
+      "n": 72,
+      "shadow": 4.6651,
+      "sum_abs": 335.89
+    },
+    "top_bucket": {
+      "current": {
+        "hits": 8,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.571429,
+        "hit_rate_pct": 57.1
+      },
+      "shadow": {
+        "hits": 4,
+        "misses": 12,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      }
+    }
+  },
+  "per_stat": {
+    "3-PT Attempted": {
+      "graded_props": 5,
+      "current": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 5,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 20.0,
+        "shadow_hit_rate_pct": 20.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "mae": {
+        "n": 5,
+        "current": 3.088,
+        "shadow": 3.088,
+        "delta": 0.0,
+        "sum_abs_current": 15.44,
+        "sum_abs_shadow": 15.44
+      },
+      "mae_shadow_all": {
+        "n": 5,
+        "shadow": 3.088,
+        "sum_abs": 15.44
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "3-PT Made": {
+      "graded_props": 4,
+      "current": {
+        "hits": 3,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 4,
+        "current_hits": 3,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 75.0,
+        "shadow_hit_rate_pct": 75.0
+      },
+      "current_edge": {
+        "hits": 3,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
+      },
+      "mae": {
+        "n": 4,
+        "current": 0.34,
+        "shadow": 0.34,
+        "delta": 0.0,
+        "sum_abs_current": 1.36,
+        "sum_abs_shadow": 1.36
+      },
+      "mae_shadow_all": {
+        "n": 4,
+        "shadow": 0.34,
+        "sum_abs": 1.36
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Assists": {
+      "graded_props": 6,
+      "current": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.4,
+        "hit_rate_pct": 40.0
+      },
+      "hit_rate_delta_pct_points": 20.0,
+      "paired": {
+        "n": 5,
+        "current_hits": 1,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 20.0,
+        "shadow_hit_rate_pct": 40.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "mae": {
+        "n": 6,
+        "current": 1.1017,
+        "shadow": 1.1783,
+        "delta": 0.0767,
+        "sum_abs_current": 6.61,
+        "sum_abs_shadow": 7.07
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 1.1783,
+        "sum_abs": 7.07
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Blks+Stls": {
+      "graded_props": 1,
+      "current": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 1,
+        "current_hits": 0,
+        "shadow_hits": 0,
+        "current_hit_rate_pct": 0.0,
+        "shadow_hit_rate_pct": 0.0
+      },
+      "current_edge": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "mae": {
+        "n": 1,
+        "current": 2.19,
+        "shadow": 2.19,
+        "delta": 0.0,
+        "sum_abs_current": 2.19,
+        "sum_abs_shadow": 2.19
+      },
+      "mae_shadow_all": {
+        "n": 1,
+        "shadow": 2.19,
+        "sum_abs": 2.19
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Defensive Rebounds": {
+      "graded_props": 2,
+      "current": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "shadow": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 1,
+        "current_hits": 0,
+        "shadow_hits": 0,
+        "current_hit_rate_pct": 0.0,
+        "shadow_hit_rate_pct": 0.0
+      },
+      "current_edge": {
+        "hits": 0,
+        "misses": 1,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.0,
+        "hit_rate_pct": 0.0
+      },
+      "mae": {
+        "n": 2,
+        "current": 1.84,
+        "shadow": 1.84,
+        "delta": 0.0,
+        "sum_abs_current": 3.68,
+        "sum_abs_shadow": 3.68
+      },
+      "mae_shadow_all": {
+        "n": 2,
+        "shadow": 1.84,
+        "sum_abs": 3.68
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 1,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "FG Attempted": {
+      "graded_props": 6,
+      "current": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "hit_rate_delta_pct_points": -16.7,
+      "paired": {
+        "n": 6,
+        "current_hits": 4,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 66.7,
+        "shadow_hit_rate_pct": 50.0
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "mae": {
+        "n": 6,
+        "current": 3.5333,
+        "shadow": 3.2517,
+        "delta": -0.2817,
+        "sum_abs_current": 21.2,
+        "sum_abs_shadow": 19.51
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 3.2517,
+        "sum_abs": 19.51
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.333333,
+          "hit_rate_pct": 33.3
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "FG Made": {
+      "graded_props": 6,
+      "current": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "shadow": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 6,
+        "current_hits": 4,
+        "shadow_hits": 4,
+        "current_hit_rate_pct": 66.7,
+        "shadow_hit_rate_pct": 66.7
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 2,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "mae": {
+        "n": 6,
+        "current": 1.1783,
+        "shadow": 1.1783,
+        "delta": 0.0,
+        "sum_abs_current": 7.07,
+        "sum_abs_shadow": 7.07
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 1.1783,
+        "sum_abs": 7.07
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Fantasy Score": {
+      "graded_props": 11,
+      "current": {
+        "hits": 5,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.454545,
+        "hit_rate_pct": 45.5
+      },
+      "shadow": {
+        "hits": 6,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.545455,
+        "hit_rate_pct": 54.5
+      },
+      "hit_rate_delta_pct_points": 9.1,
+      "paired": {
+        "n": 11,
+        "current_hits": 5,
+        "shadow_hits": 6,
+        "current_hit_rate_pct": 45.5,
+        "shadow_hit_rate_pct": 54.5
+      },
+      "current_edge": {
+        "hits": 5,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.454545,
+        "hit_rate_pct": 45.5
+      },
+      "mae": {
+        "n": 11,
+        "current": 5.6336,
+        "shadow": 6.4327,
+        "delta": 0.7991,
+        "sum_abs_current": 61.97,
+        "sum_abs_shadow": 70.76
+      },
+      "mae_shadow_all": {
+        "n": 11,
+        "shadow": 6.4327,
+        "sum_abs": 70.76
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.333333,
+          "hit_rate_pct": 33.3
+        }
+      }
+    },
+    "Free Throws Attempted": {
+      "graded_props": 6,
+      "current": {
+        "hits": 1,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.166667,
+        "hit_rate_pct": 16.7
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.166667,
+        "hit_rate_pct": 16.7
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 6,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 16.7,
+        "shadow_hit_rate_pct": 16.7
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.166667,
+        "hit_rate_pct": 16.7
+      },
+      "mae": {
+        "n": 6,
+        "current": 2.9483,
+        "shadow": 2.9483,
+        "delta": 0.0,
+        "sum_abs_current": 17.69,
+        "sum_abs_shadow": 17.69
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 2.9483,
+        "sum_abs": 17.69
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Free Throws Made": {
+      "graded_props": 6,
+      "current": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 5,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 20.0,
+        "shadow_hit_rate_pct": 20.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.2,
+        "hit_rate_pct": 20.0
+      },
+      "mae": {
+        "n": 6,
+        "current": 2.8017,
+        "shadow": 2.8017,
+        "delta": 0.0,
+        "sum_abs_current": 16.81,
+        "sum_abs_shadow": 16.81
+      },
+      "mae_shadow_all": {
+        "n": 6,
+        "shadow": 2.8017,
+        "sum_abs": 16.81
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Offensive Rebounds": {
+      "graded_props": 4,
+      "current": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 4,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 25.0,
+        "shadow_hit_rate_pct": 25.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "mae": {
+        "n": 4,
+        "current": 0.915,
+        "shadow": 0.915,
+        "delta": 0.0,
+        "sum_abs_current": 3.66,
+        "sum_abs_shadow": 3.66
+      },
+      "mae_shadow_all": {
+        "n": 4,
+        "shadow": 0.915,
+        "sum_abs": 3.66
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Points": {
+      "graded_props": 13,
+      "current": {
+        "hits": 6,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.461538,
+        "hit_rate_pct": 46.2
+      },
+      "shadow": {
+        "hits": 5,
+        "misses": 8,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.384615,
+        "hit_rate_pct": 38.5
+      },
+      "hit_rate_delta_pct_points": -7.7,
+      "paired": {
+        "n": 13,
+        "current_hits": 6,
+        "shadow_hits": 5,
+        "current_hit_rate_pct": 46.2,
+        "shadow_hit_rate_pct": 38.5
+      },
+      "current_edge": {
+        "hits": 6,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.461538,
+        "hit_rate_pct": 46.2
+      },
+      "mae": {
+        "n": 13,
+        "current": 4.7854,
+        "shadow": 5.4692,
+        "delta": 0.6838,
+        "sum_abs_current": 62.21,
+        "sum_abs_shadow": 71.1
+      },
+      "mae_shadow_all": {
+        "n": 13,
+        "shadow": 5.4692,
+        "sum_abs": 71.1
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 2,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.666667,
+          "hit_rate_pct": 66.7
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Pts+Asts": {
+      "graded_props": 12,
+      "current": {
+        "hits": 6,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "shadow": {
+        "hits": 3,
+        "misses": 9,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "hit_rate_delta_pct_points": -25.0,
+      "paired": {
+        "n": 12,
+        "current_hits": 6,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 50.0,
+        "shadow_hit_rate_pct": 25.0
+      },
+      "current_edge": {
+        "hits": 6,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "mae": {
+        "n": 12,
+        "current": 5.1375,
+        "shadow": 6.5492,
+        "delta": 1.4117,
+        "sum_abs_current": 61.65,
+        "sum_abs_shadow": 78.59
+      },
+      "mae_shadow_all": {
+        "n": 12,
+        "shadow": 6.5492,
+        "sum_abs": 78.59
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 3,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.25,
+          "hit_rate_pct": 25.0
+        }
+      }
+    },
+    "Pts+Rebs": {
+      "graded_props": 12,
+      "current": {
+        "hits": 7,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.583333,
+        "hit_rate_pct": 58.3
+      },
+      "shadow": {
+        "hits": 5,
+        "misses": 7,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.416667,
+        "hit_rate_pct": 41.7
+      },
+      "hit_rate_delta_pct_points": -16.7,
+      "paired": {
+        "n": 12,
+        "current_hits": 7,
+        "shadow_hits": 5,
+        "current_hit_rate_pct": 58.3,
+        "shadow_hit_rate_pct": 41.7
+      },
+      "current_edge": {
+        "hits": 7,
+        "misses": 5,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.583333,
+        "hit_rate_pct": 58.3
+      },
+      "mae": {
+        "n": 12,
+        "current": 4.6642,
+        "shadow": 5.1625,
+        "delta": 0.4983,
+        "sum_abs_current": 55.97,
+        "sum_abs_shadow": 61.95
+      },
+      "mae_shadow_all": {
+        "n": 12,
+        "shadow": 5.1625,
+        "sum_abs": 61.95
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 2,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.666667,
+          "hit_rate_pct": 66.7
+        },
+        "shadow": {
+          "hits": 2,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.666667,
+          "hit_rate_pct": 66.7
+        }
+      }
+    },
+    "Pts+Rebs+Asts": {
+      "graded_props": 12,
+      "current": {
+        "hits": 4,
+        "misses": 7,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.363636,
+        "hit_rate_pct": 36.4
+      },
+      "shadow": {
+        "hits": 4,
+        "misses": 7,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.363636,
+        "hit_rate_pct": 36.4
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 11,
+        "current_hits": 4,
+        "shadow_hits": 4,
+        "current_hit_rate_pct": 36.4,
+        "shadow_hit_rate_pct": 36.4
+      },
+      "current_edge": {
+        "hits": 4,
+        "misses": 7,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.363636,
+        "hit_rate_pct": 36.4
+      },
+      "mae": {
+        "n": 12,
+        "current": 5.7975,
+        "shadow": 5.7975,
+        "delta": 0.0,
+        "sum_abs_current": 69.57,
+        "sum_abs_shadow": 69.57
+      },
+      "mae_shadow_all": {
+        "n": 12,
+        "shadow": 5.7975,
+        "sum_abs": 69.57
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 1,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.5,
+          "hit_rate_pct": 50.0
+        }
+      }
+    },
+    "Rebounds": {
+      "graded_props": 7,
+      "current": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 6,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 33.3,
+        "shadow_hit_rate_pct": 33.3
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 4,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.333333,
+        "hit_rate_pct": 33.3
+      },
+      "mae": {
+        "n": 7,
+        "current": 1.9371,
+        "shadow": 1.9371,
+        "delta": 0.0,
+        "sum_abs_current": 13.56,
+        "sum_abs_shadow": 13.56
+      },
+      "mae_shadow_all": {
+        "n": 7,
+        "shadow": 1.9371,
+        "sum_abs": 13.56
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Rebs+Asts": {
+      "graded_props": 12,
+      "current": {
+        "hits": 3,
+        "misses": 9,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "shadow": {
+        "hits": 6,
+        "misses": 6,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.5,
+        "hit_rate_pct": 50.0
+      },
+      "hit_rate_delta_pct_points": 25.0,
+      "paired": {
+        "n": 12,
+        "current_hits": 3,
+        "shadow_hits": 6,
+        "current_hit_rate_pct": 25.0,
+        "shadow_hit_rate_pct": 50.0
+      },
+      "current_edge": {
+        "hits": 3,
+        "misses": 9,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "mae": {
+        "n": 12,
+        "current": 2.375,
+        "shadow": 2.2425,
+        "delta": -0.1325,
+        "sum_abs_current": 28.5,
+        "sum_abs_shadow": 26.91
+      },
+      "mae_shadow_all": {
+        "n": 12,
+        "shadow": 2.2425,
+        "sum_abs": 26.91
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 2,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 2,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.0,
+          "hit_rate_pct": 0.0
+        }
+      }
+    },
+    "Turnovers": {
+      "graded_props": 3,
+      "current": {
+        "hits": 2,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 3,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 66.7,
+        "shadow_hit_rate_pct": 66.7
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 1,
+        "pushes": 0,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.666667,
+        "hit_rate_pct": 66.7
+      },
+      "mae": {
+        "n": 3,
+        "current": 1.1333,
+        "shadow": 1.1333,
+        "delta": 0.0,
+        "sum_abs_current": 3.4,
+        "sum_abs_shadow": 3.4
+      },
+      "mae_shadow_all": {
+        "n": 3,
+        "shadow": 1.1333,
+        "sum_abs": 3.4
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        },
+        "shadow": {
+          "hits": 0,
+          "misses": 0,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": null,
+          "hit_rate_pct": null
+        }
+      }
+    },
+    "Two Pointers Attempted": {
+      "graded_props": 5,
+      "current": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "shadow": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 4,
+        "current_hits": 1,
+        "shadow_hits": 1,
+        "current_hit_rate_pct": 25.0,
+        "shadow_hit_rate_pct": 25.0
+      },
+      "current_edge": {
+        "hits": 1,
+        "misses": 3,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 0.25,
+        "hit_rate_pct": 25.0
+      },
+      "mae": {
+        "n": 5,
+        "current": 2.558,
+        "shadow": 2.558,
+        "delta": 0.0,
+        "sum_abs_current": 12.79,
+        "sum_abs_shadow": 12.79
+      },
+      "mae_shadow_all": {
+        "n": 5,
+        "shadow": 2.558,
+        "sum_abs": 12.79
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 3,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.25,
+          "hit_rate_pct": 25.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 3,
+          "pushes": 0,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 0.25,
+          "hit_rate_pct": 25.0
+        }
+      }
+    },
+    "Two Pointers Made": {
+      "graded_props": 3,
+      "current": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "shadow": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "hit_rate_delta_pct_points": 0.0,
+      "paired": {
+        "n": 2,
+        "current_hits": 2,
+        "shadow_hits": 2,
+        "current_hit_rate_pct": 100.0,
+        "shadow_hit_rate_pct": 100.0
+      },
+      "current_edge": {
+        "hits": 2,
+        "misses": 0,
+        "pushes": 1,
+        "dnps": 0,
+        "voids": 0,
+        "no_pick": 0,
+        "hit_rate": 1.0,
+        "hit_rate_pct": 100.0
+      },
+      "mae": {
+        "n": 3,
+        "current": 0.9267,
+        "shadow": 0.9267,
+        "delta": 0.0,
+        "sum_abs_current": 2.78,
+        "sum_abs_shadow": 2.78
+      },
+      "mae_shadow_all": {
+        "n": 3,
+        "shadow": 0.9267,
+        "sum_abs": 2.78
+      },
+      "top_bucket": {
+        "current": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 1,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        },
+        "shadow": {
+          "hits": 1,
+          "misses": 0,
+          "pushes": 1,
+          "dnps": 0,
+          "voids": 0,
+          "no_pick": 0,
+          "hit_rate": 1.0,
+          "hit_rate_pct": 100.0
+        }
+      }
+    }
+  },
+  "props": [
+    {"player":"Allisha Gray","team":"ATL","stat":"3-PT Attempted","odds_type":"standard","line":5.0,"actual":8.0,"result":"OVER","current_projection":4.71,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.71,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.5393,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.29,"abs_err_shadow":3.29},
+    {"player":"Allisha Gray","team":"ATL","stat":"3-PT Made","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":2.02,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.02,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5239,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.02,"abs_err_shadow":1.02},
+    {"player":"Allisha Gray","team":"ATL","stat":"Blks+Stls","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":2.19,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.19,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.19,"abs_err_shadow":2.19},
+    {"player":"Allisha Gray","team":"ATL","stat":"FG Attempted","odds_type":"standard","line":13.5,"actual":19.0,"result":"OVER","current_projection":10.39,"current_side":"UNDER","current_result":"MISS","published_projection":12.87,"published_side":"UNDER","published_result":"MISS","shadow_projection":12.87,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4128,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":8.61,"abs_err_shadow":6.13},
+    {"player":"Allisha Gray","team":"ATL","stat":"FG Made","odds_type":"standard","line":5.5,"actual":5.0,"result":"UNDER","current_projection":4.89,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.89,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.5849,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.11,"abs_err_shadow":0.11},
+    {"player":"Allisha Gray","team":"ATL","stat":"Fantasy Score","odds_type":"standard","line":25.5,"actual":28.2,"result":"OVER","current_projection":29.28,"current_side":"OVER","current_result":"HIT","published_projection":27.91,"published_side":"OVER","published_result":"HIT","shadow_projection":31.85,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.591,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":1.08,"abs_err_shadow":3.65},
+    {"player":"Allisha Gray","team":"ATL","stat":"Free Throws Attempted","odds_type":"standard","line":4.0,"actual":8.0,"result":"OVER","current_projection":3.92,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.92,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.5273,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.08,"abs_err_shadow":4.08},
+    {"player":"Allisha Gray","team":"ATL","stat":"Free Throws Made","odds_type":"standard","line":3.5,"actual":8.0,"result":"OVER","current_projection":3.8,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.8,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.5008,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":4.2,"abs_err_shadow":4.2},
+    {"player":"Allisha Gray","team":"ATL","stat":"Points","odds_type":"standard","line":15.5,"actual":19.0,"result":"OVER","current_projection":15.4,"current_side":"UNDER","current_result":"MISS","published_projection":17.12,"published_side":"OVER","published_result":"HIT","shadow_projection":18.57,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5683,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.6,"abs_err_shadow":0.43},
+    {"player":"Allisha Gray","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":17.5,"actual":21.0,"result":"OVER","current_projection":18.28,"current_side":"OVER","current_result":"HIT","published_projection":20.3,"published_side":"OVER","published_result":"HIT","shadow_projection":21.92,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5775,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":2.72,"abs_err_shadow":0.92},
+    {"player":"Allisha Gray","team":"ATL","stat":"Pts+Rebs","odds_type":"standard","line":18.5,"actual":25.0,"result":"OVER","current_projection":19.05,"current_side":"OVER","current_result":"HIT","published_projection":21.55,"published_side":"OVER","published_result":"HIT","shadow_projection":23.09,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5391,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":5.95,"abs_err_shadow":1.91},
+    {"player":"Allisha Gray","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":20.5,"actual":27.0,"result":"OVER","current_projection":21.93,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":21.93,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.5674,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":5.07,"abs_err_shadow":5.07},
+    {"player":"Allisha Gray","team":"ATL","stat":"Rebs+Asts","odds_type":"standard","line":5.0,"actual":8.0,"result":"OVER","current_projection":6.53,"current_side":"OVER","current_result":"HIT","published_projection":6.8,"published_side":"OVER","published_result":"HIT","shadow_projection":7.03,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5876,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.47,"abs_err_shadow":0.97},
+    {"player":"Allisha Gray","team":"ATL","stat":"Two Pointers Attempted","odds_type":"standard","line":8.5,"actual":11.0,"result":"OVER","current_projection":5.66,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":5.66,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.375,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":5.34,"abs_err_shadow":5.34},
+    {"player":"Angel Reese","team":"ATL","stat":"Defensive Rebounds","odds_type":"standard","line":7.0,"actual":7.0,"result":"PUSH","current_projection":8.52,"current_side":"OVER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":8.52,"shadow_side":"OVER","shadow_result":"PUSH","shadow_source":"current","p_over":0.4325,"current_edge_result":"PUSH","top_current":true,"top_shadow":false,"abs_err_current":1.52,"abs_err_shadow":1.52},
+    {"player":"Angel Reese","team":"ATL","stat":"FG Attempted","odds_type":"standard","line":13.0,"actual":11.0,"result":"UNDER","current_projection":12.17,"current_side":"UNDER","current_result":"HIT","published_projection":13.18,"published_side":"OVER","published_result":"MISS","shadow_projection":13.18,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4455,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.17,"abs_err_shadow":2.18},
+    {"player":"Angel Reese","team":"ATL","stat":"FG Made","odds_type":"standard","line":5.5,"actual":5.0,"result":"UNDER","current_projection":5.89,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":5.89,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.6116,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.89,"abs_err_shadow":0.89},
+    {"player":"Angel Reese","team":"ATL","stat":"Fantasy Score","odds_type":"standard","line":36.0,"actual":33.4,"result":"UNDER","current_projection":40.19,"current_side":"OVER","current_result":"MISS","published_projection":38.53,"published_side":"OVER","published_result":"MISS","shadow_projection":42.71,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5946,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":6.79,"abs_err_shadow":9.31},
+    {"player":"Angel Reese","team":"ATL","stat":"Free Throws Attempted","odds_type":"standard","line":6.5,"actual":7.0,"result":"OVER","current_projection":7.54,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":7.54,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.4089,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.54,"abs_err_shadow":0.54},
+    {"player":"Angel Reese","team":"ATL","stat":"Free Throws Made","odds_type":"standard","line":4.0,"actual":4.0,"result":"PUSH","current_projection":4.35,"current_side":"OVER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.35,"shadow_side":"OVER","shadow_result":"PUSH","shadow_source":"current","p_over":0.4546,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.35,"abs_err_shadow":0.35},
+    {"player":"Angel Reese","team":"ATL","stat":"Offensive Rebounds","odds_type":"standard","line":4.0,"actual":5.0,"result":"OVER","current_projection":2.94,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.94,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4897,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":2.06,"abs_err_shadow":2.06},
+    {"player":"Angel Reese","team":"ATL","stat":"Points","odds_type":"standard","line":14.5,"actual":14.0,"result":"UNDER","current_projection":16.33,"current_side":"OVER","current_result":"MISS","published_projection":16.53,"published_side":"OVER","published_result":"MISS","shadow_projection":17.41,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5615,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.33,"abs_err_shadow":3.41},
+    {"player":"Angel Reese","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":16.5,"actual":14.0,"result":"UNDER","current_projection":19.38,"current_side":"OVER","current_result":"MISS","published_projection":21.08,"published_side":"OVER","published_result":"MISS","shadow_projection":22.28,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5961,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":5.38,"abs_err_shadow":8.28},
+    {"player":"Angel Reese","team":"ATL","stat":"Pts+Rebs","odds_type":"standard","line":25.0,"actual":26.0,"result":"OVER","current_projection":27.78,"current_side":"OVER","current_result":"HIT","published_projection":30.01,"published_side":"OVER","published_result":"HIT","shadow_projection":31.12,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5772,"current_edge_result":"HIT","top_current":false,"top_shadow":true,"abs_err_current":1.78,"abs_err_shadow":5.12},
+    {"player":"Angel Reese","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":27.5,"actual":26.0,"result":"UNDER","current_projection":30.83,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":30.83,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5885,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.83,"abs_err_shadow":4.83},
+    {"player":"Angel Reese","team":"ATL","stat":"Rebounds","odds_type":"standard","line":11.0,"actual":12.0,"result":"OVER","current_projection":11.45,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":11.45,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.4692,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.55,"abs_err_shadow":0.55},
+    {"player":"Angel Reese","team":"ATL","stat":"Rebs+Asts","odds_type":"standard","line":13.0,"actual":12.0,"result":"UNDER","current_projection":14.5,"current_side":"OVER","current_result":"MISS","published_projection":15.34,"published_side":"OVER","published_result":"MISS","shadow_projection":15.72,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5462,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":2.5,"abs_err_shadow":3.72},
+    {"player":"Angel Reese","team":"ATL","stat":"Turnovers","odds_type":"standard","line":2.5,"actual":4.0,"result":"OVER","current_projection":2.83,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.83,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.17,"abs_err_shadow":1.17},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Assists","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":1.35,"current_side":"UNDER","current_result":"HIT","published_projection":1.8,"published_side":"OVER","published_result":"MISS","shadow_projection":1.91,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5639,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.35,"abs_err_shadow":0.91},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":14.0,"actual":14.7,"result":"OVER","current_projection":15.57,"current_side":"OVER","current_result":"HIT","published_projection":15.82,"published_side":"OVER","published_result":"HIT","shadow_projection":17.01,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5522,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.87,"abs_err_shadow":2.31},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Points","odds_type":"standard","line":6.5,"actual":8.0,"result":"OVER","current_projection":9.45,"current_side":"OVER","current_result":"HIT","published_projection":9.13,"published_side":"OVER","published_result":"HIT","shadow_projection":9.31,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5277,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":1.45,"abs_err_shadow":1.31},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":8.5,"actual":9.0,"result":"OVER","current_projection":10.8,"current_side":"OVER","current_result":"HIT","published_projection":10.84,"published_side":"OVER","published_result":"HIT","shadow_projection":11.07,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5029,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.8,"abs_err_shadow":2.07},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":8.5,"actual":9.0,"result":"OVER","current_projection":11.91,"current_side":"OVER","current_result":"HIT","published_projection":11.59,"published_side":"OVER","published_result":"HIT","shadow_projection":11.91,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4889,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.91,"abs_err_shadow":2.91},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":10.5,"actual":10.0,"result":"UNDER","current_projection":13.26,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":13.26,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5293,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.26,"abs_err_shadow":3.26},
+    {"player":"Cecilia Zandalasini","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":3.5,"actual":2.0,"result":"UNDER","current_projection":3.81,"current_side":"OVER","current_result":"MISS","published_projection":4.19,"published_side":"OVER","published_result":"MISS","shadow_projection":4.37,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5605,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.81,"abs_err_shadow":2.37},
+    {"player":"DeWanna Bonner","team":"ATL","stat":"Points","odds_type":"standard","line":8.0,"actual":2.0,"result":"UNDER","current_projection":10.1,"current_side":"OVER","current_result":"MISS","published_projection":11.24,"published_side":"OVER","published_result":"MISS","shadow_projection":11.84,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5526,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":8.1,"abs_err_shadow":9.84},
+    {"player":"DeWanna Bonner","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":9.5,"actual":3.0,"result":"UNDER","current_projection":11.74,"current_side":"OVER","current_result":"MISS","published_projection":12.81,"published_side":"OVER","published_result":"MISS","shadow_projection":13.54,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5335,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":8.74,"abs_err_shadow":10.54},
+    {"player":"DeWanna Bonner","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":15.5,"actual":4.0,"result":"UNDER","current_projection":17.64,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":17.64,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5493,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":13.64,"abs_err_shadow":13.64},
+    {"player":"DeWanna Bonner","team":"ATL","stat":"Rebounds","odds_type":"standard","line":5.5,"actual":1.0,"result":"UNDER","current_projection":5.9,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":5.9,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.4556,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.9,"abs_err_shadow":4.9},
+    {"player":"Gabby Williams","team":"GSV","stat":"3-PT Attempted","odds_type":"standard","line":6.0,"actual":11.0,"result":"OVER","current_projection":4.86,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.86,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.3983,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":6.14,"abs_err_shadow":6.14},
+    {"player":"Gabby Williams","team":"GSV","stat":"FG Attempted","odds_type":"standard","line":16.5,"actual":22.0,"result":"OVER","current_projection":12.87,"current_side":"UNDER","current_result":"MISS","published_projection":13.14,"published_side":"UNDER","published_result":"MISS","shadow_projection":13.14,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.2971,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":9.13,"abs_err_shadow":8.86},
+    {"player":"Gabby Williams","team":"GSV","stat":"FG Made","odds_type":"standard","line":7.0,"actual":8.0,"result":"OVER","current_projection":4.85,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.85,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.2405,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":3.15,"abs_err_shadow":3.15},
+    {"player":"Gabby Williams","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":32.0,"actual":34.8,"result":"OVER","current_projection":23.04,"current_side":"UNDER","current_result":"MISS","published_projection":22.33,"published_side":"UNDER","published_result":"MISS","shadow_projection":24.12,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4211,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":11.76,"abs_err_shadow":10.68},
+    {"player":"Gabby Williams","team":"GSV","stat":"Free Throws Attempted","odds_type":"standard","line":3.5,"actual":8.0,"result":"OVER","current_projection":1.54,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.54,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.3635,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":6.46,"abs_err_shadow":6.46},
+    {"player":"Gabby Williams","team":"GSV","stat":"Free Throws Made","odds_type":"standard","line":3.0,"actual":7.0,"result":"OVER","current_projection":1.29,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.29,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.3715,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":5.71,"abs_err_shadow":5.71},
+    {"player":"Gabby Williams","team":"GSV","stat":"Offensive Rebounds","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.32,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.32,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4219,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.68,"abs_err_shadow":0.68},
+    {"player":"Gabby Williams","team":"GSV","stat":"Points","odds_type":"standard","line":18.5,"actual":26.0,"result":"OVER","current_projection":12.74,"current_side":"UNDER","current_result":"MISS","published_projection":12.69,"published_side":"UNDER","published_result":"MISS","shadow_projection":12.94,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4222,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":13.26,"abs_err_shadow":13.06},
+    {"player":"Gabby Williams","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":21.5,"actual":28.0,"result":"OVER","current_projection":15.15,"current_side":"UNDER","current_result":"MISS","published_projection":14.91,"published_side":"UNDER","published_result":"MISS","shadow_projection":15.23,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4101,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":12.85,"abs_err_shadow":12.77},
+    {"player":"Gabby Williams","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":22.5,"actual":30.0,"result":"OVER","current_projection":15.43,"current_side":"UNDER","current_result":"MISS","published_projection":15.46,"published_side":"UNDER","published_result":"MISS","shadow_projection":15.87,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4671,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":14.57,"abs_err_shadow":14.13},
+    {"player":"Gabby Williams","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":25.5,"actual":32.0,"result":"OVER","current_projection":17.84,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":17.84,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4563,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":14.16,"abs_err_shadow":14.16},
+    {"player":"Gabby Williams","team":"GSV","stat":"Rebounds","odds_type":"standard","line":4.0,"actual":4.0,"result":"PUSH","current_projection":2.69,"current_side":"UNDER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.69,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"current","p_over":0.44,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":1.31,"abs_err_shadow":1.31},
+    {"player":"Gabby Williams","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":7.0,"actual":6.0,"result":"UNDER","current_projection":5.1,"current_side":"UNDER","current_result":"HIT","published_projection":5.05,"published_side":"UNDER","published_result":"HIT","shadow_projection":5.27,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.442,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":0.9,"abs_err_shadow":0.73},
+    {"player":"Gabby Williams","team":"GSV","stat":"Two Pointers Attempted","odds_type":"standard","line":10.5,"actual":11.0,"result":"OVER","current_projection":7.94,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":7.94,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.2698,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":3.06,"abs_err_shadow":3.06},
+    {"player":"Gabby Williams","team":"GSV","stat":"Two Pointers Made","odds_type":"standard","line":5.0,"actual":5.0,"result":"PUSH","current_projection":3.05,"current_side":"UNDER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.05,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"current","p_over":0.1267,"current_edge_result":"PUSH","top_current":true,"top_shadow":true,"abs_err_current":1.95,"abs_err_shadow":1.95},
+    {"player":"Jordin Canada","team":"ATL","stat":"3-PT Attempted","odds_type":"standard","line":4.0,"actual":1.0,"result":"UNDER","current_projection":4.07,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.07,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.4397,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.07,"abs_err_shadow":3.07},
+    {"player":"Jordin Canada","team":"ATL","stat":"Assists","odds_type":"standard","line":7.0,"actual":7.0,"result":"PUSH","current_projection":6.38,"current_side":"UNDER","current_result":"PUSH","published_projection":5.83,"published_side":"UNDER","published_result":"PUSH","shadow_projection":6.47,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"candidate","p_over":0.4458,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.62,"abs_err_shadow":0.53},
+    {"player":"Jordin Canada","team":"ATL","stat":"FG Attempted","odds_type":"standard","line":10.5,"actual":9.0,"result":"UNDER","current_projection":8.76,"current_side":"UNDER","current_result":"HIT","published_projection":8.61,"published_side":"UNDER","published_result":"HIT","shadow_projection":8.61,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4045,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.24,"abs_err_shadow":0.39},
+    {"player":"Jordin Canada","team":"ATL","stat":"FG Made","odds_type":"standard","line":4.5,"actual":3.0,"result":"UNDER","current_projection":3.33,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.33,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.3822,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.33,"abs_err_shadow":0.33},
+    {"player":"Jordin Canada","team":"ATL","stat":"Fantasy Score","odds_type":"standard","line":29.5,"actual":27.5,"result":"UNDER","current_projection":26.9,"current_side":"UNDER","current_result":"HIT","published_projection":25.76,"published_side":"UNDER","published_result":"HIT","shadow_projection":29.25,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5123,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.6,"abs_err_shadow":1.75},
+    {"player":"Jordin Canada","team":"ATL","stat":"Free Throws Attempted","odds_type":"standard","line":3.0,"actual":2.0,"result":"UNDER","current_projection":3.75,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.75,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5865,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.75,"abs_err_shadow":1.75},
+    {"player":"Jordin Canada","team":"ATL","stat":"Free Throws Made","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":3.39,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.39,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5568,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.39,"abs_err_shadow":1.39},
+    {"player":"Jordin Canada","team":"ATL","stat":"Offensive Rebounds","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.38,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.38,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.4359,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.38,"abs_err_shadow":0.38},
+    {"player":"Jordin Canada","team":"ATL","stat":"Points","odds_type":"standard","line":11.5,"actual":8.0,"result":"UNDER","current_projection":11.1,"current_side":"UNDER","current_result":"HIT","published_projection":10.98,"published_side":"UNDER","published_result":"HIT","shadow_projection":11.91,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5036,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":3.1,"abs_err_shadow":3.91},
+    {"player":"Jordin Canada","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":18.5,"actual":15.0,"result":"UNDER","current_projection":17.48,"current_side":"UNDER","current_result":"HIT","published_projection":17.99,"published_side":"UNDER","published_result":"HIT","shadow_projection":19.3,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5192,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.48,"abs_err_shadow":4.3},
+    {"player":"Jordin Canada","team":"ATL","stat":"Pts+Rebs","odds_type":"standard","line":15.0,"actual":13.0,"result":"UNDER","current_projection":13.49,"current_side":"UNDER","current_result":"HIT","published_projection":14.13,"published_side":"UNDER","published_result":"HIT","shadow_projection":15.15,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4898,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.49,"abs_err_shadow":2.15},
+    {"player":"Jordin Canada","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":22.0,"actual":20.0,"result":"UNDER","current_projection":19.87,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":19.87,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.5188,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.13,"abs_err_shadow":0.13},
+    {"player":"Jordin Canada","team":"ATL","stat":"Rebs+Asts","odds_type":"standard","line":10.0,"actual":12.0,"result":"OVER","current_projection":8.77,"current_side":"UNDER","current_result":"MISS","published_projection":9.51,"published_side":"UNDER","published_result":"MISS","shadow_projection":9.91,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4738,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.23,"abs_err_shadow":2.09},
+    {"player":"Jordin Canada","team":"ATL","stat":"Two Pointers Attempted","odds_type":"standard","line":6.5,"actual":8.0,"result":"OVER","current_projection":4.69,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.69,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.3321,"current_edge_result":"MISS","top_current":true,"top_shadow":true,"abs_err_current":3.31,"abs_err_shadow":3.31},
+    {"player":"Jordin Canada","team":"ATL","stat":"Two Pointers Made","odds_type":"standard","line":3.5,"actual":3.0,"result":"UNDER","current_projection":2.28,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.28,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.2356,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.72,"abs_err_shadow":0.72},
+    {"player":"Kaitlyn Chen","team":"GSV","stat":"3-PT Made","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":1.0,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.0,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.5019,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.0,"abs_err_shadow":0.0},
+    {"player":"Kaitlyn Chen","team":"GSV","stat":"Points","odds_type":"standard","line":4.5,"actual":5.0,"result":"OVER","current_projection":8.23,"current_side":"OVER","current_result":"HIT","published_projection":7.37,"published_side":"OVER","published_result":"HIT","shadow_projection":7.61,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5252,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":3.23,"abs_err_shadow":2.61},
+    {"player":"Kaitlyn Chen","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":5.5,"actual":6.0,"result":"OVER","current_projection":9.47,"current_side":"OVER","current_result":"HIT","published_projection":8.27,"published_side":"OVER","published_result":"HIT","shadow_projection":8.55,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4738,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":3.47,"abs_err_shadow":2.55},
+    {"player":"Kaitlyn Chen","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":2.71,"current_side":"OVER","current_result":"MISS","published_projection":2.68,"published_side":"OVER","published_result":"MISS","shadow_projection":2.84,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5505,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.71,"abs_err_shadow":0.84},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":17.0,"actual":5.1,"result":"UNDER","current_projection":12.56,"current_side":"UNDER","current_result":"HIT","published_projection":13.44,"published_side":"UNDER","published_result":"HIT","shadow_projection":14.46,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4855,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":7.46,"abs_err_shadow":9.36},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Points","odds_type":"standard","line":7.5,"actual":0.0,"result":"UNDER","current_projection":4.74,"current_side":"UNDER","current_result":"HIT","published_projection":6.71,"published_side":"UNDER","published_result":"HIT","shadow_projection":6.84,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4677,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":4.74,"abs_err_shadow":6.84},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":8.5,"actual":1.0,"result":"UNDER","current_projection":5.12,"current_side":"UNDER","current_result":"HIT","published_projection":7.43,"published_side":"UNDER","published_result":"HIT","shadow_projection":7.58,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4418,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":4.12,"abs_err_shadow":6.58},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":12.0,"actual":3.0,"result":"UNDER","current_projection":8.04,"current_side":"UNDER","current_result":"HIT","published_projection":10.26,"published_side":"UNDER","published_result":"HIT","shadow_projection":10.58,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4652,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":5.04,"abs_err_shadow":7.58},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":13.0,"actual":4.0,"result":"UNDER","current_projection":8.42,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":8.42,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.4863,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":4.42,"abs_err_shadow":4.42},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Rebounds","odds_type":"standard","line":4.5,"actual":3.0,"result":"UNDER","current_projection":3.3,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.3,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.4649,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.3,"abs_err_shadow":0.3},
+    {"player":"Kayla Thornton","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":5.5,"actual":4.0,"result":"UNDER","current_projection":3.68,"current_side":"UNDER","current_result":"HIT","published_projection":4.37,"published_side":"UNDER","published_result":"HIT","shadow_projection":4.59,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4826,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":0.32,"abs_err_shadow":0.59},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Assists","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":2.0,"current_side":"OVER","current_result":"MISS","published_projection":1.64,"published_side":"OVER","published_result":"MISS","shadow_projection":1.42,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5311,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.0,"abs_err_shadow":0.42},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Defensive Rebounds","odds_type":"standard","line":6.0,"actual":4.0,"result":"UNDER","current_projection":6.16,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":6.16,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.4148,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.16,"abs_err_shadow":2.16},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":21.5,"actual":30.9,"result":"OVER","current_projection":21.23,"current_side":"UNDER","current_result":"MISS","published_projection":21.15,"published_side":"UNDER","published_result":"MISS","shadow_projection":19.74,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4946,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":9.67,"abs_err_shadow":11.16},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Points","odds_type":"standard","line":3.5,"actual":9.0,"result":"OVER","current_projection":3.66,"current_side":"OVER","current_result":"HIT","published_projection":3.74,"published_side":"OVER","published_result":"HIT","shadow_projection":3.54,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4646,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":5.34,"abs_err_shadow":5.46},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":5.0,"actual":10.0,"result":"OVER","current_projection":5.66,"current_side":"OVER","current_result":"HIT","published_projection":4.99,"published_side":"UNDER","published_result":"MISS","shadow_projection":4.7,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4362,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":4.34,"abs_err_shadow":5.3},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":11.5,"actual":16.0,"result":"OVER","current_projection":11.2,"current_side":"UNDER","current_result":"MISS","published_projection":10.69,"published_side":"UNDER","published_result":"MISS","shadow_projection":10.44,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.466,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.8,"abs_err_shadow":5.56},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":13.5,"actual":17.0,"result":"OVER","current_projection":13.2,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":13.2,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4896,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.8,"abs_err_shadow":3.8},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Rebounds","odds_type":"standard","line":7.5,"actual":7.0,"result":"UNDER","current_projection":7.54,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":7.54,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.4483,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.54,"abs_err_shadow":0.54},
+    {"player":"Kiah Stokes","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":9.5,"actual":8.0,"result":"UNDER","current_projection":9.54,"current_side":"OVER","current_result":"MISS","published_projection":8.48,"published_side":"UNDER","published_result":"HIT","shadow_projection":8.32,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4404,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.54,"abs_err_shadow":0.32},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Assists","odds_type":"standard","line":1.5,"actual":0.0,"result":"UNDER","current_projection":2.06,"current_side":"OVER","current_result":"MISS","published_projection":1.31,"published_side":"UNDER","published_result":"HIT","shadow_projection":1.51,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5372,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.06,"abs_err_shadow":1.51},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Fantasy Score","odds_type":"standard","line":15.5,"actual":9.4,"result":"UNDER","current_projection":19.17,"current_side":"OVER","current_result":"MISS","published_projection":16.95,"published_side":"OVER","published_result":"MISS","shadow_projection":18.83,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5559,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":9.77,"abs_err_shadow":9.43},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Points","odds_type":"standard","line":6.5,"actual":5.0,"result":"UNDER","current_projection":9.0,"current_side":"OVER","current_result":"MISS","published_projection":8.68,"published_side":"OVER","published_result":"MISS","shadow_projection":9.15,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5248,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.0,"abs_err_shadow":4.15},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":8.5,"actual":5.0,"result":"UNDER","current_projection":11.06,"current_side":"OVER","current_result":"MISS","published_projection":10.72,"published_side":"OVER","published_result":"MISS","shadow_projection":11.33,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5075,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":6.06,"abs_err_shadow":6.33},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Pts+Rebs","odds_type":"standard","line":10.5,"actual":7.0,"result":"UNDER","current_projection":13.77,"current_side":"OVER","current_result":"MISS","published_projection":13.38,"published_side":"OVER","published_result":"MISS","shadow_projection":13.91,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4971,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":6.77,"abs_err_shadow":6.91},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":12.5,"actual":7.0,"result":"UNDER","current_projection":15.83,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":15.83,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5337,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":8.83,"abs_err_shadow":8.83},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Rebounds","odds_type":"standard","line":4.0,"actual":2.0,"result":"UNDER","current_projection":4.77,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.77,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.4731,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.77,"abs_err_shadow":2.77},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Rebs+Asts","odds_type":"standard","line":6.0,"actual":2.0,"result":"UNDER","current_projection":6.83,"current_side":"OVER","current_result":"MISS","published_projection":6.26,"published_side":"OVER","published_result":"MISS","shadow_projection":6.44,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5252,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":4.83,"abs_err_shadow":4.44},
+    {"player":"Naz Hillmon","team":"ATL","stat":"Turnovers","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.71,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.71,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.29,"abs_err_shadow":0.29},
+    {"player":"Rhyne Howard","team":"ATL","stat":"3-PT Attempted","odds_type":"standard","line":8.0,"actual":9.0,"result":"OVER","current_projection":7.48,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":7.48,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.5916,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.52,"abs_err_shadow":1.52},
+    {"player":"Rhyne Howard","team":"ATL","stat":"3-PT Made","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":2.05,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.05,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.5505,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.05,"abs_err_shadow":0.05},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Assists","odds_type":"standard","line":3.5,"actual":4.0,"result":"OVER","current_projection":3.43,"current_side":"UNDER","current_result":"MISS","published_projection":3.3,"published_side":"UNDER","published_result":"MISS","shadow_projection":3.66,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5273,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.57,"abs_err_shadow":0.34},
+    {"player":"Rhyne Howard","team":"ATL","stat":"FG Attempted","odds_type":"standard","line":16.0,"actual":14.0,"result":"UNDER","current_projection":12.74,"current_side":"UNDER","current_result":"HIT","published_projection":14.6,"published_side":"UNDER","published_result":"HIT","shadow_projection":14.6,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.3609,"current_edge_result":"HIT","top_current":true,"top_shadow":false,"abs_err_current":1.26,"abs_err_shadow":0.6},
+    {"player":"Rhyne Howard","team":"ATL","stat":"FG Made","odds_type":"standard","line":5.5,"actual":3.0,"result":"UNDER","current_projection":4.66,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.66,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.5413,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.66,"abs_err_shadow":1.66},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Fantasy Score","odds_type":"standard","line":32.0,"actual":32.4,"result":"OVER","current_projection":28.72,"current_side":"UNDER","current_result":"MISS","published_projection":31.41,"published_side":"UNDER","published_result":"MISS","shadow_projection":35.52,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5573,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.68,"abs_err_shadow":3.12},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Free Throws Attempted","odds_type":"standard","line":3.5,"actual":4.0,"result":"OVER","current_projection":2.26,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.26,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4592,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.74,"abs_err_shadow":1.74},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Free Throws Made","odds_type":"standard","line":3.0,"actual":4.0,"result":"OVER","current_projection":1.57,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.57,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4637,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":2.43,"abs_err_shadow":2.43},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Offensive Rebounds","odds_type":"standard","line":0.5,"actual":0.0,"result":"UNDER","current_projection":0.54,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.54,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.427,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":0.54,"abs_err_shadow":0.54},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Points","odds_type":"standard","line":15.5,"actual":12.0,"result":"UNDER","current_projection":12.74,"current_side":"UNDER","current_result":"HIT","published_projection":16.01,"published_side":"OVER","published_result":"MISS","shadow_projection":17.36,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5463,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.74,"abs_err_shadow":5.36},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Pts+Asts","odds_type":"standard","line":19.5,"actual":16.0,"result":"UNDER","current_projection":16.17,"current_side":"UNDER","current_result":"HIT","published_projection":19.4,"published_side":"UNDER","published_result":"HIT","shadow_projection":20.91,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5346,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.17,"abs_err_shadow":4.91},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Pts+Rebs","odds_type":"standard","line":19.5,"actual":19.0,"result":"UNDER","current_projection":16.55,"current_side":"UNDER","current_result":"HIT","published_projection":19.23,"published_side":"UNDER","published_result":"HIT","shadow_projection":20.6,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5157,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":2.45,"abs_err_shadow":1.6},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Pts+Rebs+Asts","odds_type":"standard","line":23.5,"actual":23.0,"result":"UNDER","current_projection":19.98,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":19.98,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.5248,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":3.02,"abs_err_shadow":3.02},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Rebounds","odds_type":"standard","line":4.0,"actual":7.0,"result":"OVER","current_projection":3.81,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.81,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":0.4588,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.19,"abs_err_shadow":3.19},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Rebs+Asts","odds_type":"standard","line":7.5,"actual":11.0,"result":"OVER","current_projection":7.24,"current_side":"UNDER","current_result":"MISS","published_projection":7.54,"published_side":"OVER","published_result":"HIT","shadow_projection":7.81,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5083,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.76,"abs_err_shadow":3.19},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Turnovers","odds_type":"standard","line":1.5,"actual":3.0,"result":"OVER","current_projection":1.06,"current_side":"UNDER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.06,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":1.94,"abs_err_shadow":1.94},
+    {"player":"Rhyne Howard","team":"ATL","stat":"Two Pointers Attempted","odds_type":"standard","line":8.0,"actual":5.0,"result":"UNDER","current_projection":5.44,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":5.44,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.2953,"current_edge_result":"HIT","top_current":true,"top_shadow":true,"abs_err_current":0.44,"abs_err_shadow":0.44},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"3-PT Made","odds_type":"standard","line":0.5,"actual":1.0,"result":"OVER","current_projection":0.71,"current_side":"OVER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.71,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"current","p_over":0.4916,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.29,"abs_err_shadow":0.29},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":16.0,"actual":21.2,"result":"OVER","current_projection":16.74,"current_side":"OVER","current_result":"HIT","published_projection":19.21,"published_side":"OVER","published_result":"HIT","shadow_projection":21.12,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5771,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":4.46,"abs_err_shadow":0.08},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Points","odds_type":"standard","line":8.5,"actual":3.0,"result":"UNDER","current_projection":9.71,"current_side":"OVER","current_result":"MISS","published_projection":10.9,"published_side":"OVER","published_result":"MISS","shadow_projection":11.26,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5348,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":6.71,"abs_err_shadow":8.26},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":11.0,"actual":7.0,"result":"UNDER","current_projection":12.37,"current_side":"OVER","current_result":"MISS","published_projection":13.52,"published_side":"OVER","published_result":"MISS","shadow_projection":14.05,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5232,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.37,"abs_err_shadow":7.05},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":10.5,"actual":9.0,"result":"UNDER","current_projection":11.38,"current_side":"OVER","current_result":"MISS","published_projection":13.39,"published_side":"OVER","published_result":"MISS","shadow_projection":13.88,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4968,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.38,"abs_err_shadow":4.88},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":13.0,"actual":13.0,"result":"PUSH","current_projection":14.04,"current_side":"OVER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":14.04,"shadow_side":"OVER","shadow_result":"PUSH","shadow_source":"current","p_over":0.5366,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":1.04,"abs_err_shadow":1.04},
+    {"player":"Tiffany Hayes","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":4.5,"actual":10.0,"result":"OVER","current_projection":4.33,"current_side":"UNDER","current_result":"MISS","published_projection":5.18,"published_side":"OVER","published_result":"HIT","shadow_projection":5.49,"shadow_side":"OVER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.5564,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.67,"abs_err_shadow":4.51},
+    {"player":"Veronica Burton","team":"GSV","stat":"3-PT Attempted","odds_type":"standard","line":4.0,"actual":2.0,"result":"UNDER","current_projection":3.42,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.42,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.4658,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":1.42,"abs_err_shadow":1.42},
+    {"player":"Veronica Burton","team":"GSV","stat":"Assists","odds_type":"standard","line":4.5,"actual":3.0,"result":"UNDER","current_projection":5.01,"current_side":"OVER","current_result":"MISS","published_projection":5.61,"published_side":"OVER","published_result":"MISS","shadow_projection":6.36,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.6291,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":2.01,"abs_err_shadow":3.36},
+    {"player":"Veronica Burton","team":"GSV","stat":"FG Attempted","odds_type":"standard","line":9.0,"actual":7.0,"result":"UNDER","current_projection":7.79,"current_side":"UNDER","current_result":"HIT","published_projection":8.35,"published_side":"UNDER","published_result":"HIT","shadow_projection":8.35,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"candidate","p_over":0.4627,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.79,"abs_err_shadow":1.35},
+    {"player":"Veronica Burton","team":"GSV","stat":"FG Made","odds_type":"standard","line":3.5,"actual":2.0,"result":"UNDER","current_projection":2.93,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":2.93,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.4681,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.93,"abs_err_shadow":0.93},
+    {"player":"Veronica Burton","team":"GSV","stat":"Fantasy Score","odds_type":"standard","line":26.0,"actual":21.3,"result":"UNDER","current_projection":27.13,"current_side":"OVER","current_result":"MISS","published_projection":28.22,"published_side":"OVER","published_result":"MISS","shadow_projection":31.21,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5776,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.83,"abs_err_shadow":9.91},
+    {"player":"Veronica Burton","team":"GSV","stat":"Free Throws Attempted","odds_type":"standard","line":3.0,"actual":1.0,"result":"UNDER","current_projection":4.12,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.12,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5036,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.12,"abs_err_shadow":3.12},
+    {"player":"Veronica Burton","team":"GSV","stat":"Free Throws Made","odds_type":"standard","line":2.5,"actual":1.0,"result":"UNDER","current_projection":3.73,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":3.73,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5326,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":2.73,"abs_err_shadow":2.73},
+    {"player":"Veronica Burton","team":"GSV","stat":"Points","odds_type":"standard","line":10.5,"actual":5.0,"result":"UNDER","current_projection":10.61,"current_side":"OVER","current_result":"MISS","published_projection":11.1,"published_side":"OVER","published_result":"MISS","shadow_projection":11.46,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5097,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.61,"abs_err_shadow":6.46},
+    {"player":"Veronica Burton","team":"GSV","stat":"Pts+Asts","odds_type":"standard","line":15.0,"actual":8.0,"result":"UNDER","current_projection":15.62,"current_side":"OVER","current_result":"MISS","published_projection":16.8,"published_side":"OVER","published_result":"MISS","shadow_projection":17.54,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5332,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":7.62,"abs_err_shadow":9.54},
+    {"player":"Veronica Burton","team":"GSV","stat":"Pts+Rebs","odds_type":"standard","line":13.5,"actual":9.0,"result":"UNDER","current_projection":14.36,"current_side":"OVER","current_result":"MISS","published_projection":15.08,"published_side":"OVER","published_result":"MISS","shadow_projection":15.65,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.4994,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":5.36,"abs_err_shadow":6.65},
+    {"player":"Veronica Burton","team":"GSV","stat":"Pts+Rebs+Asts","odds_type":"standard","line":18.5,"actual":12.0,"result":"UNDER","current_projection":19.37,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":19.37,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":0.5369,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":7.37,"abs_err_shadow":7.37},
+    {"player":"Veronica Burton","team":"GSV","stat":"Rebs+Asts","odds_type":"standard","line":8.0,"actual":7.0,"result":"UNDER","current_projection":8.76,"current_side":"OVER","current_result":"MISS","published_projection":9.56,"published_side":"OVER","published_result":"MISS","shadow_projection":10.14,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"candidate","p_over":0.5672,"current_edge_result":"MISS","top_current":false,"top_shadow":true,"abs_err_current":1.76,"abs_err_shadow":3.14},
+    {"player":"Veronica Burton","team":"GSV","stat":"Two Pointers Attempted","odds_type":"standard","line":5.0,"actual":5.0,"result":"PUSH","current_projection":4.36,"current_side":"UNDER","current_result":"PUSH","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.36,"shadow_side":"UNDER","shadow_result":"PUSH","shadow_source":"current","p_over":0.3948,"current_edge_result":"PUSH","top_current":false,"top_shadow":false,"abs_err_current":0.64,"abs_err_shadow":0.64},
+    {"player":"Veronica Burton","team":"GSV","stat":"Two Pointers Made","odds_type":"standard","line":2.5,"actual":2.0,"result":"UNDER","current_projection":1.89,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":1.89,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":0.3554,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.11,"abs_err_shadow":0.11}
+  ]
+}

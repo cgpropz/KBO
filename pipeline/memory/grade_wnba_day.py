@@ -20,6 +20,8 @@ from pipeline.memory.common import (
     grade_line,
     gradeable_slate_prop,
     load_json,
+    locked_day_result,
+    recap_locked,
     memory_dir,
     model_result,
     normalize_name,
@@ -157,8 +159,12 @@ STAT_VALUE = {
 }
 
 
-def grade_day(d: date, *, dry_run: bool = False) -> dict:
+def grade_day(d: date, *, dry_run: bool = False, regrade: bool = False) -> dict:
     day_dir = memory_dir("wnba", d)
+    # Recapped days are locked, for scheduled and manual --date runs alike.
+    # --regrade re-reads finals, but only a complete result can replace the recap.
+    if recap_locked("wnba", d) and not regrade:
+        return locked_day_result("wnba", d, dry_run=dry_run)
     slate = load_json(day_dir / "slate.json")
     if not slate or not slate.get("props"):
         if not dry_run:
@@ -314,6 +320,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--date", help="Game date mm/dd/YYYY or YYYY-MM-DD (default: yesterday ET)")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--regrade",
+        action="store_true",
+        help="Re-grade a day that already has recap.json. Only a complete result is written; waiting/partial never replaces a graded day.",
+    )
+    parser.add_argument(
         "--catch-up-days",
         type=int,
         default=None,
@@ -329,8 +340,8 @@ def main(argv: list[str] | None = None) -> int:
     catch_up = args.catch_up_days
     if catch_up is None:
         catch_up = 0 if args.date else DEFAULT_CATCH_UP_DAYS
-    results = [grade_day(prior, dry_run=args.dry_run) for prior in catch_up_dates(d, catch_up)]
-    results.append(grade_day(d, dry_run=args.dry_run))
+    results = [grade_day(prior, dry_run=args.dry_run, regrade=args.regrade) for prior in catch_up_dates(d, catch_up)]
+    results.append(grade_day(d, dry_run=args.dry_run, regrade=args.regrade))
     print(json.dumps(results if len(results) > 1 else results[0], indent=2))
     return 0
 

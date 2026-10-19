@@ -17,6 +17,13 @@ import { teamLogoUrl } from './nflTeams'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { lineClause } from '../lineCount'
+import { nflSeasonAverage } from './seasonAverage'
+
+// This season's per-game average, or '—' (src/nfl/seasonAverage.js).
+function seasonAvgText(row) {
+  const season = nflSeasonAverage(row)
+  return season ? formatValue(season.average) : '—'
+}
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE']
 
@@ -65,7 +72,7 @@ function ProjectionCard({ item, onSelectPlayer }) {
       </div>
       <div className="nfl-card-prop">{item.prop}</div>
       <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{shownScore}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
-      <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{formatValue(item.seasonAverage)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
+      <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{seasonAvgText(item)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
       <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
       <div className="nfl-history-bars" aria-label={`Last ${recent.length} games for ${item.player}`}>
         {recent.map((value, index) => {

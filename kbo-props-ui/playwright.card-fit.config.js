@@ -14,7 +14,7 @@ function phone(name, browserName, width, userAgent) {
       browserName,
       userAgent,
       viewport: { width, height: 700 },
-      screen: { width, height: width === 320 ? 568 : 844 },
+      screen: { width, height: width === 320 ? 568 : width === 430 ? 932 : 844 },
       isMobile: true,
       hasTouch: true,
       deviceScaleFactor: 2,
@@ -35,6 +35,8 @@ export default defineConfig({
     phone('chromium-390', 'chromium', 390, chromeUa),
     phone('webkit-320', 'webkit', 320, safariUa),
     phone('webkit-390', 'webkit', 390, safariUa),
+    phone('chromium-430', 'chromium', 430, chromeUa),
+    phone('webkit-430', 'webkit', 430, safariUa),
   ],
   use: {
     baseURL: 'http://127.0.0.1:4173',

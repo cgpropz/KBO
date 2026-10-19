@@ -382,11 +382,7 @@ const edgeRows = [
 
 const edgeLabels = ['LINE', 'MODEL', 'SCORE', 'DVP RANK', 'SEASON AVG', 'HIT RATE', 'GAMES']
 
-test('NFL edge board uses two cards per row without clipping names or labels', async ({ page }) => {
-  for (const row of edgeRows) {
-    expect(row.hitRate, `${row.player} hit rate scale`).toBeGreaterThan(1)
-    expect(row.hitRate, `${row.player} hit rate scale`).toBeLessThanOrEqual(100)
-  }
+async function installEdgeRows(page) {
   await installFixtures(page, 'member')
   await page.route('**/api/data**', async (route) => {
     const ds = new URL(route.request().url()).searchParams.get('ds')
@@ -406,11 +402,13 @@ test('NFL edge board uses two cards per row without clipping names or labels', a
     })
   })
   await installMember(page)
-  await page.goto('/?sport=nfl&page=projections', { waitUntil: 'domcontentloaded' })
-  const cards = page.locator('.nfl-edge-card')
-  await expect(cards).toHaveCount(edgeRows.length)
-  await expect(page.locator('.nfl-board-meta')).toContainText('LIVE MODEL / DVP ADJUSTED')
-  const fit = await page.locator('.nfl-edge-grid').evaluate((grid, labels) => {
+}
+
+const nhlEdgeLabels = ['LINE', 'MODEL', 'SCORE', 'DVP', '2026-27', '2025-26', 'L10', 'H2H']
+
+// Reads the edge grid and every card's name, prop, and stat labels.
+async function edgeFit(page, labels) {
+  return page.locator('.nfl-edge-grid').evaluate((grid, expected) => {
     const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean)
     const cardNodes = [...grid.querySelectorAll('.nfl-edge-card')]
     const boxOf = (node) => {
@@ -423,9 +421,10 @@ test('NFL edge board uses two cards per row without clipping names or labels', a
       const ellipsis = style.textOverflow === 'ellipsis' && (style.whiteSpace === 'nowrap' || style.whiteSpace === 'pre')
       return ellipsis || node.scrollWidth > node.clientWidth + 1
     }
+    const rootBox = (document.getElementById('root') || document.body).getBoundingClientRect()
     return {
       tracks,
-      innerWidth: window.innerWidth,
+      innerWidth: Math.max(window.innerWidth, rootBox.right),
       scrollWidth: Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0),
       cards: cardNodes.map((card) => {
         const cardBox = boxOf(card)
@@ -441,34 +440,103 @@ test('NFL edge board uses two cards per row without clipping names or labels', a
             sticksOut: box.right > cardBox.right + 1 || box.left < cardBox.left - 1,
           }
         })
+        const dvp = [...card.querySelectorAll('.nfl-card-metrics > div')]
+          .find((node) => /^DVP/.test((node.querySelector('small')?.textContent || '').trim()))
+          ?.querySelector('strong')
+        const dvpRects = dvp ? [...dvp.getClientRects()].map((r) => Math.round(r.top)) : []
         return {
           name: (name?.textContent || '').replace(/\s+/g, ' ').trim(),
           box: cardBox,
           pieces,
           labels: labelNodes.map((node) => (node.textContent || '').replace(/\s+/g, ' ').trim()),
+          dvpText: (dvp?.textContent || '').replace(/\s+/g, ' ').trim(),
+          dvpOneLine: dvp ? getComputedStyle(dvp).whiteSpace === 'nowrap' && new Set(dvpRects).size <= 1 : false,
           hitRate: [...card.querySelectorAll('.nfl-card-meta div')].find((node) => (node.querySelector('small')?.textContent || '').trim() === 'HIT RATE')?.querySelector('strong')?.textContent?.trim() || '',
         }
       }),
-      expectedLabels: labels,
+      expectedLabels: expected,
     }
-  }, edgeLabels)
-  expect(fit.tracks, `columns ${fit.tracks.join(' | ')}`).toHaveLength(2)
-  expect(fit.scrollWidth, 'edge board scrollWidth').toBeLessThanOrEqual(fit.innerWidth + 1)
+  }, labels)
+}
+
+function expectTwoUp(fit, players, labels, where) {
+  expect(fit.tracks, `${where} columns ${fit.tracks.join(' | ')}`).toHaveLength(2)
+  expect(fit.scrollWidth, `${where} edge board scrollWidth`).toBeLessThanOrEqual(fit.innerWidth + 1)
   const boxes = fit.cards.map((card) => card.box)
-  expect(boxes[0].top, 'first row').toBeLessThanOrEqual(boxes[1].top + 1)
-  expect(boxes[1].top, 'first row').toBeLessThanOrEqual(boxes[0].top + 1)
-  expect(boxes[0].right, 'two cards share the row').toBeLessThanOrEqual(boxes[1].left + 1)
-  expect(boxes[2].top, 'third card wraps').toBeGreaterThan(boxes[0].bottom - 1)
-  expect(boxes[1].right, 'row stays in the viewport').toBeLessThanOrEqual(fit.innerWidth + 1)
+  expect(boxes[0].top, `${where} first row`).toBeLessThanOrEqual(boxes[1].top + 1)
+  expect(boxes[1].top, `${where} first row`).toBeLessThanOrEqual(boxes[0].top + 1)
+  expect(boxes[0].right, `${where} two cards share the row`).toBeLessThanOrEqual(boxes[1].left + 1)
+  if (boxes[2]) expect(boxes[2].top, `${where} third card wraps`).toBeGreaterThan(boxes[0].bottom - 1)
   const names = fit.cards.map((card) => card.name)
-  expect(names).toEqual(expect.arrayContaining(edgeRows.map((row) => row.player)))
+  expect(names).toEqual(expect.arrayContaining(players))
   for (const card of fit.cards) {
-    expect(card.labels, card.name).toEqual(edgeLabels)
+    expect(card.labels, `${where} ${card.name}`).toEqual(labels)
     for (const piece of card.pieces) {
-      expect(piece.clipped, `${card.name} clips ${piece.text}`).toBe(false)
-      expect(piece.sticksOut, `${card.name} ${piece.text} leaves the card`).toBe(false)
+      expect(piece.clipped, `${where} ${card.name} clips ${piece.text}`).toBe(false)
+      expect(piece.sticksOut, `${where} ${card.name} ${piece.text} leaves the card`).toBe(false)
     }
+    expect(card.dvpText, `${where} ${card.name} DvP`).toMatch(/^\d+ \/32$/)
+    expect(card.dvpOneLine, `${where} ${card.name} DvP rank wraps`).toBe(true)
+  }
+}
+
+test('NFL edge board uses two cards per row without clipping names or labels', async ({ page }) => {
+  for (const row of edgeRows) {
+    expect(row.hitRate, `${row.player} hit rate scale`).toBeGreaterThan(1)
+    expect(row.hitRate, `${row.player} hit rate scale`).toBeLessThanOrEqual(100)
+  }
+  await installEdgeRows(page)
+  await page.goto('/?sport=nfl&page=projections', { waitUntil: 'domcontentloaded' })
+  const cards = page.locator('.nfl-edge-card')
+  await expect(cards).toHaveCount(edgeRows.length)
+  await expect(page.locator('.nfl-board-meta')).toContainText('LIVE MODEL / DVP ADJUSTED')
+  const fit = await edgeFit(page, edgeLabels)
+  expectTwoUp(fit, edgeRows.map((row) => row.player), edgeLabels, 'nfl')
+  for (const card of fit.cards) {
     expect(card.hitRate, `${card.name} hit rate`).toMatch(/^(60|70|80)%$/)
+  }
+})
+
+test('NHL edge board shares the two-card phone grid', async ({ page }) => {
+  await installEdgeRows(page)
+  await page.goto('/?sport=nhl&page=projections', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.nfl-edge-card')).toHaveCount(fixtures.nhl_projections.length)
+  const fit = await edgeFit(page, nhlEdgeLabels)
+  expect(fit.tracks, `nhl columns ${fit.tracks.join(' | ')}`).toHaveLength(2)
+  for (const card of fit.cards) {
+    for (const piece of card.pieces) {
+      expect(piece.clipped, `nhl ${card.name} clips ${piece.text}`).toBe(false)
+    }
+    expect(card.dvpOneLine, `nhl ${card.name} DvP rank wraps`).toBe(true)
+  }
+})
+
+// Safari "Request Desktop Website" (and a zoomed iPhone) keeps a 980px layout
+// viewport, and the boot script zooms #root back to the phone width. Width
+// queries then see 980px, so the cards used to fall to the 3-column tablet
+// grid with clipped names. The phone-board query must still give two per row.
+test('edge boards stay two per row when a phone requests the desktop site', async ({ browser }, testInfo) => {
+  const { use } = testInfo.project
+  const context = await browser.newContext({
+    userAgent: use.userAgent,
+    viewport: { width: 980, height: 1800 },
+    screen: { width: use.viewport.width, height: use.screen.height },
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 2,
+  })
+  const page = await context.newPage()
+  try {
+    await installEdgeRows(page)
+    await page.goto('/?sport=nfl&page=projections', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('.nfl-edge-card')).toHaveCount(edgeRows.length)
+    expectTwoUp(await edgeFit(page, edgeLabels), edgeRows.map((row) => row.player), edgeLabels, 'nfl desktop-site')
+    await page.goto('/?sport=nhl&page=projections', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('.nfl-edge-card')).toHaveCount(fixtures.nhl_projections.length)
+    const nhl = await edgeFit(page, nhlEdgeLabels)
+    expect(nhl.tracks, `nhl desktop-site columns ${nhl.tracks.join(' | ')}`).toHaveLength(2)
+  } finally {
+    await context.close()
   }
 })
 
