@@ -1,13 +1,16 @@
 // Slip ranking and payouts. CG Score itself is unchanged: this only reads
 // cgScore() and the published Power/Flex table.
 
-import { cgScore } from './cgScore.js'
+import { boundCg, cgScore } from './cgScore.js'
 import { breakevenFor } from './prizepicksBreakeven.js'
 
 // Over uses the score as published. Under mirrors it around 50 so a
 // projection well under the line ranks with a projection well over it.
+// NBA is bounded 0-100 like its board, so an NBA leg (and the card
+// average) stays inside 0-100 on either side.
 export function legCg(row, side) {
-  const score = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
+  const raw = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
+  const score = String(row?.sport || '').toLowerCase() === 'nba' ? boundCg(raw) : raw
   if (score == null || !Number.isFinite(score)) return null
   return side === 'UNDER' || side === 'LESS' ? (100 - score) : score
 }

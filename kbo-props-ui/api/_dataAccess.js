@@ -176,9 +176,9 @@ function wnbaPropScore(player, prop) {
 }
 
 // NBA uses the same preview shape and still divides by the pick's own line.
-// WNBA floors do not apply.
+// WNBA floors do not apply. Bounded 0-100 like KBO and NFL.
 function nbaPropScore(player, prop) {
-  return boardPropScore(player, prop, (projection, row) => cgScore(projection, row?.line, row?.stat ?? row?.prop));
+  return boardPropScore(player, prop, (projection, row) => boundCg(cgScore(projection, row?.line, row?.stat ?? row?.prop)));
 }
 
 // NFL Prop Lines preview score.

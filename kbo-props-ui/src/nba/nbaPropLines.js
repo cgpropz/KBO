@@ -3,7 +3,7 @@
 // five positions and a 30-team defense rank.
 
 import { windowPills } from '../hitRateStrip.js'
-import { cgScore } from '../cgScore.js'
+import { boundCg, cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
@@ -294,7 +294,7 @@ export function buildPropRows(projections, players) {
       const standard = num(prop.standardLine)
       const line = standard ?? rawLine
       const projection = num(prop.projection)
-      const score = cgScore(projection, line, prop.stat)
+      const score = boundCg(cgScore(projection, line, prop.stat))
       if (projection == null || line == null || line <= 0 || score == null) return
 
       const recentGames = logsSupport(logs, prop.stat) ? logs : []
@@ -341,6 +341,8 @@ export function buildPropRows(projections, players) {
         _player: { name: player.name, team, image: imageUrl },
         _hit: l10Obj,
         _edgePct: rawLine && rawLine > 0 ? ((projection - rawLine) / rawLine) * 100 : 0,
+        // Uncapped score behind the shown one. Sort tiebreak only at the 100 cap.
+        _rawScore: cgScore(projection, line, prop.stat),
       })
     })
   })
@@ -368,7 +370,7 @@ export function filterAndSortRows(allRows, propTab, filters) {
     })
 
   return filtered.sort((a, b) => {
-    if (filters.sortBy === 'CG Score') return b.score - a.score
+    if (filters.sortBy === 'CG Score') return (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0))
     if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
     if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
     if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)

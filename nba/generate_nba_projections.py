@@ -309,6 +309,10 @@ def project_player(games: list[dict], dvp_factors: dict | None = None) -> dict |
     return bundle
 
 
+CG_MIN = 0.0
+CG_MAX = 100.0
+
+
 def edge_rating(projection, line):
     if projection is None or line is None:
         return None
@@ -319,7 +323,10 @@ def edge_rating(projection, line):
         return None
     if not math.isfinite(projection_n) or not math.isfinite(line_n) or line_n <= 0:
         return None
-    return to_fixed((projection_n / line_n) * 50, 1)
+    # Bounded 0-100 like the KBO and NFL boards (boundCg in cgScore.js).
+    # Order inside the range is unchanged; a score past either end pins there.
+    raw = (projection_n / line_n) * 50
+    return to_fixed(min(CG_MAX, max(CG_MIN, raw)), 1)
 
 
 def l10_values(games: list[dict], label: str) -> list | None:
