@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-19T08:24:02Z",
+  "checked_at": "2026-10-19T08:34:09Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-19T08:24:02.970399+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-19T08:07:00.884365+00:00",
-      "prop_count": 227,
+      "generated_at": "2026-10-19T08:34:09.223986+00:00",
+      "prop_count": 235,
       "started_removed": 0,
       "removals": [
         {
@@ -77,6 +77,15 @@
           "line": 3.5,
           "odds_type": "demon",
           "projection": 1.83,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Artturi Lehkonen",
+          "team": "COL",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.63,
           "reason": "line pulled"
         },
         {
@@ -710,15 +719,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Matvei Michkov",
-          "team": "PHI",
-          "stat": "Shots On Goal",
-          "line": 6.5,
-          "odds_type": "demon",
-          "projection": 1.75,
-          "reason": "line pulled"
-        },
-        {
           "player": "Mika Zibanejad",
           "team": "NYR",
           "stat": "Points",
@@ -822,15 +822,6 @@
           "team": "COL",
           "stat": "Points",
           "line": 2.5,
-          "odds_type": "demon",
-          "projection": 1.3,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Nathan MacKinnon",
-          "team": "COL",
-          "stat": "Points",
-          "line": 3.5,
           "odds_type": "demon",
           "projection": 1.3,
           "reason": "line pulled"
@@ -1134,7 +1125,7 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 40,
+        "pp_pull": 42,
         "superseded_dup": 7,
         "manual_out": 0,
         "news_out": 0,
