@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchApiDataset } from './apiData';
-import { boundCg, lineMatchesStat } from './cgScore';
-import { scoreFor } from './kboBoardScore';
+import { kboRawRating, scoreFor } from './kboBoardScore';
 import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
 import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip';
@@ -29,15 +28,15 @@ const fmt = (v, digits = 1) => {
   if (!Number.isFinite(n)) return '-';
   return Number.isInteger(n) ? String(n) : n.toFixed(digits);
 };
-const ratio = (projection, line, stat) => {
-  if (!lineMatchesStat(stat, line)) return -Infinity;
-  return num(line) > 0 && Number.isFinite(num(projection)) ? (num(projection) / num(line)) * 50 : -Infinity;
-};
 
 function kboRows(data) {
   const rows = [];
   (data?.cards || []).forEach((card) => (card?.props || []).forEach((prop) => {
-    const cg = num(prop?.cg_projection ?? prop?.rating);
+    // Standard lines only, ranked by the KBO CG Score (same as the board and
+    // the ledger), not by the cg_projection confidence number.
+    const type = prop?.odds_type;
+    if (type != null && String(type).toLowerCase() !== 'standard') return;
+    const cg = scoreFor(prop);
     rows.push({
       player: card.name,
       matchup: [card.team, card.opponent].filter(Boolean).join(' vs '),
@@ -46,7 +45,8 @@ function kboRows(data) {
       projection: prop.projection ?? prop.avg,
       l10: l10Display(kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })),
       tag: prop.odds_type && prop.odds_type !== 'standard' ? prop.odds_type : null,
-      score: !lineMatchesStat(prop.stat, prop.line) ? -Infinity : (Number.isFinite(cg) ? cg : boundCg(ratio(prop.projection ?? prop.avg, prop.line, prop.stat))),
+      score: cg == null ? -Infinity : cg,
+      rawScore: kboRawRating(prop.projection, prop.line, prop.stat),
       start_time: prop.start_time || card.start_time,
       game_date: prop.game_date || card.game_date,
       started: prop.started === true || card.started === true,

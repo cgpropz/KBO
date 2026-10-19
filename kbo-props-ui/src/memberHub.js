@@ -1,9 +1,9 @@
 // Paid-member Command Center (C5): turns each sport's live board snapshot into
 // the few standard-line rows the hub shows. Pure functions, no fetching.
-// Scores match the sport boards: KBO cg_projection (falls back to rating),
+// Scores match the sport boards: KBO CG Score (kboBoardScore.scoreFor),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
-import { hasModelNumber } from './kboBoardScore.js'
+import { hasModelNumber, kboRawRating, scoreFor as kboCgScore } from './kboBoardScore.js'
 import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
@@ -288,7 +288,10 @@ export function kboHubRows(data, photos = {}) {
       if (!lineMatchesStat(prop?.stat, prop?.line)) continue
       // No model number: not a hub/landing row (no 0 score, no side from avg).
       if (!hasModelNumber(prop)) continue
-      const score = num(prop?.cg_projection ?? prop?.rating)
+      // Rank by the KBO CG Score (same as the board and the ledger), not by
+      // the cg_projection confidence number. Raw score breaks ties at 100.
+      const cg = kboCgScore(prop)
+      const score = cg == null ? NaN : cg
       const logged = Array.isArray(prop?.recent_values) && prop.recent_values.length
         ? prop.recent_values
         : kboLoggedValues(card.games, prop.stat)
@@ -304,6 +307,7 @@ export function kboHubRows(data, photos = {}) {
         projection: prop.projection ?? prop.avg,
         side,
         score,
+        rawScore: kboRawRating(prop.projection, prop.line, prop.stat),
         image: kboCardImage(card, photos?.[card.name] || lookup[normalizePlayerName(card.name)]),
         ppImageUrl: card.image_url || card.ppImageUrl || null,
         start: card.start_time || card.game_time || null,
