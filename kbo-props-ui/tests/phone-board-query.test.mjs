@@ -28,3 +28,14 @@ test('the phone board and the phone stylesheet share one query', () => {
   const menu = built.slice(built.indexOf(`@media ${PHONE_BOARD_QUERY}`))
   assert.match(menu, /\.cg-menu-btn \{/)
 })
+
+test('the NFL/NHL edge grid goes two-up on the phone query, not on a width query', () => {
+  const nfl = readFileSync(join(root, 'src/nfl/nfl.css'), 'utf8')
+  // A desktop-site or zoomed iPhone lays out at 980px, so a max-width rule
+  // alone left the shared edge grid on the 3-column tablet rule.
+  assert.match(nfl, /@media \(--phone-board\) \{ \.nfl-root \.nfl-edge-grid \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) !important; \} \}/)
+  assert.ok(nfl.indexOf('@media (--phone-board)') > nfl.indexOf('@media (max-width: 760px)'), 'phone rule must follow the 760px one-column rule')
+  assert.equal(/max-width: 480px\) \{ \.nfl-root:not\(\.nhl-root\) \.nfl-edge-grid/.test(nfl), false)
+  const built = applyPhoneBoardMedia(nfl)
+  assert.equal(built.includes('@media (--phone-board)'), false)
+})
