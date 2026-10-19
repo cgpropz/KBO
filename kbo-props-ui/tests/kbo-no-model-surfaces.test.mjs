@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { DATASETS } from '../api/_dataAccess.js'
-import { kboModelProjection } from '../src/kboBoardScore.js'
+import { kboModelProjection, pregameSide } from '../src/kboBoardScore.js'
 import { kboHubRows } from '../src/memberHub.js'
 
 const src = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8')
@@ -59,4 +59,25 @@ test("nit: projection preview treats '' like null", () => {
     ],
   })
   assert.deepEqual(res.data.projections.map((r) => r.name), ['Dong Won Park'])
+})
+
+test('MatchupDeepDive: no-model rows get no edge or side; a 0 projection stays valid', () => {
+  const s = src('MatchupDeepDive.jsx')
+  assert.match(s, /import \{ kboModelProjection, pregameSide \} from '\.\/kboBoardScore'/)
+  assert.match(s, /const projection = kboModelProjection\(prop\);/)
+  assert.doesNotMatch(s, /const projection = Number\(prop\?\.projection\);/)
+  assert.match(s, /const edge = projection != null \? projection - liveLine : null;/)
+  assert.match(s, /const recommendation = pregameSide\(projection, liveLine\);/)
+  assert.match(s, /edge: edge != null \? Number\(edge\.toFixed\(2\)\) : null,/)
+  // Same logic on the rows: Moon FS 4.5 (null) vs a real 0 projection.
+  const liveLine = 4.5
+  const rowFor = (prop) => {
+    const projection = kboModelProjection(prop)
+    const edge = projection != null ? projection - liveLine : null
+    return { edge: edge != null ? Number(edge.toFixed(2)) : null, recommendation: pregameSide(projection, liveLine) }
+  }
+  assert.deepEqual(rowFor({ name: 'Moon Jeong-bin', projection: null, edge: -4.5 }), { edge: null, recommendation: 'NO LINE' })
+  assert.deepEqual(rowFor({ projection: '' }), { edge: null, recommendation: 'NO LINE' })
+  assert.deepEqual(rowFor({ projection: 0 }), { edge: -4.5, recommendation: 'UNDER' })
+  assert.deepEqual(rowFor({ projection: 6.84 }), { edge: 2.34, recommendation: 'OVER' })
 })
