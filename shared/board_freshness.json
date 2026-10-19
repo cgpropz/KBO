@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-19T19:38:34Z",
+  "checked_at": "2026-10-19T19:57:35Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-19T19:38:34.925749+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-19T19:30:09.890313+00:00",
-      "prop_count": 370,
+      "generated_at": "2026-10-19T19:57:35.415512+00:00",
+      "prop_count": 379,
       "started_removed": 0,
       "removals": [
         {
@@ -53,6 +53,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Miro Heiskanen",
+          "team": "DAL",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.72,
+          "reason": "line pulled"
+        },
+        {
           "player": "Morgan Geekie",
           "team": "BOS",
           "stat": "Shots On Goal",
@@ -60,11 +69,20 @@
           "odds_type": "demon",
           "projection": 1.86,
           "reason": "line pulled"
+        },
+        {
+          "player": "Wyatt Johnston",
+          "team": "DAL",
+          "stat": "Shots On Goal",
+          "line": 4.5,
+          "odds_type": "demon",
+          "projection": 2.63,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 27,
-        "superseded_dup": 22,
+        "pp_pull": 29,
+        "superseded_dup": 23,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
