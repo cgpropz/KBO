@@ -1,5 +1,6 @@
 import { lineResult } from './hitRateStrip.js'
 import { NFL_LINE_FLOORS } from './nfl/nflLineFloors.js'
+import { displayScore } from './sideRank.js'
 
 // Approved CG Score note (Code Green, Oct 11). Fill the variables the board
 // already has. Leave a clause out when that variable is not on the row.
@@ -118,19 +119,24 @@ export function buildCgScoreExplainer({
   newestFirst = false,
   projectionGames = null,
   currentSeason = null,
+  symmetric = false,
 } = {}) {
-  const scoreText = formatScoreNumber(score)
+  const side = projectionSide(projection, line)
+  // Symmetric preview: an under reads as its same-side strength with the
+  // side named, so it matches the board cell. The score itself is unchanged.
+  const shown = symmetric && side === 'under' && Number.isFinite(Number(score)) ? displayScore(score, 'UNDER') : score
+  const scoreText = formatScoreNumber(shown)
   const projText = formatStatNumber(projection)
   const lineText = formatStatNumber(line)
   if (scoreText == null || projText == null || lineText == null) return null
 
-  const side = projectionSide(projection, line)
   const window = recentWindow(recentValues, { newestFirst })
   const record = recentRecordSentence(window, line, side)
   const lead = `Our projection is ${projText} against a line of ${lineText}${basedOnClause(player, projectionGames, currentSeason)}.`
 
   return {
     score: scoreText,
+    sideLabel: symmetric && side ? (side === 'under' ? 'Under' : 'Over') : null,
     lead,
     recent: record.sentence,
     smallSample: record.games > 0 && record.games < 8,
@@ -141,7 +147,7 @@ export function buildCgScoreExplainer({
 
 export function explainerText(note) {
   if (!note) return ''
-  const lines = [`CG Score ${note.score}. ${note.lead}`]
+  const lines = [`CG Score ${note.score}${note.sideLabel ? ` ${note.sideLabel}` : ''}. ${note.lead}`]
   if (note.recent) lines.push(note.recent)
   if (note.smallSample) lines.push('Small sample, so give this less weight.')
   if (note.capped) lines.push('Scores on very small lines are adjusted.')

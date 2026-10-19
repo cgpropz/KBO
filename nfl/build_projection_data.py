@@ -470,6 +470,7 @@ def slate_records(payload):
             'image_url': text_or_empty(player.get('image_url')),
             'status': attrs.get('status'),
             'projection_id': str(item.get('id') or '').strip(),
+            'wager_types': _wager_types(attrs.get('allowed_wager_types')),
         })
     records = []
     for candidates in grouped.values():
@@ -485,6 +486,8 @@ def slate_records(payload):
         }
         if chosen.get('projection_id'):
             record['projection_id'] = chosen['projection_id']
+        if chosen.get('wager_types'):
+            record['wager_types'] = chosen['wager_types']
         pulled = prizepicks_pulled_status(chosen.get('status'))
         if pulled:
             # Keep the standard card. Do not promote a demon in its place.
@@ -493,6 +496,13 @@ def slate_records(payload):
             record['pp_status'] = pulled
         records.append(record)
     return records
+
+
+def _wager_types(value):
+    """PrizePicks allowed_wager_types as one lowercase string, or ''."""
+    if isinstance(value, (list, tuple)):
+        value = '_or_'.join(str(item) for item in value if item)
+    return str(value or '').strip().lower()
 
 
 def _same_season(season):
@@ -791,6 +801,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'recentUsage': recent_usage, 'usageLabel': usage_label, 'targetsPerGame': targets_per_game,
         'teammates': teammates, 'teammateOn': teammate_on,
         **({'projection_id': text_or_empty(getattr(row, 'projection_id', '')).strip()} if text_or_empty(getattr(row, 'projection_id', '')).strip() else {}),
+        # PrizePicks allowed_wager_types for the published card ("under_or_over"
+        # or "over"). Over-only standard cards cannot be played under, so the
+        # site's unders pilot does not rank their under side.
+        **({'wagerTypes': text_or_empty(getattr(row, 'wager_types', ''))} if text_or_empty(getattr(row, 'wager_types', '')) else {}),
         **_pulled_fields(row),
     }
 

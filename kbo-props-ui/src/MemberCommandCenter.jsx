@@ -23,6 +23,7 @@ import {
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
+import { displayScore, symmetricRankOn } from './sideRank';
 
 /*
  * Paid-member landing, Option B Sports Hub.
@@ -360,7 +361,7 @@ function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
       const shown = countPlayable(all);
       out[sport.id] = {
         status: all.length ? 'ready' : 'empty',
-        rows: topHubRows(all, 12),
+        rows: topHubRows(all, 12, { symmetric: symmetricRankOn(sport.id) }),
         all,
         games: scopeToGameday(hubGames(sport.id, all, lineups[sport.id]), gameday),
         gameday,
@@ -441,7 +442,10 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const games = state.games || [];
   const activeGame = games.find((game) => gameKey(game) === matchup) || null;
   const pool = activeGame ? (state.all || []).filter((row) => sameMatchup(row, activeGame)) : (state.all || []);
-  const ranked = topHubRows(pool, 7);
+  const symmetric = symmetricRankOn(selected.id);
+  const ranked = topHubRows(pool, 7, { symmetric });
+  // NFL admin pilot: an under shows its same-side strength. Score unchanged.
+  const shownScore = (row) => Math.round(symmetric ? displayScore(row.score, row.side) : row.score);
   const top = ranked.slice(0, 3);
   const preview = ranked.slice(3, 7);
   const hitLeaders = topHitRateRows(pool, 10);
@@ -593,8 +597,8 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       <span className="hub-mini is-status">{row.statusLabel || (row.side === 'UNDER' ? 'Under' : 'Over')}</span>
                     </span>
                   </span>
-                  <span className="hub-score" aria-label={`CG Score ${Math.round(row.score)}`}>
-                    <strong className="hub-num">{Math.round(row.score)}</strong>
+                  <span className="hub-score" aria-label={`CG Score ${shownScore(row)}${symmetric && row.side ? ` ${row.side === 'UNDER' ? 'Under' : 'Over'}` : ''}`}>
+                    <strong className="hub-num">{shownScore(row)}</strong>
                     <span>CG</span>
                   </span>
                 </button>
@@ -620,7 +624,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       <span className="hub-name">{row.player}</span>
                       <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                     </span>
-                    <span className="hub-num hub-preview-score">{Math.round(row.score)}</span>
+                    <span className="hub-num hub-preview-score">{shownScore(row)}</span>
                   </button>
                 )) : null}
                 {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (

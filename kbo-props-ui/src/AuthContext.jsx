@@ -3,6 +3,7 @@ import { devTierOverride, NBA_OWNER_EMAIL } from './entitlements';
 import { confirmSignOut, deferSignOutDuringRefresh, loadSupabase, markUserSignOut, onSupabaseLoaded, readCachedSession, shouldHoldSignOut } from './supabaseClient';
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 import { settlePlanCheck } from './planCheck.js';
+import { setSymmetricRankViewer } from './sideRank.js';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
 const TIER_CACHE_KEY = 'cg_tier';
@@ -65,6 +66,9 @@ const CACHED_SESSION = DEV_PREVIEW ? null : readCachedSession();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(DEV_PREVIEW?.user ?? CACHED_SESSION?.user ?? null);
+  // NFL unders pilot flag reads the signed-in email (admin only). Set during
+  // render so the boards below see it on the same pass. Idempotent.
+  setSymmetricRankViewer(user?.email);
   const [tier, setTier] = useState(DEV_PREVIEW?.tier ?? (CACHED_SESSION?.user ? readCachedTier(CACHED_SESSION.user.id) : 'free'));
   const [tierConfirmed, setTierConfirmed] = useState(() => Boolean(DEV_PREVIEW) || !CACHED_SESSION?.user);
   const [planCheckExhausted, setPlanCheckExhausted] = useState(false);
