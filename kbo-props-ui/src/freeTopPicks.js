@@ -1,5 +1,5 @@
 // Free top 3. Started, locked, and removed props are skipped. An NHL Points
-// over is promoted only at 0.86 or above. The slice happens after that
+// over is promoted only at 0.78 or above. The slice happens after that
 // filter, so a started row does not take a slot that a live row should fill.
 
 import { pointsOverDisposition } from './nhl/pointsGate.js'

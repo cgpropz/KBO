@@ -1,13 +1,13 @@
 // Points overs on the NHL board.
 //
-// Promote and rank only an over whose projection is at least 0.86. That is
+// Promote and rank only an over whose projection is at least 0.78. That is
 // the free top list, the CG Score order, and the highlight lists. An over
-// from 0.69 up to 0.86 stays on the board and is not promoted. An over
+// from 0.69 up to 0.78 stays on the board and is not promoted. An over
 // under 0.69 is not shown. Unders and every other prop are unchanged.
 // The anytime goal scorer page is a separate admin surface and is not this gate.
 
 export const POINTS_OVER_SHOW = 0.69
-export const POINTS_OVER_PROMOTE = 0.86
+export const POINTS_OVER_PROMOTE = 0.78
 
 export function isPointsProp(stat) {
   return String(stat || '').trim().toLowerCase() === 'points'

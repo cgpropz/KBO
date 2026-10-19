@@ -257,7 +257,7 @@ function propStillLive(player, prop) {
   return !gameAlreadyStarted(prop) && !gameAlreadyStarted(player) && !prizepicksPulled(prop) && prop?.rankEligible !== false;
 }
 
-// Points overs under 0.69 are already gone. Held overs (0.69 up to 0.86)
+// Points overs under 0.69 are already gone. Held overs (0.69 up to 0.78)
 // and unconfirmed goalies stay off the free top 3.
 function nhlScore(row) {
   if (row?.rankEligible === false || gameAlreadyStarted(row)) return -Infinity;
@@ -868,7 +868,7 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
   // Same row set for the paid board and the free denominator. Pulled,
   // removed, and non-standard lines are already gone on every paid board.
   // Only nhl_projections then drops Points overs under 0.69 and leaves
-  // overs from 0.69 up to 0.86 on the board with rankEligible false.
+  // overs from 0.69 up to 0.78 on the board with rankEligible false.
   if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };

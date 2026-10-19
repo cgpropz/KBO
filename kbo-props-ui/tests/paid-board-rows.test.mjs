@@ -51,13 +51,13 @@ function rowsFrom(ds, data) {
   return data || []
 }
 
-test('WNBA Points rows under 0.86 are not held or dropped', () => {
+test('WNBA Points rows under 0.78 are not held or dropped', () => {
   assert.equal(POINTS_OVER_SHOW, 0.69)
-  assert.equal(POINTS_OVER_PROMOTE, 0.86)
+  assert.equal(POINTS_OVER_PROMOTE, 0.78)
   const rows = [
     pointsRow('under-show', 0.68, 0.5),
-    pointsRow('under-promote', 0.8, 0.5),
-    pointsRow('short-line', 0.9, 0.85),
+    pointsRow('under-promote', 0.75, 0.5),
+    pointsRow('short-line', 0.9, 0.75),
     pointsRow('wnba-points', 22, 18.5),
   ]
   const member = shapeForTier('wnba_projections_standard', payloadFor('wnba_projections_standard', rows), 'combined')
@@ -75,7 +75,7 @@ test('WNBA Points rows under 0.86 are not held or dropped', () => {
 test('NHL Points overs keep the show and promote lines', () => {
   const rows = [
     pointsRow('under-show', 0.68, 0.5),
-    pointsRow('under-promote', 0.8, 0.5),
+    pointsRow('under-promote', 0.75, 0.5),
     pointsRow('ranked', 0.9, 0.5),
     pointsRow('under', 0.4, 0.5),
     { ...pointsRow('shots', 3.1, 2.5), prop: 'Shots On Goal', stat: 'Shots On Goal' },
