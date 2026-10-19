@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Daily NHL AGS odds + game/team totals collector (research only).
 Source: ESPN public JSON (odds provider 100 = DraftKings, as shown by ESPN).
-Writes data/YYYY-MM-DD_ags.csv and data/YYYY-MM-DD_games.csv; skips if today's files exist (use --force)."""
+Writes data/YYYY-MM-DD_ags.csv and data/YYYY-MM-DD_games.csv; skips if today's files exist (use --force).
+athlete_cache.json only keeps complete lookups (name, position, team). A failed or partial
+lookup is never cached; every run retries cache entries with an athlete_ placeholder name or
+a blank position/team. --retry-cache runs only that retry pass (no odds pull)."""
 import csv, json, os, sys, time, urllib.request, datetime as dt
 from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York"); BASE = os.path.dirname(os.path.abspath(__file__))
@@ -21,13 +24,45 @@ def get(url):
         except Exception as e:
             if a == 2: raise
             time.sleep(2)
+def cache_entry_bad(c):
+    """A cache entry that must be looked up again: placeholder name, or blank position/team."""
+    return (not c or str(c.get("name") or "").startswith("athlete_") or not c.get("name")
+            or not c.get("pos") or not c.get("team_id"))
+def lookup_athlete(ref):
+    """{name, pos, team_id} from the ESPN athlete endpoint, or None on any failure (never cached)."""
+    try:
+        ath = get(ref.replace("espn.pvt", "espn.com")); team = ath.get("team", {}).get("$ref", "")
+        entry = {"name": ath.get("displayName"), "pos": ath.get("position", {}).get("abbreviation"),
+                 "team_id": team.split("/teams/")[-1].split("?")[0] if team else ""}
+    except Exception as e:
+        log(f"athlete lookup failed {ref.split('?')[0]}: {e}"); return None
+    return entry if entry.get("name") else None
+def retry_cache(cache):
+    """Re-look-up every bad entry. A success replaces it; a failure is dropped so it is tried again next run."""
+    fixed = failed = 0
+    for aid in [k for k, v in cache.items() if cache_entry_bad(v)]:
+        entry = lookup_athlete(f"{CORE}/athletes/{aid}")
+        if entry and not cache_entry_bad(entry):
+            cache[aid] = entry; fixed += 1
+        else:
+            cache.pop(aid, None); failed += 1
+            if entry: cache_put_pending[aid] = entry
+    if fixed or failed: log(f"cache retry: {fixed} fixed, {failed} still failing")
+    return fixed, failed
+cache_put_pending = {}  # partial lookups (e.g. no team): used for this run's rows, not cached
 def imp(am):
     am = float(am); return round(100/(am+100) if am > 0 else -am/(-am+100), 4)
 def main():
     force = "--force" in sys.argv; now = dt.datetime.now(ET); day = now.date()
     ags_p = os.path.join(DATA, f"{day}_ags.csv"); gm_p = os.path.join(DATA, f"{day}_games.csv")
-    if os.path.exists(ags_p) and not force: log(f"skip: {ags_p} exists"); print("already collected today"); return
+    cache_put_pending.clear()
     cache = json.load(open(CACHE)) if os.path.exists(CACHE) else {}
+    if "--retry-cache" in sys.argv:  # cache backfill only, no odds pull
+        fixed, failed = retry_cache(cache); json.dump(cache, open(CACHE, "w"))
+        print(f"cache: {len(cache)} entries; {fixed} fixed, {failed} still failing"); return
+    if os.path.exists(ags_p) and not force: log(f"skip: {ags_p} exists"); print("already collected today"); return
+    retry_cache(cache)
+    refreshed = set()
     snap = now.strftime("%Y-%m-%d %H:%M:%S ET")
     sb = get(f"{SITE}/scoreboard?dates={day:%Y%m%d}")
     ags, games = [], []
@@ -56,13 +91,15 @@ def main():
                 name = it["type"]["name"]; am = it["odds"]["american"]["value"]
                 if name == "Anytime Goalscorer":
                     ref = it["athlete"]["$ref"].split("?")[0]; aid = ref.rstrip("/").split("/")[-1]
-                    if aid not in cache:
-                        try:
-                            ath = get(ref.replace("espn.pvt", "espn.com")); team = ath.get("team", {}).get("$ref", "")
-                            cache[aid] = {"name": ath.get("displayName"), "pos": ath.get("position", {}).get("abbreviation"),
-                                          "team_id": team.split("/teams/")[-1].split("?")[0] if team else ""}
-                        except Exception as e: cache[aid] = {"name": f"athlete_{aid}", "pos": "", "team_id": ""}
-                    c = cache[aid]
+                    if aid not in cache and aid not in cache_put_pending:
+                        entry = lookup_athlete(ref)
+                        if entry and not cache_entry_bad(entry): cache[aid] = entry
+                        elif entry: cache_put_pending[aid] = entry
+                    elif aid in cache and cache[aid].get("team_id") not in tid and aid not in refreshed:
+                        # Cached team is not in this game (trade / stale ESPN team): look it up again once.
+                        refreshed.add(aid); entry = lookup_athlete(ref)
+                        if entry and not cache_entry_bad(entry): cache[aid] = entry
+                    c = cache.get(aid) or cache_put_pending.get(aid) or {"name": f"athlete_{aid}", "pos": "", "team_id": ""}
                     ags.append({**base, "player": c["name"], "athlete_id": aid, "pos": c["pos"], "team": tid.get(c["team_id"], ""),
                                 "american_odds": am, "implied_prob": imp(am), "open_odds": it["odds"]["american"].get("open"),
                                 "book_updated_utc": it.get("lastUpdated")})
