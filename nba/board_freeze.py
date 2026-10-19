@@ -8,8 +8,8 @@ side from sign(projection - saved line). Does not change ranking, CG math, the s
 or gating.
 
 Usage:
-  python nba/board_freeze.py --out-dir /tmp/nba-board
-  python nba/board_freeze.py --out-dir /tmp/nba-board --force
+  python -m nba.board_freeze --out-dir /tmp/nba-board
+  python -m nba.board_freeze --out-dir /tmp/nba-board --force
 
 Env (same as nba-props-refresh / restore_snapshots):
   SUPABASE_URL or VITE_SUPABASE_URL
@@ -30,6 +30,11 @@ import sys
 import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+# Allow `python -m nba.board_freeze` and `python nba/board_freeze.py`.
+_REPO = Path(__file__).resolve().parents[1]
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
 
 from nba.generate_nba_projections import edge_rating
 
