@@ -3,7 +3,7 @@
 // five positions and a 30-team defense rank.
 
 import { windowPills } from '../hitRateStrip.js'
-import { cgScore } from '../cgScore.js'
+import { boundCg, cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
@@ -294,7 +294,7 @@ export function buildPropRows(projections, players) {
       const standard = num(prop.standardLine)
       const line = standard ?? rawLine
       const projection = num(prop.projection)
-      const score = cgScore(projection, line, prop.stat)
+      const score = boundCg(cgScore(projection, line, prop.stat))
       if (projection == null || line == null || line <= 0 || score == null) return
 
       const recentGames = logsSupport(logs, prop.stat) ? logs : []

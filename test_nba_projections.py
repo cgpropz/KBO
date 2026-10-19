@@ -138,6 +138,10 @@ class FormulaTests(unittest.TestCase):
         games.extend(counting_game(30, 10) for _ in range(6))
         self.assertEqual(proj.edge_rating(25.0, 20.0), 62.5)
         self.assertIsNone(proj.edge_rating(None, 20.0))
+        # Bounded 0-100 like the KBO and NFL boards.
+        self.assertEqual(proj.edge_rating(5.68, 2.5), 100.0)
+        self.assertEqual(proj.edge_rating(0.0, 2.5), 0.0)
+        self.assertEqual(proj.edge_rating(8.83, 4.5), 98.1)
         self.assertEqual(proj.hit_rate(games, "Points", 15, 5), 80.0)
         self.assertEqual(proj.hit_rate(games, "Points", 15, None), 40.0)
         self.assertIsNone(proj.hit_rate([], "Points", 15, 5))

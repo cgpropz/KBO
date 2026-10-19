@@ -165,3 +165,20 @@ test('filters keep one prop type and sort by last-10 hit rate', () => {
   assert.equal(dvpGrade(30), 'A+')
   assert.equal(dvpGrade(1)[0], 'D')
 })
+
+test('NBA board score is bounded 0-100 like KBO and NFL', () => {
+  const projections = [{
+    athleteId: '9',
+    name: 'Bound Test',
+    team: 'PHI',
+    position: 'SG',
+    ppAllProps: [
+      { stat: 'Assists', line: 2.5, projection: 5.68, opponent: 'NY', hitRates: { L10: 60, FULL: 60 } },
+      { stat: 'Points', line: 4.5, projection: 8.83, opponent: 'NY', hitRates: { L10: 60, FULL: 60 } },
+    ],
+  }]
+  const rows = buildPropRows(projections, [])
+  const byStat = Object.fromEntries(rows.map((row) => [row.prop, row.score]))
+  assert.equal(byStat.Assists, 100)
+  assert.equal(byStat.Points.toFixed(1), '98.1')
+})
