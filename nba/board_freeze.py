@@ -270,10 +270,29 @@ def main(argv: list[str] | None = None) -> int:
     rows = build_rows(pp_rows, pub, captured_at)
     today_rows = [r for r in rows if row_touches_et_date(r, et_date)]
 
-    if args.include_upcoming or args.force:
-        use_rows = rows if rows else today_rows
-    else:
+    if today_rows:
         use_rows = today_rows
+    elif args.include_upcoming or args.force:
+        # Next tip slate only (earliest ET game date among current standard rows).
+        dates = sorted(
+            {
+                (r.get("game_date") or (r.get("start") or "")[:10])
+                for r in rows
+                if (r.get("game_date") or (r.get("start") or "")[:10])
+            }
+        )
+        if dates:
+            next_day = dates[0]
+            use_rows = [
+                r
+                for r in rows
+                if (r.get("game_date") or (r.get("start") or "")[:10]) == next_day
+                or row_touches_et_date(r, next_day)
+            ]
+        else:
+            use_rows = rows
+    else:
+        use_rows = []
 
     if not use_rows and not args.force:
         print(
