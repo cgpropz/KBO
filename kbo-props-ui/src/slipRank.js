@@ -6,11 +6,12 @@ import { breakevenFor } from './prizepicksBreakeven.js'
 
 // Over uses the score as published. Under mirrors it around 50 so a
 // projection well under the line ranks with a projection well over it.
-// NBA is bounded 0-100 like its board, so an NBA leg (and the card
+// NBA and KBO are bounded 0-100 like their boards, so a leg (and the card
 // average) stays inside 0-100 on either side.
 export function legCg(row, side) {
   const raw = cgScore(row?.projection, row?.line, row?.prop ?? row?.stat)
-  const score = String(row?.sport || '').toLowerCase() === 'nba' ? boundCg(raw) : raw
+  const sport = String(row?.sport || '').toLowerCase()
+  const score = sport === 'nba' || sport === 'kbo' ? boundCg(raw) : raw
   if (score == null || !Number.isFinite(score)) return null
   return side === 'UNDER' || side === 'LESS' ? (100 - score) : score
 }
