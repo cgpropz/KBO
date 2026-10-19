@@ -1,0 +1,74 @@
+name: NBA board freeze (artifact)
+
+# Pre-tip save of PrizePicks standard NBA lines + published projection/CG/side.
+# Uploads a workflow artifact only. Never commits paid board data (repo is public).
+#
+# GitHub cron is UTC. Times below are Eastern Daylight (UTC-4):
+#   15 18 * * *  → 2:15 PM ET
+#   15 22 * * *  → 6:15 PM ET
+#   45 0  * * *  → 8:45 PM ET
+# After the Nov 1, 2026 DST → EST shift (UTC-5), move each cron one hour later
+# in UTC (19:15, 23:15, 01:45) so wall-clock ET stays the same.
+#
+# Oct 20 opening night tips (ET): BOS@DET 3:00 PM, PHI@NY 7:00 PM, OKC@SA 9:30 PM.
+
+on:
+  schedule:
+    - cron: "15 18 * * *"
+    - cron: "15 22 * * *"
+    - cron: "45 0 * * *"
+  workflow_dispatch:
+    inputs:
+      include_upcoming:
+        description: "Save all current standard rows even if tip is not today (for proofs)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-board-freeze
+  cancel-in-progress: false
+
+jobs:
+  freeze:
+    # Schedules only fire on the default branch. Dispatch can target any branch.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Freeze NBA board (standard only)
+        id: freeze
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NBA_BOARD_FREEZE_OUT: ${{ runner.temp }}/nba-board
+        run: |
+          set -euo pipefail
+          mkdir -p "$NBA_BOARD_FREEZE_OUT"
+          EXTRA=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_upcoming }}" != "false" ]; then
+            EXTRA+=(--include-upcoming)
+          fi
+          python nba/board_freeze.py --out-dir "$NBA_BOARD_FREEZE_OUT" "${EXTRA[@]}"
+          ls -la "$NBA_BOARD_FREEZE_OUT" || true
+
+      - name: Upload board artifact
+        if: steps.freeze.outputs.skipped == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-board-${{ steps.freeze.outputs.artifact_hint }}
+          path: ${{ runner.temp }}/nba-board/board_*.json
+          retention-days: 90
+          if-no-files-found: warn
