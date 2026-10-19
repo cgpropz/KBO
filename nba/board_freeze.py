@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
-"""Pre-tip NBA board freeze for grading: artifact only, never committed.
+"""Pre-tip NBA board freeze for grading: encrypted artifact only, never committed.
 
-Reads live PrizePicks standard lines and the published nba_projections_standard
-board (same Supabase snapshot the refresh workflows publish). Joins on player+stat,
-keeps the freeze-time line, attaches published projection and CG Score (rating),
-and derives side. Does not change ranking, CG math, the site, or gating.
+Reads live PrizePicks standard lines (full pagination via nba-pp-odds.fetch_all_projections)
+and the published nba_projections_standard board. Joins on player+stat, keeps the
+freeze-time line, attaches published projection and CG Score (rating), and derives
+side from sign(projection - saved line). Does not change ranking, CG math, the site,
+or gating.
 
 Usage:
   python nba/board_freeze.py --out-dir /tmp/nba-board
-  python nba/board_freeze.py --out-dir /tmp/nba-board --force   # write even if empty day
+  python nba/board_freeze.py --out-dir /tmp/nba-board --force
 
 Env (same as nba-props-refresh / restore_snapshots):
   SUPABASE_URL or VITE_SUPABASE_URL
   SUPABASE_SERVICE_ROLE_KEY
 
-Exit 0 with no files when there are no standard rows / no NBA tips today (silent skip),
-unless --force. Never prints secrets.
+On GitHub Actions schedule, empty / no-games-today skips emit ::warning:: (still exit 0).
+Never prints secrets.
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
+import importlib.util
 import json
 import math
 import os
@@ -29,9 +31,24 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-PP_URL = "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000"
-NEUTRAL = 50.0
+from nba.generate_nba_projections import edge_rating
+
 ET = ZoneInfo("America/New_York")
+_PP_ODDS = None
+
+
+def _load_pp_odds():
+    """Load nba/nba-pp-odds.py (hyphenated filename) once."""
+    global _PP_ODDS
+    if _PP_ODDS is not None:
+        return _PP_ODDS
+    path = Path(__file__).resolve().parent / "nba-pp-odds.py"
+    spec = importlib.util.spec_from_file_location("nba_pp_odds_freeze", path)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    _PP_ODDS = mod
+    return mod
 
 
 def _get(url: str, headers: dict | None = None, timeout: int = 90):
@@ -47,28 +64,52 @@ def _get(url: str, headers: dict | None = None, timeout: int = 90):
         return json.load(resp)
 
 
-def fetch_prizepicks_standard() -> list[dict]:
-    d = _get(PP_URL)
-    players = {
-        i["id"]: i["attributes"].get("name")
-        for i in d.get("included", [])
-        if i.get("type") == "new_player"
-    }
+def fetch_prizepicks_standard(*, get=None) -> list[dict]:
+    """Standard NBA lines only, fully paged, with combo/excluded-stat filters.
+
+    Missing odds_type is treated as non-standard (dropped). Reuses
+    fetch_all_projections from nba-pp-odds.py. Optional get= is for tests.
+    """
+    pp = _load_pp_odds()
+    payload = pp.fetch_all_projections(get=get) if get is not None else pp.fetch_all_projections()
+    leagues, players = pp._index_included(payload)
     rows = []
-    for p in d.get("data") or []:
-        a = p.get("attributes") or {}
-        if a.get("odds_type", "standard") != "standard":
+    for row in payload.get("data") or []:
+        relationships = row.get("relationships") or {}
+        player_id = str(
+            ((relationships.get("new_player") or {}).get("data") or {}).get("id") or ""
+        )
+        player = players.get(player_id) or {}
+        name = str(player.get("name") or "").strip()
+        league = pp.projection_league(row, leagues, players)
+        if league != pp.ALLOWED_LEAGUE:
             continue
-        rel = (p.get("relationships") or {}).get("new_player") or {}
-        pid = (rel.get("data") or {}).get("id")
+        if "+" in name:
+            continue
+        attrs = row.get("attributes") or {}
+        # Missing odds_type is non-standard — do not default to standard.
+        odds = str(attrs.get("odds_type") or "").strip().lower()
+        if odds != "standard":
+            continue
+        stat = str(attrs.get("stat_type") or "").strip()
+        if stat in pp.EXCLUDED_STATS:
+            continue
+        try:
+            line = float(attrs.get("line_score"))
+        except (TypeError, ValueError):
+            continue
+        start = attrs.get("start_time") or attrs.get("board_time")
         rows.append(
             {
-                "player": players.get(pid),
-                "stat": a.get("stat_type"),
-                "line": a.get("line_score"),
-                "start": a.get("start_time"),
-                "game_id": a.get("game_id"),
+                "player": name or None,
+                "team": pp.canonical_team(player.get("team")) or None,
+                "stat": stat,
+                "line": line,
+                "start": start,
+                "game_id": attrs.get("game_id"),
                 "odds_type": "standard",
+                "opponent": pp.parse_opponent(attrs.get("description")) or None,
+                "game_date": pp.parse_game_date(start or ""),
             }
         )
     return rows
@@ -128,34 +169,41 @@ def _norm_stat(s: str | None) -> str:
     return (s or "").strip().lower()
 
 
-def cg_from_proj_line(projection, line) -> float | None:
-    """Published CG is preferred; this only recomputes when the freeze line moved."""
+def _lines_close(a, b, eps: float = 1e-6) -> bool:
+    try:
+        return abs(float(a) - float(b)) <= eps
+    except (TypeError, ValueError):
+        return False
+
+
+def side_from_projection_line(projection, line) -> str | None:
+    """OVER/UNDER from sign(projection - saved line); None when equal or missing."""
     try:
         p = float(projection)
         l = float(line)
     except (TypeError, ValueError):
         return None
-    if not math.isfinite(p) or not math.isfinite(l) or l <= 0:
+    if not math.isfinite(p) or not math.isfinite(l):
         return None
-    return round((p / l) * NEUTRAL, 1)
+    if p > l:
+        return "OVER"
+    if p < l:
+        return "UNDER"
+    return None
 
 
-def side_from_cg(cg) -> str | None:
-    if cg is None:
-        return None
+def _started(start, captured_at: str) -> bool:
+    if not start or not captured_at:
+        return False
     try:
-        v = float(cg)
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(v) or v == NEUTRAL:
-        return None
-    return "OVER" if v > NEUTRAL else "UNDER"
-
-
-def _lines_close(a, b, eps: float = 1e-6) -> bool:
-    try:
-        return abs(float(a) - float(b)) <= eps
-    except (TypeError, ValueError):
+        tip = dt.datetime.fromisoformat(str(start).replace("Z", "+00:00"))
+        cap = dt.datetime.fromisoformat(str(captured_at).replace("Z", "+00:00"))
+        if tip.tzinfo is None:
+            tip = tip.replace(tzinfo=ET)
+        if cap.tzinfo is None:
+            cap = cap.replace(tzinfo=ET)
+        return tip <= cap
+    except ValueError:
         return False
 
 
@@ -179,28 +227,47 @@ def build_rows(pp_rows: list[dict], pub: list[dict], captured_at: str) -> list[d
         projection = match.get("projection") if match else None
         published_line = match.get("line") if match else None
         published_cg = match.get("cg_score") if match else None
+        generated_at = match.get("generated_at") if match else None
 
-        if match and _lines_close(published_line, pp.get("line")) and published_cg is not None:
+        if (
+            match
+            and _lines_close(published_line, pp.get("line"))
+            and published_cg is not None
+        ):
             cg = published_cg
+            cg_source = "published"
+        elif projection is not None:
+            cg = edge_rating(projection, pp.get("line"))
+            cg_source = "recomputed_at_freeze_line" if cg is not None else None
         else:
-            cg = cg_from_proj_line(projection, pp.get("line"))
+            cg = None
+            cg_source = None
+
+        team = (match.get("team") if match else None) or pp.get("team")
+        opponent = (match.get("opponent") if match else None) or pp.get("opponent")
+        game_date = (match.get("game_date") if match else None) or pp.get("game_date")
 
         out.append(
             {
                 "player": pp.get("player"),
-                "team": match.get("team") if match else None,
-                "opponent": match.get("opponent") if match else None,
+                "team": team,
+                "opponent": opponent,
                 "stat": pp.get("stat"),
                 "line": pp.get("line"),
                 "odds_type": "standard",
                 "captured_at": captured_at,
                 "projection": projection,
                 "cg_score": cg,
-                "side": side_from_cg(cg),
+                "published_line": published_line,
+                "published_cg": published_cg,
+                "cg_source": cg_source,
+                "projection_generated_at": generated_at,
+                "side": side_from_projection_line(projection, pp.get("line")),
                 "start": pp.get("start"),
                 "game_id": pp.get("game_id"),
-                "game_date": match.get("game_date") if match else None,
+                "game_date": game_date,
                 "match": "joined" if match else "line_only",
+                "started": _started(pp.get("start"), captured_at),
             }
         )
     return out
@@ -214,11 +281,10 @@ def row_touches_et_date(row: dict, et_date: str) -> bool:
     if not start:
         return False
     try:
-        # PrizePicks start_time is typically ISO UTC.
-        moment = dt.datetime.fromisoformat(start.replace("Z", "+00:00"))
+        moment = dt.datetime.fromisoformat(str(start).replace("Z", "+00:00"))
         return moment.astimezone(ET).date().isoformat() == et_date
     except ValueError:
-        return start[:10] == et_date
+        return str(start)[:10] == et_date
 
 
 def write_board(rows: list[dict], out_dir: Path, et_now: dt.datetime) -> Path:
@@ -227,6 +293,26 @@ def write_board(rows: list[dict], out_dir: Path, et_now: dt.datetime) -> Path:
     path = out_dir / f"board_{stamp}.json"
     path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
     return path
+
+
+def _write_gh_output(**kwargs) -> None:
+    gh_out = os.environ.get("GITHUB_OUTPUT")
+    if not gh_out:
+        return
+    with open(gh_out, "a", encoding="utf-8") as fh:
+        for k, v in kwargs.items():
+            fh.write(f"{k}={v}\n")
+
+
+def _skip(reason: str, et_date: str, *, warn: bool, extra: dict | None = None) -> int:
+    payload = {"skipped": True, "reason": reason, "et_date": et_date}
+    if extra:
+        payload.update(extra)
+    print(json.dumps(payload))
+    if warn:
+        print(f"::warning::NBA board freeze skipped: {reason} (et_date={et_date})")
+    _write_gh_output(skipped="true", rows=0)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -244,27 +330,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--include-upcoming",
         action="store_true",
-        help="Keep all current standard rows (not only tips dated today). For workflow_dispatch proofs.",
+        help="Keep next tip slate when today has no tips (workflow_dispatch proofs).",
     )
     parser.add_argument(
         "--today",
         default=None,
         help="Override ET calendar date YYYY-MM-DD (tests)",
     )
+    parser.add_argument(
+        "--warn-on-skip",
+        action="store_true",
+        help="Emit ::warning:: on empty skip (also auto when GITHUB_EVENT_NAME=schedule)",
+    )
     args = parser.parse_args(argv)
 
     et_now = dt.datetime.now(tz=ET)
     et_date = args.today or et_now.date().isoformat()
     captured_at = et_now.isoformat()
+    warn = args.warn_on_skip or os.environ.get("GITHUB_EVENT_NAME") == "schedule"
 
     pp_rows = fetch_prizepicks_standard()
     if not pp_rows and not args.force:
-        print(json.dumps({"skipped": True, "reason": "no_standard_rows", "et_date": et_date}))
-        if os.environ.get("GITHUB_OUTPUT"):
-            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-                fh.write("skipped=true\n")
-                fh.write("rows=0\n")
-        return 0
+        return _skip("no_standard_rows", et_date, warn=warn)
 
     pub = fetch_published_projections()
     rows = build_rows(pp_rows, pub, captured_at)
@@ -273,7 +360,6 @@ def main(argv: list[str] | None = None) -> int:
     if today_rows:
         use_rows = today_rows
     elif args.include_upcoming or args.force:
-        # Next tip slate only (earliest ET game date among current standard rows).
         dates = sorted(
             {
                 (r.get("game_date") or (r.get("start") or "")[:10])
@@ -295,24 +381,15 @@ def main(argv: list[str] | None = None) -> int:
         use_rows = []
 
     if not use_rows and not args.force:
-        print(
-            json.dumps(
-                {
-                    "skipped": True,
-                    "reason": "no_nba_games_today",
-                    "et_date": et_date,
-                    "pp_standard_rows": len(pp_rows),
-                }
-            )
+        return _skip(
+            "no_nba_games_today",
+            et_date,
+            warn=warn,
+            extra={"pp_standard_rows": len(pp_rows)},
         )
-        if os.environ.get("GITHUB_OUTPUT"):
-            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-                fh.write("skipped=true\n")
-                fh.write("rows=0\n")
-        return 0
+
     path = write_board(use_rows, Path(args.out_dir), et_now)
     joined = sum(1 for r in use_rows if r.get("match") == "joined")
-    # Artifact name hint for the workflow (ET date + HHMM).
     artifact_hint = et_now.strftime("%Y-%m-%d-%H%M")
     print(
         json.dumps(
@@ -327,14 +404,12 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
     )
-    # Expose for GitHub Actions without printing secrets.
-    gh_out = os.environ.get("GITHUB_OUTPUT")
-    if gh_out:
-        with open(gh_out, "a", encoding="utf-8") as fh:
-            fh.write(f"skipped=false\n")
-            fh.write(f"rows={len(use_rows)}\n")
-            fh.write(f"artifact_hint={artifact_hint}\n")
-            fh.write(f"board_path={path}\n")
+    _write_gh_output(
+        skipped="false",
+        rows=len(use_rows),
+        artifact_hint=artifact_hint,
+        board_path=str(path),
+    )
     return 0
 
 
