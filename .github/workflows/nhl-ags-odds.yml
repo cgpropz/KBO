@@ -22,7 +22,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: nhl-ags-odds
@@ -47,27 +47,18 @@ jobs:
             python shared/lab/nhl_ags_odds/collect.py
           fi
 
-      - name: Commit shared/lab/nhl_ags_odds
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add shared/lab/nhl_ags_odds
-          if git diff --cached --quiet; then
-            echo "No NHL AGS odds changes to commit"
-            exit 0
-          fi
-          git commit -m "chore: nhl ags odds $(TZ=America/New_York date +%Y-%m-%d)"
-          # Only this job writes shared/lab/nhl_ags_odds, so a rebase onto a
-          # newer main cannot conflict there. Up to 3 pushes with backoff.
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "Push succeeded on attempt ${attempt}"
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              sleep $((10 * attempt))
-              git pull --rebase origin main || { git rebase --abort || true; echo "::error::rebase failed"; exit 1; }
-            fi
-          done
-          echo "::error::NHL AGS odds were collected but could not be pushed to main"
-          exit 1
+      - name: ET date for the artifact name
+        id: etdate
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # Research data stays out of git (public repo): upload as an artifact.
+      - name: Upload shared/lab/nhl_ags_odds as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-ags-odds-${{ steps.etdate.outputs.date }}
+          path: |
+            shared/lab/nhl_ags_odds/data/*.csv
+            shared/lab/nhl_ags_odds/athlete_cache.json
+            shared/lab/nhl_ags_odds/collect.log
+          retention-days: 90
+          if-no-files-found: warn

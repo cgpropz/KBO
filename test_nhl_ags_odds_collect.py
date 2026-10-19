@@ -114,8 +114,22 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('- cron: "7 15 * * *"', text)
         self.assertIn("10:07 AM EST", text)
         self.assertIn("python shared/lab/nhl_ags_odds/collect.py", text)
-        self.assertIn("git add shared/lab/nhl_ags_odds", text)
         self.assertNotIn("secrets.", text)
+
+    def test_uploads_an_artifact_and_never_commits(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("uses: actions/upload-artifact@v4", text)
+        self.assertIn("name: nhl-ags-odds-${{ steps.etdate.outputs.date }}", text)
+        self.assertIn("TZ=America/New_York date +%Y-%m-%d", text)
+        for path in ("shared/lab/nhl_ags_odds/data/*.csv", "shared/lab/nhl_ags_odds/athlete_cache.json",
+                     "shared/lab/nhl_ags_odds/collect.log"):
+            self.assertIn(path, text)
+        self.assertIn("retention-days: 90", text)
+        self.assertIn("if-no-files-found: warn", text)
+        self.assertIn("permissions:\n  contents: read", text)
+        self.assertNotIn("contents: write", text)
+        for word in ("git add", "git commit", "git push"):
+            self.assertNotIn(word, text)
 
 
 if __name__ == "__main__":
