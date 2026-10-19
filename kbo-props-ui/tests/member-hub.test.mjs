@@ -30,7 +30,8 @@ test('hub rows keep standard lines only', () => {
     { stat: 'Hits', line: 1.5, odds_type: 'standard', cg_projection: 70, projection: 1.8, recommendation: 'OVER' },
   ] }] })
   assert.equal(kbo.length, 1)
-  assert.equal(kbo[0].score, 70)
+  // KBO hub score is the displayed capped CG rating (1.8 / 1.5 * 50), not cg_projection.
+  assert.equal(kbo[0].score, 60)
   const nhl = nhlHubRows([{ player: 'B', prop: 'Points', line: 0.5, projection: 1, oddsType: 'demon' }, { player: 'C', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard' }])
   assert.deepEqual(nhl.map((r) => r.player), ['C'])
   const nfl = nflHubRows([{ player: 'D', prop: 'Receptions', line: 4.5, projection: 6, line_type: 'goblin' }])
@@ -85,7 +86,7 @@ test('hub rows carry the board hit rate and log without changing the score', () 
     { tb: 2, date: '2026-10-12' },
     { tb: 0, date: '2026-10-11' },
   ], props: [{ stat: 'Total Bases', line: 1.5, odds_type: 'standard', cg_projection: 70, projection: 1.8, hit_rate_l10: 60, recent_values: [3, 0, 2] }] }] })
-  assert.equal(kbo[0].score, 70)
+  assert.equal(kbo[0].score, 60)
   assert.equal(kbo[0].hitRate, 60)
   assert.deepEqual(kbo[0].recent, [2, 0, 3])
   const nhl = nhlHubRows([{
