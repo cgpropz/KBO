@@ -4,7 +4,7 @@ import { fetchDataSnapshot } from './dataUrl';
 import BoardStatus from './BoardStatus';
 import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
-import { capKboRating, compareKboRating, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
+import { capKboRating, compareKboRating, kboModelProjection, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
 import { BoardLoadError } from './BoardLoadError';
@@ -542,9 +542,10 @@ function BatterProjections() {
     const liveLine = variant.line;
     const oddsType = variant.odds_type;
 
-    const projection = Number(p.projection);
-    const edge = Number.isFinite(projection) ? projection - liveLine : null;
-    const recommendation = pregameSide(Number.isFinite(projection) ? projection : null, liveLine);
+    // null/'' projection stays null (Number(null) would show 0.0 and UNDER).
+    const projection = kboModelProjection(p);
+    const edge = projection != null ? projection - liveLine : null;
+    const recommendation = pregameSide(projection, liveLine);
 
     return {
       ...p,
@@ -556,8 +557,8 @@ function BatterProjections() {
       line: liveLine,
       odds_type: oddsType,
       edge: edge != null ? Number(edge.toFixed(2)) : null,
-      rating: liveLine ? kboRating(projection, liveLine, p.prop) : null,
-      rawRating: liveLine ? kboRawRating(projection, liveLine, p.prop) : null,
+      rating: liveLine && projection != null ? kboRating(projection, liveLine, p.prop) : null,
+      rawRating: liveLine && projection != null ? kboRawRating(projection, liveLine, p.prop) : null,
       recommendation,
     };
   });

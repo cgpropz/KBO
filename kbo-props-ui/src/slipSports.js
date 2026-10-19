@@ -7,6 +7,7 @@ import { fetchNhlProjections } from './nhl/nhlData'
 import { compareSlipRows } from './slipBoardModel.js'
 import { isStandardLine, oddsTypeOf, standardSlipRows } from './slipLines'
 import { normalizePlayerName } from './memberHub.js'
+import { kboModelProjection } from './kboBoardScore.js'
 import {
   kboBoardIsOpen,
   kboEmptyState,
@@ -139,7 +140,9 @@ async function loadKboProps() {
   const props = []
   for (const row of standardSlipRows([...(pitchers?.projections || []), ...(batters?.projections || [])])) {
     const line = num(row?.line)
-    const projection = num(row?.projection)
+    // No model number (null/'' projection or formula_source 'none'): skip
+    // before num(), which would turn null into PROJ 0 / CG 0 / LESS.
+    const projection = kboModelProjection(row)
     if (!row?.name && !row?.player) continue
     if (line == null || projection == null) continue
     const key = normalizePlayerName(row.name || row.player)

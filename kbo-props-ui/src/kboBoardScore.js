@@ -38,6 +38,13 @@ export function hasModelNumber(prop) {
   return modelProjection(prop) != null
 }
 
+// The model number for a KBO row, or null when there is none (null or ''
+// projection, or formula_source 'none'). Use this instead of Number(...):
+// Number(null) is 0, which would show PROJ 0 / CG 0 / UNDER on a no-data row.
+export function kboModelProjection(row) {
+  return hasModelNumber(row) ? modelProjection(row) : null
+}
+
 export function scoreFor(prop) {
   if (!lineMatchesStat(prop?.stat, prop?.line)) return null
   if (!hasModelNumber(prop)) return null

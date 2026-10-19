@@ -1,5 +1,5 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
-import { scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
+import { modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
@@ -157,7 +157,7 @@ function kboProjectionScore(row) {
   // No model number (formula_source 'none', or a projection field that is
   // explicitly empty): never ranked, even if a stray rating is present.
   if (row?.formula_source === 'none') return -Infinity;
-  if (row && Object.prototype.hasOwnProperty.call(row, 'projection') && !Number.isFinite(num(row.projection ?? NaN))) return -Infinity;
+  if (row && Object.prototype.hasOwnProperty.call(row, 'projection') && kboModelNumber(row) == null) return -Infinity;
   const rating = num(row?.rating);
   if (Number.isFinite(rating)) return boundCg(rating);
   const score = ratioScore(row?.projection, row?.line, stat);
