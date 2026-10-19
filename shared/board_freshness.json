@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-19T07:32:48Z",
+  "checked_at": "2026-10-19T07:39:50Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-19T07:32:48.304415+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-19T07:12:38.759526+00:00",
-      "prop_count": 170,
+      "generated_at": "2026-10-19T07:39:50.255185+00:00",
+      "prop_count": 206,
       "started_removed": 0,
       "removals": [
         {
@@ -192,6 +192,15 @@
           "team": "PHI",
           "stat": "Shots On Goal",
           "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.42,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Christian Dvorak",
+          "team": "PHI",
+          "stat": "Shots On Goal",
+          "line": 1.5,
           "odds_type": "standard",
           "projection": 1.42,
           "reason": "line pulled"
@@ -230,6 +239,15 @@
           "line": 1.5,
           "odds_type": "demon",
           "projection": 0.77,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Cutter Gauthier",
+          "team": "ANA",
+          "stat": "Shots On Goal",
+          "line": 6.5,
+          "odds_type": "demon",
+          "projection": 3.11,
           "reason": "line pulled"
         },
         {
@@ -426,6 +444,15 @@
           "team": "ANA",
           "stat": "Points",
           "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.64,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jackson LaCombe",
+          "team": "ANA",
+          "stat": "Points",
+          "line": 2.5,
           "odds_type": "demon",
           "projection": 0.64,
           "reason": "line pulled"
@@ -651,6 +678,15 @@
           "team": "ANA",
           "stat": "Points",
           "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.69,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Mikael Granlund",
+          "team": "ANA",
+          "stat": "Points",
+          "line": 2.5,
           "odds_type": "demon",
           "projection": 0.69,
           "reason": "line pulled"
@@ -999,8 +1035,8 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 13,
-        "superseded_dup": 6,
+        "pp_pull": 14,
+        "superseded_dup": 7,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
