@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-19T20:43:28Z",
+  "checked_at": "2026-10-19T20:51:25Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-19T20:43:28.585712+00:00",
@@ -12,10 +12,19 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-19T20:24:39.951004+00:00",
-      "prop_count": 392,
+      "generated_at": "2026-10-19T20:51:25.841862+00:00",
+      "prop_count": 442,
       "started_removed": 0,
       "removals": [
+        {
+          "player": "Cole Perfetti",
+          "team": "WPG",
+          "stat": "Shots On Goal",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 2.13,
+          "reason": "line pulled"
+        },
         {
           "player": "David Pastrnak",
           "team": "BOS",
@@ -53,6 +62,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Mark Scheifele",
+          "team": "WPG",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "goblin",
+          "projection": 1.81,
+          "reason": "line pulled"
+        },
+        {
           "player": "Miro Heiskanen",
           "team": "DAL",
           "stat": "Shots On Goal",
@@ -81,7 +99,7 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 28,
+        "pp_pull": 29,
         "superseded_dup": 23,
         "manual_out": 0,
         "news_out": 0,
