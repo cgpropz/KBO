@@ -3,18 +3,200 @@
   "slate_date": "10/18/2026",
   "slate_date_iso": "2026-10-18",
   "timezone_basis": "ET",
-  "status": "partial",
-  "props_total": 27,
-  "props_graded": 3,
-  "hits": 0,
-  "misses": 0,
-  "pushes": 0,
+  "status": "complete",
+  "props_total": 29,
+  "props_graded": 29,
+  "hits": 9,
+  "misses": 9,
+  "pushes": 1,
   "dnps": 0,
-  "voids": 3,
+  "voids": 10,
   "missing": 0,
-  "hit_rate": null,
-  "hit_rate_pct": null,
-  "props_hit": [],
-  "props_miss": [],
-  "updated_at": "2026-10-18T14:42:40.145931+00:00"
+  "hit_rate": 0.5,
+  "hit_rate_pct": 50.0,
+  "props_hit": [
+    {
+      "player": "Bradly Nadeau",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CAR"
+    },
+    {
+      "player": "Charlie Coyle",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CBJ"
+    },
+    {
+      "player": "Devin Cooley",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 27.5,
+      "actual": 34.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Jonas Brodin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "MIN"
+    },
+    {
+      "player": "Matt Coronato",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Matvei Gridin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Morgan Frost",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Sean Walker",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CAR"
+    },
+    {
+      "player": "Shayne Gostisbehere",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CAR"
+    }
+  ],
+  "props_miss": [
+    {
+      "player": "Adam Fantilli",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CBJ"
+    },
+    {
+      "player": "Andrei Svechnikov",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CAR"
+    },
+    {
+      "player": "Brandon Bussi",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 21.5,
+      "actual": 31.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "CAR"
+    },
+    {
+      "player": "Jesper Wallstedt",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 14.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "MIN"
+    },
+    {
+      "player": "Matt Boldy",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "actual": 6.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "MIN"
+    },
+    {
+      "player": "Matthew Knies",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CBJ"
+    },
+    {
+      "player": "Matthew Knies",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CBJ"
+    },
+    {
+      "player": "Sebastian Aho",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "CAR"
+    },
+    {
+      "player": "Shayne Gostisbehere",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CAR"
+    }
+  ],
+  "updated_at": "2026-10-19T17:37:14.289442+00:00"
 }
