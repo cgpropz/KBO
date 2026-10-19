@@ -182,3 +182,20 @@ test('NBA board score is bounded 0-100 like KBO and NFL', () => {
   assert.equal(byStat.Assists, 100)
   assert.equal(byStat.Points.toFixed(1), '98.1')
 })
+
+test('rows tied at the 100 cap sort by the uncapped score, not feed order', () => {
+  const projections = [{
+    athleteId: '10',
+    name: 'Tie Test',
+    team: 'PHI',
+    position: 'SG',
+    ppAllProps: [
+      { stat: 'Turnovers', line: 2.5, projection: 5.1, opponent: 'NY', hitRates: { L10: 60, FULL: 60 } },
+      { stat: 'Assists', line: 2.5, projection: 5.68, opponent: 'NY', hitRates: { L10: 60, FULL: 60 } },
+    ],
+  }]
+  const rows = buildPropRows(projections, [])
+  const sorted = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, sortBy: 'CG Score' })
+  assert.deepEqual(sorted.map((row) => row.score), [100, 100])
+  assert.deepEqual(sorted.map((row) => row.prop), ['Assists', 'Turnovers'])
+})

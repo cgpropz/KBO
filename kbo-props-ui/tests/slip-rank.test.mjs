@@ -42,3 +42,16 @@ test('Power and Flex payouts come from the published table', () => {
   assert.equal(payoutFor('power', 3, { altered: true }).altered, true)
   assert.equal(payoutFor('power', 1), null)
 })
+
+test('NBA legs are bounded 0-100 on both sides; other sports are unchanged', () => {
+  const nba = { sport: 'nba', projection: 5.68, line: 2.5, prop: 'Assists' }
+  assert.equal(legCg(nba, 'OVER'), 100)
+  assert.equal(legCg(nba, 'UNDER'), 0)
+  const negative = { sport: 'nba', projection: -1, line: 2.5, prop: 'Assists' }
+  assert.equal(legCg(negative, 'OVER'), 0)
+  assert.equal(legCg(negative, 'UNDER'), 100)
+  const avg = averageCg([{ ...nba, side: 'OVER' }, { ...nba, side: 'UNDER' }])
+  assert.ok(avg >= 0 && avg <= 100)
+  assert.equal(legCg({ ...nba, sport: 'wnba' }, 'OVER'), (5.68 / 2.5) * 50)
+  assert.equal(legCg({ ...nba, sport: 'nhl' }, 'UNDER'), 100 - ((5.68 / 2.5) * 50))
+})

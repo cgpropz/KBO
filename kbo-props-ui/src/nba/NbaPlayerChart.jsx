@@ -4,7 +4,7 @@ import { useChartLine } from '../useChartLine'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { logsSupport, opponentFromMatchup, statValue, storedL10Values } from './nbaPropLines'
-import { cgScore } from '../cgScore'
+import { boundCg, cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 
@@ -108,7 +108,7 @@ export default function NbaPlayerChart({ player, projection }) {
     projection: chartProp?.projection,
     line: current.posted,
     stat: current.stat,
-    score: cgScore(chartProp?.projection, current.posted, current.stat),
+    score: boundCg(cgScore(chartProp?.projection, current.posted, current.stat)),
     recentValues: logsSupport(chartLogs, current.stat)
       ? chartLogs.slice(0, 10).map((game) => statValue(game, current.stat))
       : storedL10Values(chartProp),

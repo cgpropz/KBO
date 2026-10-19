@@ -1,4 +1,4 @@
-import { cgScore } from './cgScore.js'
+import { boundCg, cgScore } from './cgScore.js'
 import { fitImage, isPrizePicksHeadshot, isRemoteHeadshotOrLogo, manualPlayerPng } from './fitImage.js'
 import { inkOn, landingHeadshotUrl, landingTeamFill } from './playerMark.js'
 import { NFL_LINE_FLOORS, nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
@@ -47,14 +47,19 @@ function nflSlipRow(row) {
   return Object.hasOwn(NFL_LINE_FLOORS, stat)
 }
 
+function nbaSlipRow(row) {
+  return String(row?.sport || '').toLowerCase() === 'nba'
+}
+
 // NFL uses the board floors. Other
-// sports stay on the plain line. The More/Less side is still projection
-// versus the posted line, so a short yardage over does not flip to Less.
+// sports stay on the plain line. NBA is bounded 0-100 like its board.
+// The More/Less side is still projection versus the posted line, so a
+// short yardage over does not flip to Less.
 export function slipCg(row) {
   const stat = row?.prop ?? row?.stat
-  return nflSlipRow(row)
-    ? nflCgScore(row?.projection, row?.line, stat)
-    : cgScore(row?.projection, row?.line, stat)
+  if (nflSlipRow(row)) return nflCgScore(row?.projection, row?.line, stat)
+  const score = cgScore(row?.projection, row?.line, stat)
+  return nbaSlipRow(row) ? boundCg(score) : score
 }
 
 // Side of the shown CG. Exactly 50 is no pick: EVEN, so it is not a MORE
