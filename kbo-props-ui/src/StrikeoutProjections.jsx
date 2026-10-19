@@ -3,7 +3,7 @@ import './StrikeoutProjections.css';
 import { fetchData, fetchDataSnapshot } from './dataUrl';
 import BoardStatus from './BoardStatus';
 import { getCgProjectionColor } from './cgProjectionColor';
-import { compareKboRating, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
+import { compareKboRating, kboModelProjection, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
 import { isZeroEdge } from './edgeTone.js';
@@ -452,8 +452,9 @@ function StrikeoutProjections({ onNavigate }) {
     const liveLine = variant?.line ?? null;
     const liveOddsType = variant?.odds_type ?? p.odds_type ?? 'standard';
 
-    const projection = Number(p.projection);
-    const edge = Number.isFinite(projection) && liveLine ? projection - liveLine : null;
+    // null/'' projection stays null (Number(null) would show 0.0 and UNDER).
+    const projection = kboModelProjection(p);
+    const edge = projection != null && liveLine ? projection - liveLine : null;
 
     return {
       ...p,
@@ -462,8 +463,8 @@ function StrikeoutProjections({ onNavigate }) {
       line: liveLine,
       odds_type: liveOddsType,
       edge: edge != null ? Number(edge.toFixed(1)) : null,
-      rating: liveLine ? kboRating(projection, liveLine, p.prop) : null,
-      rawRating: liveLine ? kboRawRating(projection, liveLine, p.prop) : null,
+      rating: liveLine && projection != null ? kboRating(projection, liveLine, p.prop) : null,
+      rawRating: liveLine && projection != null ? kboRawRating(projection, liveLine, p.prop) : null,
       opp_k_pct: oppStats.k_pct,
       opp_ba: oppStats.ba,
     };

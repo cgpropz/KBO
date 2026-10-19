@@ -29,8 +29,25 @@ export function directionFor(prop) {
   return 'neutral'
 }
 
+// formula_source 'none' means no model ran for this row (no stats matched).
+// It gets no CG Score, so it is never ranked or picked for the free top 3.
+// formula_applied === false alone is not that: stats kept on the standing
+// model (Total Bases) still carry a full projection.
+export function hasModelNumber(prop) {
+  if (prop?.formula_source === 'none') return false
+  return modelProjection(prop) != null
+}
+
+// The model number for a KBO row, or null when there is none (null or ''
+// projection, or formula_source 'none'). Use this instead of Number(...):
+// Number(null) is 0, which would show PROJ 0 / CG 0 / UNDER on a no-data row.
+export function kboModelProjection(row) {
+  return hasModelNumber(row) ? modelProjection(row) : null
+}
+
 export function scoreFor(prop) {
   if (!lineMatchesStat(prop?.stat, prop?.line)) return null
+  if (!hasModelNumber(prop)) return null
   const projection = modelProjection(prop)
   if (projection == null) return null
   const score = boundCg(cgScore(projection, prop.line, prop.stat))

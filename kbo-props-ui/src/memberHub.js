@@ -3,6 +3,7 @@
 // Scores match the sport boards: KBO cg_projection (falls back to rating),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
+import { hasModelNumber } from './kboBoardScore.js'
 import { manualPlayerPng } from './fitImage.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
@@ -285,6 +286,8 @@ export function kboHubRows(data, photos = {}) {
     for (const prop of Array.isArray(card?.props) ? card.props : []) {
       if (!isStandard(prop?.odds_type)) continue
       if (!lineMatchesStat(prop?.stat, prop?.line)) continue
+      // No model number: not a hub/landing row (no 0 score, no side from avg).
+      if (!hasModelNumber(prop)) continue
       const score = num(prop?.cg_projection ?? prop?.rating)
       const logged = Array.isArray(prop?.recent_values) && prop.recent_values.length
         ? prop.recent_values

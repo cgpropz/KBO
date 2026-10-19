@@ -150,6 +150,32 @@ def find_batter_projection(b_proj, name, stat):
     return {}
 
 
+def _formula_source(model_row, projection):
+    """Which model produced the number: tuned, current or none.
+
+    formula_applied only says whether a tuned (Phase 2) fit replaced the
+    number. Stats kept on the standing model (Total Bases) are False there but
+    still carry a full model projection, so the board needs this field to tell
+    them apart from rows with no model number at all.
+    """
+    source = (model_row or {}).get("formula_source")
+    if source in ("tuned", "current", "none"):
+        return source
+    if projection is None:
+        return "none"
+    return "tuned" if (model_row or {}).get("formula_applied") else "current"
+
+
+def _drop_unmodeled_rating(prop):
+    """A prop with no model projection gets no CG rating, side or confidence."""
+    if prop.get("projection") is None or prop.get("formula_source") == "none":
+        prop["rating"] = None
+        prop["edge"] = None
+        prop["cg_projection"] = None
+        prop["recommendation"] = "NO LINE"
+    return prop
+
+
 def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, display_name=None):
     logs = pitcher_logs_by_name.get(name, [])
     # Sort by date descending (handles MM/DD/YYYY correctly)
@@ -280,7 +306,9 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
             "baseline_recommendation": stat_proj.get("baseline_recommendation"),
             "formula_applied": stat_proj.get("formula_applied"),
             "formula_mode": stat_proj.get("formula_mode"),
+            "formula_source": _formula_source(stat_proj, proj_val),
         })
+        _drop_unmodeled_rating(card["props"][-1])
 
     return card
 
@@ -391,7 +419,9 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, p
             "baseline_recommendation": proj.get("baseline_recommendation"),
             "formula_applied": proj.get("formula_applied"),
             "formula_mode": proj.get("formula_mode"),
+            "formula_source": _formula_source(proj, proj.get("projection")),
         })
+        _drop_unmodeled_rating(card["props"][-1])
 
     return card
 
