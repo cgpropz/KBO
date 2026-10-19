@@ -29,8 +29,18 @@ export function directionFor(prop) {
   return 'neutral'
 }
 
+// formula_source 'none' means no model ran for this row (no stats matched).
+// It gets no CG Score, so it is never ranked or picked for the free top 3.
+// formula_applied === false alone is not that: stats kept on the standing
+// model (Total Bases) still carry a full projection.
+export function hasModelNumber(prop) {
+  if (prop?.formula_source === 'none') return false
+  return modelProjection(prop) != null
+}
+
 export function scoreFor(prop) {
   if (!lineMatchesStat(prop?.stat, prop?.line)) return null
+  if (!hasModelNumber(prop)) return null
   const projection = modelProjection(prop)
   if (projection == null) return null
   const score = boundCg(cgScore(projection, prop.line, prop.stat))

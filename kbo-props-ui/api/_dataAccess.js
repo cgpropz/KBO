@@ -154,6 +154,10 @@ function kboPropScore(prop) {
 function kboProjectionScore(row) {
   const stat = row?.prop ?? row?.stat;
   if (!lineMatchesStat(stat, row?.line)) return -Infinity;
+  // No model number (formula_source 'none', or a projection field that is
+  // explicitly empty): never ranked, even if a stray rating is present.
+  if (row?.formula_source === 'none') return -Infinity;
+  if (row && Object.prototype.hasOwnProperty.call(row, 'projection') && !Number.isFinite(num(row.projection ?? NaN))) return -Infinity;
   const rating = num(row?.rating);
   if (Number.isFinite(rating)) return boundCg(rating);
   const score = ratioScore(row?.projection, row?.line, stat);
