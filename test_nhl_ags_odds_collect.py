@@ -1,6 +1,8 @@
 """NHL AGS odds collector (shared/lab/nhl_ags_odds/collect.py): output format and schedule. No network."""
+import contextlib
 import csv
 import importlib.util
+import io
 import json
 import sys
 import tempfile
@@ -106,6 +108,142 @@ class CollectTests(unittest.TestCase):
             for path in (SCRIPT.parent / "data").glob(f"*_{name}.csv"):
                 with path.open(newline="") as fh:
                     self.assertEqual(next(csv.reader(fh)), header, path.name)
+
+
+def get_with(athlete):
+    """fake_get, but /athletes/4002 answers with `athlete` (a dict, or an Exception to raise)."""
+    calls = []
+
+    def _get(url):
+        if "/athletes/" in url:
+            calls.append(url)
+            if isinstance(athlete, Exception):
+                raise athlete
+            return athlete
+        return fake_get(url)
+    return _get, calls
+
+
+class AthleteCacheTests(unittest.TestCase):
+    GOOD = {"displayName": "Zach Bogosian", "position": {"abbreviation": "D"}, "team": {"$ref": f"{CORE}/teams/9"}}
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.mod = load(self.tmp)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def run_main(self, athlete, *args):
+        getter, calls = get_with(athlete)
+        with mock.patch.object(self.mod, "get", getter), mock.patch.object(sys, "argv", ["collect.py", "--force", *args]):
+            self.mod.main()
+        return calls
+
+    def cache(self):
+        p = self.tmp / "athlete_cache.json"
+        return json.loads(p.read_text()) if p.exists() else {}
+
+    def rows(self):
+        with next((self.tmp / "data").glob("*_ags.csv")).open(newline="") as fh:
+            return list(csv.DictReader(fh))
+
+    def seed(self, entry):
+        (self.tmp / "athlete_cache.json").write_text(json.dumps({"4002": entry}))
+
+    def test_failed_lookup_is_not_cached_and_retried_next_run(self):
+        self.run_main(RuntimeError("ESPN 503"))
+        self.assertNotIn("4002", self.cache())
+        row = self.rows()[0]
+        self.assertEqual((row["player"], row["pos"], row["team"]), ("athlete_4002", "", ""))
+        self.assertIn("athlete lookup failed", (self.tmp / "collect.log").read_text())
+        calls = self.run_main(self.GOOD)
+        self.assertTrue(calls)
+        self.assertEqual(self.cache()["4002"], {"name": "Zach Bogosian", "pos": "D", "team_id": "9"})
+        row = self.rows()[0]
+        self.assertEqual((row["player"], row["pos"], row["team"]), ("Zach Bogosian", "D", "MIN"))
+
+    def test_partial_lookup_is_used_for_the_row_but_not_cached(self):
+        self.run_main({"displayName": "Zach Bogosian", "position": {"abbreviation": "D"}})
+        self.assertNotIn("4002", self.cache())
+        self.assertEqual(self.rows()[0]["player"], "Zach Bogosian")
+        self.assertEqual(self.rows()[0]["team"], "")
+
+    def test_placeholder_and_blank_entries_are_retried_every_run(self):
+        for bad in ({"name": "athlete_4002", "pos": "", "team_id": ""},
+                    {"name": "Zach Bogosian", "pos": "", "team_id": "9"},
+                    {"name": "Zach Bogosian", "pos": "D", "team_id": ""}):
+            with self.subTest(bad=bad):
+                self.seed(bad)
+                self.run_main(self.GOOD)
+                self.assertEqual(self.cache()["4002"], {"name": "Zach Bogosian", "pos": "D", "team_id": "9"})
+                self.assertEqual(self.rows()[0]["team"], "MIN")
+
+    def test_bad_entry_that_still_fails_is_dropped_not_kept(self):
+        self.seed({"name": "athlete_4002", "pos": "", "team_id": ""})
+        self.run_main(RuntimeError("timeout"))
+        self.assertNotIn("4002", self.cache())
+        self.assertIn("cache retry: 0 fixed, 1 still failing", (self.tmp / "collect.log").read_text())
+
+    def test_good_entry_is_not_looked_up_again(self):
+        self.seed({"name": "Zach Bogosian", "pos": "D", "team_id": "9"})
+        self.assertEqual(self.run_main(self.GOOD), [])
+
+    def test_stale_team_is_refreshed_once(self):
+        self.seed({"name": "Zach Bogosian", "pos": "D", "team_id": "15"})  # cached team not in CBJ@MIN
+        calls = self.run_main(self.GOOD)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.cache()["4002"]["team_id"], "9")
+        self.assertEqual(self.rows()[0]["team"], "MIN")
+
+    def test_retry_cache_flag_only_backfills(self):
+        self.seed({"name": "athlete_4002", "pos": "", "team_id": ""})
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.run_main(self.GOOD, "--retry-cache")
+        self.assertIn("cache: 1 entries; 1 fixed, 0 still failing", out.getvalue())
+        self.assertEqual(self.cache()["4002"]["name"], "Zach Bogosian")
+        self.assertEqual(list((self.tmp / "data").glob("*.csv")), [])
+
+    def test_committed_cache_has_no_bad_entries(self):
+        cache = json.loads((SCRIPT.parent / "athlete_cache.json").read_text())
+        self.assertEqual([k for k, v in cache.items() if self.mod.cache_entry_bad(v)], [])
+
+
+class RejoinTests(unittest.TestCase):
+    def test_fills_placeholders_writes_fixed_copy_and_keeps_original(self):
+        spec = importlib.util.spec_from_file_location("ags_rejoin", SCRIPT.parent / "rejoin.py")
+        rejoin = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rejoin)
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            base = ["2026-10-19 11:07:00 ET", "2026-10-19 19:00 ET", "1", "CBJ@MIN", "DraftKings"]
+            tail = ["+1300", "0.0714", "+1300", "2026-10-19T07:25Z"]
+            rows = [base + ["Kirill Kaprizov", "1", "LW", "MIN"] + tail,
+                    base + ["athlete_2", "2", "", ""] + tail,
+                    base + ["Michael Bunting", "3", "LW", ""] + tail]
+            src = d / "2026-10-19_ags.csv"
+            with src.open("w", newline="") as fh:
+                w = csv.writer(fh); w.writerow(AGS_HEADER); w.writerows(rows)
+            original = src.read_bytes()
+            (d / "cache.json").write_text(json.dumps({
+                "1": {"name": "Kirill Kaprizov", "pos": "LW", "team_id": "30"},
+                "2": {"name": "Zach Werenski", "pos": "D", "team_id": "29"},
+                "3": {"name": "Michael Bunting", "pos": "LW", "team_id": "15"}}))  # PHI: not in this game
+            (d / "other_ags.csv").write_text(",".join(AGS_HEADER) + "\n" + ",".join(
+                base[:3] + ["CBJ@MIN"] + base[4:] + ["Sean Monahan", "4", "C", "CBJ"] + tail) + "\n")
+            (d / "cache.json").write_text(json.dumps({**json.loads((d / "cache.json").read_text()),
+                                                       "4": {"name": "Sean Monahan", "pos": "C", "team_id": "29"}}))
+            report = dict((r[0], r[1:]) for r in rejoin.rejoin(str(d), str(d / "cache.json")))
+            self.assertEqual(src.read_bytes(), original)
+            with (d / "2026-10-19_ags.fixed.csv").open(newline="") as fh:
+                out = list(csv.reader(fh))
+            self.assertEqual(out[0], AGS_HEADER)
+            self.assertEqual(out[1], rows[0])
+            self.assertEqual(out[2][5:9], ["Zach Werenski", "2", "D", "CBJ"])
+            self.assertEqual(out[3][5:9], ["Michael Bunting", "3", "LW", ""])
+            self.assertEqual(report["2026-10-19_ags.fixed.csv"], (3, 1, 1))
 
 
 class WorkflowTests(unittest.TestCase):
