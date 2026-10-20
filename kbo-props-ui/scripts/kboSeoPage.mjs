@@ -188,7 +188,7 @@ export function renderKboPage() {
   return html;
 }
 
-export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides() } = {}) {
+export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides(), extra = [] } = {}) {
   const lastmod = (value) => (value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : PUBLISHED_ON);
   const pages = [
     { loc: pageUrl('/'), lastmod: PUBLISHED_ON },
@@ -203,6 +203,7 @@ export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides(
       lastmod: sport.path === PAGE_PATH ? lastmod(kboLastmod) : PUBLISHED_ON,
     })),
     ...guides.map((guide) => ({ loc: pageUrl(guide.path), lastmod: guide.lastmod || PUBLISHED_ON })),
+    ...extra.map((page) => ({ loc: page.loc, lastmod: lastmod(page.lastmod) })),
   ];
   const seen = new Set();
   return pages.filter((page) => {
