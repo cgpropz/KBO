@@ -55,14 +55,16 @@ heavy_success_within() {
   echo 0
 }
 
-# REFRESH_TRIGGER=kbo-due is the kick from other sports' scheduled runs
-# (kbo-due-kick.sh dispatches with -f trigger=kbo-due). It takes the scheduled
-# path: game window, 50-minute guard, and it stands down when an earlier run
-# of this workflow is active or started in the last 5 minutes. A plain manual
-# dispatch keeps its bypass.
+# REFRESH_TRIGGER=kbo-due or nba-due is the kick from other sports' runs
+# (kbo-due-kick.sh and nba-due-kick.sh dispatch with -f trigger=<sport>-due;
+# the NBA board freeze also sends nba-due when the board is old). It takes
+# the scheduled path: game window, 50-minute guard, and it stands down when
+# an earlier run of this workflow is active or started in the last 5
+# minutes. A plain manual dispatch keeps its bypass.
 KICK=0
+KICK_NAME="${REFRESH_TRIGGER:-}"
 if [[ "${GITHUB_EVENT_NAME:-}" == "workflow_dispatch" ]]; then
-  if [[ "${REFRESH_TRIGGER:-}" == "kbo-due" ]]; then
+  if [[ "$KICK_NAME" == "kbo-due" || "$KICK_NAME" == "nba-due" ]]; then
     KICK=1
   else
     write_due true "" "Manual dispatch; refreshing ${SPORT}."
@@ -96,7 +98,7 @@ if [[ -z "${runs_json}" ]]; then
   if [[ "$KICK" == "1" ]]; then
     # A kick that cannot see the run list does not scrape; a scheduled tick
     # or the next kick will.
-    write_due false kick_unlisted "KBO-due kick could not list ${WF} runs; not refreshing."
+    write_due false kick_unlisted "${KICK_NAME} kick could not list ${WF} runs; not refreshing."
     exit 0
   fi
   runs_json="[]"
@@ -118,8 +120,8 @@ if [[ "$KICK" == "1" ]]; then
   done < <(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --recent-earlier --current "${GITHUB_RUN_ID:-}")
   earlier="$(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --earlier-active --current "${GITHUB_RUN_ID:-}" --stood-down "${stood_down# }")"
   if [[ "$earlier" == "1" ]]; then
-    note_summary "skipped: kbo-due kick (another ${SPORT} run is active or started in the last 5 minutes)"
-    write_due false kick_recent "KBO-due kick: an earlier ${WF} run is active or started in the last 5 minutes; not refreshing."
+    note_summary "skipped: ${KICK_NAME} kick (another ${SPORT} run is active or started in the last 5 minutes)"
+    write_due false kick_recent "${KICK_NAME} kick: an earlier ${WF} run is active or started in the last 5 minutes; not refreshing."
     exit 0
   fi
 fi

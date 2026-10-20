@@ -21,6 +21,14 @@ name: Refresh NBA PrizePicks Lines (hourly)
 # refreshes. Otherwise a run scrapes only when no successful scrape finished
 # in the last 50 minutes.
 #
+# GitHub drops most of these ticks (Oct 20: 8 of ~73 slots fired between
+# 00:00 and 15:13 UTC, none from 13:03 to 15:13). nhl-refresh and
+# nfl-odds-live requeue themselves about every 25 minutes, and each of those
+# runs checks this gate through nba-due-kick.yml and starts this workflow
+# with -f trigger=nba-due when NBA is due. That run keeps the window, the
+# 50-minute guard, and the 5-minute earlier-run rule, so it never scrapes
+# twice. A plain manual dispatch still always refreshes.
+#
 # One tip, about 8 scrapes × ~1 min of work (measured 0.6-0.9), plus about
 # one minute for every other tick (71 starts: 23 hourly hours + 48 backup).
 # Game day ≈ 70 billed minutes. Off day ≈ 71. The old 25-minute chain was
@@ -35,6 +43,16 @@ on:
     # Off-day backup. A run inside 50 minutes of a real scrape exits early.
     - cron: "22,52 * * * *" # every 30 minutes (UTC)
   workflow_dispatch:
+    inputs:
+      trigger:
+        # Empty for a manual run (always refreshes). nba-due is the kick from
+        # nba-due-kick.yml or the board freeze; refresh-due.sh gives it the
+        # scheduled gate (window, 50-minute guard, no second run within 5
+        # minutes).
+        description: "Leave empty for a manual run"
+        required: false
+        default: ""
+        type: string
   push:
     branches: [main]
     paths:
@@ -70,6 +88,7 @@ jobs:
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
+          REFRESH_TRIGGER: ${{ inputs.trigger }}
         run: bash .github/scripts/refresh-due.sh nba-props-refresh.yml nba
 
       - name: "skipped: gate (outside game window)"
