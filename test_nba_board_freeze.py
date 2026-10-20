@@ -447,3 +447,41 @@ def test_freeze_workflow_fails_red_after_upload_when_pp_unavailable():
     fail = text.index("Fail when PrizePicks was unavailable at freeze")
     assert upload < fail
     assert "steps.freeze.outputs.skipped == 'false' && steps.freeze.outputs.pp_unavailable == 'true'" in text
+
+
+def test_fallback_rows_carry_published_started_flag():
+    from nba.board_freeze import build_rows_published_only, fetch_published_projections
+    import nba.board_freeze as bf
+
+    captured = "2026-10-20T19:30:00-04:00"
+    pub = [
+        {"player": "A", "stat": "Points", "line": 10.5, "projection": 12.0, "started": True, "game_date": "2026-10-20"},
+        {"player": "B", "stat": "Points", "line": 10.5, "projection": 9.0, "started": False, "game_date": "2026-10-20"},
+        {"player": "C", "stat": "Points", "line": 10.5, "projection": 9.0, "start": "2026-10-20T19:00:00Z"},
+    ]
+    rows = build_rows_published_only(pub, captured, "HTTPError: 403")
+    assert [r["started"] for r in rows] == [True, False, True]
+
+    # The flatten step carries the prop's (or the player's) started flag.
+    payload = [{"data": [
+        {"name": "A", "team": "BOS", "started": True, "ppAllProps": [{"stat": "Points", "line": 10.5}]},
+        {"name": "B", "team": "DET", "ppAllProps": [{"stat": "Points", "line": 9.5, "started": True}, {"stat": "Assists", "line": 5.5}]},
+    ]}]
+
+    import os
+    old = {k: os.environ.get(k) for k in ("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL")}
+    os.environ["SUPABASE_SERVICE_ROLE_KEY"] = "test"
+    os.environ["SUPABASE_URL"] = "https://example.invalid"
+    orig = bf._get
+    bf._get = lambda url, headers=None, timeout=90: payload
+    try:
+        flat = fetch_published_projections()
+    finally:
+        bf._get = orig
+        for k, v in old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    assert [(r["player"], r["stat"], r["started"]) for r in flat] == [
+        ("A", "Points", True), ("B", "Points", True), ("B", "Assists", False)]

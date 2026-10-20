@@ -164,6 +164,9 @@ def fetch_published_projections() -> list[dict]:
                     "game_date": prop.get("gameDate"),
                     "generated_at": prop.get("generated_at"),
                     "start": prop.get("start_time") or pl.get("start_time"),
+                    # The published NBA board has no start_time; publish stamps
+                    # `started` (board_expiry) instead.
+                    "started": bool(prop.get("started") or pl.get("started")),
                 }
             )
     return flat
@@ -200,7 +203,7 @@ def build_rows_published_only(pub: list[dict], captured_at: str, reason: str) ->
                 "game_id": None,
                 "game_date": r.get("game_date"),
                 "match": "published_only",
-                "started": _started(r.get("start"), captured_at),
+                "started": bool(r.get("started")) or _started(r.get("start"), captured_at),
                 "pp_unavailable": True,
                 "pp_unavailable_reason": reason,
             }

@@ -45,7 +45,7 @@ jobs:
     # Schedules only fire on the default branch. Dispatch can target any branch.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
       # Start nba-props-refresh.yml when the board is older than 60 minutes.
