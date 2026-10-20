@@ -782,3 +782,29 @@
   .nhl-dvp-team span { font-size: 13px; }
   .nhl-dvp-badge { min-width: 64px; padding: 2px 6px; }
 }
+
+/* NHL PP Odds table. Same cells as the NFL board, without the NFL class that
+   turns the phone grid into one full-width card. iPad and desktop stay a table. */
+.nhl-root .nhl-sharp-table { min-width: 0; }
+.nhl-root .nhl-sharp-table th,
+.nhl-root .nhl-sharp-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: normal;
+}
+.nhl-root .nhl-sharp-table .nfl-lines-player { white-space: nowrap; }
+.nhl-root .nhl-sharp-table .nfl-sharp-quote-logo { height: 20px; }
+.nhl-root .nhl-sharp-table .nfl-sharp-quote-book { max-width: 150px; flex-wrap: wrap; }
+.nhl-root .nhl-sharp-table .nfl-sharp-edge { min-width: 0; max-width: 160px; }
+.nhl-root .nhl-sharp-page .nfl-sharp-baseline { margin: 0 0 14px; }
+
+@media (--phone-board) {
+  .nhl-root table.nhl-sharp-table[data-card-table] > tbody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nhl-root .nhl-sharp-table .nfl-lines-player { white-space: normal; }
+  .nhl-root .nfl-sharp-cg .cgo-head { flex-wrap: wrap; }
+  .nhl-root .nfl-sharp-cg .cgo-price { font-size: 22px !important; }
+  .nhl-root .nfl-sharp-cg .cgo-prob strong { font-size: 14px !important; }
+  .nhl-root .nfl-sharp-cg .cgo-who { white-space: normal; }
+}
