@@ -7,8 +7,9 @@ then saves, and fails the job if the saved board was still stale.
 Reads only the public board_status endpoint. No secrets, no SQL.
 
 Writes stale=true|false|unknown, age_min, updated_at to GITHUB_OUTPUT.
-unknown means the clock could not be read. Exit 0, unless --fail-stale and
-the board is stale (exit 1).
+unknown means the clock could not be read; the freeze treats anything but
+false as a failure after it saves. Exit 0, unless --fail-stale and the board
+is stale (exit 1).
 """
 from __future__ import annotations
 

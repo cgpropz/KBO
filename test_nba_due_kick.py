@@ -173,10 +173,16 @@ class WiringTests(unittest.TestCase):
         freeze = code.index("Freeze NBA board (standard only)")
         self.assertLess(code.index("NBA board age at freeze"), freeze)
         self.assertLess(upload, fail)
-        self.assertIn("steps.freeze.outputs.skipped == 'false' && steps.age.outputs.stale == 'true'", code)
-        # Still never commits board data.
+        # Unknown or empty (age step is continue-on-error) fails too, and so
+        # does the saved board's own projection age.
+        self.assertIn("steps.freeze.outputs.skipped == 'false' && (steps.age.outputs.stale != 'false' || steps.freeze.outputs.board_stale != 'false')", code)
+        self.assertIn("if: steps.age_pre.outputs.stale != 'false' && github.ref == 'refs/heads/main'", code)
+        # Still never commits board data; actions: write is job-level only.
         self.assertIn("contents: read", code)
         self.assertNotIn("contents: write", code)
+        top = code.split("\njobs:", 1)[0]
+        self.assertNotIn("actions: write", top)
+        self.assertIn("    permissions:\n      contents: read\n\n      actions: write", code)
 
 
 # --- The dispatched run's gate (refresh-due.sh with trigger=nba-due) ---
