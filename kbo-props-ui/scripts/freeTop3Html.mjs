@@ -74,8 +74,12 @@ export function gameDay(rows, now = Date.now()) {
   return starts.length ? Math.min(...starts) : now;
 }
 
-// Fails closed: a sport with a lineup feed shows no rows when that feed did
-// not load, so a player ruled OUT cannot reach the page.
+// Fails closed on the feed itself: a sport with a lineup feed shows no rows
+// when that feed did not load. This is a partial OUT filter, not a complete
+// one: the anonymous lineup feeds only cover 3 games, so a player ruled OUT
+// in any other game is not caught here. The real guard is each sport
+// pipeline's availability filter, which keeps OUT players off the free
+// preview before it is published.
 export function previewRows(sport, body, lineupBody, now = Date.now()) {
   if (sport.lineups && !(lineupBody && lineupBody.data != null)) return [];
   return freeTop3Rows(sport.id, body, now, sport.lineups ? lineupBody : null);
@@ -106,7 +110,9 @@ function rowItem(row) {
 
 // One block per sport. data-built is when the rows were read; data-live marks
 // a sport page block that the browser re-reads from the live free preview
-// (the homepage's React landing replaces its own copy on load).
+// (the homepage's React landing replaces its own copy on load). The stamp and
+// rows sit in a data-nosnippet div so a stale or pulled row from the build
+// cannot show in a search snippet; the heading, note and page stay indexable.
 export function renderSportFreeTop3({ sport, rows, now = Date.now(), heading = 'h2', live = false }) {
   const boardLink = `<a href="${pageUrl(`/?sport=${sport.id}`)}">Open the ${escapeHtml(sport.name)} board</a>`;
   const built = rows.length ? ` data-built="${new Date(now).toISOString()}"` : '';
@@ -117,8 +123,8 @@ export function renderSportFreeTop3({ sport, rows, now = Date.now(), heading = '
   }
   const day = gameDay(rows, now);
   return `${open}<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>
-      <p class="free-top3-stamp">Next game day: <time datetime="${etIsoDate(day)}">${escapeHtml(etDate(day))}</time> (ET) · as of ${escapeHtml(etStamp(now))} ET</p>
-      <ol class="free-top3">${rows.map(rowItem).join('')}</ol>
+      <div data-nosnippet><p class="free-top3-stamp">Next game day: <time datetime="${etIsoDate(day)}">${escapeHtml(etDate(day))}</time> (ET) · as of ${escapeHtml(etStamp(now))} ET</p>
+      <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
       <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
 }
 

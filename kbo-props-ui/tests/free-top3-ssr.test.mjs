@@ -251,3 +251,37 @@ test('the browser module re-reads the anonymous preview and re-renders with line
   assert.match(nhl.outerHTML, /data-live/)
   assert.match(kbo.outerHTML, /No KBO free top 3 is posted right now\./)
 })
+
+test('a failed live re-check keeps the rows hidden with the out-of-date note, not an empty-board claim', async () => {
+  const doc = fakeDom([
+    { sport: 'nhl', built: new Date(NOW).toISOString(), starts: [LATER], live: true },
+    { sport: 'kbo', built: new Date(NOW).toISOString(), starts: [LATER], live: true },
+    { sport: 'nfl', built: new Date(NOW).toISOString(), starts: [LATER], live: true },
+  ])
+  const fetchImpl = async (url) => {
+    if (url === '/api/data?ds=nhl_projections') return { ok: true, json: async () => NHL_BODY }
+    if (url === '/api/data?ds=nhl_lineups') return { ok: false, json: async () => ({}) }
+    if (url === '/api/data?ds=prizepicks_props') throw new Error('network')
+    return { ok: true, json: async () => ({ error: 'forbidden' }) }
+  }
+  await refreshFreeTop3({ root: doc, fetchImpl, clock: () => NOW })
+  for (const block of doc.blocks) {
+    assert.equal(block.outerHTML, null)
+    assert.equal(block.ol, null)
+    assert.equal(block.stamp.textContent, FREE_TOP3_STALE_TEXT)
+  }
+})
+
+test('the build-time stamp and rows are data-nosnippet; the heading and note stay indexable', () => {
+  const html = renderSportFreeTop3({
+    sport: FREE_TOP3_SPORTS.find((s) => s.id === 'kbo'),
+    rows: [{ player: 'Kim', stat: 'Hits', line: 0.5, side: 'OVER', score: 70, start: new Date(LATER).toISOString() }],
+    now: NOW,
+  })
+  const snip = html.match(/<div data-nosnippet>([\s\S]*?)<\/ol><\/div>/)
+  assert.ok(snip, 'rows wrapped in data-nosnippet')
+  assert.match(snip[1], /free-top3-stamp/)
+  assert.match(snip[1], /<ol class="free-top3">/)
+  assert.ok(html.indexOf('<h2>') < html.indexOf('data-nosnippet'))
+  assert.match(html.slice(html.indexOf('</ol></div>')), /class="note"/)
+})
