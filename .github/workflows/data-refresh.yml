@@ -27,6 +27,15 @@ on:
     # Off-day backup. A run inside 50 minutes of a real scrape exits early.
     - cron: "7,37 * * * *"
   workflow_dispatch:
+    inputs:
+      trigger:
+        # Empty for a manual run (always refreshes). kbo-due is the kick from
+        # other sports' scheduled runs; refresh-due.sh gives it the scheduled
+        # gate (window, 50-minute guard, no second run within 5 minutes).
+        description: "Leave empty for a manual run"
+        required: false
+        default: ""
+        type: string
   push:
     branches: [main]
     paths:
@@ -63,6 +72,7 @@ jobs:
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
+          REFRESH_TRIGGER: ${{ inputs.trigger }}
         run: bash .github/scripts/refresh-due.sh data-refresh.yml kbo
 
       - name: "skipped: gate (outside game window)"

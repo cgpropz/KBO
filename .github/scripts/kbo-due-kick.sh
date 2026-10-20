@@ -3,12 +3,16 @@
 #
 # GitHub drops most of data-refresh.yml's own cron ticks (about 8-10 of ~62
 # a day fire; gaps of 3-5 hours, including 9:49 PM to 1 AM ET on Oct 19-20).
-# The other sports' scheduled workflows call this from a separate job, so
-# whichever schedule GitHub does fire can start the KBO refresh.
+# nfl-refresh and nba-props-refresh (the two busiest schedules inside the KBO
+# window) call this from a separate job, so a schedule GitHub does fire can
+# start the KBO refresh.
 #
-# The decision is refresh-due.sh, unchanged: KBO game window plus the
-# 50-minute guard. A data-refresh.yml run that is already queued or running
-# is left alone. This script always exits 0 so it never fails the host run.
+# This side is a cheap pre-filter: refresh-due.sh (KBO game window plus the
+# 50-minute guard) and no data-refresh.yml run already queued or running.
+# The real guard is in the dispatched run: -f trigger=kbo-due makes its gate
+# take the scheduled path, and it stands down when an earlier run is active
+# or started in the last 5 minutes, so two kicks (or a kick and a native
+# tick) scrape once. This script always exits 0 so it never fails the host.
 #
 # Env:
 #   GITHUB_EVENT_NAME  only "schedule" does anything
@@ -60,7 +64,7 @@ if [[ "${KBO_DUE_DRY_RUN:-}" == "1" ]]; then
   exit 0
 fi
 
-if gh workflow run "$WF" --ref main; then
+if gh workflow run "$WF" --ref main -f trigger=kbo-due; then
   echo "kbo-due: started ${WF} on main."
 else
   echo "::warning title=KBO refresh not started::gh workflow run ${WF} failed; the next scheduled tick will try again"

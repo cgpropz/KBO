@@ -1,10 +1,11 @@
 name: Start KBO refresh if due
 
-# Called from other sports' scheduled workflows (nfl-refresh, nhl-refresh,
-# nba-props-refresh, wnba-props-refresh). GitHub drops most of
+# Called from nfl-refresh and nba-props-refresh, the two busiest schedules
+# inside the KBO window. GitHub drops most of
 # data-refresh.yml's own cron ticks, so any scheduled run that does fire
 # checks the KBO gate (game window plus the 50-minute guard) and, when KBO is
-# due, starts data-refresh.yml on main with the job's GITHUB_TOKEN. A
+# due, starts data-refresh.yml on main (-f trigger=kbo-due, so that run's gate
+# keeps the 50-minute guard) with the job's GITHUB_TOKEN. A
 # workflow_dispatch from GITHUB_TOKEN is one of the events GitHub lets that
 # token start.
 #
@@ -26,7 +27,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Same UTC hours as data-refresh.yml's hourly cron (23, 0-12). Outside
+      # them, skip checkout and the gate. refresh-due.sh still checks the
+      # real game window inside these hours.
+      - name: KBO window hours (UTC 23-12)
+        id: hours
+        continue-on-error: true
+        run: |
+          hour=$((10#$(date -u +%H)))
+          if [ "$hour" -eq 23 ] || [ "$hour" -le 12 ]; then
+            echo "inside=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "kbo-due: outside KBO window hours (UTC ${hour}); nothing to do."
+            echo "inside=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repo
+        if: steps.hours.outputs.inside == 'true'
         continue-on-error: true
         uses: actions/checkout@v4
         with:
@@ -34,6 +51,7 @@ jobs:
           persist-credentials: false
 
       - name: Start data-refresh.yml if KBO is due
+        if: steps.hours.outputs.inside == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
