@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import { readFileSync } from 'node:fs'
-import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE, BOARD_STATUS_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE, BOARD_STATUS_CACHE, BOARD_STATUS_MEMO_MS } from '../api/data.js'
 import {
   DATASETS,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
@@ -1964,7 +1964,8 @@ test('a failed nba_players refresh keeps the last good in-memory copy for the fa
   }
 })
 
-test('board_status reads the table on every request and the CDN holds it 30s', async () => {
+test('board_status reads the table at most every 10s per instance and the CDN holds it 30s', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-20T15:14:00Z') })
   _clearCache()
   let clock = '2026-10-20T13:10:22Z'
   let reads = 0
@@ -1992,11 +1993,18 @@ test('board_status reads the table on every request and the CDN holds it 30s', a
   assert.equal(first.headers['cache-control'], BOARD_STATUS_CACHE)
   assert.equal(BOARD_STATUS_CACHE, 'public, max-age=30, s-maxage=30')
   assert.equal(first.body.boards.find((b) => b.sport === 'nba').board_updated_at, clock)
-  // A new publish inside the 60s fresh window is served right away, not the cached copy.
+  // Inside 10s (e.g. a ?cb= cache-buster that missed the CDN) the instance copy answers.
   clock = '2026-10-20T15:14:15Z'
+  t.mock.timers.tick(BOARD_STATUS_MEMO_MS - 1)
+  const memo = await get()
+  assert.equal(memo.body.boards.find((b) => b.sport === 'nba').board_updated_at, '2026-10-20T13:10:22Z')
+  assert.equal(reads, 1)
+  // After 10s, well inside the old 60s fresh window, the new publish is read.
+  t.mock.timers.tick(1)
   const second = await get()
   assert.equal(second.body.boards.find((b) => b.sport === 'nba').board_updated_at, clock)
   assert.equal(reads, 2)
+  t.mock.timers.tick(BOARD_STATUS_MEMO_MS)
   // A failed read still serves the last clock it read.
   fail = true
   const third = await get()
