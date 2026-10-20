@@ -72,6 +72,8 @@ test('phone card nits from #319 review stay fixed', () => {
   assert.match(phone, /td\.nfl-sharp-cg\[data-label\]::before \{\s*content: none;/)
   // Matchups last-5 dates and team names do not split mid-word.
   assert.match(phone, /table\.mdd-recent-table\[data-card-table\] > tbody > tr > td \{\s*overflow-wrap: normal;\s*white-space: nowrap !important;/)
+  // Date and opponent each get the full card width, so they fit at 320px.
+  assert.match(phone, /table\.mdd-recent-table\[data-card-table\] > tbody > tr > td:nth-child\(-n \+ 2\) \{\s*grid-column: 1 \/ -1;/)
   // Pitcher Rankings cards lead with the pitcher's name.
   assert.match(phone, /table\.rk-table\[data-card-table\] > tbody > tr > td\.col-player \{\s*order: -1;/)
 })

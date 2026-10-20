@@ -587,14 +587,15 @@
     display: none;
   }
 
-  /* Matchups last-5 starts: the date takes its own line and dates and team
-     names never split mid-word. */
+  /* Matchups last-5 starts: the date and the opponent each take their own
+     line, so dates and team names (Samsung at 320px) never split mid-word or
+     get clipped. IP/ER and K/ERA sit two-up below. */
   .kbo-app-root table.mdd-recent-table[data-card-table] > tbody > tr > td {
     overflow-wrap: normal;
     white-space: nowrap !important;
   }
 
-  .kbo-app-root table.mdd-recent-table[data-card-table] > tbody > tr > td:first-child {
+  .kbo-app-root table.mdd-recent-table[data-card-table] > tbody > tr > td:nth-child(-n + 2) {
     grid-column: 1 / -1;
   }
 
