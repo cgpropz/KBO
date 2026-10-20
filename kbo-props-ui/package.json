@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/build-kbo-seo.mjs && node scripts/write-status.mjs && node scripts/write-member-recap.mjs && vite build && node scripts/omit-static-status.mjs",
+    "build": "node scripts/build-kbo-seo.mjs && node scripts/write-status.mjs && node scripts/write-member-recap.mjs && vite build && node scripts/write-free-top3.mjs && node scripts/omit-static-status.mjs",
     "test:phone": "playwright test -c playwright.phone.config.js",
     "lint": "eslint .",
     "preview": "vite preview",
