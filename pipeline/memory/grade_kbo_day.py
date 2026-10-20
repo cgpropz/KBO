@@ -28,6 +28,7 @@ from pipeline.memory.common import (
     parse_cli_date,
     parse_date,
     postponed_matchups,
+    pulled_status,
     scheduled_matchups,
     team_key,
     utc_now_iso,
@@ -338,6 +339,10 @@ def grade_day(d: date, *, dry_run: bool = False, allow_partial_write: bool = Fal
         stat_key = STAT_KEY.get(stat)
         line = prop.get("line")
         pair = matchup_pair(prop.get("team"), prop.get("opponent"))
+        # A line PrizePicks pulled before first pitch is Void, never a W/L.
+        if pulled_status(prop):
+            graded.append(_void_prop(prop, "pulled"))
+            continue
         if pair and pair in postponed:
             graded.append(_void_prop(prop, "postponed"))
             continue

@@ -187,6 +187,43 @@ class WriteStatus(unittest.TestCase):
             odds.write_pull_status(odds.pull_status_payload("confirmed_empty", now=NOW), path)
             self.assertEqual(pl.load_pull_status(path, now=NOW + timedelta(minutes=1))["status"], "confirmed_empty")
 
+    def _write(self, path, kind, at, **kw):
+        return odds.write_pull_status(odds.pull_status_payload(kind, now=at, **kw), path, now=at)
+
+    def test_fetch_error_or_partial_keeps_recent_confirmed_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pull.json")
+            self._write(path, "confirmed_empty", NOW)
+            for kind in ("fetch_error", "partial"):
+                later = NOW + timedelta(hours=2, minutes=50)
+                kept = self._write(path, kind, later)
+                self.assertEqual(kept["status"], "confirmed_empty")
+                status = pl.load_pull_status(path, now=later)
+                self.assertEqual(status["status"], "confirmed_empty")
+                # So the rebuild after a 429 still marks every prop pulled.
+                _, pulled = generate_props._apply_pulled_lines(_board(), status)
+                self.assertEqual(pulled, 5)
+
+    def test_stale_confirmed_empty_is_replaced_by_fetch_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pull.json")
+            self._write(path, "confirmed_empty", NOW)
+            later = NOW + timedelta(hours=3, minutes=1)
+            self.assertEqual(self._write(path, "fetch_error", later)["status"], "fetch_error")
+            with open(path, encoding="utf-8") as fh:
+                self.assertEqual(json.load(fh)["status"], "fetch_error")
+
+    def test_fresh_pull_replaces_confirmed_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pull.json")
+            self._write(path, "confirmed_empty", NOW)
+            self.assertEqual(self._write(path, "fresh", NOW + timedelta(minutes=20))["status"], "fresh")
+
+    def test_fetch_error_without_prior_status_is_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pull.json")
+            self.assertEqual(self._write(path, "fetch_error", NOW)["status"], "fetch_error")
+
 
 if __name__ == "__main__":
     unittest.main()

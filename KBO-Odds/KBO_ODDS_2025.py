@@ -269,13 +269,54 @@ def pull_status_payload(source, frame=None, now=None):
     return payload
 
 
-def write_pull_status(payload, path=None):
+CONFIRMED_STATUS_MAX_AGE_SECONDS = 3 * 3600
+
+
+def _confirmed_status_to_keep(path, now=None):
+    """The last confirming status (confirmed_empty, or a complete fresh pull)
+    if it is under 3 hours old, else None."""
+    from datetime import datetime, timezone
+    try:
+        with open(path, encoding="utf-8") as handle:
+            previous = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(previous, dict):
+        return None
+    confirming = previous.get("status") == "confirmed_empty" or (
+        previous.get("status") == "fresh" and previous.get("complete") is True
+    )
+    if not confirming:
+        return None
+    try:
+        checked = datetime.fromisoformat(str(previous.get("checked_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if checked.tzinfo is None:
+        checked = checked.replace(tzinfo=timezone.utc)
+    age = ((now or datetime.now(timezone.utc)) - checked).total_seconds()
+    return previous if 0 <= age <= CONFIRMED_STATUS_MAX_AGE_SECONDS else None
+
+
+def write_pull_status(payload, path=None, now=None):
+    """Write the pull status. A fetch error or partial save does not replace
+    a confirming status under 3 hours old: a run of 429s after PrizePicks
+    confirmed 0 KBO lines must not bring the pulled props back."""
     base = os.path.dirname(os.path.abspath(__file__))
     path = path or os.environ.get("KBO_PULL_STATUS_PATH") or os.path.join(base, PULL_STATUS_FILE)
+    if payload.get("status") in ("fetch_error", "partial"):
+        kept = _confirmed_status_to_keep(path, now)
+        if kept is not None:
+            print(
+                f"PrizePicks KBO pull status: {payload['status']}; keeping the {kept['status']} status "
+                f"from {kept.get('checked_at')} (under 3h old)"
+            )
+            return kept
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
         handle.write("\n")
     print(f"PrizePicks KBO pull status: {payload['status']} ({len(payload['lines'])} lines) → {os.path.basename(path)}")
+    return payload
 
 
 def _load_cached():
