@@ -3,6 +3,7 @@ import './StrikeoutProjections.css';
 import { fetchData, fetchDataSnapshot } from './dataUrl';
 import BoardStatus from './BoardStatus';
 import { getCgProjectionColor } from './cgProjectionColor';
+import { prizepicksPulled } from './nhl/pointsGate';
 import { compareKboRating, kboModelProjection, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
@@ -412,7 +413,8 @@ function StrikeoutProjections({ onNavigate }) {
     };
   };
 
-  const mergedScoped = scoped.map((p) => {
+  // Pulled PrizePicks lines never show, even from the snapshot fallback.
+  const mergedScoped = scoped.filter((p) => !prizepicksPulled(p)).map((p) => {
     const resolvedOpponent = resolveOpponent(p);
     // Get opponent team stats first (for all projections)
     const oppStats = getOppStats(resolvedOpponent);

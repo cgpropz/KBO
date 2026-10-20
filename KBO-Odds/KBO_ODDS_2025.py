@@ -20,6 +20,10 @@ HEADERS = {
 PP_URL = "https://partner-api.prizepicks.com/projections"
 KBO_LEAGUE_ID = "135"
 MAX_RETRIES = 4
+# Two clean HTTP 200 answers from the KBO league filter with no rows is
+# PrizePicks saying there are no KBO lines (not a fetch failure).
+CONFIRM_EMPTY_AFTER = 2
+PULL_STATUS_FILE = "prizepicks_kbo_pull.json"
 BACKOFF_CAP_SECONDS = 30.0
 SNIPPET_CHARS = 180
 
@@ -160,22 +164,43 @@ def _retry_delay(attempt, status):
     return backoff_seconds(attempt, retry_after), status_code
 
 
+def _clean_empty(frame, status):
+    """True for a parsed HTTP 200 with zero KBO rows (not an error)."""
+    code = status[0] if isinstance(status, tuple) else status
+    return frame is not None and len(frame) == 0 and code == 200
+
+
 def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print):
     """Fetch KBO lines, retrying transient HTTP failures and empty boards.
 
-    Returns (dataframe, source) where source is 'fresh', 'cache', or 'empty'.
-    An empty live board keeps the last saved file instead of wiping it.
+    Returns (dataframe, source). source is:
+      'fresh'            live KBO lines.
+      'confirmed_empty'  PrizePicks answered HTTP 200 with no KBO lines on the
+                         league filter CONFIRM_EMPTY_AFTER times, and the
+                         unfiltered board had none either (or errored). The
+                         frame is the last saved file so projections still
+                         build; the board marks every prop pulled.
+      'cache'            fetch errors only (non-200, exception, timeout, bad
+                         JSON): the last saved file is the fallback.
+      'empty'            nothing fetched and no saved file.
     """
     if load_cached is None:
         load_cached = _load_cached
 
     last_status = None
+    clean_empty = 0
     filtered = {"league_id": KBO_LEAGUE_ID, "per_page": 1000}
     for attempt in range(1, MAX_RETRIES + 1):
         frame, status = _request_kbo(get, filtered, attempt, log)
         last_status = status[0] if isinstance(status, tuple) else status
         if frame is not None and len(frame) > 0:
+            frame.attrs["kbo_complete"] = True
             return frame, "fresh"
+        if _clean_empty(frame, status):
+            clean_empty += 1
+            if clean_empty >= CONFIRM_EMPTY_AFTER:
+                # Stop retrying an empty board: more calls only earn a 429.
+                break
         if attempt < MAX_RETRIES:
             delay, _status_code = _retry_delay(attempt, status)
             log(f"  ⏳ retrying in {delay:.0f}s")
@@ -185,7 +210,15 @@ def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print):
     frame, status = _request_kbo(get, {"per_page": 1000}, MAX_RETRIES + 1, log)
     last_status = status[0] if isinstance(status, tuple) else status
     if frame is not None and len(frame) > 0:
+        # The all-league board is capped by per_page and can omit KBO lines,
+        # so a line missing from it is not proof the line was pulled.
+        frame.attrs["kbo_complete"] = False
         return frame, "fresh"
+
+    if clean_empty >= CONFIRM_EMPTY_AFTER:
+        log(f"  ✓ PrizePicks confirmed 0 KBO lines ({clean_empty} clean HTTP 200 responses); props will be marked pulled")
+        cached = load_cached()
+        return (cached if cached is not None else pd.DataFrame()), "confirmed_empty"
 
     cached = load_cached()
     if cached is not None and not cached.empty:
@@ -201,6 +234,89 @@ def dfs_scraper():
     if source == "empty":
         return _load_cached()
     return frame
+
+
+def _line_value(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def pull_status_payload(source, frame=None, now=None):
+    """What the last PrizePicks KBO pull saw, for the board's pulled-line check.
+
+    'fresh' lists every live line (name, stat, line, odds type). Only 'fresh'
+    and 'confirmed_empty' mark props pulled; any other status marks nothing.
+    """
+    from datetime import datetime, timezone
+    checked = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0).isoformat()
+    payload = {"status": source, "checked_at": checked, "lines": []}
+    if source == "fresh":
+        # Only the KBO league-filter answer is complete enough to say a
+        # specific line is gone.
+        payload["complete"] = bool(getattr(frame, "attrs", {}).get("kbo_complete", False)) if frame is not None else False
+    if source == "fresh" and frame is not None and not frame.empty:
+        lines = []
+        for row in frame.to_dict("records"):
+            lines.append({
+                "name": str(row.get("Name") or ""),
+                "stat": str(row.get("Stat") or ""),
+                "line": _line_value(row.get("Prizepicks")),
+                "odds_type": str(row.get("Odds Type") or "standard").lower(),
+            })
+        payload["lines"] = lines
+    return payload
+
+
+CONFIRMED_STATUS_MAX_AGE_SECONDS = 3 * 3600
+
+
+def _confirmed_status_to_keep(path, now=None):
+    """The last confirming status (confirmed_empty, or a complete fresh pull)
+    if it is under 3 hours old, else None."""
+    from datetime import datetime, timezone
+    try:
+        with open(path, encoding="utf-8") as handle:
+            previous = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(previous, dict):
+        return None
+    confirming = previous.get("status") == "confirmed_empty" or (
+        previous.get("status") == "fresh" and previous.get("complete") is True
+    )
+    if not confirming:
+        return None
+    try:
+        checked = datetime.fromisoformat(str(previous.get("checked_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if checked.tzinfo is None:
+        checked = checked.replace(tzinfo=timezone.utc)
+    age = ((now or datetime.now(timezone.utc)) - checked).total_seconds()
+    return previous if 0 <= age <= CONFIRMED_STATUS_MAX_AGE_SECONDS else None
+
+
+def write_pull_status(payload, path=None, now=None):
+    """Write the pull status. A fetch error or partial save does not replace
+    a confirming status under 3 hours old: a run of 429s after PrizePicks
+    confirmed 0 KBO lines must not bring the pulled props back."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    path = path or os.environ.get("KBO_PULL_STATUS_PATH") or os.path.join(base, PULL_STATUS_FILE)
+    if payload.get("status") in ("fetch_error", "partial"):
+        kept = _confirmed_status_to_keep(path, now)
+        if kept is not None:
+            print(
+                f"PrizePicks KBO pull status: {payload['status']}; keeping the {kept['status']} status "
+                f"from {kept.get('checked_at')} (under 3h old)"
+            )
+            return kept
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
+    print(f"PrizePicks KBO pull status: {payload['status']} ({len(payload['lines'])} lines) → {os.path.basename(path)}")
+    return payload
 
 
 def _load_cached():
@@ -243,7 +359,15 @@ def save_to_json(df):
 
 if __name__ == "__main__":
     df, source = fetch_kbo_lines(requests.get)
+    if source == "confirmed_empty":
+        # A real empty board, not an error. Keep the odds file so projections
+        # still build, and record the empty pull so every KBO prop is marked
+        # pulled and leaves the ranking, free top 3 and slips.
+        write_pull_status(pull_status_payload("confirmed_empty"))
+        print("⚠ PrizePicks has no KBO lines; keeping the odds file and marking every prop pulled")
+        sys.exit(0)
     if source == "cache":
+        write_pull_status(pull_status_payload("fetch_error"))
         # The live board had no usable KBO lines. Keep this file so pitcher and
         # batter projections are not rebuilt from nothing. It can still be a
         # finished game. The board publish drops those lines before they go out.
@@ -254,5 +378,9 @@ if __name__ == "__main__":
         sys.exit(1)
     print("Scraping complete... saving local odds files")
     if not save_to_json(df):
+        # Refused (batter-only response over cached pitcher markets): the
+        # saved file is not this pull, so do not mark lines pulled from it.
+        write_pull_status(pull_status_payload("partial"))
         sys.exit(1)
+    write_pull_status(pull_status_payload("fresh", df))
     print("Google Sheets sync disabled")

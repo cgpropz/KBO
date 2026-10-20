@@ -4,6 +4,7 @@ import { fetchDataSnapshot } from './dataUrl';
 import BoardStatus from './BoardStatus';
 import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
+import { prizepicksPulled } from './nhl/pointsGate';
 import { capKboRating, compareKboRating, kboModelProjection, kboRatingClass, kboRating, kboRawRating, pregameSide } from './kboBoardScore';
 import RecentGameLogChart from './RecentGameLogChart';
 import { fitImage } from './fitImage.js';
@@ -448,7 +449,8 @@ function BatterProjections() {
     return candidates[0].variants;
   };
 
-  const mergedProjections = (data?.projections || []).map((p) => {
+  // Pulled PrizePicks lines never show, even from the snapshot fallback.
+  const mergedProjections = (data?.projections || []).filter((p) => !prizepicksPulled(p)).map((p) => {
     const ppStats = propToPrizepicksStat[p.prop] || [];
     const team = canonicalTeam(p.team || '');
     const liveCtx = liveCtxByTeam[team] || null;

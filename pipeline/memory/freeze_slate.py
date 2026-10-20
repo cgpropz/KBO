@@ -298,6 +298,8 @@ def build_kbo_props(
             if ignore_cutoff:
                 row["cutoff_ignored"] = True
             _formula_fields(row, src, prop)
+            # Pulled lines (removed / pp_status) must freeze as pulled, not live.
+            attach_board_identity(row, prop)
             out.append(_stamp(row, start, start_source, now, commit))
     return out, stats
 
