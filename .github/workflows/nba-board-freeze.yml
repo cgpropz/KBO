@@ -45,7 +45,7 @@ jobs:
     # Schedules only fire on the default branch. Dispatch can target any branch.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
       # Start nba-props-refresh.yml when the board is older than 60 minutes.
@@ -141,6 +141,15 @@ jobs:
           path: ${{ runner.temp }}/nba-board/board_*.json.enc
           retention-days: 90
           if-no-files-found: error
+
+      # After the upload, so the record is kept. PrizePicks could not be read
+      # after retries, so the saved board is the published standard board with
+      # published lines, every row marked pp_unavailable. Red run.
+      - name: Fail when PrizePicks was unavailable at freeze
+        if: steps.freeze.outputs.skipped == 'false' && steps.freeze.outputs.pp_unavailable == 'true'
+        run: |
+          echo "::error title=NBA freeze without PrizePicks::PrizePicks did not answer after retries; the artifact holds the published board marked pp_unavailable"
+          exit 1
 
       # After the upload, so the record is kept. Red run = the public clock was
       # over 60 minutes old or unreadable (an empty output counts: the age

@@ -301,3 +301,187 @@ def test_saved_board_age_uses_newest_projection_generated_at():
     assert edge["board_stale"] == "false"
     assert saved_board_age([{"projection_generated_at": None}], captured)["board_stale"] == "unknown"
     assert saved_board_age([], captured)["board_stale"] == "unknown"
+def _load_pp():
+    from nba.board_freeze import _load_pp_odds
+
+    return _load_pp_odds()
+
+
+class _Resp:
+    def __init__(self, status, payload=None, headers=None):
+        self.status_code = status
+        self._payload = payload or {"data": [], "included": [], "meta": {"total_pages": 1}}
+        self.headers = headers or {}
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+
+            raise requests.HTTPError(f"{self.status_code} Client Error", response=self)
+
+    def json(self):
+        return self._payload
+
+
+def test_pp_fetch_retries_403_429_5xx_then_succeeds():
+    pp = _load_pp()
+    for status in (403, 429, 500, 503):
+        seq = [_Resp(status), _Resp(status, headers={"Retry-After": "2"}), _Resp(200)]
+        waits = []
+        out = pp.fetch_all_projections(get=lambda url, params=None, timeout=30: seq.pop(0), sleep=waits.append)
+        assert out == {"data": [], "included": []}
+        assert waits == [5, 2.0], (status, waits)
+
+
+def test_pp_fetch_gives_up_after_three_attempts():
+    import pytest
+    import requests
+
+    pp = _load_pp()
+    calls, waits = [], []
+
+    def get(url, params=None, timeout=30):
+        calls.append(params["page"])
+        return _Resp(403)
+
+    with pytest.raises(requests.HTTPError):
+        pp.fetch_all_projections(get=get, sleep=waits.append)
+    assert len(calls) == 3 and waits == [5, 15]
+
+
+def test_pp_fetch_does_not_retry_404_and_retries_connection_errors():
+    import pytest
+    import requests
+
+    pp = _load_pp()
+    calls = []
+
+    def get404(url, params=None, timeout=30):
+        calls.append(1)
+        return _Resp(404)
+
+    with pytest.raises(requests.HTTPError):
+        pp.fetch_all_projections(get=get404, sleep=lambda s: None)
+    assert len(calls) == 1
+
+    seq = [requests.ConnectionError("reset"), _Resp(200)]
+
+    def flaky(url, params=None, timeout=30):
+        item = seq.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    waits = []
+    pp.fetch_all_projections(get=flaky, sleep=waits.append)
+    assert waits == [5]
+
+
+def test_freeze_saves_published_board_marked_pp_unavailable(tmp_path, monkeypatch):
+    import json as _json
+
+    import requests
+
+    from nba import board_freeze as bf
+
+    def boom():
+        raise requests.HTTPError("403 Client Error: Forbidden for url: https://partner-api.prizepicks.com/projections")
+
+    pub = [
+        {"player": "Jayson Tatum", "team": "BOS", "stat": "Points", "line": 27.5, "projection": 30.0,
+         "cg_score": 54.5, "opponent": "DET", "game_date": "2026-10-20", "generated_at": "2026-10-20T17:50:00Z",
+         "start": "2026-10-20T19:00:00Z"},
+        {"player": "Cade Cunningham", "team": "DET", "stat": "Assists", "line": 9.5, "projection": 8.0,
+         "cg_score": 40.0, "opponent": "BOS", "game_date": "2026-10-21", "generated_at": "2026-10-20T17:50:00Z"},
+    ]
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", boom)
+    monkeypatch.setattr(bf, "fetch_published_projections", lambda: pub)
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
+    outputs = out_file.read_text()
+    assert "pp_unavailable=true" in outputs and "skipped=false" in outputs
+    rows = _json.loads(next(tmp_path.glob("board_*.json")).read_text())
+    assert [r["player"] for r in rows] == ["Jayson Tatum"]
+    row = rows[0]
+    assert row["pp_unavailable"] is True and row["match"] == "published_only"
+    assert (row["line"], row["odds_type"], row["side"], row["cg_score"]) == (27.5, "standard", "OVER", 54.5)
+    assert "403" in row["pp_unavailable_reason"]
+
+
+def test_freeze_without_pp_and_no_slate_rows_fails(tmp_path, monkeypatch):
+    from nba import board_freeze as bf
+
+    def boom():
+        raise RuntimeError("down")
+
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", boom)
+    monkeypatch.setattr(bf, "fetch_published_projections", lambda: [])
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 1
+    assert "skipped=true" in out_file.read_text()
+    assert not list(tmp_path.glob("board_*.json"))
+
+
+def test_freeze_normal_path_reports_pp_available(tmp_path, monkeypatch):
+    from nba import board_freeze as bf
+
+    pp_rows = [{"player": "Jayson Tatum", "team": "BOS", "stat": "Points", "line": 27.5,
+                "start": "2026-10-20T19:00:00Z", "game_id": "g1", "odds_type": "standard", "game_date": "2026-10-20"}]
+    pub = [{"player": "Jayson Tatum", "team": "BOS", "stat": "Points", "line": 27.5, "projection": 30.0,
+            "cg_score": 54.5, "generated_at": "2026-10-20T17:50:00Z"}]
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", lambda: pp_rows)
+    monkeypatch.setattr(bf, "fetch_published_projections", lambda: pub)
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
+    assert "pp_unavailable=false" in out_file.read_text()
+
+
+def test_freeze_workflow_fails_red_after_upload_when_pp_unavailable():
+    from pathlib import Path
+
+    text = (Path(__file__).resolve().parent / ".github" / "workflows" / "nba-board-freeze.yml").read_text()
+    upload = text.index("Upload encrypted board artifact")
+    fail = text.index("Fail when PrizePicks was unavailable at freeze")
+    assert upload < fail
+    assert "steps.freeze.outputs.skipped == 'false' && steps.freeze.outputs.pp_unavailable == 'true'" in text
+
+
+def test_fallback_rows_carry_published_started_flag():
+    from nba.board_freeze import build_rows_published_only, fetch_published_projections
+    import nba.board_freeze as bf
+
+    captured = "2026-10-20T19:30:00-04:00"
+    pub = [
+        {"player": "A", "stat": "Points", "line": 10.5, "projection": 12.0, "started": True, "game_date": "2026-10-20"},
+        {"player": "B", "stat": "Points", "line": 10.5, "projection": 9.0, "started": False, "game_date": "2026-10-20"},
+        {"player": "C", "stat": "Points", "line": 10.5, "projection": 9.0, "start": "2026-10-20T19:00:00Z"},
+    ]
+    rows = build_rows_published_only(pub, captured, "HTTPError: 403")
+    assert [r["started"] for r in rows] == [True, False, True]
+
+    # The flatten step carries the prop's (or the player's) started flag.
+    payload = [{"data": [
+        {"name": "A", "team": "BOS", "started": True, "ppAllProps": [{"stat": "Points", "line": 10.5}]},
+        {"name": "B", "team": "DET", "ppAllProps": [{"stat": "Points", "line": 9.5, "started": True}, {"stat": "Assists", "line": 5.5}]},
+    ]}]
+
+    import os
+    old = {k: os.environ.get(k) for k in ("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL")}
+    os.environ["SUPABASE_SERVICE_ROLE_KEY"] = "test"
+    os.environ["SUPABASE_URL"] = "https://example.invalid"
+    orig = bf._get
+    bf._get = lambda url, headers=None, timeout=90: payload
+    try:
+        flat = fetch_published_projections()
+    finally:
+        bf._get = orig
+        for k, v in old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    assert [(r["player"], r["stat"], r["started"]) for r in flat] == [
+        ("A", "Points", True), ("B", "Points", True), ("B", "Assists", False)]

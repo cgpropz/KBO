@@ -16,6 +16,10 @@ Env (same as nba-props-refresh / restore_snapshots):
   SUPABASE_SERVICE_ROLE_KEY
 
 On GitHub Actions schedule, empty / no-games-today skips emit ::warning:: (still exit 0).
+If PrizePicks still fails after nba-pp-odds.py's retries, the published standard
+board is saved instead (published lines, every row pp_unavailable=true), the
+pp_unavailable=true output tells the workflow to fail after the encrypted upload,
+and with no rows for the slate it exits 1.
 Never prints secrets.
 """
 from __future__ import annotations
@@ -159,9 +163,52 @@ def fetch_published_projections() -> list[dict]:
                     "opponent": prop.get("opponent") or prop.get("versus"),
                     "game_date": prop.get("gameDate"),
                     "generated_at": prop.get("generated_at"),
+                    "start": prop.get("start_time") or pl.get("start_time"),
+                    # The published NBA board has no start_time; publish stamps
+                    # `started` (board_expiry) instead.
+                    "started": bool(prop.get("started") or pl.get("started")),
                 }
             )
     return flat
+
+
+def build_rows_published_only(pub: list[dict], captured_at: str, reason: str) -> list[dict]:
+    """Fallback when PrizePicks cannot be read: the published standard board as is.
+
+    Same row shape as build_rows. line is the published line (no freeze-time
+    PrizePicks line exists), every row is marked pp_unavailable, and the job
+    fails after the encrypted upload so nobody grades it as a normal freeze.
+    """
+    out = []
+    for r in pub:
+        line = r.get("line")
+        projection = r.get("projection")
+        out.append(
+            {
+                "player": r.get("player"),
+                "team": r.get("team"),
+                "opponent": r.get("opponent"),
+                "stat": r.get("stat"),
+                "line": line,
+                "odds_type": "standard",
+                "captured_at": captured_at,
+                "projection": projection,
+                "cg_score": r.get("cg_score"),
+                "published_line": line,
+                "published_cg": r.get("cg_score"),
+                "cg_source": "published" if r.get("cg_score") is not None else None,
+                "projection_generated_at": r.get("generated_at"),
+                "side": side_from_projection_line(projection, line),
+                "start": r.get("start"),
+                "game_id": None,
+                "game_date": r.get("game_date"),
+                "match": "published_only",
+                "started": bool(r.get("started")) or _started(r.get("start"), captured_at),
+                "pp_unavailable": True,
+                "pp_unavailable_reason": reason,
+            }
+        )
+    return out
 
 
 def _norm_name(s: str | None) -> str:
@@ -391,12 +438,22 @@ def main(argv: list[str] | None = None) -> int:
     captured_at = et_now.isoformat()
     warn = args.warn_on_skip or os.environ.get("GITHUB_EVENT_NAME") == "schedule"
 
-    pp_rows = fetch_prizepicks_standard()
-    if not pp_rows and not args.force:
+    pp_error = None
+    try:
+        pp_rows = fetch_prizepicks_standard()
+    except Exception as exc:  # retries already spent in fetch_all_projections
+        pp_error = f"{type(exc).__name__}: {str(exc)[:200]}"
+        pp_rows = []
+        print(f"::error title=PrizePicks unavailable::{pp_error}. Saving the published NBA board marked pp_unavailable.")
+    if pp_error is None and not pp_rows and not args.force:
         return _skip("no_standard_rows", et_date, warn=warn)
 
     pub = fetch_published_projections()
-    rows = build_rows(pp_rows, pub, captured_at)
+    if pp_error is not None:
+        rows = build_rows_published_only(pub, captured_at, pp_error)
+    else:
+        rows = build_rows(pp_rows, pub, captured_at)
+    _write_gh_output(pp_unavailable="true" if pp_error is not None else "false")
     today_rows = [r for r in rows if row_touches_et_date(r, et_date)]
 
     if today_rows:
@@ -421,6 +478,11 @@ def main(argv: list[str] | None = None) -> int:
             use_rows = rows
     else:
         use_rows = []
+
+    if not use_rows and pp_error is not None:
+        print("::error title=NBA freeze without PrizePicks::PrizePicks unavailable and the published board has no rows for this slate; nothing saved")
+        _write_gh_output(skipped="true", rows=0)
+        return 1
 
     if not use_rows and not args.force:
         return _skip(
