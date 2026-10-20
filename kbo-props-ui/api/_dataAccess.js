@@ -4,6 +4,7 @@ import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
+import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
@@ -623,6 +624,22 @@ function previewMatchups(payload) {
     };
   });
   return { data: { ...obj, matchups: data }, lockedCount };
+}
+
+// matchup_data props are never marked removed, so their stored lines alone
+// overcount. With the live PrizePicks board, count only the props the matchup
+// page would show with a line: the same standard-only, exact-name match as
+// mergeLivePrizePicks. A missing or failed board, or the KBO hold, counts 0.
+export function matchupLiveLockedCount(matchupPayload, prizepicksBoard) {
+  const obj = matchupPayload && typeof matchupPayload === 'object' ? matchupPayload : {};
+  if (obj.kbo_hold?.active === true) return 0;
+  if (!prizepicksBoard || typeof prizepicksBoard !== 'object') return 0;
+  const merged = mergeLivePrizePicks(obj, prizepicksBoard);
+  let count = 0;
+  for (const game of merged?.matchups || []) {
+    if (Array.isArray(game?.props)) count += game.props.filter(matchupPropLocked).length;
+  }
+  return count;
 }
 
 // graded_props_history: the settled record (graded rows and the summary)

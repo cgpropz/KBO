@@ -12,6 +12,7 @@ import {
   nhlAccessDecision,
   datasetIsFullyPublic,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
+  matchupLiveLockedCount,
   memberRecapForTier,
   shapeForTier,
   sportAccess,
@@ -1112,11 +1113,15 @@ export async function handleDataRequest(req, res, client) {
   // lines or the hold expires. Applied per request, after the cached standard
   // filter, so an expired hold never lingers in that cache.
   const presented = applyKboHold(ds, board);
+  const heldPayload = applyKboHold(ds, tierPayload.payload);
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, applyKboHold(ds, tierPayload.payload), tier, { alreadyStandard: tierPayload.alreadyStandard }),
+    shapeForTier(ds, heldPayload, tier, { alreadyStandard: tierPayload.alreadyStandard }),
     presented,
   );
+  if (ds === 'matchup_data' && shaped.preview === true) {
+    shaped.lockedCount = matchupLiveLockedCount(heldPayload, await liveKboBoard(client));
+  }
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
     data: shaped.data,
@@ -1126,6 +1131,19 @@ export async function handleDataRequest(req, res, client) {
     tier,
     access: sportAccess(tier),
   }, memberGated);
+}
+
+// The live KBO board (hold applied) for the free matchup lockedCount. Any
+// read failure is null, which counts 0 locked: fail closed.
+async function liveKboBoard(client) {
+  try {
+    const row = await readSnapshot(client, DATASETS.prizepicks_props.table);
+    if (!row) return null;
+    return applyKboHold('prizepicks_props', boardForPresentation(row.data));
+  } catch (err) {
+    console.error(`[api/data] prizepicks_props read for matchup lockedCount failed: ${err?.message || err}`);
+    return null;
+  }
 }
 
 export function _clearCache() {

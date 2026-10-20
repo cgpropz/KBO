@@ -263,7 +263,21 @@ test('privacy page lists Vercel Web Analytics and PostHog, per tool', () => {
   assert.match(html, /Do Not Track or Global Privacy Control, PostHog is not loaded/);
   assert.match(html, /It does not check Do Not Track or Global Privacy Control/, 'Vercel DNT behavior stated separately');
   assert.match(html, /discard client IP addresses/);
+  // Events carry the referrer (scrubbed like the page URL), its domain and search engine.
+  assert.match(html, /the referring site and search engine, cleaned the same way/);
+  assert.ok(built.includes('the referring site and search engine, cleaned the same way'), 'public/privacy.html carries the referrer sentence');
   // The rest of the notice is unchanged.
   assert.match(html, /An X \(Twitter\) pixel can record a sign-up and a purchase\./);
   assert.match(html, /age confirmation stays in this browser/);
+});
+
+test('vercel.json sends Referrer-Policy strict-origin-when-cross-origin on every path', () => {
+  const config = JSON.parse(src('vercel.json'));
+  const all = config.headers.find((h) => h.source === '/(.*)');
+  assert.ok(all, 'site-wide header rule');
+  const policy = all.headers.find((h) => h.key === 'Referrer-Policy');
+  assert.equal(policy?.value, 'strict-origin-when-cross-origin');
+  // Only the policy rides on the catch-all; per-path cache headers stay as they were.
+  assert.deepEqual(all.headers.map((h) => h.key), ['Referrer-Policy']);
+  assert.ok(config.headers.some((h) => h.source === '/assets/(.*)'));
 });
