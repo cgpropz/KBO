@@ -137,7 +137,7 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
   const title = `<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>`;
   if (now == null) {
     return `${open}${title}
-      <div data-nosnippet><p class="free-top3-stamp">Today's free ${escapeHtml(sport.name)} top 3 is on the live board.</p></div>
+      <div data-nosnippet><p class="free-top3-stamp">Check the live board for today's free ${escapeHtml(sport.name)} top 3.</p></div>
       <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   if (failed) {
