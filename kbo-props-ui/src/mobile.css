@@ -577,7 +577,31 @@
     color: #8fa69e;
     font: 700 12px/1.2 Inter, system-ui, sans-serif !important;
     letter-spacing: 0;
+    text-transform: none;
     white-space: normal;
+  }
+
+  /* The CG ODDS panel names itself; no second "CG Odds" label above it. */
+  body .nfl-root table[data-card-table] > tbody > tr > td.nfl-sharp-cg[data-label]::before {
+    content: none;
+    display: none;
+  }
+
+  /* Matchups last-5 starts: the date takes its own line and dates and team
+     names never split mid-word. */
+  .kbo-app-root table.mdd-recent-table[data-card-table] > tbody > tr > td {
+    overflow-wrap: normal;
+    white-space: nowrap !important;
+  }
+
+  .kbo-app-root table.mdd-recent-table[data-card-table] > tbody > tr > td:first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Pitcher Rankings: the pitcher's name leads the card (the table keeps
+     its GS, RK, Player column order). */
+  .kbo-app-root table.rk-table[data-card-table] > tbody > tr > td.col-player {
+    order: -1;
   }
 
   /* Wide cells take the full card width: the NFL CG Odds panel and any cell

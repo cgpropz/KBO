@@ -103,7 +103,20 @@ if [[ -z "${runs_json}" ]]; then
 fi
 
 if [[ "$KICK" == "1" ]]; then
-  earlier="$(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --earlier-active --current "${GITHUB_RUN_ID:-}")"
+  # A green earlier run that skipped the heavy step stood down; it scraped
+  # nothing, so it does not hold this kick back. Failed or cancelled runs
+  # never count (pipeline.refresh_due).
+  stood_down=""
+  while IFS= read -r id; do
+    [[ -z "$id" ]] && continue
+    heavy="$(gh run view "$id" --json jobs \
+      --jq "[.jobs[].steps[] | select(.name==\"${STEP}\") | .conclusion][0]" 2>/dev/null)" || heavy="unreadable"
+    # An unreadable run still blocks, the same as before this check.
+    if [[ "$heavy" != "success" && "$heavy" != "unreadable" ]]; then
+      stood_down="${stood_down} ${id}"
+    fi
+  done < <(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --recent-earlier --current "${GITHUB_RUN_ID:-}")
+  earlier="$(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --earlier-active --current "${GITHUB_RUN_ID:-}" --stood-down "${stood_down# }")"
   if [[ "$earlier" == "1" ]]; then
     note_summary "skipped: kbo-due kick (another ${SPORT} run is active or started in the last 5 minutes)"
     write_due false kick_recent "KBO-due kick: an earlier ${WF} run is active or started in the last 5 minutes; not refreshing."
