@@ -16,6 +16,7 @@ import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
 import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
+import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import './PublicLanding.css';
@@ -145,6 +146,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           updatedAt: snap.updatedAt,
           preview: !!snap.preview,
           lockedCount: Number(snap.lockedCount) || 0,
+          hold: kboHoldMessage(sport.id, snap.data),
         },
       }));
     };
@@ -322,7 +324,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           </div>
           <div className="pl-card">
             {hitRows.length ? <BoardTable rows={hitRows} showHitRate sport={hitSport.id} /> : (
-              <p className="pl-empty">{settled ? `No scored standard lines in the ${hitSport.name} free top 3 right now.` : 'Loading the board…'}</p>
+              <p className="pl-empty">{freeTopEmptyText({ sportName: hitSport.name, settled: settled || !!hitState?.hold, hold: hitState?.hold })}</p>
             )}
             {hitState?.preview && hitState.lockedCount > 0 && (
               <p className="pl-foot">Public preview · {hitState.lockedCount} more {lineWord(hitState.lockedCount)} on All-Access</p>

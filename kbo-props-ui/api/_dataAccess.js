@@ -1,5 +1,5 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
-import { modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
+import { kboRawRating, modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
@@ -468,11 +468,19 @@ function wnbaSharpScore(row) {
   return Number.isFinite(outcomes) ? outcomes : -Infinity;
 }
 
-function topN(items, scoreFn, n = FREE_ROW_LIMIT) {
+// rawFn breaks ties on the shown score (several props at the 100 cap) the way
+// the landing does (publicFreeTopRows: score, then raw score, then board
+// order), so the server's 3 and the landing's 3 are the same rows.
+function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
+  const rawOf = (item) => {
+    if (!rawFn) return -Infinity;
+    const raw = rawFn(item);
+    return Number.isFinite(raw) ? raw : -Infinity;
+  };
   return items
-    .map((item, index) => ({ item, index, score: scoreFn(item) }))
+    .map((item, index) => ({ item, index, score: scoreFn(item), raw: rawOf(item) }))
     .filter((row) => Number.isFinite(row.score))
-    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .sort((a, b) => (b.score - a.score) || (b.raw === a.raw ? 0 : b.raw - a.raw) || (a.index - b.index))
     .slice(0, n);
 }
 
@@ -515,7 +523,7 @@ function previewPrizepicks(payload) {
       flat.push({ cardIndex, prop });
     });
   });
-  const kept = topN(flat, ({ prop }) => kboPropScore(prop));
+  const kept = topN(flat, ({ prop }) => kboPropScore(prop), FREE_ROW_LIMIT, ({ prop }) => kboRawRating(prop?.projection, prop?.line, prop?.stat));
   const byCard = new Map();
   kept.forEach(({ item }) => {
     if (!byCard.has(item.cardIndex)) byCard.set(item.cardIndex, []);
