@@ -817,7 +817,7 @@ function BatterProjections() {
                 <th onClick={() => handleSort('opp_pitcher_whip')} className="col-num">WHIP {sortIcon('opp_pitcher_whip')}</th>
                 <th onClick={() => handleSort('ops')} className="col-num">OPS {sortIcon('ops')}</th>
                 <th onClick={() => handleSort('prop')}>Prop {sortIcon('prop')}</th>
-                <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
+                <th onClick={() => handleSort('line')} className="col-num" data-label="PP Line"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
                 <th onClick={() => handleSort('avg_per_g')} className="col-num">Avg/G {sortIcon('avg_per_g')}</th>
                 <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 {sortIcon('hit_rate_l5')}</th>

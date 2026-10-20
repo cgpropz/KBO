@@ -10,9 +10,13 @@ import './mobile.css'
 import { captureAttribution } from './tracking.js'
 import { Analytics } from '@vercel/analytics/react'
 import { scrubEvent } from './analytics.js'
+import { startTableCardLabels } from './tableCardLabels.js'
 
 // Remember utm_* / twclid from the landing URL before anything rewrites it.
 captureAttribution()
+
+// Phone only: column names on the table cards (layout, no data change).
+startTableCardLabels()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

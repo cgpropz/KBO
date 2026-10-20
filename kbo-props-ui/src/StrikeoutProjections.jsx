@@ -680,7 +680,7 @@ function StrikeoutProjections({ onNavigate }) {
                 <th onClick={() => handleSort('opp_ba')} className="col-num">Opp BA {sortIcon('opp_ba')}</th>
                 <th onClick={() => handleSort('opp_k_pct')} className="col-num">Opp K% {sortIcon('opp_k_pct')}</th>
                 <th>Prop</th>
-                <th onClick={() => handleSort('line')} className="col-num"><span className="pp-icon">P</span> {sortIcon('line')}</th>
+                <th onClick={() => handleSort('line')} className="col-num" data-label="PP Line"><span className="pp-icon">P</span> {sortIcon('line')}</th>
                 <th onClick={() => handleSort('projection')} className="col-num">Projection {sortIcon('projection')}</th>
                 <th onClick={() => handleSort('hit_rate_l5')} className="col-num">L5 Hit% {sortIcon('hit_rate_l5')}</th>
                 <th onClick={() => handleSort('hit_rate_full')} className="col-num">Full Hit% {sortIcon('hit_rate_full')}</th>
