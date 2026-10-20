@@ -495,9 +495,12 @@ function previewObjectList(key, scoreFn) {
     const kept = scoreFn
       ? topN(rows, scoreFn).map(({ item }) => item)
       : rows.slice(0, FREE_ROW_LIMIT);
+    // A pulled line (or every KBO row under the manual hold) is not a
+    // hidden pick, so it is not counted as locked.
+    const lockable = rows.filter((row) => !prizepicksPulled(row)).length;
     return {
       data: { ...obj, [key]: kept },
-      lockedCount: Math.max(0, rows.length - kept.length),
+      lockedCount: Math.max(0, lockable - kept.length),
     };
   };
 }

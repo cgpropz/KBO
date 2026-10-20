@@ -66,6 +66,17 @@ test('held board: member board, free top 3 and hub are empty', () => {
   assert.deepEqual(topHubRows(playableRows(kboHubRows(held)), 3), [])
   const ks = shapeForTier('strikeout_projections', applyKboHold('strikeout_projections', projections(), HOLD), 'free')
   assert.deepEqual(ks.data.projections, [])
+  // Board QA 9:20 PM: under the hold the free preview locked count is 0 (it was 9 batter, 4 K).
+  assert.equal(ks.lockedCount, 0)
+  const batters = { projections: Array.from({ length: 12 }, (_, i) => ({ name: `B${i}`, prop: 'Total Bases', line: 0.5, projection: 1 + i / 10, odds_type: 'standard' })) }
+  const bp = shapeForTier('batter_projections', applyKboHold('batter_projections', batters, HOLD), 'free')
+  assert.deepEqual([bp.data.projections.length, bp.lockedCount], [0, 0])
+  const ks4 = { projections: Array.from({ length: 7 }, (_, i) => ({ name: `P${i}`, prop: 'Strikeouts', line: 4.5, projection: 5 + i / 10, odds_type: 'standard' })) }
+  const kp = shapeForTier('strikeout_projections', applyKboHold('strikeout_projections', ks4, HOLD), 'free')
+  assert.deepEqual([kp.data.projections.length, kp.lockedCount], [0, 0])
+  // Not held: the usual top 3 + locked remainder.
+  const open = shapeForTier('batter_projections', batters, 'free')
+  assert.deepEqual([open.data.projections.length, open.lockedCount], [3, 9])
 })
 
 test('hold clears on its own after a fresh pull with live lines, or when turned off', () => {
@@ -89,7 +100,6 @@ test('hold clears on its own after a fresh pull with live lines, or when turned 
   // Other datasets and sports are never touched.
   const wnba = [{ name: 'W', ppAllProps: [prop('Points', 10, 12)] }]
   assert.equal(applyKboHold('wnba_projections_standard', wnba, HOLD), wnba)
-  assert.equal(kboHoldActive('matchup_data', { matchups: [] }, HOLD), false)
 })
 
 function mockClient(tables) {
@@ -158,5 +168,23 @@ test('/api/data stops holding once the hold has expired, even for a cached board
   const res = await call('prizepicks_props', { prizepicks_props: staleBoard() })
   assert.ok(res.body.data.cards.length > 0)
   assert.equal(res.body.data.kbo_hold, undefined)
+  _setKboHold(FILE)
+})
+
+test('hold clears stored lines in matchup_data (paid and free) until it is off or expires', async () => {
+  const md = { matchups: [{ away: 'LG', home: 'Kia', away_pitcher: { name: 'Shirakawa', line: 5.5, k_projection: 5.9 }, home_pitcher: { name: 'Oller', line: 5.5, k_projection: 6.1 },
+    props: [{ name: 'Oller', prop: 'Strikeouts', line: 5.5, projection: 6.1, edge: 0.6, recommendation: 'OVER' }] }] }
+  const held = applyKboHold('matchup_data', md, HOLD)
+  const g = held.matchups[0]
+  assert.deepEqual([g.props[0].line, g.props[0].edge, g.props[0].recommendation, g.props[0].projection], [null, null, 'NO LINE', 6.1])
+  assert.deepEqual([g.away_pitcher.line, g.home_pitcher.line, g.home_pitcher.k_projection], [null, null, 6.1])
+  assert.equal(held.kbo_hold.active, true)
+  assert.equal(applyKboHold('matchup_data', md, { ...HOLD, active: false }), md)
+  assert.equal(applyKboHold('matchup_data', md, { ...HOLD, expires_at: '2000-01-01T00:00:00Z' }), md)
+  _setKboHold(HOLD)
+  _clearCache()
+  const res = await call('matchup_data', { matchup_data: md })
+  assert.equal(res.statusCode, 200)
+  assert.equal(JSON.stringify(res.body.data).includes('"line":5.5'), false)
   _setKboHold(FILE)
 })
