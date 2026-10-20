@@ -56,6 +56,20 @@ class PickTests(unittest.TestCase):
         recent_fresh = status("fresh", NOW - timedelta(hours=1), complete=True)
         self.assertEqual(merge.pick_pull_status(status("fetch_error", NOW), recent_fresh, NOW), "remote")
 
+    def test_unknown_status_is_replaceable(self):
+        empty = status("confirmed_empty", NOW - timedelta(hours=2))
+        for kind in ("weird_new_status", "", None, "Confirmed_Empty", "FRESH"):
+            later = status("fetch_error", NOW - timedelta(minutes=1))
+            later["status"] = kind
+            self.assertTrue(merge._replaceable(later), kind)
+            self.assertEqual(merge.pick_pull_status(later, empty, NOW), "remote", kind)
+        no_status = {"checked_at": iso(NOW), "lines": []}
+        self.assertTrue(merge._replaceable(no_status))
+        self.assertEqual(merge.pick_pull_status(no_status, empty, NOW), "remote")
+        self.assertFalse(merge._replaceable(status("confirmed_empty", NOW)))
+        self.assertFalse(merge._replaceable(status("fresh", NOW, complete=True)))
+        self.assertTrue(merge._replaceable(status("fresh", NOW, complete=False)))
+
     def test_later_fetch_error_wins_over_an_expired_status(self):
         old_fresh = status("fresh", NOW - timedelta(hours=4), complete=True)
         error = status("fetch_error", NOW - timedelta(minutes=1))
@@ -235,8 +249,50 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("checkout --theirs", refresh)
         self.assertIn("bash pipeline/commit_kbo_odds.sh", publish)
         self.assertIn("git restore --staged KBO-Odds", publish)
-        # KBO-Odds/ is committed before the general data commit (and its autostash).
-        self.assertLess(publish.index("bash pipeline/commit_kbo_odds.sh"), publish.index("- name: Commit data updates"))
+        # KBO-Odds/ is committed, then reset, before the general data commit (and its autostash).
+        kbo = publish.index("bash pipeline/commit_kbo_odds.sh")
+        reset = publish.index("git checkout -- KBO-Odds")
+        commit = publish.index("- name: Commit data updates")
+        self.assertLess(kbo, reset)
+        self.assertLess(reset, commit)
+        self.assertIn("git clean -fq -- KBO-Odds", publish[reset:commit])
+        # The reset step must not be continue-on-error-skipped by the KBO step failing.
+        reset_step = publish[publish.rindex("- name:", 0, reset):commit]
+        self.assertNotIn("if:", reset_step)
+
+    def test_reset_step_leaves_no_markers_for_the_autostash(self):
+        # Simulate the publish-data sequence: KBO step changed files, reset, then the
+        # general commit step's pull --rebase --autostash against a main that moved
+        # prizepicks_kbo_pull.json.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            remote = tmp / "r.git"
+            subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True)
+            seed = tmp / "seed"
+            subprocess.run(["git", "init", "-q", "-b", "main", str(seed)], check=True)
+            (seed / "KBO-Odds").mkdir()
+            (seed / PULL).write_text('{"status": "fresh"}\n')
+            (seed / "data.txt").write_text("0\n")
+            git(seed, "add", "-A"); git(seed, "commit", "-qm", "seed")
+            git(seed, "remote", "add", "origin", str(remote)); git(seed, "push", "-q", "origin", "main")
+            job = tmp / "job"
+            subprocess.run(["git", "clone", "-q", str(remote), str(job)], check=True, capture_output=True)
+            (job / PULL).write_text('{"status": "job"}\n')
+            (job / "KBO-Odds" / "new.csv").write_text("x\n")
+            (seed / PULL).write_text('{"status": "main"}\n')
+            git(seed, "commit", "-qam", "main moved"); git(seed, "push", "-q", "origin", "main")
+            # Reset step.
+            git(job, "checkout", "--", "KBO-Odds")
+            git(job, "clean", "-fq", "--", "KBO-Odds")
+            # Commit data updates step.
+            (job / "data.txt").write_text("1\n")
+            git(job, "add", "-A"); git(job, "commit", "-qm", "data")
+            (job / "data.txt").write_text("dirty\n")
+            result = git(job, "pull", "--rebase", "--autostash", "origin", "main", check=False)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual((job / PULL).read_text(), '{"status": "main"}\n')
+            self.assertNotIn("<<<<<<<", (job / PULL).read_text())
+            self.assertEqual(git(job, "status", "--porcelain").stdout.strip(), "M data.txt")
 
 
 if __name__ == "__main__":
