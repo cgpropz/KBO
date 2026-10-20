@@ -32,7 +32,10 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
       }
       window.location.assign(url);
     };
-    const cached = ready.current[plan];
+    // Keyed by account so a logout/login on this tab never reuses another
+    // person's (or a guest's) session.
+    const cacheKey = `${user?.id || 'guest'}:${plan}`;
+    const cached = ready.current[cacheKey];
     if (cached && Date.now() - cached.at < DISCORD_URL_REUSE_MS) {
       open(cached.url);
       return;
@@ -44,7 +47,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
         try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
       }
       const url = await requestDiscordCheckoutUrl({ plan, token });
-      ready.current[plan] = { url, at: Date.now() };
+      ready.current[cacheKey] = { url, at: Date.now() };
       open(url);
     } catch {
       setError('Discord checkout is unavailable right now. Try again in a moment.');

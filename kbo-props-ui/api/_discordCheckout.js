@@ -24,7 +24,7 @@ const PLANS = {
 // Automated clients that execute page JS (crawler renderers, link-preview
 // renderers, headless browsers, uptime checks) must not open Checkout Sessions.
 // Real browsers never send these tokens.
-const AUTOMATED_UA_RE = /(?:^|[^a-z])bot\b|[a-z]bot\/|crawl|spider|slurp|preview|facebookexternalhit|embedly|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptime|curl\/|wget\/|python-requests|python-urllib|aiohttp|axios\/|node-fetch|undici|go-http-client|okhttp|java\/|libwww|httpclient|scrapy|phantomjs|puppeteer|playwright|whatsapp|telegrambot|skypeuripreview/i;
+const AUTOMATED_UA_RE = /(?:^|[^a-z])bot\b|[a-z]bot\/|crawl|spider|slurp|preview|facebookexternalhit|embedly|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptime|curl\/|wget\/|python-requests|python-urllib|aiohttp|axios\/|node-fetch|undici|go-http-client|okhttp|java\/|libwww|httpclient|scrapy|phantomjs|puppeteer|playwright|^whatsapp\/|telegrambot|skypeuripreview/i;
 
 export function isAutomatedClient(headers = {}) {
   const ua = String(headers['user-agent'] || headers['User-Agent'] || '').trim();
@@ -47,11 +47,10 @@ async function reusableSession(client, customerId, plan, priceId, nowSec) {
       if (!url.startsWith('https://checkout.stripe.com/')) continue;
       if (session.mode !== 'subscription') continue;
       if (session.metadata?.cg_plan !== plan.cgPlan || session.metadata?.tier !== 'discord_only') continue;
+      // The list has no line_items; the price id stamped in metadata at
+      // creation must match today's price. Older sessions without it are skipped.
+      if (session.metadata?.price_id !== priceId) continue;
       if (!(Number(session.expires_at) - nowSec >= REUSE_MIN_REMAINING_SEC)) continue;
-      // Line items are not on the list object; metadata + mode pin the plan,
-      // and the price must still match when Stripe returned it.
-      const listedPrice = session.line_items?.data?.[0]?.price?.id;
-      if (listedPrice && listedPrice !== priceId) continue;
       return url;
     }
   } catch {
@@ -165,7 +164,8 @@ export async function handleDiscordCheckoutRequest(req, res, deps = {}) {
 
   const buyer = deps.user !== undefined ? deps.user : await optionalUser(req, env, deps.authenticate);
   const body = readBody(req);
-  const metadata = { cg_plan: plan.cgPlan, tier: 'discord_only' };
+  // price_id lets a later click verify an open session is for today's price.
+  const metadata = { cg_plan: plan.cgPlan, tier: 'discord_only', price_id: priceId };
   for (const key of UTM_KEYS) {
     const value = String(body[key] || '').trim();
     if (UTM_VALUE_RE.test(value)) metadata[key] = value;

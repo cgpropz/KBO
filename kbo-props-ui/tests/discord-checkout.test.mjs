@@ -59,6 +59,7 @@ test('creates a discord weekly subscription and ignores a client-supplied price'
   assert.deepEqual(params.line_items, [{ price: PRICE, quantity: 1 }])
   assert.equal(params.metadata.cg_plan, 'discord_weekly')
   assert.equal(params.metadata.tier, 'discord_only')
+  assert.equal(params.metadata.price_id, PRICE)
   assert.deepEqual(params.subscription_data, { metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' } })
   assert.equal(params.metadata.utm_source, 'x')
   assert.equal(params.metadata.utm_campaign, undefined)
@@ -111,7 +112,7 @@ test('crawlers, link previews, headless browsers and prefetch get no session', a
     'Twitterbot/1.0',
     'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/130.0 Safari/537.36',
-    'WhatsApp/2.23.20.0',
+    'WhatsApp/2.23.20.0 A',
     'curl/8.5.0',
     '',
   ]
@@ -132,6 +133,9 @@ test('real phone and desktop browsers still check out', () => {
     'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/400.0;]',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    // WhatsApp's in-app browser (only the bare WhatsApp/x.y fetcher is a preview)
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/24.20.79',
+    'Mozilla/5.0 (Linux; Android 13; SM-A536B Build/TP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0 Mobile Safari/537.36 WhatsApp/2.24.1',
   ]) assert.equal(isAutomatedClient({ 'user-agent': ua }), false, ua)
 })
 
@@ -155,8 +159,8 @@ const buyer = { id: 'user_123', email: 'buyer@example.com' }
 test('a signed-in customer gets their open session for the same plan back', async () => {
   const calls = []
   const stripe = customerStripe(calls, [
-    { url: 'https://checkout.stripe.com/c/pay/other', mode: 'subscription', metadata: { cg_plan: 'discord_monthly', tier: 'discord_only' }, expires_at: NOW_S + 20 * 3600 },
-    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' }, expires_at: NOW_S + 20 * 3600 },
+    { url: 'https://checkout.stripe.com/c/pay/other', mode: 'subscription', metadata: { cg_plan: 'discord_monthly', tier: 'discord_only', price_id: 'price_discordMonthlyTest' }, expires_at: NOW_S + 20 * 3600 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only', price_id: PRICE }, expires_at: NOW_S + 20 * 3600 },
   ])
   const { res } = await call({ plan: 'weekly' }, { user: buyer, stripe, now: () => NOW_MS })
   assert.equal(res.statusCode, 200)
@@ -165,10 +169,12 @@ test('a signed-in customer gets their open session for the same plan back', asyn
   assert.deepEqual(calls[0][1], { customer: 'cus_1', status: 'open', limit: 20 })
 })
 
-test('an open session that is about to expire, or for another plan, is not reused', async () => {
+test('an open session that is about to expire, for another plan, an old price, or with no price_id is not reused', async () => {
   const calls = []
   const stripe = customerStripe(calls, [
-    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' }, expires_at: NOW_S + 10 * 60 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only', price_id: PRICE }, expires_at: NOW_S + 10 * 60 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only', price_id: 'price_oldWeekly' }, expires_at: NOW_S + 20 * 3600 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' }, expires_at: NOW_S + 20 * 3600 },
     { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'weekly', tier: 'combined' }, expires_at: NOW_S + 20 * 3600 },
   ])
   const { res } = await call({ plan: 'weekly' }, { user: buyer, stripe, now: () => NOW_MS })

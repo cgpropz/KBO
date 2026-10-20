@@ -25,3 +25,9 @@ test('cards render buttons, not pre-made checkout links', () => {
   assert.equal(/href=\{/.test(src), false)
   assert.match(src, /onClick=\{\(\) => start\(plan\.plan\)\}/)
 })
+
+test('the click-URL cache is keyed by account, never shared across a logout/login', () => {
+  assert.match(src, /const cacheKey = `\$\{user\?\.id \|\| 'guest'\}:\$\{plan\}`/)
+  assert.match(src, /ready\.current\[cacheKey\] = \{ url, at: Date\.now\(\) \}/)
+  assert.equal(/ready\.current\[plan\]/.test(src), false)
+})
