@@ -50,10 +50,27 @@ export function kboHoldCleared(hold, ds, payload) {
   return hasLiveRow(ds, payload);
 }
 
-export function kboHoldActive(ds, payload, hold = currentHold) {
-  if (!KBO_HOLD_DATASETS.has(ds)) return false;
+// Past expires_at the hold is off, so it cannot stick past the day it was
+// set for. A hold with no readable expires_at is treated as expired.
+export function kboHoldExpired(hold, now = new Date()) {
+  const expires = time(hold?.expires_at);
+  if (expires == null) return true;
+  return now.getTime() >= expires;
+}
+
+export function kboHoldActive(ds, payload, hold = currentHold, now = new Date()) {
+  if (!KBO_HOLD_DATASETS.has(ds) && ds !== 'matchup_data') return false;
   if (!hold || hold.active !== true) return false;
+  if (kboHoldExpired(hold, now)) return false;
+  // matchup_data has no pull stamp of its own: it stays held until the flag
+  // is off or expires. The matchup page takes live lines from the board.
+  if (ds === 'matchup_data') return true;
   return !kboHoldCleared(hold, ds, payload);
+}
+
+function noLine(row) {
+  if (!row || typeof row !== 'object') return row;
+  return { ...row, line: null, edge: null, recommendation: 'NO LINE' };
 }
 
 function holdRow(row) {
@@ -63,10 +80,24 @@ function holdRow(row) {
 
 // Same shape, every prop marked pulled. Nothing else (projection, score,
 // price) changes. Returns the payload itself when the hold is off.
-export function applyKboHold(ds, payload, hold = currentHold) {
+export function applyKboHold(ds, payload, hold = currentHold, now = new Date()) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
-  if (!kboHoldActive(ds, payload, hold)) return payload;
-  const meta = { active: true, since: hold.since || null, message: hold.message || KBO_HOLD_MESSAGE };
+  if (!kboHoldActive(ds, payload, hold, now)) return payload;
+  const meta = { active: true, since: hold.since || null, expires_at: hold.expires_at, message: hold.message || KBO_HOLD_MESSAGE };
+  if (ds === 'matchup_data') {
+    return {
+      ...payload,
+      matchups: Array.isArray(payload.matchups)
+        ? payload.matchups.map((game) => (game && typeof game === 'object' ? {
+          ...game,
+          props: Array.isArray(game.props) ? game.props.map(noLine) : game.props,
+          away_pitcher: game.away_pitcher ? { ...game.away_pitcher, line: null } : game.away_pitcher,
+          home_pitcher: game.home_pitcher ? { ...game.home_pitcher, line: null } : game.home_pitcher,
+        } : game))
+        : payload.matchups,
+      kbo_hold: meta,
+    };
+  }
   if (ds === 'prizepicks_props') {
     return {
       ...payload,

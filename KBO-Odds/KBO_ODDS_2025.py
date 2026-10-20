@@ -252,6 +252,10 @@ def pull_status_payload(source, frame=None, now=None):
     from datetime import datetime, timezone
     checked = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0).isoformat()
     payload = {"status": source, "checked_at": checked, "lines": []}
+    if source == "confirmed_empty":
+        until = _confirmed_empty_valid_until(checked)
+        if until:
+            payload["valid_until"] = until
     if source == "fresh":
         # Only the KBO league-filter answer is complete enough to say a
         # specific line is gone.
@@ -272,9 +276,30 @@ def pull_status_payload(source, frame=None, now=None):
 CONFIRMED_STATUS_MAX_AGE_SECONDS = 3 * 3600
 
 
-def _confirmed_status_to_keep(path, now=None):
-    """The last confirming status (confirmed_empty, or a complete fresh pull)
-    if it is under 3 hours old, else None."""
+def _pulled_lines_module():
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if repo not in sys.path:
+        sys.path.insert(0, repo)
+    from pipeline import kbo_pulled_lines
+    return kbo_pulled_lines
+
+
+def _confirmed_empty_valid_until(checked_iso):
+    """ISO time of the slate's first pitch for a confirmed-empty pull."""
+    from datetime import datetime
+    try:
+        checked = datetime.fromisoformat(str(checked_iso).replace("Z", "+00:00"))
+        return _pulled_lines_module().confirmed_empty_valid_until(checked).replace(microsecond=0).isoformat()
+    except Exception as exc:  # never block the odds step on this
+        print(f"  ↳ could not work out the KBO first pitch for the empty pull: {exc}")
+        return None
+
+
+def _confirmed_status_to_keep(path, now=None, incoming=None):
+    """The last confirming status to keep instead of ``incoming``, else None.
+
+    confirmed_empty stands until the slate's first pitch (or a complete fresh
+    pull). A complete fresh pull stands for 3 hours against errors."""
     from datetime import datetime, timezone
     try:
         with open(path, encoding="utf-8") as handle:
@@ -283,10 +308,15 @@ def _confirmed_status_to_keep(path, now=None):
         return None
     if not isinstance(previous, dict):
         return None
-    confirming = previous.get("status") == "confirmed_empty" or (
-        previous.get("status") == "fresh" and previous.get("complete") is True
-    )
-    if not confirming:
+    if previous.get("status") == "confirmed_empty":
+        try:
+            in_force = _pulled_lines_module().confirmed_empty_in_force(previous, now or datetime.now(timezone.utc))
+        except Exception as exc:
+            print(f"  ↳ could not check the last confirmed-empty pull: {exc}")
+            in_force = False
+        return previous if in_force else None
+    confirming = previous.get("status") == "fresh" and previous.get("complete") is True
+    if not confirming or (incoming or {}).get("status") == "fresh":
         return None
     try:
         checked = datetime.fromisoformat(str(previous.get("checked_at")).replace("Z", "+00:00"))
@@ -304,12 +334,16 @@ def write_pull_status(payload, path=None, now=None):
     confirmed 0 KBO lines must not bring the pulled props back."""
     base = os.path.dirname(os.path.abspath(__file__))
     path = path or os.environ.get("KBO_PULL_STATUS_PATH") or os.path.join(base, PULL_STATUS_FILE)
-    if payload.get("status") in ("fetch_error", "partial"):
-        kept = _confirmed_status_to_keep(path, now)
+    # Only a complete fresh pull replaces a confirmed_empty before first pitch.
+    replaceable = payload.get("status") in ("fetch_error", "partial") or (
+        payload.get("status") == "fresh" and payload.get("complete") is not True
+    )
+    if replaceable:
+        kept = _confirmed_status_to_keep(path, now, payload)
         if kept is not None:
             print(
                 f"PrizePicks KBO pull status: {payload['status']}; keeping the {kept['status']} status "
-                f"from {kept.get('checked_at')} (under 3h old)"
+                f"from {kept.get('checked_at')}"
             )
             return kept
     with open(path, "w", encoding="utf-8") as handle:

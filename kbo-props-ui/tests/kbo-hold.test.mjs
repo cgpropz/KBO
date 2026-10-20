@@ -10,7 +10,8 @@ import { keepSlipRow } from '../src/slipAvailability.js'
 import { prizepicksPulled } from '../src/nhl/pointsGate.js'
 
 const FILE = kboHold()
-const HOLD = { active: true, since: '2026-10-20T00:30:00Z', message: KBO_HOLD_MESSAGE }
+// Far-future expiry so these cases do not depend on the clock; expiry has its own test.
+const HOLD = { active: true, since: '2026-10-20T00:30:00Z', expires_at: '2099-01-01T00:00:00Z', message: KBO_HOLD_MESSAGE }
 const START = '2026-10-20T18:30:00+09:00'
 const prop = (stat, line, projection) => ({ stat, line, projection, odds_type: 'standard', recommendation: 'OVER', rating: 80 })
 // 7:31 PM ET build: stale lines, no pull confirmation (Cloudflare 429s).
@@ -33,11 +34,12 @@ test('committed hold file is on, with the Lines not posted yet message', () => {
   assert.equal(FILE.active, true)
   assert.equal(FILE.message, 'Lines not posted yet')
   assert.ok(Number.isFinite(Date.parse(FILE.since)))
+  assert.equal(FILE.expires_at, '2026-10-20T16:00:00Z')
 })
 
 test('hold marks every KBO prop pulled and nothing else', () => {
   const held = applyKboHold('prizepicks_props', staleBoard(), HOLD)
-  assert.deepEqual(held.kbo_hold, { active: true, since: HOLD.since, message: 'Lines not posted yet' })
+  assert.deepEqual(held.kbo_hold, { active: true, since: HOLD.since, expires_at: HOLD.expires_at, message: 'Lines not posted yet' })
   const props = held.cards.flatMap((c) => c.props)
   assert.equal(props.length, 2)
   for (const p of props) {
@@ -64,6 +66,17 @@ test('held board: member board, free top 3 and hub are empty', () => {
   assert.deepEqual(topHubRows(playableRows(kboHubRows(held)), 3), [])
   const ks = shapeForTier('strikeout_projections', applyKboHold('strikeout_projections', projections(), HOLD), 'free')
   assert.deepEqual(ks.data.projections, [])
+  // Board QA 9:20 PM: under the hold the free preview locked count is 0 (it was 9 batter, 4 K).
+  assert.equal(ks.lockedCount, 0)
+  const batters = { projections: Array.from({ length: 12 }, (_, i) => ({ name: `B${i}`, prop: 'Total Bases', line: 0.5, projection: 1 + i / 10, odds_type: 'standard' })) }
+  const bp = shapeForTier('batter_projections', applyKboHold('batter_projections', batters, HOLD), 'free')
+  assert.deepEqual([bp.data.projections.length, bp.lockedCount], [0, 0])
+  const ks4 = { projections: Array.from({ length: 7 }, (_, i) => ({ name: `P${i}`, prop: 'Strikeouts', line: 4.5, projection: 5 + i / 10, odds_type: 'standard' })) }
+  const kp = shapeForTier('strikeout_projections', applyKboHold('strikeout_projections', ks4, HOLD), 'free')
+  assert.deepEqual([kp.data.projections.length, kp.lockedCount], [0, 0])
+  // Not held: the usual top 3 + locked remainder.
+  const open = shapeForTier('batter_projections', batters, 'free')
+  assert.deepEqual([open.data.projections.length, open.lockedCount], [3, 9])
 })
 
 test('hold clears on its own after a fresh pull with live lines, or when turned off', () => {
@@ -87,7 +100,6 @@ test('hold clears on its own after a fresh pull with live lines, or when turned 
   // Other datasets and sports are never touched.
   const wnba = [{ name: 'W', ppAllProps: [prop('Points', 10, 12)] }]
   assert.equal(applyKboHold('wnba_projections_standard', wnba, HOLD), wnba)
-  assert.equal(kboHoldActive('matchup_data', { matchups: [] }, HOLD), false)
 })
 
 function mockClient(tables) {
@@ -132,5 +144,47 @@ test('board shows Lines not posted yet while held', () => {
   assert.match(s, /<EmptyBoard nextGame=\{snapshot\.next_game\} hold=\{snapshot\.kbo_hold\} \/>/)
   assert.match(s, /hold\.message \|\| 'Lines not posted yet'/)
   const api = readFileSync(new URL('../api/data.js', import.meta.url), 'utf8')
-  assert.match(api, /board = applyKboHold\(ds, boardForPresentation\(row\.data\)\);/)
+  assert.match(api, /const presented = applyKboHold\(ds, board\);/)
+  assert.match(api, /shapeForTier\(ds, applyKboHold\(ds, tierPayload\.payload\), tier,/)
+})
+
+test('hold expires at expires_at (12:00 PM ET 10/20) and cannot stick', () => {
+  const hold = { ...FILE }
+  const before = new Date('2026-10-20T15:59:00Z')
+  const after = new Date('2026-10-20T16:00:00Z')
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), hold, before), true)
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), hold, after), false)
+  const board = staleBoard()
+  assert.equal(applyKboHold('prizepicks_props', board, hold, after), board)
+  // A hold with no readable expiry is off.
+  const { expires_at: _drop, ...noExpiry } = hold
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), noExpiry, before), false)
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), { ...hold, expires_at: 'soon' }, before), false)
+})
+
+test('/api/data stops holding once the hold has expired, even for a cached board row', async () => {
+  _setKboHold({ ...HOLD, expires_at: '2000-01-01T00:00:00Z' })
+  _clearCache()
+  const res = await call('prizepicks_props', { prizepicks_props: staleBoard() })
+  assert.ok(res.body.data.cards.length > 0)
+  assert.equal(res.body.data.kbo_hold, undefined)
+  _setKboHold(FILE)
+})
+
+test('hold clears stored lines in matchup_data (paid and free) until it is off or expires', async () => {
+  const md = { matchups: [{ away: 'LG', home: 'Kia', away_pitcher: { name: 'Shirakawa', line: 5.5, k_projection: 5.9 }, home_pitcher: { name: 'Oller', line: 5.5, k_projection: 6.1 },
+    props: [{ name: 'Oller', prop: 'Strikeouts', line: 5.5, projection: 6.1, edge: 0.6, recommendation: 'OVER' }] }] }
+  const held = applyKboHold('matchup_data', md, HOLD)
+  const g = held.matchups[0]
+  assert.deepEqual([g.props[0].line, g.props[0].edge, g.props[0].recommendation, g.props[0].projection], [null, null, 'NO LINE', 6.1])
+  assert.deepEqual([g.away_pitcher.line, g.home_pitcher.line, g.home_pitcher.k_projection], [null, null, 6.1])
+  assert.equal(held.kbo_hold.active, true)
+  assert.equal(applyKboHold('matchup_data', md, { ...HOLD, active: false }), md)
+  assert.equal(applyKboHold('matchup_data', md, { ...HOLD, expires_at: '2000-01-01T00:00:00Z' }), md)
+  _setKboHold(HOLD)
+  _clearCache()
+  const res = await call('matchup_data', { matchup_data: md })
+  assert.equal(res.statusCode, 200)
+  assert.equal(JSON.stringify(res.body.data).includes('"line":5.5'), false)
+  _setKboHold(FILE)
 })

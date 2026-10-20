@@ -5,6 +5,7 @@ import { DATASETS } from '../api/_dataAccess.js'
 import { kboModelProjection, pregameSide } from '../src/kboBoardScore.js'
 import { kboHubRows } from '../src/memberHub.js'
 
+import { mergeLivePrizePicks } from '../src/kboLiveLines.js'
 const src = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8')
 
 // Moon Jeong-bin FS 4.5 on the 10/20 slate: no model number. batter_projections
@@ -63,21 +64,21 @@ test("nit: projection preview treats '' like null", () => {
 
 test('MatchupDeepDive: no-model rows get no edge or side; a 0 projection stays valid', () => {
   const s = src('MatchupDeepDive.jsx')
-  assert.match(s, /import \{ kboModelProjection, pregameSide \} from '\.\/kboBoardScore'/)
-  assert.match(s, /const projection = kboModelProjection\(prop\);/)
-  assert.doesNotMatch(s, /const projection = Number\(prop\?\.projection\);/)
-  assert.match(s, /const edge = projection != null \? projection - liveLine : null;/)
-  assert.match(s, /const recommendation = pregameSide\(projection, liveLine\);/)
-  assert.match(s, /edge: edge != null \? Number\(edge\.toFixed\(2\)\) : null,/)
-  // Same logic on the rows: Moon FS 4.5 (null) vs a real 0 projection.
-  const liveLine = 4.5
-  const rowFor = (prop) => {
-    const projection = kboModelProjection(prop)
-    const edge = projection != null ? projection - liveLine : null
-    return { edge: edge != null ? Number(edge.toFixed(2)) : null, recommendation: pregameSide(projection, liveLine) }
+  assert.match(s, /import \{ mergeLivePrizePicks \} from '\.\/kboLiveLines'/)
+  const lib = src('kboLiveLines.js')
+  assert.match(lib, /const projection = kboModelProjection\(prop\)/)
+  assert.doesNotMatch(lib, /Number\(prop\?\.projection\)/)
+  // Moon FS 4.5 (null projection) vs a real 0 projection, through the real merge.
+  const card = (name) => ({ name, team: 'LG', opponent: 'Kia', props: [{ stat: 'Hitter Fantasy Score', line: 4.5, odds_type: 'standard' }] })
+  const rowFor = (projection) => {
+    const out = mergeLivePrizePicks(
+      { matchups: [{ away: 'LG', home: 'Kia', props: [{ name: 'Moon Jeong-bin', team: 'LG', prop: 'Fantasy Score', line: 9, projection, edge: -4.5 }] }] },
+      { cards: [card('Moon Jeong-bin')] },
+    ).matchups[0].props[0]
+    return { line: out.line, edge: out.edge, recommendation: out.recommendation }
   }
-  assert.deepEqual(rowFor({ name: 'Moon Jeong-bin', projection: null, edge: -4.5 }), { edge: null, recommendation: 'NO LINE' })
-  assert.deepEqual(rowFor({ projection: '' }), { edge: null, recommendation: 'NO LINE' })
-  assert.deepEqual(rowFor({ projection: 0 }), { edge: -4.5, recommendation: 'UNDER' })
-  assert.deepEqual(rowFor({ projection: 6.84 }), { edge: 2.34, recommendation: 'OVER' })
+  assert.deepEqual(rowFor(null), { line: 4.5, edge: null, recommendation: 'NO LINE' })
+  assert.deepEqual(rowFor(''), { line: 4.5, edge: null, recommendation: 'NO LINE' })
+  assert.deepEqual(rowFor(0), { line: 4.5, edge: -4.5, recommendation: 'UNDER' })
+  assert.deepEqual(rowFor(6.84), { line: 4.5, edge: 2.34, recommendation: 'OVER' })
 })

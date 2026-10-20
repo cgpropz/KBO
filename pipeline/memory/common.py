@@ -1066,7 +1066,15 @@ def write_slate(
     source: str | None = None,
     pulled: list[dict] | None = None,
     now: datetime | None = None,
+    clear_pulled: bool = True,
 ) -> Path:
+    """Merge a freeze into the day's slate.
+
+    clear_pulled=False (KBO when the board has no fresh PrizePicks pull, e.g.
+    a 429 fallback rebuild) keeps removed/pp_status on rows already marked
+    pulled even when the board still lists them: only a fresh pull can say a
+    pulled line is back.
+    """
     day_dir = ensure_memory_dir(sport, d)
     slate_path = day_dir / "slate.json"
     existing = load_json(slate_path, default={}) or {}
@@ -1110,6 +1118,8 @@ def write_slate(
         else:
             for row in merged:
                 if _row_still_on_board(sport, row, live_keys, live_by_id):
+                    if pulled_status(row) and not clear_pulled:
+                        continue
                     row.pop("superseded_at", None)
                     if pulled_status(row):
                         row.pop("pp_status", None)

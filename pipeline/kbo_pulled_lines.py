@@ -10,7 +10,8 @@ pull. Only two results mark anything:
                    marked pulled.
 
 A fetch error (non-200, exception, timeout), a partial or all-league answer,
-a missing file, or a status older than MAX_AGE marks nothing, so the last
+a missing file, or a status older than MAX_AGE (confirmed_empty: past the
+slate's first pitch, see confirmed_empty_valid_until) marks nothing, so the last
 good board stays up as the fallback. Same fields as the NHL/NFL pulled-line
 check (pipeline/prizepicks_seen.py): removed=True and pp_status='removed'.
 The site already drops those rows from the board, the free top 3 and slips.
@@ -78,6 +79,36 @@ def _parse_time(value: Any) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def confirmed_empty_valid_until(checked: datetime) -> datetime:
+    """A confirmed-empty pull stands until the slate's first pitch.
+
+    The slate is the KST date of the check, or the next KST date once that
+    day's first pitch has passed. A complete fresh pull with lines replaces
+    it sooner. After first pitch the started-game cutoff takes over.
+    """
+    from pipeline.memory import cutoff
+
+    if checked.tzinfo is None:
+        checked = checked.replace(tzinfo=timezone.utc)
+    day = checked.astimezone(cutoff.KST).date()
+    first, _source = cutoff.kbo_first_pitch(day)
+    if checked >= first:
+        first, _source = cutoff.kbo_first_pitch(day + timedelta(days=1))
+    return first.astimezone(timezone.utc)
+
+
+def confirmed_empty_in_force(status: Any, now: datetime | None = None) -> bool:
+    """True for a confirmed_empty status whose slate has not reached first pitch."""
+    if not isinstance(status, dict) or status.get("status") != "confirmed_empty":
+        return False
+    now = now or datetime.now(timezone.utc)
+    checked = _parse_time(status.get("checked_at"))
+    if checked is None or checked - now > timedelta(minutes=10):
+        return False
+    until = _parse_time(status.get("valid_until")) or confirmed_empty_valid_until(checked)
+    return now < until
+
+
 def status_path() -> Path:
     override = os.environ.get("KBO_PULL_STATUS_PATH")
     return Path(override) if override else DEFAULT_STATUS_PATH
@@ -94,6 +125,11 @@ def load_pull_status(path: Path | None = None, now: datetime | None = None) -> d
         return None
     checked = _parse_time(status.get("checked_at"))
     now = now or datetime.now(timezone.utc)
+    # PrizePicks confirmed 0 KBO lines: that holds until a complete fresh
+    # pull with lines or the slate's first pitch, not just MAX_AGE, so a run
+    # of 429 fallbacks overnight cannot put the stale lines back.
+    if confirmed_empty_in_force(status, now):
+        return status
     if checked is None or now - checked > MAX_AGE or checked - now > timedelta(minutes=10):
         return None
     return status
