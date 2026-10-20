@@ -21,6 +21,7 @@ import {
 } from '../src/responsibleGambling.js';
 import { appBoardPath } from '../src/appSport.js';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
+import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import {
   assertNoCurlyPlaceholders,
   demoteHeadings,
@@ -61,8 +62,8 @@ function boardLinks(path) {
 
 function sportFaqs(id) {
   const name = sportById(id).name;
-  const preview = id === 'nfl'
-    ? 'They are on the live NFL board in the CGPropz app, with a CG Score on every standard line. The NFL board is part of All-Access. NFL has no free top 3 right now.'
+  const preview = id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED
+    ? 'They are on the live NFL board in the CGPropz app, with a CG Score on every standard line. The NFL board is part of All-Access. The NFL free preview is off right now.'
     : `The free top 3 on the CGPropz homepage shows three standard ${name} lines ranked by CG Score. The rest of the live ${name} board is part of All-Access.`;
   return [
     {
