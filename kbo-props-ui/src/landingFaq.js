@@ -10,7 +10,7 @@ export function landingFaqs() {
     },
     {
       q: 'Does one subscription cover every sport?',
-      a: 'Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
+      a: 'Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, NBA, and NHL under one login. Discord Only is separate: props in Discord, not the site boards.',
     },
     {
       q: 'Can I cancel anytime?',

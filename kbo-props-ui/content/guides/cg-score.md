@@ -59,7 +59,7 @@ Scores on low lines can run higher, so a modest projection on a small line can p
 
 **KBO is different.** KBO can show its own stored score, so read KBO scores on their own terms rather than comparing them directly with other sports.
 
-**How the free top 3 is chosen.** On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score. KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board. NFL and NBA have no free top 3 right now. The NBA board opens Tuesday, Oct 20.
+**How the free top 3 is chosen.** On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score. KBO's free top 3 is also ranked by CG Score from the standard lines on the board. NFL and NBA have no free top 3 right now.
 
 Every CGPropz board shows standard lines only. Demon and goblin lines aren't on the boards.
 

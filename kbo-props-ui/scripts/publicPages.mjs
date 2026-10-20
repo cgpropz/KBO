@@ -62,11 +62,11 @@ function boardLinks(path) {
 function sportFaqs(id) {
   const name = sportById(id).name;
   const preview = id === 'nfl'
-    ? 'This page does not list prop rows. NFL lines on the live board are part of All-Access. The free preview described on the pricing page does not include NFL.'
-    : `This page does not list prop rows. The app can show a free preview of the top 3 lines on the ${name} board. The rest of the live board is All-Access.`;
+    ? 'They are on the live NFL board in the CGPropz app, with a CG Score on every standard line. The NFL board is part of All-Access. NFL has no free top 3 right now.'
+    : `The free top 3 on the CGPropz homepage shows three standard ${name} lines ranked by CG Score. The rest of the live ${name} board is part of All-Access.`;
   return [
     {
-      q: `Does this page list today's ${name} props?`,
+      q: `Where are today's ${name} player props?`,
       a: preview,
     },
     {
@@ -86,13 +86,32 @@ function wnbaFinalsSection() {
   return { html: renderMarkdown(published), faqPage };
 }
 
+// Titles (60 chars max) and meta descriptions (140-155 chars) from the
+// Oct 19, 2026 SEO rewrite. og/twitter title and description reuse these.
+export const SPORT_META = {
+  nfl: {
+    title: 'NFL Player Props Today: CG Score & Hit Rates | CGPropz',
+    description: 'NFL player props today: CG Score, model projections, L10 hit rates and defense vs position on every standard line. Full NFL board with All-Access. 21+.',
+  },
+  nhl: {
+    title: 'NHL Player Props Today: Free Top 3 & CG Score | CGPropz',
+    description: 'NHL player props today: a free top 3 ranked by CG Score, plus projections and L10 hit rates for shots, saves and points. Full board with All-Access. 21+.',
+  },
+  wnba: {
+    title: 'WNBA Player Props Today: Free Top 3 & CG Score | CGPropz',
+    description: 'WNBA player props today, including the Finals: a free top 3 ranked by CG Score, with projections, L10 hit rates and DvP. Full board with All-Access. 21+.',
+  },
+};
+
+export const PRICING_META = {
+  title: 'All-Access Pricing: Plans for Every Board | CGPropz',
+  description: 'All-Access unlocks every CGPropz board: CG Scores, projections and L10 hit rates. First week $4.99 with code XWEEK, then $9.99/wk, cancel anytime. 21+.',
+};
+
 function renderSport(id, path) {
   const sport = sportById(id);
   const finals = id === 'wnba' ? wnbaFinalsSection() : null;
-  const title = `${sport.name} player props | CGPropz`;
-  const description = id === 'wnba'
-    ? 'WNBA player props on CGPropz, including the 2026 Finals hub for Valkyries vs Dream. No prop rows on this page.'
-    : `${sport.name} player props on CGPropz: what the ${sport.full.toLowerCase()} board covers, how to read CG Score, and where pricing lives. No prop rows on this page.`;
+  const { title, description } = SPORT_META[id];
   const faqs = sportFaqs(id);
   const features = sport.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
   const bodyHtml = `
@@ -153,8 +172,7 @@ function planCard(tier) {
 
 export function renderPricingPage() {
   const path = '/pricing';
-  const title = 'All-Access pricing | CGPropz';
-  const description = 'CGPropz All-Access pricing: Weekly $9.99, Monthly $29.99, Yearly $149.99, and Lifetime $249.99. Checkout stays in the app. This page does not list prop rows.';
+  const { title, description } = PRICING_META;
   const landing = landingFaqs();
   const faqs = [
     landing.find((item) => item.q.startsWith('What\'s included')),
@@ -169,7 +187,7 @@ export function renderPricingPage() {
   const bodyHtml = `
       <p class="lede">Plans</p>
       <h1>All-Access pricing</h1>
-      <p>These are the published CGPropz plan prices. Checkout stays in the app, which opens the current Stripe session. This page does not list prop rows.</p>
+      <p>These are the published CGPropz plan prices. Checkout stays in the app, which opens the current Stripe session. All-Access covers the KBO, NFL, WNBA, NBA and NHL boards under one login.</p>
       <h2>Auto-renewal</h2>
       <p>${escapeHtml(autoRenewalStatement())}</p>
       <div class="actions">
@@ -181,7 +199,6 @@ export function renderPricingPage() {
       <div class="plans">
         ${paid.map(planCard).join('\n')}
       </div>
-      <p class="note">While the Founders offer is open, the app can show a Founders lifetime price of $99.99 through Oct 18, 2026. That buy button appears only while the offer is open. If it is sold out or ended, the app does not offer it. Lifetime All-Access otherwise remains ${escapeHtml(paid.find((tier) => tier.id === 'lifetime')?.price || '$249.99')}.</p>
       <h2>Free</h2>
       ${planCard(free)}
       <h2>Discord Only</h2>
@@ -300,10 +317,13 @@ export function renderNbaPlayerPropsPage() {
   const path = '/nba-player-props';
   const title = meta.title_tag || 'NBA player props | CGPropz';
   const description = meta.meta_description || '';
+  const image = PAGE_IMAGES[path];
   const html = renderDocument({
     title,
     description,
     path,
+    image: image ? pageUrl(image.src) : undefined,
+    imageAlt: image?.alt,
     bodyHtml: renderMarkdown(published),
     schemas: [
       breadcrumbNode([
@@ -326,7 +346,7 @@ export function renderSportPages() {
     return {
       path,
       file,
-      title: `${sportById(id).name} player props | CGPropz`,
+      title: SPORT_META[id].title,
       lastmod: PUBLISHED_ON,
       html: renderSport(id, path),
     };

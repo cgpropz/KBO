@@ -121,8 +121,9 @@ test('built public pages show standard lines only and publish no placeholders', 
   const guide = readFileSync(join(root, 'public', 'guides', 'cg-score.html'), 'utf8')
   assert.match(guide, /Every CGPropz board shows standard lines only\. Demon and goblin lines aren't on the boards\./)
   assert.match(guide, /On NHL and WNBA, the free top 3 is chosen from the standard lines on the board, ranked by CG Score\./)
-  assert.match(guide, /KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board\./)
-  assert.match(guide, /NFL and NBA have no free top 3 right now\. The NBA board opens Tuesday, Oct 20\./)
+  assert.match(guide, /KBO's free top 3 is also ranked by CG Score from the standard lines on the board\./)
+  assert.match(guide, /NFL and NBA have no free top 3 right now\./)
+  assert.equal(guide.includes('opens Tuesday, Oct 20'), false)
 
   const nba = readFileSync(join(root, 'public', 'nba-player-props.html'), 'utf8')
   assert.match(nba, /<strong>Line types:<\/strong> The board shows standard lines only\./)

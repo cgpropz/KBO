@@ -13,18 +13,18 @@ const uiRoot = fileURLToPath(new URL('..', import.meta.url))
 const config = JSON.parse(readFileSync(join(uiRoot, 'vercel.json'), 'utf8'))
 
 const PUBLIC_PAGES = [
-  ['/', 'CGPropz: Every prop line, scored.', 'Every prop line, scored.'],
-  ['/pricing', 'All-Access pricing | CGPropz', 'All-Access pricing'],
+  ['/', 'CGPropz: Player Props Today for NBA, NFL, NHL, WNBA &amp; KBO', 'Every prop line, scored.'],
+  ['/pricing', 'All-Access Pricing: Plans for Every Board | CGPropz', 'All-Access pricing'],
   ['/policies', 'Plans &amp; Policies | CGPropz', 'Plans &amp; Policies'],
   ['/terms', 'Terms | CGPropz', 'Terms'],
   ['/privacy', 'Privacy | CGPropz', 'Privacy'],
   ['/responsible-gaming', 'Responsible gaming | CGPropz', 'Responsible gaming'],
   ['/states-not-available', 'Where CGPropz isn\'t available | CGPropz', 'Where CGPropz is not available'],
-  ['/kbo-player-props', 'KBO Playoffs Player Props &amp; PrizePicks Picks | CGPropz', 'KBO player props, with the full board.'],
-  ['/nfl-player-props', 'NFL player props | CGPropz', 'NFL player props'],
-  ['/wnba-player-props', 'WNBA player props | CGPropz', 'WNBA player props'],
-  ['/nba-player-props', 'NBA Player Props Today &amp; PrizePicks Picks | CGPropz', 'NBA player props, with the full board.'],
-  ['/nhl-player-props', 'NHL player props | CGPropz', 'NHL player props'],
+  ['/kbo-player-props', 'KBO Player Props Today: Free Top 3 &amp; Playoffs | CGPropz', 'KBO player props, with the full board.'],
+  ['/nfl-player-props', 'NFL Player Props Today: CG Score &amp; Hit Rates | CGPropz', 'NFL player props'],
+  ['/wnba-player-props', 'WNBA Player Props Today: Free Top 3 &amp; CG Score | CGPropz', 'WNBA player props'],
+  ['/nba-player-props', 'NBA Player Props Today: CG Score &amp; L10 Hit Rates | CGPropz', 'NBA player props, with the full board.'],
+  ['/nhl-player-props', 'NHL Player Props Today: Free Top 3 &amp; CG Score | CGPropz', 'NHL player props'],
   ['/guides/cg-score', 'How CG Score Works: Projection vs Line | CGPropz', 'How CG Score Works'],
   ['/guides/start-here', 'Start Here: How to Read Player Props | CGPropz', 'Start Here: How to Read Player Props on CGPropz'],
 ]
@@ -264,13 +264,13 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
 
   execFileSync('npx', ['vite', 'build'], { cwd: uiRoot, stdio: 'pipe' })
   const builtHome = readFileSync(join(uiRoot, 'dist/index.html'), 'utf8')
-  assert.match(builtHome, /<title>CGPropz: Every prop line, scored\.<\/title>/)
+  assert.match(builtHome, /<title>CGPropz: Player Props Today for NBA, NFL, NHL, WNBA &amp; KBO<\/title>/)
   assert.match(builtHome, /<h1>Every prop line, scored\.<\/h1>/)
   assert.doesNotMatch(builtHome, /PrizePicks/i)
   assert.match(builtHome, /id="free-top-3"/)
   assert.equal(builtHome.includes('Loading KBO Player Props'), false)
   const builtPricing = readFileSync(join(uiRoot, 'dist/pricing.html'), 'utf8')
-  assert.match(builtPricing, /<title>All-Access pricing \| CGPropz<\/title>/)
+  assert.match(builtPricing, /<title>All-Access Pricing: Plans for Every Board \| CGPropz<\/title>/)
   assert.match(builtPricing, /<h1>All-Access pricing<\/h1>/)
   const builtGuide = readFileSync(join(uiRoot, 'dist/guides/cg-score.html'), 'utf8')
   assert.match(builtGuide, /<h1>How CG Score Works<\/h1>/)

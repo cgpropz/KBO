@@ -8,8 +8,8 @@ Organization + BreadcrumbList JSON-LD.
 -->
 
 ---
-title_tag: "KBO Playoffs Player Props & PrizePicks Picks | CGPropz"
-meta_description: "KBO playoffs player props and today's free KBO picks: postseason schedule in ET, and how the board scores props. 21+."
+title_tag: "KBO Player Props Today: Free Top 3 & Playoffs | CGPropz"
+meta_description: "KBO player props today through the postseason: a free top 3 ranked by CG Score, model projections and hit rates, with first pitch times in ET. 21+."
 slug: "/kbo-player-props"
 canonical: "https://www.cgpropz.com/kbo-player-props"
 primary_keyword: "kbo playoffs player props"
@@ -25,7 +25,7 @@ status: draft
 
 CGPropz tracks KBO player props for Korea Baseball Organization games: batter lines such as hits, runs and RBIs, and pitcher lines such as strikeouts. Each prop sits next to a model number built from recent form, the matchup and the posted line. The live board is the [KBO board](/?sport=kbo). All-Access plans that include KBO are listed on [pricing](/pricing).
 
-The regular season is over, and the KBO postseason starts Wednesday, Oct 14. Slates shrink to one game a day, so the free picks and the full board will be smaller than in the regular season.
+The regular season is over, and the KBO postseason has been under way since Wednesday, Oct 14. Slates shrink to one game a day, so the free picks and the full board will be smaller than in the regular season.
 
 **[Open the KBO board](/?sport=kbo)** · **[Today's free top 3](/#free-top-3)** · **[See pricing](/pricing)**
 
@@ -58,7 +58,7 @@ The Wild Card works differently from the other rounds. LG, the fourth seed, adva
 
 The live KBO board in the app lines a model number up with the posted prop. The free preview shows three lines. The rest of that live board is All-Access, and those rows are not printed here.
 
-**How the KBO free top 3 is picked:** KBO's free picks are chosen on the server. They aren't simply the top three CG Scores on the board.
+**How the KBO free top 3 is picked:** the three standard lines with the highest CG Scores on the board. Lines PrizePicks has taken down are left out.
 
 ## What CG Score means on KBO
 
@@ -77,7 +77,7 @@ The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. W
 Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET.
 
 **Where are today's free KBO picks?**
-In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order.
+In the free top 3 on the homepage: the three standard KBO lines with the highest CG Scores on the board.
 
 **What does CG Score mean on KBO?**
 CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often.
@@ -95,7 +95,7 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
   "mainEntity": [
     { "@type": "Question", "name": "Are there KBO player props during the playoffs?", "acceptedAnswer": { "@type": "Answer", "text": "The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. When lines are posted, the KBO board covers them, and the free top 3 appears on the homepage." } },
     { "@type": "Question", "name": "What time do KBO playoff games start in ET?", "acceptedAnswer": { "@type": "Answer", "text": "Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET." } },
-    { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage. KBO's free picks are chosen on the server and don't simply follow the CG Score order." } },
+    { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage: the three standard KBO lines with the highest CG Scores on the board." } },
     { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often." } },
     { "@type": "Question", "name": "Where is pricing?", "acceptedAnswer": { "@type": "Answer", "text": "All-Access plans are on the pricing page." } },
     { "@type": "Question", "name": "Is CGPropz affiliated with PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "No. CGPropz is not affiliated with PrizePicks or Underdog." } }

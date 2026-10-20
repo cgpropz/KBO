@@ -14,7 +14,7 @@ export function publicFaqs() {
     },
     {
       q: 'Does one login cover every league?',
-      a: 'Yes. Weekly, Monthly, Yearly, and Lifetime All-Access unlock KBO, WNBA, NFL, and NHL under one login.',
+      a: 'Yes. Weekly, Monthly, Yearly, and Lifetime All-Access unlock KBO, WNBA, NFL, NBA, and NHL under one login.',
     },
     {
       q: 'What is CG Score?',
