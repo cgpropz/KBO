@@ -257,15 +257,33 @@ def _board_row_line_type(row: dict) -> str:
     return str(raw or "").strip().lower()
 
 
-def dedupe_board_rows(rows: list[dict] | None) -> list[dict]:
-    """One row per (player, stat type, line type). The non-promo row wins.
+def _board_row_line(row: dict) -> str:
+    raw = row.get("line")
+    if raw is None or raw == "":
+        raw = row.get("line_score")
+    try:
+        return f"{float(raw):.2f}"
+    except (TypeError, ValueError):
+        return str(raw or "").strip()
 
-    Line type is the PrizePicks odds type (standard, demon, goblin). A promo
-    copy with no standard twin is dropped. When both copies are non-promo,
-    the first one stays. Order otherwise follows the first copy.
+
+def _board_row_game_date(row: dict) -> str:
+    raw = row.get("gameDate")
+    if raw is None or raw == "":
+        raw = row.get("game_date")
+    return str(raw or "").strip()[:10]
+
+
+def dedupe_board_rows(rows: list[dict] | None) -> list[dict]:
+    """Collapse exact duplicates. The non-promo row wins.
+
+    The key is player, stat type, line type (standard, demon, goblin), line,
+    and game date. Different lines for the same player and stat stay, so a
+    demon or goblin ladder is kept. A promo copy of the same line and date
+    is dropped. When both copies are non-promo, the first one stays.
     """
-    best: dict[tuple[str, str, str], dict] = {}
-    order: list[tuple[str, str, str]] = []
+    best: dict[tuple[str, str, str, str, str], dict] = {}
+    order: list[tuple[str, str, str, str, str]] = []
     loose: list[dict] = []
     for row in rows or []:
         if not isinstance(row, dict):
@@ -276,7 +294,7 @@ def dedupe_board_rows(rows: list[dict] | None) -> list[dict]:
             if not _board_row_is_promo(row):
                 loose.append(row)
             continue
-        key = (player, stat, _board_row_line_type(row))
+        key = (player, stat, _board_row_line_type(row), _board_row_line(row), _board_row_game_date(row))
         current = best.get(key)
         if current is None:
             best[key] = row
@@ -471,8 +489,9 @@ def _team_info(team: str, teams: dict) -> dict:
 def build_boards(rows: list[dict], roster: list[dict], teams: dict | None = None) -> tuple[dict, dict]:
     """Group slate rows into standard, demon, and goblin player cards.
 
-    Safety net for a promo copy that still shares (player, stat, odds type)
-    with the posted line: the non-promo row is the one that stays.
+    Safety net for an exact promo copy (same player, stat, odds type, line,
+    and game date): the non-promo row is the one that stays. Other lines in
+    a demon or goblin ladder are left in place.
     """
     rows = dedupe_board_rows(rows)
     teams = teams if teams is not None else {}

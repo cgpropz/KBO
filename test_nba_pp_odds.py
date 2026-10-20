@@ -238,6 +238,75 @@ class FilterTests(unittest.TestCase):
             [("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "standard")],
         )
 
+    def test_alt_lines_and_separate_dates_are_not_collapsed(self):
+        """Demon and goblin ladders stay. The freeze keeps the same stat on two dates."""
+        def slate_row(odds, line, game_date="2026-10-20", promo=False):
+            return {
+                "name": "Jaylen Brown",
+                "stat": "Pts+Rebs+Asts",
+                "statKey": "ptsRebAst",
+                "line": line,
+                "oddsType": odds,
+                "isPromo": promo,
+                "versus": "PHI",
+                "opponent": "PHI",
+                "gameDate": game_date,
+            }
+
+        roster = [{
+            "athleteId": "3917376",
+            "name": "Jaylen Brown",
+            "team": "BOS",
+            "position": "SF",
+        }]
+        rows = [
+            slate_row("standard", 30.5),
+            slate_row("standard", 30.5, promo=True),
+            slate_row("demon", 32.5),
+            slate_row("demon", 35.5),
+            slate_row("demon", 38.5),
+            slate_row("goblin", 24.5),
+            slate_row("goblin", 27.5),
+        ]
+        boards, _match = pp.build_boards(rows, roster, {})
+        self.assertEqual([prop["line"] for prop in boards["standard"][0]["ppAllProps"]], [30.5])
+        self.assertEqual([prop["line"] for prop in boards["demon"][0]["ppAllProps"]], [32.5, 35.5, 38.5])
+        self.assertEqual([prop["line"] for prop in boards["goblin"][0]["ppAllProps"]], [24.5, 27.5])
+
+        from nba.board_freeze import fetch_prizepicks_standard
+
+        class _Resp:
+            def __init__(self, body):
+                self.status_code = 200
+                self.headers = {}
+                self._body = body
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._body
+
+        payload = payload_from([
+            projection(
+                "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=30.5,
+                odds="standard", description="PHI", start="2026-10-20T19:00:00-04:00",
+            ),
+            projection(
+                "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=30.5,
+                odds="standard", description="PHI", start="2026-10-21T19:00:00-04:00",
+            ),
+        ])
+        payload["meta"] = {"total_pages": 1}
+        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30: _Resp(payload))
+        self.assertEqual(
+            [(row["player"], row["stat"], row["line"], row["game_date"]) for row in frozen],
+            [
+                ("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "2026-10-20"),
+                ("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "2026-10-21"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -77,8 +77,10 @@ def fetch_prizepicks_standard(*, get=None) -> list[dict]:
     """Standard NBA lines only, fully paged, with combo/excluded-stat filters.
 
     Missing odds_type is treated as non-standard (dropped). Promo copies
-    (is_promo true, including discounted flash lines) are dropped. A second
-    row for the same player, stat, and odds type keeps the non-promo line.
+    (is_promo true, including discounted flash lines) are dropped. Exact
+    duplicates collapse on player, stat, odds type, line, and game date,
+    keeping the non-promo line. This list covers more than one slate date,
+    so the same player and stat on different dates both stay.
     Reuses fetch_all_projections from nba-pp-odds.py. Optional get= is for tests.
     """
     pp = _load_pp_odds()
