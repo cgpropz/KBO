@@ -208,7 +208,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const sportState = boards[sport.id];
   const hitState = boards[hitSport.id];
   const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
-  const hitRows = boardApi ? boardApi.publicTopHitRows(hitState?.rows || []) : [];
+  const hitRows = boardApi ? boardApi.publicFreeTopRows(hitState?.rows || []) : [];
   const phoneRows = switchRows;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
@@ -302,10 +302,10 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         </section>
 
         <section id="free-top-3">
-          <p className="pl-kick">{hitRows.length >= 10 ? 'Top 10 tonight' : 'L10 hit rates'}</p>
-          <h2>Highest hit rates on the board</h2>
-          <p className="pl-lead">Sorted by L10 hit rate vs today's standard line. A log shorter than 10 games stays off this list.</p>
-          <div className="pl-seg" role="tablist" aria-label="Hit-rate sport">
+          <p className="pl-kick">Free preview</p>
+          <h2>Today's free top 3</h2>
+          <p className="pl-lead">The three standard lines with the highest CG Scores on each board. Pulled lines stay off this list.</p>
+          <div className="pl-seg" role="tablist" aria-label="Free top 3 sport">
             {LANDING_SPORTS.map((item) => (
               <button
                 key={item.id}
@@ -321,7 +321,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           </div>
           <div className="pl-card">
             {hitRows.length ? <BoardTable rows={hitRows} showHitRate sport={hitSport.id} /> : (
-              <p className="pl-empty">{settled ? `No full L10 sample on the ${hitSport.name} public preview right now.` : 'Loading the board…'}</p>
+              <p className="pl-empty">{settled ? `No scored standard lines in the ${hitSport.name} free top 3 right now.` : 'Loading the board…'}</p>
             )}
             {hitState?.preview && hitState.lockedCount > 0 && (
               <p className="pl-foot">Public preview · {hitState.lockedCount} more {lineWord(hitState.lockedCount)} on All-Access</p>
