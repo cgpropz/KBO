@@ -5,7 +5,7 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -21,9 +21,21 @@ def load_module():
 
 pp = load_module()
 EASTERN = ZoneInfo("America/New_York")
+# Frozen fetch. Tips are later that evening, so the started-game filter
+# (start_time at or before fetch) does not read the wall clock.
+FETCH = datetime(2026, 10, 20, 12, tzinfo=EASTERN)
 
 
-def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start="2026-10-20T19:00:00-04:00", description="DET", is_promo=None, line_type=None):
+def tip(day_offset=0, hour=19, minute=0) -> str:
+    moment = (FETCH + timedelta(days=day_offset)).replace(
+        hour=hour, minute=minute, second=0, microsecond=0
+    )
+    return moment.isoformat(timespec="seconds")
+
+
+def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start=None, description="DET", is_promo=None, line_type=None):
+    if start is None:
+        start = tip()
     attributes = {
         "stat_type": stat,
         "line_score": line,
@@ -80,10 +92,7 @@ class FilterTests(unittest.TestCase):
             projection("7", "NBA", "p1", "Jayson Tatum", stat="Points - 1st 3 Minutes", odds="standard", line=1.5),
             projection("7", "NBA", "p1", "Jayson Tatum", stat="Quarter Points", odds="standard", line=9.5),
         ]
-        parsed, report = pp.rows_from_payload(
-            payload_from(rows),
-            now=datetime(2026, 10, 20, 12, tzinfo=EASTERN),
-        )
+        parsed, report = pp.rows_from_payload(payload_from(rows), now=FETCH)
         self.assertEqual(report["excluded_started"], 0)
         self.assertEqual(report["excluded_nbap"], 1)
         self.assertEqual(report["excluded_nbaszn"], 1)
@@ -172,7 +181,7 @@ class FilterTests(unittest.TestCase):
             ),
         ]
         payload = payload_from(rows)
-        parsed, report = pp.rows_from_payload(payload)
+        parsed, report = pp.rows_from_payload(payload, now=FETCH)
         self.assertEqual(report["excluded_promo"], 1)
         self.assertEqual(
             [(row["stat"], row["line"], row["oddsType"]) for row in parsed],
@@ -192,8 +201,7 @@ class FilterTests(unittest.TestCase):
             "teamFull": "Boston Celtics",
             "teamColor": "#008348",
         }]
-        today = datetime(2026, 10, 20, 12, tzinfo=EASTERN)
-        result = pp.prepare(payload, roster, today=today, teams={})
+        result = pp.prepare(payload, roster, today=FETCH, teams={})
         standard = result["boards"]["standard"]
         self.assertEqual(len(standard), 1)
         standard_props = standard[0]["ppAllProps"]
@@ -296,18 +304,22 @@ class FilterTests(unittest.TestCase):
             def json(self):
                 return self._body
 
+        first_night = tip()
+        next_night = tip(day_offset=1)
         payload = payload_from([
             projection(
                 "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=30.5,
-                odds="standard", description="PHI", start="2026-10-20T19:00:00-04:00",
+                odds="standard", description="PHI", start=first_night,
             ),
             projection(
                 "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=30.5,
-                odds="standard", description="PHI", start="2026-10-21T19:00:00-04:00",
+                odds="standard", description="PHI", start=next_night,
             ),
         ])
         payload["meta"] = {"total_pages": 1}
         frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30, headers=None: _Resp(payload))
+        self.assertEqual(pp.parse_game_date(first_night), "2026-10-20")
+        self.assertEqual(pp.parse_game_date(next_night), "2026-10-21")
         self.assertEqual(
             [(row["player"], row["stat"], row["line"], row["game_date"]) for row in frozen],
             [
@@ -450,11 +462,11 @@ class CacheAndSnapshotTests(unittest.TestCase):
         self.assertTrue(issubclass(pp.StalePrizePicksResponse, Exception))
 
     def test_started_line_is_dropped_and_future_line_is_kept(self):
-        fetch_time = datetime(2026, 10, 20, 19, 30, tzinfo=EASTERN)
+        fetch_time = FETCH.replace(hour=19, minute=30)
         rows = [
-            projection("7", "NBA", "s", "Started Player", stat="Points", line=20.5, start="2026-10-20T19:00:00-04:00"),
-            projection("7", "NBA", "e", "Tipoff Player", stat="Rebounds", line=6.5, start="2026-10-20T19:30:00-04:00"),
-            projection("7", "NBA", "f", "Later Player", stat="Assists", line=5.5, start="2026-10-20T20:00:00-04:00"),
+            projection("7", "NBA", "s", "Started Player", stat="Points", line=20.5, start=tip(hour=19, minute=0)),
+            projection("7", "NBA", "e", "Tipoff Player", stat="Rebounds", line=6.5, start=tip(hour=19, minute=30)),
+            projection("7", "NBA", "f", "Later Player", stat="Assists", line=5.5, start=tip(hour=20, minute=0)),
         ]
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -606,8 +618,7 @@ class CacheAndSnapshotTests(unittest.TestCase):
             {"athleteId": "4431678", "name": "Paul Reed", "team": "DET", "position": "C"},
             {"athleteId": "4065648", "name": "Jayson Tatum", "team": "BOS", "position": "PF"},
         ]
-        today = datetime(2026, 10, 20, 12, tzinfo=EASTERN)
-        result = pp.prepare(payload_from(rows), roster, today=today, teams={})
+        result = pp.prepare(payload_from(rows), roster, today=FETCH, teams={})
         standard = result["boards"]["standard"]
         self.assertEqual([player["name"] for player in standard], ["Jayson Tatum"])
         self.assertEqual(

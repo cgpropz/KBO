@@ -1,32 +1,51 @@
 {
-  "checked_at": "2026-10-20T21:02:25Z",
+  "checked_at": "2026-10-20T23:32:57Z",
   "boards": {
     "nfl": {
-      "generated_at": "2026-10-20T20:58:27.853270+00:00",
-      "prop_count": 383,
+      "generated_at": "2026-10-20T23:32:57.160520+00:00",
+      "prop_count": 393,
       "started_removed": 0
     },
     "nfl_game_markets": {
-      "generated_at": "2026-10-20T19:35:22.739386+00:00",
+      "generated_at": "2026-10-20T22:40:24.921002+00:00",
       "prop_count": 0,
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-20T21:02:25.706866+00:00",
-      "prop_count": 901,
+      "generated_at": "2026-10-20T23:19:30.687644+00:00",
+      "prop_count": 438,
       "started_removed": 0,
-      "removals": [],
+      "removals": [
+        {
+          "player": "Brady Tkachuk",
+          "team": "FLA",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "standard",
+          "projection": 2.75,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jake Sanderson",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.76,
+          "reason": "line pulled"
+        }
+      ],
       "removed_reasons": {
-        "pp_pull": 62,
-        "superseded_dup": 31,
+        "pp_pull": 0,
+        "superseded_dup": 0,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
       }
     },
     "nba": {
-      "generated_at": "2026-10-20T20:34:35.365559+00:00",
-      "prop_count": 352,
+      "generated_at": "2026-10-20T23:11:14.550267+00:00",
+      "prop_count": 178,
       "started_removed": 0
     },
     "wnba": {
