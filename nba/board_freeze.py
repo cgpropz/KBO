@@ -330,16 +330,57 @@ def build_rows(pp_rows: list[dict], pub: list[dict], captured_at: str) -> list[d
 UPCOMING_TIP_WINDOW = dt.timedelta(hours=5)
 
 
-def untipped_games_soon(now: dt.datetime, starts: list | None = None, fetch=None) -> list:
-    """ESPN NBA start times after now and within UPCOMING_TIP_WINDOW.
+def espn_pre_starts(payload) -> list[dt.datetime] | None:
+    """Start times of ESPN scoreboard events whose status state is 'pre'.
 
-    Empty when there are none or the scoreboard cannot be read (then the
-    zero-line skip stays a warning, as before).
+    Postponed, in-progress and final games are left out. None when the
+    payload is not a scoreboard.
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
+        return None
+    out = []
+    for event in payload["events"]:
+        if not isinstance(event, dict):
+            continue
+        state = (((event.get("status") or {}).get("type") or {}).get("state") or "").lower()
+        if state != "pre":
+            continue
+        moment = _parse_iso(event.get("date"))
+        if moment is not None:
+            out.append(moment)
+    return out
+
+
+def fetch_espn_pre_starts(fetch=None, sleep=None, retry_wait: float = 5.0) -> list[dt.datetime] | None:
+    """NBA 'pre' start times from ESPN, with one retry. None when both reads fail."""
+    from pipeline.refresh_window import ESPN_SCOREBOARD, _fetch_json
+    import time
+
+    fetch = fetch or _fetch_json
+    sleep = sleep or time.sleep
+    for attempt in (1, 2):
+        try:
+            starts = espn_pre_starts(fetch(ESPN_SCOREBOARD["nba"]))
+        except Exception:
+            starts = None
+        if starts is not None:
+            return starts
+        if attempt == 1:
+            print(f"ESPN NBA scoreboard unreadable; retrying once in {retry_wait:g}s")
+            sleep(retry_wait)
+    return None
+
+
+def untipped_games_soon(now: dt.datetime, starts: list | None = None, fetch=None, sleep=None) -> list | None:
+    """ESPN 'pre' NBA start times after now and within UPCOMING_TIP_WINDOW.
+
+    None when the scoreboard cannot be read after one retry (the caller fails
+    red instead of skipping green).
     """
     if starts is None:
-        from pipeline.refresh_window import espn_starts
-
-        starts = espn_starts("nba", fetch=fetch) or []
+        starts = fetch_espn_pre_starts(fetch=fetch, sleep=sleep)
+        if starts is None:
+            return None
     if now.tzinfo is None:
         now = now.replace(tzinfo=dt.timezone.utc)
     out = []
@@ -473,6 +514,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"::error title=PrizePicks unavailable::{pp_error}. Saving the published NBA board marked pp_unavailable.")
     if pp_error is None and not pp_rows and not args.force:
         upcoming = untipped_games_soon(dt.datetime.now(tz=dt.timezone.utc))
+        if upcoming is None:
+            print(
+                "::error title=NBA schedule unknown::PrizePicks answered with 0 NBA standard lines and the "
+                "ESPN NBA scoreboard could not be read after one retry, so an empty slate cannot be confirmed; nothing saved"
+            )
+            _write_gh_output(skipped="true", rows=0)
+            return 1
         if upcoming:
             first = min(upcoming).astimezone(ET).strftime("%I:%M %p ET").lstrip("0")
             print(

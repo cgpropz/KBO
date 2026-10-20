@@ -301,6 +301,8 @@ def test_saved_board_age_uses_newest_projection_generated_at():
     assert edge["board_stale"] == "false"
     assert saved_board_age([{"projection_generated_at": None}], captured)["board_stale"] == "unknown"
     assert saved_board_age([], captured)["board_stale"] == "unknown"
+
+
 def _load_pp():
     from nba.board_freeze import _load_pp_odds
 
@@ -502,8 +504,54 @@ def test_untipped_games_soon_counts_only_future_tips_inside_five_hours():
     ]
     assert untipped_games_soon(now, starts=starts) == starts[1:3]
     assert untipped_games_soon(now, starts=[]) == []
-    # Unreadable scoreboard -> empty (keeps the old warning skip).
-    assert untipped_games_soon(now, fetch=lambda url: None) == []
+    # Unreadable scoreboard after one retry -> None (the caller fails red).
+    calls, waits = [], []
+
+    def dead(url):
+        calls.append(url)
+        raise OSError("down")
+
+    assert untipped_games_soon(now, fetch=dead, sleep=waits.append) is None
+    assert len(calls) == 2 and waits == [5.0]
+    assert untipped_games_soon(now, fetch=lambda url: None, sleep=lambda s: None) is None
+
+
+def _event(date, state, name="STATUS_SCHEDULED"):
+    return {"date": date, "status": {"type": {"state": state, "name": name}}}
+
+
+def test_only_pre_games_count_and_espn_is_retried_once():
+    import datetime as _dt
+
+    from nba.board_freeze import espn_pre_starts, untipped_games_soon
+
+    utc = _dt.timezone.utc
+    now = _dt.datetime(2026, 10, 20, 18, 15, tzinfo=utc)
+    board = {"events": [
+        _event("2026-10-20T19:00Z", "pre"),
+        _event("2026-10-20T20:00Z", "post", "STATUS_POSTPONED"),  # postponed: never a false red
+        _event("2026-10-20T17:00Z", "in", "STATUS_IN_PROGRESS"),
+        _event("2026-10-20T23:00Z", "PRE"),
+    ]}
+    assert espn_pre_starts(board) == [
+        _dt.datetime(2026, 10, 20, 19, 0, tzinfo=utc), _dt.datetime(2026, 10, 20, 23, 0, tzinfo=utc)]
+    only_postponed = {"events": [_event("2026-10-20T20:00Z", "post", "STATUS_POSTPONED")]}
+    assert untipped_games_soon(now, fetch=lambda url: only_postponed, sleep=lambda s: None) == []
+    assert espn_pre_starts({"events": []}) == []
+    assert espn_pre_starts({"nope": 1}) is None
+
+    # First read fails, the retry answers.
+    seq = [OSError("blip"), board]
+
+    def flaky(url):
+        item = seq.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    waits = []
+    got = untipped_games_soon(now, fetch=flaky, sleep=waits.append)
+    assert len(got) == 2 and waits == [5.0]
 
 
 def test_zero_standard_rows_with_games_tipping_fails_red(tmp_path, monkeypatch):
@@ -522,3 +570,16 @@ def test_zero_standard_rows_with_games_tipping_fails_red(tmp_path, monkeypatch):
     monkeypatch.setattr(bf, "untipped_games_soon", lambda now: [])
     assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
     assert "skipped=true" in out_file.read_text()
+
+
+def test_zero_standard_rows_with_unknown_schedule_fails_red(tmp_path, monkeypatch, capsys):
+    from nba import board_freeze as bf
+
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", lambda: [])
+    monkeypatch.setattr(bf, "untipped_games_soon", lambda now: None)
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 1
+    assert "skipped=true" in out_file.read_text()
+    assert "::error title=NBA schedule unknown::" in capsys.readouterr().out
+    assert not list(tmp_path.glob("board_*.json"))
