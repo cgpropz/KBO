@@ -143,7 +143,7 @@ jobs:
               echo "Push succeeded on first attempt"
             else
               echo "Push rejected; fetching latest and rebasing..."
-              if git pull --rebase origin main; then
+              if git pull --rebase --autostash origin main; then
                 if git push origin HEAD:main; then
                   echo "Push succeeded after clean rebase"
                 else

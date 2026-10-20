@@ -256,5 +256,101 @@ class WriteStatus(unittest.TestCase):
             self.assertEqual(self._write(path, "fetch_error", NOW)["status"], "fetch_error")
 
 
+class RestoredBoardFallback(unittest.TestCase):
+    """Board QA P0 (10/19): the status file never reached main (push race), so
+    every run starts with no status file. The restored board's prizepicks_pull
+    must keep everything pulled through a 429 run."""
+
+    CHECKED = datetime(2026, 10, 20, 1, 13, 16, tzinfo=timezone.utc)  # 9:13 PM ET confirmed_empty
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.status_path = os.path.join(self._tmp.name, "prizepicks_kbo_pull.json")
+        self.board_path = os.path.join(self._tmp.name, "prizepicks_props.json")
+        self._env = {k: os.environ.get(k) for k in ("KBO_PULL_STATUS_PATH", "KBO_PULL_BOARD_PATH")}
+        os.environ["KBO_PULL_STATUS_PATH"] = self.status_path
+        os.environ["KBO_PULL_BOARD_PATH"] = self.board_path
+
+    def tearDown(self):
+        for key, value in self._env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        self._tmp.cleanup()
+
+    def _restore_board(self, kind="confirmed_empty", checked=None):
+        board, _ = pl.mark_pulled_board(_board(), _status(kind, checked=checked or self.CHECKED))
+        with open(self.board_path, "w") as f:
+            json.dump(board, f)
+        return board
+
+    def test_fresh_checkout_then_429_still_marks_every_prop_pulled(self):
+        self._restore_board()
+        self.assertFalse(os.path.exists(self.status_path))
+        now = datetime(2026, 10, 20, 4, 30, tzinfo=timezone.utc)  # 12:30 AM ET window run
+        frame, source, _calls = _fetch([RATE_429])
+        self.assertEqual(source, "cache")
+        # Production call shape: no explicit path (env/defaults), like __main__.
+        kept = odds.write_pull_status(odds.pull_status_payload("fetch_error", now=now), now=now)
+        self.assertEqual((kept["status"], kept["checked_at"]), ("confirmed_empty", self.CHECKED.isoformat()))
+        with open(self.status_path) as f:
+            persisted = json.load(f)
+        self.assertEqual(persisted["status"], "confirmed_empty")
+        self.assertEqual(persisted["valid_until"], "2026-10-20T09:30:00+00:00")
+        # The board rebuild from the stale odds file (fresh, unflagged rows).
+        os.remove(self.status_path)  # even if the status write is lost too
+        status = pl.load_pull_status(now=now)
+        self.assertEqual(status["status"], "confirmed_empty")
+        board, pulled = generate_props._apply_pulled_lines(_board(), status)
+        self.assertEqual(pulled, 5)
+        self.assertEqual(len(_pulled(board)), 5)
+        self.assertEqual(board["prizepicks_pull"]["checked_at"], self.CHECKED.isoformat())
+
+    def test_fetch_error_status_file_does_not_hide_the_board_hold(self):
+        self._restore_board()
+        now = datetime(2026, 10, 20, 4, 30, tzinfo=timezone.utc)
+        with open(self.status_path, "w") as f:
+            json.dump(_status("fetch_error", checked=now), f)
+        self.assertEqual(pl.load_pull_status(now=now)["status"], "confirmed_empty")
+        _, pulled = pl.mark_pulled_board(_board(), pl.load_pull_status(now=now))
+        self.assertEqual(pulled, 5)
+
+    def test_newer_complete_fresh_pull_beats_the_board(self):
+        self._restore_board()
+        later = datetime(2026, 10, 20, 8, 0, tzinfo=timezone.utc)
+        with open(self.status_path, "w") as f:
+            json.dump(_status("fresh", ALL_LIVE[1:], checked=later), f)
+        status = pl.load_pull_status(now=later + timedelta(minutes=5))
+        self.assertEqual(status["status"], "fresh")
+        _, pulled = pl.mark_pulled_board(_board(), status)
+        self.assertEqual(pulled, 1)
+        # And the writer replaces nothing with the board on a complete fresh pull.
+        frame = odds.pd.DataFrame([{"Name": "Dong Won Park", "Stat": "Total Bases", "Prizepicks": 0.5, "Odds Type": "standard"}])
+        frame.attrs["kbo_complete"] = True
+        out = odds.write_pull_status(odds.pull_status_payload("fresh", frame, now=later), now=later)
+        self.assertEqual(out["status"], "fresh")
+
+    def test_board_hold_expires_at_first_pitch(self):
+        self._restore_board()
+        after = datetime(2026, 10, 20, 9, 31, tzinfo=timezone.utc)
+        self.assertIsNone(pl.load_pull_status(now=after))
+        out = odds.write_pull_status(odds.pull_status_payload("fetch_error", now=after), now=after)
+        self.assertEqual(out["status"], "fetch_error")
+
+    def test_board_fresh_block_is_not_a_fallback(self):
+        self._restore_board("fresh")
+        now = datetime(2026, 10, 20, 2, 0, tzinfo=timezone.utc)
+        self.assertIsNone(pl.board_pull_status(now=now))
+        self.assertIsNone(pl.load_pull_status(now=now))
+
+    def test_explicit_paths_ignore_the_default_board(self):
+        self._restore_board()
+        now = datetime(2026, 10, 20, 4, 30, tzinfo=timezone.utc)
+        missing = os.path.join(self._tmp.name, "other.json")
+        self.assertIsNone(pl.load_pull_status(missing, now=now))
+        self.assertEqual(pl.load_pull_status(missing, now=now, board=self.board_path)["status"], "confirmed_empty")
+
+
 if __name__ == "__main__":
     unittest.main()

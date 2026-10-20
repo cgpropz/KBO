@@ -295,56 +295,107 @@ def _confirmed_empty_valid_until(checked_iso):
         return None
 
 
-def _confirmed_status_to_keep(path, now=None, incoming=None):
+def _board_confirmed_empty(board_path, now=None):
+    """The restored board's in-force confirmed_empty pull, else None."""
+    from datetime import datetime, timezone
+    try:
+        return _pulled_lines_module().board_pull_status(board_path, now or datetime.now(timezone.utc))
+    except Exception as exc:  # never block the odds step on this
+        print(f"  ↳ could not read the restored board's pull status: {exc}")
+        return None
+
+
+def _confirmed_status_to_keep(path, now=None, incoming=None, board_path=None):
     """The last confirming status to keep instead of ``incoming``, else None.
 
     confirmed_empty stands until the slate's first pitch (or a complete fresh
-    pull). A complete fresh pull stands for 3 hours against errors."""
+    pull). A complete fresh pull stands for 3 hours against errors.
+
+    The status file is often missing on a fresh checkout (its commit loses
+    the push race), so the restored board's prizepicks_pull is the fallback:
+    an in-force confirmed_empty there is kept when the file is missing, not
+    confirming, or older than the board's check. ``board_path=None`` skips
+    the board (explicit test paths stay hermetic)."""
     from datetime import datetime, timezone
+    now = now or datetime.now(timezone.utc)
+    board = _board_confirmed_empty(board_path, now) if board_path is not None else None
     try:
         with open(path, encoding="utf-8") as handle:
             previous = json.load(handle)
     except (OSError, ValueError):
-        return None
+        previous = None
     if not isinstance(previous, dict):
-        return None
+        return board
+    kept = None
     if previous.get("status") == "confirmed_empty":
         try:
-            in_force = _pulled_lines_module().confirmed_empty_in_force(previous, now or datetime.now(timezone.utc))
+            in_force = _pulled_lines_module().confirmed_empty_in_force(previous, now)
         except Exception as exc:
             print(f"  ↳ could not check the last confirmed-empty pull: {exc}")
             in_force = False
-        return previous if in_force else None
-    confirming = previous.get("status") == "fresh" and previous.get("complete") is True
-    if not confirming or (incoming or {}).get("status") == "fresh":
-        return None
+        kept = previous if in_force else None
+    else:
+        confirming = previous.get("status") == "fresh" and previous.get("complete") is True
+        if confirming and (incoming or {}).get("status") != "fresh":
+            try:
+                checked = datetime.fromisoformat(str(previous.get("checked_at")).replace("Z", "+00:00"))
+            except ValueError:
+                checked = None
+            if checked is not None:
+                if checked.tzinfo is None:
+                    checked = checked.replace(tzinfo=timezone.utc)
+                age = (now - checked).total_seconds()
+                kept = previous if 0 <= age <= CONFIRMED_STATUS_MAX_AGE_SECONDS else None
+    if board is None:
+        return kept
+    if kept is None:
+        return board
     try:
-        checked = datetime.fromisoformat(str(previous.get("checked_at")).replace("Z", "+00:00"))
+        mine = datetime.fromisoformat(str(kept.get("checked_at")).replace("Z", "+00:00"))
+        theirs = datetime.fromisoformat(str(board.get("checked_at")).replace("Z", "+00:00"))
+        if mine.tzinfo is None:
+            mine = mine.replace(tzinfo=timezone.utc)
+        if theirs.tzinfo is None:
+            theirs = theirs.replace(tzinfo=timezone.utc)
     except ValueError:
-        return None
-    if checked.tzinfo is None:
-        checked = checked.replace(tzinfo=timezone.utc)
-    age = ((now or datetime.now(timezone.utc)) - checked).total_seconds()
-    return previous if 0 <= age <= CONFIRMED_STATUS_MAX_AGE_SECONDS else None
+        return board
+    return board if theirs > mine else kept
 
 
-def write_pull_status(payload, path=None, now=None):
+def write_pull_status(payload, path=None, now=None, board_path=None):
     """Write the pull status. A fetch error or partial save does not replace
     a confirming status under 3 hours old: a run of 429s after PrizePicks
-    confirmed 0 KBO lines must not bring the pulled props back."""
+    confirmed 0 KBO lines must not bring the pulled props back.
+
+    With no explicit ``path`` the restored board
+    (kbo-props-ui/public/data/prizepicks_props.json) is also checked, and a
+    confirmed_empty kept from it is written to the status file."""
     base = os.path.dirname(os.path.abspath(__file__))
+    default_path = path is None
     path = path or os.environ.get("KBO_PULL_STATUS_PATH") or os.path.join(base, PULL_STATUS_FILE)
+    if board_path is None and default_path:
+        try:
+            board_path = _pulled_lines_module().board_path()
+        except Exception as exc:
+            print(f"  ↳ restored board path unavailable: {exc}")
+            board_path = None
     # Only a complete fresh pull replaces a confirmed_empty before first pitch.
     replaceable = payload.get("status") in ("fetch_error", "partial") or (
         payload.get("status") == "fresh" and payload.get("complete") is not True
     )
     if replaceable:
-        kept = _confirmed_status_to_keep(path, now, payload)
+        kept = _confirmed_status_to_keep(path, now, payload, board_path)
         if kept is not None:
             print(
                 f"PrizePicks KBO pull status: {payload['status']}; keeping the {kept['status']} status "
                 f"from {kept.get('checked_at')}"
+                + (" (restored board)" if kept.get("source") == "restored_board" else "")
             )
+            if kept.get("source") == "restored_board":
+                # Persist it so the next run (and main) has the status file.
+                with open(path, "w", encoding="utf-8") as handle:
+                    json.dump(kept, handle, indent=2)
+                    handle.write("\n")
             return kept
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
