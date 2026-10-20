@@ -20,15 +20,18 @@ pp = load_module()
 EASTERN = ZoneInfo("America/New_York")
 
 
-def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start="2026-10-20T19:00:00-04:00", description="DET"):
+def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start="2026-10-20T19:00:00-04:00", description="DET", is_promo=None):
+    attributes = {
+        "stat_type": stat,
+        "line_score": line,
+        "odds_type": odds,
+        "description": description,
+        "start_time": start,
+    }
+    if is_promo is not None:
+        attributes["is_promo"] = is_promo
     return {
-        "attributes": {
-            "stat_type": stat,
-            "line_score": line,
-            "odds_type": odds,
-            "description": description,
-            "start_time": start,
-        },
+        "attributes": attributes,
         "relationships": {
             "league": {"data": {"id": league_id}},
             "new_player": {"data": {"id": player_id}},
@@ -142,6 +145,98 @@ class FilterTests(unittest.TestCase):
         self.assertEqual(publish_supabase.nba_line_count(players), 2)
         self.assertFalse(publish_supabase.should_publish_nba_lines([]))
         self.assertTrue(publish_supabase.should_publish_nba_lines(players))
+
+    def test_promo_copy_is_dropped_and_standard_line_survives(self):
+        """A flash promo of the same player and stat must not reach the board or the freeze."""
+        rows = [
+            projection(
+                "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=30.5,
+                odds="standard", description="PHI", is_promo=False,
+            ),
+            projection(
+                "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=23.5,
+                odds="standard", description="PHI", is_promo=True,
+            ),
+            projection(
+                "7", "NBA", "jb", "Jaylen Brown", stat="Pts+Rebs+Asts", line=35.5,
+                odds="demon", description="PHI",
+            ),
+        ]
+        payload = payload_from(rows)
+        parsed, report = pp.rows_from_payload(payload)
+        self.assertEqual(report["excluded_promo"], 1)
+        self.assertEqual(
+            [(row["stat"], row["line"], row["oddsType"]) for row in parsed],
+            [("Pts+Rebs+Asts", 30.5, "standard"), ("Pts+Rebs+Asts", 35.5, "demon")],
+        )
+        self.assertTrue(pp.is_promo_projection({"is_promo": True}))
+        self.assertTrue(pp.is_promo_projection({"is_promo": "true"}))
+        self.assertFalse(pp.is_promo_projection({"is_promo": False}))
+        self.assertFalse(pp.is_promo_projection({"is_promo": "false"}))
+        self.assertFalse(pp.is_promo_projection({}))
+
+        roster = [{
+            "athleteId": "3917376",
+            "name": "Jaylen Brown",
+            "team": "BOS",
+            "position": "SF",
+            "teamFull": "Boston Celtics",
+            "teamColor": "#008348",
+        }]
+        today = datetime(2026, 10, 20, 12, tzinfo=EASTERN)
+        result = pp.prepare(payload, roster, today=today, teams={})
+        standard = result["boards"]["standard"]
+        self.assertEqual(len(standard), 1)
+        standard_props = standard[0]["ppAllProps"]
+        self.assertEqual([(prop["stat"], prop["line"], prop["standardLine"]) for prop in standard_props], [
+            ("Pts+Rebs+Asts", 30.5, 30.5),
+        ])
+        demon_props = result["boards"]["demon"][0]["ppAllProps"]
+        self.assertEqual([(prop["stat"], prop["line"], prop["standardLine"]) for prop in demon_props], [
+            ("Pts+Rebs+Asts", 35.5, 30.5),
+        ])
+        self.assertEqual(result["boards"]["goblin"], [])
+
+        # Safety net: promo rows that bypassed the parser still lose to the posted line.
+        leaked = [
+            {"name": "Jaylen Brown", "stat": "Pts+Rebs+Asts", "statKey": "ptsRebAst", "line": 23.5, "oddsType": "standard", "isPromo": True, "versus": "PHI", "opponent": "PHI", "gameDate": "2026-10-20"},
+            {"name": "Jaylen Brown", "stat": "Pts+Rebs+Asts", "statKey": "ptsRebAst", "line": 30.5, "oddsType": "standard", "isPromo": False, "versus": "PHI", "opponent": "PHI", "gameDate": "2026-10-20"},
+            {"name": "Jaylen Brown", "stat": "Pts+Rebs+Asts", "statKey": "ptsRebAst", "line": 28.5, "oddsType": "demon", "isPromo": True, "versus": "PHI", "opponent": "PHI", "gameDate": "2026-10-20"},
+            {"name": "Jaylen Brown", "stat": "Pts+Rebs+Asts", "statKey": "ptsRebAst", "line": 35.5, "oddsType": "demon", "isPromo": False, "versus": "PHI", "opponent": "PHI", "gameDate": "2026-10-20"},
+        ]
+        boards, _match = pp.build_boards(leaked, roster, {})
+        self.assertEqual(
+            [(prop["stat"], prop["line"]) for prop in boards["standard"][0]["ppAllProps"]],
+            [("Pts+Rebs+Asts", 30.5)],
+        )
+        self.assertEqual(boards["standard"][0]["ppAllProps"][0]["standardLine"], 30.5)
+        self.assertEqual(
+            [(prop["stat"], prop["line"]) for prop in boards["demon"][0]["ppAllProps"]],
+            [("Pts+Rebs+Asts", 35.5)],
+        )
+
+        from nba.board_freeze import fetch_prizepicks_standard
+
+        class _Resp:
+            def __init__(self, body):
+                self.status_code = 200
+                self.headers = {}
+                self._body = body
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._body
+
+        body = dict(payload)
+        body["meta"] = {"total_pages": 1}
+
+        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30: _Resp(body))
+        self.assertEqual(
+            [(row["player"], row["stat"], row["line"], row["odds_type"]) for row in frozen],
+            [("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "standard")],
+        )
 
 
 if __name__ == "__main__":

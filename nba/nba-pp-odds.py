@@ -5,6 +5,8 @@ Adapted from wnba/wnba-pp-odds.py. The partner API, pagination, Eastern slate
 date, and name key are the same. This script keeps projection league NBA only.
 NBAP (preseason) and NBASZN (season-long) are dropped even when the player
 record says NBA. Names containing '+' are combo cards and are dropped.
+A projection with is_promo true is a promo copy (often a discounted flash
+line) and is dropped, even when odds_type is still standard.
 
 Stat labels use the WNBA PrizePicks map. A label in that map is stored as-is.
 "Points - 1st 3 Minutes" is dropped the same way the WNBA board drops it.
@@ -222,6 +224,70 @@ def _index_included(payload: dict) -> tuple[dict, dict]:
     return leagues, players
 
 
+def _promo_flag(value: object) -> bool:
+    """True only for a real promo flag. The string "false" is not promo."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes"}
+    if isinstance(value, (int, float)):
+        return value == 1
+    return False
+
+
+def is_promo_projection(attrs: object) -> bool:
+    """PrizePicks promo copy. Missing and false stay. Flash lines set this true."""
+    if not isinstance(attrs, dict):
+        return False
+    return _promo_flag(attrs.get("is_promo"))
+
+
+def _board_row_is_promo(row: dict) -> bool:
+    if "isPromo" in row:
+        return _promo_flag(row.get("isPromo"))
+    if "is_promo" in row:
+        return _promo_flag(row.get("is_promo"))
+    return False
+
+
+def _board_row_line_type(row: dict) -> str:
+    raw = row.get("oddsType")
+    if raw is None or raw == "":
+        raw = row.get("odds_type")
+    return str(raw or "").strip().lower()
+
+
+def dedupe_board_rows(rows: list[dict] | None) -> list[dict]:
+    """One row per (player, stat type, line type). The non-promo row wins.
+
+    Line type is the PrizePicks odds type (standard, demon, goblin). A promo
+    copy with no standard twin is dropped. When both copies are non-promo,
+    the first one stays. Order otherwise follows the first copy.
+    """
+    best: dict[tuple[str, str, str], dict] = {}
+    order: list[tuple[str, str, str]] = []
+    loose: list[dict] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        player = normalize_player_key(row.get("name") or row.get("player"))
+        stat = str(row.get("stat") or "").strip().lower()
+        if not player or not stat:
+            if not _board_row_is_promo(row):
+                loose.append(row)
+            continue
+        key = (player, stat, _board_row_line_type(row))
+        current = best.get(key)
+        if current is None:
+            best[key] = row
+            order.append(key)
+            continue
+        if _board_row_is_promo(current) and not _board_row_is_promo(row):
+            best[key] = row
+    kept = [best[key] for key in order if not _board_row_is_promo(best[key])]
+    return kept + loose
+
+
 def projection_league(row: dict, leagues: dict, players: dict) -> str:
     """League on the projection, not the player. NBASZN players are not NBA lines."""
     relationships = row.get("relationships") or {}
@@ -244,6 +310,7 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
         "excluded_other_league": 0,
         "excluded_combos": 0,
         "excluded_stats": 0,
+        "excluded_promo": 0,
         "unmapped_stats": [],
     }
     unmapped = set()
@@ -266,6 +333,11 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
             report["excluded_combos"] += 1
             continue
         attrs = row.get("attributes") or {}
+        # Promo copies (is_promo), including discounted flash lines, are not
+        # the posted standard / demon / goblin line.
+        if is_promo_projection(attrs):
+            report["excluded_promo"] += 1
+            continue
         stat = str(attrs.get("stat_type") or "").strip()
         if stat in EXCLUDED_STATS:
             report["excluded_stats"] += 1
@@ -397,7 +469,12 @@ def _team_info(team: str, teams: dict) -> dict:
 
 
 def build_boards(rows: list[dict], roster: list[dict], teams: dict | None = None) -> tuple[dict, dict]:
-    """Group slate rows into standard, demon, and goblin player cards."""
+    """Group slate rows into standard, demon, and goblin player cards.
+
+    Safety net for a promo copy that still shares (player, stat, odds type)
+    with the posted line: the non-promo row is the one that stays.
+    """
+    rows = dedupe_board_rows(rows)
     teams = teams if teams is not None else {}
     matched_by_key, ambiguous = index_roster(roster)
     standard_lines: dict[tuple[str, str], float] = {}
@@ -553,7 +630,8 @@ def print_report(result: dict) -> None:
         f"NBASZN {dropped['excluded_nbaszn']}, "
         f"other leagues {dropped['excluded_other_league']}, "
         f"combos {dropped['excluded_combos']}, "
-        f"excluded stats {dropped['excluded_stats']}"
+        f"excluded stats {dropped['excluded_stats']}, "
+        f"promos {dropped.get('excluded_promo', 0)}"
     )
     unmapped = dropped["unmapped_stats"]
     print("Unmapped stat types: " + (", ".join(unmapped) if unmapped else "none"))
