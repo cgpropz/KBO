@@ -62,3 +62,16 @@ test('the Batter and Pitcher Props line column has a readable label', () => {
     assert.match(read(file), /<th onClick=\{\(\) => handleSort\('line'\)\} className="col-num" data-label="PP Line">/)
   }
 })
+
+test('phone card nits from #319 review stay fixed', () => {
+  const css = read('src/mobile.css')
+  const phone = css.slice(css.indexOf('@media (--phone-board) {'), css.indexOf('/* A mouse window in this range is not a phone'))
+  // Labels keep their header case (NBA Edge cells lowercase their value).
+  assert.match(phone, /\[data-label\]::before \{[^}]*text-transform: none;/)
+  // No second "CG Odds" label over the CG ODDS panel.
+  assert.match(phone, /td\.nfl-sharp-cg\[data-label\]::before \{\s*content: none;/)
+  // Matchups last-5 dates and team names do not split mid-word.
+  assert.match(phone, /table\.mdd-recent-table\[data-card-table\] > tbody > tr > td \{\s*overflow-wrap: normal;\s*white-space: nowrap !important;/)
+  // Pitcher Rankings cards lead with the pitcher's name.
+  assert.match(phone, /table\.rk-table\[data-card-table\] > tbody > tr > td\.col-player \{\s*order: -1;/)
+})

@@ -10,7 +10,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from pipeline.refresh_due import earlier_run_blocks
+from pipeline.refresh_due import earlier_run_blocks, recent_earlier_successes
 
 ROOT = Path(__file__).resolve().parent
 SCRIPT = ROOT / ".github" / "scripts" / "kbo-due-kick.sh"
@@ -200,7 +200,7 @@ def _gate(run_id, runs, event="workflow_dispatch", trigger="kbo-due", window_exi
         _write_exec(bin_dir / "gh", (
             "#!/bin/sh\n"
             'if [ "$1" = "run" ] && [ "$2" = "list" ]; then printf \'%s\' "$GH_RUNS_JSON"; exit 0; fi\n'
-            'if [ "$1" = "run" ] && [ "$2" = "view" ]; then printf \'%s\' "$GH_HEAVY"; exit 0; fi\n'
+            'if [ "$1" = "run" ] && [ "$2" = "view" ]; then [ "$GH_HEAVY" = "__fail__" ] && exit 1; printf \'%s\' "$GH_HEAVY"; exit 0; fi\n'
             "exit 0\n"
         ))
         env = dict(os.environ)
@@ -250,13 +250,27 @@ class KickedRunGateTests(unittest.TestCase):
         self.assertEqual([_due(out1), _due(out2)], [True, False], out1 + out2)
         self.assertIn("reason=kick_recent", out2)
 
-    def test_second_kick_after_the_first_finished_still_stands_down(self):
-        # The first kick failed its scrape (no 50-minute guard), but it
-        # started 3 minutes ago: no back-to-back scrape.
-        listed = [self._run(1002, 0, "in_progress"), self._run(1001, 3, "completed", "failure", updated_ago=1)]
-        proc, out = _gate(1002, listed, heavy="failure")
+    def test_failed_or_cancelled_earlier_run_does_not_hold_the_kick(self):
+        # The 5-minute rule only counts runs that are active or succeeded.
+        # A failed or cancelled run scraped nothing, so the kick scrapes.
+        for conclusion in ("failure", "cancelled"):
+            listed = [self._run(1002, 0, "in_progress"), self._run(1001, 3, "completed", conclusion, updated_ago=1)]
+            proc, out = _gate(1002, listed, heavy="failure")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(_due(out), conclusion + out + proc.stderr)
+
+    def test_stood_down_earlier_run_does_not_hold_the_kick(self):
+        # Green, but it skipped the heavy step: it stood down without scraping.
+        listed = [self._run(1002, 0, "in_progress"), self._run(1001, 2, "completed", "success", updated_ago=2)]
+        proc, out = _gate(1002, listed, heavy="skipped")
         self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(_due(out), out + proc.stderr)
+
+    def test_unreadable_earlier_run_still_holds_the_kick(self):
+        listed = [self._run(1002, 0, "in_progress"), self._run(1001, 2, "completed", "success", updated_ago=2)]
+        proc, out = _gate(1002, listed, heavy="__fail__")
         self.assertFalse(_due(out), out)
+        self.assertIn("reason=kick_recent", out)
 
     def test_kick_after_a_native_scheduled_tick_stands_down(self):
         listed = [self._run(1002, 0, "in_progress"), self._run(1001, 1, "completed", "success")]
@@ -293,8 +307,28 @@ class KickedRunGateTests(unittest.TestCase):
         self.assertTrue(earlier_run_blocks(earlier_active, now, "10"))
         earlier_old = [{"databaseId": 9, "status": "completed", "createdAt": _stamp(now - timedelta(minutes=6))}]
         self.assertFalse(earlier_run_blocks(earlier_old, now, "10"))
-        earlier_new = [{"databaseId": 9, "status": "completed", "createdAt": _stamp(now - timedelta(minutes=4))}]
+        earlier_new = [{"databaseId": 9, "status": "completed", "conclusion": "success", "createdAt": _stamp(now - timedelta(minutes=4))}]
         self.assertTrue(earlier_run_blocks(earlier_new, now, "10"))
+
+    def test_recent_start_rule_counts_only_active_or_successful_runs(self):
+        now = self.now
+        recent = _stamp(now - timedelta(minutes=2))
+        for conclusion in ("failure", "cancelled", "timed_out", "skipped", ""):
+            runs = [{"databaseId": 9, "status": "completed", "conclusion": conclusion, "createdAt": recent}]
+            self.assertFalse(earlier_run_blocks(runs, now, "10"), conclusion)
+            self.assertEqual(recent_earlier_successes(runs, now, "10"), [], conclusion)
+        ok = [{"databaseId": 9, "status": "completed", "conclusion": "success", "createdAt": recent}]
+        self.assertTrue(earlier_run_blocks(ok, now, "10"))
+        self.assertEqual(recent_earlier_successes(ok, now, "10"), ["9"])
+        # Stood down: green but no scrape.
+        self.assertFalse(earlier_run_blocks(ok, now, "10", stood_down={"9"}))
+        self.assertFalse(earlier_run_blocks(ok, now, "10", stood_down=["9"]))
+        # Running counts at any age; a stood-down list never clears it.
+        running = [{"databaseId": 9, "status": "in_progress", "createdAt": _stamp(now - timedelta(hours=2))}]
+        self.assertTrue(earlier_run_blocks(running, now, "10", stood_down={"9"}))
+        self.assertEqual(recent_earlier_successes(running, now, "10"), [])
+        # Later runs never count.
+        self.assertEqual(recent_earlier_successes([{**ok[0], "databaseId": 11}], now, "10"), [])
 
 
 if __name__ == "__main__":

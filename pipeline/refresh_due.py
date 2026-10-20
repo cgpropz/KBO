@@ -76,22 +76,8 @@ def candidate_run_ids(
     return [run_id for _updated, run_id in found]
 
 
-def earlier_run_blocks(
-    runs: list[dict],
-    now: datetime,
-    current_run_id: str = "",
-    minutes: int = EARLIER_START_MINUTES,
-) -> bool:
-    """True when an earlier run (lower id) is still active or started inside `minutes`.
-
-    Only earlier runs count, so of two near-simultaneous kicks the first one
-    scrapes and the later one stands down; neither waits on the other. The
-    workflow's concurrency group runs them one after the other, so the later
-    run's gate sees the earlier run listed. With no current id every other
-    run counts.
-    """
-    now = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
-    cutoff = now - timedelta(minutes=minutes)
+def _earlier_runs(runs: list[dict], current_run_id: str = ""):
+    """Runs listed before this one (lower id). With no current id, every other run."""
     current = str(current_run_id or "")
     current_num = int(current) if current.isdigit() else None
     for run in runs or []:
@@ -102,9 +88,63 @@ def earlier_run_blocks(
             continue
         if current_num is not None and (not run_id.isdigit() or int(run_id) >= current_num):
             continue
+        yield run_id, run
+
+
+def recent_earlier_successes(
+    runs: list[dict],
+    now: datetime,
+    current_run_id: str = "",
+    minutes: int = EARLIER_START_MINUTES,
+) -> list[str]:
+    """Earlier runs that finished green and started inside `minutes`.
+
+    refresh-due.sh checks each one's heavy step. A green run that skipped it
+    stood down and is passed back as stood_down.
+    """
+    now = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    cutoff = now - timedelta(minutes=minutes)
+    found = []
+    for run_id, run in _earlier_runs(runs, current_run_id):
+        if str(run.get("status") or "") not in ("", "completed"):
+            continue
+        if run.get("conclusion") != "success":
+            continue
+        created = parse_github_time(str(run.get("createdAt") or ""))
+        if created is not None and created > cutoff:
+            found.append(run_id)
+    return found
+
+
+def earlier_run_blocks(
+    runs: list[dict],
+    now: datetime,
+    current_run_id: str = "",
+    minutes: int = EARLIER_START_MINUTES,
+    stood_down: set[str] | frozenset[str] | list[str] | None = None,
+) -> bool:
+    """True when an earlier run (lower id) is still active or recently scraped.
+
+    Only earlier runs count, so of two near-simultaneous kicks the first one
+    scrapes and the later one stands down; neither waits on the other. The
+    workflow's concurrency group runs them one after the other, so the later
+    run's gate sees the earlier run listed. With no current id every other
+    run counts.
+
+    A queued or running earlier run always blocks. A finished one blocks
+    only when it succeeded, started inside `minutes`, and did not itself
+    stand down (`stood_down` ids). A failed, cancelled, or stood-down run
+    scraped nothing, so it never holds the next kick back.
+    """
+    now = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    cutoff = now - timedelta(minutes=minutes)
+    skipped = {str(item) for item in (stood_down or ())}
+    for run_id, run in _earlier_runs(runs, current_run_id):
         status = str(run.get("status") or "")
         if status and status != "completed":
             return True
+        if run.get("conclusion") != "success" or run_id in skipped:
+            continue
         created = parse_github_time(str(run.get("createdAt") or ""))
         if created is not None and created > cutoff:
             return True
@@ -201,6 +241,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stale-floor", type=int, default=0)
     parser.add_argument("--sport", default="")
     parser.add_argument("--earlier-active", action="store_true")
+    parser.add_argument("--recent-earlier", action="store_true")
+    parser.add_argument("--stood-down", default="")
     args = parser.parse_args(argv)
     if args.board_stale:
         print(board_clock_state(args.sport or "wnba"))
@@ -220,7 +262,17 @@ def main(argv: list[str] | None = None) -> int:
         if now is None:
             now = datetime.now(timezone.utc)
         span = args.minutes if args.minutes > 0 else EARLIER_START_MINUTES
-        print(1 if earlier_run_blocks(runs, now, args.current, minutes=span) else 0)
+        stood = [item for item in args.stood_down.replace(",", " ").split() if item]
+        print(1 if earlier_run_blocks(runs, now, args.current, minutes=span, stood_down=stood) else 0)
+        return 0
+    if args.recent_earlier:
+        runs = json.load(sys.stdin)
+        now = parse_github_time(args.now) if args.now else datetime.now(timezone.utc)
+        if now is None:
+            now = datetime.now(timezone.utc)
+        span = args.minutes if args.minutes > 0 else EARLIER_START_MINUTES
+        for run_id in recent_earlier_successes(runs, now, args.current, minutes=span):
+            print(run_id)
         return 0
     if args.decide:
         due = should_refresh(
@@ -232,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print("true" if due else "false")
         return 0
-    parser.error("pass --candidates, --earlier-active or --decide")
+    parser.error("pass --candidates, --earlier-active, --recent-earlier or --decide")
     return 2
 
 
