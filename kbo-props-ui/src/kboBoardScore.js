@@ -1,4 +1,5 @@
 import { boundCg, cgScore, isNeutralCg, lineMatchesStat } from './cgScore.js'
+import { prizepicksPulled } from './nhl/pointsGate.js'
 
 // `cg_projection` is a separate 1-100 confidence score. It is high for a
 // strong under, so using it as the CG Score ranks below-line picks at 86-95.
@@ -46,6 +47,8 @@ export function kboModelProjection(row) {
 }
 
 export function scoreFor(prop) {
+  // A line PrizePicks pulled (removed / pp_status) is never ranked.
+  if (prizepicksPulled(prop)) return null
   if (!lineMatchesStat(prop?.stat, prop?.line)) return null
   if (!hasModelNumber(prop)) return null
   const projection = modelProjection(prop)

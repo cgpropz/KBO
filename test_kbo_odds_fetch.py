@@ -93,7 +93,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(sleeps, [5])
         self.assertTrue(any("HTTP 429" in line and "slow down" in line for line in logs))
 
-    def test_empty_board_keeps_last_good_lines_after_retries(self):
+    def test_clean_empty_board_is_confirmed_empty_not_a_fallback(self):
         sleeps = []
         logs = []
 
@@ -111,11 +111,14 @@ class FetchTests(unittest.TestCase):
             log=logs.append,
         )
 
-        self.assertEqual(source, "cache")
+        # Two clean HTTP 200 answers with no KBO rows is a real empty board.
+        # The saved file is still returned so projections build, but the
+        # source says the board must be marked pulled.
+        self.assertEqual(source, "confirmed_empty")
         self.assertEqual(list(frame["Name"]), ["Cached Arm"])
-        self.assertGreaterEqual(len(sleeps), 1)
+        self.assertEqual(len(sleeps), 1)
         self.assertTrue(any("HTTP 200" in line and "0 KBO" in line for line in logs))
-        self.assertTrue(any("last-good" in line for line in logs))
+        self.assertTrue(any("confirmed 0 KBO lines" in line for line in logs))
 
     def test_unfiltered_fallback_is_used_when_the_league_filter_stays_empty(self):
         calls = []

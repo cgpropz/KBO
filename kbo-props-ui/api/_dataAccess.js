@@ -157,6 +157,8 @@ function kboProjectionScore(row) {
   // No model number (formula_source 'none', or a projection field that is
   // explicitly empty): never ranked, even if a stray rating is present.
   if (row?.formula_source === 'none') return -Infinity;
+  // A line PrizePicks pulled never takes a free slot.
+  if (prizepicksPulled(row)) return -Infinity;
   if (row && Object.prototype.hasOwnProperty.call(row, 'projection') && kboModelNumber(row) == null) return -Infinity;
   const rating = num(row?.rating);
   if (Number.isFinite(rating)) return boundCg(rating);

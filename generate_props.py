@@ -457,6 +457,53 @@ def _apply_board_cutoff(payload):
     return updated
 
 
+def _apply_pulled_lines(payload, status=None):
+    """Mark props PrizePicks no longer lists (pipeline/kbo_pulled_lines.py)."""
+    try:
+        from pipeline.kbo_pulled_lines import load_pull_status, mark_pulled_board
+    except Exception as exc:
+        print(f"⚠ KBO pulled-line check unavailable: {exc}")
+        return payload, 0
+    if status is None:
+        status = load_pull_status()
+    payload, pulled = mark_pulled_board(payload, status)
+    if status is None:
+        print("ℹ KBO pulled-line check: no current PrizePicks pull status; nothing marked")
+    elif pulled:
+        print(f"⚠ KBO pulled-line check ({status.get('status')}): {pulled} prop(s) marked pulled")
+    else:
+        print(f"ℹ KBO pulled-line check ({status.get('status')}): no props pulled")
+    return payload, pulled
+
+
+def _mark_projection_files(status=None):
+    """Mark the same pulled lines in the projection files the slip builder reads."""
+    try:
+        from pipeline.kbo_pulled_lines import load_pull_status, mark_pulled_projections
+    except Exception as exc:
+        print(f"⚠ KBO pulled-line check unavailable: {exc}")
+        return
+    if status is None:
+        status = load_pull_status()
+    if status is None:
+        return
+    for filename in ("strikeout_projections.json", "batter_projections.json"):
+        path = os.path.join(PUBLIC_DATA, filename)
+        if not os.path.exists(path):
+            continue
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            continue
+        before = json.dumps(data, sort_keys=True)
+        data, pulled = mark_pulled_projections(data, status)
+        if json.dumps(data, sort_keys=True) != before:
+            with open(path, "w") as f:
+                json.dump(data, f, indent=2)
+            print(f"ℹ {filename}: {pulled} row(s) marked pulled")
+
+
 def main():
     odds = load_odds()
     pitcher_logs = load_pitcher_logs()
@@ -708,6 +755,13 @@ def main():
     }
     output = _apply_board_cutoff(output)
     cards = output["cards"]
+    try:
+        from pipeline.kbo_pulled_lines import load_pull_status
+        pull_status = load_pull_status()
+    except Exception:
+        pull_status = None
+    output, _pulled = _apply_pulled_lines(output, pull_status)
+    _mark_projection_files(pull_status)
 
     out_path = os.path.join(PUBLIC_DATA, "prizepicks_props.json")
 
@@ -757,6 +811,14 @@ def main():
                         print(f"ℹ Existing data is from {_prev_date} (today={_now_kst}) — allowing overwrite ({prev_cards} → {len(cards)} cards)")
                     else:
                         print(f"⚠ Skipping write: existing file has {prev_cards} cards vs {len(cards)} new — keeping richer snapshot")
+                        # The kept snapshot can hold lines PrizePicks has
+                        # pulled; mark them before it is published again.
+                        before = json.dumps(prev, sort_keys=True)
+                        prev, _pulled = _apply_pulled_lines(prev, pull_status)
+                        if json.dumps(prev, sort_keys=True) != before:
+                            with open(out_path, "w") as f:
+                                json.dump(prev, f, indent=2)
+                            print("ℹ Kept snapshot rewritten with pulled-line flags")
                         return
         except Exception:
             pass
@@ -858,6 +920,8 @@ def lines_only():
         __import__("datetime").timezone.utc
     ).isoformat()
     data = _apply_board_cutoff(data)
+    data, _pulled = _apply_pulled_lines(data)
+    _mark_projection_files()
 
     with open(out_path, "w") as f:
         json.dump(data, f, indent=2)
