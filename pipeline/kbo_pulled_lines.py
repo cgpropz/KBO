@@ -29,6 +29,10 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATUS_PATH = REPO_ROOT / "KBO-Odds" / "prizepicks_kbo_pull.json"
+# The last published board (restored from Supabase at the start of each data
+# run). Its prizepicks_pull block is the fallback when the status file never
+# reached main (a lost push race leaves every run with no status file).
+DEFAULT_BOARD_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "prizepicks_props.json"
 MAX_AGE = timedelta(hours=3)
 REASON_EMPTY = "prizepicks_no_kbo_lines"
 REASON_MISSING = "prizepicks_line_missing"
@@ -114,9 +118,87 @@ def status_path() -> Path:
     return Path(override) if override else DEFAULT_STATUS_PATH
 
 
-def load_pull_status(path: Path | None = None, now: datetime | None = None) -> dict | None:
-    """The last pull status, or None when it is missing, unreadable or stale."""
+def board_path() -> Path:
+    override = os.environ.get("KBO_PULL_BOARD_PATH")
+    return Path(override) if override else DEFAULT_BOARD_PATH
+
+
+def board_pull_status(path: Path | None = None, now: datetime | None = None) -> dict | None:
+    """The restored board's confirmed_empty pull, if it is still in force.
+
+    Only confirmed_empty is used: it is the one status the board block fully
+    describes. valid_until is derived from checked_at (never extended), so
+    carrying it forward cannot hold the board past the slate's first pitch.
+    """
+    path = Path(path) if path else board_path()
+    try:
+        board = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    block = board.get("prizepicks_pull") if isinstance(board, dict) else None
+    if not isinstance(block, dict) or block.get("status") != "confirmed_empty":
+        return None
+    checked = _parse_time(block.get("checked_at"))
+    if checked is None:
+        return None
+    status = {
+        "status": "confirmed_empty",
+        "checked_at": block.get("checked_at"),
+        "lines": [],
+        "source": "restored_board",
+    }
+    try:
+        status["valid_until"] = confirmed_empty_valid_until(checked).replace(microsecond=0).isoformat()
+    except Exception:
+        return None
+    return status if confirmed_empty_in_force(status, now) else None
+
+
+def load_pull_status(
+    path: Path | None = None, now: datetime | None = None, board: Path | None = None
+) -> dict | None:
+    """The last pull status, or None when it is missing, unreadable or stale.
+
+    When the status file is missing, stale or not confirming (or older than
+    the board's check), an in-force confirmed_empty from the restored board
+    stands instead. ``board`` defaults to the published board only when
+    ``path`` is the default status file, so explicit paths stay hermetic.
+    """
+    explicit = path is not None
     path = Path(path) if path else status_path()
+    now = now or datetime.now(timezone.utc)
+    board_status = None
+    if board is not None or not explicit:
+        board_status = board_pull_status(board, now)
+    status = _load_status_file(path, now)
+    return _newer_board_status(status, board_status, now) or status
+
+
+def _newer_board_status(status: dict | None, board: dict | None, now: datetime) -> dict | None:
+    """``board`` when it should stand instead of ``status``, else None.
+
+    The board's confirmed_empty wins over a missing, stale, error/partial or
+    incomplete status, and over any status checked before it. Only a
+    confirming status (in-force confirmed_empty or complete fresh pull)
+    checked at or after the board's check keeps precedence.
+    """
+    if board is None:
+        return None
+    if not isinstance(status, dict):
+        return board
+    if status.get("status") == "confirmed_empty":
+        confirming = confirmed_empty_in_force(status, now)
+    else:
+        confirming = _mode(status) is not None
+    if not confirming:
+        return board
+    mine, theirs = _parse_time(status.get("checked_at")), _parse_time(board.get("checked_at"))
+    if mine is None or (theirs is not None and theirs > mine):
+        return board
+    return None
+
+
+def _load_status_file(path: Path, now: datetime) -> dict | None:
     try:
         status = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -124,7 +206,6 @@ def load_pull_status(path: Path | None = None, now: datetime | None = None) -> d
     if not isinstance(status, dict):
         return None
     checked = _parse_time(status.get("checked_at"))
-    now = now or datetime.now(timezone.utc)
     # PrizePicks confirmed 0 KBO lines: that holds until a complete fresh
     # pull with lines or the slate's first pitch, not just MAX_AGE, so a run
     # of 429 fallbacks overnight cannot put the stale lines back.

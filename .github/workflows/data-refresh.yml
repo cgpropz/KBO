@@ -150,17 +150,42 @@ jobs:
             echo "No odds changes to commit"
           else
             git commit -m "chore: intraday odds refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            if ! git push origin HEAD:main; then
-              echo "Push rejected; attempting one rebase+push retry"
-              if git pull --rebase origin main && git push origin HEAD:main; then
-                echo "Retry push succeeded"
-              else
-                # Never continue with a conflicted worktree; downstream steps read JSON files.
-                # Keep locally-refreshed odds files so deploy still ships fresh data
-                # even when committing back to main loses a race.
-                git rebase --abort >/dev/null 2>&1 || true
-                echo "Retry push failed (likely race/merge conflict) — continuing to deploy current build"
+            # KBO-Odds/prizepicks_kbo_pull.json must reach main: the next run
+            # starts from it. Other bots push to main concurrently and this job
+            # leaves other tracked files modified (only KBO-Odds/ is staged), so
+            # a plain `git pull --rebase` refuses to run. Autostash, retry, and
+            # resolve KBO-Odds/ conflicts in favor of this run's fresh files.
+            pushed=0
+            for attempt in 1 2 3 4 5; do
+              if git push origin HEAD:main; then
+                pushed=1
+                echo "Odds commit pushed (attempt ${attempt})"
+                break
               fi
+              echo "Push rejected (attempt ${attempt}/5); rebasing onto origin/main with autostash"
+              if ! git pull --rebase --autostash origin main; then
+                CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+                OTHER=$(printf '%s\n' "$CONFLICTS" | grep -v '^KBO-Odds/' | grep -v '^$' || true)
+                if [ -n "$CONFLICTS" ] && [ -z "$OTHER" ]; then
+                  echo "Resolving KBO-Odds conflicts with this run's files: $CONFLICTS"
+                  # During a rebase, --theirs is the commit being replayed (this run).
+                  printf '%s\n' "$CONFLICTS" | grep -v '^$' | tr '\n' '\0' | xargs -0 git checkout --theirs -- || true
+                  printf '%s\n' "$CONFLICTS" | grep -v '^$' | tr '\n' '\0' | xargs -0 git add -- || true
+                  if ! GIT_EDITOR=true git rebase --continue; then
+                    git rebase --abort >/dev/null 2>&1 || true
+                  fi
+                else
+                  echo "Rebase failed (conflicts: ${CONFLICTS:-none}); aborting this attempt"
+                  git rebase --abort >/dev/null 2>&1 || true
+                fi
+              fi
+              sleep $((attempt * 5))
+            done
+            if [ "$pushed" != "1" ]; then
+              # Keep going so the board status and memory freeze still run;
+              # the last step fails the job so the lost status is not silent.
+              echo "::error title=KBO odds commit not pushed::KBO-Odds/ (incl. prizepicks_kbo_pull.json) did not reach main after 5 attempts"
+              echo "ODDS_PUSH_FAILED=1" >> "$GITHUB_ENV"
             fi
           fi
 
@@ -198,6 +223,12 @@ jobs:
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: kbo memory slate freeze"
+
+      - name: Fail if the odds commit did not reach main
+        if: always() && env.ODDS_PUSH_FAILED == '1'
+        run: |
+          echo "::error title=KBO odds commit not pushed::KBO-Odds/prizepicks_kbo_pull.json was not saved to main; the next run will start without it"
+          exit 1
 
       # Email-on-failure: create/update a GitHub issue when this scheduled
       # job fails. GitHub's default notification settings will email the repo
