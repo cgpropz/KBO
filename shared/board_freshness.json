@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-20T21:49:52Z",
+  "checked_at": "2026-10-20T21:57:28Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-20T21:49:52.738131+00:00",
@@ -12,13 +12,23 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-20T21:02:25.706866+00:00",
-      "prop_count": 901,
+      "generated_at": "2026-10-20T21:57:28.035941+00:00",
+      "prop_count": 906,
       "started_removed": 0,
-      "removals": [],
+      "removals": [
+        {
+          "player": "Jake Sanderson",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.76,
+          "reason": "line pulled"
+        }
+      ],
       "removed_reasons": {
-        "pp_pull": 62,
-        "superseded_dup": 31,
+        "pp_pull": 66,
+        "superseded_dup": 34,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
