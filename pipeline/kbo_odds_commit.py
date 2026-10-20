@@ -39,11 +39,20 @@ def _load(path: Path) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
+# Only confirmed_empty and a complete fresh pull confirm anything. Anything
+# else (fetch_error, partial, an incomplete fresh pull, or a status value this
+# module does not know) is replaceable: it never wins over a status that is
+# still confirming.
+
 def _replaceable(status: dict | None) -> bool:
     if not isinstance(status, dict):
         return True
     kind = status.get("status")
-    return kind in ("fetch_error", "partial") or (kind == "fresh" and status.get("complete") is not True)
+    if kind == "confirmed_empty":
+        return False
+    if kind == "fresh":
+        return status.get("complete") is not True
+    return True  # fetch_error, partial, unknown or missing: fail safe
 
 
 def _confirming(status: dict | None, now: datetime) -> bool:

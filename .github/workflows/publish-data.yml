@@ -130,6 +130,17 @@ jobs:
         run: |
           bash pipeline/commit_kbo_odds.sh "chore: kbo odds (data refresh)"
 
+      - name: Reset KBO-Odds/ to the checkout
+        # KBO-Odds/ is already committed (or reported) by the step above, and
+        # no later step reads it. Resetting it here means "Commit data
+        # updates" has no KBO-Odds/ change to autostash, so a stash re-apply
+        # can't leave conflict markers in prizepicks_kbo_pull.json, and an
+        # untracked pull status can't block its rebase. Ignored files
+        # (KBO-Odds/.browser_profile/) are kept.
+        run: |
+          git checkout -- KBO-Odds
+          git clean -fq -- KBO-Odds
+
       - name: Commit data updates
         run: |
           git config user.name "github-actions[bot]"
