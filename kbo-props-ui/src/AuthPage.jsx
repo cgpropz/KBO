@@ -6,6 +6,7 @@ import { useAgeGate } from './ageGateContext';
 import { authErrorMessage } from './authErrors';
 import { recoveryRedirectUrl } from './passwordRecovery';
 import './AuthPage.css';
+import { trackSignup } from './analytics';
 
 export default function AuthPage({ initialMode = 'login', onBack, notice = '' } = {}) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'reset'
@@ -60,7 +61,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
       const data = {};
       if (Object.keys(attribution).length) data.attribution = attribution;
       if (ageConfirmedAt) data.age_confirmed_at = ageConfirmedAt;
-      const { error: err } = await supabase.auth.signUp({
+      const { data: signUpData, error: err } = await supabase.auth.signUp({
         email,
         password,
         ...(Object.keys(data).length ? { options: { data } } : {}),
@@ -70,6 +71,8 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
       } else {
         setMessage('Check your email to confirm your account, then log in.');
         setMode('login');
+        // An already-registered email comes back with no identities; not a new signup.
+        if (signUpData?.user?.identities?.length) trackSignup();
         // X (Twitter) lead generation conversion tracking event
         window.twq && window.twq('event', 'tw-pul9k-pul9n', {});
       }

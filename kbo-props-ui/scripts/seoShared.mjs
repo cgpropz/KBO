@@ -213,6 +213,13 @@ const PAGE_CSS = `
     .price span { font-size: 14px; font-weight: 600; color: #a1a1aa; }
 `;
 
+// Vercel Web Analytics page views for the static pages (the React app mounts
+// <Analytics /> instead). Query strings are cut to utm_* only.
+export function vercelInsightsScripts() {
+  return `<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};window.va('beforeSend',function(e){try{var u=new URL(e.url),k=new URLSearchParams();u.searchParams.forEach(function(v,n){if(/^utm_(source|medium|campaign|term|content)$/.test(n)&&/^[A-Za-z0-9_-]{1,64}$/.test(v))k.set(n,v)});var q=k.toString();return Object.assign({},e,{url:u.origin+u.pathname+(q?'?'+q:'')})}catch(x){return null}});</script>
+  <script defer src="/_vercel/insights/script.js"></script>`;
+}
+
 export function renderDocument({
   title,
   description,
@@ -250,6 +257,7 @@ export function renderDocument({
   <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   ${jsonLdScript(graph)}
+  ${vercelInsightsScripts()}
   <style>${PAGE_CSS}
   </style>
 </head>

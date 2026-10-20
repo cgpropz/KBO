@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { observeVisibleOnce, trackFreeTop3View } from './analytics';
 import { fetchApiDataset } from './apiData';
 import { kboRawRating, scoreFor } from './kboBoardScore';
 import { buildCgScoreExplainer } from './cgScoreExplainer';
@@ -210,6 +211,14 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
     document.getElementById(hash)?.scrollIntoView({ block: 'start' });
   }, [settled, showingRows, available.length]);
 
+  // free_top3_view once per sport per page load, when the picks are on screen.
+  const sectionRef = useRef(null);
+  const viewSport = (available.find((b) => b.id === selected) || available[0])?.id || null;
+  useEffect(() => {
+    if (!showingRows || !viewSport) return undefined;
+    return observeVisibleOnce(sectionRef.current, () => trackFreeTop3View(viewSport));
+  }, [showingRows, viewSport]);
+
   if (!showingRows) {
     return (
       <section id={anchorId} aria-label="Today's free top 3">
@@ -222,7 +231,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
   const state = activeBoard ? boards[activeBoard.id] : null;
 
   return (
-    <section className="ff-picks" id={anchorId} aria-labelledby="free-picks">
+    <section className="ff-picks" id={anchorId} aria-labelledby="free-picks" ref={sectionRef}>
       <div className="ff-picks-head">
         <div>
           <span className="ff-kicker"><span className="ff-live-dot" aria-hidden="true" /> Today's free picks</span>

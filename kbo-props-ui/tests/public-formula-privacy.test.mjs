@@ -45,6 +45,8 @@ function textForPhrase(path, text, phrase) {
   if (phrase !== 'minimum') return text
   // Intl.NumberFormat's option name is not a published line minimum.
   let scan = text.replaceAll('minimumFractionDigits', '')
+  // PostHog's built-in event property name (lazy analytics chunk), not a line minimum.
+  scan = scan.replaceAll('$session_past_minimum_duration', '')
   // The draft notes in cg-score.md tell the publisher not to print line minimums.
   // Those HTML comments are not the page. The published copy still cannot say "minimum".
   if (path.endsWith(join('content', 'guides', 'cg-score.md'))) {

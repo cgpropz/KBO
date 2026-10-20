@@ -478,6 +478,17 @@ export function renderPrivacyPage() {
       <p>This browser can store the marketing codes from your visit, the time you confirmed you are 21 or older, and a note of purchase events already sent. That age confirmation stays in this browser so you are not asked again on this device.</p>
       <h2>Advertising measurement</h2>
       <p>An X (Twitter) pixel can record a sign-up and a purchase.</p>
+      <h2>Site analytics</h2>
+      <p>Two tools measure how the site is used: Vercel Web Analytics and PostHog. Neither one receives your name, email, password, account id or payment details.</p>
+      <p><strong>Vercel Web Analytics</strong> counts page views. For each page view Vercel can record the page address, the referring site, and the browser, operating system, device type and approximate location that it derives from the request. Before a page address is sent, the site removes every query parameter except a sport name and marketing codes (utm tags) made only of letters, numbers, dashes and underscores, so session ids, tokens, email addresses and ad click IDs are not sent. Vercel Web Analytics does not use cookies. Vercel tells visitors apart with a hash of the request that it discards after 24 hours. It does not check Do Not Track or Global Privacy Control.</p>
+      <p><strong>PostHog</strong> records four events, each with fixed values only:</p>
+      <ul>
+        <li><code>free_top3_view</code>: the free top 3 preview came into view, with the sport.</li>
+        <li><code>checkout_click</code>: a checkout button was pressed, with the plan and the sport.</li>
+        <li><code>signup</code>: a new account sign-up was accepted, with no other details.</li>
+        <li><code>discord_plan_click</code>: a Discord Only plan button was pressed, with the plan.</li>
+      </ul>
+      <p>Each event also carries the page address, cleaned the same way as for Vercel, and browser details such as browser, operating system, screen size, language and time zone. Marketing codes that are not plain letters and numbers, and ad click IDs such as gclid, fbclid and twclid, are removed before anything is sent. PostHog does not capture clicks automatically, does not record sessions, and does not build a profile of you; the site never tells PostHog who you are. PostHog keeps its state in memory only, so it sets no cookies and writes nothing to local storage, and its random visitor id is replaced on the next page load. If your browser sends Do Not Track or Global Privacy Control, PostHog is not loaded and no events are sent. The CGPropz PostHog project is set to discard client IP addresses.</p>
       <p>Questions can go to the <a href="${escapeHtml(DISCORD_INVITE_URL)}">CGPropz Discord</a>. The terms are on <a href="${pageUrl('/terms')}">Terms</a>.</p>
     `;
   return complianceDocument({

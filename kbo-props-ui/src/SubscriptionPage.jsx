@@ -4,6 +4,7 @@ import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
 import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { trackCheckoutClick } from './analytics';
 import { useAgeGate } from './ageGateContext';
 import AutoRenewalNote from './AutoRenewalNote';
 import { PAUSE_WEEK_ENABLED, PAUSE_WEEK_MS, pauseTokenFromSearch } from './pauseWindow';
@@ -112,6 +113,7 @@ function SubscriptionPage() {
   const openOfferCheckout = async (plan) => {
     if (offerBusy) return;
     if (!(await requireAge())) return;
+    trackCheckoutClick(plan);
     setOfferBusy(true);
     try {
       let token = '';
@@ -139,6 +141,7 @@ function SubscriptionPage() {
       return;
     }
     if (!plan.link) return;
+    trackCheckoutClick(plan.id);
     // Logged in: pass Supabase user ID + prefill email so the webhook links the
     // payment instantly. Logged out: Stripe collects the email and access is
     // matched to it when they sign up (webhook + /api/sync-subscription).
