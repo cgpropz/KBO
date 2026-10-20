@@ -233,3 +233,13 @@ jobs:
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: wnba memory slate freeze"
+
+  # GitHub drops most of data-refresh.yml's own cron ticks. This separate job
+  # starts the KBO refresh when KBO is due (see kbo-due-kick.yml). It has no
+  # needs and never fails, so it cannot block or fail the job above.
+  kbo-due:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      actions: write
+    uses: ./.github/workflows/kbo-due-kick.yml

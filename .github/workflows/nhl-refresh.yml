@@ -124,3 +124,13 @@ jobs:
           echo "Next NHL board in ${NHL_REFRESH_WAIT_SECONDS}s (late scratch recheck during the wait)"
           python -m nhl.late_out --wait "${NHL_REFRESH_WAIT_SECONDS}" --publish || true
           gh workflow run nhl-refresh.yml --ref main
+
+  # GitHub drops most of data-refresh.yml's own cron ticks. This separate job
+  # starts the KBO refresh when KBO is due (see kbo-due-kick.yml). It has no
+  # needs and never fails, so it cannot block or fail the job above.
+  kbo-due:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      actions: write
+    uses: ./.github/workflows/kbo-due-kick.yml

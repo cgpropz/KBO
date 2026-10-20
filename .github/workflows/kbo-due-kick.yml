@@ -1,0 +1,41 @@
+name: Start KBO refresh if due
+
+# Called from other sports' scheduled workflows (nfl-refresh, nhl-refresh,
+# nba-props-refresh, wnba-props-refresh). GitHub drops most of
+# data-refresh.yml's own cron ticks, so any scheduled run that does fire
+# checks the KBO gate (game window plus the 50-minute guard) and, when KBO is
+# due, starts data-refresh.yml on main with the job's GITHUB_TOKEN. A
+# workflow_dispatch from GITHUB_TOKEN is one of the events GitHub lets that
+# token start.
+#
+# The caller job holds the only actions: write grant. Every step here is
+# continue-on-error and the script exits 0, so this job never fails or
+# blocks the host sport's refresh job.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  kick:
+    name: Start KBO refresh if due
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Start data-refresh.yml if KBO is due
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/kbo-due-kick.sh
