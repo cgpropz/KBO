@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-20T00:56:53Z",
+  "checked_at": "2026-10-20T01:23:47Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-20T00:47:19.787267+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-20T00:56:53.318938+00:00",
-      "prop_count": 287,
+      "generated_at": "2026-10-20T01:23:47.870545+00:00",
+      "prop_count": 213,
       "started_removed": 0,
       "removals": [
         {
@@ -107,15 +107,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "John Carlson",
-          "team": "TBL",
-          "stat": "Shots On Goal",
-          "line": 2.5,
-          "odds_type": "demon",
-          "projection": 1.48,
-          "reason": "line pulled"
-        },
-        {
           "player": "Mark Scheifele",
           "team": "WPG",
           "stat": "Shots On Goal",
@@ -190,18 +181,36 @@
         {
           "player": "Tyler Seguin",
           "team": "DAL",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.59,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Tyler Seguin",
+          "team": "DAL",
           "stat": "Shots On Goal",
           "line": 3.5,
           "odds_type": "demon",
           "projection": 1.37,
           "reason": "line pulled"
+        },
+        {
+          "player": "Wyatt Johnston",
+          "team": "DAL",
+          "stat": "Shots On Goal",
+          "line": 4.5,
+          "odds_type": "demon",
+          "projection": 2.63,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 16,
-        "superseded_dup": 6,
+        "pp_pull": 6,
+        "superseded_dup": 2,
         "manual_out": 0,
-        "news_out": 1,
+        "news_out": 0,
         "lineup_out": 0
       }
     },
