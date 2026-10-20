@@ -16,6 +16,7 @@ import {
   renderDocument,
   SITE,
 } from './seoShared.mjs';
+import { applyNbaFreeCopy } from './nbaFreeCopy.mjs';
 
 export const GUIDES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../content/guides');
 const PUBLISHED_AT = '2026-10-11T13:10:00-04:00';
@@ -442,7 +443,7 @@ export function listGuides(dir = GUIDES_DIR) {
     .sort()
     .map((name) => {
       const slug = `/guides/${name.replace(/\.md$/, '')}`;
-      const guide = guideFromMarkdown(readFileSync(join(dir, name), 'utf8'), slug);
+      const guide = guideFromMarkdown(applyNbaFreeCopy(readFileSync(join(dir, name), 'utf8')), slug);
       if (!guide.path) guide.path = slug;
       if (!guide.file) guide.file = `${guide.path.replace(/^\//, '')}.html`;
       return guide;

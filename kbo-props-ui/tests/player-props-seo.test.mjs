@@ -63,8 +63,7 @@ test('NBA player props page uses the app board, hides the unconfirmed slate, and
   const { html } = page
   assert.equal(page.title, 'NBA Player Props Today: CG Score & L10 Hit Rates | CGPropz')
   assert.match(html, /<h1>NBA player props, with the full board\.<\/h1>/)
-  assert.equal(html.includes('There is no free NBA preview'), false)
-  assert.match(html, /For the opening weeks, NBA is also in the <a href="https:\/\/www\.cgpropz\.com\/#free-top-3">homepage free top 3<\/a>/)
+  assert.match(html, /There is no free NBA preview/)
   assert.match(html, /The board covers the 2026-27 regular season \(opening night: Tuesday, Oct 20\)\./)
   assert.equal(/opens (Tuesday, )?Oct 20/.test(html), false)
   assert.match(html, /<strong>L10<\/strong> as the main view/)
