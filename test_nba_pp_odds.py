@@ -1,10 +1,13 @@
 """NBA PrizePicks line filters. No network."""
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 
@@ -20,7 +23,7 @@ pp = load_module()
 EASTERN = ZoneInfo("America/New_York")
 
 
-def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start="2026-10-20T19:00:00-04:00", description="DET", is_promo=None):
+def projection(league_id, league_name, player_id, name, team="BOS", stat="Points", line=20.5, odds="standard", start="2026-10-20T19:00:00-04:00", description="DET", is_promo=None, line_type=None):
     attributes = {
         "stat_type": stat,
         "line_score": line,
@@ -30,6 +33,8 @@ def projection(league_id, league_name, player_id, name, team="BOS", stat="Points
     }
     if is_promo is not None:
         attributes["is_promo"] = is_promo
+    if line_type is not None:
+        attributes["line_type"] = line_type
     return {
         "attributes": attributes,
         "relationships": {
@@ -232,7 +237,7 @@ class FilterTests(unittest.TestCase):
         body = dict(payload)
         body["meta"] = {"total_pages": 1}
 
-        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30: _Resp(body))
+        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30, headers=None: _Resp(body))
         self.assertEqual(
             [(row["player"], row["stat"], row["line"], row["odds_type"]) for row in frozen],
             [("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "standard")],
@@ -298,7 +303,7 @@ class FilterTests(unittest.TestCase):
             ),
         ])
         payload["meta"] = {"total_pages": 1}
-        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30: _Resp(payload))
+        frozen = fetch_prizepicks_standard(get=lambda url, params=None, timeout=30, headers=None: _Resp(payload))
         self.assertEqual(
             [(row["player"], row["stat"], row["line"], row["game_date"]) for row in frozen],
             [
@@ -306,6 +311,246 @@ class FilterTests(unittest.TestCase):
                 ("Jaylen Brown", "Pts+Rebs+Asts", 30.5, "2026-10-21"),
             ],
         )
+
+
+class _HeadersResp:
+    def __init__(self, body, headers=None, status=200):
+        self.status_code = status
+        self.headers = headers or {}
+        self._body = body
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+
+            raise requests.HTTPError(f"{self.status_code}", response=self)
+
+    def json(self):
+        return self._body
+
+
+class CacheAndSnapshotTests(unittest.TestCase):
+    def test_cache_buster_headers_are_sent_and_logged(self):
+        payload = payload_from([
+            projection("7", "NBA", "p1", "Jayson Tatum", odds="standard"),
+        ])
+        payload["meta"] = {"total_pages": 1, "total_count": 1}
+        calls = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append({"url": url, "params": dict(params or {}), "headers": dict(headers or {})})
+            return _HeadersResp(payload, {
+                "Date": "Tue, 20 Oct 2026 19:00:00 GMT",
+                "Age": "90",
+                "cf-cache-status": "HIT",
+                "Set-Cookie": "session=super-secret",
+                "Authorization": "Bearer token-secret",
+            })
+
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            result = pp.fetch_all_projections(get=get, sleep=lambda _s: None)
+        self.assertEqual(len(result["data"]), 1)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]["url"], pp.PP_URL)
+        params = calls[0]["params"]
+        self.assertEqual(params["per_page"], 1000)
+        self.assertEqual(params["page"], 1)
+        self.assertNotIn("league_id", params)
+        self.assertRegex(str(params["_cb"]), r"^\d+-1-\d+$")
+        self.assertEqual(calls[0]["headers"].get("Cache-Control"), "no-cache")
+        self.assertEqual(calls[0]["headers"].get("Pragma"), "no-cache")
+        log = buf.getvalue()
+        self.assertIn("Date=Tue, 20 Oct 2026 19:00:00 GMT", log)
+        self.assertIn("Age=90", log)
+        self.assertIn("cf-cache-status=HIT", log)
+        self.assertIn("::warning::", log)
+        self.assertNotIn("super-secret", log)
+        self.assertNotIn("token-secret", log)
+        self.assertNotIn("Set-Cookie", log)
+        self.assertNotIn("Authorization", log)
+
+        quiet = io.StringIO()
+        with redirect_stdout(quiet):
+            pp.log_prizepicks_cache(type("R", (), {"headers": {
+                "Date": "Tue, 20 Oct 2026 19:00:00 GMT",
+                "Age": "60",
+                "cf-cache-status": "STALE",
+                "Cookie": "a=secret-cookie",
+            }})(), 2)
+        self.assertIn("Age=60", quiet.getvalue())
+        self.assertIn("cf-cache-status=STALE", quiet.getvalue())
+        self.assertNotIn("::warning::", quiet.getvalue())
+        self.assertNotIn("secret-cookie", quiet.getvalue())
+
+        warned = io.StringIO()
+        with redirect_stdout(warned):
+            pp.log_prizepicks_cache(type("R", (), {"headers": {
+                "Date": "Tue, 20 Oct 2026 19:00:00 GMT",
+                "Age": "61",
+                "cf-cache-status": "STALE",
+            }})(), 2)
+        self.assertIn("::warning::", warned.getvalue())
+
+    def test_retry_still_backs_off_and_busts_each_attempt(self):
+        payload = {"data": [], "included": [], "meta": {"total_pages": 1}}
+        seq = [
+            _HeadersResp(payload, {"Retry-After": "2", "Date": "d1", "cf-cache-status": "MISS"}, status=403),
+            _HeadersResp(payload, {"Date": "d2", "cf-cache-status": "MISS"}, status=200),
+        ]
+        calls = []
+        waits = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append({"params": dict(params or {}), "headers": dict(headers or {})})
+            return seq.pop(0)
+
+        pp.fetch_all_projections(get=get, sleep=waits.append)
+        self.assertEqual(waits, [2.0])
+        self.assertEqual(len(calls), 2)
+        self.assertNotEqual(calls[0]["params"]["_cb"], calls[1]["params"]["_cb"])
+        self.assertTrue(all(call["headers"].get("Cache-Control") == "no-cache" for call in calls))
+        self.assertTrue(all(call["headers"].get("Pragma") == "no-cache" for call in calls))
+        self.assertTrue(all("league_id" not in call["params"] for call in calls))
+
+    def test_page_local_links_do_not_force_a_retry(self):
+        def body(page, cb):
+            stat = "Points" if page == 1 else "Rebounds"
+            line = 20.5 if page == 1 else 8.5
+            payload = payload_from([
+                projection("7", "NBA", "p1", "Jayson Tatum", stat=stat, line=line, odds="standard"),
+            ])
+            payload["meta"] = {"current_page": page, "total_pages": 2, "total_count": "2"}
+            payload["links"] = {
+                "self": f"https://partner-api.prizepicks.com/projections?page={page}&_cb={cb}",
+                "next": f"https://partner-api.prizepicks.com/projections?page={page + 1}&_cb={cb}",
+                "first": "https://partner-api.prizepicks.com/projections?page=1&_cb=echo",
+                "last": "https://partner-api.prizepicks.com/projections?per_page=1000&page=2",
+            }
+            return payload
+
+        calls = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append(params["_cb"])
+            return _HeadersResp(body(int(params["page"]), params["_cb"]), {
+                "Date": "Tue, 20 Oct 2026 19:00:00 GMT",
+                "cf-cache-status": "DYNAMIC",
+            })
+
+        out = pp.fetch_all_projections(get=get, sleep=lambda _s: None)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len({*calls}), 2)
+        self.assertEqual(len(out["data"]), 2)
+
+    def test_page_set_change_retries_then_fails_without_writing(self):
+        page1 = {
+            "data": [],
+            "included": [],
+            "meta": {"current_page": 1, "total_pages": 2, "total_count": 10366},
+            "links": {
+                "self": "https://partner-api.prizepicks.com/projections?page=1&_cb=old",
+                "next": "https://partner-api.prizepicks.com/projections?page=2",
+                "first": "https://partner-api.prizepicks.com/projections?page=1",
+                "last": "https://partner-api.prizepicks.com/projections?per_page=1000&page=21",
+            },
+        }
+        page2 = {
+            "data": [],
+            "included": [],
+            "meta": {"current_page": 2, "total_pages": 2, "total_count": 9372},
+            "links": {
+                "self": "https://partner-api.prizepicks.com/projections?page=2&_cb=newer",
+                "prev": "https://partner-api.prizepicks.com/projections?page=1",
+                "first": "https://partner-api.prizepicks.com/projections?page=1",
+                "last": "https://partner-api.prizepicks.com/projections?per_page=1000&page=19",
+            },
+        }
+        calls = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append({"params": dict(params or {}), "headers": dict(headers or {})})
+            page = int((params or {})["page"])
+            return _HeadersResp(
+                page1 if page == 1 else page2,
+                {
+                    "Date": "Tue, 20 Oct 2026 19:06:00 GMT",
+                    "cf-cache-status": "MISS",
+                    "Set-Cookie": "session=super-secret",
+                },
+            )
+
+        prior = json.dumps([{"name": "Kept", "ppAllProps": [{"stat": "Points", "line": 10.5}]}])
+        err = io.StringIO()
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as folder:
+            snapshots = {}
+            for odds_type in pp.ODDS_TYPES:
+                path = Path(folder) / f"{odds_type}.json"
+                path.write_text(prior, encoding="utf-8")
+                snapshots[odds_type] = path
+            with patch.object(pp, "SNAPSHOTS", snapshots), patch.object(pp.requests, "get", get), redirect_stdout(out), redirect_stderr(err):
+                code = pp.main([])
+            for path in snapshots.values():
+                self.assertEqual(path.read_text(encoding="utf-8"), prior)
+        self.assertEqual(code, 1)
+        self.assertEqual([call["params"]["page"] for call in calls], [1, 2, 1, 2])
+        self.assertEqual(len({call["params"]["_cb"] for call in calls}), 4)
+        self.assertTrue(all(call["headers"].get("Cache-Control") == "no-cache" for call in calls))
+        self.assertTrue(all("league_id" not in call["params"] for call in calls))
+        logged_err = err.getvalue()
+        self.assertIn("retrying the whole pull once", logged_err)
+        self.assertIn("::error::", logged_err)
+        self.assertIn("mixed snapshot", logged_err)
+        self.assertIn("last-good", logged_err)
+        logged_out = out.getvalue()
+        self.assertIn("Date=Tue, 20 Oct 2026 19:06:00 GMT", logged_out)
+        self.assertIn("cf-cache-status=MISS", logged_out)
+        self.assertNotIn("Age=", logged_out)
+        self.assertNotIn("super-secret", logged_out)
+        self.assertNotIn("super-secret", logged_err)
+        self.assertNotIn("::warning::", logged_out)
+
+    def test_goblin_only_line_stays_off_standard(self):
+        rows = [
+            projection(
+                "7", "NBA", "mm", "Miles McBride", team="NYK", stat="FG Attempted",
+                line=5.5, odds="goblin", description="BOS", line_type="standard",
+            ),
+            projection(
+                "7", "NBA", "pr", "Paul Reed", team="DET", stat="Free Throws Attempted",
+                line=1.5, odds="demon", description="BOS",
+            ),
+            projection(
+                "7", "NBA", "jt", "Jayson Tatum", stat="Points", line=27.5,
+                odds="standard", description="DET",
+            ),
+        ]
+        self.assertEqual(pp.classify_odds_type({"odds_type": "goblin", "line_type": "standard"}), "goblin")
+        self.assertEqual(pp.classify_odds_type({"line_type": "standard"}), "")
+        self.assertEqual(pp.classify_odds_type({}), "")
+        self.assertEqual(pp.classify_odds_type({"odds_type": "demon"}), "demon")
+        roster = [
+            {"athleteId": "3134881", "name": "Miles McBride", "team": "NY", "position": "PG"},
+            {"athleteId": "4431678", "name": "Paul Reed", "team": "DET", "position": "C"},
+            {"athleteId": "4065648", "name": "Jayson Tatum", "team": "BOS", "position": "PF"},
+        ]
+        today = datetime(2026, 10, 20, 12, tzinfo=EASTERN)
+        result = pp.prepare(payload_from(rows), roster, today=today, teams={})
+        standard = result["boards"]["standard"]
+        self.assertEqual([player["name"] for player in standard], ["Jayson Tatum"])
+        self.assertEqual(
+            [(prop["stat"], prop["line"]) for prop in standard[0]["ppAllProps"]],
+            [("Points", 27.5)],
+        )
+        goblin = result["boards"]["goblin"]
+        self.assertEqual([player["name"] for player in goblin], ["Miles McBride"])
+        self.assertEqual(goblin[0]["ppAllProps"][0]["line"], 5.5)
+        self.assertIsNone(goblin[0]["ppAllProps"][0]["standardLine"])
+        demon = result["boards"]["demon"]
+        self.assertEqual([player["name"] for player in demon], ["Paul Reed"])
+        self.assertEqual(demon[0]["ppAllProps"][0]["line"], 1.5)
+        self.assertIsNone(demon[0]["ppAllProps"][0]["standardLine"])
 
 
 if __name__ == "__main__":

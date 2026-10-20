@@ -155,7 +155,7 @@ def test_fetch_prizepicks_pages_all_and_filters():
 
     calls = []
 
-    def fake_get(url, params=None, timeout=30):
+    def fake_get(url, params=None, timeout=30, headers=None):
         page = int((params or {}).get("page") or 1)
         calls.append(page)
         if page == 1:
@@ -181,6 +181,21 @@ def test_fetch_prizepicks_pages_all_and_filters():
                             "attributes": {
                                 "stat_type": "Rebounds",
                                 "line_score": 8.5,
+                                "start_time": "2026-10-20T19:00:00Z",
+                                "description": "DET",
+                            },
+                            "relationships": {
+                                "league": {"data": {"id": "7"}},
+                                "new_player": {"data": {"id": "p1"}},
+                            },
+                        },
+                        {
+                            # goblin-only, even if line_type says standard
+                            "attributes": {
+                                "stat_type": "FG Attempted",
+                                "line_score": 5.5,
+                                "odds_type": "goblin",
+                                "line_type": "standard",
                                 "start_time": "2026-10-20T19:00:00Z",
                                 "description": "DET",
                             },
@@ -281,6 +296,7 @@ def test_fetch_prizepicks_pages_all_and_filters():
         ("Points", 27.5),
     ]
     assert all(r["odds_type"] == "standard" for r in rows)
+    assert all(r["stat"] != "FG Attempted" for r in rows)
     assert rows[0]["team"] == "BOS" or any(r["team"] == "BOS" for r in rows)
 
 
@@ -330,7 +346,7 @@ def test_pp_fetch_retries_403_429_5xx_then_succeeds():
     for status in (403, 429, 500, 503):
         seq = [_Resp(status), _Resp(status, headers={"Retry-After": "2"}), _Resp(200)]
         waits = []
-        out = pp.fetch_all_projections(get=lambda url, params=None, timeout=30: seq.pop(0), sleep=waits.append)
+        out = pp.fetch_all_projections(get=lambda url, params=None, timeout=30, headers=None: seq.pop(0), sleep=waits.append)
         assert out == {"data": [], "included": []}
         assert waits == [5, 2.0], (status, waits)
 
@@ -342,7 +358,7 @@ def test_pp_fetch_gives_up_after_three_attempts():
     pp = _load_pp()
     calls, waits = [], []
 
-    def get(url, params=None, timeout=30):
+    def get(url, params=None, timeout=30, headers=None):
         calls.append(params["page"])
         return _Resp(403)
 
@@ -358,7 +374,7 @@ def test_pp_fetch_does_not_retry_404_and_retries_connection_errors():
     pp = _load_pp()
     calls = []
 
-    def get404(url, params=None, timeout=30):
+    def get404(url, params=None, timeout=30, headers=None):
         calls.append(1)
         return _Resp(404)
 
@@ -368,7 +384,7 @@ def test_pp_fetch_does_not_retry_404_and_retries_connection_errors():
 
     seq = [requests.ConnectionError("reset"), _Resp(200)]
 
-    def flaky(url, params=None, timeout=30):
+    def flaky(url, params=None, timeout=30, headers=None):
         item = seq.pop(0)
         if isinstance(item, Exception):
             raise item
