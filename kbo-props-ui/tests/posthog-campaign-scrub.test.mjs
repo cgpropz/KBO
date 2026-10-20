@@ -56,9 +56,18 @@ function installBrowserStubs(sent) {
   }
 }
 
+// One set of browser stubs per process: posthog-js keeps the window, document
+// and fetch it saw when the module first loaded.
+const SENT = [];
+let stubbed = false;
+function ensureBrowserStubs() {
+  if (!stubbed) installBrowserStubs(SENT);
+  stubbed = true;
+}
+
 test('real posthog-js: campaign params and click IDs from the URL never leave the browser', async () => {
-  const sent = [];
-  installBrowserStubs(sent);
+  ensureBrowserStubs();
+  const sent = SENT;
   const { posthogInitOptions, CAMPAIGN_PROP } = await import('../src/analytics.js');
   const { default: posthog } = await import('posthog-js/dist/module.slim.no-external.js');
   const options = posthogInitOptions('https://us.i.posthog.com');
@@ -101,3 +110,54 @@ test('real posthog-js: campaign params and click IDs from the URL never leave th
   assert.equal(event.$set_once, undefined);
   assert.equal(props.$set_once, undefined);
 });
+
+// Search-engine referrers: posthog-js copies the raw q= (Yahoo: p=) search
+// text into ph_keyword, $session_entry_ph_keyword and $initial_ph_keyword.
+// A search for an email must never reach PostHog. Each case runs a fresh,
+// named posthog-js instance with the browser's referrer set to that search.
+const SEARCHES = [
+  { name: 'google', engine: 'google', referrer: 'https://www.google.com/search?q=john.doe%40mail.com+cgpropz&oq=john.doe' },
+  { name: 'yahoo', engine: 'yahoo', referrer: 'https://search.yahoo.com/search?p=jane.roe%40mail.com+kbo+props&fr=yfp' },
+];
+const SEARCH_LEAKS = ['john.doe', 'jane.roe', 'INITKEYWORD', 'mail.com', '%40', 'cgpropz&', 'kbo props', 'kbo+props'];
+
+for (const search of SEARCHES) {
+  test(`real posthog-js: ${search.name} search terms in the referrer never leave the browser`, async () => {
+    ensureBrowserStubs();
+    const start = SENT.length;
+    window.document.referrer = search.referrer;
+    // Fresh session: the session-entry props are rebuilt from this referrer.
+    window.sessionStorage.clear();
+    const { posthogInitOptions } = await import('../src/analytics.js');
+    const { default: posthog } = await import('posthog-js/dist/module.slim.no-external.js');
+    const ph = posthog.init(`phc_searchTestKey${search.name}0123`, { ...posthogInitOptions('https://us.i.posthog.com'), request_batching: false, disable_compression: true }, `search_${search.name}`);
+    ph.capture('free_top3_view', {
+      sport: 'kbo',
+      // An older SDK or stored person property pushing the copies through capture.
+      $initial_ph_keyword: 'INITKEYWORD older@mail.com',
+      $initial_search_engine: 'google',
+    });
+    await new Promise((r) => { const t = setTimeout(r, 200); t.ref?.(); });
+
+    const events = [];
+    for (const { url, body } of SENT.slice(start)) {
+      const text = typeof body === 'string' ? body : await new Response(body).text();
+      for (const leak of SEARCH_LEAKS) assert.equal(text.includes(leak), false, `${leak} leaked to ${url}`);
+      const parsed = JSON.parse(text);
+      events.push(...(parsed.batch || [parsed]));
+    }
+    const event = events.find((e) => e.event === 'free_top3_view');
+    assert.ok(event, 'the custom event was sent');
+    const props = event.properties;
+    assert.equal(props.sport, 'kbo');
+    for (const key of ['ph_keyword', '$session_entry_ph_keyword', '$initial_ph_keyword']) {
+      assert.equal(key in props, false, `${key} dropped`);
+    }
+    for (const key of Object.keys(props)) assert.doesNotMatch(key, /keyword/, `${key} dropped`);
+    // The engine name and the scrubbed referrer stay.
+    assert.equal(props.$search_engine, search.engine);
+    assert.equal(props.$session_entry_search_engine, search.engine);
+    assert.equal(props.$initial_search_engine, 'google');
+    assert.equal(props.$session_entry_referrer, new URL(search.referrer).origin + new URL(search.referrer).pathname);
+  });
+}

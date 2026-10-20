@@ -126,7 +126,27 @@ export function doNotTrack(nav = typeof navigator !== 'undefined' ? navigator : 
 // IDs are always dropped; a utm_* value stays only if it is a safe code.
 export const CAMPAIGN_PROP = /^(?:\$session_entry_|\$initial_)?(utm_(?:source|medium|campaign|term|content)|gclid|gclsrc|dclid|gbraid|wbraid|fbclid|msclkid|twclid|li_fat_id|igshid|ttclid|rdt_cid|epik|qclid|sccid|irclid|_kx|mc_cid|gad_source|oppref|bfcid)$/;
 
+// Search terms posthog-js reads from a search-engine referrer (Google/Bing/
+// DuckDuckGo q=, Yahoo p=) as raw text, plus their $session_entry_ and
+// $initial_ copies. Always dropped: a search can contain an email or name.
+export const SEARCH_KEYWORD_PROP = /^(?:\$session_entry_|\$initial_)?ph_keyword$/;
+// The other referrer-derived properties may stay only in their expected
+// shape: the search engine as one of posthog-js's fixed names, and the
+// referring domain as a bare host (or $direct). Anything else is dropped.
+const SEARCH_ENGINE_PROP = /^(?:\$session_entry_|\$initial_)?\$?search_engine$/;
+const SEARCH_ENGINES = new Set(['google', 'bing', 'yahoo', 'duckduckgo']);
+const REFERRING_DOMAIN_PROP = /^(?:\$session_entry_|\$initial_)?\$?referring_domain$/;
+const HOST_VALUE = /^[A-Za-z0-9.-]{1,253}(?::\d{1,5})?$/;
+
+function keepReferrerProp(key, value) {
+  if (SEARCH_KEYWORD_PROP.test(key)) return false;
+  if (SEARCH_ENGINE_PROP.test(key)) return SEARCH_ENGINES.has(value);
+  if (REFERRING_DOMAIN_PROP.test(key)) return value === '$direct' || (typeof value === 'string' && HOST_VALUE.test(value));
+  return true;
+}
+
 function keepCampaignProp(key, value) {
+  if (!keepReferrerProp(key, value)) return false;
   const match = CAMPAIGN_PROP.exec(key);
   if (!match) return true;
   return match[1].startsWith('utm_') && typeof value === 'string' && SAFE_VALUE.test(value);
@@ -135,7 +155,8 @@ function keepCampaignProp(key, value) {
 const URL_PROPS = ['$current_url', '$referrer', '$initial_current_url', '$initial_referrer', '$session_entry_url', '$session_entry_referrer'];
 
 // PostHog before_send: scrub every URL property, drop campaign / click-ID
-// properties (see CAMPAIGN_PROP) and person updates.
+// properties (see CAMPAIGN_PROP), search keywords (SEARCH_KEYWORD_PROP) and
+// person updates.
 export function sanitizeCapture(capture) {
   if (!capture || typeof capture !== 'object') return null;
   const properties = { ...(capture.properties || {}) };

@@ -5,6 +5,7 @@ import {
   EVENTS, eventProps, scrubUrl, scrubEvent, trackEvent, trackCheckoutClick, trackDiscordPlanClick,
   trackFreeTop3View, trackSignup, noteSportContext, currentSportContext, setAnalyticsSender, resetAnalyticsForTests,
   posthogConfig, posthogSender, posthogInitOptions, sanitizeCapture, doNotTrack, DEFAULT_POSTHOG_HOST,
+  SEARCH_KEYWORD_PROP,
 } from '../src/analytics.js';
 import { vercelInsightsScripts } from '../scripts/seoShared.mjs';
 import { renderPrivacyPage } from '../scripts/publicPages.mjs';
@@ -250,6 +251,45 @@ test('before_send scrubs $current_url and other URL props, and drops person upda
   assert.equal(sanitizeCapture(null), null)
 })
 
+test('before_send drops search keywords from Google q= and Yahoo p= referrers', () => {
+  // What posthog-js 1.438.12 builds from these referrers (q= for Google, Bing
+  // and DuckDuckGo; p= for Yahoo), plus the $session_entry_ and $initial_ copies.
+  for (const [engine, referrer, keyword] of [
+    ['google', 'https://www.google.com/search?q=john.doe%40mail.com+cgpropz', 'john.doe@mail.com cgpropz'],
+    ['yahoo', 'https://search.yahoo.com/search?p=jane.roe%40mail.com+kbo', 'jane.roe@mail.com kbo'],
+  ]) {
+    const out = sanitizeCapture({
+      event: 'free_top3_view',
+      properties: {
+        sport: 'kbo',
+        $search_engine: engine,
+        ph_keyword: keyword,
+        $session_entry_referrer: referrer,
+        $session_entry_search_engine: engine,
+        $session_entry_ph_keyword: keyword,
+        $initial_referrer: referrer,
+        $initial_search_engine: engine,
+        $initial_ph_keyword: keyword,
+        $session_entry_referring_domain: new URL(referrer).host,
+      },
+    });
+    const p = out.properties;
+    for (const key of ['ph_keyword', '$session_entry_ph_keyword', '$initial_ph_keyword']) assert.equal(key in p, false, `${engine} ${key} dropped`);
+    assert.equal(JSON.stringify(out).includes('mail.com'), false, `${engine}: no search text`);
+    assert.equal(p.$session_entry_referrer, referrer.split('?')[0]);
+    assert.equal(p.$initial_referrer, referrer.split('?')[0]);
+    assert.equal(p.$search_engine, engine);
+    assert.equal(p.$session_entry_search_engine, engine);
+    assert.equal(p.$session_entry_referring_domain, new URL(referrer).host);
+    assert.equal(p.sport, 'kbo');
+  }
+  for (const key of ['ph_keyword', '$session_entry_ph_keyword', '$initial_ph_keyword']) assert.match(key, SEARCH_KEYWORD_PROP);
+  assert.doesNotMatch('$search_engine', SEARCH_KEYWORD_PROP);
+  // Referrer-derived fields that are not in their expected shape are dropped.
+  const odd = sanitizeCapture({ properties: { $search_engine: 'a@b.com', $initial_search_engine: 'google', $referring_domain: 'x.com/?q=a@b.com', $session_entry_referring_domain: '$direct' } }).properties;
+  assert.deepEqual(odd, { $initial_search_engine: 'google', $session_entry_referring_domain: '$direct' });
+});
+
 test('privacy page lists Vercel Web Analytics and PostHog, per tool', () => {
   const html = renderPrivacyPage().html;
   const built = src('public/privacy.html');
@@ -263,7 +303,21 @@ test('privacy page lists Vercel Web Analytics and PostHog, per tool', () => {
   assert.match(html, /Do Not Track or Global Privacy Control, PostHog is not loaded/);
   assert.match(html, /It does not check Do Not Track or Global Privacy Control/, 'Vercel DNT behavior stated separately');
   assert.match(html, /discard client IP addresses/);
+  // Events carry the referrer (scrubbed like the page URL), its domain and search engine.
+  assert.match(html, /the referring site and search engine, cleaned the same way/);
+  assert.ok(built.includes('the referring site and search engine, cleaned the same way'), 'public/privacy.html carries the referrer sentence');
   // The rest of the notice is unchanged.
   assert.match(html, /An X \(Twitter\) pixel can record a sign-up and a purchase\./);
   assert.match(html, /age confirmation stays in this browser/);
+});
+
+test('vercel.json sends Referrer-Policy strict-origin-when-cross-origin on every path', () => {
+  const config = JSON.parse(src('vercel.json'));
+  const all = config.headers.find((h) => h.source === '/(.*)');
+  assert.ok(all, 'site-wide header rule');
+  const policy = all.headers.find((h) => h.key === 'Referrer-Policy');
+  assert.equal(policy?.value, 'strict-origin-when-cross-origin');
+  // Only the policy rides on the catch-all; per-path cache headers stay as they were.
+  assert.deepEqual(all.headers.map((h) => h.key), ['Referrer-Policy']);
+  assert.ok(config.headers.some((h) => h.source === '/assets/(.*)'));
 });

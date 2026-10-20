@@ -338,7 +338,9 @@ test('matchups preview keeps the slate but strips projections/lines', async () =
   assert.equal(g.away_pitcher.line, undefined)
   assert.equal(g.away_pitcher.k_projection, undefined)
   assert.equal(g.away_pitcher.profile.era, 3.1)
-  assert.equal(res.body.lockedCount, 2)
+  // Stored lines alone are not locked picks: x and y have no live standard
+  // line on the KBO board, so nothing is counted.
+  assert.equal(res.body.lockedCount, 0)
 })
 
 test('graded history: free and logged-out callers do not receive the record', async () => {

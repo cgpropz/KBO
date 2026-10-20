@@ -145,7 +145,8 @@ test('board shows Lines not posted yet while held', () => {
   assert.match(s, /hold\.message \|\| 'Lines not posted yet'/)
   const api = readFileSync(new URL('../api/data.js', import.meta.url), 'utf8')
   assert.match(api, /const presented = applyKboHold\(ds, board\);/)
-  assert.match(api, /shapeForTier\(ds, applyKboHold\(ds, tierPayload\.payload\), tier,/)
+  assert.match(api, /const heldPayload = applyKboHold\(ds, tierPayload\.payload\);/)
+  assert.match(api, /shapeForTier\(ds, heldPayload, tier,/)
 })
 
 test('hold expires at expires_at (12:00 PM ET 10/20) and cannot stick', () => {
@@ -206,10 +207,66 @@ test('free matchup_data lockedCount is 0 under the hold and never counts pulled 
   assert.deepEqual(held.body.data.matchups[0].props, [])
   _setKboHold({ ...HOLD, active: false })
   _clearCache()
-  const open = await call('matchup_data', { matchup_data: md })
+  // Oller has a live standard line on the board; Park's board line is pulled.
+  const board = { cards: [
+    { name: 'Oller', team: '', opponent: '', props: [{ stat: 'Pitcher Strikeouts', line: 5.5, odds_type: 'standard' }] },
+    { name: 'Park', team: '', opponent: '', props: [{ stat: 'Total Bases', line: 0.5, odds_type: 'standard', removed: true, pp_status: 'removed' }] },
+  ] }
+  const open = await call('matchup_data', { matchup_data: md, prizepicks_props: board })
   assert.equal(open.body.preview, true)
   // Only Oller has a live line; pulled and NO LINE rows are not counted.
   assert.equal(open.body.lockedCount, 1)
+  _setKboHold(FILE)
+  _clearCache()
+})
+
+test('free matchup_data lockedCount without the hold counts only props with a live standard board line', async () => {
+  const md = { matchups: [{ away: 'LG', home: 'Kia', away_pitcher: { name: 'Shirakawa' }, home_pitcher: { name: 'Oller' },
+    props: [
+      { name: 'Oller', team: 'Kia', prop: 'Strikeouts', line: 5.5, projection: 6.1 },
+      { name: 'Kim Do-yeong', team: 'Kia', prop: 'Fantasy Score', line: 6.5, projection: 8.96 },
+      { name: 'Park', team: 'LG', prop: 'Total Bases', line: 0.5, projection: 0.97 },
+      { name: 'Castro', team: 'Kia', prop: 'Hits+Runs+RBIs', line: 1.5, projection: 2.2 },
+      { name: 'Moon', team: 'LG', prop: 'Total Bases', line: 1.5, projection: 1.1 },
+    ] }] }
+  const board = { cards: [
+    // Live standard line: counts.
+    { name: 'Oller', team: 'Kia', opponent: 'LG', props: [{ stat: 'Pitcher Strikeouts', line: 5.5, odds_type: 'standard' }] },
+    // Promo-only (goblin) line: NO LINE on the matchup page, not counted.
+    { name: 'Kim Do-yeong', team: 'Kia', opponent: 'LG', props: [{ stat: 'Hitter Fantasy Score', line: 5, odds_type: 'goblin' }] },
+    // Pulled on the board: not counted.
+    { name: 'Park', team: 'LG', opponent: 'Kia', props: [{ stat: 'Total Bases', line: 0.5, odds_type: 'standard', removed: true, pp_status: 'removed' }] },
+    // Live standard line: counts.
+    { name: 'Castro', team: 'Kia', opponent: 'LG', props: [{ stat: 'Hits+Runs+RBIs', line: 1.5, odds_type: 'standard' }] },
+    // Moon has no card at all: not counted.
+  ] }
+  _setKboHold({ ...HOLD, active: false })
+  _clearCache()
+  const open = await call('matchup_data', { matchup_data: md, prizepicks_props: board })
+  assert.equal(open.statusCode, 200)
+  assert.equal(open.body.preview, true)
+  assert.equal(open.body.lockedCount, 2)
+  assert.deepEqual(open.body.data.matchups[0].props, [])
+  // No published board (or a failed read): fail closed, nothing implied locked.
+  _clearCache()
+  const noBoard = await call('matchup_data', { matchup_data: md })
+  assert.equal(noBoard.body.lockedCount, 0)
+  // Board marked failed: same.
+  _clearCache()
+  const failed = await call('matchup_data', { matchup_data: md, prizepicks_props: { ...board, failed: true } })
+  assert.equal(failed.body.lockedCount, 0)
+  // A malformed board card (non-iterable props) counts 0, never a 500.
+  _clearCache()
+  const malformed = await call('matchup_data', { matchup_data: md, prizepicks_props: { cards: [{ name: 'Oller', team: 'Kia', opponent: 'LG', props: 5 }, ...board.cards] } })
+  assert.equal(malformed.statusCode, 200)
+  assert.equal(malformed.body.preview, true)
+  assert.equal(malformed.body.lockedCount, 0)
+  assert.deepEqual(malformed.body.data.matchups[0].props, [])
+  // The hold on: 0 even with live board lines.
+  _setKboHold(HOLD)
+  _clearCache()
+  const held = await call('matchup_data', { matchup_data: md, prizepicks_props: board })
+  assert.equal(held.body.lockedCount, 0)
   _setKboHold(FILE)
   _clearCache()
 })
