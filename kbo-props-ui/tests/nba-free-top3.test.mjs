@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test, { afterEach, beforeEach } from 'node:test'
-import { NBA_MIN_AVG_MINUTES, NBA_MIN_GAMES, nbaAccessDecision, nbaHighRisk, shapeForTier } from '../api/_dataAccess.js'
+import { NBA_MIN_AVG_MINUTES, NBA_MIN_GAMES, NBA_OWNER_EMAIL, nbaAccessDecision, nbaHighRisk, shapeForTier } from '../api/_dataAccess.js'
 import { _clearCache, _setNbaFreePreview, handleDataRequest } from '../api/data.js'
 import { cgScore } from '../src/cgScore.js'
 import { freePreviewBoardList, freeTierFaqAnswer } from '../src/freePreviewCopy.js'
@@ -19,6 +19,7 @@ const uiRoot = join(import.meta.dirname, '..')
 function player(name, props, extra = {}) {
   return {
     name, team: 'BOS', matched: true, projectionStatus: 'projected', gp: 60, avgMins: 32,
+    injuryChecked: true, injuryStatus: null,
     recentGames: [{ pts: 30, min: 34 }],
     propProjectionByStat: { Points: 30, Rebounds: 9 },
     ...extra,
@@ -41,6 +42,15 @@ const RISKY = [
   player('Few Games', [{ stat: 'Points', line: 1.5, projection: 40 }], { gp: NBA_MIN_GAMES - 1 }),
   player('Low Minutes', [{ stat: 'Points', line: 1.5, projection: 40 }], { avgMins: NBA_MIN_AVG_MINUTES - 0.1 }),
   player('No Minutes', [{ stat: 'Points', line: 1.5, projection: 40 }], { avgMins: null }),
+  // ESPN injury tags (nba/availability.py).
+  player('Tag Out', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Out' }),
+  player('Tag Doubtful', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Doubtful' }),
+  player('Tag Questionable', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Questionable' }),
+  player('Tag DTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Day-To-Day' }),
+  player('Tag GTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'GTD' }),
+  player('Tag Suspended', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Suspended' }),
+  player('Not Checked', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryChecked: false }),
+  player('No Check Field', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryChecked: undefined }),
 ]
 
 test('the free NBA top 3 switch is off by default; the tab and copy follow it', () => {
@@ -53,10 +63,12 @@ test('the free NBA top 3 switch is off by default; the tab and copy follow it', 
 
 test('access: off denies free callers; on opens only the free top 3 dataset before nba_public', () => {
   const base = { emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: false }
-  // Off (the default): unchanged, NBA is full access only.
+  // Off (the default): main's behavior. Before nba_public NBA is full access
+  // only; with nba_public on, free and logged-out callers get the preview.
   assert.equal(nbaAccessDecision(base), 'deny')
   assert.equal(nbaAccessDecision({ ...base, freeTop3Dataset: true }), 'deny')
-  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true }), 'deny')
+  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true }), 'preview')
+  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true, freeTop3Dataset: true }), 'preview')
   assert.equal(nbaAccessDecision({ ...base, nbaPublic: true, tier: 'monthly' }), 'full')
   assert.equal(nbaAccessDecision({ ...base, tier: 'monthly' }), 'deny')
   // On, before nba_public: preview of nba_projections_standard only.
@@ -72,6 +84,32 @@ test('access: off denies free callers; on opens only the free top 3 dataset befo
   // Auth and tier failures stay closed either way.
   assert.equal(nbaAccessDecision({ ...on, emailResolved: false, freeTop3Dataset: true }), 'deny')
   assert.equal(nbaAccessDecision({ ...on, tierResolved: false, freeTop3Dataset: true }), 'deny')
+})
+
+// main's nbaAccessDecision (before this PR), verbatim, to pin the flag-off behavior.
+const MAIN_ALL_ACCESS = new Set(['owner', 'pro', 'monthly', 'weekly', 'season', 'all', 'combined'])
+function mainDecision({ emailResolved, email, tierResolved, tier, flagResolved, nbaPublic }) {
+  if (emailResolved !== true) return 'deny'
+  const normalized = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  if (normalized === NBA_OWNER_EMAIL) return 'full'
+  if (flagResolved !== true || nbaPublic !== true) return 'deny'
+  if (tierResolved !== true) return 'deny'
+  if (MAIN_ALL_ACCESS.has(tier)) return 'full'
+  return 'preview'
+}
+
+test('access with the switch off matches main for every input', () => {
+  const tiers = ['free', 'kbo', 'wnba', 'legacy', 'monthly', 'weekly', 'season', 'pro', 'all', 'combined', 'owner', null]
+  const bools = [true, false, undefined]
+  let checked = 0
+  for (const emailResolved of bools) for (const tierResolved of bools) for (const flagResolved of bools)
+    for (const nbaPublic of bools) for (const freeTop3Dataset of [true, false]) for (const tier of tiers)
+      for (const email of [null, 'someone@example.com', NBA_OWNER_EMAIL]) {
+        const input = { emailResolved, email, tierResolved, tier, flagResolved, nbaPublic, freeTop3Dataset, freePreview: false }
+        assert.equal(nbaAccessDecision(input), mainDecision(input), JSON.stringify(input))
+        checked += 1
+      }
+  assert.ok(checked > 1000)
 })
 
 test('HIGH RISK players never take a free NBA slot', () => {
@@ -206,4 +244,60 @@ test('/api/data: with the switch on, logged-out callers get the 3-row NBA previe
   const forged = mockRes()
   await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard' }, headers: { authorization: 'Bearer forged' } }, forged, snapshotClient(false))
   assert.equal(forged.statusCode, 403)
+})
+
+test('capped NBA ties break on the raw score, then board order (same as the landing and #312)', () => {
+  // Both picks sit at the 100 cap; Later Bigger has the larger raw score.
+  const board = [
+    player('Early Smaller', [{ stat: 'Points', line: 10.5, projection: 30 }]),
+    player('Filler A', [{ stat: 'Rebounds', line: 6.5, projection: 7.1 }]),
+    player('Filler B', [{ stat: 'Rebounds', line: 6.5, projection: 7.0 }]),
+    player('Later Bigger', [{ stat: 'Points', line: 4.5, projection: 30 }]),
+  ]
+  const shaped = shapeForTier('nba_projections_standard', board, 'free')
+  const names = shaped.data.map((p) => p.name)
+  assert.ok(names.includes('Later Bigger'))
+  assert.ok(names.includes('Early Smaller'))
+  assert.ok(names.includes('Filler A'))
+  assert.equal(names.includes('Filler B'), false)
+  const landing = nbaPublicRows(board).sort((a, b) => (b.score - a.score) || (b.rawScore - a.rawScore))
+  assert.equal(landing[0].player, 'Later Bigger')
+  assert.equal(names[0], 'Later Bigger')
+})
+
+test('/api/data: ?player= on the NBA preview reads only the trimmed row', async () => {
+  _setNbaFreePreview(true)
+  const res = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard', player: 'Huge Edge' }, headers: {} }, res, snapshotClient(false))
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, true)
+  assert.equal(res.body.data.length, 1)
+  const row = res.body.data[0]
+  assert.equal(row.name, 'Huge Edge')
+  assert.deepEqual(row.ppAllProps.map((p) => p.stat), ['Points'])
+  assert.equal(row.propProjectionByStat, undefined)
+  assert.equal(row.recentGames, undefined)
+  // A hidden player is not reachable by name.
+  const hidden = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard', player: 'Goblin' }, headers: {} }, hidden, snapshotClient(false))
+  assert.equal(hidden.statusCode, 200)
+  assert.deepEqual(hidden.body.data, [])
+  // With nba_public on and the switch off, a free caller's ?player= is trimmed the same way.
+  _setNbaFreePreview(false)
+  _clearCache()
+  const launched = mockRes()
+  await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard', player: 'Huge Edge' }, headers: {} }, launched, snapshotClient(true))
+  assert.equal(launched.statusCode, 200)
+  assert.equal(launched.body.preview, true)
+  assert.deepEqual(launched.body.data[0].ppAllProps.map((p) => p.stat), ['Points'])
+  assert.equal(launched.body.data[0].propProjectionByStat, undefined)
+})
+
+test('/api/data: switch off keeps main access (nba_public on: logged-out gets the preview)', async () => {
+  _setNbaFreePreview(false)
+  const res = await anonymous('nba_projections_standard', true)
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.preview, true)
+  const players = await anonymous('nba_players', true)
+  assert.equal(players.statusCode, 200)
 })

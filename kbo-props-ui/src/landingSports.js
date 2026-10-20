@@ -8,7 +8,8 @@ export const LANDING_SPORTS = [
   { id: 'kbo', name: 'KBO', sportName: 'Baseball', props: 'Hits · RBIs · Strikeouts', ds: 'prizepicks_props', dev: 'prizepicks_props.json' },
   { id: 'wnba', name: 'WNBA', sportName: 'Basketball', props: 'Points · Rebounds · PRA', ds: 'wnba_projections_standard', dev: 'wnba/projections_standard.json', lineups: 'wnba_lineups', lineupsDev: 'wnba/lineups.json' },
   { id: 'nhl', name: 'NHL', sportName: 'Hockey', props: 'Shots · Points · Saves', ds: 'nhl_projections', dev: 'nhl/projections.json', lineups: 'nhl_lineups', lineupsDev: 'nhl/lineups.json' },
-  // Free NBA top 3 for the opening weeks. The API still returns 403 until nba_public is on.
+  // Free NBA top 3 for the opening weeks. With this switch on, the API serves
+  // logged-out and free callers the 3-row nba_projections_standard preview.
   ...(NBA_FREE_PREVIEW_ENABLED
     ? [{ id: 'nba', name: 'NBA', sportName: 'Basketball', props: 'Points · Rebounds · PRA', ds: 'nba_projections_standard', dev: 'nba/projections_standard.json' }]
     : []),

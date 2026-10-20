@@ -82,13 +82,8 @@ test('nbaAccessDecision fails closed on auth, email, flag, and tier lookup error
   assert.equal(nbaAccessDecision({
     emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: false,
   }), 'deny')
-  // After nba_public, free callers get the preview only while the free NBA top 3
-  // switch (src/nbaPreviewFlag.js, off by default) is on.
   assert.equal(nbaAccessDecision({
     emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: true,
-  }), 'deny')
-  assert.equal(nbaAccessDecision({
-    emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: true, freePreview: true,
   }), 'preview')
 })
 

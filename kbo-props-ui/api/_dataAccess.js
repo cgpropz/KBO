@@ -83,16 +83,20 @@ export function nbaAccessDecision({
   if (emailResolved !== true) return 'deny';
   const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (normalized === NBA_OWNER_EMAIL) return 'full';
+  if (flagResolved === true && nbaPublic === true) {
+    // nba_public on: exactly main's behavior whatever the free top 3 flag is.
+    // All-access is full; every other resolved caller (free, legacy,
+    // logged-out) gets the free preview of any NBA dataset.
+    if (tierResolved !== true) return 'deny';
+    if (ALL_ACCESS_TIERS.has(tier)) return 'full';
+    return 'preview';
+  }
+  // nba_public off (or its read failed): main denies. Only the free NBA top 3
+  // flag (src/nbaPreviewFlag.js, off by default) opens anything here, and only
+  // the free top 3 dataset, through the preview trimmer.
+  if (freePreview !== true || freeTop3Dataset !== true) return 'deny';
   if (tierResolved !== true) return 'deny';
-  const launched = flagResolved === true && nbaPublic === true;
-  if (launched && ALL_ACCESS_TIERS.has(tier)) return 'full';
-  // Free NBA top 3 (opening weeks): the same 3-row preview as other sports.
-  // Off by default (src/nbaPreviewFlag.js).
-  if (freePreview !== true) return 'deny';
-  if (launched) return 'preview';
-  // Before nba_public, the flag opens only the free top 3 dataset, and only
-  // through the preview trimmer, for every caller without full access.
-  return freeTop3Dataset === true ? 'preview' : 'deny';
+  return 'preview';
 }
 
 // The one NBA dataset the homepage free top 3 reads.
@@ -195,18 +199,28 @@ function wnbaPropScore(player, prop) {
 }
 
 // HIGH RISK (free NBA top 3 selection only; the member board, its ranking and
-// the score are unchanged). The NBA feed has no injury or game-status field,
-// so the exclusion uses the fields the projection step writes on each player:
+// the score are unchanged). The exclusion uses the ESPN injury tag written by
+// nba/availability.py plus the fields the projection step writes on each player:
 //   matched !== true                    PrizePicks name not tied to a roster player
 //   projectionStatus !== 'projected'    no projection from a game log
 //   gp < NBA_MIN_GAMES (10)             fewer than 10 games with minutes logged
 //   avgMins missing or < NBA_MIN_AVG_MINUTES (20)   low or unknown minutes role
+//   injuryChecked !== true              ESPN injury report not read for this row
+//   injuryStatus set                    ESPN Out, Suspended, Doubtful, Questionable,
+//                                       Day-To-Day or GTD
 // Any one of these keeps every prop of that player out of the free top 3.
 export const NBA_MIN_GAMES = 10;
 export const NBA_MIN_AVG_MINUTES = 20;
 
+// Tags nba/availability.py writes. Any non-empty injuryStatus is treated as a
+// risk (an unknown tag counts too), and a row whose report was not read
+// (injuryChecked !== true) fails closed.
+export const NBA_RISK_INJURY_STATUSES = new Set(['out', 'suspended', 'doubtful', 'questionable', 'day-to-day', 'gtd']);
+
 export function nbaHighRisk(player) {
   if (!player || typeof player !== 'object') return true;
+  if (player.injuryChecked !== true) return true;
+  if (player.injuryStatus != null && String(player.injuryStatus).trim() !== '') return true;
   if (player.matched !== true) return true;
   if (player.projectionStatus !== 'projected') return true;
   const gp = num(player.gp);
@@ -222,6 +236,13 @@ export function nbaHighRisk(player) {
 function nbaPropScore(player, prop) {
   if (nbaHighRisk(player)) return -Infinity;
   return boardPropScore(player, prop, (projection, row) => boundCg(cgScore(projection, row?.line, row?.stat ?? row?.prop)));
+}
+
+// Unbounded score of the same pick: the tie-break at the 100 cap, as the
+// landing's publicFreeTopRows (and #312 for KBO) do.
+function nbaPropRawScore(player, prop) {
+  if (nbaHighRisk(player)) return -Infinity;
+  return boardPropScore(player, prop, (projection, row) => cgScore(projection, row?.line, row?.stat ?? row?.prop));
 }
 
 // NFL Prop Lines preview score.
@@ -590,7 +611,7 @@ function nbaPreviewPlayer(player, props) {
   return out;
 }
 
-function previewPlayerProps(payload, scoreFn, { trimPlayer = null } = {}) {
+function previewPlayerProps(payload, scoreFn, { trimPlayer = null, rawFn = null } = {}) {
   const players = Array.isArray(payload) ? payload : [];
   const flat = [];
   players.forEach((player, playerIndex) => {
@@ -606,7 +627,12 @@ function previewPlayerProps(payload, scoreFn, { trimPlayer = null } = {}) {
     const kept = players.slice(0, FREE_ROW_LIMIT).map((player) => (trimPlayer ? trimPlayer(player, []) : player));
     return { data: kept, lockedCount: Math.max(0, players.length - kept.length) };
   }
-  const kept = topN(flat, ({ playerIndex, prop }) => scoreFn(players[playerIndex], prop));
+  const kept = topN(
+    flat,
+    ({ playerIndex, prop }) => scoreFn(players[playerIndex], prop),
+    FREE_ROW_LIMIT,
+    rawFn ? ({ playerIndex, prop }) => rawFn(players[playerIndex], prop) : null,
+  );
   const byPlayer = new Map();
   kept.forEach(({ item }) => {
     if (!byPlayer.has(item.playerIndex)) byPlayer.set(item.playerIndex, []);
@@ -635,7 +661,7 @@ function previewWnbaProjections(payload) {
 }
 
 function previewNbaProjections(payload) {
-  return previewPlayerProps(payload, nbaPropScore, { trimPlayer: nbaPreviewPlayer });
+  return previewPlayerProps(payload, nbaPropScore, { trimPlayer: nbaPreviewPlayer, rawFn: nbaPropRawScore });
 }
 
 // matchup_data: the slate itself (teams, venue, weather, probable pitchers'

@@ -778,18 +778,18 @@ async function handleNbaRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const shaped = withPresentedData(
-    req,
-    decision === 'full'
-      ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
-      : shapeForTier(
-        ds,
-        FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
-        'free',
-        { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
-      ),
-    board,
-  );
+  const tierShaped = decision === 'full'
+    ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
+    : shapeForTier(
+      ds,
+      FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
+      'free',
+      { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
+    );
+  // ?player= on a preview reads from the trimmed rows, never the full board:
+  // a visible player's other props, per-stat maps and game logs stay
+  // full-access only. Full access keeps main's behavior.
+  const shaped = withPresentedData(req, tierShaped, decision === 'full' ? board : tierShaped.data);
   return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,

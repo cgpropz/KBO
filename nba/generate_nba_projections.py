@@ -53,6 +53,7 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 import nba.generate_nba_dvp as dvp
+from nba.availability import apply_injury_tags, fetch_espn_injuries
 
 
 PUBLIC_NBA = REPO / "kbo-props-ui" / "public" / "data" / "nba"
@@ -772,12 +773,17 @@ def main() -> int:
     samples = []
     neutral_names = []
     fallback_names = []
+    # ESPN injury tags for the free NBA top 3 (nba/availability.py). One read
+    # for every odds type; tags only, no row or score changes.
+    injury_report = fetch_espn_injuries()
+    injury_tagged = 0
     for odds_type, path in SNAPSHOTS.items():
         players = load_snapshot(path)
         if not players:
             print(f"{odds_type}: snapshot missing or empty; left untouched")
             continue
         filled, counts = apply_board(players, games, factors, ranks, espn)
+        injury_tagged += apply_injury_tags([filled], report=injury_report)
         write_snapshot(path, filled)
         per_type[odds_type] = counts
         for player in filled:
@@ -800,6 +806,10 @@ def main() -> int:
         + f" ({len(set(neutral_names))})."
     )
     print(format_report(note, per_type, position_note))
+    print(
+        "ESPN injury tags: "
+        + (f"{injury_tagged} player row(s) tagged" if injury_report is not None else "report unavailable, rows tagged injuryChecked=false")
+    )
     print("Standard star sample:")
     if samples:
         print("\n".join(samples))
