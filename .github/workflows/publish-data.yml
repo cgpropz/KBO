@@ -119,6 +119,17 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
+      - name: Commit KBO odds inputs and pull status
+        # Same script and merge rule as data-refresh.yml (different
+        # concurrency group): clean worktree of origin/main, and the pull
+        # status with the later checked_at wins. Runs before "Commit data
+        # updates" so that step's autostash never touches KBO-Odds/ first.
+        # A failed push is reported but does not fail the data job (the
+        # database publish already ran).
+        continue-on-error: true
+        run: |
+          bash pipeline/commit_kbo_odds.sh "chore: kbo odds (data refresh)"
+
       - name: Commit data updates
         run: |
           git config user.name "github-actions[bot]"
@@ -134,6 +145,10 @@ jobs:
           git restore --staged credentials.json >/dev/null 2>&1 || true
           # Never let a data commit rewrite the website source.
           git restore --staged kbo-props-ui/src kbo-props-ui/api kbo-props-ui/index.html kbo-props-ui/package.json kbo-props-ui/package-lock.json kbo-props-ui/vercel.json >/dev/null 2>&1 || true
+          # KBO-Odds/ was committed by the step above from a clean worktree, so
+          # the --theirs conflict handling below can never replace a newer
+          # prizepicks_kbo_pull.json that data-refresh.yml pushed meanwhile.
+          git restore --staged KBO-Odds >/dev/null 2>&1 || true
 
           if git diff --cached --quiet; then
             echo "No data changes to commit"

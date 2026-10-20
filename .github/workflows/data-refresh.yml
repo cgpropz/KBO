@@ -139,54 +139,19 @@ jobs:
 
       - name: Commit refreshed odds-derived snapshots
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           # Paid snapshots (public/data/*) are published to Supabase by
           # refresh_odds.py and served via /api/data; they are git-ignored and
           # must never be committed. Only the raw odds inputs are committed.
           # public/status.json is published by the next step, not this one.
-          git add KBO-Odds/ 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "No odds changes to commit"
-          else
-            git commit -m "chore: intraday odds refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            # KBO-Odds/prizepicks_kbo_pull.json must reach main: the next run
-            # starts from it. Other bots push to main concurrently and this job
-            # leaves other tracked files modified (only KBO-Odds/ is staged), so
-            # a plain `git pull --rebase` refuses to run. Autostash, retry, and
-            # resolve KBO-Odds/ conflicts in favor of this run's fresh files.
-            pushed=0
-            for attempt in 1 2 3 4 5; do
-              if git push origin HEAD:main; then
-                pushed=1
-                echo "Odds commit pushed (attempt ${attempt})"
-                break
-              fi
-              echo "Push rejected (attempt ${attempt}/5); rebasing onto origin/main with autostash"
-              if ! git pull --rebase --autostash origin main; then
-                CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-                OTHER=$(printf '%s\n' "$CONFLICTS" | grep -v '^KBO-Odds/' | grep -v '^$' || true)
-                if [ -n "$CONFLICTS" ] && [ -z "$OTHER" ]; then
-                  echo "Resolving KBO-Odds conflicts with this run's files: $CONFLICTS"
-                  # During a rebase, --theirs is the commit being replayed (this run).
-                  printf '%s\n' "$CONFLICTS" | grep -v '^$' | tr '\n' '\0' | xargs -0 git checkout --theirs -- || true
-                  printf '%s\n' "$CONFLICTS" | grep -v '^$' | tr '\n' '\0' | xargs -0 git add -- || true
-                  if ! GIT_EDITOR=true git rebase --continue; then
-                    git rebase --abort >/dev/null 2>&1 || true
-                  fi
-                else
-                  echo "Rebase failed (conflicts: ${CONFLICTS:-none}); aborting this attempt"
-                  git rebase --abort >/dev/null 2>&1 || true
-                fi
-              fi
-              sleep $((attempt * 5))
-            done
-            if [ "$pushed" != "1" ]; then
-              # Keep going so the board status and memory freeze still run;
-              # the last step fails the job so the lost status is not silent.
-              echo "::error title=KBO odds commit not pushed::KBO-Odds/ (incl. prizepicks_kbo_pull.json) did not reach main after 5 attempts"
-              echo "ODDS_PUSH_FAILED=1" >> "$GITHUB_ENV"
-            fi
+          # KBO-Odds/prizepicks_kbo_pull.json must reach main: the next run
+          # starts from it. commit_kbo_odds.sh commits KBO-Odds/ from a clean
+          # worktree of origin/main (no autostash of this job's other dirty
+          # files), and keeps the pull status with the later checked_at when
+          # publish-data.yml raced it.
+          if ! bash pipeline/commit_kbo_odds.sh "chore: intraday odds refresh"; then
+            # Keep going so the board status and memory freeze still run;
+            # the last step fails the job so the lost status is not silent.
+            echo "ODDS_PUSH_FAILED=1" >> "$GITHUB_ENV"
           fi
 
       - name: Publish public board status
