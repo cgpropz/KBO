@@ -980,6 +980,14 @@ export async function resolveTier(client, authorization) {
 // up-to-30-minute stale-while-revalidate copy, and the CDN holds it 30s.
 // A failed read still falls back to a recent in-memory copy, then the bundle.
 export const BOARD_STATUS_CACHE = 'public, max-age=30, s-maxage=30';
+// A warm instance answers from its own copy for 10s, so query-string
+// cache-busters that miss the CDN still read the table at most every 10s.
+export const BOARD_STATUS_MEMO_MS = 10 * 1000;
+function boardStatusRow(client) {
+  const hit = currentBoard('board_status');
+  if (hit?.row && Date.now() - hit.at < BOARD_STATUS_MEMO_MS) return hit.row;
+  return startBoardRead(client, 'board_status');
+}
 export async function handleBoardStatus(req, res, client) {
   res.setHeader('Cache-Control', BOARD_STATUS_CACHE);
   if (req.method !== 'GET') {
@@ -987,7 +995,7 @@ export async function handleBoardStatus(req, res, client) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const row = await startBoardRead(client || getClient(), 'board_status');
+    const row = await boardStatusRow(client || getClient());
     if (row && row.data) return res.status(200).json(publicBoardStatus(row.data));
   } catch (err) {
     console.error('[api/data] board status read failed:', err.message);
