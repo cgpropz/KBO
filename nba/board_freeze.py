@@ -76,8 +76,12 @@ def _get(url: str, headers: dict | None = None, timeout: int = 90):
 def fetch_prizepicks_standard(*, get=None) -> list[dict]:
     """Standard NBA lines only, fully paged, with combo/excluded-stat filters.
 
-    Missing odds_type is treated as non-standard (dropped). Reuses
-    fetch_all_projections from nba-pp-odds.py. Optional get= is for tests.
+    Missing odds_type is treated as non-standard (dropped). Promo copies
+    (is_promo true, including discounted flash lines) are dropped. Exact
+    duplicates collapse on player, stat, odds type, line, and game date,
+    keeping the non-promo line. This list covers more than one slate date,
+    so the same player and stat on different dates both stay.
+    Reuses fetch_all_projections from nba-pp-odds.py. Optional get= is for tests.
     """
     pp = _load_pp_odds()
     payload = pp.fetch_all_projections(get=get) if get is not None else pp.fetch_all_projections()
@@ -96,6 +100,8 @@ def fetch_prizepicks_standard(*, get=None) -> list[dict]:
         if "+" in name:
             continue
         attrs = row.get("attributes") or {}
+        if pp.is_promo_projection(attrs):
+            continue
         # Missing odds_type is non-standard — do not default to standard.
         odds = str(attrs.get("odds_type") or "").strip().lower()
         if odds != "standard":
@@ -121,7 +127,7 @@ def fetch_prizepicks_standard(*, get=None) -> list[dict]:
                 "game_date": pp.parse_game_date(start or ""),
             }
         )
-    return rows
+    return pp.dedupe_board_rows(rows)
 
 
 def fetch_published_projections() -> list[dict]:
