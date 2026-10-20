@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Pre-tip NBA board freeze for grading: encrypted artifact only, never committed.
 
-Reads live PrizePicks standard lines (full pagination via nba-pp-odds.fetch_all_projections)
+Reads live PrizePicks standard lines (all-league pagination via
+nba-pp-odds.fetch_all_projections; each request is cache-busted)
 and the published nba_projections_standard board. Joins on player+stat, keeps the
 freeze-time line, attaches published projection and CG Score (rating), and derives
 side from sign(projection - saved line). Does not change ranking, CG math, the site,
@@ -76,12 +77,14 @@ def _get(url: str, headers: dict | None = None, timeout: int = 90):
 def fetch_prizepicks_standard(*, get=None) -> list[dict]:
     """Standard NBA lines only, fully paged, with combo/excluded-stat filters.
 
-    Missing odds_type is treated as non-standard (dropped). Promo copies
-    (is_promo true, including discounted flash lines) are dropped. Exact
-    duplicates collapse on player, stat, odds type, line, and game date,
-    keeping the non-promo line. This list covers more than one slate date,
-    so the same player and stat on different dates both stay.
-    Reuses fetch_all_projections from nba-pp-odds.py. Optional get= is for tests.
+    Missing odds_type is treated as non-standard (dropped). Classification
+    uses each projection's own odds_type (not line_type), so a goblin-only
+    line is not stored as standard. Promo copies (is_promo true, including
+    discounted flash lines) are dropped. Exact duplicates collapse on player,
+    stat, odds type, line, and game date, keeping the non-promo line. This
+    list covers more than one slate date, so the same player and stat on
+    different dates both stay. Reuses fetch_all_projections from
+    nba-pp-odds.py. Optional get= is for tests.
     """
     pp = _load_pp_odds()
     payload = pp.fetch_all_projections(get=get) if get is not None else pp.fetch_all_projections()
@@ -103,7 +106,8 @@ def fetch_prizepicks_standard(*, get=None) -> list[dict]:
         if pp.is_promo_projection(attrs):
             continue
         # Missing odds_type is non-standard — do not default to standard.
-        odds = str(attrs.get("odds_type") or "").strip().lower()
+        # line_type is ignored; a goblin-only line must not land here.
+        odds = pp.classify_odds_type(attrs)
         if odds != "standard":
             continue
         stat = str(attrs.get("stat_type") or "").strip()

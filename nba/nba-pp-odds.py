@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 """Fetch NBA PrizePicks lines and write lines-only Edge snapshots.
 
-Adapted from wnba/wnba-pp-odds.py. The partner API, pagination, Eastern slate
-date, and name key are the same. This script keeps projection league NBA only.
-NBAP (preseason) and NBASZN (season-long) are dropped even when the player
-record says NBA. Names containing '+' are combo cards and are dropped.
-A projection with is_promo true is a promo copy (often a discounted flash
-line) and is dropped, even when odds_type is still standard.
+Adapted from wnba/wnba-pp-odds.py. The partner API, Eastern slate date, and
+name key are the same. The request is still the all-leagues board (no
+league_id filter). Each request sends Cache-Control: no-cache and
+Pragma: no-cache, plus a unique _cb query param, so Cloudflare does not reuse
+a stale copy. Date, Age, and cf-cache-status from each response are logged.
+
+This script keeps projection league NBA only. NBAP (preseason) and NBASZN
+(season-long) are dropped even when the player record says NBA. Names
+containing '+' are combo cards and are dropped. A projection with is_promo
+true is a promo copy (often a discounted flash line) and is dropped, even
+when odds_type is still standard.
+
+Standard, demon, and goblin boards are filled from each projection's own
+odds_type. A goblin-only or demon-only line is not written onto standard.
+If meta totals or the first/last links change between pages, the whole pull
+is retried once. A second change fails the step and leaves the previous
+snapshots in place.
 
 Stat labels use the WNBA PrizePicks map. A label in that map is stored as-is.
 "Points - 1st 3 Minutes" is dropped the same way the WNBA board drops it.
@@ -34,6 +45,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 import requests
@@ -144,6 +156,148 @@ def parse_opponent(description: object) -> str:
 RETRY_STATUSES = frozenset({403, 429, 500, 502, 503, 504})
 RETRY_WAITS = (5, 15)
 RETRY_AFTER_CAP = 60
+# Cloudflare caches this API (max-age=20, stale-if-error=600). A refresh that
+# reuses that copy republishes lines PrizePicks has already removed.
+PP_CACHE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+}
+_CACHE_BUST_SEQ = 0
+_TOTAL_META_KEYS = ("total_count", "total", "count", "total_entries")
+_STABLE_LINK_KEYS = ("first", "last")
+
+
+class InconsistentPrizePicksSnapshot(RuntimeError):
+    """Pages in one pull do not describe a single PrizePicks snapshot."""
+
+
+class StalePrizePicksResponse(InconsistentPrizePicksSnapshot):
+    """A cache-busted request was still served from Cloudflare's cache."""
+
+
+# A cache-busted request must not be served from cache. HIT/STALE/UPDATING/
+# REVALIDATED, or any Age over the 20s max-age, is retried with a new _cb.
+CACHED_CF_STATUSES = frozenset({"HIT", "STALE", "UPDATING", "REVALIDATED"})
+CACHE_MAX_AGE_SECONDS = 20
+
+
+def cache_buster(page: object) -> str:
+    """Unique _cb value: epoch milliseconds, page, and a per-process counter."""
+    global _CACHE_BUST_SEQ
+    _CACHE_BUST_SEQ += 1
+    return f"{int(time.time() * 1000)}-{page}-{_CACHE_BUST_SEQ}"
+
+
+def _response_header(response, name: str) -> str | None:
+    """One response header. Does not read cookies, authorization, or tokens."""
+    headers = getattr(response, "headers", None)
+    if headers is None or not hasattr(headers, "get"):
+        return None
+    wanted = name.lower()
+    for candidate in (name, name.lower(), name.upper(), name.title()):
+        try:
+            direct = headers.get(candidate)
+        except Exception:
+            direct = None
+        if direct not in (None, ""):
+            return str(direct)
+    try:
+        pairs = headers.items()
+    except Exception:
+        return None
+    for key, value in pairs:
+        if str(key).lower() == wanted and value not in (None, ""):
+            return str(value)
+    return None
+
+
+def log_prizepicks_cache(response, page) -> None:
+    """Log Date, Age when it is present, and cf-cache-status."""
+    date = _response_header(response, "Date")
+    age = _response_header(response, "Age")
+    status = _response_header(response, "cf-cache-status")
+    parts = [f"PrizePicks page {page}: Date={date or '-'}"]
+    if age is not None:
+        parts.append(f"Age={age}")
+    parts.append(f"cf-cache-status={status or '-'}")
+    print(" ".join(parts))
+    kind = (status or "").strip().upper()
+    if kind not in {"HIT", "STALE"} or age is None:
+        return
+    try:
+        age_seconds = float(age)
+    except (TypeError, ValueError):
+        return
+    if age_seconds > 60:
+        print(
+            f"::warning::PrizePicks page {page} looks cached "
+            f"(cf-cache-status={kind}, Age={age_seconds:g}s). The pull continues."
+        )
+
+
+def _stable_link(value: object) -> object:
+    """Drop an echoed _cb so two pages of one snapshot still compare equal."""
+    if not isinstance(value, str) or not value:
+        return value
+    parts = urlsplit(value)
+    query = [
+        (key, item)
+        for key, item in parse_qsl(parts.query, keep_blank_values=True)
+        if key != "_cb"
+    ]
+    query.sort()
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+
+def _norm_count(value: object) -> object:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return value
+    if isinstance(value, str):
+        try:
+            number = float(value.strip())
+        except ValueError:
+            return value
+    else:
+        number = float(value)
+    if number.is_integer():
+        return int(number)
+    return number
+
+
+def page_set_token(payload: object) -> tuple:
+    """Identity of one page set: totals plus first/last links.
+
+    current_page, self, next, and prev differ on every page of one snapshot.
+    An echoed _cb query param is ignored.
+    """
+    if not isinstance(payload, dict):
+        return ("invalid", type(payload).__name__)
+    meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
+    links = payload.get("links") if isinstance(payload.get("links"), dict) else {}
+    totals = tuple((key, _norm_count(meta[key])) for key in _TOTAL_META_KEYS if key in meta)
+    pages = ("total_pages", _norm_count(meta["total_pages"])) if "total_pages" in meta else None
+    stable_links = tuple(
+        (key, _stable_link(links[key]))
+        for key in _STABLE_LINK_KEYS
+        if key in links
+    )
+    return (totals, pages, stable_links)
+
+
+def cached_response_detail(response) -> tuple[bool, str, str]:
+    """Whether this response is still cached, plus cf-cache-status and Age."""
+    kind = (_response_header(response, "cf-cache-status") or "").strip().upper()
+    age_raw = _response_header(response, "Age")
+    age_seconds = None
+    if age_raw is not None:
+        try:
+            age_seconds = float(age_raw)
+        except (TypeError, ValueError):
+            age_seconds = None
+    cached = kind in CACHED_CF_STATUSES or (
+        age_seconds is not None and age_seconds > CACHE_MAX_AGE_SECONDS
+    )
+    return cached, kind, age_raw if age_raw is not None else "-"
 
 
 def _retry_wait(response, default: float) -> float:
@@ -156,45 +310,82 @@ def _retry_wait(response, default: float) -> float:
     return max(0.0, min(value, RETRY_AFTER_CAP))
 
 
-def get_page_with_retry(getter, params: dict, sleep=time.sleep, waits=RETRY_WAITS):
-    """One projections page. Retries 403/429/5xx and connection errors, then raises."""
+def get_page_with_retry(getter, params: dict, sleep=None, waits=RETRY_WAITS):
+    """One projections page. Retries 403/429/5xx, connection errors, and cached bodies."""
+    pause = time.sleep if sleep is None else sleep
     attempts = len(waits) + 1
+    page = params.get("page")
     for attempt in range(1, attempts + 1):
+        request_params = dict(params)
+        request_params["_cb"] = cache_buster(page)
         try:
-            response = getter(PP_URL, params=params, timeout=30)
+            response = getter(
+                PP_URL,
+                params=request_params,
+                timeout=30,
+                headers=dict(PP_CACHE_HEADERS),
+            )
         except (requests.ConnectionError, requests.Timeout) as exc:
             if attempt == attempts:
                 raise
             wait = waits[attempt - 1]
-            print(f"PrizePicks page {params.get('page')}: {type(exc).__name__}; retry {attempt}/{attempts - 1} in {wait}s")
-            sleep(wait)
+            print(f"PrizePicks page {page}: {type(exc).__name__}; retry {attempt}/{attempts - 1} in {wait}s")
+            pause(wait)
             continue
+        log_prizepicks_cache(response, page)
         status = getattr(response, "status_code", 200)
-        if status in RETRY_STATUSES and attempt < attempts:
-            wait = _retry_wait(response, waits[attempt - 1])
-            print(f"PrizePicks page {params.get('page')}: HTTP {status}; retry {attempt}/{attempts - 1} in {wait:g}s")
-            sleep(wait)
+        cached, cache_status, age = cached_response_detail(response)
+        if (cached or status in RETRY_STATUSES) and attempt < attempts:
+            if status in RETRY_STATUSES:
+                wait = _retry_wait(response, waits[attempt - 1])
+                reason = f"HTTP {status}"
+            else:
+                wait = waits[attempt - 1]
+                reason = f"cached cf-cache-status={cache_status or '-'} Age={age}"
+            print(f"PrizePicks page {page}: {reason}; retry {attempt}/{attempts - 1} in {wait:g}s")
+            pause(wait)
             continue
+        if cached:
+            message = (
+                f"PrizePicks page {page} came back cached after {attempts} attempts "
+                f"(cf-cache-status={cache_status or '-'}, Age={age}). "
+                "Refusing to publish a cached board. "
+                "The previous published board and last-good copies are unchanged."
+            )
+            print(f"::error::{message}", file=sys.stderr)
+            raise StalePrizePicksResponse(message)
         response.raise_for_status()
         return response
     raise RuntimeError("unreachable")
 
 
-def fetch_all_projections(per_page: int = 1000, get=None, sleep=time.sleep) -> dict:
-    """Fetch every PrizePicks projections page. Same URL and page loop as WNBA."""
-    getter = get or requests.get
+def _fetch_projection_pages(getter, per_page: int, sleep) -> dict:
+    """One all-leagues pull. Raises if a later page is a different snapshot."""
     page = 1
     all_data = []
     all_included = []
+    baseline = None
     while True:
         response = get_page_with_retry(getter, {"per_page": per_page, "page": page}, sleep=sleep)
         payload = response.json()
-        page_data = payload.get("data") or []
-        page_included = payload.get("included") or []
+        token = page_set_token(payload)
+        if baseline is None:
+            baseline = token
+        elif token != baseline:
+            raise InconsistentPrizePicksSnapshot(
+                f"page {page} changed the page set (page 1 {baseline}; page {page} {token})"
+            )
+        if isinstance(payload, dict):
+            page_data = payload.get("data") or []
+            page_included = payload.get("included") or []
+            meta = payload.get("meta") or {}
+        else:
+            page_data = []
+            page_included = []
+            meta = {}
         all_data.extend(page_data)
         all_included.extend(page_included)
-        meta = payload.get("meta") or {}
-        total_pages = meta.get("total_pages")
+        total_pages = meta.get("total_pages") if isinstance(meta, dict) else None
         if total_pages is not None:
             if page >= int(total_pages):
                 break
@@ -211,6 +402,40 @@ def fetch_all_projections(per_page: int = 1000, get=None, sleep=time.sleep) -> d
         seen.add(item_id)
         deduped.append(item)
     return {"data": all_data, "included": deduped}
+
+
+def fetch_all_projections(per_page: int = 1000, get=None, sleep=None) -> dict:
+    """Fetch every PrizePicks projections page on the all-leagues board.
+
+    Each request is cache-busted. A cached response is retried inside the page
+    fetch; if the last attempt is still cached, StalePrizePicksResponse is
+    raised and callers must not replace snapshots. A page set that changes
+    mid-pull is fetched again from page 1. A second change prints ::error and
+    raises InconsistentPrizePicksSnapshot.
+    """
+    getter = get or requests.get
+    pause = time.sleep if sleep is None else sleep
+    error: InconsistentPrizePicksSnapshot | None = None
+    for pull in (1, 2):
+        try:
+            return _fetch_projection_pages(getter, per_page, pause)
+        except StalePrizePicksResponse:
+            raise
+        except InconsistentPrizePicksSnapshot as exc:
+            error = exc
+            if pull == 1:
+                print(
+                    f"PrizePicks page set changed mid-pull; retrying the whole pull once. {exc}",
+                    file=sys.stderr,
+                )
+                continue
+    message = (
+        "PrizePicks pages changed mid-pull after one retry "
+        f"({error}). Refusing to publish a mixed snapshot. "
+        "The previous published board and last-good copies are unchanged."
+    )
+    print(f"::error::{message}", file=sys.stderr)
+    raise InconsistentPrizePicksSnapshot(message)
 
 
 def _index_included(payload: dict) -> tuple[dict, dict]:
@@ -240,6 +465,20 @@ def is_promo_projection(attrs: object) -> bool:
     if not isinstance(attrs, dict):
         return False
     return _promo_flag(attrs.get("is_promo"))
+
+
+def classify_odds_type(attrs: object) -> str:
+    """standard, demon, or goblin from this projection's own odds_type.
+
+    line_type is not read. Missing and unknown values are not standard, so a
+    goblin-only line cannot be filed on the standard board.
+    """
+    if not isinstance(attrs, dict):
+        return ""
+    odds = str(attrs.get("odds_type") or "").strip().lower()
+    if odds in ODDS_TYPES:
+        return odds
+    return ""
 
 
 def _board_row_is_promo(row: dict) -> bool:
@@ -318,8 +557,28 @@ def projection_league(row: dict, leagues: dict, players: dict) -> str:
     return str((players.get(player_id) or {}).get("league") or "").strip()
 
 
-def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
-    """Return NBA rows and a drop/unmapped report. Does not apply the slate date."""
+def _start_instant(raw: object) -> datetime | None:
+    """PrizePicks start_time as an aware datetime, or None when it cannot be read."""
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+    return parsed
+
+
+def rows_from_payload(payload: dict, now: datetime | None = None) -> tuple[list[dict], dict]:
+    """Return NBA rows and a drop/unmapped report. Does not apply the slate date.
+
+    A row whose start_time is at or before the fetch time is a game that has
+    already started and is dropped. now defaults to the current Eastern time.
+    """
+    fetch_time = now or datetime.now(SLATE_TIMEZONE)
+    if fetch_time.tzinfo is None:
+        fetch_time = fetch_time.replace(tzinfo=SLATE_TIMEZONE)
     leagues, players = _index_included(payload)
     rows = []
     report = {
@@ -329,6 +588,7 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
         "excluded_combos": 0,
         "excluded_stats": 0,
         "excluded_promo": 0,
+        "excluded_started": 0,
         "unmapped_stats": [],
     }
     unmapped = set()
@@ -360,6 +620,10 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
         if stat in EXCLUDED_STATS:
             report["excluded_stats"] += 1
             continue
+        started = _start_instant(attrs.get("start_time"))
+        if started is not None and started <= fetch_time:
+            report["excluded_started"] += 1
+            continue
         stat_key = STAT_MAP.get(stat)
         if stat and stat_key is None:
             unmapped.add(stat)
@@ -379,10 +643,14 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
             "line": line,
             "versus": str(attrs.get("description") or "").strip(),
             "opponent": parse_opponent(attrs.get("description")),
-            "oddsType": str(attrs.get("odds_type") or "").strip().lower(),
+            "oddsType": classify_odds_type(attrs),
             "gameDate": parse_game_date(attrs.get("start_time") or attrs.get("board_time") or ""),
         })
     report["unmapped_stats"] = sorted(unmapped)
+    print(
+        f"Dropped {report['excluded_started']} lines whose start_time is at or before "
+        f"the fetch ({fetch_time.astimezone(SLATE_TIMEZONE).strftime('%Y-%m-%d %H:%M %Z')})"
+    )
     return rows, report
 
 
@@ -614,7 +882,7 @@ def load_teams() -> dict:
 
 
 def prepare(payload: dict, roster: list[dict], today: datetime | None = None, teams: dict | None = None):
-    rows, filter_report = rows_from_payload(payload)
+    rows, filter_report = rows_from_payload(payload, now=today)
     slate_rows, slate_date = select_slate_rows(rows, today=today)
     boards, match_report = build_boards(slate_rows, roster, teams if teams is not None else load_teams())
     return {
@@ -650,7 +918,8 @@ def print_report(result: dict) -> None:
         f"other leagues {dropped['excluded_other_league']}, "
         f"combos {dropped['excluded_combos']}, "
         f"excluded stats {dropped['excluded_stats']}, "
-        f"promos {dropped.get('excluded_promo', 0)}"
+        f"promos {dropped.get('excluded_promo', 0)}, "
+        f"started {dropped.get('excluded_started', 0)}"
     )
     unmapped = dropped["unmapped_stats"]
     print("Unmapped stat types: " + (", ".join(unmapped) if unmapped else "none"))
@@ -666,7 +935,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print one odds type as JSON instead of writing snapshots")
     args = parser.parse_args(argv)
 
-    payload = fetch_all_projections()
+    try:
+        payload = fetch_all_projections()
+    except InconsistentPrizePicksSnapshot:
+        # ::error is already printed. Do not replace the restored snapshots.
+        return 1
     roster = load_roster()
     result = prepare(payload, roster)
     if args.json:

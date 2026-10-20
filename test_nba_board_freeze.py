@@ -155,7 +155,7 @@ def test_fetch_prizepicks_pages_all_and_filters():
 
     calls = []
 
-    def fake_get(url, params=None, timeout=30):
+    def fake_get(url, params=None, timeout=30, headers=None):
         page = int((params or {}).get("page") or 1)
         calls.append(page)
         if page == 1:
@@ -181,6 +181,21 @@ def test_fetch_prizepicks_pages_all_and_filters():
                             "attributes": {
                                 "stat_type": "Rebounds",
                                 "line_score": 8.5,
+                                "start_time": "2026-10-20T19:00:00Z",
+                                "description": "DET",
+                            },
+                            "relationships": {
+                                "league": {"data": {"id": "7"}},
+                                "new_player": {"data": {"id": "p1"}},
+                            },
+                        },
+                        {
+                            # goblin-only, even if line_type says standard
+                            "attributes": {
+                                "stat_type": "FG Attempted",
+                                "line_score": 5.5,
+                                "odds_type": "goblin",
+                                "line_type": "standard",
                                 "start_time": "2026-10-20T19:00:00Z",
                                 "description": "DET",
                             },
@@ -281,6 +296,7 @@ def test_fetch_prizepicks_pages_all_and_filters():
         ("Points", 27.5),
     ]
     assert all(r["odds_type"] == "standard" for r in rows)
+    assert all(r["stat"] != "FG Attempted" for r in rows)
     assert rows[0]["team"] == "BOS" or any(r["team"] == "BOS" for r in rows)
 
 
@@ -330,7 +346,7 @@ def test_pp_fetch_retries_403_429_5xx_then_succeeds():
     for status in (403, 429, 500, 503):
         seq = [_Resp(status), _Resp(status, headers={"Retry-After": "2"}), _Resp(200)]
         waits = []
-        out = pp.fetch_all_projections(get=lambda url, params=None, timeout=30: seq.pop(0), sleep=waits.append)
+        out = pp.fetch_all_projections(get=lambda url, params=None, timeout=30, headers=None: seq.pop(0), sleep=waits.append)
         assert out == {"data": [], "included": []}
         assert waits == [5, 2.0], (status, waits)
 
@@ -342,7 +358,7 @@ def test_pp_fetch_gives_up_after_three_attempts():
     pp = _load_pp()
     calls, waits = [], []
 
-    def get(url, params=None, timeout=30):
+    def get(url, params=None, timeout=30, headers=None):
         calls.append(params["page"])
         return _Resp(403)
 
@@ -358,7 +374,7 @@ def test_pp_fetch_does_not_retry_404_and_retries_connection_errors():
     pp = _load_pp()
     calls = []
 
-    def get404(url, params=None, timeout=30):
+    def get404(url, params=None, timeout=30, headers=None):
         calls.append(1)
         return _Resp(404)
 
@@ -368,7 +384,7 @@ def test_pp_fetch_does_not_retry_404_and_retries_connection_errors():
 
     seq = [requests.ConnectionError("reset"), _Resp(200)]
 
-    def flaky(url, params=None, timeout=30):
+    def flaky(url, params=None, timeout=30, headers=None):
         item = seq.pop(0)
         if isinstance(item, Exception):
             raise item
@@ -409,6 +425,33 @@ def test_freeze_saves_published_board_marked_pp_unavailable(tmp_path, monkeypatc
     assert row["pp_unavailable"] is True and row["match"] == "published_only"
     assert (row["line"], row["odds_type"], row["side"], row["cg_score"]) == (27.5, "standard", "OVER", 54.5)
     assert "403" in row["pp_unavailable_reason"]
+
+
+def test_freeze_falls_back_when_the_response_is_still_cached(tmp_path, monkeypatch):
+    import json as _json
+
+    from nba import board_freeze as bf
+
+    pp = bf._load_pp_odds()
+
+    def boom():
+        raise pp.StalePrizePicksResponse("cf-cache-status=STALE Age=25")
+
+    pub = [
+        {"player": "Jayson Tatum", "team": "BOS", "stat": "Points", "line": 27.5, "projection": 30.0,
+         "cg_score": 54.5, "opponent": "DET", "game_date": "2026-10-20", "generated_at": "2026-10-20T17:50:00Z",
+         "start": "2026-10-20T19:00:00Z"},
+    ]
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", boom)
+    monkeypatch.setattr(bf, "fetch_published_projections", lambda: pub)
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
+    outputs = out_file.read_text()
+    assert "pp_unavailable=true" in outputs and "skipped=false" in outputs
+    rows = _json.loads(next(tmp_path.glob("board_*.json")).read_text())
+    assert rows[0]["pp_unavailable"] is True and rows[0]["player"] == "Jayson Tatum"
+    assert "STALE" in rows[0]["pp_unavailable_reason"]
 
 
 def test_freeze_without_pp_and_no_slate_rows_fails(tmp_path, monkeypatch):
