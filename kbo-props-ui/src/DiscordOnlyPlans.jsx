@@ -1,36 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { DISCORD_ONLY_NOTE, discordPlanCards } from './pricingTiers';
 import { requestDiscordCheckoutUrl } from './tracking';
 import { useAgeGate } from './ageGateContext';
 import { sessionAccessToken } from './supabaseClient';
 import './Discord.css';
 
+// A session URL from an earlier click on this page is reused for this long.
+// Stripe keeps the session open for 24h; the margin covers a tab left open.
+export const DISCORD_URL_REUSE_MS = 60 * 60 * 1000;
+
 export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutStart }) {
   const plans = discordPlanCards(import.meta.env || {});
   const { requireAge } = useAgeGate();
-  const [hrefs, setHrefs] = useState({ weekly: '', monthly: '' });
+  // Checkout Sessions are created only from a Buy click, never on page load.
+  // Loading /pricing used to open a weekly and a monthly session per visit
+  // (and again on every auth refresh), so Stripe filled with expired sessions.
+  const ready = useRef({});
+  const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    // The public landing creates a Checkout Session on click, not on load.
-    if (variant === 'public') return undefined;
-    let cancelled = false;
-    (async () => {
-      let token = '';
-      if (user) {
-        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
-      }
-      for (const plan of ['weekly', 'monthly']) {
-        try {
-          const url = await requestDiscordCheckoutUrl({ plan, token });
-          if (!cancelled) setHrefs((prev) => ({ ...prev, [plan]: url }));
-        } catch { /* the click retries */ }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user, variant]);
-
   async function start(plan) {
+    if (busy) return;
     if (!(await requireAge())) return;
     setError('');
     const open = (url) => {
@@ -42,19 +32,27 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
       }
       window.location.assign(url);
     };
-    const ready = hrefs[plan];
-    if (ready) {
-      open(ready);
+    // Keyed by account so a logout/login on this tab never reuses another
+    // person's (or a guest's) session.
+    const cacheKey = `${user?.id || 'guest'}:${plan}`;
+    const cached = ready.current[cacheKey];
+    if (cached && Date.now() - cached.at < DISCORD_URL_REUSE_MS) {
+      open(cached.url);
       return;
     }
+    setBusy(plan);
     try {
       let token = '';
-      if (user) token = await sessionAccessToken() || '';
+      if (user) {
+        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
+      }
       const url = await requestDiscordCheckoutUrl({ plan, token });
-      setHrefs((prev) => ({ ...prev, [plan]: url }));
+      ready.current[cacheKey] = { url, at: Date.now() };
       open(url);
     } catch {
       setError('Discord checkout is unavailable right now. Try again in a moment.');
+    } finally {
+      setBusy('');
     }
   }
 
@@ -76,21 +74,14 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
               {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
             <p className="discord-plan-limited">Not included: {plan.limited}</p>
-            {hrefs[plan.plan] ? (
-              <a
-                className="discord-btn discord-btn-primary discord-plan-cta"
-                href={hrefs[plan.plan]}
-                target={user && variant === 'page' ? '_blank' : undefined}
-                rel="noopener noreferrer"
-                onClick={() => onCheckoutStart?.()}
-              >
-                {plan.cta}{plan.price ? ` · ${plan.price}` : ''}
-              </a>
-            ) : (
-              <button type="button" className="discord-btn discord-btn-primary discord-plan-cta" onClick={() => start(plan.plan)}>
-                {plan.cta}{plan.price ? ` · ${plan.price}` : ''}
-              </button>
-            )}
+            <button
+              type="button"
+              className="discord-btn discord-btn-primary discord-plan-cta"
+              disabled={busy === plan.plan}
+              onClick={() => start(plan.plan)}
+            >
+              {busy === plan.plan ? 'Opening checkout…' : `${plan.cta}${plan.price ? ` · ${plan.price}` : ''}`}
+            </button>
           </article>
         ))}
       </div>
