@@ -64,12 +64,22 @@ def components_for(label: str) -> tuple[str, ...]:
 class RowFeatures:
     """Prefix sums of minutes and the needed stats over the last MAX_GAMES prior games."""
 
-    def __init__(self, games: list[dict], stats: tuple[str, ...], dvp: dict):
+    def __init__(self, games: list[dict], stats: tuple[str, ...], dvp: dict,
+                 minutes_games: list[dict] | None = None):
         games = games[:MAX_GAMES]
         self.n = len(games)
         self.min = [0.0]
         for g in games:
             self.min.append(self.min[-1] + g["min"])
+        # Minutes window source. Defaults to `games` (replay/tuning unchanged);
+        # the live board passes the log including playoff games, newest first.
+        if minutes_games is None:
+            self.mins_n, self.mins = self.n, self.min
+        else:
+            mg = minutes_games[:MAX_GAMES]
+            self.mins_n, self.mins = len(mg), [0.0]
+            for g in mg:
+                self.mins.append(self.mins[-1] + g["min"])
         self.cum = {}
         for s in stats:
             acc = [0.0]
@@ -83,8 +93,8 @@ class RowFeatures:
         return self.cum[stat][n] / self.min[n] if n and self.min[n] > 0 else 0.0
 
     def minutes(self, m: int) -> float:
-        m = min(m, self.n)
-        return self.min[m] / m if m else 0.0
+        m = min(m, self.mins_n)
+        return self.mins[m] / m if m else 0.0
 
 
 def project(label: str, f: RowFeatures, k: dict) -> float:

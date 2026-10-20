@@ -9,6 +9,7 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const { parseRotowireLineups } = require('./rotowireLineups');
 const schedule = require('./schedule');
+const { canonicalGameDate, projectionAvgMins } = require('./minutes');
 require('dotenv').config();
 
 const app = express();
@@ -609,28 +610,14 @@ function normalizeRow(row, src) {
   };
 }
 
-// ── Canonicalise a game date (ISO or M/D/YYYY) to YYYY-MM-DD ──────────────────
-// The two gamelog CSVs store dates in different formats (the stats-API gamelog
-// uses "2026-07-15T00:00:00", the scraped boxscores use "07/15/2026"). Reducing
-// both to a canonical calendar date lets the same game from either source dedupe
-// against each other and sort correctly.
-function canonicalGameDate(value) {
-  const raw = String(value || '').trim();
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const us = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (us) return `${us[3]}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}`;
-  const parsed = new Date(raw);
-  return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString().slice(0, 10);
-}
-
 // ── Merge + dedupe the gamelog CSVs, sorted newest-first ─────────────────────
 // Regular-season sources feed projection math. Playoff box scores
 // (wnba_boxscores_postseason.csv) are appended only when includePostseason is
 // set, tagged `postseason: true`, and listed last so a regular-season row always
 // wins the dedupe. Filtering `!g.postseason` therefore returns exactly the
-// regular-season-only list, which keeps live projections (and the ML shadow
-// replay in ml/wnba/replay.py) unchanged while game logs show playoff games.
+// regular-season-only list, which per-minute rates use (as does the ML shadow
+// replay in ml/wnba/replay.py). The minutes input (projectionAvgMins) counts
+// playoff games too.
 async function getAllGamelogs({ includePostseason = false } = {}) {
   const [bs, gl, ps] = await Promise.all([
     readCsv(path.join(ROOT, 'wnba_boxscores_2025_2026.csv')),
@@ -920,7 +907,8 @@ app.get('/api/projections/v2', async (req, res) => {
     const ppStandardLines = rawPpStandardLines === rawPpLines
       ? ppLines
       : dropStartedBoardLines(rawPpStandardLines, scheduleEvents, teamByName);
-    // Projection math stays on regular-season games only; the displayed game log
+    // Per-minute rates stay on regular-season games; the minutes input counts
+    // playoff/Finals games (last 10 by date). The displayed game log
     // (recentGames: chart, L5/L10/L20/L30, hit rates) also includes playoff games.
     const all = logsWithPostseason.filter(g => !g.postseason);
     const teamGameTotals = buildTeamGameTotals(logsWithPostseason);
@@ -1005,8 +993,7 @@ app.get('/api/projections/v2', async (req, res) => {
         };
       }
 
-      const last10    = games.slice(0, 10);
-      const avgMins   = last10.reduce((s, g) => s + g.min, 0) / last10.length;
+      const avgMins   = projectionAvgMins(logGames);
       const dvpFactors = dvpOpponent ? (dvpMaps[position]?.[dvpOpponent] ?? {}) : {};
       const opponentRankMap = dvpOpponent ? (dvpRankMaps[position]?.[dvpOpponent] ?? {}) : {};
       const dvpRank = opponentRankMap.pts ?? DVP_RANK_NEUTRAL;
@@ -1360,8 +1347,9 @@ app.get('/api/edge', async (req, res) => {
     const spreads = await fetchSpreads(propSlateDates(rawPpStandard));
     const scheduleEvents = await fetchSchedule(propSlateDates(rawPpStandard));
     const ppStandard = dropStartedBoardLines(rawPpStandard, scheduleEvents, teamByPlayerName(bio));
-    // Projections use regular-season games; hit rates / season average use the
-    // full game log including playoff games (same split as /api/projections/v2).
+    // Per-minute rates use regular-season games; the minutes input, hit rates
+    // and season average use the full game log including playoff games (same
+    // split as /api/projections/v2).
     const all = logsWithPostseason.filter(g => !g.postseason);
 
     const dvpMaps  = { Guard: gDvp.map, Forward: fDvp.map, Center: cDvp.map };
@@ -1385,8 +1373,7 @@ app.get('/api/edge', async (req, res) => {
       const games    = all.filter(g => g.player.toLowerCase() === nameLow);
       const logGames = logsWithPostseason.filter(g => g.player.toLowerCase() === nameLow);
 
-      const last10    = games.slice(0, 10);
-      const avgMins   = last10.length ? last10.reduce((s, g) => s + g.min, 0) / last10.length : 0;
+      const avgMins   = projectionAvgMins(logGames);
 
       for (const prop of props) {
         const { stat: statLabel, line, opponent, gameDate, start_time: startTime } = prop;
