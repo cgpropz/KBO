@@ -80,7 +80,11 @@ class FilterTests(unittest.TestCase):
             projection("7", "NBA", "p1", "Jayson Tatum", stat="Points - 1st 3 Minutes", odds="standard", line=1.5),
             projection("7", "NBA", "p1", "Jayson Tatum", stat="Quarter Points", odds="standard", line=9.5),
         ]
-        parsed, report = pp.rows_from_payload(payload_from(rows))
+        parsed, report = pp.rows_from_payload(
+            payload_from(rows),
+            now=datetime(2026, 10, 20, 12, tzinfo=EASTERN),
+        )
+        self.assertEqual(report["excluded_started"], 0)
         self.assertEqual(report["excluded_nbap"], 1)
         self.assertEqual(report["excluded_nbaszn"], 1)
         self.assertEqual(report["excluded_combos"], 1)
@@ -341,8 +345,8 @@ class CacheAndSnapshotTests(unittest.TestCase):
             calls.append({"url": url, "params": dict(params or {}), "headers": dict(headers or {})})
             return _HeadersResp(payload, {
                 "Date": "Tue, 20 Oct 2026 19:00:00 GMT",
-                "Age": "90",
-                "cf-cache-status": "HIT",
+                "Age": "0",
+                "cf-cache-status": "MISS",
                 "Set-Cookie": "session=super-secret",
                 "Authorization": "Bearer token-secret",
             })
@@ -362,9 +366,9 @@ class CacheAndSnapshotTests(unittest.TestCase):
         self.assertEqual(calls[0]["headers"].get("Pragma"), "no-cache")
         log = buf.getvalue()
         self.assertIn("Date=Tue, 20 Oct 2026 19:00:00 GMT", log)
-        self.assertIn("Age=90", log)
-        self.assertIn("cf-cache-status=HIT", log)
-        self.assertIn("::warning::", log)
+        self.assertIn("Age=0", log)
+        self.assertIn("cf-cache-status=MISS", log)
+        self.assertNotIn("::warning::", log)
         self.assertNotIn("super-secret", log)
         self.assertNotIn("token-secret", log)
         self.assertNotIn("Set-Cookie", log)
@@ -391,6 +395,73 @@ class CacheAndSnapshotTests(unittest.TestCase):
                 "cf-cache-status": "STALE",
             }})(), 2)
         self.assertIn("::warning::", warned.getvalue())
+
+    def test_miss_with_age_zero_is_accepted(self):
+        payload = {"data": [{"id": "1"}], "included": [], "meta": {"total_pages": 1, "total_count": 1}}
+        calls = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append(params["_cb"])
+            return _HeadersResp(payload, {"Date": "Tue, 20 Oct 2026 19:00:00 GMT", "Age": "0", "cf-cache-status": "MISS"})
+
+        out = pp.fetch_all_projections(get=get, sleep=lambda _s: None)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(out["data"], [{"id": "1"}])
+
+    def test_stale_age_25_retries_then_main_leaves_snapshots(self):
+        calls = []
+
+        def get(url, params=None, timeout=30, headers=None):
+            calls.append({"params": dict(params or {}), "headers": dict(headers or {})})
+            return _HeadersResp(
+                {"data": [], "included": [], "meta": {"total_pages": 1}},
+                {"Date": "Tue, 20 Oct 2026 19:06:00 GMT", "Age": "25", "cf-cache-status": "STALE"},
+            )
+
+        prior = json.dumps([{"name": "Kept", "ppAllProps": [{"stat": "Points", "line": 10.5}]}])
+        err = io.StringIO()
+        sleeps = []
+        with tempfile.TemporaryDirectory() as folder:
+            snapshots = {}
+            for odds_type in pp.ODDS_TYPES:
+                path = Path(folder) / f"{odds_type}.json"
+                path.write_text(prior, encoding="utf-8")
+                snapshots[odds_type] = path
+            with (
+                patch.object(pp, "SNAPSHOTS", snapshots),
+                patch.object(pp.requests, "get", get),
+                patch.object(pp.time, "sleep", lambda seconds: sleeps.append(seconds)),
+                redirect_stderr(err),
+            ):
+                code = pp.main([])
+            for path in snapshots.values():
+                self.assertEqual(path.read_text(encoding="utf-8"), prior)
+        self.assertEqual(code, 1)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(sleeps, [5, 15])
+        self.assertEqual(len({call["params"]["_cb"] for call in calls}), 3)
+        self.assertTrue(all(call["headers"].get("Cache-Control") == "no-cache" for call in calls))
+        logged = err.getvalue()
+        self.assertIn("::error::", logged)
+        self.assertIn("cached", logged)
+        self.assertIn("STALE", logged)
+        self.assertIn("Age=25", logged)
+        self.assertTrue(issubclass(pp.StalePrizePicksResponse, pp.InconsistentPrizePicksSnapshot))
+        self.assertTrue(issubclass(pp.StalePrizePicksResponse, Exception))
+
+    def test_started_line_is_dropped_and_future_line_is_kept(self):
+        fetch_time = datetime(2026, 10, 20, 19, 30, tzinfo=EASTERN)
+        rows = [
+            projection("7", "NBA", "s", "Started Player", stat="Points", line=20.5, start="2026-10-20T19:00:00-04:00"),
+            projection("7", "NBA", "e", "Tipoff Player", stat="Rebounds", line=6.5, start="2026-10-20T19:30:00-04:00"),
+            projection("7", "NBA", "f", "Later Player", stat="Assists", line=5.5, start="2026-10-20T20:00:00-04:00"),
+        ]
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            parsed, report = pp.rows_from_payload(payload_from(rows), now=fetch_time)
+        self.assertEqual(report["excluded_started"], 2)
+        self.assertEqual([(row["name"], row["stat"], row["line"]) for row in parsed], [("Later Player", "Assists", 5.5)])
+        self.assertIn("Dropped 2 lines whose start_time is at or before the fetch", buf.getvalue())
 
     def test_retry_still_backs_off_and_busts_each_attempt(self):
         payload = {"data": [], "included": [], "meta": {"total_pages": 1}}

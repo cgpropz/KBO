@@ -427,6 +427,33 @@ def test_freeze_saves_published_board_marked_pp_unavailable(tmp_path, monkeypatc
     assert "403" in row["pp_unavailable_reason"]
 
 
+def test_freeze_falls_back_when_the_response_is_still_cached(tmp_path, monkeypatch):
+    import json as _json
+
+    from nba import board_freeze as bf
+
+    pp = bf._load_pp_odds()
+
+    def boom():
+        raise pp.StalePrizePicksResponse("cf-cache-status=STALE Age=25")
+
+    pub = [
+        {"player": "Jayson Tatum", "team": "BOS", "stat": "Points", "line": 27.5, "projection": 30.0,
+         "cg_score": 54.5, "opponent": "DET", "game_date": "2026-10-20", "generated_at": "2026-10-20T17:50:00Z",
+         "start": "2026-10-20T19:00:00Z"},
+    ]
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", boom)
+    monkeypatch.setattr(bf, "fetch_published_projections", lambda: pub)
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
+    outputs = out_file.read_text()
+    assert "pp_unavailable=true" in outputs and "skipped=false" in outputs
+    rows = _json.loads(next(tmp_path.glob("board_*.json")).read_text())
+    assert rows[0]["pp_unavailable"] is True and rows[0]["player"] == "Jayson Tatum"
+    assert "STALE" in rows[0]["pp_unavailable_reason"]
+
+
 def test_freeze_without_pp_and_no_slate_rows_fails(tmp_path, monkeypatch):
     from nba import board_freeze as bf
 

@@ -171,6 +171,16 @@ class InconsistentPrizePicksSnapshot(RuntimeError):
     """Pages in one pull do not describe a single PrizePicks snapshot."""
 
 
+class StalePrizePicksResponse(InconsistentPrizePicksSnapshot):
+    """A cache-busted request was still served from Cloudflare's cache."""
+
+
+# A cache-busted request must not be served from cache. HIT/STALE/UPDATING/
+# REVALIDATED, or any Age over the 20s max-age, is retried with a new _cb.
+CACHED_CF_STATUSES = frozenset({"HIT", "STALE", "UPDATING", "REVALIDATED"})
+CACHE_MAX_AGE_SECONDS = 20
+
+
 def cache_buster(page: object) -> str:
     """Unique _cb value: epoch milliseconds, page, and a per-process counter."""
     global _CACHE_BUST_SEQ
@@ -274,6 +284,22 @@ def page_set_token(payload: object) -> tuple:
     return (totals, pages, stable_links)
 
 
+def cached_response_detail(response) -> tuple[bool, str, str]:
+    """Whether this response is still cached, plus cf-cache-status and Age."""
+    kind = (_response_header(response, "cf-cache-status") or "").strip().upper()
+    age_raw = _response_header(response, "Age")
+    age_seconds = None
+    if age_raw is not None:
+        try:
+            age_seconds = float(age_raw)
+        except (TypeError, ValueError):
+            age_seconds = None
+    cached = kind in CACHED_CF_STATUSES or (
+        age_seconds is not None and age_seconds > CACHE_MAX_AGE_SECONDS
+    )
+    return cached, kind, age_raw if age_raw is not None else "-"
+
+
 def _retry_wait(response, default: float) -> float:
     headers = getattr(response, "headers", None) or {}
     raw = headers.get("Retry-After") if hasattr(headers, "get") else None
@@ -284,12 +310,14 @@ def _retry_wait(response, default: float) -> float:
     return max(0.0, min(value, RETRY_AFTER_CAP))
 
 
-def get_page_with_retry(getter, params: dict, sleep=time.sleep, waits=RETRY_WAITS):
-    """One projections page. Retries 403/429/5xx and connection errors, then raises."""
+def get_page_with_retry(getter, params: dict, sleep=None, waits=RETRY_WAITS):
+    """One projections page. Retries 403/429/5xx, connection errors, and cached bodies."""
+    pause = time.sleep if sleep is None else sleep
     attempts = len(waits) + 1
+    page = params.get("page")
     for attempt in range(1, attempts + 1):
         request_params = dict(params)
-        request_params["_cb"] = cache_buster(params.get("page"))
+        request_params["_cb"] = cache_buster(page)
         try:
             response = getter(
                 PP_URL,
@@ -301,16 +329,31 @@ def get_page_with_retry(getter, params: dict, sleep=time.sleep, waits=RETRY_WAIT
             if attempt == attempts:
                 raise
             wait = waits[attempt - 1]
-            print(f"PrizePicks page {params.get('page')}: {type(exc).__name__}; retry {attempt}/{attempts - 1} in {wait}s")
-            sleep(wait)
+            print(f"PrizePicks page {page}: {type(exc).__name__}; retry {attempt}/{attempts - 1} in {wait}s")
+            pause(wait)
             continue
-        log_prizepicks_cache(response, params.get("page"))
+        log_prizepicks_cache(response, page)
         status = getattr(response, "status_code", 200)
-        if status in RETRY_STATUSES and attempt < attempts:
-            wait = _retry_wait(response, waits[attempt - 1])
-            print(f"PrizePicks page {params.get('page')}: HTTP {status}; retry {attempt}/{attempts - 1} in {wait:g}s")
-            sleep(wait)
+        cached, cache_status, age = cached_response_detail(response)
+        if (cached or status in RETRY_STATUSES) and attempt < attempts:
+            if status in RETRY_STATUSES:
+                wait = _retry_wait(response, waits[attempt - 1])
+                reason = f"HTTP {status}"
+            else:
+                wait = waits[attempt - 1]
+                reason = f"cached cf-cache-status={cache_status or '-'} Age={age}"
+            print(f"PrizePicks page {page}: {reason}; retry {attempt}/{attempts - 1} in {wait:g}s")
+            pause(wait)
             continue
+        if cached:
+            message = (
+                f"PrizePicks page {page} came back cached after {attempts} attempts "
+                f"(cf-cache-status={cache_status or '-'}, Age={age}). "
+                "Refusing to publish a cached board. "
+                "The previous published board and last-good copies are unchanged."
+            )
+            print(f"::error::{message}", file=sys.stderr)
+            raise StalePrizePicksResponse(message)
         response.raise_for_status()
         return response
     raise RuntimeError("unreachable")
@@ -361,18 +404,23 @@ def _fetch_projection_pages(getter, per_page: int, sleep) -> dict:
     return {"data": all_data, "included": deduped}
 
 
-def fetch_all_projections(per_page: int = 1000, get=None, sleep=time.sleep) -> dict:
+def fetch_all_projections(per_page: int = 1000, get=None, sleep=None) -> dict:
     """Fetch every PrizePicks projections page on the all-leagues board.
 
-    Each request is cache-busted. A page set that changes mid-pull is fetched
-    again from page 1. A second change prints ::error and raises
-    InconsistentPrizePicksSnapshot. Callers must not replace snapshots.
+    Each request is cache-busted. A cached response is retried inside the page
+    fetch; if the last attempt is still cached, StalePrizePicksResponse is
+    raised and callers must not replace snapshots. A page set that changes
+    mid-pull is fetched again from page 1. A second change prints ::error and
+    raises InconsistentPrizePicksSnapshot.
     """
     getter = get or requests.get
+    pause = time.sleep if sleep is None else sleep
     error: InconsistentPrizePicksSnapshot | None = None
     for pull in (1, 2):
         try:
-            return _fetch_projection_pages(getter, per_page, sleep)
+            return _fetch_projection_pages(getter, per_page, pause)
+        except StalePrizePicksResponse:
+            raise
         except InconsistentPrizePicksSnapshot as exc:
             error = exc
             if pull == 1:
@@ -509,8 +557,28 @@ def projection_league(row: dict, leagues: dict, players: dict) -> str:
     return str((players.get(player_id) or {}).get("league") or "").strip()
 
 
-def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
-    """Return NBA rows and a drop/unmapped report. Does not apply the slate date."""
+def _start_instant(raw: object) -> datetime | None:
+    """PrizePicks start_time as an aware datetime, or None when it cannot be read."""
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+    return parsed
+
+
+def rows_from_payload(payload: dict, now: datetime | None = None) -> tuple[list[dict], dict]:
+    """Return NBA rows and a drop/unmapped report. Does not apply the slate date.
+
+    A row whose start_time is at or before the fetch time is a game that has
+    already started and is dropped. now defaults to the current Eastern time.
+    """
+    fetch_time = now or datetime.now(SLATE_TIMEZONE)
+    if fetch_time.tzinfo is None:
+        fetch_time = fetch_time.replace(tzinfo=SLATE_TIMEZONE)
     leagues, players = _index_included(payload)
     rows = []
     report = {
@@ -520,6 +588,7 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
         "excluded_combos": 0,
         "excluded_stats": 0,
         "excluded_promo": 0,
+        "excluded_started": 0,
         "unmapped_stats": [],
     }
     unmapped = set()
@@ -551,6 +620,10 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
         if stat in EXCLUDED_STATS:
             report["excluded_stats"] += 1
             continue
+        started = _start_instant(attrs.get("start_time"))
+        if started is not None and started <= fetch_time:
+            report["excluded_started"] += 1
+            continue
         stat_key = STAT_MAP.get(stat)
         if stat and stat_key is None:
             unmapped.add(stat)
@@ -574,6 +647,10 @@ def rows_from_payload(payload: dict) -> tuple[list[dict], dict]:
             "gameDate": parse_game_date(attrs.get("start_time") or attrs.get("board_time") or ""),
         })
     report["unmapped_stats"] = sorted(unmapped)
+    print(
+        f"Dropped {report['excluded_started']} lines whose start_time is at or before "
+        f"the fetch ({fetch_time.astimezone(SLATE_TIMEZONE).strftime('%Y-%m-%d %H:%M %Z')})"
+    )
     return rows, report
 
 
@@ -805,7 +882,7 @@ def load_teams() -> dict:
 
 
 def prepare(payload: dict, roster: list[dict], today: datetime | None = None, teams: dict | None = None):
-    rows, filter_report = rows_from_payload(payload)
+    rows, filter_report = rows_from_payload(payload, now=today)
     slate_rows, slate_date = select_slate_rows(rows, today=today)
     boards, match_report = build_boards(slate_rows, roster, teams if teams is not None else load_teams())
     return {
@@ -841,7 +918,8 @@ def print_report(result: dict) -> None:
         f"other leagues {dropped['excluded_other_league']}, "
         f"combos {dropped['excluded_combos']}, "
         f"excluded stats {dropped['excluded_stats']}, "
-        f"promos {dropped.get('excluded_promo', 0)}"
+        f"promos {dropped.get('excluded_promo', 0)}, "
+        f"started {dropped.get('excluded_started', 0)}"
     )
     unmapped = dropped["unmapped_stats"]
     print("Unmapped stat types: " + (", ".join(unmapped) if unmapped else "none"))
