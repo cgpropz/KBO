@@ -2,6 +2,7 @@ import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { kboRawRating, modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
+import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
@@ -76,6 +77,7 @@ export function nbaAccessDecision({
   tier,
   flagResolved,
   nbaPublic,
+  freePreview = NBA_FREE_PREVIEW_ENABLED,
 }) {
   if (emailResolved !== true) return 'deny';
   const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -83,7 +85,8 @@ export function nbaAccessDecision({
   if (flagResolved !== true || nbaPublic !== true) return 'deny';
   if (tierResolved !== true) return 'deny';
   if (ALL_ACCESS_TIERS.has(tier)) return 'full';
-  return 'preview';
+  // Free NBA top 3 (opening weeks): the same 3-row preview as other sports.
+  return freePreview === true ? 'preview' : 'deny';
 }
 
 export const NHL_OWNER_EMAIL = NBA_OWNER_EMAIL;

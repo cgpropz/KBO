@@ -8,6 +8,8 @@
 
 import { confirmedGoalieStarters, isNeutralHubRow, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
+import { nbaHubRows } from './memberHub.js'
+import { boundCg, cgScore } from './cgScore.js'
 import { formatPoints, formatSpread, kickoffInstant, statusPill } from './nfl/gameCardModel.js'
 import { publicFaqs } from './publicFaqs.js'
 
@@ -21,6 +23,17 @@ const TO_ROWS = {
   kbo: kboHubRows,
   wnba: wnbaHubRows,
   nhl: nhlHubRows,
+  nba: nbaPublicRows,
+}
+
+// NBA public rows score like the NBA board (#297): CG Score bounded 0-100,
+// with the unbounded score kept as the tiebreak at the cap.
+export function nbaPublicRows(data) {
+  return nbaHubRows(data).map((row) => {
+    const raw = cgScore(row.projection, row.line, row.stat)
+    const score = boundCg(raw)
+    return { ...row, score: score == null ? NaN : Number(score), rawScore: raw == null ? NaN : Number(raw) }
+  })
 }
 
 export const PUBLIC_SPORTS = LANDING_SPORTS.map((sport) => ({
