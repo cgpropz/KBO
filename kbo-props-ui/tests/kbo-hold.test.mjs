@@ -10,6 +10,11 @@ import { keepSlipRow } from '../src/slipAvailability.js'
 import { prizepicksPulled } from '../src/nhl/pointsGate.js'
 
 const FILE = kboHold()
+// Pinned clock for the /api/data cases: 11:30 PM ET 10/19, before the
+// fixture's first pitch (START), so the started-game filter does not empty
+// the board once the real date passes 10/20. Only Date is mocked.
+const PINNED_NOW = new Date('2026-10-20T03:30:00Z')
+const pinClock = (t) => t.mock.timers.enable({ apis: ['Date'], now: PINNED_NOW })
 // Far-future expiry so these cases do not depend on the clock; expiry has its own test.
 const HOLD = { active: true, since: '2026-10-20T00:30:00Z', expires_at: '2099-01-01T00:00:00Z', message: KBO_HOLD_MESSAGE }
 const START = '2026-10-20T18:30:00+09:00'
@@ -125,7 +130,8 @@ async function call(ds, tables) {
   return res
 }
 
-test('/api/data serves the held KBO board to logged-out visitors', async () => {
+test('/api/data serves the held KBO board to logged-out visitors', async (t) => {
+  pinClock(t)
   _setKboHold(HOLD)
   _clearCache()
   const res = await call('prizepicks_props', { prizepicks_props: staleBoard() })
@@ -163,7 +169,8 @@ test('hold expires at expires_at (12:00 PM ET 10/20) and cannot stick', () => {
   assert.equal(kboHoldActive('prizepicks_props', staleBoard(), { ...hold, expires_at: 'soon' }, before), false)
 })
 
-test('/api/data stops holding once the hold has expired, even for a cached board row', async () => {
+test('/api/data stops holding once the hold has expired, even for a cached board row', async (t) => {
+  pinClock(t)
   _setKboHold({ ...HOLD, expires_at: '2000-01-01T00:00:00Z' })
   _clearCache()
   const res = await call('prizepicks_props', { prizepicks_props: staleBoard() })
