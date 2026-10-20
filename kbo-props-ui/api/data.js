@@ -975,14 +975,19 @@ export async function resolveTier(client, authorization) {
 // Clocks and prop counts only. Paid rows never ride along. A failed read
 // returns the clocks shipped with the last site deploy, so a data blip
 // cannot blank the public status file.
+// The clock is what the refresh gates and the NBA freeze read, so every
+// request reads the table (one in-flight read per instance) instead of the
+// up-to-30-minute stale-while-revalidate copy, and the CDN holds it 30s.
+// A failed read still falls back to a recent in-memory copy, then the bundle.
+export const BOARD_STATUS_CACHE = 'public, max-age=30, s-maxage=30';
 export async function handleBoardStatus(req, res, client) {
-  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.setHeader('Cache-Control', BOARD_STATUS_CACHE);
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const row = await readSnapshot(client || getClient(), 'board_status');
+    const row = await startBoardRead(client || getClient(), 'board_status');
     if (row && row.data) return res.status(200).json(publicBoardStatus(row.data));
   } catch (err) {
     console.error('[api/data] board status read failed:', err.message);

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import { readFileSync } from 'node:fs'
-import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE } from '../api/data.js'
+import { handleDataRequest, _clearCache, _lastGoodWrite, _setTimeouts, _standardFilterRuns, timeouts, cacheWindows, SNAPSHOT_READ_MS, CLIENT_FETCH_MS, BOARD_READ_BUDGET_MS, boardReadBudgetMs, stepBudgetMs, lastGoodMaxAgeMs, lastGoodMemoryAt, PRIVATE_DATA_CACHE, BOARD_STATUS_CACHE } from '../api/data.js'
 import {
   DATASETS,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
@@ -1962,4 +1962,51 @@ test('a failed nba_players refresh keeps the last good in-memory copy for the fa
   } finally {
     cacheWindows.freshMs = prevFresh
   }
+})
+
+test('board_status reads the table on every request and the CDN holds it 30s', async () => {
+  _clearCache()
+  let clock = '2026-10-20T13:10:22Z'
+  let reads = 0
+  let fail = false
+  const client = mockClient()
+  client.from = (table) => {
+    const chain = {
+      select() { return chain },
+      eq() { return chain },
+      async maybeSingle() {
+        if (table !== 'board_status') return { data: null, error: null }
+        reads += 1
+        if (fail) return { data: null, error: { message: 'boom' } }
+        return { data: { data: { boards: [{ sport: 'nba', board_updated_at: clock, prop_count: 495, stale: false }] }, updated_at: clock }, error: null }
+      },
+    }
+    return chain
+  }
+  const get = async () => {
+    const res = mockRes()
+    await handleDataRequest({ method: 'GET', query: { ds: 'board_status' }, headers: {} }, res, client)
+    return res
+  }
+  const first = await get()
+  assert.equal(first.headers['cache-control'], BOARD_STATUS_CACHE)
+  assert.equal(BOARD_STATUS_CACHE, 'public, max-age=30, s-maxage=30')
+  assert.equal(first.body.boards.find((b) => b.sport === 'nba').board_updated_at, clock)
+  // A new publish inside the 60s fresh window is served right away, not the cached copy.
+  clock = '2026-10-20T15:14:15Z'
+  const second = await get()
+  assert.equal(second.body.boards.find((b) => b.sport === 'nba').board_updated_at, clock)
+  assert.equal(reads, 2)
+  // A failed read still serves the last clock it read.
+  fail = true
+  const third = await get()
+  assert.equal(third.statusCode, 200)
+  assert.equal(third.body.boards.find((b) => b.sport === 'nba').board_updated_at, clock)
+  _clearCache()
+})
+
+test('/status.json keeps a 30s cache header in vercel.json', () => {
+  const cfg = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
+  const status = cfg.headers.find((h) => h.source === '/status.json')
+  assert.equal(status.headers.find((h) => h.key === 'Cache-Control').value, 'public, max-age=30, s-maxage=30')
 })
