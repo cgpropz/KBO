@@ -1,7 +1,7 @@
 // Discord-only Checkout Sessions. No network, no credentials.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { handleDiscordCheckoutRequest } from '../api/_discordCheckout.js'
+import { handleDiscordCheckoutRequest, isAutomatedClient } from '../api/_discordCheckout.js'
 
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_test_discord'
 const PRICE = 'price_discordWeeklyTest'
@@ -29,13 +29,15 @@ function mockStripe(calls) {
   }
 }
 
-async function call(body, { method = 'POST', env = ENV, user = null, stripe } = {}) {
+const BROWSER_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Twitter for iPhone'
+
+async function call(body, { method = 'POST', env = ENV, user = null, stripe, headers = { 'user-agent': BROWSER_UA }, now } = {}) {
   const calls = []
   const res = mockRes()
   await handleDiscordCheckoutRequest(
-    { method, body, headers: {} },
+    { method, body, headers },
     res,
-    { env, user, stripe: stripe === undefined ? mockStripe(calls) : stripe },
+    { env, user, now, stripe: stripe === undefined ? mockStripe(calls) : stripe },
   )
   return { res, calls }
 }
@@ -98,4 +100,96 @@ test('refuses an unknown plan instead of charging all-access', async () => {
 test('only POST is allowed', async () => {
   const { res } = await call({}, { method: 'GET', stripe: null })
   assert.equal(res.statusCode, 405)
+})
+
+// --- Sessions only for real Buy clicks ---------------------------------
+
+test('crawlers, link previews, headless browsers and prefetch get no session', async () => {
+  const agents = [
+    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130 Safari/537.36',
+    'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+    'Twitterbot/1.0',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/130.0 Safari/537.36',
+    'WhatsApp/2.23.20.0',
+    'curl/8.5.0',
+    '',
+  ]
+  for (const ua of agents) {
+    const { res, calls } = await call({ plan: 'weekly' }, { headers: { 'user-agent': ua } })
+    assert.equal(res.statusCode, 403, ua)
+    assert.equal(calls.length, 0, ua)
+  }
+  const prefetch = await call({ plan: 'weekly' }, { headers: { 'user-agent': BROWSER_UA, 'sec-purpose': 'prefetch' } })
+  assert.equal(prefetch.res.statusCode, 403)
+  assert.equal(prefetch.calls.length, 0)
+})
+
+test('real phone and desktop browsers still check out', () => {
+  for (const ua of [
+    BROWSER_UA,
+    'Mozilla/5.0 (Linux; Android 12; CUBOT X30 Build/SP1A) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/400.0;]',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  ]) assert.equal(isAutomatedClient({ 'user-agent': ua }), false, ua)
+})
+
+function customerStripe(calls, openSessions) {
+  return {
+    customers: { async list() { return { data: [{ id: 'cus_1', email: 'buyer@example.com', created: 1 }] } } },
+    checkout: {
+      sessions: {
+        async list(params) { calls.push(['list', params]); return { data: openSessions } },
+        async create(params) { calls.push(['create', params]); return { url: SESSION_URL, id: 'cs_new' } },
+      },
+    },
+  }
+}
+
+const NOW_MS = 1_800_000_000_000
+const NOW_S = NOW_MS / 1000
+const OPEN_URL = 'https://checkout.stripe.com/c/pay/cs_live_open'
+const buyer = { id: 'user_123', email: 'buyer@example.com' }
+
+test('a signed-in customer gets their open session for the same plan back', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [
+    { url: 'https://checkout.stripe.com/c/pay/other', mode: 'subscription', metadata: { cg_plan: 'discord_monthly', tier: 'discord_only' }, expires_at: NOW_S + 20 * 3600 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' }, expires_at: NOW_S + 20 * 3600 },
+  ])
+  const { res } = await call({ plan: 'weekly' }, { user: buyer, stripe, now: () => NOW_MS })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { url: OPEN_URL })
+  assert.deepEqual(calls.map((c) => c[0]), ['list'])
+  assert.deepEqual(calls[0][1], { customer: 'cus_1', status: 'open', limit: 20 })
+})
+
+test('an open session that is about to expire, or for another plan, is not reused', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'discord_weekly', tier: 'discord_only' }, expires_at: NOW_S + 10 * 60 },
+    { url: OPEN_URL, mode: 'subscription', metadata: { cg_plan: 'weekly', tier: 'combined' }, expires_at: NOW_S + 20 * 3600 },
+  ])
+  const { res } = await call({ plan: 'weekly' }, { user: buyer, stripe, now: () => NOW_MS })
+  assert.deepEqual(res.body, { url: SESSION_URL })
+  assert.deepEqual(calls.map((c) => c[0]), ['list', 'create'])
+  assert.equal(calls[1][1].customer, 'cus_1')
+})
+
+test('a failed lookup still creates a session', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [])
+  stripe.checkout.sessions.list = async () => { throw new Error('rate limited') }
+  const { res } = await call({ plan: 'monthly' }, { user: buyer, stripe, now: () => NOW_MS })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { url: SESSION_URL })
+})
+
+test('guests skip the lookup and get a fresh session', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [])
+  const { res } = await call({ plan: 'weekly' }, { stripe })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(calls.map((c) => c[0]), ['create'])
 })

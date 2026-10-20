@@ -21,6 +21,45 @@ const PLANS = {
   monthly: { envKey: 'STRIPE_PRICE_DISCORD_MONTHLY', fallback: DISCORD_MONTHLY_PRICE_ID, cgPlan: 'discord_monthly' },
 };
 
+// Automated clients that execute page JS (crawler renderers, link-preview
+// renderers, headless browsers, uptime checks) must not open Checkout Sessions.
+// Real browsers never send these tokens.
+const AUTOMATED_UA_RE = /(?:^|[^a-z])bot\b|[a-z]bot\/|crawl|spider|slurp|preview|facebookexternalhit|embedly|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptime|curl\/|wget\/|python-requests|python-urllib|aiohttp|axios\/|node-fetch|undici|go-http-client|okhttp|java\/|libwww|httpclient|scrapy|phantomjs|puppeteer|playwright|whatsapp|telegrambot|skypeuripreview/i;
+
+export function isAutomatedClient(headers = {}) {
+  const ua = String(headers['user-agent'] || headers['User-Agent'] || '').trim();
+  if (!ua) return true;
+  if (AUTOMATED_UA_RE.test(ua)) return true;
+  const purpose = String(headers.purpose || headers['sec-purpose'] || headers['x-purpose'] || headers['x-moz'] || '').toLowerCase();
+  return purpose.includes('prefetch') || purpose.includes('prerender') || purpose.includes('preview');
+}
+
+// An open session for the same customer and plan with this much life left is
+// returned instead of creating another one.
+const REUSE_MIN_REMAINING_SEC = 30 * 60;
+
+async function reusableSession(client, customerId, plan, priceId, nowSec) {
+  if (!customerId || typeof client.checkout?.sessions?.list !== 'function') return null;
+  try {
+    const page = await client.checkout.sessions.list({ customer: customerId, status: 'open', limit: 20 });
+    for (const session of page?.data || []) {
+      const url = String(session?.url || '');
+      if (!url.startsWith('https://checkout.stripe.com/')) continue;
+      if (session.mode !== 'subscription') continue;
+      if (session.metadata?.cg_plan !== plan.cgPlan || session.metadata?.tier !== 'discord_only') continue;
+      if (!(Number(session.expires_at) - nowSec >= REUSE_MIN_REMAINING_SEC)) continue;
+      // Line items are not on the list object; metadata + mode pin the plan,
+      // and the price must still match when Stripe returned it.
+      const listedPrice = session.line_items?.data?.[0]?.price?.id;
+      if (listedPrice && listedPrice !== priceId) continue;
+      return url;
+    }
+  } catch {
+    /* fall through to a new session */
+  }
+  return null;
+}
+
 let stripe = null;
 function getStripe(env) {
   const key = cleanEnv(env?.STRIPE_SECRET_KEY);
@@ -97,12 +136,21 @@ async function optionalUser(req, env, authenticate) {
  *
  * Automatic tax is off, matching the weekly All-Access session. Phone is not
  * collected. Returns only { url }.
+ *
+ * The site calls this only from a Buy click. Requests from crawlers, link
+ * previews, headless browsers and prefetch/prerender get 403 and no session.
+ * A signed-in buyer with a Stripe customer gets their still-open session for
+ * the same plan back instead of a new one.
  */
 export async function handleDiscordCheckoutRequest(req, res, deps = {}) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (isAutomatedClient(req.headers || {})) {
+    return res.status(403).json({ error: 'Checkout unavailable' });
   }
 
   const env = deps.env || process.env;
@@ -143,6 +191,10 @@ export async function handleDiscordCheckoutRequest(req, res, deps = {}) {
   const existingCustomerId = email.includes('@') ? await stripeCustomerId(client, email) : null;
   if (existingCustomerId) params.customer = existingCustomerId;
   else if (email.includes('@')) params.customer_email = email;
+
+  const nowSec = Math.floor((deps.now ? deps.now() : Date.now()) / 1000);
+  const reuse = await reusableSession(client, existingCustomerId, plan, priceId, nowSec);
+  if (reuse) return res.status(200).json({ url: reuse });
 
   let session;
   try {
