@@ -589,12 +589,23 @@ function stripPitcher(pitcher) {
   return rest;
 }
 
+// Only a prop with a live line counts as locked. Under the manual KBO hold
+// nothing is locked, and a pulled or line-less row (NO LINE) never counts,
+// so the paywall cannot imply hidden picks that do not exist.
+function matchupPropLocked(prop) {
+  if (!prop || typeof prop !== 'object') return false;
+  if (prop.removed === true || String(prop.pp_status || '').toLowerCase() === 'removed') return false;
+  if (prop.line == null || prop.line === '' || !Number.isFinite(Number(prop.line))) return false;
+  return true;
+}
+
 function previewMatchups(payload) {
   const obj = payload && typeof payload === 'object' ? payload : {};
   const matchups = Array.isArray(obj.matchups) ? obj.matchups : [];
+  const held = obj.kbo_hold?.active === true;
   let lockedCount = 0;
   const data = matchups.map((game) => {
-    lockedCount += Array.isArray(game?.props) ? game.props.length : 0;
+    if (!held && Array.isArray(game?.props)) lockedCount += game.props.filter(matchupPropLocked).length;
     return {
       ...game,
       props: [],

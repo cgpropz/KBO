@@ -5,6 +5,7 @@
 // stay.
 import { kboModelProjection, pregameSide } from './kboBoardScore.js'
 import { prizepicksPulled } from './nhl/pointsGate.js'
+import { isStandardBoardLine } from './standardBoard.js'
 
 export const normalizeName = (value) => String(value || '')
   .normalize('NFD')
@@ -45,7 +46,9 @@ const STAT_ALIAS = {
 
 // Exact name or name-signature match only, on the same team and opponent.
 // There is no team/opponent fallback: a pulled line for one player must
-// never show as another player's line.
+// never show as another player's line. Standard PrizePicks lines only: a
+// goblin or demon line never shows on the matchup page, so a player with
+// only promo lines shows NO LINE.
 export function liveLineLookup(cards) {
   const lineMap = new Map()
   for (const card of cards || []) {
@@ -56,6 +59,7 @@ export function liveLineLookup(cards) {
     const byStat = new Map()
     for (const prop of card?.props || []) {
       if (prizepicksPulled(prop)) continue
+      if (!isStandardBoardLine(prop)) continue
       const line = Number(prop?.line)
       if (prop?.line == null || prop?.line === '' || !Number.isFinite(line)) continue
       if (!byStat.has(prop?.stat)) byStat.set(prop?.stat, [])
