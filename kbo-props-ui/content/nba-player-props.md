@@ -23,7 +23,7 @@ status: draft
 
 The CGPropz NBA board lines up a model projection with each posted player prop so you can see where the model and the line disagree before you build a lineup. The board covers the 2026-27 regular season (opening night: Tuesday, Oct 20).
 
-NBA is part of All-Access. There is no free NBA preview, so NBA props don't appear in the homepage free top 3.
+{{^nba-free}}NBA is part of All-Access. There is no free NBA preview, so NBA props don't appear in the homepage free top 3.{{/nba-free}}{{#nba-free}}The full NBA board is part of All-Access. For the opening weeks, NBA is also in the [homepage free top 3](/#free-top-3): three standard NBA lines ranked by CG Score.{{/nba-free}}
 
 **[Open the NBA board]({{NBA BOARD URL: CONFIRM WITH GIT BOT}})** · **[See All-Access pricing](/pricing)**
 
@@ -63,7 +63,7 @@ Each row pairs a posted line with the CGPropz projection, the CG Score and recen
 - **Hit rates:** how often the player cleared tonight's line in recent games. The board shows **L5, L10, L20, H2H** (against tonight's opponent) and **Season**, with **L10** as the main view. Read each with its game count.
 - **Line types:** The board shows standard lines only.
 - **Stat types:** Points, Rebounds, Assists, 3-PT Made, Steals, Blocked Shots, Turnovers, Blocks + Steals, Points + Rebounds, Points + Assists, Rebounds + Assists, and Points + Rebounds + Assists.
-- **Free preview:** none for NBA. The full board is All-Access.
+- **Free preview:** {{^nba-free}}none for NBA. The full board is All-Access.{{/nba-free}}{{#nba-free}}for the opening weeks, the top three standard NBA lines by CG Score are free in the homepage free top 3. The full board is All-Access.{{/nba-free}}
 
 A CG Score is not a probability, and a higher score is not a claim that a prop hits more often.
 
@@ -91,7 +91,7 @@ Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers 
 On the CGPropz NBA board. The board shows standard lines only, with every prop available to All-Access members.
 
 **Are there free NBA picks?**
-No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access.
+{{^nba-free}}No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access.{{/nba-free}}{{#nba-free}}Yes, for the opening weeks of the season. The homepage free top 3 includes NBA: the three standard NBA lines with the highest CG Scores on the board. The rest of the NBA board is part of All-Access.{{/nba-free}}
 
 **What is CG Score?**
 It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often.
@@ -107,7 +107,7 @@ The lines on CGPropz are the lines at the time the board was updated. Confirm th
   "mainEntity": [
     { "@type": "Question", "name": "When does the 2026-27 NBA season start?", "acceptedAnswer": { "@type": "Answer", "text": "Tuesday, Oct 20, 2026, with three games: Celtics at Pistons (3:00 PM ET), 76ers at Knicks (7:00 PM ET) and Thunder at Spurs (9:30 PM ET)." } },
     { "@type": "Question", "name": "Where are today's NBA player props?", "acceptedAnswer": { "@type": "Answer", "text": "On the CGPropz NBA board. The board shows standard lines only, with every prop available to All-Access members." } },
-    { "@type": "Question", "name": "Are there free NBA picks?", "acceptedAnswer": { "@type": "Answer", "text": "No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access." } },
+    { "@type": "Question", "name": "Are there free NBA picks?", "acceptedAnswer": { "@type": "Answer", "text": "{{^nba-free}}No. NBA has no free preview, so it isn't part of the homepage free top 3. The NBA board is part of All-Access.{{/nba-free}}{{#nba-free}}Yes, for the opening weeks of the season. The homepage free top 3 includes NBA: the three standard NBA lines with the highest CG Scores on the board. The rest of the NBA board is part of All-Access.{{/nba-free}}" } },
     { "@type": "Question", "name": "What is CG Score?", "acceptedAnswer": { "@type": "Answer", "text": "It shows how far the CGPropz projection sits from a prop's line. It isn't a probability, and a higher score isn't a claim that a prop hits more often." } },
     { "@type": "Question", "name": "Can I use these props on PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "The lines on CGPropz are the lines at the time the board was updated. Confirm the current line in your app before entering. CGPropz is not affiliated with PrizePicks or Underdog." } }
   ]

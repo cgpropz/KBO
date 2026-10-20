@@ -9,6 +9,7 @@ import {
   isNbaDataset,
   isNhlDataset,
   nbaAccessDecision,
+  NBA_FREE_TOP3_DATASETS,
   nhlAccessDecision,
   datasetIsFullyPublic,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
@@ -20,6 +21,7 @@ import {
 } from './_dataAccess.js';
 import { landingFallbackBody } from './_landingFallback.js';
 import { applyKboHold } from './_kboHold.js';
+import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
 import { clearMemberTierCache, lookupMemberTier } from './_memberTier.js';
@@ -701,6 +703,12 @@ function forbid(res) {
   return res.status(403).json({ error: 'Forbidden' });
 }
 
+// src/nbaPreviewFlag.js (off by default). Tests flip it with the setter.
+let nbaFreePreview = NBA_FREE_PREVIEW_ENABLED;
+export function _setNbaFreePreview(value) {
+  nbaFreePreview = value === true;
+}
+
 async function handleNbaRequest(req, res, client, ds) {
   const caller = await resolveNbaCaller(client, req.headers?.authorization);
   // Auth/email failures deny before the flag read, so a hanging flag cannot
@@ -727,6 +735,10 @@ async function handleNbaRequest(req, res, client, ds) {
     tier: caller.tier,
     flagResolved,
     nbaPublic,
+    // Flagged free NBA top 3 (src/nbaPreviewFlag.js, off by default): logged-out
+    // and free callers get the 3-row preview of this one dataset.
+    freePreview: nbaFreePreview,
+    freeTop3Dataset: NBA_FREE_TOP3_DATASETS.has(ds),
   });
   // A valid token whose profile read did not finish is retryable. The owner
   // email is already on the token, so that short-circuit still opens the board.
@@ -766,18 +778,18 @@ async function handleNbaRequest(req, res, client, ds) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const shaped = withPresentedData(
-    req,
-    decision === 'full'
-      ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
-      : shapeForTier(
-        ds,
-        FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
-        'free',
-        { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
-      ),
-    board,
-  );
+  const tierShaped = decision === 'full'
+    ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
+    : shapeForTier(
+      ds,
+      FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
+      'free',
+      { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
+    );
+  // ?player= on a preview reads from the trimmed rows, never the full board:
+  // a visible player's other props, per-stat maps and game logs stay
+  // full-access only. Full access keeps main's behavior.
+  const shaped = withPresentedData(req, tierShaped, decision === 'full' ? board : tierShaped.data);
   return sendData(req, res, {
     data: shaped.data,
     updatedAt: row.updated_at || null,

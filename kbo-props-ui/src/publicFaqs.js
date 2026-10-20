@@ -1,9 +1,8 @@
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag.js'
+import { freePreviewBoardList } from './freePreviewCopy.js'
 
 export function publicFaqs() {
-  const previewBoards = NFL_FREE_PREVIEW_ENABLED
-    ? 'KBO, WNBA, NFL, and NHL'
-    : 'KBO, WNBA, and NHL'
+  const previewBoards = freePreviewBoardList()
   const nflNote = NFL_FREE_PREVIEW_ENABLED
     ? ''
     : ' The NFL free preview is off, so NFL rows are not in that public feed.'

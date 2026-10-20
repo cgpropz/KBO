@@ -23,6 +23,7 @@ import { appBoardPath } from '../src/appSport.js';
 import { FREE_TOP3_END, FREE_TOP3_SPORTS, FREE_TOP3_START, renderSportFreeTop3 } from './freeTop3Html.mjs';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
+import { applyNbaFreeCopy } from './nbaFreeCopy.mjs';
 import {
   assertNoCurlyPlaceholders,
   demoteHeadings,
@@ -318,7 +319,7 @@ export function renderPoliciesPage() {
 const NBA_GUIDE = join(dirname(fileURLToPath(import.meta.url)), '../content/nba-player-props.md');
 
 export function renderNbaPlayerPropsPage() {
-  const raw = readFileSync(NBA_GUIDE, 'utf8').replaceAll(
+  const raw = applyNbaFreeCopy(readFileSync(NBA_GUIDE, 'utf8')).replaceAll(
     '{{NBA BOARD URL: CONFIRM WITH GIT BOT}}',
     appBoardPath('nba'),
   );

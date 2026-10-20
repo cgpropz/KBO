@@ -33,8 +33,8 @@ test('the demon free preview ranks the floored pick line and keeps the posted li
 
 test('the NBA free preview does not use the WNBA line floor', () => {
   const payload = [
-    { name: 'Tiny', ppAllProps: [{ stat: '3-PT Made', line: 0.5, projection: 2.15 }] },
-    { name: 'Normal', ppAllProps: [{ stat: 'Points', line: 8.5, projection: 12 }] },
+    { name: 'Tiny', matched: true, projectionStatus: 'projected', gp: 40, avgMins: 30, espnInjuryChecked: true, ppAllProps: [{ stat: '3-PT Made', line: 0.5, projection: 2.15 }] },
+    { name: 'Normal', matched: true, projectionStatus: 'projected', gp: 40, avgMins: 30, espnInjuryChecked: true, ppAllProps: [{ stat: 'Points', line: 8.5, projection: 12 }] },
   ]
   const preview = shapeForTier('nba_projections_standard', payload, 'free')
   assert.deepEqual(preview.data.map((player) => player.name), ['Tiny', 'Normal'])
