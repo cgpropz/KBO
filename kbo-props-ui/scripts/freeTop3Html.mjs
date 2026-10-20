@@ -81,8 +81,18 @@ export function gameDay(rows, now = Date.now()) {
 // pipeline's availability filter, which keeps OUT players off the free
 // preview before it is published.
 export function previewRows(sport, body, lineupBody, now = Date.now()) {
-  if (sport.lineups && !(lineupBody && lineupBody.data != null)) return [];
-  return freeTop3Rows(sport.id, body, now, sport.lineups ? lineupBody : null);
+  return previewResult(sport, body, lineupBody, now).rows;
+}
+
+// A read that failed is not the same as a read that came back empty. failed
+// is true when the preview did not load (null, timed out, HTTP error) or is
+// not the anonymous preview, or when a sport with a lineup feed got no feed
+// or a feed whose data is null. Only a successful, empty read may say that no
+// free top 3 is posted.
+export function previewResult(sport, body, lineupBody, now = Date.now()) {
+  if (!body || typeof body !== 'object' || body.preview !== true) return { rows: [], failed: true };
+  if (sport.lineups && !(lineupBody && typeof lineupBody === 'object' && lineupBody.data != null)) return { rows: [], failed: true };
+  return { rows: freeTop3Rows(sport.id, body, now, sport.lineups ? lineupBody : null), failed: false };
 }
 
 function sideText(row) {
@@ -108,21 +118,40 @@ function rowItem(row) {
   return `<li${startAttr}><strong>${escapeHtml(row.player)}</strong>${matchup}: ${escapeHtml(row.stat)} ${side ? `${side} ` : ''}${escapeHtml(fmt(row.line))} · CG Score ${escapeHtml(Number(row.score).toFixed(1))}${when}</li>`;
 }
 
-// One block per sport. data-built is when the rows were read; data-live marks
-// a sport page block that the browser re-reads from the live free preview
-// (the homepage's React landing replaces its own copy on load). The stamp and
-// rows sit in a data-nosnippet div so a stale or pulled row from the build
-// cannot show in a search snippet; the heading, note and page stay indexable.
-export function renderSportFreeTop3({ sport, rows, now = Date.now(), heading = 'h2', live = false }) {
+// One block per sport. data-built is when the rows were read (every built
+// block carries it, so the inline script can age out an empty or failed block
+// too); data-live marks a sport page block that the browser re-reads from the
+// live free preview (the homepage's React landing replaces its own copy on
+// load). The stamp and rows sit in a data-nosnippet div so a stale or pulled
+// row from the build cannot show in a search snippet; the heading, note and
+// page stay indexable. failed: the read failed, so the block shows the
+// out-of-date note and no rows, never the "nothing posted" claim. The
+// .free-top3-stamp paragraph is the one hide()/hideStale() rewrite.
+export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', live = false, failed = false }) {
   const boardLink = `<a href="${pageUrl(`/?sport=${sport.id}`)}">Open the ${escapeHtml(sport.name)} board</a>`;
-  const built = rows.length ? ` data-built="${new Date(now).toISOString()}"` : '';
-  const open = `<div class="free-top3-block" data-sport="${escapeHtml(sport.id)}"${built}${live ? ' data-live' : ''}>`;
+  // now == null: the committed static fallback (no read at all). It carries
+  // no data-built and makes no claim about what is posted, so the page stays
+  // byte-stable between generator runs and a skipped build step says nothing false.
+  const built = now == null ? '' : ` data-built="${new Date(now).toISOString()}"`;
+  const open = `<div class="free-top3-block" data-sport="${escapeHtml(sport.id)}"${built}${live ? ' data-live' : ''}${failed ? ' data-failed' : ''}>`;
+  const title = `<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>`;
+  if (now == null) {
+    return `${open}${title}
+      <div data-nosnippet><p class="free-top3-stamp">Today's free ${escapeHtml(sport.name)} top 3 is on the live board.</p></div>
+      <p class="note">${boardLink} for the latest lines.</p></div>`;
+  }
+  if (failed) {
+    return `${open}${title}
+      <div data-nosnippet><p class="free-top3-stamp">${escapeHtml(FREE_TOP3_STALE_TEXT)}</p></div>
+      <p class="note">${boardLink} for the current lines.</p></div>`;
+  }
   if (!rows.length) {
-    return `${open}<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>
-      <p>No ${escapeHtml(sport.name)} free top 3 is posted right now. ${boardLink} for the latest lines.</p></div>`;
+    return `${open}${title}
+      <div data-nosnippet><p class="free-top3-stamp">No ${escapeHtml(sport.name)} free top 3 is posted right now.</p></div>
+      <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   const day = gameDay(rows, now);
-  return `${open}<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>
+  return `${open}${title}
       <div data-nosnippet><p class="free-top3-stamp">Next game day: <time datetime="${etIsoDate(day)}">${escapeHtml(etDate(day))}</time> (ET) · as of ${escapeHtml(etStamp(now))} ET</p>
       <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
       <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
@@ -139,7 +168,7 @@ export const FREE_TOP3_STARTED_TEXT = 'Today\u2019s free top 3 games have starte
 export function freeTop3Script(moduleSrc = '') {
   const src = moduleSrc ? JSON.stringify(moduleSrc) : '""';
   return `<script>(function(){var n=Date.now(),M=${FREE_TOP3_MAX_AGE_MS},S=${src};`
-    + `function hide(b,t){var ol=b.querySelector('.free-top3');if(!ol)return;var s=b.querySelector('.free-top3-stamp');if(s){s.textContent=t;}ol.remove();}`
+    + `function hide(b,t){var s=b.querySelector('.free-top3-stamp');if(s){s.textContent=t;}var ol=b.querySelector('.free-top3');if(ol){ol.remove();}}`
     + `document.querySelectorAll('.free-top3-block').forEach(function(b){var t=Date.parse(b.getAttribute('data-built')||'');if(!(t>0)||n-t>M){hide(b,${JSON.stringify(FREE_TOP3_STALE_TEXT)});return;}`
     + `b.querySelectorAll('.free-top3 li[data-start]').forEach(function(li){if(Date.parse(li.getAttribute('data-start'))<=n){li.remove();}});var ol=b.querySelector('.free-top3');if(ol&&!ol.children.length){hide(b,${JSON.stringify(FREE_TOP3_STARTED_TEXT)});}});`
     + `if(S&&document.querySelector('.free-top3-block[data-live]')){import(S).then(function(m){return m.refreshFreeTop3();}).catch(function(){document.querySelectorAll('.free-top3-block[data-live]').forEach(function(b){hide(b,${JSON.stringify(FREE_TOP3_STALE_TEXT)});});});}`

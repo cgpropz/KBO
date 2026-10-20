@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import vm from 'node:vm'
-import { FREE_TOP3_END, FREE_TOP3_MAX_AGE_MS, FREE_TOP3_SPORTS, FREE_TOP3_STALE_TEXT, FREE_TOP3_START, freeTop3Rows, freeTop3Script, patchFreeTop3, previewRows, renderSportFreeTop3 } from '../scripts/freeTop3Html.mjs'
+import { FREE_TOP3_END, FREE_TOP3_MAX_AGE_MS, FREE_TOP3_SPORTS, FREE_TOP3_STALE_TEXT, FREE_TOP3_START, freeTop3Rows, previewResult, freeTop3Script, patchFreeTop3, previewRows, renderSportFreeTop3 } from '../scripts/freeTop3Html.mjs'
 import { refreshFreeTop3 } from '../scripts/freeTop3Client.mjs'
 import { homeRootInner } from '../scripts/homeShell.mjs'
 import { renderKboPage } from '../scripts/kboSeoPage.mjs'
@@ -67,7 +67,10 @@ test('static pages ship the marker with the empty fallback; the build fills it',
   for (const html of [pages['/nfl-player-props'], pages['/nhl-player-props'], pages['/wnba-player-props'], renderKboPage()]) {
     assert.ok(html.includes(FREE_TOP3_START) && html.includes(FREE_TOP3_END))
     assert.match(html, /<section id="free-top-3">/)
-    assert.match(html, /free top 3 is posted right now/)
+    // The committed fallback makes no claim and carries no build clock.
+    assert.match(html, /top 3 is on the live board\./)
+    assert.equal(html.includes('free top 3 is posted right now'), false)
+    assert.equal(/class="free-top3-block"[^>]*data-built/.test(html), false)
   }
   assert.equal(pages['/nba-player-props'].includes(FREE_TOP3_START), false)
   assert.ok(homeRootInner().includes(FREE_TOP3_START))
@@ -89,13 +92,18 @@ test('static pages ship the marker with the empty fallback; the build fills it',
   assert.equal(asked.some((url) => /authorization|token/i.test(url)), false)
   assert.equal(result.counts.kbo > 0, true)
   assert.equal(result.counts.nhl, 0)
+  assert.deepEqual(result.failed.sort(), ['nfl', 'nhl', 'wnba'])
   const kbo = readFileSync(join(dist, 'kbo-player-props.html'), 'utf8')
   assert.match(kbo, /<strong>Top<\/strong>/)
   assert.equal(kbo.includes('Pulled'), false)
   assert.equal(kbo.split(FREE_TOP3_START).length - 1, 1)
   assert.equal(kbo.includes('<!--'), false)
+  // NHL answered HTTP 500: out-of-date note, no rows, a build clock, never "nothing posted".
   const nhl = readFileSync(join(dist, 'nhl-player-props.html'), 'utf8')
-  assert.match(nhl, /No NHL free top 3 is posted right now\./)
+  assert.equal(nhl.includes('free top 3 is posted right now'), false)
+  assert.ok(nhl.includes(FREE_TOP3_STALE_TEXT))
+  assert.match(nhl, /data-sport="nhl" data-built="2026-10-19T22:00:00\.000Z" data-live data-failed>/)
+  assert.equal(/<ol class="free-top3">/.test(nhl.split(FREE_TOP3_START)[1]), false)
   assert.match(kbo, /data-sport="kbo" data-built="2026-10-19T22:00:00\.000Z" data-live>/)
   assert.match(kbo, /"\/assets\/free-top3-test\.js"/)
   const home = readFileSync(join(dist, 'index.html'), 'utf8')
@@ -132,7 +140,7 @@ test('lineup feeds match the landing, drop OUT players, and a missing feed fails
   assert.ok(previewRows(byId.kbo, kboBody(), null, NOW).length > 0)
 })
 
-test('the build reads each lineup feed; a failed feed leaves that sport empty', async () => {
+test('the build reads each lineup feed; a failed feed shows the out-of-date note, not an empty board', async () => {
   const dist = mkdtempSync(join(tmpdir(), 'free-top3-lu-'))
   const pages = Object.fromEntries(renderSportPages().map((page) => [page.path, page.html]))
   writeFileSync(join(dist, 'nhl-player-props.html'), pages['/nhl-player-props'])
@@ -155,6 +163,11 @@ test('the build reads each lineup feed; a failed feed leaves that sport empty', 
   assert.match(html, /Alex Tuch/)
   const down = await run(false)
   assert.equal(down.counts.nhl, 0)
+  assert.ok(down.failed.includes('nhl'))
+  assert.equal(up.failed.includes('nhl'), false)
+  const downHtml = readFileSync(join(dist, 'nhl-player-props.html'), 'utf8')
+  assert.ok(downHtml.includes(FREE_TOP3_STALE_TEXT))
+  assert.equal(downHtml.includes('free top 3 is posted right now'), false)
 })
 
 // Minimal DOM for the inline script and the browser module.
@@ -181,6 +194,8 @@ function fakeDom(blocks) {
     }
     const ol = block.ol
     ol.remove = () => { block.ol = null }
+    if (spec.noList) block.ol = null
+    if (spec.stamp) block.stamp.textContent = spec.stamp
     return block
   }
   const all = blocks.map(make)
@@ -284,4 +299,63 @@ test('the build-time stamp and rows are data-nosnippet; the heading and note sta
   assert.match(snip[1], /<ol class="free-top3">/)
   assert.ok(html.indexOf('<h2>') < html.indexOf('data-nosnippet'))
   assert.match(html.slice(html.indexOf('</ol></div>')), /class="note"/)
+})
+
+test('previewResult tells a failed read from an empty one', () => {
+  const nhl = FREE_TOP3_SPORTS.find((x) => x.id === 'nhl')
+  const kbo = FREE_TOP3_SPORTS.find((x) => x.id === 'kbo')
+  assert.equal(previewResult(nhl, null, NHL_LINEUPS, NOW).failed, true)
+  assert.equal(previewResult(nhl, { error: 'Forbidden' }, NHL_LINEUPS, NOW).failed, true)
+  assert.equal(previewResult(nhl, NHL_BODY, null, NOW).failed, true)
+  assert.equal(previewResult(nhl, NHL_BODY, { data: null }, NOW).failed, true)
+  assert.equal(previewResult(nhl, NHL_BODY, NHL_LINEUPS, NOW).failed, false)
+  const held = previewResult(kbo, { preview: true, data: { cards: [], kbo_hold: true } }, null, NOW)
+  assert.deepEqual(held, { rows: [], failed: false })
+})
+
+test('failed and empty built blocks carry data-built; only an empty read says nothing is posted', () => {
+  const sport = FREE_TOP3_SPORTS.find((x) => x.id === 'nhl')
+  const failed = renderSportFreeTop3({ sport, rows: [], now: NOW, failed: true, live: true })
+  assert.match(failed, /data-built="2026-10-19T22:00:00\.000Z" data-live data-failed>/)
+  assert.ok(failed.includes(`<p class="free-top3-stamp">${FREE_TOP3_STALE_TEXT}</p>`))
+  assert.equal(failed.includes('posted right now'), false)
+  assert.equal(failed.includes('<ol'), false)
+  const empty = renderSportFreeTop3({ sport, rows: [], now: NOW })
+  assert.match(empty, /data-built="2026-10-19T22:00:00\.000Z"/)
+  assert.match(empty, /<p class="free-top3-stamp">No NHL free top 3 is posted right now\.<\/p>/)
+})
+
+test('the inline script ages out and fails over blocks with no list, rewriting the stamp', async () => {
+  const doc = fakeDom([
+    { sport: 'nhl', built: new Date(NOW - FREE_TOP3_MAX_AGE_MS - 1).toISOString(), starts: [], noList: true, stamp: 'No NHL free top 3 is posted right now.' },
+    { sport: 'kbo', built: new Date(NOW).toISOString(), starts: [], noList: true, live: true, stamp: 'No KBO free top 3 is posted right now.' },
+  ])
+  let rejected
+  const done = new Promise((resolve) => { rejected = resolve })
+  runScript(freeTop3Script('/assets/x.js'), doc, NOW, () => {
+    const p = Promise.reject(new Error('blocked'))
+    p.catch(() => setTimeout(rejected, 0))
+    return p
+  })
+  await done
+  assert.equal(doc.blocks[0].stamp.textContent, FREE_TOP3_STALE_TEXT)
+  assert.equal(doc.blocks[1].stamp.textContent, FREE_TOP3_STALE_TEXT)
+})
+
+test('the browser module treats a null lineup feed as a failed read', async () => {
+  const doc = fakeDom([
+    { sport: 'nhl', built: new Date(NOW).toISOString(), starts: [LATER], live: true },
+    { sport: 'wnba', built: new Date(NOW).toISOString(), starts: [], noList: true, live: true, stamp: 'No WNBA free top 3 is posted right now.' },
+  ])
+  const fetchImpl = async (url) => {
+    if (url === '/api/data?ds=nhl_projections') return { ok: true, json: async () => NHL_BODY }
+    if (url === '/api/data?ds=nhl_lineups') return { ok: true, json: async () => ({ data: null }) }
+    return { ok: false, json: async () => ({}) }
+  }
+  await refreshFreeTop3({ root: doc, fetchImpl, clock: () => NOW })
+  for (const block of doc.blocks) {
+    assert.equal(block.outerHTML, null)
+    assert.equal(block.ol, null)
+    assert.equal(block.stamp.textContent, FREE_TOP3_STALE_TEXT)
+  }
 })

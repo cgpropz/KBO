@@ -2,8 +2,10 @@
 // lineup/injury feeds from the live /api/data endpoint, the same public
 // payloads the landing shows, and writes the free top 3 into dist/index.html
 // and the dist sport pages. No credentials are used and nothing paid is read.
-// Any failure leaves the "no free top 3 posted" text in place and never fails
-// the build. A sport whose lineup feed fails gets no rows (fails closed).
+// A failed or timed-out read (or a missing or null lineup feed) renders the
+// "may be out of date" note with no rows, never the "no free top 3 posted"
+// text, and never fails the build. Only a successful empty read says nothing
+// is posted.
 //
 // Data publishes do not redeploy, so the build also bundles a small browser
 // module (scripts/freeTop3Client.mjs -> dist/assets/free-top3-<hash>.js). On
@@ -17,7 +19,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FREE_TOP3_SPORTS, freeTop3Script, patchFreeTop3, previewRows, renderSportFreeTop3 } from './freeTop3Html.mjs';
+import { FREE_TOP3_SPORTS, freeTop3Script, patchFreeTop3, previewResult, renderSportFreeTop3 } from './freeTop3Html.mjs';
 
 const uiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TIMEOUT_MS = 10_000;
@@ -67,8 +69,8 @@ export async function buildClientModule(distDir) {
   }
 }
 
-export function homeFreeTop3(bySport, now) {
-  return FREE_TOP3_SPORTS.map((sport) => renderSportFreeTop3({ sport, rows: bySport[sport.id] || [], now, heading: 'h3' })).join('\n');
+export function homeFreeTop3(bySport, now, failed = {}) {
+  return FREE_TOP3_SPORTS.map((sport) => renderSportFreeTop3({ sport, rows: bySport[sport.id] || [], now, heading: 'h3', failed: failed[sport.id] === true })).join('\n');
 }
 
 export async function writeFreeTop3({
@@ -79,10 +81,13 @@ export async function writeFreeTop3({
   clientModule = buildClientModule,
 } = {}) {
   const bySport = {};
+  const failed = {};
   for (const sport of FREE_TOP3_SPORTS) {
     const body = await fetchPreview(origin, sport.ds, fetchImpl);
     const lineups = body && sport.lineups ? await fetchPreview(origin, sport.lineups, fetchImpl) : null;
-    bySport[sport.id] = body ? previewRows(sport, body, lineups, now) : [];
+    const result = previewResult(sport, body, lineups, now);
+    bySport[sport.id] = result.rows;
+    failed[sport.id] = result.failed;
   }
   const moduleSrc = clientModule ? await clientModule(distDir) : '';
   const script = freeTop3Script(moduleSrc);
@@ -90,15 +95,15 @@ export async function writeFreeTop3({
   for (const sport of FREE_TOP3_SPORTS) {
     const file = join(distDir, sport.file);
     if (!existsSync(file)) continue;
-    writeFileSync(file, patchFreeTop3(readFileSync(file, 'utf8'), renderSportFreeTop3({ sport, rows: bySport[sport.id], now, live: true }), script));
+    writeFileSync(file, patchFreeTop3(readFileSync(file, 'utf8'), renderSportFreeTop3({ sport, rows: bySport[sport.id], now, live: true, failed: failed[sport.id] === true }), script));
     written.push(sport.file);
   }
   const index = join(distDir, 'index.html');
   if (existsSync(index)) {
-    writeFileSync(index, patchFreeTop3(readFileSync(index, 'utf8'), homeFreeTop3(bySport, now), script));
+    writeFileSync(index, patchFreeTop3(readFileSync(index, 'utf8'), homeFreeTop3(bySport, now, failed), script));
     written.push('index.html');
   }
-  return { written, moduleSrc, counts: Object.fromEntries(Object.entries(bySport).map(([id, rows]) => [id, rows.length])) };
+  return { written, moduleSrc, counts: Object.fromEntries(Object.entries(bySport).map(([id, rows]) => [id, rows.length])), failed: Object.keys(failed).filter((id) => failed[id]) };
 }
 
 const isDirect = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

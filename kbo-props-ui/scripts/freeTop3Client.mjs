@@ -5,7 +5,7 @@
 // used. No credentials are sent. A failed read hides the build-time rows and
 // shows the "may be out of date" note; it never claims nothing is posted.
 
-import { FREE_TOP3_SPORTS, FREE_TOP3_STALE_TEXT, previewRows, renderSportFreeTop3 } from './freeTop3Html.mjs';
+import { FREE_TOP3_SPORTS, FREE_TOP3_STALE_TEXT, previewResult, renderSportFreeTop3 } from './freeTop3Html.mjs';
 
 async function readDataset(fetchImpl, ds) {
   const res = await fetchImpl(`/api/data?ds=${encodeURIComponent(ds)}`, {
@@ -17,14 +17,14 @@ async function readDataset(fetchImpl, ds) {
   return res.json();
 }
 
-// Same effect as the inline script's hide(): drop the rows, keep the block
-// and say the list may be out of date.
+// Same effect as the inline script's hide(): say the list may be out of date
+// (rewriting the stamp paragraph, which an empty or failed block also has)
+// and drop any rows.
 export function hideStale(block) {
-  const ol = block.querySelector('.free-top3');
-  if (!ol) return;
   const stamp = block.querySelector('.free-top3-stamp');
   if (stamp) stamp.textContent = FREE_TOP3_STALE_TEXT;
-  ol.remove();
+  const ol = block.querySelector('.free-top3');
+  if (ol) ol.remove();
 }
 
 export async function liveRows(sport, fetchImpl, now = Date.now()) {
@@ -32,10 +32,11 @@ export async function liveRows(sport, fetchImpl, now = Date.now()) {
     readDataset(fetchImpl, sport.ds),
     sport.lineups ? readDataset(fetchImpl, sport.lineups) : Promise.resolve(null),
   ]);
-  // Credentials are omitted, so anything but the anonymous preview is a
-  // failed read, not an empty board.
-  if (!body || body.preview !== true) throw new Error('not a free preview');
-  return previewRows(sport, body, lineups, now);
+  // Credentials are omitted, so anything but the anonymous preview, or a
+  // lineup feed with no data, is a failed read, not an empty board.
+  const result = previewResult(sport, body, lineups, now);
+  if (result.failed) throw new Error('free preview read failed');
+  return result.rows;
 }
 
 export async function refreshFreeTop3({ root = globalThis.document, fetchImpl = globalThis.fetch?.bind(globalThis), clock = Date.now } = {}) {
