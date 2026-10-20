@@ -255,6 +255,13 @@ test('free matchup_data lockedCount without the hold counts only props with a li
   _clearCache()
   const failed = await call('matchup_data', { matchup_data: md, prizepicks_props: { ...board, failed: true } })
   assert.equal(failed.body.lockedCount, 0)
+  // A malformed board card (non-iterable props) counts 0, never a 500.
+  _clearCache()
+  const malformed = await call('matchup_data', { matchup_data: md, prizepicks_props: { cards: [{ name: 'Oller', team: 'Kia', opponent: 'LG', props: 5 }, ...board.cards] } })
+  assert.equal(malformed.statusCode, 200)
+  assert.equal(malformed.body.preview, true)
+  assert.equal(malformed.body.lockedCount, 0)
+  assert.deepEqual(malformed.body.data.matchups[0].props, [])
   // The hold on: 0 even with live board lines.
   _setKboHold(HOLD)
   _clearCache()

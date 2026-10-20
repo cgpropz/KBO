@@ -1120,7 +1120,14 @@ export async function handleDataRequest(req, res, client) {
     presented,
   );
   if (ds === 'matchup_data' && shaped.preview === true) {
-    shaped.lockedCount = matchupLiveLockedCount(heldPayload, await liveKboBoard(client));
+    // Any error (e.g. a malformed board card) counts 0 locked, never a 500.
+    const liveBoard = await liveKboBoard(client);
+    try {
+      shaped.lockedCount = matchupLiveLockedCount(heldPayload, liveBoard);
+    } catch (err) {
+      console.error(`[api/data] matchup lockedCount failed: ${err?.message || err}`);
+      shaped.lockedCount = 0;
+    }
   }
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {
