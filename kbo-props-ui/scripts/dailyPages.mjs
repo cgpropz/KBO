@@ -85,12 +85,15 @@ export function propComplete(prop) {
     && num(prop.projection) != null && num(prop.cg_score) != null
     && Number.isInteger(prop.l10_hits) && Number.isInteger(prop.l10_n) && prop.l10_n > 0
     && prop.ledger_id != null && prop.ledger_id !== ''
-    && (prop.line_type == null || prop.line_type === 'standard'));
+    && prop.line_type === 'standard');
 }
+
+// Only Board QA verifies a daily file (content/daily/README.md).
+export const DAILY_VERIFIER = 'board-qa';
 
 export function isIndexable(day) {
   return day?.verified === true
-    && typeof day.verified_by === 'string' && day.verified_by.trim() !== ''
+    && day.verified_by === DAILY_VERIFIER
     && Array.isArray(day.props) && day.props.length === 3
     && day.props.every(propComplete);
 }
@@ -204,7 +207,7 @@ export function renderDailyPage(day, { existing = new Set() } = {}) {
       <h3>How to read CG Score</h3>
       <p>${escapeHtml(CG_TEXT)} <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a></p>
       <h2>Hit-rate notes</h2>
-      <ul>${free.map((p) => `<li><strong>${escapeHtml(p.player)}:</strong> cleared ${escapeHtml(fmt(p.line))} in ${p.l10_hits} of the last ${p.l10_n} games.</li>`).join('')}</ul>
+      <ul>${free.map((p) => `<li><strong>${escapeHtml(p.player)}:</strong> went ${escapeHtml(p.side)} ${escapeHtml(fmt(p.line))} in ${p.l10_hits} of the last ${p.l10_n} games.</li>`).join('')}</ul>
       <p>Ten games is a small sample. A role change, an injury to a teammate or a minutes limit can make older games a weak guide, so check the latest news before the game.</p>
       ${free.some((p) => p.dvp_note) ? `<h2>DvP notes</h2><ul>${free.filter((p) => p.dvp_note).map((p) => `<li><strong>${escapeHtml(p.player)}:</strong> ${escapeHtml(p.dvp_note)}</li>`).join('')}</ul><p>DvP shows how today's opponent has defended the player's position. Read it as matchup context alongside the score and the hit rate.</p>` : ''}
       ${isGraded(day) ? resultsTable(free) : ''}`

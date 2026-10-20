@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { withDailyLinks } from '../scripts/build-kbo-seo.mjs';
-import { DAILY_SPORTS, FOOTER_LINE, PROMO_LINE, etIso, isIndexable, readDailyFiles, recentDailyLinks, renderDailyPages } from '../scripts/dailyPages.mjs';
+import { DAILY_SPORTS, FOOTER_LINE, PROMO_LINE, etIso, isIndexable, readDailyFiles, recentDailyLinks, renderDailyPage, renderDailyPages } from '../scripts/dailyPages.mjs';
 import { renderGuidesIndex } from '../scripts/guidesIndex.mjs';
 import { sitemapEntries } from '../scripts/kboSeoPage.mjs';
 
@@ -75,6 +75,12 @@ test('a day with a non-standard line is never indexable', () => {
   assert.equal(isIndexable(day), true);
   assert.equal(isIndexable({ ...day, props: day.props.slice(0, 2) }), false);
   assert.equal(isIndexable({ ...day, verified_by: '' }), false);
+  assert.equal(isIndexable({ ...day, verified_by: 'someone-else' }), false);
+  assert.equal(isIndexable({ ...day, verified_by: 'Board QA' }), false);
+  const noType = { ...day.props[2] };
+  delete noType.line_type;
+  assert.equal(isIndexable({ ...day, props: [...day.props.slice(0, 2), noType] }), false);
+  assert.equal(isIndexable({ ...day, props: [...day.props.slice(0, 2), { ...day.props[2], line_type: null }] }), false);
   assert.equal(isIndexable({ ...day, props: [...day.props.slice(0, 2), { ...day.props[2], ledger_id: null }] }), false);
 });
 
@@ -141,4 +147,15 @@ test('a full site build writes the daily pages and sitemap from a daily dir', as
   assert.ok(sitemap.includes('https://www.cgpropz.com/guides</loc>'));
   assert.ok(existsSync(join(tmp, 'public/nhl-player-props/2026-10-21.html')));
   assert.ok(readFileSync(join(tmp, 'public/nhl-player-props.html'), 'utf8').includes('Daily free top 3 pages'));
+});
+
+test('hit-rate notes say Over or Under, not "cleared"', () => {
+  const day = readDailyFiles(fixtures).find((d) => d.sport === 'nhl' && d.date === '2026-10-20');
+  const under = { ...day, props: day.props.map((p, i) => (i === 2 ? { ...p, side: 'Under' } : p)) };
+  const { html } = renderDailyPage(under);
+  const start = html.indexOf('<h2>Hit-rate notes</h2>');
+  const notes = html.slice(start, html.indexOf('</ul>', start));
+  assert.equal(notes.includes('cleared'), false);
+  assert.equal((notes.match(/went Over /g) || []).length, 2);
+  assert.equal((notes.match(/went Under /g) || []).length, 1);
 });

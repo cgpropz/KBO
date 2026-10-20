@@ -7,8 +7,9 @@ One file per sport and ET slate date: `content/daily/{sport}/{YYYY-MM-DD}.json`
 The site has no read path to `qa_pick_ledger` that avoids prod SQL during the
 day, so Board QA exports the verified rows into this file (outside 6 AM to
 midnight ET for any prod SQL) and commits it. A page is indexable, and listed
-in the sitemap, only when `verified` is `true`, `verified_by` is set, and
-`props` holds exactly three complete standard-line props. Anything else
+in the sitemap, only when `verified` is `true`, `verified_by` is exactly
+`"board-qa"`, and `props` holds exactly three complete props, each with
+`line_type: "standard"` (a missing `line_type` does not count). Anything else
 renders `noindex,follow` with no picks shown. Add `result` to each prop once
 graded; the page then shows a Results table and stays up.
 
