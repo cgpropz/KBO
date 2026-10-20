@@ -86,3 +86,35 @@ test('matchup page fails closed: board fetch failed, empty board, or the #305 ho
   assert.match(s, /mergeLivePrizePicks\(withMarkets, ppSnap\?\.data \|\| \{ cards: \[\], failed: true \}\)/)
   assert.doesNotMatch(src('kboLiveLines.js'), /teamOpp/)
 })
+
+test('matchup page: standard PrizePicks line only, never a goblin or demon line', () => {
+  const promoBoard = {
+    cards: [
+      // Median of 4.5/5.5/6.5 across odds types was 5.5 before; the standard line is 6.5.
+      { name: 'Oller', team: 'Kia', opponent: 'LG', props: [
+        { stat: 'Pitcher Strikeouts', line: 4.5, odds_type: 'goblin' },
+        { stat: 'Pitcher Strikeouts', line: 6.5, odds_type: 'standard' },
+        { stat: 'Pitcher Strikeouts', line: 5.5, odds_type: 'demon' },
+      ] },
+      // Castro only has promo lines: NO LINE.
+      { name: 'Harold Castro', team: 'Kia', opponent: 'LG', props: [
+        { stat: 'Hitter Fantasy Score', line: 4.5, odds_type: 'goblin' },
+        { stat: 'Hitter Fantasy Score', line: 9.5, odds_type: 'Demon' },
+      ] },
+    ],
+  }
+  const getLine = liveLineLookup(promoBoard.cards)
+  assert.equal(getLine({ statNames: ['Pitcher Strikeouts'], team: 'Kia', opponent: 'LG', name: 'Oller' }), 6.5)
+  assert.equal(getLine({ statNames: ['Hitter Fantasy Score'], team: 'Kia', opponent: 'LG', name: 'Harold Castro' }), null)
+  const out = mergeLivePrizePicks({ matchups: [game()] }, promoBoard)
+  const rows = byName(out)
+  assert.equal(rows.Oller.line, 6.5)
+  assert.equal(out.matchups[0].home_pitcher.line, 6.5)
+  assert.equal(cleared(rows['Harold Castro']), true)
+  // A blank or unknown odds type is not standard either.
+  const odd = liveLineLookup([{ name: 'Oller', team: 'Kia', opponent: 'LG', props: [
+    { stat: 'Pitcher Strikeouts', line: 3.5, odds_type: '' },
+    { stat: 'Pitcher Strikeouts', line: 7.5, odds_type: 'flex' },
+  ] }])
+  assert.equal(odd({ statNames: ['Pitcher Strikeouts'], team: 'Kia', opponent: 'LG', name: 'Oller' }), null)
+})

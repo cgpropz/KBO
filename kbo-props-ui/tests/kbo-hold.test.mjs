@@ -188,3 +188,28 @@ test('hold clears stored lines in matchup_data (paid and free) until it is off o
   assert.equal(JSON.stringify(res.body.data).includes('"line":5.5'), false)
   _setKboHold(FILE)
 })
+
+test('free matchup_data lockedCount is 0 under the hold and never counts pulled or line-less rows', async () => {
+  const md = { matchups: [{ away: 'LG', home: 'Kia', away_pitcher: { name: 'Carrasco', line: 5.5 }, home_pitcher: { name: 'Shirakawa', line: 4.5 },
+    props: [
+      { name: 'Oller', prop: 'Strikeouts', line: 5.5, projection: 6.1 },
+      { name: 'Kim Do-yeong', prop: 'Fantasy Score', line: 6.5, projection: 8.96, removed: true, pp_status: 'removed' },
+      { name: 'Castro', prop: 'Fantasy Score', line: null, projection: 8.87, recommendation: 'NO LINE' },
+      { name: 'Park', prop: 'Total Bases', line: 0.5, projection: 0.97, pp_status: 'REMOVED' },
+    ] }] }
+  _setKboHold(HOLD)
+  _clearCache()
+  const held = await call('matchup_data', { matchup_data: md })
+  assert.equal(held.statusCode, 200)
+  assert.equal(held.body.preview, true)
+  assert.equal(held.body.lockedCount, 0)
+  assert.deepEqual(held.body.data.matchups[0].props, [])
+  _setKboHold({ ...HOLD, active: false })
+  _clearCache()
+  const open = await call('matchup_data', { matchup_data: md })
+  assert.equal(open.body.preview, true)
+  // Only Oller has a live line; pulled and NO LINE rows are not counted.
+  assert.equal(open.body.lockedCount, 1)
+  _setKboHold(FILE)
+  _clearCache()
+})
