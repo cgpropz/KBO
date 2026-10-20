@@ -12,6 +12,14 @@ name: NBA board freeze (artifact)
 # in UTC (19:15, 23:15, 01:45) so wall-clock ET stays the same.
 #
 # Oct 20 opening night tips (ET): BOS@DET 3:00 PM, PHI@NY 7:00 PM, OKC@SA 9:30 PM.
+#
+# Board age: before saving, read the public NBA board clock (board_status).
+# Older than 60 minutes inside the NBA window: start nba-props-refresh.yml
+# (-f trigger=nba-due, so its gate still applies) and wait up to 8 minutes
+# for the clock to move. The board is saved either way. After the upload the
+# job fails when the public clock was over 60 minutes old or unreadable, or
+# when the saved rows' own projection_generated_at is over 60 minutes before
+# capture (or missing).
 
 on:
   schedule:
@@ -38,6 +46,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      # Start nba-props-refresh.yml when the board is older than 60 minutes.
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +66,33 @@ jobs:
 
       - name: Install dependencies
         run: pip install requests
+
+      - name: Check NBA board age
+        id: age_pre
+        continue-on-error: true
+        run: python3 -m pipeline.board_age --sport nba --max-age-minutes 60
+
+      # Inside the NBA window only, so an off day does not start a refresh.
+      - name: Refresh a stale NBA board before the freeze
+        if: steps.age_pre.outputs.stale != 'false' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          code=0
+          python3 -m pipeline.refresh_window --sport nba || code=$?
+          if [ "$code" -ne 0 ]; then
+            echo "Outside the NBA game window (exit ${code}); not starting a refresh."
+            exit 0
+          fi
+          gh workflow run nba-props-refresh.yml --ref main -f trigger=nba-due
+          python3 -m pipeline.board_age --sport nba --max-age-minutes 60 --wait-seconds 480 --interval 30
+
+      - name: NBA board age at freeze
+        id: age
+        continue-on-error: true
+        run: python3 -m pipeline.board_age --sport nba --max-age-minutes 60
 
       - name: Freeze NBA board (standard only)
         id: freeze
@@ -102,3 +141,20 @@ jobs:
           path: ${{ runner.temp }}/nba-board/board_*.json.enc
           retention-days: 90
           if-no-files-found: error
+
+      # After the upload, so the record is kept. Red run = the public clock was
+      # over 60 minutes old or unreadable (an empty output counts: the age
+      # step is continue-on-error), or the saved rows' newest
+      # projection_generated_at was over 60 minutes before capture or missing.
+      - name: Fail when the saved NBA board was over 60 minutes old
+        if: steps.freeze.outputs.skipped == 'false' && (steps.age.outputs.stale != 'false' || steps.freeze.outputs.board_stale != 'false')
+        env:
+          CLOCK_STALE: ${{ steps.age.outputs.stale }}
+          CLOCK_AT: ${{ steps.age.outputs.updated_at }}
+          CLOCK_AGE: ${{ steps.age.outputs.age_min }}
+          SAVED_STALE: ${{ steps.freeze.outputs.board_stale }}
+          SAVED_AT: ${{ steps.freeze.outputs.board_generated_at }}
+          SAVED_AGE: ${{ steps.freeze.outputs.board_age_min }}
+        run: |
+          echo "::error title=NBA board stale at freeze::public clock stale=${CLOCK_STALE:-unread} (${CLOCK_AT:-unreadable}, ${CLOCK_AGE:-?} min); saved board stale=${SAVED_STALE:-unread} (projections ${SAVED_AT:-unknown}, ${SAVED_AGE:-?} min before capture); limit 60"
+          exit 1

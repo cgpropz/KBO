@@ -1,0 +1,58 @@
+name: Start NBA refresh if due
+
+# Called from nhl-refresh and nfl-odds-live. Both requeue themselves about
+# every 25 minutes with workflow_dispatch, which GitHub delivers, while it
+# drops most of nba-props-refresh.yml's own cron ticks (8 of ~73 fired on
+# Oct 20 before 11:13 AM ET). Each host run checks the NBA gate (game window
+# plus the 50-minute guard) and, when NBA is due, starts nba-props-refresh.yml
+# on main (-f trigger=nba-due, so that run's gate keeps the 50-minute guard
+# and the 5-minute earlier-run rule) with the job's GITHUB_TOKEN.
+#
+# The caller job holds the only actions: write grant. Every step here is
+# continue-on-error and the script exits 0, so this job never fails or
+# blocks the host sport's refresh job.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  kick:
+    name: Start NBA refresh if due
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Same UTC hours as nba-props-refresh.yml's hourly cron (0-9, 11-23).
+      # Outside them, skip checkout and the gate. refresh-due.sh still checks
+      # the real game window inside these hours.
+      - name: NBA window hours (UTC 0-9, 11-23)
+        id: hours
+        continue-on-error: true
+        run: |
+          hour=$((10#$(date -u +%H)))
+          if [ "$hour" -ne 10 ]; then
+            echo "inside=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "nba-due: outside NBA window hours (UTC ${hour}); nothing to do."
+            echo "inside=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repo
+        if: steps.hours.outputs.inside == 'true'
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Start nba-props-refresh.yml if NBA is due
+        if: steps.hours.outputs.inside == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/nba-due-kick.sh

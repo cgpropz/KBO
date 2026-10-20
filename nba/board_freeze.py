@@ -278,6 +278,43 @@ def build_rows(pp_rows: list[dict], pub: list[dict], captured_at: str) -> list[d
     return out
 
 
+SAVED_BOARD_MAX_AGE_MINUTES = 60
+
+
+def _parse_iso(value) -> dt.datetime | None:
+    if not value:
+        return None
+    try:
+        moment = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=dt.timezone.utc)
+    return moment
+
+
+def saved_board_age(
+    rows: list[dict], captured_at: str, max_age_minutes: int = SAVED_BOARD_MAX_AGE_MINUTES
+) -> dict:
+    """Age of the published projections inside the saved board.
+
+    Newest projection_generated_at among the saved rows (the publish time
+    stamped on every published prop) against captured_at. stale is "unknown"
+    when no saved row carries a readable projection_generated_at.
+    """
+    stamps = [m for m in (_parse_iso(r.get("projection_generated_at")) for r in rows) if m]
+    captured = _parse_iso(captured_at)
+    if not stamps or captured is None:
+        return {"board_generated_at": "", "board_age_min": "", "board_stale": "unknown"}
+    newest = max(stamps)
+    age = round((captured - newest).total_seconds() / 60.0, 1)
+    return {
+        "board_generated_at": newest.astimezone(dt.timezone.utc).isoformat(),
+        "board_age_min": age,
+        "board_stale": "true" if age > max_age_minutes else "false",
+    }
+
+
 def row_touches_et_date(row: dict, et_date: str) -> bool:
     gd = row.get("game_date")
     if gd == et_date:
@@ -395,6 +432,13 @@ def main(argv: list[str] | None = None) -> int:
 
     path = write_board(use_rows, Path(args.out_dir), et_now)
     joined = sum(1 for r in use_rows if r.get("match") == "joined")
+    age = saved_board_age(use_rows, captured_at)
+    if age["board_stale"] != "false":
+        print(
+            f"::warning title=Saved NBA board not fresh::projections generated "
+            f"{age['board_generated_at'] or 'unknown'} ({age['board_age_min'] or '?'} min before capture, "
+            f"limit {SAVED_BOARD_MAX_AGE_MINUTES}); the job fails after the upload"
+        )
     artifact_hint = et_now.strftime("%Y-%m-%d-%H%M")
     print(
         json.dumps(
@@ -406,6 +450,7 @@ def main(argv: list[str] | None = None) -> int:
                 "captured_at": captured_at,
                 "path": str(path),
                 "artifact_hint": artifact_hint,
+                **age,
             }
         )
     )
@@ -414,6 +459,7 @@ def main(argv: list[str] | None = None) -> int:
         rows=len(use_rows),
         artifact_hint=artifact_hint,
         board_path=str(path),
+        **age,
     )
     return 0
 

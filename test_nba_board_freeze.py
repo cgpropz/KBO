@@ -282,3 +282,22 @@ def test_fetch_prizepicks_pages_all_and_filters():
     ]
     assert all(r["odds_type"] == "standard" for r in rows)
     assert rows[0]["team"] == "BOS" or any(r["team"] == "BOS" for r in rows)
+
+
+def test_saved_board_age_uses_newest_projection_generated_at():
+    from nba.board_freeze import saved_board_age
+
+    captured = "2026-10-20T14:15:00-04:00"
+    rows = [
+        {"projection_generated_at": "2026-10-20T13:10:22Z"},
+        {"projection_generated_at": "2026-10-20T17:30:00+00:00"},
+        {"projection_generated_at": None},
+    ]
+    age = saved_board_age(rows, captured)
+    assert age["board_stale"] == "false" and age["board_age_min"] == 45.0
+    old = saved_board_age(rows[:1], captured)
+    assert old["board_stale"] == "true" and old["board_age_min"] == 304.6
+    edge = saved_board_age([{"projection_generated_at": "2026-10-20T17:15:00Z"}], captured)
+    assert edge["board_stale"] == "false"
+    assert saved_board_age([{"projection_generated_at": None}], captured)["board_stale"] == "unknown"
+    assert saved_board_age([], captured)["board_stale"] == "unknown"
