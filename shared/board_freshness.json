@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-20T23:11:14Z",
+  "checked_at": "2026-10-20T23:19:30Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-20T23:07:12.668657+00:00",
@@ -12,10 +12,19 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-20T22:52:28.640682+00:00",
-      "prop_count": 862,
+      "generated_at": "2026-10-20T23:19:30.687644+00:00",
+      "prop_count": 438,
       "started_removed": 0,
       "removals": [
+        {
+          "player": "Brady Tkachuk",
+          "team": "FLA",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "standard",
+          "projection": 2.75,
+          "reason": "line pulled"
+        },
         {
           "player": "Jake Sanderson",
           "team": "OTT",
@@ -27,11 +36,11 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 63,
-        "superseded_dup": 37,
+        "pp_pull": 0,
+        "superseded_dup": 0,
         "manual_out": 0,
         "news_out": 0,
-        "lineup_out": 7
+        "lineup_out": 0
       }
     },
     "nba": {
