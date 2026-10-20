@@ -80,12 +80,16 @@ export function nhlMatchupGrade(item) {
 }
 
 // Our projection against the posted line, on the NFL hit-rate scale.
-// Above the line moves toward green. Below the line moves toward red.
-// On the line is the neutral board color. A missing number stays uncolored.
-export function projectionVsLineColor(projection, line) {
+// The color follows the pick. An Over is green above the line and red below.
+// An Under is green below the line and red above. On the line is neutral.
+// A missing number, or a row with no Over/Under side, stays uncolored.
+// The NFL board does not color Our Proj.
+export function projectionVsLineColor(projection, line, side) {
+  if (side !== 'over' && side !== 'under') return null
   const proj = finiteNumber(projection)
   const posted = finiteNumber(line)
   if (proj == null || posted == null || posted === 0) return null
   const delta = (proj - posted) / Math.abs(posted)
-  return hitRateColor(50 + (delta / PROJECTION_GAP) * 20)
+  const signed = side === 'under' ? -delta : delta
+  return hitRateColor(50 + (signed / PROJECTION_GAP) * 20)
 }

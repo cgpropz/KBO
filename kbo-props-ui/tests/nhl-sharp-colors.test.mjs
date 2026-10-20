@@ -35,13 +35,39 @@ test('a missing matchup rank and a missing grade stay blank', () => {
   assert.equal(nhlDisplayedGrade({ grade: '', grade_flex: '', dvpRank: 32 }), null)
 })
 
-test('our projection uses the hit-rate anchors against the line', () => {
-  assert.equal(projectionVsLineColor(6, 5), hitRateColor(70))
-  assert.equal(projectionVsLineColor(4, 5), hitRateColor(30))
-  assert.equal(projectionVsLineColor(5, 5), hitRateColor(50))
-  assert.equal(projectionVsLineColor(null, 2), null)
-  assert.equal(projectionVsLineColor(2, null), null)
-  assert.notEqual(projectionVsLineColor(6, 5), projectionVsLineColor(4, 5))
+test('an over projection uses the hit-rate anchors against the line', () => {
+  assert.equal(projectionVsLineColor(6, 5, 'over'), hitRateColor(70))
+  assert.equal(projectionVsLineColor(4, 5, 'over'), hitRateColor(30))
+  assert.equal(projectionVsLineColor(5, 5, 'over'), hitRateColor(50))
+  assert.equal(projectionVsLineColor(null, 2, 'over'), null)
+  assert.equal(projectionVsLineColor(2, null, 'over'), null)
+  assert.notEqual(projectionVsLineColor(6, 5, 'over'), projectionVsLineColor(4, 5, 'over'))
+})
+
+function greenChannel(color) {
+  const match = String(color).match(/rgb\(\d+, (\d+), \d+\)/)
+  assert.ok(match, color)
+  return Number(match[1])
+}
+
+test('an under projection below the line is green, including 1.9 against 2', () => {
+  const under = projectionVsLineColor(1.9, 2, 'under')
+  const over = projectionVsLineColor(1.9, 2, 'over')
+  const neutral = greenChannel(hitRateColor(50))
+  assert.ok(greenChannel(under) > neutral)
+  assert.ok(greenChannel(over) < neutral)
+  assert.equal(under, projectionVsLineColor(2.1, 2, 'over'))
+  assert.equal(projectionVsLineColor(4, 5, 'under'), hitRateColor(70))
+  assert.equal(projectionVsLineColor(6, 5, 'under'), hitRateColor(30))
+  assert.equal(projectionVsLineColor(5, 5, 'under'), hitRateColor(50))
+  assert.equal(projectionVsLineColor(1.6, 2, 'under'), hitRateColor(70))
+  assert.equal(projectionVsLineColor(2.4, 2, 'under'), hitRateColor(30))
+})
+
+test('a projection with no pick side stays uncolored', () => {
+  assert.equal(projectionVsLineColor(1.9, 2), null)
+  assert.equal(projectionVsLineColor(1.9, 2, null), null)
+  assert.equal(projectionVsLineColor(6, 5, ''), null)
 })
 
 test('best prices keep the NFL flex color direction', () => {
@@ -51,7 +77,7 @@ test('best prices keep the NFL flex color direction', () => {
 
 test('the NHL odds table uses the NFL color helpers and stays two-up on a phone', () => {
   assert.match(source, /nhlMatchupGrade/)
-  assert.match(source, /projectionVsLineColor/)
+  assert.match(source, /projectionVsLineColor\(item\.projection, item\.pp_line, nhlScoredSide\(item\)\)/)
   assert.match(source, /priceColor/)
   assert.match(source, /hitRateColor/)
   assert.equal(source.includes('item.grade || dvpGrade'), false)

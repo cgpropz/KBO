@@ -139,7 +139,7 @@ function CgOddsCell({ item, mode }) {
 }
 
 function ProjectionCell({ item }) {
-  const color = projectionVsLineColor(item.projection, item.pp_line)
+  const color = projectionVsLineColor(item.projection, item.pp_line, nhlScoredSide(item))
   return <span className="nfl-sharp-hit" style={color ? { color } : undefined}>{formatValue(item.projection)}</span>
 }
 
