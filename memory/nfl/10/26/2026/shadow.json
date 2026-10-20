@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "sport": "nfl",
+  "slate_date": "10/26/2026",
+  "slate_date_iso": "2026-10-26",
+  "generated_at": "2026-10-20T02:07:08+00:00",
+  "mode": "shadow (offline; never shown on the site)",
+  "slate_sha256": "c3d4361120eaa6aa",
+  "slate_frozen_at": "2026-10-20T02:02:25.386323+00:00",
+  "params": {
+    "sha256": "6a5f4958099df0c8",
+    "files": 10,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "9078e5e02d61"
+  },
+  "rules": {
+    "shadow_projection": "Phase 2 final fit (knobs + linear calibration) for stats with recommendation=candidate; otherwise the current projection is carried (carried_current=true)",
+    "current_projection": "pre-promotion formula when the slate row has formula_applied and baseline_projection (the site projection is then published_projection); otherwise the slate projection",
+    "shadow_side": "candidate stats: sign(shadow_projection - line); carried stats: current pick",
+    "p_over": "Phase 2 logistic on (fit_projection - line, line); standard lines only",
+    "top_bucket": "top 20% of the day's standard lines by |projection - line| / stat walk-forward MAE, separately for current and shadow",
+    "leakage": "inputs pinned per prop at its pregame ref (source_commit, or last commit before a provably pregame legacy freeze); game logs filtered to dates before the game date"
+  },
+  "status": "scored",
+  "counts": {
+    "props": 9,
+    "scored": 9,
+    "not_scored": 0,
+    "shadow_candidate": 9,
+    "carried_current": 0,
+    "with_p_over": 0,
+    "top_current": 2,
+    "top_shadow": 2
+  },
+  "input_refs": {
+    "70c525d3496e": 9
+  },
+  "props": [
+    {"player":"CeeDee Lamb","team":"DAL","opponent":"PHI","stat":"Receiving Yards","params_stat":"Receiving Yards","odds_type":"standard","line":84.5,"current_projection":84.3,"current_projection_note":null,"current_side":"UNDER","current_from_baseline":true,"published_projection":71.4,"published_side":"UNDER","shadow_projection":71.351,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":71.351,"fit_note":"replayed(nflverse<gameday)","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.0084,"top_shadow":false,"confidence_shadow":0.5543},
+    {"player":"Dak Prescott","team":"DAL","opponent":"PHI","stat":"Pass Yards","params_stat":"Pass Yards","odds_type":"standard","line":266.5,"current_projection":283.0,"current_projection_note":null,"current_side":"OVER","current_from_baseline":true,"published_projection":254.2,"published_side":"UNDER","shadow_projection":254.258,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":254.258,"fit_note":"current_x_calibration","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.2415,"top_shadow":false,"confidence_shadow":0.1792},
+    {"player":"Dak Prescott","team":"DAL","opponent":"PHI","stat":"Rush Yards","params_stat":"Rush Yards","odds_type":"standard","line":8.5,"current_projection":8.1,"current_projection_note":null,"current_side":"UNDER","current_from_baseline":true,"published_projection":12.3,"published_side":"OVER","shadow_projection":12.264,"shadow_side":"OVER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":12.264,"fit_note":"current_x_calibration","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.0155,"top_shadow":false,"confidence_shadow":0.1463},
+    {"player":"Dallas Goedert","team":"PHI","opponent":"DAL","stat":"Receiving Yards","params_stat":"Receiving Yards","odds_type":"standard","line":38.5,"current_projection":38.8,"current_projection_note":null,"current_side":"OVER","current_from_baseline":true,"published_projection":35.6,"published_side":"UNDER","shadow_projection":33.534,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":33.534,"fit_note":"replayed(nflverse<gameday)","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.0126,"top_shadow":false,"confidence_shadow":0.2093},
+    {"player":"DeVonta Smith","team":"PHI","opponent":"DAL","stat":"Receiving Yards","params_stat":"Receiving Yards","odds_type":"standard","line":66.5,"current_projection":73.8,"current_projection_note":null,"current_side":"OVER","current_from_baseline":true,"published_projection":59.6,"published_side":"UNDER","shadow_projection":57.166,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":57.166,"fit_note":"replayed(nflverse<gameday)","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.3077,"top_shadow":false,"confidence_shadow":0.3934},
+    {"player":"George Pickens","team":"DAL","opponent":"PHI","stat":"Receiving Yards","params_stat":"Receiving Yards","odds_type":"standard","line":69.5,"current_projection":83.8,"current_projection_note":null,"current_side":"OVER","current_from_baseline":true,"published_projection":69.1,"published_side":"UNDER","shadow_projection":69.119,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":69.119,"fit_note":"replayed(nflverse<gameday)","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.6028,"top_shadow":false,"confidence_shadow":0.0161},
+    {"player":"Javonte Williams","team":"DAL","opponent":"PHI","stat":"Receiving Yards","params_stat":"Receiving Yards","odds_type":"standard","line":14.5,"current_projection":13.5,"current_projection_note":null,"current_side":"UNDER","current_from_baseline":true,"published_projection":11.2,"published_side":"UNDER","shadow_projection":11.167,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":11.167,"fit_note":"replayed(nflverse<gameday)","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":false,"confidence_current":0.0422,"top_shadow":false,"confidence_shadow":0.1405},
+    {"player":"Javonte Williams","team":"DAL","opponent":"PHI","stat":"Rush Yards","params_stat":"Rush Yards","odds_type":"standard","line":69.5,"current_projection":53.9,"current_projection_note":null,"current_side":"UNDER","current_from_baseline":true,"published_projection":48.5,"published_side":"UNDER","shadow_projection":48.488,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":48.488,"fit_note":"current_x_calibration","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":true,"confidence_current":0.6063,"top_shadow":true,"confidence_shadow":0.8166},
+    {"player":"Tanner McKee","team":"PHI","opponent":"DAL","stat":"Pass Yards","params_stat":"Pass Yards","odds_type":"standard","line":211.5,"current_projection":124.9,"current_projection_note":null,"current_side":"UNDER","current_from_baseline":true,"published_projection":167.8,"published_side":"UNDER","shadow_projection":167.777,"shadow_side":"UNDER","shadow_source":"candidate","carried_current":false,"flag":null,"fit_projection":167.777,"fit_note":"current_x_calibration","p_over":null,"p_over_note":"no_calibrator","input_ref":"70c525d3496e","pin":"source_commit","start_time_utc":"2026-10-27T00:15:00+00:00","frozen_at":"2026-10-20T02:02:25+00:00","shadow_status":"scored","top_current":true,"confidence_current":1.2673,"top_shadow":true,"confidence_shadow":0.6399}
+  ]
+}
