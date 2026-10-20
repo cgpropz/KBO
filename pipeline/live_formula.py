@@ -23,6 +23,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(__file__).resolve().parent / "projection_formula.json"
 PARAMS_DIR = REPO_ROOT / "ml" / "params"
 WNBA_DIR = REPO_ROOT / "kbo-props-ui" / "public" / "data" / "wnba"
+WNBA_POSTSEASON = "wnba/wnba_boxscores_postseason.csv"
 
 # Kept for callers that still pass a stat-specific cutoff. Pre-game side is the
 # sign of (projection - line); these numbers are not a PUSH dead zone.
@@ -388,12 +389,19 @@ def _wnba_logs() -> dict[str, list[dict]]:
     import io
     from ml.wnba.replay import BOXSCORES, GAMELOG, _norm
     rows = []
-    for rel, src in ((BOXSCORES, "boxscore"), (GAMELOG, "gamelog")):
+    # Playoff box scores are listed last and tagged, so a regular-season row
+    # wins the dedupe. tune_wnba uses them for the minutes window only.
+    sources = ((BOXSCORES, "boxscore", False), (GAMELOG, "gamelog", False), (WNBA_POSTSEASON, "boxscore", True))
+    for rel, src, postseason in sources:
         path = REPO_ROOT / rel
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8-sig")
-        rows += [_norm(row, src) for row in csv.DictReader(io.StringIO(text))]
+        for row in csv.DictReader(io.StringIO(text)):
+            game = _norm(row, src)
+            if postseason:
+                game["postseason"] = True
+            rows.append(game)
     seen, by_player = set(), defaultdict(list)
     for game in rows:
         if not game["player"] or not game["date"]:
@@ -409,15 +417,23 @@ def _wnba_logs() -> dict[str, list[dict]]:
 
 
 def tune_wnba(stat: str, games: list[dict], dvp: dict | None) -> float | None:
+    """Tuned number for one prop. `games` is the player's log, newest first.
+
+    Per-minute rates use regular-season games; the minutes window counts
+    playoff/Finals games too (rows tagged `postseason`), in date order.
+    """
     params = candidate_params("wnba", stat)
-    if not params or not games:
+    regular = [g for g in games or [] if not g.get("postseason")]
+    if not params or not regular:
         return None
     from ml.wnba import formula
     from ml.wnba.tune import RowFeatures, components_for, project
     if formula.LABEL_TO_KEY.get(stat) is None:
         return None
     knobs = params["formula"]["knobs"]
-    features = RowFeatures(games, components_for(stat), dvp or {})
+    # Stable sort: rows without a date keep their given (newest-first) order.
+    minutes_games = sorted(games, key=lambda game: str(game.get("date") or ""), reverse=True)
+    features = RowFeatures(regular, components_for(stat), dvp or {}, minutes_games=minutes_games)
     return round(linear(params.get("linear_calibration"), project(stat, features, knobs)), 2)
 
 
