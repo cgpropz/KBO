@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test, { afterEach, beforeEach } from 'node:test'
-import { NBA_MIN_AVG_MINUTES, NBA_MIN_GAMES, NBA_OWNER_EMAIL, nbaAccessDecision, nbaHighRisk, shapeForTier } from '../api/_dataAccess.js'
+import { NBA_MIN_AVG_MINUTES, NBA_MIN_GAMES, NBA_OWNER_EMAIL, NBA_PREVIEW_PLAYER_FIELDS, nbaAccessDecision, nbaHighRisk, shapeForTier } from '../api/_dataAccess.js'
 import { _clearCache, _setNbaFreePreview, handleDataRequest } from '../api/data.js'
 import { cgScore } from '../src/cgScore.js'
 import { freePreviewBoardList, freeTierFaqAnswer } from '../src/freePreviewCopy.js'
@@ -19,7 +19,7 @@ const uiRoot = join(import.meta.dirname, '..')
 function player(name, props, extra = {}) {
   return {
     name, team: 'BOS', matched: true, projectionStatus: 'projected', gp: 60, avgMins: 32,
-    injuryChecked: true, injuryStatus: null,
+    espnInjuryChecked: true, espnInjuryStatus: null,
     recentGames: [{ pts: 30, min: 34 }],
     propProjectionByStat: { Points: 30, Rebounds: 9 },
     ...extra,
@@ -43,14 +43,14 @@ const RISKY = [
   player('Low Minutes', [{ stat: 'Points', line: 1.5, projection: 40 }], { avgMins: NBA_MIN_AVG_MINUTES - 0.1 }),
   player('No Minutes', [{ stat: 'Points', line: 1.5, projection: 40 }], { avgMins: null }),
   // ESPN injury tags (nba/availability.py).
-  player('Tag Out', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Out' }),
-  player('Tag Doubtful', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Doubtful' }),
-  player('Tag Questionable', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Questionable' }),
-  player('Tag DTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Day-To-Day' }),
-  player('Tag GTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'GTD' }),
-  player('Tag Suspended', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryStatus: 'Suspended' }),
-  player('Not Checked', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryChecked: false }),
-  player('No Check Field', [{ stat: 'Points', line: 1.5, projection: 40 }], { injuryChecked: undefined }),
+  player('Tag Out', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'Out' }),
+  player('Tag Doubtful', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'Doubtful' }),
+  player('Tag Questionable', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'Questionable' }),
+  player('Tag DTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'Day-To-Day' }),
+  player('Tag GTD', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'GTD' }),
+  player('Tag Suspended', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryStatus: 'Suspended' }),
+  player('Not Checked', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryChecked: false }),
+  player('No Check Field', [{ stat: 'Points', line: 1.5, projection: 40 }], { espnInjuryChecked: undefined }),
 ]
 
 test('the free NBA top 3 switch is off by default; the tab and copy follow it', () => {
@@ -300,4 +300,25 @@ test('/api/data: switch off keeps main access (nba_public on: logged-out gets th
   assert.equal(res.body.preview, true)
   const players = await anonymous('nba_players', true)
   assert.equal(players.statusCode, 200)
+})
+
+test('NBA preview rows keep only the allowlisted player fields', () => {
+  const board = BOARD.map((p) => ({ ...p, athleteId: '42', image: 'x.png', dvpSlot: 'PG', dvpOpponent: 'NY', avgMins: 33, gp: 61, someNewModelField: 7, espnInjuryChecked: true }))
+  const shaped = shapeForTier('nba_projections_standard', board, 'free')
+  assert.ok(shaped.data.length > 0)
+  for (const row of shaped.data) {
+    for (const key of Object.keys(row)) {
+      assert.ok(key === 'ppAllProps' || NBA_PREVIEW_PLAYER_FIELDS.includes(key), key)
+    }
+    assert.equal(row.athleteId, '42')
+    assert.equal(row.image, 'x.png')
+    for (const key of ['avgMins', 'gp', 'dvpSlot', 'someNewModelField', 'matched', 'projectionStatus']) assert.equal(key in row, false, key)
+  }
+})
+
+test('the ESPN tags do not use field names the member boards read', () => {
+  const hub = readFileSync(join(uiRoot, 'src/memberHub.js'), 'utf8') + readFileSync(join(uiRoot, 'src/slipSports.js'), 'utf8')
+  assert.equal(/espnInjury/.test(hub), false)
+  assert.equal(nbaHighRisk(player('Tagged', [], { espnInjuryStatus: 'Questionable' })), true)
+  assert.equal(nbaHighRisk(player('Checked', [])), false)
 })

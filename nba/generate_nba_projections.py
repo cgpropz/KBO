@@ -808,7 +808,7 @@ def main() -> int:
     print(format_report(note, per_type, position_note))
     print(
         "ESPN injury tags: "
-        + (f"{injury_tagged} player row(s) tagged" if injury_report is not None else "report unavailable, rows tagged injuryChecked=false")
+        + (f"{injury_tagged} player row(s) tagged" if injury_report is not None else "report unavailable, rows tagged espnInjuryChecked=false")
     )
     print("Standard star sample:")
     if samples:

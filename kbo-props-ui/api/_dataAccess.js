@@ -205,22 +205,22 @@ function wnbaPropScore(player, prop) {
 //   projectionStatus !== 'projected'    no projection from a game log
 //   gp < NBA_MIN_GAMES (10)             fewer than 10 games with minutes logged
 //   avgMins missing or < NBA_MIN_AVG_MINUTES (20)   low or unknown minutes role
-//   injuryChecked !== true              ESPN injury report not read for this row
-//   injuryStatus set                    ESPN Out, Suspended, Doubtful, Questionable,
+//   espnInjuryChecked !== true              ESPN injury report not read for this row
+//   espnInjuryStatus set                    ESPN Out, Suspended, Doubtful, Questionable,
 //                                       Day-To-Day or GTD
 // Any one of these keeps every prop of that player out of the free top 3.
 export const NBA_MIN_GAMES = 10;
 export const NBA_MIN_AVG_MINUTES = 20;
 
-// Tags nba/availability.py writes. Any non-empty injuryStatus is treated as a
+// Tags nba/availability.py writes. Any non-empty espnInjuryStatus is treated as a
 // risk (an unknown tag counts too), and a row whose report was not read
-// (injuryChecked !== true) fails closed.
+// (espnInjuryChecked !== true) fails closed.
 export const NBA_RISK_INJURY_STATUSES = new Set(['out', 'suspended', 'doubtful', 'questionable', 'day-to-day', 'gtd']);
 
 export function nbaHighRisk(player) {
   if (!player || typeof player !== 'object') return true;
-  if (player.injuryChecked !== true) return true;
-  if (player.injuryStatus != null && String(player.injuryStatus).trim() !== '') return true;
+  if (player.espnInjuryChecked !== true) return true;
+  if (player.espnInjuryStatus != null && String(player.espnInjuryStatus).trim() !== '') return true;
   if (player.matched !== true) return true;
   if (player.projectionStatus !== 'projected') return true;
   const gp = num(player.gp);
@@ -598,13 +598,22 @@ function previewPrizepicks(payload) {
 }
 
 // projections_*: [{ ...player, ppAllProps: [...] }] → best props, regrouped.
-// NBA preview rows carry only the player's scalar fields (name, team, image,
-// minutes, status) and the props that are shown, so no other projection for a
-// kept player leaves the server. WNBA keeps its full player row because its
-// free board reads the per-stat maps.
+// NBA preview rows carry only an explicit allowlist of player fields (who,
+// which team, the photo, and the availability flags the landing uses to drop
+// held or OUT rows) plus the props that are shown, so no projection, minutes,
+// game log or other per-player model field leaves the server. WNBA keeps its
+// full player row because its free board reads the per-stat maps.
+export const NBA_PREVIEW_PLAYER_FIELDS = Object.freeze([
+  'name', 'team', 'teamFull', 'teamColor', 'position', 'athleteId',
+  'image', 'imageUrl', 'ppImageUrl', 'image_url',
+  'status', 'injury', 'injury_status', 'pp_status', 'ppStatus', 'held',
+]);
+
 function nbaPreviewPlayer(player, props) {
   const out = {};
-  for (const [key, value] of Object.entries(player || {})) {
+  for (const key of NBA_PREVIEW_PLAYER_FIELDS) {
+    if (!Object.hasOwn(player || {}, key)) continue;
+    const value = player[key];
     if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) out[key] = value;
   }
   out.ppAllProps = props;

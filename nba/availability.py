@@ -4,19 +4,26 @@ Same source as nfl/availability.py and nhl/availability.py: ESPN's public
 injury report (site.api.espn.com .../basketball/nba/injuries). Each player
 row on every NBA snapshot gets two fields:
 
-- injuryStatus: "Out", "Suspended", "Doubtful", "Questionable",
+- espnInjuryStatus: "Out", "Suspended", "Doubtful", "Questionable",
   "Day-To-Day" or "GTD" when ESPN lists the player with one of those
   statuses (status or fantasyStatus), else None.
-- injuryChecked: True when the ESPN report was read and parsed this run,
-  False when it was not (request failed, bad JSON, no teams).
+- espnInjuryChecked: True when the ESPN report was read and parsed this run and
+  the row has an ESPN athleteId. False when the report was not read (request
+  failed, bad JSON, no teams) or the row has no athleteId (a name/team match
+  cannot prove the player is healthy: trades, nicknames).
+
+The field names are espn-prefixed on purpose: src/memberHub.js and
+src/slipSports.js already read a row's injuryStatus/injury for labels and the
+held/OUT filter, so a plain injuryStatus would change the member boards.
 
 Tagging only. Rows are not removed or re-ranked and no score changes, so the
 member boards are unchanged. The free NBA top 3 (api/_dataAccess.js
 nbaHighRisk) keeps out any player with a risk status, and fails closed: a row
-with injuryChecked !== True never takes a free slot.
+with espnInjuryChecked !== True never takes a free slot.
 
 Matching is by ESPN athlete id (the board's athleteId is the ESPN id) and
-falls back to (name, team). An ESPN entry with no team and no id is skipped,
+falls back to (name, team) only to tag a risk status; a row without an id is
+still left unchecked, so it never takes a free slot. An ESPN entry with no team and no id is skipped,
 so a name never matches every team. The build never raises on this step.
 """
 from __future__ import annotations
@@ -122,17 +129,17 @@ def fetch_espn_injuries(get=None):
         return parse_espn_injuries(response.json())
     except Exception as exc:  # noqa: BLE001 - ESPN down must not block the board
         print(f"::error title=NBA injury tags::ESPN NBA injury report unavailable ({type(exc).__name__}); free NBA top 3 shows no players this run.")
-        print(f"WARNING: ESPN NBA injury report unavailable ({type(exc).__name__}); rows tagged injuryChecked=false.")
+        print(f"WARNING: ESPN NBA injury report unavailable ({type(exc).__name__}); rows tagged espnInjuryChecked=false.")
         return None
 
 
 def tag_players(players: list[dict], report) -> int:
-    """Write injuryStatus / injuryChecked on each player row in place. Returns tagged count."""
+    """Write espnInjuryStatus / espnInjuryChecked on each player row in place. Returns tagged count."""
     if report is None:
         for player in players:
             if isinstance(player, dict):
-                player["injuryStatus"] = None
-                player["injuryChecked"] = False
+                player["espnInjuryStatus"] = None
+                player["espnInjuryChecked"] = False
         return 0
     by_id, by_name = report
     tagged = 0
@@ -143,8 +150,11 @@ def tag_players(players: list[dict], report) -> int:
         tag = by_id.get(athlete_id) if athlete_id else None
         if not tag:
             tag = by_name.get((name_key(player.get("name")), team_key(player.get("team"))))
-        player["injuryStatus"] = tag
-        player["injuryChecked"] = True
+        player["espnInjuryStatus"] = tag
+        # Only an ESPN athlete id proves the row was really matched. A row
+        # without one can only match by (name, team), so a traded player, a
+        # nickname or a stale team passes as healthy: it is never "checked".
+        player["espnInjuryChecked"] = bool(athlete_id)
         if tag:
             tagged += 1
     return tagged
@@ -157,7 +167,7 @@ def apply_injury_tags(snapshots: list[list[dict]], get=None, report=...) -> int:
             report = fetch_espn_injuries(get)
         return sum(tag_players(players, report) for players in snapshots)
     except Exception as exc:  # noqa: BLE001 - tagging must never block a publish
-        print(f"::error title=NBA injury tags::tagging failed ({type(exc).__name__}); rows tagged injuryChecked=false.")
+        print(f"::error title=NBA injury tags::tagging failed ({type(exc).__name__}); rows tagged espnInjuryChecked=false.")
         for players in snapshots:
             tag_players(players, None)
         return 0

@@ -95,28 +95,43 @@ class TagTests(unittest.TestCase):
         before = copy.deepcopy(players)
         tagged = apply_injury_tags([players], get=stub(REPORT))
         by = {p["name"]: p for p in players}
-        self.assertEqual(by["Jayson Tatum"]["injuryStatus"], "Out")
-        self.assertEqual(by["Luka Doncic"]["injuryStatus"], "Day-To-Day")
-        self.assertEqual(by["Q Player"]["injuryStatus"], "Questionable")
-        self.assertEqual(by["D Player"]["injuryStatus"], "Doubtful")
-        self.assertIsNone(by["Healthy Guy"]["injuryStatus"])
-        self.assertIsNone(by["Same Name"]["injuryStatus"])
+        self.assertEqual(by["Jayson Tatum"]["espnInjuryStatus"], "Out")
+        self.assertEqual(by["Luka Doncic"]["espnInjuryStatus"], "Day-To-Day")
+        self.assertEqual(by["Q Player"]["espnInjuryStatus"], "Questionable")
+        self.assertEqual(by["D Player"]["espnInjuryStatus"], "Doubtful")
+        self.assertIsNone(by["Healthy Guy"]["espnInjuryStatus"])
+        self.assertIsNone(by["Same Name"]["espnInjuryStatus"])
         self.assertEqual(tagged, 4)
         for player in players:
-            self.assertIs(player["injuryChecked"], True)
+            self.assertIs(player["espnInjuryChecked"], bool(player["athleteId"]), player["name"])
         # Tags only: no row removed, no prop or other field changed.
         self.assertEqual(len(players), len(before))
         for got, want in zip(players, before):
-            stripped = {k: v for k, v in got.items() if k not in ("injuryStatus", "injuryChecked")}
+            stripped = {k: v for k, v in got.items() if k not in ("espnInjuryStatus", "espnInjuryChecked")}
             self.assertEqual(stripped, want)
+
+    def test_row_without_athlete_id_is_never_checked(self):
+        # Board QA repro: Mouhamed Gueye with no id, listed under BOS (ESPN has him Out with ATL).
+        report = espn(("Mouhamed Gueye", "ATL", "Out", {"athlete": {"links": [{"href": "https://www.espn.com/nba/player/_/id/4712863/mouhamed-gueye"}]}}))
+        players = [
+            {"name": "Mouhamed Gueye", "team": "BOS", "athleteId": "", "ppAllProps": []},
+            {"name": "Mouhamed Gueye", "team": "BOS", "ppAllProps": []},
+            {"name": "Healthy Id", "team": "BOS", "athleteId": "999", "ppAllProps": []},
+        ]
+        apply_injury_tags([players], get=stub(report))
+        self.assertEqual([(p["espnInjuryStatus"], p["espnInjuryChecked"]) for p in players], [(None, False), (None, False), (None, True)])
+        # With his id, he is matched across the team change.
+        moved = [{"name": "Mouhamed Gueye", "team": "BOS", "athleteId": "4712863", "ppAllProps": []}]
+        apply_injury_tags([moved], get=stub(report))
+        self.assertEqual((moved[0]["espnInjuryStatus"], moved[0]["espnInjuryChecked"]), ("Out", True))
 
     def test_failed_read_fails_closed(self):
         for get in (stub(REPORT, fail=True), stub({"injuries": []}), stub("not json")):
             players = board()
             self.assertEqual(apply_injury_tags([players], get=get), 0)
             for player in players:
-                self.assertIs(player["injuryChecked"], False)
-                self.assertIsNone(player["injuryStatus"])
+                self.assertIs(player["espnInjuryChecked"], False)
+                self.assertIsNone(player["espnInjuryStatus"])
 
     def test_one_read_tags_every_snapshot(self):
         calls = []
@@ -130,7 +145,7 @@ class TagTests(unittest.TestCase):
         apply_injury_tags([standard], report=report)
         apply_injury_tags([goblin], report=report)
         self.assertEqual(len(calls), 1)
-        self.assertEqual(standard[0]["injuryStatus"], goblin[0]["injuryStatus"])
+        self.assertEqual(standard[0]["espnInjuryStatus"], goblin[0]["espnInjuryStatus"])
 
     def test_tagging_never_raises(self):
         players = board() + [None, "junk"]
