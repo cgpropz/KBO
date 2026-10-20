@@ -55,9 +55,19 @@ heavy_success_within() {
   echo 0
 }
 
+# REFRESH_TRIGGER=kbo-due is the kick from other sports' scheduled runs
+# (kbo-due-kick.sh dispatches with -f trigger=kbo-due). It takes the scheduled
+# path: game window, 50-minute guard, and it stands down when an earlier run
+# of this workflow is active or started in the last 5 minutes. A plain manual
+# dispatch keeps its bypass.
+KICK=0
 if [[ "${GITHUB_EVENT_NAME:-}" == "workflow_dispatch" ]]; then
-  write_due true "" "Manual dispatch; refreshing ${SPORT}."
-  exit 0
+  if [[ "${REFRESH_TRIGGER:-}" == "kbo-due" ]]; then
+    KICK=1
+  else
+    write_due true "" "Manual dispatch; refreshing ${SPORT}."
+    exit 0
+  fi
 fi
 
 code=0
@@ -81,9 +91,24 @@ fi
 clock="$(python3 -m pipeline.refresh_due --board-stale --sport "$SPORT" 2>/dev/null || true)"
 
 STEP="$(python3 -c 'from pipeline.refresh_due import HEAVY_STEP; print(HEAVY_STEP)')"
-runs_json="$(gh run list --workflow "$WF" --limit 12 --json databaseId,conclusion,updatedAt 2>/dev/null || true)"
+runs_json="$(gh run list --workflow "$WF" --limit 12 --json databaseId,conclusion,updatedAt,createdAt,status 2>/dev/null || true)"
 if [[ -z "${runs_json}" ]]; then
+  if [[ "$KICK" == "1" ]]; then
+    # A kick that cannot see the run list does not scrape; a scheduled tick
+    # or the next kick will.
+    write_due false kick_unlisted "KBO-due kick could not list ${WF} runs; not refreshing."
+    exit 0
+  fi
   runs_json="[]"
+fi
+
+if [[ "$KICK" == "1" ]]; then
+  earlier="$(printf '%s' "$runs_json" | python3 -m pipeline.refresh_due --earlier-active --current "${GITHUB_RUN_ID:-}")"
+  if [[ "$earlier" == "1" ]]; then
+    note_summary "skipped: kbo-due kick (another ${SPORT} run is active or started in the last 5 minutes)"
+    write_due false kick_recent "KBO-due kick: an earlier ${WF} run is active or started in the last 5 minutes; not refreshing."
+    exit 0
+  fi
 fi
 
 if [[ "$clock" == "stale" ]]; then

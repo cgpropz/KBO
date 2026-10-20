@@ -1,6 +1,10 @@
 """Whether this hourly props run should scrape.
 
-workflow_dispatch always scrapes. A schedule or push run scrapes only inside
+workflow_dispatch always scrapes, except a dispatch with trigger=kbo-due (the
+kick from other sports' scheduled runs, .github/scripts/kbo-due-kick.sh). That
+one takes the scheduled path below, and also stands down when an earlier run
+of this workflow is still queued or running or started in the last 5 minutes.
+A schedule or push run scrapes only inside
 the game window, and only when this workflow has not already finished a
 scrape in the last 50 minutes. A fast exit (the install step skipped) does
 not count, or an off-window success would block the first run of the window.
@@ -26,6 +30,8 @@ from urllib.request import Request, urlopen
 FRESH_MINUTES = 50
 STALE_MINUTES = 110
 STALE_FLOOR_MINUTES = 25
+EARLIER_START_MINUTES = 5
+KICK_TRIGGER = "kbo-due"
 HEAVY_STEP = "Install Python dependencies"
 BOARD_STATUS_URL = "https://www.cgpropz.com/api/data?ds=board_status"
 
@@ -68,6 +74,41 @@ def candidate_run_ids(
         found.append((updated, run_id))
     found.sort(key=lambda item: item[0], reverse=True)
     return [run_id for _updated, run_id in found]
+
+
+def earlier_run_blocks(
+    runs: list[dict],
+    now: datetime,
+    current_run_id: str = "",
+    minutes: int = EARLIER_START_MINUTES,
+) -> bool:
+    """True when an earlier run (lower id) is still active or started inside `minutes`.
+
+    Only earlier runs count, so of two near-simultaneous kicks the first one
+    scrapes and the later one stands down; neither waits on the other. The
+    workflow's concurrency group runs them one after the other, so the later
+    run's gate sees the earlier run listed. With no current id every other
+    run counts.
+    """
+    now = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    cutoff = now - timedelta(minutes=minutes)
+    current = str(current_run_id or "")
+    current_num = int(current) if current.isdigit() else None
+    for run in runs or []:
+        if not isinstance(run, dict):
+            continue
+        run_id = str(run.get("databaseId") or "")
+        if not run_id or run_id == current:
+            continue
+        if current_num is not None and (not run_id.isdigit() or int(run_id) >= current_num):
+            continue
+        status = str(run.get("status") or "")
+        if status and status != "completed":
+            return True
+        created = parse_github_time(str(run.get("createdAt") or ""))
+        if created is not None and created > cutoff:
+            return True
+    return False
 
 
 def should_refresh(
@@ -159,6 +200,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stale", type=int, default=0)
     parser.add_argument("--stale-floor", type=int, default=0)
     parser.add_argument("--sport", default="")
+    parser.add_argument("--earlier-active", action="store_true")
     args = parser.parse_args(argv)
     if args.board_stale:
         print(board_clock_state(args.sport or "wnba"))
@@ -172,6 +214,14 @@ def main(argv: list[str] | None = None) -> int:
         for run_id in candidate_run_ids(runs, now, args.current, minutes=span):
             print(run_id)
         return 0
+    if args.earlier_active:
+        runs = json.load(sys.stdin)
+        now = parse_github_time(args.now) if args.now else datetime.now(timezone.utc)
+        if now is None:
+            now = datetime.now(timezone.utc)
+        span = args.minutes if args.minutes > 0 else EARLIER_START_MINUTES
+        print(1 if earlier_run_blocks(runs, now, args.current, minutes=span) else 0)
+        return 0
     if args.decide:
         due = should_refresh(
             bool(args.forced),
@@ -182,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print("true" if due else "false")
         return 0
-    parser.error("pass --candidates or --decide")
+    parser.error("pass --candidates, --earlier-active or --decide")
     return 2
 
 

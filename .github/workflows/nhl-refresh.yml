@@ -124,3 +124,4 @@ jobs:
           echo "Next NHL board in ${NHL_REFRESH_WAIT_SECONDS}s (late scratch recheck during the wait)"
           python -m nhl.late_out --wait "${NHL_REFRESH_WAIT_SECONDS}" --publish || true
           gh workflow run nhl-refresh.yml --ref main
+
