@@ -1102,17 +1102,20 @@ export async function handleDataRequest(req, res, client) {
 
   let board;
   try {
-    // Manual KBO hold: every KBO prop served as pulled until a fresh pull has lines.
-    board = applyKboHold(ds, boardForPresentation(row.data));
+    board = boardForPresentation(row.data);
   } catch (err) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   const tierPayload = payloadForTier(ds, spec.table, row, board, tier);
+  // Manual KBO hold: every KBO prop served as pulled until a fresh pull has
+  // lines or the hold expires. Applied per request, after the cached standard
+  // filter, so an expired hold never lingers in that cache.
+  const presented = applyKboHold(ds, board);
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, tierPayload.payload, tier, { alreadyStandard: tierPayload.alreadyStandard }),
-    board,
+    shapeForTier(ds, applyKboHold(ds, tierPayload.payload), tier, { alreadyStandard: tierPayload.alreadyStandard }),
+    presented,
   );
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
   return sendData(req, res, {

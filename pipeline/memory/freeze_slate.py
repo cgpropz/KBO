@@ -64,11 +64,12 @@ def write_slate(
     source: str | None = None,
     pulled: list[dict] | None = None,
     now: datetime | None = None,
+    clear_pulled: bool = True,
 ) -> Path:
     """common.write_slate, except graded (locked) days are never touched."""
     if slate_is_locked(sport, d):
         return memory_dir(sport, d) / "slate.json"
-    return _write_slate_unlocked(sport, d, props, source=source, pulled=pulled, now=now)
+    return _write_slate_unlocked(sport, d, props, source=source, pulled=pulled, now=now, clear_pulled=clear_pulled)
 
 
 def _pulled_marker(player, stat, odds_type, line, status: str, *sources: dict) -> dict:
@@ -335,8 +336,21 @@ def freeze_kbo(
     if not incoming:
         out["note"] = "no pregame props to freeze (cutoff reached or empty board)"
         return out
-    out["path"] = str(write_slate("kbo", resolved, incoming, source=str(props_path.relative_to(REPO_ROOT))))
+    # Only a fresh, complete PrizePicks pull (prizepicks_pull 'fresh', set by
+    # pipeline/kbo_pulled_lines.py) can un-pull a line already frozen as pulled.
+    out["path"] = str(write_slate(
+        "kbo",
+        resolved,
+        incoming,
+        source=str(props_path.relative_to(REPO_ROOT)),
+        clear_pulled=kbo_board_pull_is_fresh(data),
+    ))
     return out
+
+
+def kbo_board_pull_is_fresh(data: dict) -> bool:
+    pull = (data or {}).get("prizepicks_pull") if isinstance(data, dict) else None
+    return isinstance(pull, dict) and pull.get("status") == "fresh"
 
 
 # ── WNBA ────────────────────────────────────────────────────────────────────

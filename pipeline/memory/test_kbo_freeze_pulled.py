@@ -84,5 +84,71 @@ class KboFreezePulledTests(unittest.TestCase):
             self.assertEqual((row["result"], row["void_reason"]), (common.RESULT_VOID, "pulled"))
 
 
+    def _freeze(self, pulled, pull, at):
+        board = _board(pulled)
+        if pull:
+            board["prizepicks_pull"] = {"status": pull, "checked_at": at.isoformat(), "pulled_props": 2 if pulled else 0}
+        rows = freeze_slate.build_kbo_props(board, SLATE, now=at)[0]
+        # Same call freeze_kbo makes (the locked-day wrapper).
+        freeze_slate.write_slate("kbo", SLATE, rows, clear_pulled=freeze_slate.kbo_board_pull_is_fresh(board))
+        return {p["player"]: p for p in common.load_json(common.memory_dir("kbo", SLATE) / "slate.json")["props"]}
+
+    def test_429_fallback_board_does_not_unpull_the_ledger(self):
+        """Board QA repro: pulled at 9 PM ET, then a 4:45 AM ET freeze on the unflagged fallback."""
+        self._freeze(False, "fresh", datetime(2026, 10, 19, 23, 0, tzinfo=timezone.utc))
+        self._freeze(True, "confirmed_empty", datetime(2026, 10, 20, 1, 0, tzinfo=timezone.utc))
+        rows = self._freeze(False, None, datetime(2026, 10, 20, 8, 45, tzinfo=timezone.utc))
+        for row in rows.values():
+            self.assertEqual((row.get("removed"), row.get("pp_status")), (True, "removed"))
+        # A fetch-error board (stamped, but not fresh) does not un-pull either.
+        rows = self._freeze(False, "fetch_error", datetime(2026, 10, 20, 8, 50, tzinfo=timezone.utc))
+        self.assertTrue(all(common.pulled_status(r) for r in rows.values()))
+
+    def test_fresh_pull_unpulls_relisted_lines(self):
+        self._freeze(False, "fresh", datetime(2026, 10, 19, 23, 0, tzinfo=timezone.utc))
+        self._freeze(True, "confirmed_empty", datetime(2026, 10, 20, 1, 0, tzinfo=timezone.utc))
+        rows = self._freeze(False, "fresh", datetime(2026, 10, 20, 8, 0, tzinfo=timezone.utc))
+        for row in rows.values():
+            self.assertIsNone(common.pulled_status(row))
+            self.assertNotIn("superseded_at", row)
+
+    def test_other_sports_still_clear_on_relist(self):
+        row = {"player": "W", "stat": "Points", "odds_type": "standard", "line": 10.5, "game_date": "2026-10-20"}
+        common.write_slate("wnba", SLATE, [row])
+        common.write_slate("wnba", SLATE, [{**row, "removed": True, "pp_status": "removed"}])
+        common.write_slate("wnba", SLATE, [row])
+        props = common.load_json(common.memory_dir("wnba", SLATE) / "slate.json")["props"]
+        self.assertIsNone(common.pulled_status(props[0]))
+
+    def test_kbo_board_pull_is_fresh(self):
+        self.assertTrue(freeze_slate.kbo_board_pull_is_fresh({"prizepicks_pull": {"status": "fresh"}}))
+        for data in ({}, {"prizepicks_pull": {"status": "confirmed_empty"}}, {"prizepicks_pull": None}, None):
+            self.assertFalse(freeze_slate.kbo_board_pull_is_fresh(data))
+
+
+    def test_freeze_kbo_end_to_end_keeps_ledger_pulled_on_fallback(self):
+        import json
+        public = Path(self._tmp.name) / "public"
+        public.mkdir()
+        orig = freeze_slate.PUBLIC_DATA
+        freeze_slate.PUBLIC_DATA = public
+        self.addCleanup(setattr, freeze_slate, "PUBLIC_DATA", orig)
+        props_path = public / "prizepicks_props.json"
+
+        def run(pulled, pull, at):
+            board = _board(pulled)
+            if pull:
+                board["prizepicks_pull"] = {"status": pull, "checked_at": at.isoformat()}
+            props_path.write_text(json.dumps(board))
+            with mock.patch.object(freeze_slate, "REPO_ROOT", Path(self._tmp.name)):
+                freeze_slate.freeze_kbo(SLATE, now=at)
+            return common.load_json(common.memory_dir("kbo", SLATE) / "slate.json")["props"]
+
+        run(False, "fresh", datetime(2026, 10, 19, 23, 0, tzinfo=timezone.utc))
+        run(True, "confirmed_empty", datetime(2026, 10, 20, 1, 0, tzinfo=timezone.utc))
+        props = run(False, None, datetime(2026, 10, 20, 8, 45, tzinfo=timezone.utc))
+        self.assertTrue(props and all(common.pulled_status(p) == "removed" for p in props))
+
+
 if __name__ == "__main__":
     unittest.main()

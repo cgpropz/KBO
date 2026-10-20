@@ -154,7 +154,11 @@ class MarkBoard(unittest.TestCase):
             path = os.path.join(tmp, "pull.json")
             self.assertIsNone(pl.load_pull_status(path, now=NOW))
             with open(path, "w") as f:
-                json.dump(_status("confirmed_empty", checked=NOW - timedelta(hours=4)), f)
+                json.dump(_status("fresh", [("Dong Won Park", "Total Bases", 0.5)], checked=NOW - timedelta(hours=4)), f)
+            self.assertIsNone(pl.load_pull_status(path, now=NOW))
+            # A confirmed_empty from before Monday's first pitch has expired.
+            with open(path, "w") as f:
+                json.dump(_status("confirmed_empty", checked=datetime(2026, 10, 19, 4, 0, tzinfo=timezone.utc)), f)
             self.assertIsNone(pl.load_pull_status(path, now=NOW))
             with open(path, "w") as f:
                 json.dump(_status("confirmed_empty", checked=NOW - timedelta(minutes=5)), f)
@@ -208,7 +212,8 @@ class WriteStatus(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "pull.json")
             self._write(path, "confirmed_empty", NOW)
-            later = NOW + timedelta(hours=3, minutes=1)
+            # 10/20 first pitch is 18:30 KST (09:30Z): the empty pull stands until then.
+            later = datetime(2026, 10, 20, 9, 31, tzinfo=timezone.utc)
             self.assertEqual(self._write(path, "fetch_error", later)["status"], "fetch_error")
             with open(path, encoding="utf-8") as fh:
                 self.assertEqual(json.load(fh)["status"], "fetch_error")
@@ -217,7 +222,33 @@ class WriteStatus(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "pull.json")
             self._write(path, "confirmed_empty", NOW)
-            self.assertEqual(self._write(path, "fresh", NOW + timedelta(minutes=20))["status"], "fresh")
+            later = NOW + timedelta(minutes=20)
+            # An all-league (incomplete) answer does not replace it before first pitch.
+            self.assertEqual(self._write(path, "fresh", later)["status"], "confirmed_empty")
+            frame = odds.pd.DataFrame([{"Name": "Dong Won Park", "Stat": "Total Bases", "Prizepicks": 0.5, "Odds Type": "standard"}])
+            frame.attrs["kbo_complete"] = True
+            self.assertEqual(self._write(path, "fresh", later, frame=frame)["status"], "fresh")
+
+    def test_confirmed_empty_stands_until_first_pitch_through_429s(self):
+        """Board QA repro: pulled at 9 PM ET, 429 fallbacks overnight, 4:45 AM ET rebuild."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pull.json")
+            nine_pm = datetime(2026, 10, 20, 1, 0, tzinfo=timezone.utc)
+            written = self._write(path, "confirmed_empty", nine_pm)
+            self.assertEqual(written["valid_until"], "2026-10-20T09:30:00+00:00")
+            for hours in (1, 4, 6):
+                self.assertEqual(self._write(path, "fetch_error", nine_pm + timedelta(hours=hours))["status"], "confirmed_empty")
+            four_45 = datetime(2026, 10, 20, 8, 45, tzinfo=timezone.utc)
+            status = pl.load_pull_status(path, now=four_45)
+            self.assertEqual(status["status"], "confirmed_empty")
+            _, pulled = generate_props._apply_pulled_lines(_board(), status)
+            self.assertEqual(pulled, 5)
+            self.assertIsNone(pl.load_pull_status(path, now=datetime(2026, 10, 20, 9, 31, tzinfo=timezone.utc)))
+
+    def test_valid_until_rolls_to_next_slate_after_first_pitch(self):
+        # 10:00 PM KST Tue 10/20 (after first pitch) -> Wed 10/21 18:30 KST.
+        checked = datetime(2026, 10, 20, 13, 0, tzinfo=timezone.utc)
+        self.assertEqual(pl.confirmed_empty_valid_until(checked), datetime(2026, 10, 21, 9, 30, tzinfo=timezone.utc))
 
     def test_fetch_error_without_prior_status_is_written(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -10,7 +10,8 @@ import { keepSlipRow } from '../src/slipAvailability.js'
 import { prizepicksPulled } from '../src/nhl/pointsGate.js'
 
 const FILE = kboHold()
-const HOLD = { active: true, since: '2026-10-20T00:30:00Z', message: KBO_HOLD_MESSAGE }
+// Far-future expiry so these cases do not depend on the clock; expiry has its own test.
+const HOLD = { active: true, since: '2026-10-20T00:30:00Z', expires_at: '2099-01-01T00:00:00Z', message: KBO_HOLD_MESSAGE }
 const START = '2026-10-20T18:30:00+09:00'
 const prop = (stat, line, projection) => ({ stat, line, projection, odds_type: 'standard', recommendation: 'OVER', rating: 80 })
 // 7:31 PM ET build: stale lines, no pull confirmation (Cloudflare 429s).
@@ -33,11 +34,12 @@ test('committed hold file is on, with the Lines not posted yet message', () => {
   assert.equal(FILE.active, true)
   assert.equal(FILE.message, 'Lines not posted yet')
   assert.ok(Number.isFinite(Date.parse(FILE.since)))
+  assert.equal(FILE.expires_at, '2026-10-20T16:00:00Z')
 })
 
 test('hold marks every KBO prop pulled and nothing else', () => {
   const held = applyKboHold('prizepicks_props', staleBoard(), HOLD)
-  assert.deepEqual(held.kbo_hold, { active: true, since: HOLD.since, message: 'Lines not posted yet' })
+  assert.deepEqual(held.kbo_hold, { active: true, since: HOLD.since, expires_at: HOLD.expires_at, message: 'Lines not posted yet' })
   const props = held.cards.flatMap((c) => c.props)
   assert.equal(props.length, 2)
   for (const p of props) {
@@ -132,5 +134,29 @@ test('board shows Lines not posted yet while held', () => {
   assert.match(s, /<EmptyBoard nextGame=\{snapshot\.next_game\} hold=\{snapshot\.kbo_hold\} \/>/)
   assert.match(s, /hold\.message \|\| 'Lines not posted yet'/)
   const api = readFileSync(new URL('../api/data.js', import.meta.url), 'utf8')
-  assert.match(api, /board = applyKboHold\(ds, boardForPresentation\(row\.data\)\);/)
+  assert.match(api, /const presented = applyKboHold\(ds, board\);/)
+  assert.match(api, /shapeForTier\(ds, applyKboHold\(ds, tierPayload\.payload\), tier,/)
+})
+
+test('hold expires at expires_at (12:00 PM ET 10/20) and cannot stick', () => {
+  const hold = { ...FILE }
+  const before = new Date('2026-10-20T15:59:00Z')
+  const after = new Date('2026-10-20T16:00:00Z')
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), hold, before), true)
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), hold, after), false)
+  const board = staleBoard()
+  assert.equal(applyKboHold('prizepicks_props', board, hold, after), board)
+  // A hold with no readable expiry is off.
+  const { expires_at: _drop, ...noExpiry } = hold
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), noExpiry, before), false)
+  assert.equal(kboHoldActive('prizepicks_props', staleBoard(), { ...hold, expires_at: 'soon' }, before), false)
+})
+
+test('/api/data stops holding once the hold has expired, even for a cached board row', async () => {
+  _setKboHold({ ...HOLD, expires_at: '2000-01-01T00:00:00Z' })
+  _clearCache()
+  const res = await call('prizepicks_props', { prizepicks_props: staleBoard() })
+  assert.ok(res.body.data.cards.length > 0)
+  assert.equal(res.body.data.kbo_hold, undefined)
+  _setKboHold(FILE)
 })
