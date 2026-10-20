@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchApiDataset } from './apiData';
 import { useAgeGate } from './ageGateContext';
 import DiscordOnlyPlans from './DiscordOnlyPlans';
@@ -14,6 +14,7 @@ import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { DataCredit } from './SiteFooter'
 import { sessionAccessToken } from './supabaseClient';
 import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
+import { observeVisibleOnce, trackCheckoutClick, trackFreeTop3View } from './analytics';
 import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import PlayerMark from './PlayerMark';
@@ -208,6 +209,14 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const sportState = boards[sport.id];
   const hitState = boards[hitSport.id];
   const switchRows = boardApi ? boardApi.publicSwitcherRows(sportState?.rows || []) : [];
+  // free_top3_view: the free board preview with rows, scrolled into view.
+  // Once per sport per page load (switching tabs counts the new sport).
+  const freeBoardRef = useRef(null);
+  const freeRowsShown = switchRows.length > 0;
+  useEffect(() => {
+    if (!freeRowsShown) return undefined;
+    return observeVisibleOnce(freeBoardRef.current, () => trackFreeTop3View(sport.id));
+  }, [freeRowsShown, sport.id]);
   const hitRows = boardApi ? boardApi.publicFreeTopRows(hitState?.rows || []) : [];
   const phoneRows = switchRows;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
@@ -223,6 +232,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const startWeekly = async () => {
     if (weeklyBusy) return;
     if (!(await requireAge())) return;
+    trackCheckoutClick('weekly', sport.id);
     setWeeklyBusy(true);
     try {
       let token = '';
@@ -241,6 +251,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const buyLifetime = async () => {
     if (lifetimeBusy) return;
     if (!(await requireAge())) return;
+    trackCheckoutClick('lifetime', sport.id);
     setLifetimeBusy(true);
     try {
       let token = '';
@@ -384,7 +395,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         <section id="boards">
           <p className="pl-kick">Leagues</p>
           <h2>Switch sports, keep the board</h2>
-          <div className="pl-card pl-sw">
+          <div className="pl-card pl-sw" ref={freeBoardRef}>
             <div className="pl-sw-top">
               <div className="pl-seg" role="tablist" aria-label="League">
                 {LANDING_SPORTS.map((item) => (
@@ -454,7 +465,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                 <li>Billed once a month</li>
                 <li>Cancel anytime</li>
               </ul>
-              <a className="pl-ghost" href={buildCheckoutUrl(STRIPE_LINKS.monthly, user || null)}>Get monthly</a>
+              <a className="pl-ghost" href={buildCheckoutUrl(STRIPE_LINKS.monthly, user || null)} onClick={() => trackCheckoutClick('monthly', sport.id)}>Get monthly</a>
             </article>
             <article className="pl-price">
               <p className="pl-kick">Lifetime</p>

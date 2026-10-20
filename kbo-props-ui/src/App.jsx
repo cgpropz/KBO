@@ -12,6 +12,7 @@ import { pauseTokenFromSearch } from './pauseWindow'
 import { freePreviewBannerText } from './freePreviewCopy'
 import { subscribeBoardRefreshing } from './apiData'
 import { useAgeGate } from './ageGateContext'
+import { noteSportContext } from './analytics'
 import './FreeFunnel.css'
 import './App.css'
 
@@ -160,6 +161,9 @@ function App() {
     setSportState(sportAfterNbaGate(sport, false));
   }
   const visibleSport = sport === 'nba' && nba.open ? 'nba' : sport === 'nba' ? sportAfterNbaGate(sport, false) : sport;
+  // Analytics only: remember the sport being browsed so a checkout from the
+  // pricing view (rendered in the KBO shell) credits it. Idempotent.
+  if (view === 'home') noteSportContext(visibleSport);
 
   const openSignUp = async () => {
     const allowed = await requireAge();

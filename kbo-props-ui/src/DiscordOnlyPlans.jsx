@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { DISCORD_ONLY_NOTE, discordPlanCards } from './pricingTiers';
 import { requestDiscordCheckoutUrl } from './tracking';
 import { useAgeGate } from './ageGateContext';
+import { trackDiscordPlanClick } from './analytics';
 import { sessionAccessToken } from './supabaseClient';
 import './Discord.css';
 
@@ -22,6 +23,7 @@ export default function DiscordOnlyPlans({ variant = 'page', user, onCheckoutSta
   async function start(plan) {
     if (busy) return;
     if (!(await requireAge())) return;
+    trackDiscordPlanClick(plan);
     setError('');
     const open = (url) => {
       onCheckoutStart?.();
