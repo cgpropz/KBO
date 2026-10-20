@@ -22,6 +22,8 @@ import {
   stripGuideSource,
 } from './markdownGuide.mjs';
 
+import { freeTop3Section } from './publicPages.mjs';
+
 export { SITE };
 export const PAGE_PATH = '/kbo-player-props';
 export const PAGE_URL = `${SITE}${PAGE_PATH}`;
@@ -165,6 +167,7 @@ export function renderKboPage() {
 
   const bodyHtml = `
       ${renderMarkdown(before)}
+      ${freeTop3Section('kbo')}
       ${renderMarkdown(after)}
     `;
 

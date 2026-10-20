@@ -7,6 +7,7 @@ import {
   OPERATOR_DISCLAIMER,
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
+import { FREE_TOP3_END, FREE_TOP3_START } from './freeTop3Html.mjs';
 import { escapeHtml, jsonLdScript, organizationNode, pageUrl, renderDataCredit, websiteNode } from './seoShared.mjs';
 
 const NAV = [
@@ -56,6 +57,8 @@ export function homeRootInner() {
       <section id="free-top-3">
         <h2>Today's free top 3</h2>
         <p>The three standard lines with the highest CG Scores on each board.</p>
+        ${FREE_TOP3_START}
+        ${FREE_TOP3_END}
       </section>
     </main>
     <footer>

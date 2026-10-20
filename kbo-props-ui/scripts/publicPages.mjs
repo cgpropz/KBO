@@ -20,6 +20,7 @@ import {
   UNDER_REVIEW_STATES,
 } from '../src/responsibleGambling.js';
 import { appBoardPath } from '../src/appSport.js';
+import { FREE_TOP3_END, FREE_TOP3_SPORTS, FREE_TOP3_START, renderSportFreeTop3 } from './freeTop3Html.mjs';
 import { NBA_CARD, SPORTS } from '../src/sportsMeta.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import {
@@ -109,6 +110,15 @@ export const PRICING_META = {
   description: 'All-Access unlocks every CGPropz board: CG Scores, projections and L10 hit rates. First week $4.99 with code XWEEK, then $9.99/wk, cancel anytime. 21+.',
 };
 
+// Static fallback; scripts/write-free-top3.mjs fills the rows at build time.
+export function freeTop3Section(id) {
+  const sport = FREE_TOP3_SPORTS.find((item) => item.id === id);
+  if (!sport) return '';
+  return `<section id="free-top-3">${FREE_TOP3_START}
+      ${renderSportFreeTop3({ sport, rows: [] })}
+      ${FREE_TOP3_END}</section>`;
+}
+
 function renderSport(id, path) {
   const sport = sportById(id);
   const finals = id === 'wnba' ? wnbaFinalsSection() : null;
@@ -121,6 +131,7 @@ function renderSport(id, path) {
       <p>${escapeHtml(sport.tagline)}</p>
       
       ${boardLinks(path)}
+      ${freeTop3Section(id)}
       <div class="actions">
         <a class="btn btn-primary" href="${pageUrl(appBoardPath(id))}">Open the ${escapeHtml(sport.name)} board</a>
         <a class="btn btn-ghost" href="${pageUrl('/pricing')}">See pricing</a>
