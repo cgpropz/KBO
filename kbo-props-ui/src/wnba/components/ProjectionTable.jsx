@@ -215,7 +215,7 @@ export default function ProjectionTable({ data = [], loading = false, selectedPr
 
                 <td><RatingBadge rating={ppRating} /></td>
 
-                <td>
+                <td data-card-wide="">
                   {Array.isArray(p.ppAllProps) && p.ppAllProps.length ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                       {p.ppAllProps.map(prop => (

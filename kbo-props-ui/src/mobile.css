@@ -515,6 +515,94 @@
   table.hit-rate-board > tbody > tr > td.hit-rate-chart { order: 3; display: block !important; }
   table.hit-rate-board > tbody > tr > td.hit-rate-extra { order: 4; display: block !important; }
 
+  /* Table cards (Batter Props, Pitcher Props, Pitcher Rankings, Tracker,
+     Matchups, game logs, odds and projection tables). tableCardLabels.js
+     copies each column header onto its cells as data-label and marks the
+     table data-card-table. Two compact cards per row, every value under its
+     column name, same cells in the same order. iPad and desktop never match
+     this query, so they keep the table. */
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 8px;
+  }
+
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr[data-card-row] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 5px;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    border-radius: 14px;
+  }
+
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr[data-card-row="full"] {
+    display: block !important;
+    grid-column: 1 / -1;
+    padding: 0 !important;
+    background: transparent;
+    border: 0;
+  }
+
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > :is(td, th) {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    position: static !important;
+    overflow-wrap: break-word;
+  }
+
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > :is(td, th)[data-card-head] {
+    grid-column: 1 / -1;
+    padding: 0 !important;
+    text-align: left !important;
+  }
+
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > :is(td, th)[data-label] {
+    min-height: 0;
+    padding: 4px 5px !important;
+    border-radius: 6px;
+    font-size: 13px !important;
+    text-align: left !important;
+    line-height: 1.25;
+  }
+
+  body :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > :is(td, th)[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin: 0 0 2px;
+    color: #8fa69e;
+    font: 700 12px/1.2 Inter, system-ui, sans-serif !important;
+    letter-spacing: 0;
+    white-space: normal;
+  }
+
+  /* Wide cells take the full card width: the NFL CG Odds panel and any cell
+     a table marks data-card-wide. */
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > :is(td.nfl-sharp-cg, td[data-card-wide]) {
+    grid-column: 1 / -1;
+    min-width: 0 !important;
+  }
+
+  /* Values sit under their label on the left, like the other cards. */
+  :is(.kbo-app-root, .nfl-root, .wnba-root) table[data-card-table] > tbody > tr > td[data-label] .nhl-stat {
+    align-items: flex-start;
+  }
+
+  /* The NFL Sharp Odds board keeps its approved full-width card, led by the
+     CG Odds panel; its other values now carry their column names too. */
+  .nfl-root table.nfl-sharp-table.has-cg[data-card-table] > tbody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Cards replace the wide pitcher table, so there is nothing to swipe. */
+  .so-scroll-hint {
+    display: none !important;
+  }
+
   :is(.kbo-avatar, .nfl-lines-avatar, .wnba-lines-avatar) {
     width: 40px !important;
     height: 40px !important;

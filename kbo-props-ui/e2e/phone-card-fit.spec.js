@@ -582,3 +582,157 @@ for (const mode of ['free', 'member']) {
     }
   })
 }
+
+// KBO Batter Props and Pitcher Props tables. On a phone every row is a card,
+// two per row, and each value carries its column name. iPad keeps the table.
+const kboLog = (values) => values.map((value, i) => ({ hit: value > 1, date: `10/${String(12 - i).padStart(2, '0')}/2026`, value, opponent: 'LG' }))
+const kboBatter = (row) => ({
+  ba: 0.293, ops: 0.811, slg: 0.45, edge: 0.4, line: 1.5, prop: 'Total Bases', team: 'Kia', opponent: 'LG', home_team: 'LG',
+  rating: 63.3, avg_per_g: 1.7, odds_type: 'standard', vs_lhp_avg: 0.283, vs_rhp_avg: 0.306, batter_hand: 'L',
+  hit_rate_l5: 60, hit_rate_l10: 60, hit_rate_full: 54.7, opp_pitcher: 'Carlos Carrasco', opp_pitcher_hand: 'R', opp_pitcher_whip: 1.31,
+  projection: 1.9, cg_projection: 64, recommendation: 'OVER', recent_game_log: kboLog([2, 1, 3, 0, 2, 1, 2, 0, 3, 1]), ...row,
+})
+const kboPitcher = (row) => ({
+  team: 'LG', opponent: 'Kia', prop: 'Strikeouts', opp_ba: 0.271, opp_k_pct: 20.1, line: 4.5, projection: 4.7, hit_rate_l5: 40,
+  hit_rate_full: 47, rating: 52, cg_projection: 56, edge: 0.2, recommendation: 'OVER', odds_type: 'standard',
+  recent_values: [5, 4, 6, 3, 5, 4, 7, 2, 5, 4], ...row,
+})
+const kboTableData = {
+  batter_projections: {
+    generated_at: '2026-10-20T05:00:00Z',
+    projections: [
+      kboBatter({ name: 'Park Jae-hyun' }),
+      kboBatter({ name: 'Park Hae-min', team: 'LG', opponent: 'Kia', opp_pitcher: 'James Naile', line: 0.5 }),
+      kboBatter({ name: 'Kim Do-yeong', line: 2.5 }),
+    ],
+    team_batting: {},
+  },
+  strikeout_projections: {
+    projections: [
+      kboPitcher({ name: 'Carlos Carrasco' }),
+      kboPitcher({ name: 'James Naile', team: 'Kia', opponent: 'LG', line: 5.5, projection: 5.9 }),
+      kboPitcher({ name: 'Son Ju-young', line: 3.5, projection: 4.1 }),
+    ],
+    team_so_per_g: {},
+  },
+  prizepicks_props: {
+    cards: [
+      ['Park Jae-hyun', 'Kia', 'LG', 'batter', 'Total Bases', 1.5],
+      ['Park Hae-min', 'LG', 'Kia', 'batter', 'Total Bases', 0.5],
+      ['Kim Do-yeong', 'Kia', 'LG', 'batter', 'Total Bases', 2.5],
+      ['Carlos Carrasco', 'LG', 'Kia', 'pitcher', 'Pitcher Strikeouts', 4.5],
+      ['James Naile', 'Kia', 'LG', 'pitcher', 'Pitcher Strikeouts', 5.5],
+      ['Son Ju-young', 'LG', 'Kia', 'pitcher', 'Pitcher Strikeouts', 3.5],
+    ].map(([name, team, opponent, type, stat, line]) => ({ name, team, opponent, type, games: [], props: [{ stat, line, odds_type: 'standard' }] })),
+  },
+}
+
+const kboTables = [
+  {
+    view: 'batters',
+    table: '.bp-table',
+    players: ['Park Jae-hyun', 'Park Hae-min', 'Kim Do-yeong'],
+    labels: ['Team', 'Bat', 'Matchup', 'Opp Pitcher', 'Opp Hand', 'Wind', '2026', 'vs RHP', 'vs LHP', 'WHIP', 'OPS', 'Prop', 'PP Line', 'Projection', 'Avg/G', 'L5', 'L10', 'FULL', 'Rating', 'CG Projection', 'Variance', 'VALUE'],
+  },
+  {
+    view: 'projections',
+    table: '.so-table',
+    players: ['Carlos Carrasco', 'James Naile', 'Son Ju-young'],
+    labels: ['Team', 'Matchup', 'Opp BA', 'Opp K%', 'Prop', 'PP Line', 'Projection', 'L5 Hit%', 'Full Hit%', 'Rating', 'CG Projection', 'Variance', 'VALUE'],
+  },
+]
+
+async function installKboTables(page) {
+  await installFixtures(page, 'member')
+  await installMember(page)
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    if (!Object.prototype.hasOwnProperty.call(kboTableData, ds)) return route.fallback()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: kboTableData[ds], updatedAt: '2026-10-20T05:00:00Z', preview: false, lockedCount: 0, tier: 'combined' }),
+    })
+  })
+}
+
+async function tableCards(page, selector) {
+  return page.locator(selector).evaluate((table) => {
+    const body = table.tBodies[0]
+    const rows = [...body.rows].filter((row) => row.dataset.cardRow === 'card')
+    const rootBox = (document.getElementById('root') || document.body).getBoundingClientRect()
+    return {
+      cardTable: table.dataset.cardTable || '',
+      theadShown: getComputedStyle(table.tHead).display !== 'none',
+      tracks: getComputedStyle(body).gridTemplateColumns.split(' ').filter(Boolean),
+      innerWidth: Math.max(window.innerWidth, rootBox.right),
+      scrollWidth: Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0),
+      cards: rows.map((row) => {
+        const box = row.getBoundingClientRect()
+        const cells = [...row.cells]
+        return {
+          box: { top: box.top, left: box.left, right: box.right, bottom: box.bottom },
+          name: (row.querySelector('.bp-player-identity > span, .so-player-identity > span')?.textContent || '').trim(),
+          labels: cells.filter((cell) => cell.hasAttribute('data-label')).map((cell) => cell.dataset.label),
+          shown: cells.filter((cell) => cell.hasAttribute('data-label')).map((cell) => getComputedStyle(cell, '::before').content.replace(/^"|"$/g, '')),
+          unlabeled: cells.filter((cell) => !cell.hasAttribute('data-label') && !cell.hasAttribute('data-card-head') && cell.textContent.trim()).map((cell) => cell.textContent.trim()),
+          sticksOut: cells.filter((cell) => {
+            const r = cell.getBoundingClientRect()
+            return r.width > 0 && (r.right > box.right + 1 || r.left < box.left - 1)
+          }).map((cell) => cell.dataset.label || cell.textContent.trim()),
+        }
+      }),
+    }
+  })
+}
+
+for (const spec of kboTables) {
+  test(`KBO ${spec.view} table shows two labeled cards per row on a phone`, async ({ page }) => {
+    await installKboTables(page)
+    await page.goto(`/?sport=kbo&page=${spec.view}`, { waitUntil: 'domcontentloaded' })
+    await expect(page.locator(`${spec.table} tbody tr[data-card-row="card"]`)).toHaveCount(spec.players.length)
+    const fit = await tableCards(page, spec.table)
+    expect(fit.cardTable).toBe('on')
+    expect(fit.theadShown, 'header row is hidden on the phone').toBe(false)
+    expect(fit.tracks, `${spec.view} columns ${fit.tracks.join(' | ')}`).toHaveLength(2)
+    expect(fit.scrollWidth, `${spec.view} scrollWidth`).toBeLessThanOrEqual(fit.innerWidth + 1)
+    const [a, b, c] = fit.cards.map((card) => card.box)
+    expect(Math.abs(a.top - b.top), `${spec.view} first two cards share a row`).toBeLessThanOrEqual(1)
+    expect(a.right, `${spec.view} cards side by side`).toBeLessThanOrEqual(b.left + 1)
+    expect(c.top, `${spec.view} third card wraps`).toBeGreaterThan(Math.min(a.bottom, b.bottom) - 1)
+    expect(b.right, `${spec.view} row stays on screen`).toBeLessThanOrEqual(fit.innerWidth + 1)
+    expect(fit.cards.map((card) => card.name).sort()).toEqual([...spec.players].sort())
+    for (const card of fit.cards) {
+      expect(card.labels, `${spec.view} ${card.name} labels in column order`).toEqual(spec.labels)
+      expect(card.shown, `${spec.view} ${card.name} printed labels`).toEqual(spec.labels)
+      expect(card.unlabeled, `${spec.view} ${card.name} unlabeled values`).toEqual([])
+      expect(card.sticksOut, `${spec.view} ${card.name} cells leave the card`).toEqual([])
+    }
+    if (spec.view === 'projections') await expect(page.locator('.so-scroll-hint')).toBeHidden()
+  })
+}
+
+test('KBO batter and pitcher tables stay tables on an iPad', async ({ browser }) => {
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+    viewport: { width: 820, height: 1180 },
+    screen: { width: 820, height: 1180 },
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 2,
+  })
+  const page = await context.newPage()
+  try {
+    await installKboTables(page)
+    for (const spec of kboTables) {
+      await page.goto(`/?sport=kbo&page=${spec.view}`, { waitUntil: 'domcontentloaded' })
+      await expect(page.locator(`${spec.table} tbody tr`).first()).toBeVisible()
+      const fit = await tableCards(page, spec.table)
+      expect(fit.cardTable, `${spec.view} iPad is not carded`).toBe('')
+      expect(fit.theadShown, `${spec.view} iPad header row`).toBe(true)
+      expect(await page.locator(spec.table).evaluate((table) => getComputedStyle(table).display)).toBe('table')
+    }
+  } finally {
+    await context.close()
+  }
+})
