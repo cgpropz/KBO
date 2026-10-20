@@ -21,6 +21,10 @@ import {
 } from '../api/_dataAccess.js'
 import { acceptLandingFallback } from '../api/_landingFallback.js'
 import { bearerFor, installJwtSecret } from './access-token.mjs'
+import { _setKboHold } from '../api/_kboHold.js'
+
+// These cover the API paths, not the manual KBO hold (tests/kbo-hold.test.mjs).
+_setKboHold(null)
 
 installJwtSecret()
 const bearer = (name) => `Bearer ${bearerFor(name)}`

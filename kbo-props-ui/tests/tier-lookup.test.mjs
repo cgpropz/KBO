@@ -4,6 +4,10 @@ import test from 'node:test';
 import { handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js';
 import { PROFILE_ABORT_MS, clearMemberTierCache, lookupMemberTier, verifyAccessToken } from '../api/_memberTier.js';
 import { bearerFor, installJwtSecret, signAccessToken, TEST_JWT_SECRET } from './access-token.mjs';
+import { _setKboHold } from '../api/_kboHold.js'
+
+// These cover the API paths, not the manual KBO hold (tests/kbo-hold.test.mjs).
+_setKboHold(null)
 
 installJwtSecret();
 
