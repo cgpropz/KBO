@@ -64,9 +64,17 @@ function formatNextGameEt(nextGame) {
   return `${parts.weekday}, ${parts.month} ${parts.day}, ${parts.hour}:${parts.minute} ${parts.dayPeriod} ET`
 }
 
-function EmptyBoard({ nextGame }) {
+function EmptyBoard({ nextGame, hold }) {
   const when = formatNextGameEt(nextGame)
   const matchup = nextGame?.away && nextGame?.home ? `${nextGame.away} @ ${nextGame.home}` : ''
+  if (hold?.active) {
+    return (
+      <section className="kbo-board-empty" data-testid="kbo-board-hold">
+        <h2>{hold.message || 'Lines not posted yet'}</h2>
+        <p>PrizePicks has not posted KBO lines. The board fills in when they do.</p>
+      </section>
+    )
+  }
   return (
     <section className="kbo-board-empty" data-testid="kbo-board-empty">
       <h2>No upcoming props</h2>
@@ -344,7 +352,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />
       {!hold && error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="kbo-notice" />}
-      {!hold && !error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} />}
+      {!hold && !error && boardEmpty && <EmptyBoard nextGame={snapshot.next_game} hold={snapshot.kbo_hold} />}
       {!hold && !error && !snapshot && (
         <div role="status" aria-label="Loading KBO prop lines">
           <BoardSkeleton />
