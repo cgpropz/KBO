@@ -736,3 +736,44 @@ test('KBO batter and pitcher tables stay tables on an iPad', async ({ browser })
     await context.close()
   }
 })
+
+// Matchups last 5 starts: dates and the longest KBO team names stay whole on
+// the narrowest phone (nowrap cells clip, so the text must fit its cell).
+const mddStart = (date, opp) => ({ date, opp, ip: '6.0', er: 3, so: 3, ha: 5, bb: 3, era: 4.5 })
+const mddPitcher = (name, team) => ({
+  name,
+  line: 4.5,
+  k_projection: 4.8,
+  profile: {
+    name, team, era: 4.24, whip: 1.45, k_per_9: 7.66, ip_per_g: 5.7, starts: 23,
+    recent: [mddStart('09/19/2026', 'Samsung'), mddStart('09/13/2026', 'KT'), mddStart('09/05/2026', 'Hanwha'), mddStart('08/20/2026', 'Kiwoom'), mddStart('07/30/2026', 'Doosan')],
+  },
+})
+const mddData = {
+  generated_at: '2026-10-20T05:00:00Z',
+  matchups: [{ away: 'Lotte', home: 'Doosan', stadium: 'Seoul-Jamsil', weather: null, market: null, away_pitcher: mddPitcher('Na Gyun-an', 'Lotte'), home_pitcher: mddPitcher('Choi Seung-yong', 'Doosan') }],
+}
+
+test('Matchups last-5 dates and team names are not clipped on a phone', async ({ page }) => {
+  await installFixtures(page, 'member')
+  await installMember(page)
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    if (ds !== 'matchup_data') return route.fallback()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: mddData, updatedAt: '2026-10-20T05:00:00Z', preview: false, lockedCount: 0, tier: 'combined' }),
+    })
+  })
+  await page.goto('/?sport=kbo&page=matchups', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('table.mdd-recent-table[data-card-table] tbody tr').first()).toBeVisible()
+  const cells = await page.locator('table.mdd-recent-table tbody td').evaluateAll((nodes) => nodes
+    .filter((node) => node.dataset.label === 'Date' || node.dataset.label === 'Opp')
+    .map((node) => ({ label: node.dataset.label, text: node.textContent.trim(), scroll: node.scrollWidth, client: node.clientWidth })))
+  expect(cells.some((cell) => cell.text === 'Samsung'), 'fixture has a Samsung row').toBe(true)
+  expect(cells.length).toBeGreaterThanOrEqual(10)
+  for (const cell of cells) {
+    expect(cell.scroll, `${cell.label} "${cell.text}" clipped (${cell.scroll} > ${cell.client})`).toBeLessThanOrEqual(cell.client)
+  }
+})
