@@ -68,7 +68,7 @@ test('static pages ship the marker with the empty fallback; the build fills it',
     assert.ok(html.includes(FREE_TOP3_START) && html.includes(FREE_TOP3_END))
     assert.match(html, /<section id="free-top-3">/)
     // The committed fallback makes no claim and carries no build clock.
-    assert.match(html, /top 3 is on the live board\./)
+    assert.match(html, /Check the live board for today's free [A-Z]+ top 3\./)
     assert.equal(html.includes('free top 3 is posted right now'), false)
     assert.equal(/class="free-top3-block"[^>]*data-built/.test(html), false)
   }
