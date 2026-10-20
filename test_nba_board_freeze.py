@@ -485,3 +485,40 @@ def test_fallback_rows_carry_published_started_flag():
                 os.environ[k] = v
     assert [(r["player"], r["stat"], r["started"]) for r in flat] == [
         ("A", "Points", True), ("B", "Points", True), ("B", "Assists", False)]
+
+
+def test_untipped_games_soon_counts_only_future_tips_inside_five_hours():
+    import datetime as _dt
+
+    from nba.board_freeze import untipped_games_soon
+
+    utc = _dt.timezone.utc
+    now = _dt.datetime(2026, 10, 20, 18, 15, tzinfo=utc)  # 2:15 PM ET
+    starts = [
+        _dt.datetime(2026, 10, 20, 17, 0, tzinfo=utc),   # already tipped
+        _dt.datetime(2026, 10, 20, 19, 0, tzinfo=utc),   # 3:00 PM ET
+        _dt.datetime(2026, 10, 20, 23, 0, tzinfo=utc),   # 7:00 PM ET
+        _dt.datetime(2026, 10, 21, 1, 30, tzinfo=utc),   # 9:30 PM ET, over 5h out
+    ]
+    assert untipped_games_soon(now, starts=starts) == starts[1:3]
+    assert untipped_games_soon(now, starts=[]) == []
+    # Unreadable scoreboard -> empty (keeps the old warning skip).
+    assert untipped_games_soon(now, fetch=lambda url: None) == []
+
+
+def test_zero_standard_rows_with_games_tipping_fails_red(tmp_path, monkeypatch):
+    import datetime as _dt
+
+    from nba import board_freeze as bf
+
+    out_file = tmp_path / "gh_out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    monkeypatch.setattr(bf, "fetch_prizepicks_standard", lambda: [])
+    monkeypatch.setattr(bf, "untipped_games_soon", lambda now: [_dt.datetime(2026, 10, 20, 19, 0, tzinfo=_dt.timezone.utc)])
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 1
+    assert "skipped=true" in out_file.read_text()
+
+    out_file.write_text("")
+    monkeypatch.setattr(bf, "untipped_games_soon", lambda now: [])
+    assert bf.main(["--out-dir", str(tmp_path), "--today", "2026-10-20"]) == 0
+    assert "skipped=true" in out_file.read_text()

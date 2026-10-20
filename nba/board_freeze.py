@@ -325,6 +325,32 @@ def build_rows(pp_rows: list[dict], pub: list[dict], captured_at: str) -> list[d
     return out
 
 
+# Same lead as the refresh window (pipeline.refresh_window.WINDOW_BEFORE):
+# an NBA game tipping within this span should already have PrizePicks lines.
+UPCOMING_TIP_WINDOW = dt.timedelta(hours=5)
+
+
+def untipped_games_soon(now: dt.datetime, starts: list | None = None, fetch=None) -> list:
+    """ESPN NBA start times after now and within UPCOMING_TIP_WINDOW.
+
+    Empty when there are none or the scoreboard cannot be read (then the
+    zero-line skip stays a warning, as before).
+    """
+    if starts is None:
+        from pipeline.refresh_window import espn_starts
+
+        starts = espn_starts("nba", fetch=fetch) or []
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=dt.timezone.utc)
+    out = []
+    for start in starts:
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=dt.timezone.utc)
+        if now < start <= now + UPCOMING_TIP_WINDOW:
+            out.append(start)
+    return out
+
+
 SAVED_BOARD_MAX_AGE_MINUTES = 60
 
 
@@ -446,6 +472,16 @@ def main(argv: list[str] | None = None) -> int:
         pp_rows = []
         print(f"::error title=PrizePicks unavailable::{pp_error}. Saving the published NBA board marked pp_unavailable.")
     if pp_error is None and not pp_rows and not args.force:
+        upcoming = untipped_games_soon(dt.datetime.now(tz=dt.timezone.utc))
+        if upcoming:
+            first = min(upcoming).astimezone(ET).strftime("%I:%M %p ET").lstrip("0")
+            print(
+                f"::error title=PrizePicks has no NBA standard lines::PrizePicks answered with 0 NBA "
+                f"standard lines while {len(upcoming)} NBA game(s) tip in the next "
+                f"{int(UPCOMING_TIP_WINDOW.total_seconds() // 3600)} hours (first {first}); nothing saved"
+            )
+            _write_gh_output(skipped="true", rows=0)
+            return 1
         return _skip("no_standard_rows", et_date, warn=warn)
 
     pub = fetch_published_projections()
