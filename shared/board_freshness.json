@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-20T10:39:15Z",
+  "checked_at": "2026-10-20T10:59:24Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-20T10:39:15.006763+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-20T10:31:56.881860+00:00",
-      "prop_count": 728,
+      "generated_at": "2026-10-20T10:59:24.476004+00:00",
+      "prop_count": 740,
       "started_removed": 0,
       "removals": [
         {
@@ -464,6 +464,15 @@
           "line": 0.5,
           "odds_type": "goblin",
           "projection": 0.93,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Brandon Hagel",
+          "team": "TBL",
+          "stat": "Shots On Goal",
+          "line": 5.5,
+          "odds_type": "demon",
+          "projection": 2.44,
           "reason": "line pulled"
         },
         {
@@ -1000,6 +1009,15 @@
         {
           "player": "Evan Bouchard",
           "team": "EDM",
+          "stat": "Power Play Points",
+          "line": 0.5,
+          "odds_type": "standard",
+          "projection": 0.32,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Evan Bouchard",
+          "team": "EDM",
           "stat": "Shots On Goal",
           "line": 2.5,
           "odds_type": "goblin",
@@ -1074,6 +1092,15 @@
           "team": "VAN",
           "stat": "Shots On Goal",
           "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.38,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Filip Hronek",
+          "team": "VAN",
+          "stat": "Shots On Goal",
+          "line": 3.5,
           "odds_type": "demon",
           "projection": 1.38,
           "reason": "line pulled"
@@ -1216,6 +1243,15 @@
         {
           "player": "Jack Eichel",
           "team": "VGK",
+          "stat": "Power Play Points",
+          "line": 0.5,
+          "odds_type": "standard",
+          "projection": 0.43,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jack Eichel",
+          "team": "VGK",
           "stat": "Shots On Goal",
           "line": 2.5,
           "odds_type": "goblin",
@@ -1292,6 +1328,15 @@
           "line": 0.5,
           "odds_type": "goblin",
           "projection": 0.89,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jakob Chychrun",
+          "team": "WSH",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.61,
           "reason": "line pulled"
         },
         {
@@ -1470,6 +1515,15 @@
           "team": "WSH",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.75,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jordan Kyrou",
+          "team": "WSH",
+          "stat": "Shots On Goal",
+          "line": 5.5,
           "odds_type": "demon",
           "projection": 1.75,
           "reason": "line pulled"
@@ -1704,6 +1758,15 @@
           "team": "VAN",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.37,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Linus Karlsson",
+          "team": "VAN",
+          "stat": "Shots On Goal",
+          "line": 4.5,
           "odds_type": "demon",
           "projection": 1.37,
           "reason": "line pulled"
@@ -2195,6 +2258,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Nikolaj Ehlers",
+          "team": "CAR",
+          "stat": "Shots On Goal",
+          "line": 6.5,
+          "odds_type": "demon",
+          "projection": 2.34,
+          "reason": "line pulled"
+        },
+        {
           "player": "Noah Dobson",
           "team": "MTL",
           "stat": "Shots On Goal",
@@ -2566,15 +2638,6 @@
         {
           "player": "Vasily Podkolzin",
           "team": "EDM",
-          "stat": "Points",
-          "line": 2.5,
-          "odds_type": "demon",
-          "projection": 0.58,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Vasily Podkolzin",
-          "team": "EDM",
           "stat": "Shots On Goal",
           "line": 3.5,
           "odds_type": "demon",
@@ -2742,11 +2805,29 @@
           "odds_type": "demon",
           "projection": 3.52,
           "reason": "line pulled"
+        },
+        {
+          "player": "Zach Werenski",
+          "team": "CBJ",
+          "stat": "Shots On Goal",
+          "line": 7.5,
+          "odds_type": "demon",
+          "projection": 3.52,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Zeev Buium",
+          "team": "VAN",
+          "stat": "Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.31,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 38,
-        "superseded_dup": 16,
+        "pp_pull": 36,
+        "superseded_dup": 18,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
