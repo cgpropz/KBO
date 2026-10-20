@@ -11,7 +11,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from pipeline.memory import common, freeze_slate, grade_kbo_day
+from pipeline.memory import common, cutoff, freeze_slate, grade_kbo_day
 
 SLATE = date(2026, 10, 20)
 NOW = datetime(2026, 10, 20, 0, 30, tzinfo=timezone.utc)  # 8:30 PM ET 10/19
@@ -35,7 +35,14 @@ class KboFreezePulledTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self._orig = common.MEMORY_ROOT
         common.MEMORY_ROOT = Path(self._tmp.name) / "memory"
+        # Pinned clock. write_slate and the started-game check fall back to
+        # cutoff.utc_now() when no `now` is passed; without this, every case
+        # turns into "game already started" once the real clock passes
+        # FIRST_PITCH. _freeze/run move it to each freeze's `at`.
+        self.clock = NOW
         patches = [
+            mock.patch.object(cutoff, "utc_now", side_effect=lambda: self.clock),
+            mock.patch.object(common, "utc_now_iso", side_effect=lambda: self.clock.isoformat()),
             mock.patch.object(freeze_slate.cutoff, "kbo_first_pitch", return_value=(FIRST_PITCH, "test")),
             mock.patch.object(freeze_slate, "scheduled_matchups", return_value=None),
             mock.patch.object(freeze_slate, "source_commit", return_value="test"),
@@ -85,6 +92,7 @@ class KboFreezePulledTests(unittest.TestCase):
 
 
     def _freeze(self, pulled, pull, at):
+        self.clock = at
         board = _board(pulled)
         if pull:
             board["prizepicks_pull"] = {"status": pull, "checked_at": at.isoformat(), "pulled_props": 2 if pulled else 0}
@@ -136,6 +144,7 @@ class KboFreezePulledTests(unittest.TestCase):
         props_path = public / "prizepicks_props.json"
 
         def run(pulled, pull, at):
+            self.clock = at
             board = _board(pulled)
             if pull:
                 board["prizepicks_pull"] = {"status": pull, "checked_at": at.isoformat()}
