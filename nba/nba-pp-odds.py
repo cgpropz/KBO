@@ -29,6 +29,7 @@ import argparse
 import csv
 import json
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -135,15 +136,56 @@ def parse_opponent(description: object) -> str:
     return ""
 
 
-def fetch_all_projections(per_page: int = 1000, get=None) -> dict:
+# PrizePicks' partner API answers 403/429 (bot wall or rate limit) and 5xx in
+# short bursts; the 10/20 1:15 AM ET NBA freeze died on a single 403. Three
+# attempts per page, waiting 5 s then 15 s (or Retry-After, capped at 60 s).
+RETRY_STATUSES = frozenset({403, 429, 500, 502, 503, 504})
+RETRY_WAITS = (5, 15)
+RETRY_AFTER_CAP = 60
+
+
+def _retry_wait(response, default: float) -> float:
+    headers = getattr(response, "headers", None) or {}
+    raw = headers.get("Retry-After") if hasattr(headers, "get") else None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return default
+    return max(0.0, min(value, RETRY_AFTER_CAP))
+
+
+def get_page_with_retry(getter, params: dict, sleep=time.sleep, waits=RETRY_WAITS):
+    """One projections page. Retries 403/429/5xx and connection errors, then raises."""
+    attempts = len(waits) + 1
+    for attempt in range(1, attempts + 1):
+        try:
+            response = getter(PP_URL, params=params, timeout=30)
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            if attempt == attempts:
+                raise
+            wait = waits[attempt - 1]
+            print(f"PrizePicks page {params.get('page')}: {type(exc).__name__}; retry {attempt}/{attempts - 1} in {wait}s")
+            sleep(wait)
+            continue
+        status = getattr(response, "status_code", 200)
+        if status in RETRY_STATUSES and attempt < attempts:
+            wait = _retry_wait(response, waits[attempt - 1])
+            print(f"PrizePicks page {params.get('page')}: HTTP {status}; retry {attempt}/{attempts - 1} in {wait:g}s")
+            sleep(wait)
+            continue
+        response.raise_for_status()
+        return response
+    raise RuntimeError("unreachable")
+
+
+def fetch_all_projections(per_page: int = 1000, get=None, sleep=time.sleep) -> dict:
     """Fetch every PrizePicks projections page. Same URL and page loop as WNBA."""
     getter = get or requests.get
     page = 1
     all_data = []
     all_included = []
     while True:
-        response = getter(PP_URL, params={"per_page": per_page, "page": page}, timeout=30)
-        response.raise_for_status()
+        response = get_page_with_retry(getter, {"per_page": per_page, "page": page}, sleep=sleep)
         payload = response.json()
         page_data = payload.get("data") or []
         page_included = payload.get("included") or []
