@@ -75,7 +75,7 @@ CG Score shows **how far the CGPropz projection sits from the line**. The CGProp
 
 A bigger gap from 50 means a bigger gap between the model and the line. Scores on low lines can run higher. Sports can calculate it a bit differently, and KBO can show its own stored score.
 
-**About the free top 3:** on NHL and WNBA it's the top three props on the full board by CG Score. KBO's free top 3 is chosen on the server and isn't simply the top three scores on the board. NFL and NBA have no free top 3 right now. (The NBA board opens Tue Oct 20.)
+**About the free top 3:** on NHL and WNBA it's the top three props on the full board by CG Score. KBO's free top 3 is the top three standard lines on the board by CG Score, too. NBA has no free top 3 right now.
 
 The board treats a prop as an over when the projection is at or above the line.
 

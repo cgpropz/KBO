@@ -319,6 +319,23 @@ export const PAGE_IMAGES = {
     src: '/images/wnba-finals-featured.png',
     alt: 'Valkyries vs Dream WNBA Finals player props on CGPropz',
   },
+  // Per-sport share cards from scripts/generate-og-images.mjs.
+  '/kbo-player-props': {
+    src: '/images/og/kbo-player-props.png',
+    alt: 'KBO player props today on CGPropz: free top 3 and CG Score',
+  },
+  '/nba-player-props': {
+    src: '/images/og/nba-player-props.png',
+    alt: 'NBA player props today on CGPropz: CG Score and hit rates',
+  },
+  '/nfl-player-props': {
+    src: '/images/og/nfl-player-props.png',
+    alt: 'NFL player props today on CGPropz: CG Score on every standard line',
+  },
+  '/nhl-player-props': {
+    src: '/images/og/nhl-player-props.png',
+    alt: 'NHL player props today on CGPropz: free top 3 ranked by CG Score',
+  },
 };
 
 function insertGuideImages(path, body) {

@@ -16,6 +16,7 @@ import {
 import {
   assertNoCurlyPlaceholders,
   hideUnresolved,
+  PAGE_IMAGES,
   listGuides,
   renderMarkdown,
   stripGuideSource,
@@ -167,11 +168,14 @@ export function renderKboPage() {
       ${renderMarkdown(after)}
     `;
 
+  const image = PAGE_IMAGES[PAGE_PATH];
   const html = renderDocument({
     title,
     description,
     path: PAGE_PATH,
     bodyHtml,
+    image: image ? pageUrl(image.src) : undefined,
+    imageAlt: image?.alt,
     schemas: [
       breadcrumbNode([
         { name: 'Home', url: pageUrl('/') },

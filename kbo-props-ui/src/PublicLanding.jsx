@@ -266,6 +266,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         <PageMenu open={menu.open}>
           <nav className="pl-nav" aria-label="Page">
             <a href="#boards" onClick={(event) => { event.preventDefault(); scrollTo('boards'); }}>Boards</a>
+            <a href="/nba-player-props">NBA</a>
             <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
             <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
             <a href="#pricing" onClick={(event) => { event.preventDefault(); scrollTo('pricing'); }}>Pricing</a>
@@ -285,7 +286,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       <main className="pl-main">
         <section className="pl-hero">
           <div>
-            <p className="pl-kick">KBO · NFL · NHL · WNBA</p>
+            <p className="pl-kick">KBO · NBA · NFL · NHL · WNBA</p>
             <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
             <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
             <div className="pl-cta-row">
