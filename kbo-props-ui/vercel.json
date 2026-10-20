@@ -59,7 +59,9 @@
     { "source": "/board", "destination": "/kbo-player-props", "statusCode": 301 },
     { "source": "/app", "destination": "/", "statusCode": 301 },
     { "source": "/start-here", "destination": "/guides/start-here", "statusCode": 301 },
-    { "source": "/how-cg-score", "destination": "/guides/cg-score", "statusCode": 301 }
+    { "source": "/how-cg-score", "destination": "/guides/cg-score", "statusCode": 301 },
+    { "source": "/blog", "destination": "/guides", "statusCode": 301 },
+    { "source": "/blog/:path*", "destination": "/guides", "statusCode": 301 }
   ],
   "rewrites": [
     { "source": "/api/discord-auth", "destination": "/api/discord/auth" },
@@ -77,6 +79,7 @@
     { "source": "/wnba-player-props", "destination": "/wnba-player-props.html" },
     { "source": "/nba-player-props", "destination": "/nba-player-props.html" },
     { "source": "/nhl-player-props", "destination": "/nhl-player-props.html" },
+    { "source": "/guides", "destination": "/guides.html" },
     { "source": "/pricing", "destination": "/pricing.html" },
     { "source": "/policies", "destination": "/policies.html" },
     { "source": "/terms", "destination": "/terms.html" },
