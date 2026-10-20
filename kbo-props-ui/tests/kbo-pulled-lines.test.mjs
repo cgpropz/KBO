@@ -32,7 +32,9 @@ test('board score: a pulled prop has no CG Score', () => {
   assert.ok(scoreFor(prop('Total Bases', 0.5, 0.97)) > 90)
 })
 
-test('API free preview and paid board drop pulled props (all pulled, and one pulled)', () => {
+test('API free preview and paid board drop pulled props (all pulled, and one pulled)', (t) => {
+  // shapeForTier reads the server clock; pin it to NOW so the fixture slate has not started.
+  t.mock.timers.enable({ apis: ['Date'], now: NOW })
   const freeAll = shapeForTier('prizepicks_props', allPulled(), 'free')
   assert.deepEqual(names(freeAll.data.cards), [])
   const freeOne = shapeForTier('prizepicks_props', parkPulled(), 'free')
