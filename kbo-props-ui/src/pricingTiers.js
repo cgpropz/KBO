@@ -103,7 +103,7 @@ export const TIERS = [
       'Landing page overview',
     ],
     limited: [
-      'Full KBO, WNBA, NFL + NHL projections',
+      'Full KBO, WNBA, NFL, NHL + NBA projections',
       'Player prop cards & PrizePicks edge',
       'Slip builder & optimizer',
       'Matchups, lineups & tracker',
