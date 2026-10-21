@@ -10,18 +10,20 @@ import {
   policyBestQuote,
 } from '../src/nfl/bookPolicy.js'
 
-test('excluded names match case and spacing, and Polymarket stays', () => {
+test('excluded names match case and spacing, and DraftKings stays', () => {
   for (const name of [
     'DraftKings Pick6', 'DRAFTKINGS PICK6', 'DraftKings  Pick 6', 'draftkings-pick6',
     'Kalshi', 'Polymarket US', 'Polymarket U.S.', 'Novig', 'Prophet Exchange',
-    'ProphetExchange', 'Underdog Prediction Market', 'Fliff',
+    'ProphetExchange', 'Underdog Prediction Market', 'Fliff', 'Polymarket',
+    'Underdog Fantasy', 'Underdog', 'Sleeper', 'Splash Sports', 'PrizePicks',
   ]) {
     assert.equal(isExcludedBook(name), true, name)
   }
   assert.equal(isExcludedBook('DraftKings'), false)
-  assert.equal(isExcludedBook('Polymarket'), false)
   assert.equal(isExcludedBook({ book: 'House Special', source_id: 84 }), true)
-  assert.equal(isExcludedBook({ book: 'Polymarket', source_id: 107 }), false)
+  assert.equal(isExcludedBook({ book: 'House Special', source_id: 107 }), true)
+  assert.equal(isExcludedBook({ book: 'House Special', source_id: 73 }), true)
+  assert.equal(isExcludedBook({ book: 'DraftKings', source_id: 1 }), false)
 })
 
 test('shared feed counts once and consensus keeps BetOnline', () => {

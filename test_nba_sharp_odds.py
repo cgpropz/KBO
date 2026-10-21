@@ -238,10 +238,10 @@ class SnapshotTests(unittest.TestCase):
         priced = {item["book"] for item in row["book_prices"]}
         self.assertNotIn("Kalshi", priced)
         self.assertNotIn("House Special", priced)
-        self.assertIn("Polymarket", priced)
+        self.assertNotIn("Polymarket", priced)
         self.assertIn("DraftKings", priced)
-        self.assertEqual(priced, {"FanDuel", "DraftKings", "BetOnline", "SportsBetting", "Bovada", "Polymarket"})
-        self.assertEqual(row["matched_books_count"], 4)
+        self.assertEqual(priced, {"FanDuel", "DraftKings", "BetOnline", "SportsBetting", "Bovada"})
+        self.assertEqual(row["matched_books_count"], 3)
         self.assertEqual(row["fair_books"], ["BetOnline"])
         self.assertEqual(row["fair_book_count"], 1)
         self.assertEqual(row["fair_source"], "sharp_books")

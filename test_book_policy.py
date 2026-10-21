@@ -74,16 +74,23 @@ class PolicyMatchTests(unittest.TestCase):
             "ProphetExchange",
             "Underdog Prediction Market",
             "Fliff",
+            "Polymarket",
+            "polymarket",
+            "Underdog Fantasy",
+            "Underdog",
+            "Sleeper",
+            "Splash Sports",
+            "PrizePicks",
         ]
         for name in excluded:
             self.assertTrue(is_excluded_book(name), name)
         self.assertFalse(is_excluded_book("DraftKings"))
-        self.assertFalse(is_excluded_book("Polymarket"))
-        self.assertFalse(is_excluded_book("Underdog Fantasy"))
         self.assertFalse(is_excluded_book("FanDuel"))
         self.assertTrue(is_excluded_book({"book": "House Special", "source_id": 84}))
         self.assertTrue(is_excluded_book({"book": "House Special", "source_id": "111"}))
-        self.assertFalse(is_excluded_book({"book": "Polymarket", "source_id": 107}))
+        self.assertTrue(is_excluded_book({"book": "House Special", "source_id": 107}))
+        self.assertTrue(is_excluded_book({"book": "House Special", "source_id": 73}))
+        self.assertFalse(is_excluded_book({"book": "DraftKings", "source_id": 1}))
         betonline = shared_feed_info("Bet Online")
         self.assertEqual(betonline["rank"], 0)
         self.assertTrue(betonline["canonical"])
@@ -143,15 +150,15 @@ class PolicyMatchTests(unittest.TestCase):
         }
         event = payload["propsPeopleEvents"]["lg1:pt1:pregame"][0]
         sides = event["propsMarketSourcesLines"]
-        kept_ids = (1, 2, 9, 10, 54, 107)
-        dropped_ids = (84, 105, 111, 66, 89, 91, 121, 900)
+        kept_ids = (1, 2, 9, 10, 54)
+        dropped_ids = (84, 105, 107, 111, 66, 89, 91, 121, 900)
         for source_id in kept_ids + dropped_ids:
             sides[f"si0:ms{source_id}:an0"] = {"bt16": line(source_id, -110)}
             sides[f"si1:ms{source_id}:an0"] = {"bt16": line(source_id, -110)}
         records, _events = sharp.normalize_unabated_payload(payload)
         books = {row["book"] for row in records}
         self.assertIn("DraftKings", books)
-        self.assertIn("Polymarket", books)
+        self.assertNotIn("Polymarket", books)
         self.assertIn("BetOnline", books)
         self.assertIn("Bovada", books)
         self.assertIn("SportsBetting", books)
@@ -214,7 +221,7 @@ class PolicyMatchTests(unittest.TestCase):
             },
         }
         records, _events = normalize_nhl_payload(payload)
-        self.assertEqual({row["book"] for row in records}, {"FanDuel", "BetOnline", "Bovada", "Polymarket"})
+        self.assertEqual({row["book"] for row in records}, {"FanDuel", "BetOnline", "Bovada"})
 
 
 class SnapshotPolicyTests(unittest.TestCase):
@@ -227,6 +234,7 @@ class SnapshotPolicyTests(unittest.TestCase):
         noisy += _pair("Polymarket U.S.", 160, -190) + _pair("Novig", 140, -160)
         noisy += _pair("Prophet Exchange", 130, -150) + _pair("fliff", 120, -140)
         noisy += _pair("Underdog Prediction Market", 110, -130)
+        noisy += _pair("Polymarket", 105, -125) + _pair("Underdog Fantasy", 102, -122)
         noisy += [_book("over", 300, "House Special", source_id=105)]
         plain = self._snapshot(base)
         with_noise = self._snapshot(noisy)

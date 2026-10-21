@@ -7,16 +7,21 @@ market source id matches even when the display name does not.
 
 Confirmed on the public Unabated props file (marketSources):
 
-Excluded from books count, consensus, and Best Over/Under. Polymarket
-(id 107) is a different source and stays. DraftKings (id 1) stays.
-Underdog Fantasy stays on the older pick'em list, not this one.
+Excluded from books count, consensus, and Best Over/Under: every
+pick'em app and prediction market in the feed. DraftKings (id 1) and
+the other sportsbooks stay.
 
   84  DraftKings Pick6
   105 Kalshi
   111 Polymarket US
+  107 Polymarket
   89  Novig
   66  Prophet Exchange
   121 Underdog Prediction Market
+  73  Underdog Fantasy
+  90  Sleeper
+  81  Splash Sports
+  72  PrizePicks
   91  Fliff
 
 Shared feed, counted as one book. Consensus keeps one skin, and only
