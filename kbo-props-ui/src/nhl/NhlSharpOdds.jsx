@@ -185,7 +185,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
           {gap && <div className="nfl-sharp-book">{gap}</div>}
           {item.line_plus && (
-            <span className="nfl-sharp-badge line" title="Nearest book line is a half-point easier on this PrizePicks side. Grade is bumped one step. The edge number itself is not padded.">LINE+</span>
+            <span className="nfl-sharp-badge line" title="LINE+ marks an easier half-point line. That half point is already priced into the edge, with no extra letter.">LINE+</span>
           )}
         </td>
         <CgOddsCell item={item} mode={mode} />

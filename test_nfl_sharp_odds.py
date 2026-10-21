@@ -227,7 +227,7 @@ class MatchTests(unittest.TestCase):
         self.assertNotEqual(before["ev_pct"], after["ev_pct"])
         self.assertNotEqual(before["fair_over_pct"], after["fair_over_pct"])
 
-    def test_nearest_line_shifts_the_edge_and_line_plus_only_bumps_the_letter(self):
+    def test_nearest_line_shifts_the_edge_and_line_plus_does_not_bump_the_letter(self):
         books = [
             {"player": "Ja'Marr Chase", "player_key": sharp.name_key("Ja'Marr Chase"), "prop": "Receiving Yards",
              "side": "over", "line": 74.5, "price": -168, "book": "Circa", "book_key": "circa"},
@@ -259,8 +259,8 @@ class MatchTests(unittest.TestCase):
             self.assertEqual(row["pp_edge_over_power"], sharp.pp_edge_pct(moved, power))
             self.assertEqual(row["pp_edge_under_power"], sharp.pp_edge_pct(1.0 - moved, power))
             self.assertEqual(row["pp_edge_flex"], row["pp_edge_over_flex"])
-            self.assertEqual(row["grade"], sharp.letter_grade(row["pp_edge_flex"], line_plus=row["line_plus"]))
-            self.assertEqual(row["grade_power"], sharp.letter_grade(row["pp_edge_power"], line_plus=row["line_plus"]))
+            self.assertEqual(row["grade"], sharp.letter_grade(row["pp_edge_flex"]))
+            self.assertEqual(row["grade_power"], sharp.letter_grade(row["pp_edge_power"]))
             # The book price is still the 74.5 price. EV is not shifted.
             self.assertEqual(row["ev_over_pct"], exact["ev_over_pct"])
             self.assertEqual(row["best_over"]["implied_pct"], exact["best_over"]["implied_pct"])
@@ -272,7 +272,9 @@ class MatchTests(unittest.TestCase):
         self.assertFalse(easier["line_plus_under"])
         shifted_row(easier, 74.0)
         self.assertGreater(easier["pp_edge_flex"], exact["pp_edge_flex"])
-        self.assertEqual(easier["grade"], "A+")
+        self.assertEqual(easier["grade"], sharp.letter_grade(easier["pp_edge_flex"]))
+        self.assertEqual(easier["grade_power"], sharp.letter_grade(easier["pp_edge_power"]))
+        self.assertNotEqual(easier["grade"], sharp.letter_grade(easier["pp_edge_flex"], line_plus=True))
 
         self.assertFalse(harder["line_plus"])
         self.assertFalse(harder["line_plus_over"])
@@ -385,10 +387,8 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(under_play["pp_edge_flex"], sharp.pp_edge_pct(under, flex))
         self.assertEqual(under_play["fair_under_pct"], sharp.pct(under))
         self.assertLess(under_play["pp_edge_flex"], sharp.pp_edge_pct(inflated, flex))
-        self.assertEqual(
-            under_play["grade"],
-            sharp.letter_grade(under_play["pp_edge_flex"], line_plus=True),
-        )
+        self.assertEqual(under_play["grade"], sharp.letter_grade(under_play["pp_edge_flex"]))
+        self.assertEqual(under_play["grade_power"], sharp.letter_grade(under_play["pp_edge_power"]))
 
     def test_whole_number_line_does_not_credit_the_push_to_either_side(self):
         props = ("Shots On Goal", "Receptions", "Rush Attempts", "Pass Completions", "Points", "Goalie Saves")

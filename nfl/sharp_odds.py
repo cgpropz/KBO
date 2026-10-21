@@ -24,9 +24,9 @@ P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
 PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
 default. Power (-137) is stored beside it. Sportsbook EV stays on the book
 line, because that price is not a PrizePicks price. A raw price shop such
-as books -140 vs PrizePicks -119 is a badge, not the sort key. LINE+ still
-only bumps the letter for a favorable half-point; it does not add a second
-pad on top of the shift.
+as books -140 vs PrizePicks -119 is a badge, not the sort key. LINE+ marks
+a favorable half-point that is already priced into the edge. It does not
+add a letter on top of the shift.
 Each matched row also carries book_prices (every book on that line) plus the
 projection's dvpRank so the board can show L5, L10, and the existing matchup
 grade without a second feed.
@@ -285,9 +285,9 @@ def line_favors_side(line_match, line_delta, side):
 
     The fair probability is already moved onto the PrizePicks line before
     PP Edge, the stored fair percents, and the grade. On a whole-number
-    count line the push is removed from both sides first. LINE+ does not
-    do that move and does not add a second numeric pad. It only bumps the
-    letter one step, and only for this favorable half-point.
+    count line the push is removed from both sides first. The LINE+ badge
+    marks this easier half-point. That half point is already priced into
+    the edge, so the grade gets no extra letter.
     """
     if line_match != "nearest" or side not in {"over", "under"}:
         return False
@@ -970,8 +970,8 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
             line_plus_over,
             line_plus_under,
         )
-        grade_flex = letter_grade(edge_flex, line_plus=line_plus)
-        grade_power = letter_grade(edge_power, line_plus=line_plus)
+        grade_flex = letter_grade(edge_flex, line_plus=False)
+        grade_power = letter_grade(edge_power, line_plus=False)
         records.append(
             {
                 **pp,
