@@ -19,8 +19,10 @@ because those models have no push mass.
 The free PP Odds preview section is the same selection the site uses:
 ``selectFreeSharpOddsPreview`` in ``kbo-props-ui/api/_dataAccess.js``
 (``nflSharpScore`` / ``nhlSharpScore``, ``topN``, ``FREE_ROW_LIMIT``), after
-``isStandardBoardLine`` in ``kbo-props-ui/src/standardBoard.js``. It sorts
-by the corrected ``pp_edge_flex``.
+``isStandardBoardLine`` in ``kbo-props-ui/src/standardBoard.js``. A row is
+eligible when ``line_match`` is ``exact``, or ``nearest`` and the book line
+is at most half a point from the PrizePicks line. It sorts by the corrected
+``pp_edge_flex``.
 """
 from __future__ import annotations
 
@@ -49,7 +51,8 @@ from nfl.sharp_odds import (  # noqa: E402
 PREVIEW_SOURCE = (
     "kbo-props-ui/api/_dataAccess.js selectFreeSharpOddsPreview "
     "(nflSharpScore / nhlSharpScore, topN, FREE_ROW_LIMIT) after "
-    "kbo-props-ui/src/standardBoard.js isStandardBoardLine"
+    "kbo-props-ui/src/standardBoard.js isStandardBoardLine; "
+    "exact, or nearest within 0.5"
 )
 
 COMPARED = (

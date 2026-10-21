@@ -121,7 +121,7 @@ const TABLES = {
     provider: 'unabated',
     status: 'ok',
     message: 'matched',
-    records: Array.from({ length: 8 }, (_, i) => ({ player: `S${i}`, prop: 'Receptions', pp_line: 4.5, ev_pct: i })),
+    records: Array.from({ length: 8 }, (_, i) => ({ player: `S${i}`, prop: 'Receptions', pp_line: 4.5, matched_line: 4.5, line_match: 'exact', ev_pct: i })),
   },
 }
 
@@ -414,10 +414,10 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
     status: 'ok',
     message: 'matched',
     records: [
-      { player: 'LowEdge', ev_pct: 9, pp_edge_flex: 0.2 },
-      { player: 'HighEdge', ev_pct: -4, pp_edge_flex: 6 },
-      { player: 'Mid', ev_pct: 1, pp_edge_flex: 3 },
-      { player: 'Legacy', ev_pct: 8 },
+      { player: 'LowEdge', ev_pct: 9, pp_edge_flex: 0.2, line_match: 'exact', pp_line: 4.5, matched_line: 4.5 },
+      { player: 'HighEdge', ev_pct: -4, pp_edge_flex: 6, line_match: 'exact', pp_line: 4.5, matched_line: 4.5 },
+      { player: 'Mid', ev_pct: 1, pp_edge_flex: 3, line_match: 'exact', pp_line: 4.5, matched_line: 4.5 },
+      { player: 'Legacy', ev_pct: 8, line_match: 'exact', pp_line: 4.5, matched_line: 4.5 },
     ],
   }
   try {
@@ -455,8 +455,8 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     message: 'matched',
     line_type_filter: null,
     records: [
-      { id: 100, player: 'Standard', prop: 'Shots On Goal', pp_line: 2.5, line_type: null, pp_edge_flex: 1 },
-      { id: 101, player: 'Plain', prop: 'Points', pp_line: 1.5, line_type: null, pp_edge_flex: 1 },
+      { id: 100, player: 'Standard', prop: 'Shots On Goal', pp_line: 2.5, matched_line: 2.5, line_match: 'exact', line_type: null, pp_edge_flex: 1 },
+      { id: 101, player: 'Plain', prop: 'Points', pp_line: 1.5, matched_line: 1.5, line_match: 'exact', line_type: null, pp_edge_flex: 1 },
       ...demonIds.map((id, index) => ({
         id,
         player: ['Ekblad', 'Newhook', 'Texier'][index],
@@ -464,11 +464,13 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
         pp_line: 0.5,
         line_type: null,
         pp_edge_flex: 50 - index,
+        line_match: 'exact',
+        matched_line: 0.5,
       })),
-      { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, line_type: null, pp_edge_flex: 20 },
-      { id: 15863634, player: 'Pulled', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 80 },
-      { id: 104, player: 'Held', prop: 'Points', pp_line: 0.5, line_type: null, pp_edge_flex: 70 },
-      { id: 105, player: 'Goalie', prop: 'Goalie Saves', pp_line: 28.5, line_type: null, pp_edge_flex: 60 },
+      { id: 999, player: 'Unknown', prop: 'Shots On Goal', pp_line: 1.5, matched_line: 1.5, line_match: 'exact', line_type: null, pp_edge_flex: 20 },
+      { id: 15863634, player: 'Pulled', prop: 'Points', pp_line: 0.5, matched_line: 0.5, line_match: 'exact', line_type: null, pp_edge_flex: 80 },
+      { id: 104, player: 'Held', prop: 'Points', pp_line: 0.5, matched_line: 0.5, line_match: 'exact', line_type: null, pp_edge_flex: 70 },
+      { id: 105, player: 'Goalie', prop: 'Goalie Saves', pp_line: 28.5, matched_line: 28.5, line_match: 'exact', line_type: null, pp_edge_flex: 60 },
     ],
   }
   try {

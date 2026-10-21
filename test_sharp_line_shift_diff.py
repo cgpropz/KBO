@@ -102,11 +102,11 @@ class SharpLineShiftDiffTests(unittest.TestCase):
 
     def test_free_preview_uses_the_site_selector(self):
         rows = [
-            {"player": "LowEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": 9, "pp_edge_flex": 0.2, "line_type": "standard"},
-            {"player": "HighEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": -4, "pp_edge_flex": 6, "line_type": "standard"},
-            {"player": "Mid", "prop": "Rush Yards", "recommendation": "UNDER", "ev_pct": 1, "pp_edge_flex": 3, "line_type": "standard"},
-            {"player": "Legacy", "prop": "Pass Yards", "recommendation": "OVER", "ev_pct": 8},
-            {"player": "Goblin", "prop": "Pass Yards", "recommendation": "OVER", "pp_edge_flex": 99, "line_type": "goblin"},
+            {"player": "LowEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": 9, "pp_edge_flex": 0.2, "line_type": "standard", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
+            {"player": "HighEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": -4, "pp_edge_flex": 6, "line_type": "standard", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
+            {"player": "Mid", "prop": "Rush Yards", "recommendation": "UNDER", "ev_pct": 1, "pp_edge_flex": 3, "line_type": "standard", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
+            {"player": "Legacy", "prop": "Pass Yards", "recommendation": "OVER", "ev_pct": 8, "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
+            {"player": "Goblin", "prop": "Pass Yards", "recommendation": "OVER", "pp_edge_flex": 99, "line_type": "goblin", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
         ]
         preview = free_preview(rows, "nfl")
         self.assertEqual([row["player"] for row in preview], ["Legacy", "HighEdge", "Mid"])
@@ -115,12 +115,31 @@ class SharpLineShiftDiffTests(unittest.TestCase):
         self.assertEqual(preview[2]["side"], "UNDER")
         self.assertEqual(preview[2]["prop"], "Rush Yards")
         held = rows + [
-            {"player": "Held", "prop": "Points", "recommendation": "OVER", "pp_edge_flex": 80, "rankEligible": False, "line_type": "standard"},
+            {"player": "Held", "prop": "Points", "recommendation": "OVER", "pp_edge_flex": 80, "rankEligible": False, "line_type": "standard", "line_match": "exact", "pp_line": 1.5, "matched_line": 1.5},
         ]
         self.assertEqual(free_preview(held, "nfl")[0]["player"], "Held")
         self.assertEqual([row["player"] for row in free_preview(held, "nhl")], ["Legacy", "HighEdge", "Mid"])
         self.assertEqual(snapshot_sport({"sport": "nhl"}, "odds.json"), "nhl")
         self.assertEqual(snapshot_sport({"sport": "americanfootball_nfl"}, "nfl_sharp_odds.json"), "nfl")
+
+    def test_free_preview_skips_a_nearest_line_more_than_half_a_point_away(self):
+        rows = [
+            {"player": "Far", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 70, "matched_line": 74.5, "line_match": "nearest", "pp_edge_flex": 40, "line_type": "standard"},
+            {"player": "Half", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 74, "matched_line": 74.5, "line_match": "nearest", "pp_edge_flex": 3, "line_type": "standard"},
+            {"player": "Exact", "prop": "Receiving Yards", "recommendation": "UNDER", "pp_line": 74.5, "matched_line": 74.5, "line_match": "exact", "pp_edge_flex": 2, "line_type": "standard"},
+            {"player": "None", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 74.5, "line_match": "none", "pp_edge_flex": 30, "line_type": "standard"},
+            {"player": "Other", "prop": "Rush Yards", "recommendation": "OVER", "pp_line": 50.5, "matched_line": 50, "line_match": "nearest", "pp_edge_flex": 1, "line_type": "standard"},
+        ]
+        for sport in ("nfl", "nhl"):
+            picked = free_preview(rows, sport)
+            self.assertEqual([row["player"] for row in picked], ["Half", "Exact", "Other"])
+        text = render(
+            {"records": 5, "exact": 1, "nearest": 3, "changed": [], "exact_changed": [], "grade_changes": 0},
+            {"before": free_preview(rows, "nfl"), "after": free_preview(rows, "nfl")},
+            "nfl",
+        )
+        self.assertIn("nearest within 0.5", text)
+        self.assertNotIn("Far", text.split("free PP Odds preview", 1)[-1])
 
     def test_an_inflated_edge_changes_who_the_free_preview_keeps(self):
         books = []
