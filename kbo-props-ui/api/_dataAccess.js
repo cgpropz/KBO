@@ -471,12 +471,34 @@ export function previewNflGameMarkets(payload, options = {}) {
 
 // PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
 // Older snapshots that only stored sportsbook EV still sort on that.
+// A null or missing edge, and a null or missing EV, stay missing. They are
+// not 0, so they cannot outrank a negative edge. A started game is out too.
+
+// Free PP Odds preview only. An exact book line stays. A nearest line stays
+// when it is at most half a point from the PrizePicks line. Wider gaps and
+// unmatched rows do not take a free slot. The member board does not use this.
+function sharpOddsPreviewLine(row) {
+  if (row?.line_match === 'exact') return true;
+  if (row?.line_match !== 'nearest') return false;
+  const book = num(row?.matched_line);
+  const pp = num(row?.pp_line);
+  return Number.isFinite(book) && Number.isFinite(pp) && Math.abs(book - pp) <= 0.5 + 1e-9;
+}
+
+// null and undefined are missing. Number(null) is 0, which would beat every
+// negative edge, so this does not use num().
+function presentScore(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
 function nflSharpScore(row) {
-  const edge = num(row?.pp_edge_flex ?? row?.pp_edge_pct);
-  if (Number.isFinite(edge)) return edge;
-  const ev = num(row?.ev_pct);
-  return Number.isFinite(ev) ? ev : -Infinity;
+  if (!sharpOddsPreviewLine(row) || gameAlreadyStarted(row)) return -Infinity;
+  const edge = presentScore(row?.pp_edge_flex ?? row?.pp_edge_pct);
+  if (edge != null) return edge;
+  const ev = presentScore(row?.ev_pct);
+  return ev != null ? ev : -Infinity;
 }
 
 function wnbaSharpScore(row) {
@@ -500,6 +522,25 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
     .filter((row) => Number.isFinite(row.score))
     .sort((a, b) => (b.score - a.score) || (b.raw === a.raw ? 0 : b.raw - a.raw) || (a.index - b.index))
     .slice(0, n);
+}
+
+// Rows the free PP Odds preview keeps. nfl_sharp_odds scores with
+// nflSharpScore and nhl_sharp_odds with nhlSharpScore, then topN. Standard
+// lines only, same rule as filterStandardBoard, and only an exact line or a
+// nearest line within half a point. A missing edge and a started game score
+// out. The NFL preview flag hides that board
+// the same way shapeForTier does. scripts/sharp_line_shift_diff.py calls
+// this so its before/after list is the preview's list.
+export function selectFreeSharpOddsPreview(records, sport = 'nfl') {
+  if (sport !== 'nhl' && !NFL_FREE_PREVIEW_ENABLED) return [];
+  const rows = (Array.isArray(records) ? records : []).filter((row) => isStandardBoardLine(row) && sharpOddsPreviewLine(row));
+  const scoreFn = sport === 'nhl' ? nhlSharpScore : nflSharpScore;
+  return topN(rows, scoreFn, FREE_ROW_LIMIT).map(({ item, score }) => ({
+    player: item?.player || '',
+    prop: item?.prop || '',
+    side: item?.recommendation === 'OVER' || item?.recommendation === 'UNDER' ? item.recommendation : '—',
+    edge: score,
+  }));
 }
 
 // ── Preview builders: return { data, lockedCount } ─────────────────────────

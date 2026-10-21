@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { FILTER_STANDARD_BEFORE_FREE_PREVIEW, shapeForTier } from '../api/_dataAccess.js'
+import { FILTER_STANDARD_BEFORE_FREE_PREVIEW, selectFreeSharpOddsPreview, shapeForTier } from '../api/_dataAccess.js'
 import { filterNhlSharpOdds, filterStandardBoard, isStandardBoardLine, nhlSharpMatchedType, nhlProjectionOddsById, rawOddsType } from '../src/standardBoard.js'
 
 test('raw odds type keeps unknown tokens and blank stays empty', () => {
@@ -255,4 +255,74 @@ test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds t
     assert.equal(paid.data.message, 'matched')
   }
   assert.equal(records.length, 5)
+})
+
+test('free sharp odds preview keeps an exact line or a nearest half point', () => {
+  const records = [
+    { player: 'Far', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 70, matched_line: 74.5, line_match: 'nearest', pp_edge_flex: 40, line_type: 'standard' },
+    { player: 'Half', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 74, matched_line: 74.5, line_match: 'nearest', pp_edge_flex: 3, line_type: 'standard' },
+    { player: 'Exact', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 74.5, matched_line: 74.5, line_match: 'exact', pp_edge_flex: 2, line_type: 'standard' },
+    { player: 'None', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 74.5, line_match: 'none', pp_edge_flex: 30, line_type: 'standard' },
+    { player: 'Other', prop: 'Rush Yards', recommendation: 'OVER', pp_line: 50.5, matched_line: 50, line_match: 'nearest', pp_edge_flex: 1, line_type: 'standard' },
+  ]
+  for (const sport of ['nfl', 'nhl']) {
+    const picked = selectFreeSharpOddsPreview(records, sport)
+    assert.deepEqual(picked.map((row) => row.player), ['Half', 'Exact', 'Other'], sport)
+    assert.equal(picked[1].side, 'UNDER')
+    assert.equal(picked.some((row) => row.player === 'Far' || row.player === 'None'), false)
+  }
+  const payload = { records, message: 'matched' }
+  for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
+    const paid = shapeForTier(ds, payload, 'combined')
+    assert.equal(paid.preview, false)
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['Far', 'Half', 'Exact', 'None', 'Other'], ds)
+    const free = shapeForTier(ds, payload, 'free')
+    assert.equal(free.preview, true)
+    assert.deepEqual(free.data.records.map((row) => row.player), ['Half', 'Exact', 'Other'], ds)
+    assert.equal(free.lockedCount, 2)
+  }
+})
+
+test('free sharp odds preview skips an exact line with no edge', () => {
+  const records = [
+    { player: 'NoEdge', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 40.5, matched_line: 40.5, line_match: 'exact', pp_edge_flex: null, pp_edge_pct: null, ev_pct: null, line_type: 'standard' },
+    { player: 'Low', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 30.5, matched_line: 30.5, line_match: 'exact', pp_edge_flex: -8, line_type: 'standard' },
+    { player: 'Mid', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 20.5, matched_line: 20.5, line_match: 'exact', pp_edge_flex: -3, line_type: 'standard' },
+    { player: 'High', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 10.5, matched_line: 10.5, line_match: 'exact', pp_edge_flex: -0.4, line_type: 'standard' },
+  ]
+  for (const sport of ['nfl', 'nhl']) {
+    const picked = selectFreeSharpOddsPreview(records, sport)
+    assert.deepEqual(picked.map((row) => row.player), ['High', 'Mid', 'Low'], sport)
+    assert.equal(picked.some((row) => row.player === 'NoEdge'), false)
+  }
+  const payload = { records, message: 'matched' }
+  for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
+    const paid = shapeForTier(ds, payload, 'combined')
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['NoEdge', 'Low', 'Mid', 'High'], ds)
+    const free = shapeForTier(ds, payload, 'free')
+    assert.deepEqual(free.data.records.map((row) => row.player), ['High', 'Mid', 'Low'], ds)
+    assert.equal(free.lockedCount, 1)
+  }
+})
+
+test('free sharp odds preview skips a started game with the best edge', () => {
+  const records = [
+    { player: 'Started', prop: 'Shots On Goal', recommendation: 'OVER', pp_line: 2.5, matched_line: 2.5, line_match: 'exact', pp_edge_flex: 25, start_time: '2000-01-01T00:00:00Z', line_type: 'standard' },
+    { player: 'Next', prop: 'Shots On Goal', recommendation: 'OVER', pp_line: 2.5, matched_line: 2.5, line_match: 'exact', pp_edge_flex: 4, line_type: 'standard' },
+    { player: 'Mid', prop: 'Shots On Goal', recommendation: 'OVER', pp_line: 1.5, matched_line: 1.5, line_match: 'exact', pp_edge_flex: 2, line_type: 'standard' },
+    { player: 'Low', prop: 'Shots On Goal', recommendation: 'UNDER', pp_line: 3.5, matched_line: 3.5, line_match: 'exact', pp_edge_flex: 1, line_type: 'standard' },
+  ]
+  for (const sport of ['nfl', 'nhl']) {
+    const picked = selectFreeSharpOddsPreview(records, sport)
+    assert.deepEqual(picked.map((row) => row.player), ['Next', 'Mid', 'Low'], sport)
+    assert.equal(picked.some((row) => row.player === 'Started'), false)
+  }
+  const payload = { records, message: 'matched' }
+  for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
+    const paid = shapeForTier(ds, payload, 'combined')
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['Started', 'Next', 'Mid', 'Low'], ds)
+    const free = shapeForTier(ds, payload, 'free')
+    assert.deepEqual(free.data.records.map((row) => row.player), ['Next', 'Mid', 'Low'], ds)
+    assert.equal(free.lockedCount, 1)
+  }
 })
