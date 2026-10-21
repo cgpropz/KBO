@@ -318,23 +318,29 @@
 .nba-root .nba-sharp-table .nfl-sharp-edge { min-width: 0; max-width: 160px; }
 .nba-root .nfl-sharp-page .nfl-sharp-baseline { margin: 0 0 14px; }
 
-/* The shared board fade keeps a translate. That pins a fixed sheet to the
-   bottom of the page, so the phone Filters panel opens off screen. Fade
-   opacity only on NBA; the sheet stays on the viewport. */
+/* The shared board fade ends on a translate. A later WNBA stylesheet wins
+   the equal-specificity shorthand and puts that translate back, which pins
+   the fixed Filters sheet to the bottom of the page. This selector is
+   stronger, so the opacity fade wins no matter which file loads last. */
 @keyframes nbaFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.nba-root .fade-in { animation-name: nbaFadeIn; }
+.wnba-root.nba-root .fade-in { animation: nbaFadeIn 0.3s ease forwards; }
 
-/* Phone sheets cap at 85dvh. Scroll the rows and leave Reset / Show in view. */
-.nba-root .wnba-filters-panel { overflow: hidden; }
-.nba-root .nba-filters-scroll {
+/* The sheet is portaled to the body, so it is not a child of .nba-root.
+   Scroll the rows and leave Reset / Show in view. Sit above the sticky nav. */
+.wnba-filters-overlay.nba-filters-overlay {
+  z-index: 60;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+.nba-filters-overlay .wnba-filters-panel { overflow: hidden; }
+.nba-filters-overlay .nba-filters-scroll {
   min-height: 0;
   overflow-y: auto;
   flex: 1 1 auto;
 }
-.nba-root .wnba-filters-footer { flex: 0 0 auto; }
+.nba-filters-overlay .wnba-filters-footer { flex: 0 0 auto; }
 
 @media (--phone-board) {
   .nba-root table.nba-sharp-table[data-card-table] > tbody {

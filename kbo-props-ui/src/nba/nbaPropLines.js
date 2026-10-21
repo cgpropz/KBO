@@ -376,9 +376,54 @@ function compareCgScore(a, b) {
   return (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0))
 }
 
+// CG Score filter bounds. Empty and non-numeric mean no bound. A number is
+// clamped to 0-100. The edited side wins when the two cross, so min stays <= max.
+export const CG_BOUND_MIN = 0
+export const CG_BOUND_MAX = 100
+
+export function cgBoundNumber(value) {
+  if (value == null) return null
+  const text = String(value).trim()
+  if (text === '' || text === '.') return null
+  const n = Number(text)
+  if (!Number.isFinite(n)) return null
+  return Math.min(CG_BOUND_MAX, Math.max(CG_BOUND_MIN, n))
+}
+
+export function cgBoundInput(value) {
+  const text = String(value ?? '').trim()
+  if (text === '') return ''
+  if (text === '.') return '0.'
+  const n = Number(text)
+  if (!Number.isFinite(n)) return ''
+  if (n > CG_BOUND_MAX) return String(CG_BOUND_MAX)
+  if (n < CG_BOUND_MIN) return String(CG_BOUND_MIN)
+  if (/^\d+\.$/.test(text)) return `${n}.`
+  const [whole, frac] = text.split('.')
+  if (frac == null || text.startsWith('-')) return String(n)
+  return `${String(Number(whole || '0'))}.${frac}`
+}
+
+export function cgBoundsAfterEdit(filters, key, raw) {
+  const edgeMin = key === 'edgeMin' ? cgBoundInput(raw) : cgBoundInput(filters?.edgeMin)
+  const edgeMax = key === 'edgeMax' ? cgBoundInput(raw) : cgBoundInput(filters?.edgeMax)
+  if (edgeMin !== '' && edgeMax !== '' && Number(edgeMin) > Number(edgeMax)) {
+    if (key === 'edgeMin') return { edgeMin, edgeMax: edgeMin }
+    return { edgeMin: edgeMax, edgeMax }
+  }
+  return { edgeMin, edgeMax }
+}
+
 export function filterAndSortRows(allRows, propTab, filters) {
-  const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
-  const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
+  const low = cgBoundNumber(filters.edgeMin)
+  const high = cgBoundNumber(filters.edgeMax)
+  let edgeMin = low == null ? -Infinity : low
+  let edgeMax = high == null ? Infinity : high
+  if (edgeMin > edgeMax) {
+    const swap = edgeMin
+    edgeMin = edgeMax
+    edgeMax = swap
+  }
   const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)
   const lineMax = filters.lineMax === '' ? Infinity : Number(filters.lineMax)
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
@@ -24,6 +25,7 @@ import {
   PROP_TABS,
   SORT_OPTIONS,
   buildPropRows,
+  cgBoundsAfterEdit,
   dvpColor,
   dvpGrade,
   filterAndSortRows,
@@ -182,9 +184,9 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
   const [expandedRow, setExpandedRow] = useState(null)
   const toggleRow = (id) => setExpandedRow((current) => (current === id ? null : id))
 
-  if (!open) return null
-  return (
-    <div className="wnba-filters-overlay" onClick={onClose}>
+  if (!open || typeof document === 'undefined') return null
+  return createPortal(
+    <div className="wnba-filters-overlay nba-filters-overlay" onClick={onClose}>
       <div className="wnba-filters-panel" data-testid="nba-filters-panel" onClick={(event) => event.stopPropagation()}>
         <div className="wnba-filters-head">
           <h2>Filters</h2>
@@ -243,9 +245,9 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 
         <FilterRow id="edge" label="CG Score" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
           <div className="wnba-filter-range-row">
-            <input type="number" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score minimum" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
             <span>to</span>
-            <input type="number" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score maximum" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
           </div>
         </FilterRow>
 
@@ -269,7 +271,8 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
           <button type="button" className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -356,6 +359,10 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [lockTop, setLockTop] = useState(null)
 
   const updateFilter = (key, value) => {
+    if (key === 'edgeMin' || key === 'edgeMax') {
+      setFilters((current) => ({ ...current, ...cgBoundsAfterEdit(current, key, value) }))
+      return
+    }
     setFilters((current) => ({ ...current, [key]: value }))
     if (key === 'sortBy') rememberBoardSort('nba', value)
   }
