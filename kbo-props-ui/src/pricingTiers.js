@@ -26,7 +26,7 @@ export const XWEEK_PROMOTION_CODE_ID = 'promo_1UKqOLPwL0k9PEMvJZQU5GKA';
 // Every paid tier unlocks the same full toolkit — tiers differ only by
 // billing cadence/price, not by feature.
 export const ALL_ACCESS_FEATURES = [
-  '⚾🏀🏈🏒 Full KBO, WNBA, NFL & NHL projections',
+  '⚾🏀🏈🏒 Full KBO, WNBA, NFL, NHL & NBA projections',
   'PrizePicks edge board for every sport',
   'Player prop cards & hit rates',
   'Slip builder, optimizer & prop tracker',
@@ -69,8 +69,8 @@ export const TIERS = [
     price: '$149.99',
     period: '/ year',
     badge: 'FULL YEAR',
-    description: 'Every board for a year, including NHL',
-    features: [...ALL_ACCESS_FEATURES, 'Billed once a year', 'KBO, WNBA, NFL, and NHL'],
+    description: 'Every board for a year, including NHL and NBA',
+    features: [...ALL_ACCESS_FEATURES, 'Billed once a year', 'KBO, WNBA, NFL, NHL, and NBA'],
     limited: [],
     cta: 'Get Yearly Access',
     ctaStyle: 'yearly',

@@ -3,7 +3,7 @@
 // user_profiles. There are no client-side overrides: owner/staff accounts get
 // tier 'owner' in the database. New per-sport plans use 'kbo' | 'wnba' |
 // 'combined'. Legacy/grandfathered all-access tiers ('monthly', 'season',
-// 'weekly', 'pro', 'owner', 'all') unlock every live sport, including NHL.
+// 'weekly', 'pro', 'owner', 'all') unlock every live sport, including NHL and NBA.
 // 'discord' is the
 // Discord-only membership: it is not in ALL_ACCESS_TIERS and unlocks nothing
 // on the site.
