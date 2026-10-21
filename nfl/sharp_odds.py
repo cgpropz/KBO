@@ -21,6 +21,7 @@ Over is moved onto the PrizePicks line with the same adjustment the CG odds
 column uses. Half-point lines and yardage lines take the under as the
 complement. A whole-number count line is a PrizePicks push, so the over is
 P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
+CG odds drops that same push before it quotes a side.
 PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
 default. Power (-137) is stored beside it. Sportsbook EV stays on the book
 line, because that price is not a PrizePicks price. A raw price shop such
@@ -392,9 +393,9 @@ def shift_over(p_over, book_line, pp_line, prop):
     push is removed. ``math.exp`` can disagree with JavaScript ``Math.exp``
     by one rounding, which does not change the 0.1-point fair percent or edge.
 
-    This return value matches the frontend. The PP Edge split for a whole
-    count line is ``_fair_at_pp_line``, which then conditions on no push.
-    The CG odds column still uses the complement and is left unchanged.
+    This return value matches ``shiftOver``. It is the strict over, push
+    included. PP Edge and CG odds each divide that push out on a
+    whole-number count line before they quote a side.
     """
     if book_line == pp_line:
         return p_over

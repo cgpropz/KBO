@@ -997,3 +997,71 @@ process.stdout.write(rows.map((row) => hex(shiftOver(row.p, row.book, row.pp, ro
                 if len(mismatches) >= 5:
                     break
         self.assertEqual(mismatches, [])
+
+    def test_whole_line_cg_odds_agree_with_pp_edge_direction(self):
+        """CG odds and PP Edge pick the same side on a whole count line.
+
+        One row is a whole-line Over 2 shots. One is a whole-line Under 2
+        shots. Both use a made-up book at 1.5. Names and prices are synthetic.
+        """
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is required to compare CG odds with PP Edge")
+
+        def row(player, projection, over_price, under_price):
+            key = sharp.name_key(player)
+            pp = {
+                "id": key, "player": player, "player_key": key, "team": "SEA", "position": "F",
+                "opponent": "VAN", "imageUrl": "", "prop": "Shots On Goal", "pp_line": 2,
+                "projection": projection, "hitRateL5": 60, "gamesL5": 5, "hitRate": 50,
+                "gamesPlayed": 10,
+            }
+            books = [
+                {"player": player, "player_key": key, "prop": "Shots On Goal",
+                 "side": "over", "line": 1.5, "price": over_price, "book": "Pinnacle", "book_key": "pinnacle"},
+                {"player": player, "player_key": key, "prop": "Shots On Goal",
+                 "side": "under", "line": 1.5, "price": under_price, "book": "Pinnacle", "book_key": "pinnacle"},
+            ]
+            return sharp.build_snapshot([pp], books)["records"][0]
+
+        over_row = row("Sample Wing", 2.6, -300, 220)
+        under_row = row("Sample Center", 1.2, -110, -110)
+        self.assertEqual(over_row["line_match"], "nearest")
+        self.assertEqual(under_row["line_match"], "nearest")
+        self.assertEqual(over_row["pp_line"], 2)
+        self.assertEqual(under_row["pp_line"], 2)
+        self.assertEqual(over_row["recommendation"], "OVER")
+        self.assertEqual(under_row["recommendation"], "UNDER")
+        self.assertGreater(over_row["pp_edge_over_flex"], over_row["pp_edge_under_flex"])
+        self.assertGreater(under_row["pp_edge_under_flex"], under_row["pp_edge_over_flex"])
+
+        script = """
+import { computeCgOdds } from './kbo-props-ui/src/nfl/cgOdds.js'
+const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const rows = JSON.parse(Buffer.concat(chunks).toString())
+const out = rows.map((row) => {
+  const over = computeCgOdds(row, 'over', 119 / 219)
+  const under = computeCgOdds(row, 'under', 119 / 219)
+  return { over: over.probability, under: under.probability }
+})
+process.stdout.write(JSON.stringify(out))
+"""
+        completed = subprocess.run(
+            [node, "--input-type=module", "-e", script],
+            input=json.dumps([over_row, under_row]),
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        cg_rows = json.loads(completed.stdout)
+        self.assertEqual(len(cg_rows), 2)
+        for record, cg in zip((over_row, under_row), cg_rows):
+            self.assertAlmostEqual(cg["over"] + cg["under"], 1.0, places=9)
+            cg_favors_over = cg["over"] > cg["under"]
+            pp_favors_over = record["pp_edge_over_flex"] > record["pp_edge_under_flex"]
+            self.assertEqual(cg_favors_over, pp_favors_over)
+            self.assertNotEqual(cg["over"], cg["under"])
+        self.assertGreater(cg_rows[0]["over"], cg_rows[0]["under"])
+        self.assertGreater(cg_rows[1]["under"], cg_rows[1]["over"])

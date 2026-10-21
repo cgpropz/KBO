@@ -10,6 +10,8 @@
 //   2. Devig each book with the power method (k > 1, q_o^k + q_u^k = 1).
 //   3. Move each book's fair Over from the book line to the PP line
 //      (Poisson for count stats, linear per-half-point shift for yardage).
+//      shiftOver stays P(X > line). On a whole-number count line, CG odds
+//      then drop P(X = line) and renormalize so Over and Under sum to 1.
 //   4. Combine in logit space with book weights x hold penalty x off-line penalty.
 // The weights are the spec's priors, not fitted: there is no stored
 // multi-book history yet (spec §7). Not validated by any backtest.
@@ -74,6 +76,7 @@ export function devigPower(qOver, qUnder) {
 }
 
 function poissonCdf(k, lambda) {
+  if (k < 0) return 0
   let term = Math.exp(-lambda)
   let total = term
   for (let i = 1; i <= k; i += 1) {
@@ -83,20 +86,44 @@ function poissonCdf(k, lambda) {
   return total
 }
 
+// Same 80-step search as nfl/sharp_odds.py _fit_count_lambda.
+function fitCountLambda(pOver, bookLine) {
+  let lo = 0.01
+  let hi = 60
+  let lambda = lo
+  const bookK = Math.floor(bookLine)
+  for (let i = 0; i < 80; i += 1) {
+    lambda = (lo + hi) / 2
+    if (1 - poissonCdf(bookK, lambda) < pOver) lo = lambda
+    else hi = lambda
+  }
+  return lambda
+}
+
+function wholeCountLine(ppLine, prop) {
+  if (HALF_POINT_SHIFT[prop] != null || !Number.isFinite(ppLine)) return false
+  return Math.abs(ppLine - Math.round(ppLine)) <= 1e-9
+}
+
+// P(X > line) / (1 - P(X = line)). Matches _fair_at_pp_line for a whole count line.
+function conditionalOver(pOver, bookLine, ppLine) {
+  const lambda = fitCountLambda(pOver, bookLine)
+  const line = Math.round(ppLine)
+  const cdfBelow = poissonCdf(line - 1, lambda)
+  const cdfLine = poissonCdf(line, lambda)
+  const pGt = 1 - cdfLine
+  const decisive = 1 - (cdfLine - cdfBelow)
+  if (decisive <= 0) return pGt
+  return pGt / decisive
+}
+
 // Python port: nfl/sharp_odds.py shift_over. The parity test compares floats.
+// This stays the strict over. Whole-line push removal happens in cgFair.
 export function shiftOver(pOver, bookLine, ppLine, prop) {
   if (bookLine === ppLine) return pOver
   const step = HALF_POINT_SHIFT[prop]
   if (step == null) {
-    let lo = 0.01
-    let hi = 60
-    let lambda = lo
-    for (let i = 0; i < 80; i += 1) {
-      lambda = (lo + hi) / 2
-      if (1 - poissonCdf(Math.floor(bookLine), lambda) < pOver) lo = lambda
-      else hi = lambda
-    }
-    return 1 - poissonCdf(Math.floor(ppLine), lambda)
+    return 1 - poissonCdf(Math.floor(ppLine), fitCountLambda(pOver, bookLine))
   }
   return Math.min(0.99, Math.max(0.01, pOver + (step * (bookLine - ppLine)) / 0.5))
 }
@@ -121,7 +148,9 @@ export function cgFair(item) {
     const hold = qOver + qUnder - 1
     if (hold <= 0 || hold > MAX_HOLD) continue
     const [fairOver] = devigPower(qOver, qUnder)
-    const shifted = shiftOver(fairOver, bookLine, ppLine, item.prop)
+    const shifted = bookLine !== ppLine && wholeCountLine(ppLine, item.prop)
+      ? conditionalOver(fairOver, bookLine, ppLine)
+      : shiftOver(fairOver, bookLine, ppLine, item.prop)
     if (!(shifted > 0 && shifted < 1)) continue
     const key = String(quote.book_key || '').toLowerCase()
     let weight = BOOK_WEIGHTS[key] ?? DEFAULT_WEIGHT

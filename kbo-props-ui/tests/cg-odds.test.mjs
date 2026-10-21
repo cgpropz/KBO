@@ -59,6 +59,61 @@ test('matches reference: linear line shift for yardage', () => {
   assert.ok(cg.lineAdjusted && cg.probability > atPp)
 })
 
+test('whole-number count lines drop the push and agree on direction', () => {
+  // Synthetic whole-line shots. Prices are made up. The heavy over is still
+  // under 50% before the push is removed, and over 50% after.
+  const overRow = {
+    prop: 'Shots On Goal', pp_line: 2, matched_line: 1.5,
+    book_prices: [{ book: 'Pinnacle', book_key: 'pinnacle', over: -300, under: 220 }],
+  }
+  const underRow = {
+    prop: 'Shots On Goal', pp_line: 2, matched_line: 1.5,
+    book_prices: [{ book: 'Pinnacle', book_key: 'pinnacle', over: -110, under: -110 }],
+  }
+  for (const item of [overRow, underRow]) {
+    const over = computeCgOdds(item, 'over', 119 / 219)
+    const under = computeCgOdds(item, 'under', 119 / 219)
+    close(over.probability + under.probability, 1)
+    assert.equal(over.lineAdjusted, true)
+    const [fairOver] = devigPower(
+      impliedProbability(item.book_prices[0].over),
+      impliedProbability(item.book_prices[0].under),
+    )
+    const strict = shiftOver(fairOver, 1.5, 2, 'Shots On Goal')
+    assert.ok(over.probability > strict)
+    assert.ok(under.probability < 1 - strict)
+  }
+  const favoredOver = computeCgOdds(overRow, 'over', 119 / 219).probability
+  const favoredUnder = computeCgOdds(underRow, 'under', 119 / 219).probability
+  assert.ok(favoredOver > 0.5)
+  assert.ok(computeCgOdds(overRow, 'under', 119 / 219).probability < 0.5)
+  assert.ok(favoredUnder > 0.5)
+  assert.ok(computeCgOdds(underRow, 'over', 119 / 219).probability < 0.5)
+  const [juiced] = devigPower(impliedProbability(-300), impliedProbability(220))
+  assert.ok(shiftOver(juiced, 1.5, 2, 'Shots On Goal') < 0.5)
+})
+
+test('an exact whole count line is left alone', () => {
+  const item = {
+    prop: 'Shots On Goal', pp_line: 2, matched_line: 2,
+    book_prices: [{ book_key: 'pinnacle', over: -110, under: -110 }],
+  }
+  close(computeCgOdds(item, 'over', 0.5).probability, 0.5)
+  assert.equal(computeCgOdds(item, 'over', 0.5).lineAdjusted, false)
+})
+
+test('a whole yardage line keeps the complement', () => {
+  const item = {
+    prop: 'Receiving Yards', pp_line: 54, matched_line: 54.5,
+    book_prices: [{ book_key: 'pinnacle', over: -110, under: -110 }],
+  }
+  const over = computeCgOdds(item, 'over', 0.5).probability
+  const under = computeCgOdds(item, 'under', 0.5).probability
+  close(over + under, 1)
+  const [fair] = devigPower(impliedProbability(-110), impliedProbability(-110))
+  close(over, shiftOver(fair, 54.5, 54, 'Receiving Yards'))
+})
+
 test('returns null instead of inventing a price', () => {
   assert.equal(computeCgOdds({ pp_line: 4.5, book_prices: [{ book_key: 'pinnacle', over: -110 }] }, 'over', 0.54), null)
   assert.equal(computeCgOdds({ pp_line: 4.5, book_prices: [{ book_key: 'x', over: 200, under: 200 }] }, 'over', 0.54), null)
