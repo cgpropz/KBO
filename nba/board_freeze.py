@@ -159,6 +159,22 @@ def fetch_published_projections() -> list[dict]:
     if not payload:
         raise SystemExit("nba_projections_standard id=1 is empty")
     players = payload[0].get("data") or []
+    if isinstance(players, dict) and isinstance(players.get("snapshotChunks"), dict):
+        # Large boards are published as a manifest at id=1 plus chunk rows.
+        from publish_supabase import assemble_snapshot_rows
+
+        ids = players["snapshotChunks"].get("ids") or []
+        if not ids or any(isinstance(i, bool) or not isinstance(i, int) for i in ids):
+            raise SystemExit("nba_projections_standard chunk manifest is invalid")
+        id_list = ",".join(str(i) for i in ids)
+        rows = _get(
+            f"{base}/rest/v1/nba_projections_standard?select=id,data&id=in.({id_list})",
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+        ) or []
+        assembled = assemble_snapshot_rows([{"id": 1, "data": players}, *rows])
+        if not isinstance(assembled, list) or not assembled:
+            raise SystemExit("nba_projections_standard chunk set is incomplete or mixed")
+        players = assembled
     flat = []
     for pl in players:
         for prop in pl.get("ppAllProps") or []:
