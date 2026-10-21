@@ -252,7 +252,7 @@ test('/api/data: with the switch on, logged-out callers get the 3-row NBA previe
   const props = res.body.data.flatMap((p) => p.ppAllProps)
   assert.equal(props.length, 3)
   for (const p of RISKY) assert.equal(res.body.data.some((row) => row.name === p.name), false, p.name)
-  for (const ds of ['nba_players', 'nba_teams', 'nba_dvp_pg', 'nba_correlations']) {
+  for (const ds of ['nba_players', 'nba_teams', 'nba_dvp_pg', 'nba_correlations', 'nba_sharp_odds']) {
     const denied = await anonymous(ds)
     assert.equal(denied.statusCode, 403, ds)
   }

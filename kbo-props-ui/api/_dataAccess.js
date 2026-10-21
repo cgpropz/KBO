@@ -849,6 +849,9 @@ export const DATASETS = {
   nba_projections_demon: { table: 'nba_projections_demon', sport: 'nba', free: previewNbaProjections },
   nba_projections_goblin: { table: 'nba_projections_goblin', sport: 'nba', free: previewNbaProjections },
   nba_correlations: { table: 'nba_correlations', sport: 'nba', free: previewCorrelations },
+  // All-access only. Not in NBA_FREE_TOP3_DATASETS, so the free switch cannot
+  // open it. A non-finite score drops every row if a preview builder is called.
+  nba_sharp_odds: { table: 'nba_sharp_odds', sport: 'nba', free: previewObjectList('records', () => Number.NaN) },
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },

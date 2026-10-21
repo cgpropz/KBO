@@ -297,3 +297,34 @@
     text-align: left;
   }
 }
+
+.nba-root .nhl-note {
+  margin: 4px 0 18px;
+  color: #78918a;
+  font: 12px/1.45 monospace;
+}
+
+/* NBA PP Odds table. Same cells as the NHL board. iPad and desktop stay a table. */
+.nba-root .nba-sharp-table { min-width: 0; }
+.nba-root .nba-sharp-table th,
+.nba-root .nba-sharp-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: normal;
+}
+.nba-root .nba-sharp-table .nfl-lines-player { white-space: nowrap; }
+.nba-root .nba-sharp-table .nfl-sharp-quote-logo { height: 20px; }
+.nba-root .nba-sharp-table .nfl-sharp-quote-book { max-width: 150px; flex-wrap: wrap; }
+.nba-root .nba-sharp-table .nfl-sharp-edge { min-width: 0; max-width: 160px; }
+.nba-root .nfl-sharp-page .nfl-sharp-baseline { margin: 0 0 14px; }
+
+@media (--phone-board) {
+  .nba-root table.nba-sharp-table[data-card-table] > tbody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nba-root .nba-sharp-table .nfl-lines-player { white-space: normal; }
+  .nba-root .nfl-sharp-cg .cgo-head { flex-wrap: wrap; }
+  .nba-root .nfl-sharp-cg .cgo-price { font-size: 22px !important; }
+  .nba-root .nfl-sharp-cg .cgo-prob strong { font-size: 14px !important; }
+  .nba-root .nfl-sharp-cg .cgo-who { white-space: normal; }
+}

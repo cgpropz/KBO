@@ -105,6 +105,7 @@ const fixtures = {
   nba_players: [],
   nfl_sharp_odds: { records: [], status: 'ok' },
   nhl_sharp_odds: { records: [], status: 'ok' },
+  nba_sharp_odds: { records: [], status: 'ok' },
 }
 
 const boards = [
