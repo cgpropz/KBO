@@ -53,6 +53,7 @@ jobs:
         run: python -m nba.sharp_odds
 
       - name: Publish NBA odds snapshot
+        timeout-minutes: 10
         run: python publish_supabase.py
         env:
           PUBLISH_ONLY_PREFIX: "nba/sharp_odds.json"
