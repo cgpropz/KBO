@@ -5,12 +5,15 @@
 import { windowPills } from '../hitRateStrip.js'
 import { boundCg, cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
+import { expectedMinutesPill } from './expectedMinutes.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 export const NBA_TEAM_COUNT = 30
 export const PROP_TABS = ['All Props', 'Points', 'Rebounds', 'Assists', '3-PT Made', 'Steals', 'Blocks', 'Turnovers', 'Fantasy Score', 'Pts+Rebs+Asts']
 export const SEASON_LABEL = String(new Date().getFullYear())
-export const SORT_OPTIONS = ['L10 Hit Rate', 'CG Score', `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
+export const MINUTES_SORT = 'Minutes high to low'
+export const MINUTES_OPTIONS = ['All', '30+', '20+', 'Under 20']
+export const SORT_OPTIONS = ['L10 Hit Rate', 'CG Score', MINUTES_SORT, `${SEASON_LABEL} Hit Rate`, 'H2H Hit Rate', 'DVP Rank']
 export const HIT_RATE_OPTIONS = [0, 50, 70, 90, 100]
 export const GAMES_OPTIONS = [0, 3, 5, 8, 10]
 export const POSITIONS = ['All', 'PG', 'SG', 'SF', 'PF', 'C']
@@ -18,6 +21,7 @@ export const GRADE_OPTIONS = ['All Grades', 'A', 'B', 'C', 'D', 'F']
 export const DEFAULT_FILTERS = {
   side: 'All',
   sortBy: 'CG Score',
+  minutes: 'All',
   minHitRate: 0,
   minGames: 0,
   position: 'All',
@@ -350,6 +354,28 @@ export function buildPropRows(projections, players) {
   return rows
 }
 
+// Same rounding as the minutes pill: round first, then compare. Blank,
+// empty, and non-numeric minutes never match a bucket, so they stay on All.
+export function passesMinutesBucket(value, bucket) {
+  if (!bucket || bucket === 'All') return true
+  const minutes = expectedMinutesPill(value)?.minutes
+  if (minutes == null) return false
+  if (bucket === '30+') return minutes >= 30
+  if (bucket === '20+') return minutes >= 20
+  if (bucket === 'Under 20') return minutes < 20
+  return true
+}
+
+function rawMinutes(value) {
+  if (expectedMinutesPill(value) == null) return null
+  const n = typeof value === 'number' ? value : Number(String(value).trim())
+  return Number.isFinite(n) ? n : null
+}
+
+function compareCgScore(a, b) {
+  return (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0))
+}
+
 export function filterAndSortRows(allRows, propTab, filters) {
   const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
   const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
@@ -364,6 +390,7 @@ export function filterAndSortRows(allRows, propTab, filters) {
     .filter((item) => filters.position === 'All' || item.position === filters.position)
     .filter((item) => item.score >= edgeMin && item.score <= edgeMax)
     .filter((item) => item.line >= lineMin && item.line <= lineMax)
+    .filter((item) => passesMinutesBucket(item.avgMins, filters.minutes))
     .filter((item) => {
       if (filters.grade === 'All Grades') return true
       const grade = dvpGrade(item.dvpRank)
@@ -372,6 +399,15 @@ export function filterAndSortRows(allRows, propTab, filters) {
 
   return filtered.sort((a, b) => {
     if (filters.sortBy === 'CG Score') return (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0))
+    if (filters.sortBy === MINUTES_SORT) {
+      const am = rawMinutes(a.avgMins)
+      const bm = rawMinutes(b.avgMins)
+      if (am == null && bm == null) return compareCgScore(a, b)
+      if (am == null) return 1
+      if (bm == null) return -1
+      if (bm !== am) return bm - am
+      return compareCgScore(a, b)
+    }
     if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
     if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
     if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)

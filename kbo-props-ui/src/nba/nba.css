@@ -318,6 +318,24 @@
 .nba-root .nba-sharp-table .nfl-sharp-edge { min-width: 0; max-width: 160px; }
 .nba-root .nfl-sharp-page .nfl-sharp-baseline { margin: 0 0 14px; }
 
+/* The shared board fade keeps a translate. That pins a fixed sheet to the
+   bottom of the page, so the phone Filters panel opens off screen. Fade
+   opacity only on NBA; the sheet stays on the viewport. */
+@keyframes nbaFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.nba-root .fade-in { animation-name: nbaFadeIn; }
+
+/* Phone sheets cap at 85dvh. Scroll the rows and leave Reset / Show in view. */
+.nba-root .wnba-filters-panel { overflow: hidden; }
+.nba-root .nba-filters-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.nba-root .wnba-filters-footer { flex: 0 0 auto; }
+
 @media (--phone-board) {
   .nba-root table.nba-sharp-table[data-card-table] > tbody {
     grid-template-columns: repeat(2, minmax(0, 1fr));

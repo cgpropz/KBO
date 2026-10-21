@@ -183,6 +183,73 @@ test('NBA board score is bounded 0-100 like KBO and NFL', () => {
   assert.equal(byStat.Points.toFixed(1), '98.1')
 })
 
+function minutesRow({ player, prop = 'Points', avgMins, score, side = 'OVER' }) {
+  return {
+    player,
+    prop,
+    avgMins,
+    score,
+    _rawScore: score,
+    side,
+    hitRate: 80,
+    gamesPlayed: 10,
+    position: 'PG',
+    line: 10,
+    seasonHitRate: 50,
+    h2hHitRate: 40,
+    dvpRank: 8,
+  }
+}
+
+test('minutes buckets round before they compare, and blank minutes stay on All', () => {
+  const rows = [
+    minutesRow({ player: 'Just Under', avgMins: 19.6, score: 10 }),
+    minutesRow({ player: 'Thirty', avgMins: 29.5, score: 20 }),
+    minutesRow({ player: 'Low', avgMins: 19.4, score: 30 }),
+    minutesRow({ player: 'Blank', avgMins: null, score: 90 }),
+    minutesRow({ player: 'Empty', avgMins: '', score: 80 }),
+    minutesRow({ player: 'Nan', avgMins: NaN, score: 70 }),
+    minutesRow({ player: 'Space', prop: 'Rebounds', avgMins: '   ', score: 60 }),
+  ]
+  const names = (minutes) => filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, minutes }).map((row) => row.player)
+  assert.deepEqual(names('All'), ['Blank', 'Empty', 'Nan', 'Space', 'Low', 'Thirty', 'Just Under'])
+  assert.deepEqual(names('30+'), ['Thirty'])
+  assert.deepEqual(names('20+'), ['Thirty', 'Just Under'])
+  assert.deepEqual(names('Under 20'), ['Low'])
+})
+
+test('minutes sort is high to low with blank minutes last', () => {
+  const rows = [
+    minutesRow({ player: 'Mid', avgMins: 19.6, score: 99 }),
+    minutesRow({ player: 'Blank', avgMins: null, score: 100 }),
+    minutesRow({ player: 'Top', avgMins: 34.2, score: 10 }),
+    minutesRow({ player: 'Thirty', avgMins: 29.5, score: 50 }),
+    minutesRow({ player: 'Tied High', avgMins: 22, score: 80 }),
+    minutesRow({ player: 'Tied Low', avgMins: 22, score: 15 }),
+    minutesRow({ player: 'Empty', prop: 'Rebounds', avgMins: '', score: 70 }),
+  ]
+  const byMinutes = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, sortBy: 'Minutes high to low' })
+  assert.deepEqual(byMinutes.map((row) => row.player), ['Top', 'Thirty', 'Tied High', 'Tied Low', 'Mid', 'Blank', 'Empty'])
+  const byScore = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, sortBy: 'CG Score' })
+  assert.deepEqual(byScore.map((row) => row.player), ['Blank', 'Mid', 'Tied High', 'Empty', 'Thirty', 'Tied Low', 'Top'])
+})
+
+test('minutes filter and sort compose with a stat chip', () => {
+  const rows = [
+    minutesRow({ player: 'Points High', prop: 'Points', avgMins: 33, score: 40 }),
+    minutesRow({ player: 'Points Low', prop: 'Points', avgMins: 12, score: 90 }),
+    minutesRow({ player: 'Points Blank', prop: 'Points', avgMins: null, score: 95 }),
+    minutesRow({ player: 'Boards High', prop: 'Rebounds', avgMins: 36, score: 70 }),
+    minutesRow({ player: 'Points Twenty', prop: 'Points', avgMins: 19.6, score: 20 }),
+  ]
+  const points = filterAndSortRows(rows, 'Points', {
+    ...DEFAULT_FILTERS,
+    minutes: '20+',
+    sortBy: 'Minutes high to low',
+  })
+  assert.deepEqual(points.map((row) => row.player), ['Points High', 'Points Twenty'])
+})
+
 test('rows tied at the 100 cap sort by the uncapped score, not feed order', () => {
   const projections = [{
     athleteId: '10',
