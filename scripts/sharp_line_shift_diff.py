@@ -12,7 +12,9 @@ are not shifted, so those rows must show no change.
     python scripts/sharp_line_shift_diff.py path/to/snapshot.json
 
 Exit 1 when an exact-match row changes. Nearest-line changes are printed
-and still exit 0.
+and still exit 0. Integer count lines also print the push probability
+P(X = line), in percent. Half-point lines and yardage lines print a dash
+because those models have no push mass.
 """
 from __future__ import annotations
 
@@ -25,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from nfl.sharp_odds import book_key, build_snapshot, name_key  # noqa: E402
+from nfl.sharp_odds import _fair_probs, book_key, build_snapshot, name_key, pct, push_probability  # noqa: E402
 
 COMPARED = (
     "pp_edge_over_flex",
@@ -143,6 +145,18 @@ def _cell(old, new):
     return f"{_fmt(old)} -> {_fmt(new)}"
 
 
+def _push_pct(record):
+    """Push probability at a whole-number count line, as a percent string."""
+    books = _books(record)
+    if not books:
+        return "—"
+    fair_over, _fair_under, _source, _names = _fair_probs(books)
+    push = push_probability(fair_over, record.get("matched_line"), record.get("pp_line"), record.get("prop"))
+    if push is None:
+        return "—"
+    return f"{pct(push):.1f}"
+
+
 def _fmt(value):
     if value is None or value == "":
         return "—"
@@ -183,6 +197,7 @@ def diff_records(records):
             "side": _side(record),
             "pp_line": record.get("pp_line"),
             "matched_line": record.get("matched_line"),
+            "push": _push_pct(record),
             "exact": exact,
             "fields": fields,
             "flex": _cell(record.get("pp_edge_flex"), fresh.get("pp_edge_flex")),
@@ -214,6 +229,7 @@ def _table(rows):
         "side",
         "pp_line",
         "matched_line",
+        "push",
         "flex",
         "power",
         "fair_over",

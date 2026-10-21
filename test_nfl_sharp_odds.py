@@ -301,6 +301,8 @@ class MatchTests(unittest.TestCase):
         exact = sharp.build_snapshot([{**pp, "pp_line": 2.0}], exact_books)["records"][0]
         fair = 0.5
         moved = sharp.shift_over(fair, 1.5, 2.0, "Shots On Goal")
+        over, under = sharp._fair_at_pp_line(fair, fair, 1.5, 2.0, "Shots On Goal")
+        push = sharp.push_probability(fair, 1.5, 2.0, "Shots On Goal")
         flex = sharp.american_to_implied(sharp.PP_FLEX_AMERICAN)
         self.assertEqual(nearest["line_match"], "nearest")
         self.assertEqual(nearest["matched_line"], 1.5)
@@ -308,14 +310,85 @@ class MatchTests(unittest.TestCase):
         self.assertFalse(nearest["line_plus"])
         self.assertTrue(nearest["line_plus_under"])
         self.assertLess(moved, fair)
-        self.assertEqual(nearest["fair_over_pct"], sharp.pct(moved))
-        self.assertEqual(nearest["pp_edge_flex"], sharp.pp_edge_pct(moved, flex))
+        self.assertGreater(push, 0.0)
+        self.assertAlmostEqual(over + under, 1.0)
+        self.assertAlmostEqual(over, moved / (1.0 - push))
+        self.assertAlmostEqual(under, (1.0 - moved - push) / (1.0 - push))
+        # P(X < 2) is the book's under at 1.5. The push must not be added to it.
+        self.assertAlmostEqual(1.0 - moved - push, fair)
+        inflated_under = 1.0 - moved
+        self.assertLess(under, inflated_under)
+        self.assertEqual(nearest["fair_over_pct"], sharp.pct(over))
+        self.assertEqual(nearest["fair_under_pct"], sharp.pct(under))
+        self.assertNotEqual(nearest["fair_under_pct"], sharp.pct(inflated_under))
+        self.assertEqual(nearest["pp_edge_flex"], sharp.pp_edge_pct(over, flex))
+        self.assertEqual(nearest["pp_edge_under_flex"], sharp.pp_edge_pct(under, flex))
+        self.assertLess(nearest["pp_edge_under_flex"], sharp.pp_edge_pct(inflated_under, flex))
         self.assertEqual(nearest["grade"], sharp.letter_grade(nearest["pp_edge_flex"], line_plus=False))
         self.assertEqual(exact["line_match"], "exact")
         self.assertEqual(exact["fair_over_pct"], 50.0)
+        self.assertEqual(exact["fair_under_pct"], 50.0)
         self.assertEqual(exact["pp_edge_flex"], sharp.pp_edge_pct(fair, flex))
         self.assertNotEqual(nearest["pp_edge_flex"], exact["pp_edge_flex"])
         self.assertEqual(nearest["ev_over_pct"], exact["ev_over_pct"])
+
+    def test_whole_count_line_splits_out_the_push_and_under_is_not_inflated(self):
+        fair = 0.5
+        cases = (
+            ("Shots On Goal", 1.5, 2),
+            ("Rush Attempts", 15.5, 15),
+            ("Rush Attempts", 15.5, 16),
+            ("Receptions", 5.5, 5),
+            ("Receptions", 5.5, 6),
+            ("Pass Completions", 19.5, 20),
+            ("Pass Completions", 20.5, 20),
+        )
+        for prop, book_line, pp_line in cases:
+            over, under = sharp._fair_at_pp_line(fair, fair, book_line, pp_line, prop)
+            strict = sharp.shift_over(fair, book_line, pp_line, prop)
+            push = sharp.push_probability(fair, book_line, pp_line, prop)
+            self.assertIsNotNone(push, prop)
+            self.assertGreater(push, 0.0, prop)
+            self.assertAlmostEqual(over + under, 1.0, msg=prop)
+            self.assertAlmostEqual(over, strict / (1.0 - push), msg=prop)
+            self.assertAlmostEqual(under, (1.0 - strict - push) / (1.0 - push), msg=prop)
+            self.assertLess(under, 1.0 - strict, msg=prop)
+
+        half_over, half_under = sharp._fair_at_pp_line(fair, fair, 1.5, 2.5, "Shots On Goal")
+        half_moved = sharp.shift_over(fair, 1.5, 2.5, "Shots On Goal")
+        self.assertIsNone(sharp.push_probability(fair, 1.5, 2.5, "Shots On Goal"))
+        self.assertAlmostEqual(half_over, half_moved)
+        self.assertAlmostEqual(half_under, 1.0 - half_moved)
+
+        # The yardage step has no point mass, so an integer yard line stays a complement.
+        yard_over, yard_under = sharp._fair_at_pp_line(0.62, 0.38, 74.5, 74.0, "Receiving Yards")
+        yard_moved = sharp.shift_over(0.62, 74.5, 74.0, "Receiving Yards")
+        self.assertIsNone(sharp.push_probability(0.62, 74.5, 74.0, "Receiving Yards"))
+        self.assertAlmostEqual(yard_over, yard_moved)
+        self.assertAlmostEqual(yard_under, 1.0 - yard_moved)
+
+        books = [
+            {"player": "Sample Skater", "player_key": sharp.name_key("Sample Skater"), "prop": "Shots On Goal",
+             "side": "over", "line": 1.5, "price": -110, "book": "Pinnacle", "book_key": "pinnacle"},
+            {"player": "Sample Skater", "player_key": sharp.name_key("Sample Skater"), "prop": "Shots On Goal",
+             "side": "under", "line": 1.5, "price": -110, "book": "Pinnacle", "book_key": "pinnacle"},
+        ]
+        under_play = sharp.build_snapshot(
+            [self._pp(player="Sample Skater", prop="Shots On Goal", pp_line=2, projection=1.2, position="F", id="sog-under")],
+            books,
+        )["records"][0]
+        over, under = sharp._fair_at_pp_line(fair, fair, 1.5, 2, "Shots On Goal")
+        inflated = 1.0 - sharp.shift_over(fair, 1.5, 2, "Shots On Goal")
+        flex = sharp.american_to_implied(sharp.PP_FLEX_AMERICAN)
+        self.assertEqual(under_play["recommendation"], "UNDER")
+        self.assertTrue(under_play["line_plus"])
+        self.assertEqual(under_play["pp_edge_flex"], sharp.pp_edge_pct(under, flex))
+        self.assertEqual(under_play["fair_under_pct"], sharp.pct(under))
+        self.assertLess(under_play["pp_edge_flex"], sharp.pp_edge_pct(inflated, flex))
+        self.assertEqual(
+            under_play["grade"],
+            sharp.letter_grade(under_play["pp_edge_flex"], line_plus=True),
+        )
 
     def test_count_prop_rejects_a_far_line(self):
         snapshot = sharp.build_snapshot(

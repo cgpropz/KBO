@@ -18,12 +18,15 @@ PrizePicks score: de-vig Over and Under on the same book, average those fair
 probabilities across sharp books when one has both sides (otherwise every
 complete book). When that book line is not the PrizePicks line, the fair
 Over is moved onto the PrizePicks line with the same adjustment the CG odds
-column uses, and the under is its complement. PP Edge = 100 * (fair side −
-PrizePicks break-even). Flex (-119) is the default. Power (-137) is stored
-beside it. Sportsbook EV stays on the book line, because that price is not
-a PrizePicks price. A raw price shop such as books -140 vs PrizePicks -119
-is a badge, not the sort key. LINE+ still only bumps the letter for a
-favorable half-point; it does not add a second pad on top of the shift.
+column uses. Half-point lines and yardage lines take the under as the
+complement. A whole-number count line is a PrizePicks push, so the over is
+P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
+PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
+default. Power (-137) is stored beside it. Sportsbook EV stays on the book
+line, because that price is not a PrizePicks price. A raw price shop such
+as books -140 vs PrizePicks -119 is a badge, not the sort key. LINE+ still
+only bumps the letter for a favorable half-point; it does not add a second
+pad on top of the shift.
 Each matched row also carries book_prices (every book on that line) plus the
 projection's dvpRank so the board can show L5, L10, and the existing matchup
 grade without a second feed.
@@ -280,10 +283,11 @@ def line_favors_side(line_match, line_delta, side):
     when PrizePicks is 0.5 lower; under is easier when PrizePicks is 0.5 higher.
     A wider gap, an exact line, and the harder side are not LINE+.
 
-    The fair probability is already moved onto the PrizePicks line by
-    ``shift_over`` before PP Edge, the stored fair percents, and the grade.
-    LINE+ does not do that move and does not add a second numeric pad. It
-    only bumps the letter one step, and only for this favorable half-point.
+    The fair probability is already moved onto the PrizePicks line before
+    PP Edge, the stored fair percents, and the grade. On a whole-number
+    count line the push is removed from both sides first. LINE+ does not
+    do that move and does not add a second numeric pad. It only bumps the
+    letter one step, and only for this favorable half-point.
     """
     if line_match != "nearest" or side not in {"over", "under"}:
         return False
@@ -344,40 +348,101 @@ def _poisson_cdf(k, lam):
     return total
 
 
+def _fit_count_lambda(p_over, book_line):
+    """Poisson mean whose P(X > book_line) matches ``p_over``.
+
+    Same 80-step search as ``shiftOver`` in cgOdds.js. The book probability
+    is matched to 1 - CDF(floor(book_line)), which is P(X > line) for both
+    a half point and a whole number.
+    """
+    lo = _SHIFT_LAMBDA_LO
+    hi = _SHIFT_LAMBDA_HI
+    lam = lo
+    book_k = math.floor(book_line)
+    target = float(p_over)
+    for _ in range(_SHIFT_LAMBDA_STEPS):
+        lam = (lo + hi) / 2.0
+        if (1.0 - _poisson_cdf(book_k, lam)) < target:
+            lo = lam
+        else:
+            hi = lam
+    return lam
+
+
+def _count_masses(p_over, book_line, pp_line):
+    """P(X > line), P(X < line), and P(X = line) at a whole-number PP line."""
+    lam = _fit_count_lambda(p_over, book_line)
+    line = int(round(pp_line))
+    cdf_below = _poisson_cdf(line - 1, lam)
+    cdf_line = _poisson_cdf(line, lam)
+    p_lt = cdf_below
+    p_eq = cdf_line - cdf_below
+    p_gt = 1.0 - cdf_line
+    return p_gt, p_lt, p_eq
+
+
 def shift_over(p_over, book_line, pp_line, prop):
     """Move a fair Over from the book line onto the PrizePicks line.
 
     Same adjustment as ``shiftOver`` in kbo-props-ui/src/nfl/cgOdds.js.
     Equal lines return the input probability unchanged. Yardage props move
     by a fixed probability per half point, clamped to [0.01, 0.99]. Every
-    other prop inverts a Poisson mean at the book line and evaluates it at
-    the PrizePicks line. ``math.exp`` can disagree with JavaScript ``Math.exp``
+    other prop inverts a Poisson mean at the book line and evaluates
+    P(X > pp_line). On a whole number that is the strict over, before the
+    push is removed. ``math.exp`` can disagree with JavaScript ``Math.exp``
     by one rounding, which does not change the 0.1-point fair percent or edge.
+
+    This return value matches the frontend. The PP Edge split for a whole
+    count line is ``_fair_at_pp_line``, which then conditions on no push.
+    The CG odds column still uses the complement and is left unchanged.
     """
     if book_line == pp_line:
         return p_over
     step = HALF_POINT_SHIFT.get(prop)
     if step is None:
-        lo = _SHIFT_LAMBDA_LO
-        hi = _SHIFT_LAMBDA_HI
-        lam = lo
-        book_k = math.floor(book_line)
-        for _ in range(_SHIFT_LAMBDA_STEPS):
-            lam = (lo + hi) / 2.0
-            if (1.0 - _poisson_cdf(book_k, lam)) < p_over:
-                lo = lam
-            else:
-                hi = lam
+        lam = _fit_count_lambda(p_over, book_line)
         return 1.0 - _poisson_cdf(math.floor(pp_line), lam)
     return min(0.99, max(0.01, p_over + (step * (book_line - pp_line)) / 0.5))
+
+
+def push_probability(p_over, book_line, pp_line, prop):
+    """Unconditional P(X = pp_line) for a whole-number count line.
+
+    ``None`` when the PrizePicks line is not a whole number, or when the
+    prop uses the yardage half-point step. That step has no point mass, so
+    an integer yard line is not a modeled push. Half-point count lines
+    cannot land exactly, so they are not a push either.
+    """
+    if prop in HALF_POINT_SHIFT or p_over is None or book_line is None or pp_line is None:
+        return None
+    try:
+        book = float(book_line)
+        prize = float(pp_line)
+        probability = float(p_over)
+    except (TypeError, ValueError):
+        return None
+    if _whole_number(prize) is None or book == prize:
+        return None
+    _p_gt, _p_lt, p_eq = _count_masses(probability, book, prize)
+    return p_eq
 
 
 def _fair_at_pp_line(fair_over, fair_under, matched_line, pp_line, prop):
     """Consensus fair at the PrizePicks line.
 
     An exact book line is returned unchanged, so those rows stay the same
-    numbers. A different line is moved with ``shift_over``. The under is the
-    complement of the shifted over.
+    numbers. A different line is moved with ``shift_over``.
+
+    Half-point count lines use the shifted over and its complement. A half
+    point has no count that lands on it, so there is no push to remove.
+    Yardage props use that same complement. Their model is a linear
+    probability step per half point, with no atom at an integer line, so
+    there is no push mass to divide out.
+
+    A whole-number count line is a PrizePicks push: the prop reverts when
+    the count lands on the line. Fair over is P(X > line) and fair under is
+    P(X < line), each divided by 1 - P(X = line). The two sides then sum to
+    one. Using 1 - P(X > line) as the under would hand the under every push.
     """
     if fair_over is None or matched_line is None or pp_line is None:
         return fair_over, fair_under
@@ -388,8 +453,14 @@ def _fair_at_pp_line(fair_over, fair_under, matched_line, pp_line, prop):
         return fair_over, fair_under
     if book_line == prize_line:
         return fair_over, fair_under
-    shifted = shift_over(float(fair_over), book_line, prize_line, prop)
-    return shifted, 1.0 - shifted
+    if prop in HALF_POINT_SHIFT or _whole_number(prize_line) is None:
+        shifted = shift_over(float(fair_over), book_line, prize_line, prop)
+        return shifted, 1.0 - shifted
+    p_gt, p_lt, p_eq = _count_masses(float(fair_over), book_line, prize_line)
+    decisive = 1.0 - p_eq
+    if decisive <= 0.0:
+        return p_gt, p_lt
+    return p_gt / decisive, p_lt / decisive
 
 
 def letter_grade(edge_pct, line_plus=False):

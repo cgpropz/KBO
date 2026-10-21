@@ -84,8 +84,21 @@ class SharpLineShiftDiffTests(unittest.TestCase):
         self.assertIn("fair_over_pct", row["fields"])
         self.assertIn("pp_edge_flex", row["fields"])
         self.assertIn("grade", row["fields"])
-        moved = sharp.shift_over(fair, 1.5, 2, "Shots On Goal")
-        self.assertIn(str(sharp.pp_edge_pct(moved, flex)), row["flex"])
+        over, _under = sharp._fair_at_pp_line(fair, fair, 1.5, 2, "Shots On Goal")
+        push = sharp.push_probability(fair, 1.5, 2, "Shots On Goal")
+        self.assertIn(str(sharp.pp_edge_pct(over, flex)), row["flex"])
+        self.assertEqual(row["push"], f"{sharp.pct(push):.1f}")
+        self.assertIn("push", render(summary))
+        self.assertNotIn("->", row["push"])
+
+    def test_an_integer_yardage_row_has_no_push_mass(self):
+        records = json.loads(json.dumps(self.snapshot["records"]))
+        yards = next(row for row in records if row["prop"] == "Receiving Yards" and row["line_match"] == "nearest")
+        yards["fair_over_pct"] = (yards.get("fair_over_pct") or 0) + 1
+        summary = diff_records(records)
+        self.assertEqual(summary["exact_changed"], [])
+        self.assertEqual(len(summary["changed"]), 1)
+        self.assertEqual(summary["changed"][0]["push"], "—")
 
     def test_cli_reads_a_data_wrapper_and_rejects_exact_match_drift(self):
         script = ROOT / "scripts" / "sharp_line_shift_diff.py"
