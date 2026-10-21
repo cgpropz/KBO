@@ -1,8 +1,8 @@
 {
-  "checked_at": "2026-10-21T03:24:34Z",
+  "checked_at": "2026-10-21T03:24:47Z",
   "boards": {
     "nfl": {
-      "generated_at": "2026-10-21T03:18:41.431194+00:00",
+      "generated_at": "2026-10-21T03:24:47.387575+00:00",
       "prop_count": 406,
       "started_removed": 0
     },
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-21T03:24:34.033587+00:00",
-      "prop_count": 62,
+      "generated_at": "2026-10-21T02:57:04.421073+00:00",
+      "prop_count": 60,
       "started_removed": 0,
       "removals": [
         {
@@ -50,6 +50,15 @@
           "line": 4.5,
           "odds_type": "demon",
           "projection": 2.56,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jake Sanderson",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.76,
           "reason": "line pulled"
         },
         {
@@ -98,15 +107,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Sam Reinhart",
-          "team": "FLA",
-          "stat": "Shots On Goal",
-          "line": 4.5,
-          "odds_type": "demon",
-          "projection": 2.04,
-          "reason": "line pulled"
-        },
-        {
           "player": "Sean Couturier",
           "team": "PHI",
           "stat": "Shots On Goal",
@@ -114,11 +114,20 @@
           "odds_type": "standard",
           "projection": 1.17,
           "reason": "line pulled"
+        },
+        {
+          "player": "Tage Thompson",
+          "team": "BUF",
+          "stat": "Shots On Goal",
+          "line": 6.5,
+          "odds_type": "demon",
+          "projection": 3.12,
+          "reason": "line pulled"
         }
       ],
       "removed_reasons": {
-        "pp_pull": 1,
-        "superseded_dup": 1,
+        "pp_pull": 0,
+        "superseded_dup": 0,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
