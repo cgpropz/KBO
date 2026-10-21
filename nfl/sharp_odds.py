@@ -21,7 +21,9 @@ Over is moved onto the PrizePicks line with the same adjustment the CG odds
 column uses. Half-point lines and yardage lines take the under as the
 complement. A whole-number count line is a PrizePicks push, so the over is
 P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
-CG odds drops that same push before it quotes a side.
+CG odds drops that same push before it quotes a side. When the book line
+itself is a whole number, the Poisson mean is fit to that line's
+push-removed over before the move.
 PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
 default. Power (-137) is stored beside it. Sportsbook EV stays on the book
 line, because that price is not a PrizePicks price. A raw price shop such
@@ -359,21 +361,39 @@ def _poisson_cdf(k, lam):
     return total
 
 
-def _fit_count_lambda(p_over, book_line):
-    """Poisson mean whose P(X > book_line) matches ``p_over``.
+def _book_count_over(lam, book_line):
+    """Fair over at the book line for the Poisson mean ``lam``.
 
-    Same 80-step search as ``shiftOver`` in cgOdds.js. The book probability
-    is matched to 1 - CDF(floor(book_line)), which is P(X > line) for both
-    a half point and a whole number.
+    A half point has no count on it, so this is P(X > line). A whole number
+    pushes. The posted over is then P(X > line) / (1 - P(X = line)).
+    """
+    book_k = math.floor(book_line)
+    strict = 1.0 - _poisson_cdf(book_k, lam)
+    if _whole_number(book_line) is None:
+        return strict
+    cdf_line = _poisson_cdf(book_k, lam)
+    cdf_below = _poisson_cdf(book_k - 1, lam)
+    decisive = 1.0 - (cdf_line - cdf_below)
+    if decisive <= 0.0:
+        return strict
+    return strict / decisive
+
+
+def _fit_count_lambda(p_over, book_line):
+    """Poisson mean whose book-line over matches ``p_over``.
+
+    Same 80-step search as ``fitCountLambda`` in cgOdds.js. Callers only
+    fit when the PrizePicks line is different. A half-point book line matches
+    P(X > line). A whole-number book line matches the push-removed over, and
+    the caller then moves that mean onto the PrizePicks line.
     """
     lo = _SHIFT_LAMBDA_LO
     hi = _SHIFT_LAMBDA_HI
     lam = lo
-    book_k = math.floor(book_line)
     target = float(p_over)
     for _ in range(_SHIFT_LAMBDA_STEPS):
         lam = (lo + hi) / 2.0
-        if (1.0 - _poisson_cdf(book_k, lam)) < target:
+        if _book_count_over(lam, book_line) < target:
             lo = lam
         else:
             hi = lam

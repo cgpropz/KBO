@@ -485,17 +485,28 @@ function sharpOddsPreviewLine(row) {
   return Number.isFinite(book) && Number.isFinite(pp) && Math.abs(book - pp) <= 0.5 + 1e-9;
 }
 
-// null and undefined are missing. Number(null) is 0, which would beat every
-// negative edge, so this does not use num().
+// null, undefined, and a blank string are missing. Number(null) and Number('')
+// are both 0, which would beat every negative edge, so this does not use num().
 function presentScore(value) {
   if (value == null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
 
+function firstPresentScore(row, keys) {
+  for (const key of keys) {
+    const score = presentScore(row?.[key]);
+    if (score != null) return score;
+  }
+  return null;
+}
+
 function nflSharpScore(row) {
   if (!sharpOddsPreviewLine(row) || gameAlreadyStarted(row)) return -Infinity;
-  const edge = presentScore(row?.pp_edge_flex ?? row?.pp_edge_pct);
+  // A blank edge falls through the same way a null edge does: try the other
+  // edge field, then a numeric ev_pct. A real 0 stays 0.
+  const edge = firstPresentScore(row, ['pp_edge_flex', 'pp_edge_pct']);
   if (edge != null) return edge;
   const ev = presentScore(row?.ev_pct);
   return ev != null ? ev : -Infinity;
@@ -568,6 +579,25 @@ function previewObjectList(key, scoreFn) {
     return {
       data: { ...obj, [key]: kept },
       lockedCount: Math.max(0, lockable - kept.length),
+    };
+  };
+}
+
+// NFL and NHL PP Odds. When every remaining row has already started, the
+// preview is empty on purpose. Tell the tab, and do not count those rows as
+// a locked upgrade.
+function previewSharpOdds(scoreFn) {
+  const build = previewObjectList('records', scoreFn);
+  return (payload) => {
+    const preview = build(payload);
+    const kept = Array.isArray(preview.data?.records) ? preview.data.records : [];
+    if (kept.length > 0) return preview;
+    const rows = Array.isArray(payload?.records) ? payload.records : [];
+    const live = rows.filter((row) => isStandardBoardLine(row) && !prizepicksPulled(row));
+    if (!live.length || !live.every((row) => gameAlreadyStarted(row))) return preview;
+    return {
+      data: { ...preview.data, empty_state: 'started' },
+      lockedCount: 0,
     };
   };
 }
@@ -831,7 +861,7 @@ export const DATASETS = {
     free: previewNflProjections,
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
-  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
+  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewSharpOdds(nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewNflGameMarkets },
   correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
   // Opponent-adjusted defense vs position (nflverse play-by-play). Team-level
@@ -857,7 +887,7 @@ export const DATASETS = {
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
-  nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewObjectList('records', nhlSharpScore) },
+  nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewSharpOdds(nhlSharpScore) },
   nhl_dvp_f: { table: 'nhl_dvp_f', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_d: { table: 'nhl_dvp_d', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },

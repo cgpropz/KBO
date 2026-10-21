@@ -1065,3 +1065,66 @@ process.stdout.write(JSON.stringify(out))
             self.assertNotEqual(cg["over"], cg["under"])
         self.assertGreater(cg_rows[0]["over"], cg_rows[0]["under"])
         self.assertGreater(cg_rows[1]["under"], cg_rows[1]["over"])
+
+    def test_whole_book_line_fits_the_push_removed_over_and_matches_js(self):
+        """A whole-number book line is fit with the push removed.
+
+        The PrizePicks line is different, so the mean is then moved. A half
+        point still matches the strict over. Python and the CG odds shift agree.
+        """
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is required to compare the book-line fit")
+
+        def old_shift(probability, book, prize):
+            lo, hi = 0.01, 60.0
+            lam = lo
+            book_k = int(book)
+            for _ in range(80):
+                lam = (lo + hi) / 2.0
+                if (1.0 - sharp._poisson_cdf(book_k, lam)) < probability:
+                    lo = lam
+                else:
+                    hi = lam
+            return 1.0 - sharp._poisson_cdf(int(prize), lam)
+
+        cases = [
+            {"p": 0.62, "book": 2, "pp": 2.5, "prop": "Shots On Goal"},
+            {"p": 0.4, "book": 3, "pp": 2.5, "prop": "Receptions"},
+            {"p": 0.7, "book": 2, "pp": 1.5, "prop": "Points"},
+            {"p": 0.55, "book": 1.5, "pp": 2, "prop": "Shots On Goal"},
+            {"p": 0.48, "book": 4.5, "pp": 4, "prop": "Rush Attempts"},
+        ]
+        for case in cases:
+            lam = sharp._fit_count_lambda(case["p"], case["book"])
+            self.assertAlmostEqual(sharp._book_count_over(lam, case["book"]), case["p"], places=5)
+            strict = 1.0 - sharp._poisson_cdf(int(case["book"]), lam)
+            moved = sharp.shift_over(case["p"], case["book"], case["pp"], case["prop"])
+            previous = old_shift(case["p"], case["book"], case["pp"])
+            if sharp._whole_number(case["book"]) is not None:
+                self.assertGreater(abs(strict - case["p"]), 0.01)
+                self.assertGreater(abs(moved - previous), 1e-4)
+            else:
+                self.assertAlmostEqual(strict, case["p"], places=5)
+                self.assertAlmostEqual(moved, previous, places=6)
+
+        script = """
+import { shiftOver } from './kbo-props-ui/src/nfl/cgOdds.js'
+const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const rows = JSON.parse(Buffer.concat(chunks).toString())
+process.stdout.write(JSON.stringify(rows.map((row) => shiftOver(row.p, row.book, row.pp, row.prop))))
+"""
+        completed = subprocess.run(
+            [node, "--input-type=module", "-e", script],
+            input=json.dumps(cases),
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        js_values = json.loads(completed.stdout)
+        self.assertEqual(len(js_values), len(cases))
+        for case, js_value in zip(cases, js_values):
+            py_value = sharp.shift_over(case["p"], case["book"], case["pp"], case["prop"])
+            self.assertAlmostEqual(py_value, js_value, delta=1e-9)
