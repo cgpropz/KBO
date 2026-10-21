@@ -449,7 +449,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <p className="pl-amount">$4.99 <span>first week</span></p>
               <p className="pl-price-note">Then $9.99/week. Code XWEEK is applied at checkout when it is valid for this buyer.</p>
               <ul>
-                <li>KBO, WNBA, NFL, and NHL boards</li>
+                <li>KBO, WNBA, NFL, NBA, and NHL boards</li>
                 <li>CG Score on every standard line</li>
                 <li>Hit rates and game logs</li>
                 <li>Cancel anytime</li>

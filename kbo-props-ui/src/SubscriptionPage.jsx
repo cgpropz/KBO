@@ -352,7 +352,7 @@ function SubscriptionPage() {
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀🏈</span>
-        <span>Every All-Access plan unlocks <strong>KBO, WNBA, NFL, and NHL</strong> — weekly, monthly, yearly, or lifetime.</span>
+        <span>Every All-Access plan unlocks <strong>KBO, WNBA, NFL, NBA, and NHL</strong> — weekly, monthly, yearly, or lifetime.</span>
       </div>
 
       {user && <DiscordAccount />}
@@ -452,7 +452,7 @@ function SubscriptionPage() {
                 tier === 'discord'
                   ? 'Props are posted in Discord. Upgrade to All-Access for the full site boards.'
                   : (TIER_LABELS[tier] === 'All Access')
-                  ? 'All features are unlocked across ⚾ KBO, 🏀 WNBA, 🏈 NFL, and 🏒 NHL. Enjoy the full toolkit.'
+                  ? 'All features are unlocked across ⚾ KBO, 🏀 WNBA, 🏈 NFL, 🏀 NBA, and 🏒 NHL. Enjoy the full toolkit.'
                   : `Your ${TIER_LABELS[tier] || tier} tools are fully unlocked. Add All Access anytime to include the other sport.`
               }</p>
             </div>
@@ -571,7 +571,7 @@ function SubscriptionPage() {
           />
           <FaqItem
             q="Does one subscription cover every sport?"
-            a="Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, and NHL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
+            a="Yes — every All-Access plan (Weekly, Monthly, Yearly, or Lifetime) unlocks KBO, WNBA, NFL, NBA, and NHL under one login. Discord Only posts props in Discord and does not unlock the site. Upgrade anytime."
           />
           <FaqItem
             q="Can I cancel anytime?"

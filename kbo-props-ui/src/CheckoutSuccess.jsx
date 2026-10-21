@@ -109,7 +109,7 @@ export default function CheckoutSuccess({ onSignUp, onLogin }) {
                 </>
               ) : (
                 <>
-                  <p>Your plan is unlocking now: KBO, WNBA, NFL, and NHL boards, projections and tools. Connect Discord to get the site subscriber role.</p>
+                  <p>Your plan is unlocking now: KBO, WNBA, NFL, NBA, and NHL boards, projections and tools. Connect Discord to get the site subscriber role.</p>
                   <DiscordAccount compact />
                   <button className="ff-btn ff-btn-primary ff-btn-block" onClick={close}>Start browsing</button>
                 </>
