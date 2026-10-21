@@ -7,8 +7,17 @@ import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksP
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
+import { gameAlreadyStarted } from '../src/gameStarted.js';
+import {
+  NBA_MIN_AVG_MINUTES,
+  NBA_MIN_GAMES,
+  NBA_RISK_INJURY_STATUSES,
+  nbaHighRisk,
+} from '../src/nba/nbaRisk.js';
 
 export { NFL_FREE_PREVIEW_ENABLED };
+export { gameAlreadyStarted };
+export { NBA_MIN_AVG_MINUTES, NBA_MIN_GAMES, NBA_RISK_INJURY_STATUSES, nbaHighRisk };
 
 // ─── Server-side data entitlement helpers (shared, NOT a route) ─────────────
 // The leading underscore keeps Vercel from exposing this file as an endpoint.
@@ -201,37 +210,9 @@ function wnbaPropScore(player, prop) {
   return boardPropScore(player, prop, wnbaCgScore);
 }
 
-// HIGH RISK (free NBA top 3 selection only; the member board, its ranking and
-// the score are unchanged). The exclusion uses the ESPN injury tag written by
-// nba/availability.py plus the fields the projection step writes on each player:
-//   matched !== true                    PrizePicks name not tied to a roster player
-//   projectionStatus !== 'projected'    no projection from a game log
-//   gp < NBA_MIN_GAMES (10)             fewer than 10 games with minutes logged
-//   avgMins missing or < NBA_MIN_AVG_MINUTES (20)   low or unknown minutes role
-//   espnInjuryChecked !== true              ESPN injury report not read for this row
-//   espnInjuryStatus set                    ESPN Out, Suspended, Doubtful, Questionable,
-//                                       Day-To-Day or GTD
-// Any one of these keeps every prop of that player out of the free top 3.
-export const NBA_MIN_GAMES = 10;
-export const NBA_MIN_AVG_MINUTES = 20;
-
-// Tags nba/availability.py writes. Any non-empty espnInjuryStatus is treated as a
-// risk (an unknown tag counts too), and a row whose report was not read
-// (espnInjuryChecked !== true) fails closed.
-export const NBA_RISK_INJURY_STATUSES = new Set(['out', 'suspended', 'doubtful', 'questionable', 'day-to-day', 'gtd']);
-
-export function nbaHighRisk(player) {
-  if (!player || typeof player !== 'object') return true;
-  if (player.espnInjuryChecked !== true) return true;
-  if (player.espnInjuryStatus != null && String(player.espnInjuryStatus).trim() !== '') return true;
-  if (player.matched !== true) return true;
-  if (player.projectionStatus !== 'projected') return true;
-  const gp = num(player.gp);
-  if (!Number.isFinite(gp) || gp < NBA_MIN_GAMES) return true;
-  const mins = num(player.avgMins);
-  if (!Number.isFinite(mins) || mins < NBA_MIN_AVG_MINUTES) return true;
-  return false;
-}
+// High-risk screen lives in src/nba/nbaRisk.js. The free top 3 is the only
+// server caller. The member board payload, its ranking and the score are
+// unchanged.
 
 // NBA uses the same preview shape and still divides by the pick's own line.
 // WNBA floors do not apply. Bounded 0-100 like KBO and NFL. Only the free
@@ -293,31 +274,7 @@ function previewNflProjections(payload) {
   return { data: kept, lockedCount: Math.max(0, rows.length - kept.length) };
 }
 
-// Kickoff has arrived. `now` is the server clock at the moment the preview
-// is built, which is the /api/data request. A missing or unparseable
-// start_time stays eligible: there is no kickoff that has passed.
-function etDayKey(now) {
-  const date = now instanceof Date ? now : new Date(now);
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
-
-export function gameAlreadyStarted(row, now = new Date()) {
-  if (row?.started === true || row?.locked === true || row?.removed === true) return true;
-  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc ?? row?.kickoff_at;
-  if (raw != null && String(raw).trim() !== '') {
-    const kick = Date.parse(String(raw));
-    const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now));
-    if (Number.isFinite(kick) && Number.isFinite(nowMs)) return kick <= nowMs;
-  }
-  const day = row?.game_date || row?.gameDate || row?.gameday;
-  if (typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)) return day < etDayKey(now);
-  return false;
-}
+// gameAlreadyStarted lives in src/gameStarted.js. Same rule as before.
 
 // A pulled line (removed flag or a pulled pp_status) never enters a free pool.
 function propStillLive(player, prop) {
