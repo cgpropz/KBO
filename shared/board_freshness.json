@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-21T14:33:58Z",
+  "checked_at": "2026-10-21T14:50:33Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-21T14:33:58.213315+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-21T14:23:09.211460+00:00",
-      "prop_count": 146,
+      "generated_at": "2026-10-21T14:50:33.836099+00:00",
+      "prop_count": 142,
       "started_removed": 0,
       "removals": [
         {
@@ -32,6 +32,33 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.39,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Andre Burakovsky",
+          "team": "OTT",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.39,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Andre Burakovsky",
+          "team": "OTT",
+          "stat": "Power Play Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.09,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Andre Burakovsky",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.97,
           "reason": "line pulled"
         },
         {
@@ -116,15 +143,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Claude Giroux",
-          "team": "OTT",
-          "stat": "Shots On Goal",
-          "line": 4.5,
-          "odds_type": "demon",
-          "projection": 1.48,
-          "reason": "line pulled"
-        },
-        {
           "player": "Denver Barkey",
           "team": "PHI",
           "stat": "Points",
@@ -176,6 +194,15 @@
           "line": 2.5,
           "odds_type": "standard",
           "projection": 2.33,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Fabian Zetterlund",
+          "team": "OTT",
+          "stat": "Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.41,
           "reason": "line pulled"
         },
         {
@@ -292,15 +319,6 @@
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "goblin",
-          "projection": 1.25,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Jiri Kulich",
-          "team": "BUF",
-          "stat": "Shots On Goal",
-          "line": 4.5,
-          "odds_type": "demon",
           "projection": 1.25,
           "reason": "line pulled"
         },
@@ -505,10 +523,28 @@
         {
           "player": "Shane Pinto",
           "team": "OTT",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.6,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Shane Pinto",
+          "team": "OTT",
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "goblin",
           "projection": 1.63,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Stephen Halliday",
+          "team": "OTT",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.5,
           "reason": "line pulled"
         },
         {
@@ -595,7 +631,7 @@
       ],
       "removed_reasons": {
         "pp_pull": 10,
-        "superseded_dup": 7,
+        "superseded_dup": 6,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
