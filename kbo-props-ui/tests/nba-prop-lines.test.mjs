@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   buildPropRows,
+  cgBoundInput,
+  cgBoundsAfterEdit,
   computeH2H,
   dvpGrade,
   filterAndSortRows,
@@ -232,6 +234,31 @@ test('minutes sort is high to low with blank minutes last', () => {
   assert.deepEqual(byMinutes.map((row) => row.player), ['Top', 'Thirty', 'Tied High', 'Tied Low', 'Mid', 'Blank', 'Empty'])
   const byScore = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, sortBy: 'CG Score' })
   assert.deepEqual(byScore.map((row) => row.player), ['Blank', 'Mid', 'Tied High', 'Empty', 'Thirty', 'Tied Low', 'Top'])
+})
+
+test('CG Score bounds clamp to 0-100, keep min at or below max, and ignore an empty box', () => {
+  assert.equal(cgBoundInput(''), '')
+  assert.equal(cgBoundInput('   '), '')
+  assert.equal(cgBoundInput('nope'), '')
+  assert.equal(cgBoundInput('150'), '100')
+  assert.equal(cgBoundInput('-4'), '0')
+  assert.equal(cgBoundInput('60.5'), '60.5')
+  assert.deepEqual(cgBoundsAfterEdit({ edgeMin: '', edgeMax: '40' }, 'edgeMin', '70'), { edgeMin: '70', edgeMax: '70' })
+  assert.deepEqual(cgBoundsAfterEdit({ edgeMin: '80', edgeMax: '' }, 'edgeMax', '30'), { edgeMin: '30', edgeMax: '30' })
+  assert.deepEqual(cgBoundsAfterEdit({ edgeMin: '20', edgeMax: '90' }, 'edgeMax', ''), { edgeMin: '20', edgeMax: '' })
+
+  const rows = [
+    minutesRow({ player: 'Top', avgMins: 34, score: 100 }),
+    minutesRow({ player: 'Inside', avgMins: 33, score: 72 }),
+    minutesRow({ player: 'Low', avgMins: 31, score: 40 }),
+    minutesRow({ player: 'Short Shift', prop: 'Rebounds', avgMins: 12, score: 72 }),
+  ]
+  const ranged = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, edgeMin: '60', edgeMax: '80', minutes: '30+' })
+  assert.deepEqual(ranged.map((row) => row.player), ['Inside'])
+  const openMax = filterAndSortRows(rows, 'Points', { ...DEFAULT_FILTERS, edgeMin: '60', edgeMax: '' })
+  assert.deepEqual(openMax.map((row) => row.player), ['Top', 'Inside'])
+  const clamped = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, edgeMin: '150', edgeMax: '-3' })
+  assert.deepEqual(clamped.map((row) => row.player), ['Top', 'Inside', 'Short Shift', 'Low'])
 })
 
 test('minutes filter and sort compose with a stat chip', () => {
