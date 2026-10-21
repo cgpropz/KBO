@@ -1008,6 +1008,21 @@
     white-space: nowrap;
   }
 
+  .prop-line-card .wnba-lines-line.has-min-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .prop-line-card .wnba-lines-line.has-min-pill .nba-line-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .prop-line-card .nfl-odds-toggle {
     grid-column: 3;
     grid-row: 3;

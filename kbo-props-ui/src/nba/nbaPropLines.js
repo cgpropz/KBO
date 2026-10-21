@@ -338,6 +338,7 @@ export function buildPropRows(projections, players) {
         h2hHitRate: h2hObj ? Math.round(h2hObj.pct) : null,
         hitPills: nbaHitPills(recentGames, prop.stat, line, prop.opponent ?? null, storedL10Values(prop)),
         dvpRank: num(prop.effectiveDvpRank),
+        avgMins: player?.avgMins ?? null,
         _player: { name: player.name, team, image: imageUrl },
         _hit: l10Obj,
         _edgePct: rawLine && rawLine > 0 ? ((projection - rawLine) / rawLine) * 100 : 0,

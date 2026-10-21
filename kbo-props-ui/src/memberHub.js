@@ -461,6 +461,8 @@ function basketballRows(data, scoreFn, roster, sport) {
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
         statusLabel: availabilityLabel({ ...player, ...prop }),
         ...availabilityOf({ ...player, ...prop }),
+        // NBA board field only. WNBA rows stay without it.
+        ...(sport === 'nba' ? { avgMins: player.avgMins } : {}),
       })
     }
   }

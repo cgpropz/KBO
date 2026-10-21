@@ -600,14 +600,16 @@ function previewPrizepicks(payload) {
 
 // projections_*: [{ ...player, ppAllProps: [...] }] → best props, regrouped.
 // NBA preview rows carry only an explicit allowlist of player fields (who,
-// which team, the photo, and the availability flags the landing uses to drop
-// held or OUT rows) plus the props that are shown, so no projection, minutes,
-// game log or other per-player model field leaves the server. WNBA keeps its
-// full player row because its free board reads the per-stat maps.
+// which team, the photo, the availability flags the landing uses to drop
+// held or OUT rows, and avgMins for the minutes pill) plus the props that
+// are shown. Game logs and other per-player model fields stay off this
+// response. WNBA keeps its full player row because its free board reads the
+// per-stat maps.
 export const NBA_PREVIEW_PLAYER_FIELDS = Object.freeze([
   'name', 'team', 'teamFull', 'teamColor', 'position', 'athleteId',
   'image', 'imageUrl', 'ppImageUrl', 'image_url',
   'status', 'injury', 'injury_status', 'pp_status', 'ppStatus', 'held',
+  'avgMins',
 ]);
 
 function nbaPreviewPlayer(player, props) {

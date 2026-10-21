@@ -32,6 +32,8 @@ import { fitImage } from '../fitImage.js'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { sideClass, sideLetter } from '../pickSide.js'
+import ExpectedMinutesPill from './ExpectedMinutesPill'
+import { expectedMinutesPill } from './expectedMinutes.js'
 
 const FREE_ROW_LIMIT = 3
 
@@ -106,6 +108,8 @@ function MiniChart({ recent, line }) {
 function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const grade = dvpGrade(item.dvpRank)
+  const minutesPill = item.side ? expectedMinutesPill(item.avgMins) : null
+  const lineLabel = <>{item.side ? <b>{sideLetter(item.side)}</b> : null} {formatValue(item.line)} {item.prop}</>
   const scoreNote = buildCgScoreExplainer({
     player: item.player,
     projection: item.projection,
@@ -131,7 +135,9 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
-              <div className={`wnba-lines-line ${sideClass(item.side)}`}>{item.side ? <b>{sideLetter(item.side)}</b> : null} {formatValue(item.line)} {item.prop}</div>
+              <div className={`wnba-lines-line ${sideClass(item.side)}${minutesPill ? ' has-min-pill' : ''}`}>
+                {minutesPill ? <><span className="nba-line-text">{lineLabel}</span><ExpectedMinutesPill minutes={item.avgMins} /></> : lineLabel}
+              </div>
             </div>
           </div>
         ) },

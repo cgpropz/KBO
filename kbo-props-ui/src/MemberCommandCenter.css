@@ -237,6 +237,9 @@ button.hub-card {
   font-weight: 650;
 }
 .hub-mini.is-status { color: var(--hub-mint); }
+.hub-side-pair { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 100%; }
+.hub-preview-sub { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.hub-preview-sub .hub-preview-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 .hub-score {
   display: inline-flex;
