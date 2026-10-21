@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-22",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-10-21T15:45:10.809236+00:00",
+  "frozen_at": "2026-10-21T16:13:06.625130+00:00",
   "source": "nhl/projections.json",
-  "source_commit": "30b0a49cb62b",
+  "source_commit": "7a1c5150667a",
   "props": [
     {
       "player": "Ilya Lyubushkin",
@@ -31,8 +31,34 @@
       "start_time_utc": "2026-10-22T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-21T15:45:10+00:00",
-      "last_pregame_frozen_at": "2026-10-21T15:45:10+00:00",
-      "source_commit": "30b0a49cb62b"
+      "last_pregame_frozen_at": "2026-10-21T16:13:06+00:00",
+      "source_commit": "7a1c5150667a"
+    },
+    {
+      "player": "Scott Morrow",
+      "team": "NYR",
+      "opponent": "TOR",
+      "position": "D",
+      "stat": "Points",
+      "line": 0.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.28,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.22,
+      "rating": null,
+      "game_date_iso": "2026-10-22",
+      "games_played": 29,
+      "dvp_rank": 30,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16037806",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-22T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-21T16:13:06+00:00",
+      "last_pregame_frozen_at": "2026-10-21T16:13:06+00:00",
+      "source_commit": "7a1c5150667a"
     }
   ]
 }
