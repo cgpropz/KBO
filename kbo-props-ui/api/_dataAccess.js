@@ -511,6 +511,8 @@ export function previewNflGameMarkets(payload, options = {}) {
 
 // PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
 // Older snapshots that only stored sportsbook EV still sort on that.
+// A null or missing edge, and a null or missing EV, stay missing. They are
+// not 0, so they cannot outrank a negative edge. A started game is out too.
 
 // Free PP Odds preview only. An exact book line stays. A nearest line stays
 // when it is at most half a point from the PrizePicks line. Wider gaps and
@@ -523,12 +525,20 @@ function sharpOddsPreviewLine(row) {
   return Number.isFinite(book) && Number.isFinite(pp) && Math.abs(book - pp) <= 0.5 + 1e-9;
 }
 
+// null and undefined are missing. Number(null) is 0, which would beat every
+// negative edge, so this does not use num().
+function presentScore(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function nflSharpScore(row) {
-  if (!sharpOddsPreviewLine(row)) return -Infinity;
-  const edge = num(row?.pp_edge_flex ?? row?.pp_edge_pct);
-  if (Number.isFinite(edge)) return edge;
-  const ev = num(row?.ev_pct);
-  return Number.isFinite(ev) ? ev : -Infinity;
+  if (!sharpOddsPreviewLine(row) || gameAlreadyStarted(row)) return -Infinity;
+  const edge = presentScore(row?.pp_edge_flex ?? row?.pp_edge_pct);
+  if (edge != null) return edge;
+  const ev = presentScore(row?.ev_pct);
+  return ev != null ? ev : -Infinity;
 }
 
 function wnbaSharpScore(row) {
@@ -557,7 +567,8 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
 // Rows the free PP Odds preview keeps. nfl_sharp_odds scores with
 // nflSharpScore and nhl_sharp_odds with nhlSharpScore, then topN. Standard
 // lines only, same rule as filterStandardBoard, and only an exact line or a
-// nearest line within half a point. The NFL preview flag hides that board
+// nearest line within half a point. A missing edge and a started game score
+// out. The NFL preview flag hides that board
 // the same way shapeForTier does. scripts/sharp_line_shift_diff.py calls
 // this so its before/after list is the preview's list.
 export function selectFreeSharpOddsPreview(records, sport = 'nfl') {

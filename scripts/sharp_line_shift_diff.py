@@ -52,7 +52,7 @@ PREVIEW_SOURCE = (
     "kbo-props-ui/api/_dataAccess.js selectFreeSharpOddsPreview "
     "(nflSharpScore / nhlSharpScore, topN, FREE_ROW_LIMIT) after "
     "kbo-props-ui/src/standardBoard.js isStandardBoardLine; "
-    "exact, or nearest within 0.5"
+    "exact, or nearest within 0.5; a missing edge and a started game stay out"
 )
 
 COMPARED = (
