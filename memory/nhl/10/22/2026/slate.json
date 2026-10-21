@@ -1,0 +1,38 @@
+{
+  "sport": "nhl",
+  "slate_date": "10/22/2026",
+  "slate_date_iso": "2026-10-22",
+  "timezone_basis": "ET",
+  "schema_version": 2,
+  "frozen_at": "2026-10-21T15:45:10.809236+00:00",
+  "source": "nhl/projections.json",
+  "source_commit": "30b0a49cb62b",
+  "props": [
+    {
+      "player": "Ilya Lyubushkin",
+      "team": "NSH",
+      "opponent": "BOS",
+      "position": "D",
+      "stat": "Points",
+      "line": 0.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.24,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.26,
+      "rating": null,
+      "game_date_iso": "2026-10-22",
+      "games_played": 53,
+      "dvp_rank": 29,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16037860",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-22T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-21T15:45:10+00:00",
+      "last_pregame_frozen_at": "2026-10-21T15:45:10+00:00",
+      "source_commit": "30b0a49cb62b"
+    }
+  ]
+}
