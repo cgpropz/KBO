@@ -66,9 +66,11 @@ export function isNbaDataset(ds) {
  * false denies non-owners even when the flag is on, so a profile blip
  * cannot fall open to a preview.
  *
- * Once nba_public is true, all-access tiers get full data. Legacy kbo/wnba
- * tiers and free accounts get the preview path. sportAccess() still has no
- * nba key. NHL uses the same all-access flag as NFL.
+ * Once nba_public is true, all-access tiers get full data. Signed-out, free,
+ * Discord-only, and legacy kbo/wnba tiers are denied. The free NBA top 3
+ * switch (off by default) can still preview nba_projections_standard for
+ * those callers, and nothing else. sportAccess() still has no nba key.
+ * NHL uses the same all-access flag as NFL.
  */
 export function nbaAccessDecision({
   emailResolved,
@@ -84,11 +86,12 @@ export function nbaAccessDecision({
   const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (normalized === NBA_OWNER_EMAIL) return 'full';
   if (flagResolved === true && nbaPublic === true) {
-    // nba_public on: exactly main's behavior whatever the free top 3 flag is.
-    // All-access is full; every other resolved caller (free, legacy,
-    // logged-out) gets the free preview of any NBA dataset.
+    // nba_public on: all-access is full. Non-all-access is denied unless the
+    // free top 3 switch is on and this is that one dataset, the same condition
+    // as the flag-off branch below.
     if (tierResolved !== true) return 'deny';
     if (ALL_ACCESS_TIERS.has(tier)) return 'full';
+    if (freePreview !== true || freeTop3Dataset !== true) return 'deny';
     return 'preview';
   }
   // nba_public off (or its read failed): main denies. Only the free NBA top 3
@@ -834,8 +837,9 @@ export const DATASETS = {
   // Opponent-adjusted defense vs position (nflverse play-by-play). Team-level
   // matchup context only, no player rows, CG Score or projections: free.
   nfl_matchup_defense: { table: 'nfl_matchup_defense', sport: 'nfl', free: FULL },
-  // NBA. The /api/data gate still denies these unless the caller is full access.
-  // The free builder is only the preview path after nba_public is on.
+  // NBA. /api/data turns a deny into 403 for every nba_* dataset, including
+  // players, teams, and dvp. The free builder runs only for the free top 3
+  // dataset when that switch is on.
   nba_players: { table: 'nba_players', sport: 'nba', free: previewList(() => 0) },
   nba_teams: { table: 'nba_teams', sport: 'nba', free: previewList(() => 0) },
   nba_dvp_pg: { table: 'nba_dvp_pg', sport: 'nba', free: previewObjectList('teams', () => 0) },

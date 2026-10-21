@@ -84,7 +84,7 @@ test('nbaAccessDecision fails closed on auth, email, flag, and tier lookup error
   }), 'deny')
   assert.equal(nbaAccessDecision({
     emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: true,
-  }), 'preview')
+  }), 'deny')
 })
 
 test('nba_players chunks join in order and a single row stays as stored', () => {
@@ -239,6 +239,7 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
     'tok-fan': { id: 'u-fan', email: 'fan@example.com' },
     'tok-weekly': { id: 'u-weekly', email: 'weekly@example.com' },
     'tok-kbo': { id: 'u-kbo', email: 'kbo@example.com' },
+    'tok-discord': { id: 'u-discord', email: 'discord@example.com' },
     'tok-noemail': { id: 'u-noemail' },
   }
   const profiles = {
@@ -246,6 +247,7 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
     'u-fan': 'combined',
     'u-weekly': 'weekly',
     'u-kbo': 'kbo',
+    'u-discord': 'discord',
   }
   return {
     calls,
@@ -359,14 +361,39 @@ test('the owner receives standard NBA lines and goblin and demon are not served'
 test('a public flag lets all-access through the gate and still denies a failed tier lookup', async () => {
   const combined = await call('nba_players', 'tok-fan', { flag: true })
   assert.equal(combined.res.statusCode, 200)
+  assert.equal(combined.res.body.preview, false)
   assert.equal(combined.res.body.data[0].name, 'Jaren Jackson Jr.')
   const weekly = await call('nba_teams', 'tok-weekly', { flag: true })
   assert.equal(weekly.res.statusCode, 200)
+  assert.equal(weekly.res.body.preview, false)
   assert.equal(weekly.res.body.data[0].team, 'MEM')
+  const dvp = await call('nba_dvp_pg', 'tok-fan', { flag: true })
+  assert.equal(dvp.res.statusCode, 200)
+  assert.equal(dvp.res.body.preview, false)
+  assert.equal(dvp.res.body.data.teams[0].team, 'WSH')
   const profileDown = await call('nba_players', 'tok-fan', { flag: true, profileErrorFor: 'u-fan' })
   assert.equal(profileDown.res.statusCode, 503)
   assert.equal(profileDown.res.body.code, 'tier_pending')
   assert.equal(profileDown.res.body.data, undefined)
+})
+
+test('a public flag 403s signed-out, discord, and kbo on every NBA dataset', async () => {
+  for (const ds of ['nba_projections_standard', 'nba_players', 'nba_teams', 'nba_dvp_pg']) {
+    for (const token of [undefined, 'tok-discord', 'tok-kbo']) {
+      const { res, client } = await call(ds, token, { flag: true })
+      assert.equal(res.statusCode, 403, `${ds} ${String(token)}`)
+      assert.equal(res.body.error, 'Forbidden', ds)
+      assert.equal(res.body.data, undefined, ds)
+      assert.equal(Object.hasOwn(res.body, 'preview'), false, ds)
+      assert.equal(client.calls.some((entry) => entry.table === ds), false, ds)
+    }
+  }
+  const discord = await callAccess('tok-discord', { flag: true })
+  assert.deepEqual(discord.res.body, { open: false })
+  const kbo = await callAccess('tok-kbo', { flag: true })
+  assert.deepEqual(kbo.res.body, { open: false })
+  const signedOut = await callAccess(undefined, { flag: true })
+  assert.deepEqual(signedOut.res.body, { open: false })
 })
 
 test('the owner receives nba player and team snapshots while a combined tier is still 403', async () => {

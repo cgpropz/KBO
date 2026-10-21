@@ -61,16 +61,24 @@ test('the free NBA top 3 switch is off by default; the tab and copy follow it', 
   assert.equal(/WNBA, NFL, NBA, and NHL boards/.test(JSON.stringify(publicFaqs())), false)
 })
 
-test('access: off denies free callers; on opens only the free top 3 dataset before nba_public', () => {
+test('access: off denies non-all-access; on opens only the free top 3 dataset, including after nba_public', () => {
   const base = { emailResolved: true, email: null, tierResolved: true, tier: 'free', flagResolved: true, nbaPublic: false }
-  // Off (the default): main's behavior. Before nba_public NBA is full access
-  // only; with nba_public on, free and logged-out callers get the preview.
+  // Off (the default): full access only. nba_public does not open a preview.
   assert.equal(nbaAccessDecision(base), 'deny')
   assert.equal(nbaAccessDecision({ ...base, freeTop3Dataset: true }), 'deny')
-  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true }), 'preview')
-  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true, freeTop3Dataset: true }), 'preview')
+  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true }), 'deny')
+  assert.equal(nbaAccessDecision({ ...base, nbaPublic: true, freeTop3Dataset: true }), 'deny')
   assert.equal(nbaAccessDecision({ ...base, nbaPublic: true, tier: 'monthly' }), 'full')
   assert.equal(nbaAccessDecision({ ...base, tier: 'monthly' }), 'deny')
+  // Flag on, switch off: signed-out, Discord-only, and legacy kbo stay denied.
+  // Combined and weekly stay full.
+  const launched = { ...base, nbaPublic: true, email: 'fan@example.com' }
+  assert.equal(nbaAccessDecision({ ...launched, email: null, tier: 'free' }), 'deny')
+  assert.equal(nbaAccessDecision({ ...launched, tier: 'discord' }), 'deny')
+  assert.equal(nbaAccessDecision({ ...launched, tier: 'kbo' }), 'deny')
+  assert.equal(nbaAccessDecision({ ...launched, tier: 'wnba' }), 'deny')
+  assert.equal(nbaAccessDecision({ ...launched, tier: 'combined' }), 'full')
+  assert.equal(nbaAccessDecision({ ...launched, tier: 'weekly' }), 'full')
   // On, before nba_public: preview of nba_projections_standard only.
   const on = { ...base, freePreview: true }
   assert.equal(nbaAccessDecision({ ...on, freeTop3Dataset: true }), 'preview')
@@ -78,15 +86,22 @@ test('access: off denies free callers; on opens only the free top 3 dataset befo
   assert.equal(nbaAccessDecision({ ...on, tier: 'monthly', freeTop3Dataset: true }), 'preview')
   assert.equal(nbaAccessDecision({ ...on, freeTop3Dataset: false }), 'deny')
   assert.equal(nbaAccessDecision({ ...on, flagResolved: false, freeTop3Dataset: true }), 'preview')
-  // On, after nba_public: like the other sports.
-  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true }), 'preview')
+  // On, after nba_public: still only the free top 3 dataset. Other datasets deny.
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true }), 'deny')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, freeTop3Dataset: true }), 'preview')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tier: 'discord', freeTop3Dataset: true }), 'preview')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tier: 'kbo', freeTop3Dataset: true }), 'preview')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tier: 'combined' }), 'full')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tier: 'weekly' }), 'full')
   assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tier: 'monthly' }), 'full')
   // Auth and tier failures stay closed either way.
   assert.equal(nbaAccessDecision({ ...on, emailResolved: false, freeTop3Dataset: true }), 'deny')
   assert.equal(nbaAccessDecision({ ...on, tierResolved: false, freeTop3Dataset: true }), 'deny')
+  assert.equal(nbaAccessDecision({ ...on, nbaPublic: true, tierResolved: false, freeTop3Dataset: true }), 'deny')
 })
 
-// main's nbaAccessDecision (before this PR), verbatim, to pin the flag-off behavior.
+// Switch off: the pre-launch matrix, except a public flag no longer returns
+// preview. Non-all-access is deny even when nba_public is on.
 const MAIN_ALL_ACCESS = new Set(['owner', 'pro', 'monthly', 'weekly', 'season', 'all', 'combined'])
 function mainDecision({ emailResolved, email, tierResolved, tier, flagResolved, nbaPublic }) {
   if (emailResolved !== true) return 'deny'
@@ -95,11 +110,11 @@ function mainDecision({ emailResolved, email, tierResolved, tier, flagResolved, 
   if (flagResolved !== true || nbaPublic !== true) return 'deny'
   if (tierResolved !== true) return 'deny'
   if (MAIN_ALL_ACCESS.has(tier)) return 'full'
-  return 'preview'
+  return 'deny'
 }
 
-test('access with the switch off matches main for every input', () => {
-  const tiers = ['free', 'kbo', 'wnba', 'legacy', 'monthly', 'weekly', 'season', 'pro', 'all', 'combined', 'owner', null]
+test('access with the switch off denies non-all-access even when nba_public is on', () => {
+  const tiers = ['free', 'discord', 'kbo', 'wnba', 'legacy', 'monthly', 'weekly', 'season', 'pro', 'all', 'combined', 'owner', null]
   const bools = [true, false, undefined]
   let checked = 0
   for (const emailResolved of bools) for (const tierResolved of bools) for (const flagResolved of bools)
@@ -237,7 +252,7 @@ test('/api/data: with the switch on, logged-out callers get the 3-row NBA previe
   const props = res.body.data.flatMap((p) => p.ppAllProps)
   assert.equal(props.length, 3)
   for (const p of RISKY) assert.equal(res.body.data.some((row) => row.name === p.name), false, p.name)
-  for (const ds of ['nba_players', 'nba_dvp_pg', 'nba_correlations']) {
+  for (const ds of ['nba_players', 'nba_teams', 'nba_dvp_pg', 'nba_correlations']) {
     const denied = await anonymous(ds)
     assert.equal(denied.statusCode, 403, ds)
   }
@@ -282,24 +297,38 @@ test('/api/data: ?player= on the NBA preview reads only the trimmed row', async 
   await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard', player: 'Goblin' }, headers: {} }, hidden, snapshotClient(false))
   assert.equal(hidden.statusCode, 200)
   assert.deepEqual(hidden.body.data, [])
-  // With nba_public on and the switch off, a free caller's ?player= is trimmed the same way.
+  // With nba_public on and the switch off, a free caller's ?player= is denied.
   _setNbaFreePreview(false)
   _clearCache()
   const launched = mockRes()
   await handleDataRequest({ method: 'GET', query: { ds: 'nba_projections_standard', player: 'Huge Edge' }, headers: {} }, launched, snapshotClient(true))
-  assert.equal(launched.statusCode, 200)
-  assert.equal(launched.body.preview, true)
-  assert.deepEqual(launched.body.data[0].ppAllProps.map((p) => p.stat), ['Points'])
-  assert.equal(launched.body.data[0].propProjectionByStat, undefined)
+  assert.equal(launched.statusCode, 403)
+  assert.equal(launched.body.error, 'Forbidden')
+  assert.equal(launched.body.data, undefined)
 })
 
-test('/api/data: switch off keeps main access (nba_public on: logged-out gets the preview)', async () => {
+test('/api/data: switch off denies every NBA dataset when nba_public is on', async () => {
   _setNbaFreePreview(false)
+  for (const ds of ['nba_projections_standard', 'nba_players', 'nba_teams', 'nba_dvp_pg']) {
+    const res = await anonymous(ds, true)
+    assert.equal(res.statusCode, 403, ds)
+    assert.equal(res.body.error, 'Forbidden', ds)
+    assert.equal(res.body.data, undefined, ds)
+  }
+})
+
+test('/api/data: switch on still previews only the free top 3 when nba_public is on', async () => {
+  _setNbaFreePreview(true)
   const res = await anonymous('nba_projections_standard', true)
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.preview, true)
-  const players = await anonymous('nba_players', true)
-  assert.equal(players.statusCode, 200)
+  assert.equal(res.body.data.flatMap((p) => p.ppAllProps).length, 3)
+  for (const ds of ['nba_players', 'nba_teams', 'nba_dvp_pg']) {
+    const denied = await anonymous(ds, true)
+    assert.equal(denied.statusCode, 403, ds)
+    assert.equal(denied.body.error, 'Forbidden', ds)
+    assert.equal(denied.body.data, undefined, ds)
+  }
 })
 
 test('NBA preview rows keep only the allowlisted player fields', () => {
