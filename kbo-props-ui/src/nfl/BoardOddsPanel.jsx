@@ -70,7 +70,7 @@ function stripItem(item, odds) {
   }
 }
 
-export function BoardOddsPanel({ item, odds, oddsState, seen = false }) {
+export function BoardOddsPanel({ item, odds, oddsState, seen = false, bookPolicy = true }) {
   const [mode, setMode] = useState('flex')
   const baseline = BASELINES[mode] || BASELINES.flex
   const message = oddsPanelMessage(odds, oddsState, seen)
@@ -94,6 +94,7 @@ export function BoardOddsPanel({ item, odds, oddsState, seen = false }) {
         mode={mode}
         baselineAmerican={baseline.american}
         emptyMessage={message || undefined}
+        bookPolicy={bookPolicy}
       />
     </div>
   )

@@ -1,3 +1,5 @@
+import { consensusBookPrices } from './bookPolicy.js'
+
 // CG odds: one fair price per NFL prop, compared with the PrizePicks line.
 //
 // computeCgOdds() is the only entry point the CG odds column in
@@ -132,7 +134,8 @@ const logit = (p) => Math.log(p / (1 - p))
 const expit = (x) => 1 / (1 + Math.exp(-x))
 
 // Returns { over, under, books, lineAdjusted } or null.
-export function cgFair(item) {
+// applyBookPolicy defaults on. The blend, weights, and push removal are unchanged.
+export function cgFair(item, options = {}) {
   const ppLine = finite(item?.pp_line)
   if (ppLine == null || !Array.isArray(item?.book_prices)) return null
   const bookLine = finite(item?.matched_line) ?? ppLine
@@ -141,7 +144,8 @@ export function cgFair(item) {
   let num = 0
   let den = 0
   const books = []
-  for (const quote of item.book_prices) {
+  const quotes = options.applyBookPolicy === false ? item.book_prices : consensusBookPrices(item.book_prices)
+  for (const quote of quotes) {
     const qOver = impliedProbability(quote?.over)
     const qUnder = impliedProbability(quote?.under)
     if (qOver == null || qUnder == null) continue
@@ -175,9 +179,9 @@ export function placeholderNoVig(item) {
 
 // side: 'over' | 'under'. breakeven: PrizePicks break-even win probability (0-1).
 // Returns { probability, american, edgePct, books, lineAdjusted, method } or null.
-export function computeCgOdds(item, side, breakeven) {
+export function computeCgOdds(item, side, breakeven, options) {
   if (side !== 'over' && side !== 'under') return null
-  const fair = cgFair(item)
+  const fair = cgFair(item, options)
   if (!fair) return null
   const probability = side === 'under' ? fair.under : fair.over
   const be = finite(breakeven)

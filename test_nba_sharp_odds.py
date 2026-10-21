@@ -178,6 +178,80 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(kept["league_id"], 3)
         self.assertEqual(kept["group"], "lg3:pt1:pregame")
 
+    def test_book_policy_applies_through_the_shared_snapshot(self):
+        payload = {
+            "people": {"1": {"firstName": "Sample", "lastName": "Guard", "leagueId": 3}},
+            "teams": {"10": {"abbreviation": "DEN"}},
+            "marketSources": [
+                {"id": 3, "name": "FanDuel"},
+                {"id": 1, "name": "DraftKings"},
+                {"id": 9, "name": "BetOnline"},
+                {"id": 54, "name": "SportsBetting"},
+                {"id": 10, "name": "Bovada"},
+                {"id": 105, "name": "Kalshi"},
+                {"id": 84, "name": "House Special"},
+                {"id": 107, "name": "Polymarket"},
+            ],
+            "propsPeopleEvents": {
+                "lg3:pt1:pregame": [
+                    {
+                        "personId": 1,
+                        "teamId": 10,
+                        "eventId": 100,
+                        "eventStart": "2026-10-22T00:00:00Z",
+                        "propsMarketSourcesLines": {
+                            "si0:fd": {"bt73": _quote(-110, 25.5, 3)},
+                            "si1:fd": {"bt73": _quote(-110, 25.5, 3)},
+                            "si0:dk": {"bt73": _quote(-105, 25.5, 1)},
+                            "si1:dk": {"bt73": _quote(-115, 25.5, 1)},
+                            "si0:bo": {"bt73": _quote(-130, 25.5, 9)},
+                            "si1:bo": {"bt73": _quote(110, 25.5, 9)},
+                            "si0:sb": {"bt73": _quote(-110, 25.5, 54)},
+                            "si1:sb": {"bt73": _quote(-110, 25.5, 54)},
+                            "si0:bv": {"bt73": _quote(100, 25.5, 10)},
+                            "si1:bv": {"bt73": _quote(-120, 25.5, 10)},
+                            "si0:ka": {"bt73": _quote(200, 25.5, 105)},
+                            "si1:ka": {"bt73": _quote(-250, 25.5, 105)},
+                            "si0:hs": {"bt73": _quote(180, 25.5, 84)},
+                            "si1:hs": {"bt73": _quote(-220, 25.5, 84)},
+                            "si0:pm": {"bt73": _quote(-108, 25.5, 107)},
+                            "si1:pm": {"bt73": _quote(-112, 25.5, 107)},
+                        },
+                    }
+                ]
+            },
+        }
+        book_rows, events = nba_sharp.normalize_nba_payload(payload)
+        self.assertEqual(events, 1)
+        self.assertIn("Kalshi", {row["book"] for row in book_rows})
+        self.assertTrue(all(row.get("source_id") is not None for row in book_rows))
+        key = nba_sharp.nba_name_key("Sample Guard")
+        pp_rows = [{
+            "player": "Sample Guard",
+            "player_key": key,
+            "prop": "Points",
+            "pp_line": 25.5,
+            "line_type": "standard",
+            "projection": 27,
+        }]
+        row = nba_sharp.snapshot_from_rows(pp_rows, book_rows, events_scanned=events)["records"][0]
+        priced = {item["book"] for item in row["book_prices"]}
+        self.assertNotIn("Kalshi", priced)
+        self.assertNotIn("House Special", priced)
+        self.assertNotIn("Polymarket", priced)
+        self.assertIn("DraftKings", priced)
+        self.assertEqual(priced, {"FanDuel", "DraftKings", "BetOnline", "SportsBetting", "Bovada"})
+        self.assertEqual(row["matched_books_count"], 3)
+        self.assertEqual(row["fair_books"], ["BetOnline"])
+        self.assertEqual(row["fair_book_count"], 1)
+        self.assertEqual(row["fair_source"], "sharp_books")
+        self.assertEqual(row["best_over"]["book"], "Bovada")
+        self.assertEqual(row["best_over"]["price"], 100)
+        self.assertNotEqual(row["best_under"]["book"], "Kalshi")
+        over = nfl_sharp.american_to_implied(-130)
+        under = nfl_sharp.american_to_implied(110)
+        self.assertEqual(row["fair_over_pct"], round((over / (over + under)) * 100, 1))
+
     def test_whole_number_push_removal_is_the_shared_function(self):
         self.assertIs(nba_sharp.build_snapshot, nfl_sharp.build_snapshot)
         key = nba_sharp.nba_name_key("Sample Forward")

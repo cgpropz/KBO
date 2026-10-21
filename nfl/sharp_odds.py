@@ -31,6 +31,14 @@ add a letter on top of the shift.
 Each matched row also carries book_prices (every book on that line) plus the
 projection's dvpRank so the board can show L5, L10, and the existing matchup
 grade without a second feed.
+
+Books count, the consensus fair price, and Best Over/Under use
+nfl/book_policy.py. That list drops DraftKings Pick6, Kalshi, Polymarket
+US, Novig, Prophet Exchange, Underdog Prediction Market, and Fliff, and
+counts BetOnline / SportsBetting / Bovada as one book, keeping one
+skin's own prices (BetOnline when it posted both sides, else
+SportsBetting, else Bovada). Best Over/Under can still show the best
+price among those three.
 """
 from __future__ import annotations
 
@@ -45,6 +53,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
+
+from nfl.book_policy import books_count, consensus_rows, is_excluded_book
 
 
 ROOT = Path(__file__).resolve().parent
@@ -558,7 +568,8 @@ def _normalize_line(type_key, line_data, sources, side, player, team, event):
     source = sources.get(line_data.get("marketSourceId")) or {}
     book = source.get("name") or ""
     key = book_key(book)
-    if not book or key in EXCLUDED_BOOK_KEYS:
+    source_id = source.get("id", line_data.get("marketSourceId"))
+    if not book or key in EXCLUDED_BOOK_KEYS or is_excluded_book({"book": book, "book_key": key, "source_id": source_id}):
         return None
     return {
         "player": player,
@@ -569,6 +580,7 @@ def _normalize_line(type_key, line_data, sources, side, player, team, event):
         "price": price,
         "book": book,
         "book_key": key,
+        "source_id": source_id,
         "event_id": event.get("eventId"),
         "commence_time": event.get("eventStart"),
         "team": team.get("abbreviation"),
@@ -748,8 +760,10 @@ def _fair_probs(rows):
 
     Sharp books win when at least one sharp book posted both sides. Otherwise
     every complete book is averaged. One-sided quotes do not enter the fair.
+    The shared book policy drops excluded sources and counts the BetOnline /
+    SportsBetting / Bovada feed once before that average.
     """
-    pairs = _paired_book_quotes(rows)
+    pairs = _paired_book_quotes(consensus_rows(rows))
     sharp_pairs = [pair for pair in pairs if pair["sharp"]]
     chosen = sharp_pairs or pairs
     if not chosen:
@@ -788,11 +802,11 @@ def _book_prices(rows):
         if side not in {"over", "under"}:
             continue
         key = row.get("book_key") or book_key(row.get("book"))
-        if not key or key in EXCLUDED_BOOK_KEYS:
+        if not key or key in EXCLUDED_BOOK_KEYS or is_excluded_book(row):
             continue
         slot = by_book.setdefault(
             key,
-            {"book": row.get("book"), "book_key": key, "over": None, "under": None},
+            {"book": row.get("book"), "book_key": key, "source_id": row.get("source_id"), "over": None, "under": None},
         )
         price = row.get("price")
         if isinstance(price, bool) or not isinstance(price, (int, float)):
@@ -810,7 +824,12 @@ def _book_prices(rows):
 def _best_quote(rows):
     best = None
     for row in rows:
+        key = row.get("book_key") or book_key(row.get("book"))
+        if not key or key in EXCLUDED_BOOK_KEYS or is_excluded_book(row):
+            continue
         price = row.get("price")
+        if isinstance(price, bool) or not isinstance(price, (int, float)):
+            continue
         if best is None or price > best["price"]:
             best = row
     if not best:
@@ -846,7 +865,7 @@ def _select_line(rows, pp_line, prop):
         return by_line[pp_line], pp_line, "exact", 0.0
     ranked = sorted(
         by_line,
-        key=lambda line: (abs(line - pp_line), -len({row["book_key"] for row in by_line[line]})),
+        key=lambda line: (abs(line - pp_line), -books_count(by_line[line])),
     )
     nearest = ranked[0]
     delta = round(nearest - pp_line, 2)
@@ -903,7 +922,18 @@ def _unmatched_reason(pp, available, line_match, props_in_feed, players_with_boo
     return "line_too_far"
 
 
+def _usable_book_row(row):
+    """Pick'em apps and the shared exclusion list never reach the snapshot."""
+    if not isinstance(row, dict):
+        return False
+    key = row.get("book_key") or book_key(row.get("book"))
+    if not key or key in EXCLUDED_BOOK_KEYS:
+        return False
+    return not is_excluded_book(row)
+
+
 def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None):
+    book_rows = [row for row in book_rows or [] if _usable_book_row(row)]
     books_by_player_prop = {}
     props_in_feed = set()
     players_with_books = set()
@@ -1016,7 +1046,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
                 "matched_line": matched_line,
                 "line_delta": line_delta,
                 "unmatched_reason": unmatched_reason,
-                "matched_books_count": len({row["book_key"] for row in matched_rows}),
+                "matched_books_count": books_count(matched_rows),
             }
         )
 

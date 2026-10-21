@@ -225,10 +225,10 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
               </tr>
             ))}
           {open && !locked && (phone
-            ? <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} />
+            ? <BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} bookPolicy={false} />
             : (
               <tr className="nfl-sharp-strip-row" ref={rowRef}>
-                <td colSpan={6}><BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} /></td>
+                <td colSpan={6}><BoardOddsPanel item={item} odds={odds} oddsState={oddsState} seen={seen} bookPolicy={false} /></td>
               </tr>
             ))}
         </>
