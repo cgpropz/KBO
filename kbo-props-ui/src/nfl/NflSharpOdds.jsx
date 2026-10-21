@@ -5,6 +5,7 @@ import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { computeCgOdds } from './cgOdds'
+import { displayedBookCount, policyBestQuote } from './bookPolicy'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
@@ -218,7 +219,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
   const quote = anchorQuote(item)
   const shop = priceShopQuote(item)
   const showPrice = priceTone(shop?.price, baselineAmerican) === 'worse'
-  const bookCount = Number(item.fair_book_count) || (Array.isArray(item.fair_books) ? item.fair_books.length : 0)
+  const bookCount = displayedBookCount(item)
   const gap = noBookNote(item)
 
   return (
@@ -252,8 +253,8 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           )}
         </td>
         {showCg && <CgOddsCell item={item} mode={mode} />}
-        <td><Quote quote={item.best_over} baselineAmerican={baselineAmerican} /></td>
-        <td><Quote quote={item.best_under} baselineAmerican={baselineAmerican} /></td>
+        <td><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
+        <td><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
         <td>{formatValue(item.projection)}</td>
         <td>
           <div className="nfl-sharp-matchup-cell">

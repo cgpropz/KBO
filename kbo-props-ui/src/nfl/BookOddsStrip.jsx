@@ -1,4 +1,5 @@
 import { bookLogoSrc } from './bookLogos'
+import { isExcludedBook } from './bookPolicy'
 import { bestAmerican, priceEvLabel, priceTone, sameAmericanPrice } from './ppBoardColors'
 
 // Display order for the expand strip. Unknown books follow, alphabetically.
@@ -43,9 +44,13 @@ function bookRank(book) {
   return index === -1 ? BOOK_ORDER.length : index
 }
 
-export function booksFor(item) {
+export function booksFor(item, options = {}) {
+  const apply = options.bookPolicy !== false
+  const allow = (book) => book && (!apply || !isExcludedBook(book))
   if (Array.isArray(item?.book_prices) && item.book_prices.length) {
-    return [...item.book_prices].sort((a, b) => bookRank(a) - bookRank(b) || String(a.book).localeCompare(String(b.book)))
+    return item.book_prices
+      .filter(allow)
+      .sort((a, b) => bookRank(a) - bookRank(b) || String(a.book).localeCompare(String(b.book)))
   }
   const map = new Map()
   const quotes = [
@@ -55,7 +60,7 @@ export function booksFor(item) {
     ['under', item?.sharp_under],
   ]
   for (const [side, quote] of quotes) {
-    if (!quote?.book || quote.price == null) continue
+    if (!quote?.book || quote.price == null || !allow(quote)) continue
     const key = quote.book_key || quote.book
     const slot = map.get(key) || { book: quote.book, book_key: quote.book_key || bookKey(quote.book), over: null, under: null }
     if (slot[side] == null) slot[side] = quote.price
@@ -107,9 +112,9 @@ function BookCell({ book, side, baselineAmerican, bestPrice }) {
   )
 }
 
-export function BookStrip({ item, mode, baselineAmerican, emptyMessage }) {
+export function BookStrip({ item, mode, baselineAmerican, emptyMessage, bookPolicy = true }) {
   const side = scoredSide(item)
-  const books = booksFor(item)
+  const books = booksFor(item, { bookPolicy })
   const bestPrice = bestAmerican(books, side)
   const gap = noBookNote(item)
   const sideLabel = item?.recommendation === 'UNDER' ? 'UNDER' : item?.recommendation === 'OVER' ? 'OVER' : 'LINE'

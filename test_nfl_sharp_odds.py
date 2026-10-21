@@ -544,7 +544,7 @@ class MatchTests(unittest.TestCase):
     def test_rec_targets_attach_when_the_feed_has_a_line(self):
         books = [
             self._book("over", 4.0, 118, "DraftKings", prop="Rec Targets"),
-            self._book("under", 4.0, -141, "Novig", prop="Rec Targets"),
+            self._book("under", 4.0, -141, "FanDuel", prop="Rec Targets"),
         ]
         for row in books:
             row["player"] = "AJ Barner"
@@ -555,7 +555,7 @@ class MatchTests(unittest.TestCase):
         )["records"][0]
         self.assertEqual(row["line_match"], "exact")
         self.assertEqual(row["best_over"]["book"], "DraftKings")
-        self.assertEqual(row["best_under"]["book"], "Novig")
+        self.assertEqual(row["best_under"]["book"], "FanDuel")
         self.assertIsNone(row["unmatched_reason"])
         self.assertEqual(row["recommendation"], "UNDER")
 

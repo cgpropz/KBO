@@ -3,6 +3,7 @@ import { fetchNhlSharpOdds } from './nhlData'
 import { lineWord } from '../lineCount'
 import { fitImage } from '../fitImage.js'
 import { computeCgOdds } from '../nfl/cgOdds'
+import { displayedBookCount, policyBestQuote } from '../nfl/bookPolicy'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from '../nfl/BookOddsStrip'
 import { hitRateColor, priceColor, priceTone } from '../nfl/ppBoardColors'
 import {
@@ -155,7 +156,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
   const quote = anchorQuote(item)
   const shop = priceShopQuote(item)
   const showPrice = priceTone(shop?.price, baselineAmerican) === 'worse'
-  const bookCount = Number(item.fair_book_count) || (Array.isArray(item.fair_books) ? item.fair_books.length : 0)
+  const bookCount = displayedBookCount(item)
   const gap = noBookNote(item)
 
   return (
@@ -189,8 +190,8 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           )}
         </td>
         <CgOddsCell item={item} mode={mode} />
-        <td><Quote quote={item.best_over} baselineAmerican={baselineAmerican} /></td>
-        <td><Quote quote={item.best_under} baselineAmerican={baselineAmerican} /></td>
+        <td><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
+        <td><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
         <td><ProjectionCell item={item} /></td>
         <td><span className={`nfl-grade ${gradeClass(matchup)}`}>{matchup || '—'}</span></td>
         <td><HitRate rate={item.hitRateL5} /></td>

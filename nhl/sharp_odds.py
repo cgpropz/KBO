@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from nfl.book_policy import is_excluded_book
 from nfl.sharp_odds import (
     EXCLUDED_BOOK_KEYS,
     SIDE_BY_KEY,
@@ -118,7 +119,8 @@ def _line(type_key, line_data, sources, side, player, team, event):
     source = sources.get(line_data.get("marketSourceId")) or {}
     book = source.get("name") or ""
     key = book_key(book)
-    if not book or key in EXCLUDED_BOOK_KEYS:
+    source_id = source.get("id", line_data.get("marketSourceId"))
+    if not book or key in EXCLUDED_BOOK_KEYS or is_excluded_book({"book": book, "book_key": key, "source_id": source_id}):
         return None
     return {
         "player": player,
@@ -129,6 +131,7 @@ def _line(type_key, line_data, sources, side, player, team, event):
         "price": price,
         "book": book,
         "book_key": key,
+        "source_id": source_id,
         "event_id": event.get("eventId"),
         "commence_time": event.get("eventStart"),
         "team": team.get("abbreviation"),
