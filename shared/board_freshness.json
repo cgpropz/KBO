@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-21T14:08:10Z",
+  "checked_at": "2026-10-21T14:23:09Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-21T14:08:10.625794+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-21T13:55:47.011092+00:00",
-      "prop_count": 138,
+      "generated_at": "2026-10-21T14:23:09.211460+00:00",
+      "prop_count": 146,
       "started_removed": 0,
       "removals": [
         {
@@ -50,6 +50,15 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.23,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Carter Yakemchuk",
+          "team": "OTT",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.34,
           "reason": "line pulled"
         },
         {
@@ -94,6 +103,24 @@
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "standard",
+          "projection": 1.48,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Claude Giroux",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.48,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Claude Giroux",
+          "team": "OTT",
+          "stat": "Shots On Goal",
+          "line": 4.5,
+          "odds_type": "demon",
           "projection": 1.48,
           "reason": "line pulled"
         },
@@ -325,6 +352,15 @@
         {
           "player": "Matvei Michkov",
           "team": "PHI",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.61,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Matvei Michkov",
+          "team": "PHI",
           "stat": "Power Play Points",
           "line": 0.5,
           "odds_type": "demon",
@@ -341,21 +377,21 @@
           "reason": "line pulled"
         },
         {
-          "player": "Matvei Michkov",
-          "team": "PHI",
-          "stat": "Shots On Goal",
-          "line": 5.5,
-          "odds_type": "demon",
-          "projection": 1.84,
-          "reason": "line pulled"
-        },
-        {
           "player": "Michael Bunting",
           "team": "PHI",
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "demon",
           "projection": 1.38,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Olen Zellweger",
+          "team": "BUF",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 1.5,
           "reason": "line pulled"
         },
         {
@@ -558,7 +594,7 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 11,
+        "pp_pull": 10,
         "superseded_dup": 7,
         "manual_out": 0,
         "news_out": 0,
