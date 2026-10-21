@@ -373,7 +373,7 @@ function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
     return out;
   }, [boards, photos, rosters, lineups, now]);
 
-  return { boards: shaped, retrySport };
+  return { boards: shaped, retrySport, now };
 }
 
 function emptyCopy(status, sport) {
@@ -412,7 +412,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     readMemberSportChoice(typeof localStorage === 'undefined' ? null : localStorage)
   ));
   const selected = SPORTS.find((s) => s.id === selectedHubSport(picked));
-  const { boards, retrySport } = useBoards(access, nbaOpen, selected.id, planPending, planFailed);
+  const { boards, retrySport, now } = useBoards(access, nbaOpen, selected.id, planPending, planFailed);
   const retryHub = (id) => {
     if (planFailed) {
       retryPlanCheck();
@@ -448,7 +448,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const shownScore = (row) => Math.round(symmetric ? displayScore(row.score, row.side) : row.score);
   const top = ranked.slice(0, 3);
   const preview = ranked.slice(3, 7);
-  const hitLeaders = topHitRateRows(pool, 10);
+  const hitLeaders = topHitRateRows(pool, 10, now);
   const active = [...top, ...preview, ...hitLeaders].find((row) => rowKey(row) === focus) || top[0] || null;
   const shownGames = activeGame ? [activeGame] : games;
   const timedStarts = shownGames

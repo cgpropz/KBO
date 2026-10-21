@@ -25,8 +25,8 @@ import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { wnbaLogoUrl } from '../slipBoardModel.js'
 import { pickSide, sideClass, sideLetter } from '../pickSide.js'
+import { EXCLUDED_PROP_LABELS } from './excludedProps.js'
 
-const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 const FREE_ROW_LIMIT = 3
 
 const PROP_PROJECTION = {

@@ -14,6 +14,7 @@ import { fitImage } from '../fitImage.js'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { wnbaLogoUrl } from '../slipBoardModel.js'
+import { EXCLUDED_PROP_LABELS } from './excludedProps.js'
 
 const POSITIONS = ['All', 'Guard', 'Forward', 'Center']
 const MINUTE_TABS = [
@@ -31,7 +32,6 @@ const HIT_RATE_SORTS = [
   { value: 'FULL', label: 'Sort: Full Hit Rate' },
   { value: 'sharpOdds', label: 'Sort: Sharp Odds (- to +)' },
 ]
-const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 
 const PROP_PROJECTION = {
   Points: p => p.projPts,

@@ -68,8 +68,8 @@ export function publicBoardRows(rows, unavailableNames, starters) {
   ))
 }
 
-export function publicTopHitRows(rows, limit = 10) {
-  return topHitRateRows(publicBoardRows(rows), limit)
+export function publicTopHitRows(rows, limit = 10, now = new Date()) {
+  return topHitRateRows(publicBoardRows(rows), limit, now)
 }
 
 // Homepage #free-top-3: the top standard lines by CG Score (the board and

@@ -3,14 +3,17 @@
 // Scores match the sport boards: KBO CG Score (kboBoardScore.scoreFor),
 // NFL nflCgScore, NHL cgScore, WNBA wnbaCgScore, NBA prop.rating.
 import { cgScore, lineMatchesStat } from './cgScore.js'
+import { gameAlreadyStarted, gameStartFields } from './gameStarted.js'
 import { hasModelNumber, kboRawRating, scoreFor as kboCgScore } from './kboBoardScore.js'
 import { manualPlayerPng } from './fitImage.js'
-import { prepareBoardRows } from './nhl/pointsGate.js'
+import { pointsOverDisposition, prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
 import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
-import { nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { EXCLUDED_PROP_LABELS, nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
+import { EXCLUDED_PROP_LABELS as WNBA_EXCLUDED_PROP_LABELS } from './wnba/excludedProps.js'
 
 const num = (v) => {
   const n = Number(v)
@@ -210,6 +213,15 @@ export function unavailableFromLineups(sport, payload) {
   return names
 }
 
+function scheduleFields(...sources) {
+  const checks = []
+  for (const source of sources) {
+    const fields = gameStartFields(source)
+    if (Object.keys(fields).length) checks.push(fields)
+  }
+  return checks.length ? { startChecks: checks } : {}
+}
+
 function finiteOrNull(value) {
   // Number(null) and Number('') are 0. A missing stored rate is not a 0% L10.
   if (value == null || value === '') return null
@@ -310,7 +322,9 @@ export function kboHubRows(data, photos = {}) {
         rawScore: kboRawRating(prop.projection, prop.line, prop.stat),
         image: kboCardImage(card, photos?.[card.name] || lookup[normalizePlayerName(card.name)]),
         ppImageUrl: card.image_url || card.ppImageUrl || null,
+        sport: 'kbo',
         start: card.start_time || card.game_time || null,
+        ...scheduleFields(card, prop),
         recent,
         ...l10ForRow(recent, prop.line, side, pills, prop.hit_rate_l10),
         oppRank: null,
@@ -344,11 +358,13 @@ export function nflHubRows(data) {
         rawScore: nflRawScore(row.projection, row.line, row.prop ?? row.stat),
         // NFL pilot rank inputs (src/sideRank.js): board games window and
         // PrizePicks wager types when the board carries them.
+        sport: 'nfl',
         gamesPlayed: finiteOrNull(row.gamesPlayed),
         wagerTypes: row.wagerTypes ?? null,
         image: row.imageUrl || null,
         ppImageUrl: row.ppImageUrl || row.imageUrl || null,
         start: row.start_time || null,
+        ...scheduleFields(row),
         recent,
         ...l10ForRow(recent, row.line, side, nflHitPills(row), null),
         oppRank: rankOrNull(row.dvpRank),
@@ -365,6 +381,7 @@ export function nhlHubRows(data) {
       const recent = chartValues(row.recent, false)
       const side = sideFor(row.projection, row.line)
       return {
+      sport: 'nhl',
       player: row.player,
       team: row.team,
       opponent: row.opponent,
@@ -377,6 +394,7 @@ export function nhlHubRows(data) {
       ppImageUrl: row.ppImageUrl || row.imageUrl || null,
       playerId: row.playerId || null,
       start: row.start_time || null,
+      ...scheduleFields(row),
       recent,
       ...l10ForRow(recent, row.line, side, nhlHitPills(row), row.hitRate),
       oppRank: rankOrNull(row.dvpRank),
@@ -422,7 +440,9 @@ function basketballRows(data, scoreFn, roster, sport) {
         : nbaHitPills(games, prop.stat, prop.line, prop.opponent || prop.versus, storedL10Values(prop))
       const recent = chartValues(series, true)
       const side = sideFor(prop.projection, prop.line)
+      const riskPlayer = sport === 'nba' ? nbaRiskInput(player) : null
       rows.push({
+        sport,
         player: player.name,
         team: player.team,
         opponent: prop.opponent || prop.versus,
@@ -434,6 +454,8 @@ function basketballRows(data, scoreFn, roster, sport) {
         image: imageFor(player) || player.image || player.imageUrl || null,
         ppImageUrl: player.ppImageUrl || player.image_url || null,
         start: prop.start_time || prop.gameDate || null,
+        ...scheduleFields(prop, player),
+        ...(riskPlayer ? { riskPlayer } : {}),
         recent,
         ...l10ForRow(recent, prop.line, side, pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
@@ -489,14 +511,37 @@ export function sideLetter(side) {
   return ''
 }
 
+// Why a row is off the hit-rate list for a board rule, or null when the
+// hit-rate rules themselves still apply. CG Score order is not this function.
+// The first match wins so a fixture can name the check. Any match drops the row.
+export function hitRateBlockReason(row, now = new Date()) {
+  if (!row || typeof row !== 'object') return null
+  const sources = Array.isArray(row.startChecks) && row.startChecks.length ? row.startChecks : [row]
+  if (sources.some((source) => gameAlreadyStarted(source, now))) return 'started'
+  if (row.sport === 'nba') {
+    if (EXCLUDED_PROP_LABELS.has(row.stat)) return 'excluded-prop'
+    if (row.riskPlayer && nbaHighRisk(row.riskPlayer)) return 'high-risk'
+  } else if (row.sport === 'wnba') {
+    if (WNBA_EXCLUDED_PROP_LABELS.has(row.stat)) return 'excluded-prop'
+  } else if (row.sport === 'nfl' || row.sport === 'kbo') {
+    if (!lineMatchesStat(row.stat, row.line)) return 'excluded-prop'
+  } else if (row.sport === 'nhl') {
+    if (!lineMatchesStat(row.stat, row.line) || pointsOverDisposition(row) === 'drop') return 'excluded-prop'
+  }
+  return null
+}
+
 // Highest L10 hit rate on the board. The sample is the chart's decided games
 // (pushes already left out). A log shorter than 10, or a window with no
-// decided game, is not an L10 and stays off the list.
-export function topHitRateRows(rows, limit = 10) {
+// decided game, is not an L10 and stays off the list. Started games, excluded
+// prop labels, and the NBA high-risk screen use the same functions as the
+// boards. They do not change CG Score order.
+export function topHitRateRows(rows, limit = 10, now = new Date()) {
   const ranked = playableRows(rows)
     .filter((row) => (
       // A neutral row (CG exactly 50, or on the line) is no pick, so it is not a hit leader.
-      !isNeutralHubRow(row)
+      !hitRateBlockReason(row, now)
+      && !isNeutralHubRow(row)
       && row?.player
       && row?.stat
       && Array.isArray(row.recent)
