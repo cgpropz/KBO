@@ -331,6 +331,22 @@
 /* The sheet is portaled to the body, so it is not a child of .nba-root.
    Scroll the rows and leave Reset / Show in view. Sit above the sticky nav. */
 .wnba-filters-overlay.nba-filters-overlay {
+  /* Portaled outside .wnba-propboard, so carry its theme variables. */
+  --pb-bg: #06100f;
+  --pb-panel: #081513;
+  --pb-panel-2: #0a1615;
+  --pb-panel-3: #0a1716;
+  --pb-input: #0b1c19;
+  --pb-border: #1a3c36;
+  --pb-border-soft: #15302b;
+  --pb-border-softer: #142a25;
+  --pb-text: #e8f4e6;
+  --pb-text-dim: #b7cac3;
+  --pb-text-muted: #78918a;
+  --pb-lime: #7fff68;
+  --pb-teal: #54e0bf;
+  --pb-red: #ff7b79;
+  --pb-amber: #f6c35f;
   z-index: 60;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
