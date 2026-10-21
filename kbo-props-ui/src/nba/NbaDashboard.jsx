@@ -245,9 +245,9 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 
         <FilterRow id="edge" label="CG Score" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
           <div className="wnba-filter-range-row">
-            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score minimum" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score low bound" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
             <span>to</span>
-            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score maximum" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score high bound" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
           </div>
         </FilterRow>
 
