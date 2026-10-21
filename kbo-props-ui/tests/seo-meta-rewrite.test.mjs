@@ -102,7 +102,7 @@ test('each sport page has its own 1200x630 share image', async () => {
   }
 })
 
-test('NBA is in the homepage nav, hero and the pricing page board text, not the plan cards', () => {
+test('NBA is in the homepage nav, hero, pricing board text, and All-Access feature line', () => {
   const landing = readFileSync(join(uiRoot, 'src', 'PublicLanding.jsx'), 'utf8')
   assert.match(landing, /<a href="\/nba-player-props">NBA<\/a>/)
   assert.match(landing, /KBO · NBA · NFL · NHL · WNBA/)
@@ -112,5 +112,10 @@ test('NBA is in the homepage nav, hero and the pricing page board text, not the 
   assert.match(pricing, /All-Access covers the KBO, NFL, WNBA, NBA and NHL boards under one login\./)
   assert.match(pricing, /unlocks KBO, WNBA, NFL, NBA, and NHL under one login/)
   const tiers = readFileSync(join(uiRoot, 'src', 'pricingTiers.js'), 'utf8')
-  assert.match(tiers, /Full KBO, WNBA, NFL & NHL projections/)
+  assert.match(tiers, /Full KBO, WNBA, NFL, NHL & NBA projections/)
+  assert.equal(/Full KBO, WNBA, NFL & NHL projections/.test(tiers), false)
+  assert.match(pricing, /Full KBO, WNBA, NFL, NHL &amp; NBA projections/)
+  const committed = readFileSync(join(uiRoot, 'public', 'pricing.html'), 'utf8')
+  assert.match(committed, /Full KBO, WNBA, NFL, NHL &amp; NBA projections/)
+  assert.equal(/Full KBO, WNBA, NFL &amp; NHL projections/.test(committed), false)
 })
