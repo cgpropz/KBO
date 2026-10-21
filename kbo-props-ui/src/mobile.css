@@ -582,7 +582,8 @@
   }
 
   /* The CG ODDS panel names itself; no second "CG Odds" label above it. */
-  body .nfl-root table[data-card-table] > tbody > tr > td.nfl-sharp-cg[data-label]::before {
+  body .nfl-root table[data-card-table] > tbody > tr > td.nfl-sharp-cg[data-label]::before,
+  body .nba-root table[data-card-table] > tbody > tr > td.nfl-sharp-cg[data-label]::before {
     content: none;
     display: none;
   }
