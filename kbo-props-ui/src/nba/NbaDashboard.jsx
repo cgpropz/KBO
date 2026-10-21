@@ -19,6 +19,7 @@ import {
   GAMES_OPTIONS,
   GRADE_OPTIONS,
   HIT_RATE_OPTIONS,
+  MINUTES_OPTIONS,
   POSITIONS,
   PROP_TABS,
   SORT_OPTIONS,
@@ -184,19 +185,28 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
   if (!open) return null
   return (
     <div className="wnba-filters-overlay" onClick={onClose}>
-      <div className="wnba-filters-panel" onClick={(event) => event.stopPropagation()}>
+      <div className="wnba-filters-panel" data-testid="nba-filters-panel" onClick={(event) => event.stopPropagation()}>
         <div className="wnba-filters-head">
           <h2>Filters</h2>
-          <button className="wnba-filters-close" onClick={onClose}>Close <span>&times;</span></button>
+          <button type="button" className="wnba-filters-close" onClick={onClose}>Close <span>&times;</span></button>
         </div>
+        <div className="nba-filters-scroll">
         <div className="wnba-filters-side">
           {['All', 'Overs', 'Unders'].map((option) => (
-            <button key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
+            <button key={option} type="button" className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
           ))}
         </div>
 
+        <FilterRow id="minutes" label="Minutes" value={filters.minutes || 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="wnba-filter-chip-row" role="group" aria-label="Minutes">
+            {MINUTES_OPTIONS.map((option) => (
+              <button key={option} type="button" className={(filters.minutes || 'All') === option ? 'active' : ''} aria-pressed={(filters.minutes || 'All') === option} onClick={() => updateFilter('minutes', option)}>{option}</button>
+            ))}
+          </div>
+        </FilterRow>
+
         <FilterRow id="sort" label="Sort By" value={filters.sortBy} expandedRow={expandedRow} onToggle={toggleRow}>
-          <select value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
+          <select aria-label="Sort by" value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </FilterRow>
@@ -252,10 +262,11 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
             {GRADE_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </FilterRow>
+        </div>
 
         <div className="wnba-filters-footer">
-          <button className="wnba-filters-reset" onClick={resetFilters}>Reset</button>
-          <button className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
+          <button type="button" className="wnba-filters-reset" onClick={resetFilters}>Reset</button>
+          <button type="button" className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
         </div>
       </div>
     </div>
