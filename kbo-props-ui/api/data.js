@@ -743,6 +743,8 @@ async function handleNbaRequest(req, res, client, ds) {
   // A valid token whose profile read did not finish is retryable. The owner
   // email is already on the token, so that short-circuit still opens the board.
   if (caller.pending && decision !== 'full') return sendTierPending(res);
+  // deny is 403 for every nba_* name, including nba_players, nba_teams, and
+  // nba_dvp_pg, before any snapshot is read.
   if (decision === 'deny') return forbid(res);
 
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
@@ -769,8 +771,8 @@ async function handleNbaRequest(req, res, client, ds) {
   if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
 
   // sportAccess() has no nba key and must stay that way. Full access returns
-  // the snapshot directly. Preview (flag on, non-all-access tier) uses the
-  // free trimmer. Unregistered nba_* names stay 400.
+  // the snapshot directly. Preview is only the free top 3 dataset when that
+  // switch is on, and uses the free trimmer. Unregistered nba_* names stay 400.
   let board;
   try {
     board = boardForPresentation(row.data);
