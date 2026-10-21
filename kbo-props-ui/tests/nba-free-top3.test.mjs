@@ -332,7 +332,7 @@ test('/api/data: switch on still previews only the free top 3 when nba_public is
 })
 
 test('NBA preview rows keep only the allowlisted player fields', () => {
-  const board = BOARD.map((p) => ({ ...p, athleteId: '42', image: 'x.png', dvpSlot: 'PG', dvpOpponent: 'NY', avgMins: 33, gp: 61, someNewModelField: 7, espnInjuryChecked: true }))
+  const board = BOARD.map((p) => ({ ...p, athleteId: '42', image: 'x.png', dvpSlot: 'PG', dvpOpponent: 'NY', avgMins: 33.6, gp: 61, someNewModelField: 7, espnInjuryChecked: true }))
   const shaped = shapeForTier('nba_projections_standard', board, 'free')
   assert.ok(shaped.data.length > 0)
   for (const row of shaped.data) {
@@ -341,7 +341,8 @@ test('NBA preview rows keep only the allowlisted player fields', () => {
     }
     assert.equal(row.athleteId, '42')
     assert.equal(row.image, 'x.png')
-    for (const key of ['avgMins', 'gp', 'dvpSlot', 'someNewModelField', 'matched', 'projectionStatus']) assert.equal(key in row, false, key)
+    assert.equal(row.avgMins, 33.6)
+    for (const key of ['gp', 'dvpSlot', 'someNewModelField', 'matched', 'projectionStatus']) assert.equal(key in row, false, key)
   }
 })
 

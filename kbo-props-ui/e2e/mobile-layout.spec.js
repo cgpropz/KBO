@@ -100,6 +100,7 @@ const fixtures = {
     team: 'DEN',
     position: 'C',
     gp: 10,
+    avgMins: 31.6,
     ppAllProps: [{ stat: 'Points', line: 26.5, projection: 28.4, opponent: 'LAL' }],
   }],
   nba_players: [],

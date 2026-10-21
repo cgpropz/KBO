@@ -24,6 +24,8 @@ import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './
 import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
 import { displayScore, symmetricRankOn } from './sideRank';
+import ExpectedMinutesPill from './nba/ExpectedMinutesPill';
+import { expectedMinutesPill } from './nba/expectedMinutes';
 
 /*
  * Paid-member landing, Option B Sports Hub.
@@ -91,6 +93,10 @@ function ordinal(value) {
 
 function rowKey(row) {
   return `${row.player}|${row.stat}|${row.line}`;
+}
+
+function sideStatusPill(row) {
+  return <span className="hub-mini is-status">{row.statusLabel || (row.side === 'UNDER' ? 'Under' : 'Over')}</span>;
 }
 
 function gameKey(game) {
@@ -594,7 +600,9 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <span className="hub-chips">
                       <span className="hub-mini">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                       {row.hitRate != null && <span className="hub-mini hub-num">L10 {Math.round(row.hitRate)}%</span>}
-                      <span className="hub-mini is-status">{row.statusLabel || (row.side === 'UNDER' ? 'Under' : 'Over')}</span>
+                      {selected.id === 'nba' && expectedMinutesPill(row.avgMins) ? (
+                        <span className="hub-side-pair">{sideStatusPill(row)}<ExpectedMinutesPill minutes={row.avgMins} /></span>
+                      ) : sideStatusPill(row)}
                     </span>
                   </span>
                   <span className="hub-score" aria-label={`CG Score ${shownScore(row)}${symmetric && row.side ? ` ${row.side === 'UNDER' ? 'Under' : 'Over'}` : ''}`}>
@@ -622,7 +630,14 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                     <Avatar row={row} sport={selected} size={36} />
                     <span>
                       <span className="hub-name">{row.player}</span>
-                      <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
+                      {selected.id === 'nba' && expectedMinutesPill(row.avgMins) ? (
+                        <span className="hub-preview-sub">
+                          <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
+                          <ExpectedMinutesPill minutes={row.avgMins} />
+                        </span>
+                      ) : (
+                        <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
+                      )}
                     </span>
                     <span className="hub-num hub-preview-score">{shownScore(row)}</span>
                   </button>
