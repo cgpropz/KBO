@@ -83,6 +83,7 @@ function poissonCdf(k, lambda) {
   return total
 }
 
+// Python port: nfl/sharp_odds.py shift_over. The parity test compares floats.
 export function shiftOver(pOver, bookLine, ppLine, prop) {
   if (bookLine === ppLine) return pOver
   const step = HALF_POINT_SHIFT[prop]

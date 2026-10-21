@@ -16,9 +16,14 @@ NFL_ODDS_PROVIDER=odds_api only after a real provider class is registered.
 
 PrizePicks score: de-vig Over and Under on the same book, average those fair
 probabilities across sharp books when one has both sides (otherwise every
-complete book), then PP Edge = 100 * (fair side − PrizePicks break-even).
-Flex (-119) is the default. Power (-137) is stored beside it. A raw price
-shop such as books -140 vs PrizePicks -119 is a badge, not the sort key.
+complete book). When that book line is not the PrizePicks line, the fair
+Over is moved onto the PrizePicks line with the same adjustment the CG odds
+column uses, and the under is its complement. PP Edge = 100 * (fair side −
+PrizePicks break-even). Flex (-119) is the default. Power (-137) is stored
+beside it. Sportsbook EV stays on the book line, because that price is not
+a PrizePicks price. A raw price shop such as books -140 vs PrizePicks -119
+is a badge, not the sort key. LINE+ still only bumps the letter for a
+favorable half-point; it does not add a second pad on top of the shift.
 Each matched row also carries book_prices (every book on that line) plus the
 projection's dvpRank so the board can show L5, L10, and the existing matchup
 grade without a second feed.
@@ -27,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import urllib.parse
@@ -95,6 +101,18 @@ DISPLAY_STAT_PHRASES = (
 )
 
 COUNT_PROPS = {"Receptions", "Pass Attempts", "Pass Completions", "Pass TDs", "Rush Attempts", "Rec Targets"}
+# Same steps as kbo-props-ui/src/nfl/cgOdds.js HALF_POINT_SHIFT. Props that
+# are absent, including shots, points, and saves, use the Poisson path.
+HALF_POINT_SHIFT = {
+    "Receiving Yards": 0.006,
+    "Rush Yards": 0.006,
+    "Pass Yards": 0.005,
+    "Rush+Rec Yds": 0.005,
+    "Pass+Rush Yds": 0.005,
+}
+_SHIFT_LAMBDA_LO = 0.01
+_SHIFT_LAMBDA_HI = 60.0
+_SHIFT_LAMBDA_STEPS = 80
 # Pick'em apps and in-house composites are not sportsbook prices.
 EXCLUDED_BOOK_KEYS = {
     "prizepicks",
@@ -260,6 +278,12 @@ def line_favors_side(line_match, line_delta, side):
 
     ``line_delta`` is the book line minus the PrizePicks line. Over is easier
     when PrizePicks is 0.5 lower; under is easier when PrizePicks is 0.5 higher.
+    A wider gap, an exact line, and the harder side are not LINE+.
+
+    The fair probability is already moved onto the PrizePicks line by
+    ``shift_over`` before PP Edge, the stored fair percents, and the grade.
+    LINE+ does not do that move and does not add a second numeric pad. It
+    only bumps the letter one step, and only for this favorable half-point.
     """
     if line_match != "nearest" or side not in {"over", "under"}:
         return False
@@ -308,10 +332,72 @@ def max_line_delta(prop):
     return 1.5 if prop in COUNT_PROPS else 10.0
 
 
+def _poisson_cdf(k, lam):
+    """Same cumulative Poisson as cgOdds.js poissonCdf."""
+    if k < 0:
+        return 0.0
+    term = math.exp(-lam)
+    total = term
+    for i in range(1, int(k) + 1):
+        term *= lam / i
+        total += term
+    return total
+
+
+def shift_over(p_over, book_line, pp_line, prop):
+    """Move a fair Over from the book line onto the PrizePicks line.
+
+    Same adjustment as ``shiftOver`` in kbo-props-ui/src/nfl/cgOdds.js.
+    Equal lines return the input probability unchanged. Yardage props move
+    by a fixed probability per half point, clamped to [0.01, 0.99]. Every
+    other prop inverts a Poisson mean at the book line and evaluates it at
+    the PrizePicks line. ``math.exp`` can disagree with JavaScript ``Math.exp``
+    by one rounding, which does not change the 0.1-point fair percent or edge.
+    """
+    if book_line == pp_line:
+        return p_over
+    step = HALF_POINT_SHIFT.get(prop)
+    if step is None:
+        lo = _SHIFT_LAMBDA_LO
+        hi = _SHIFT_LAMBDA_HI
+        lam = lo
+        book_k = math.floor(book_line)
+        for _ in range(_SHIFT_LAMBDA_STEPS):
+            lam = (lo + hi) / 2.0
+            if (1.0 - _poisson_cdf(book_k, lam)) < p_over:
+                lo = lam
+            else:
+                hi = lam
+        return 1.0 - _poisson_cdf(math.floor(pp_line), lam)
+    return min(0.99, max(0.01, p_over + (step * (book_line - pp_line)) / 0.5))
+
+
+def _fair_at_pp_line(fair_over, fair_under, matched_line, pp_line, prop):
+    """Consensus fair at the PrizePicks line.
+
+    An exact book line is returned unchanged, so those rows stay the same
+    numbers. A different line is moved with ``shift_over``. The under is the
+    complement of the shifted over.
+    """
+    if fair_over is None or matched_line is None or pp_line is None:
+        return fair_over, fair_under
+    try:
+        book_line = float(matched_line)
+        prize_line = float(pp_line)
+    except (TypeError, ValueError):
+        return fair_over, fair_under
+    if book_line == prize_line:
+        return fair_over, fair_under
+    shifted = shift_over(float(fair_over), book_line, prize_line, prop)
+    return shifted, 1.0 - shifted
+
+
 def letter_grade(edge_pct, line_plus=False):
     """Grade PP edge. A favorable half-point bumps one letter, and never past A+.
 
     Negative edges stay D. LINE+ does not turn a minus edge into a passing grade.
+    The bump is only a letter. It does not add points to an edge that was
+    already shifted onto the PrizePicks line.
     """
     if edge_pct is None:
         return None
@@ -775,13 +861,17 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
             fair_over, fair_under, fair_source, fair_books = _fair_probs(matched_rows)
         else:
             fair_over, fair_under, fair_source, fair_books = None, None, None, []
+        # The book price is posted at matched_line, so EV stays on that fair.
         ev_over = ev_percent(fair_over, None if not best_over else best_over["price"])
         ev_under = ev_percent(fair_under, None if not best_under else best_under["price"])
+        pp_over, pp_under = _fair_at_pp_line(
+            fair_over, fair_under, matched_line, pp["pp_line"], pp["prop"]
+        )
         edges = {
-            "over_flex": pp_edge_pct(fair_over, flex_be),
-            "under_flex": pp_edge_pct(fair_under, flex_be),
-            "over_power": pp_edge_pct(fair_over, power_be),
-            "under_power": pp_edge_pct(fair_under, power_be),
+            "over_flex": pp_edge_pct(pp_over, flex_be),
+            "under_flex": pp_edge_pct(pp_under, flex_be),
+            "over_power": pp_edge_pct(pp_over, power_be),
+            "under_power": pp_edge_pct(pp_under, power_be),
         }
         line_plus_over = line_favors_side(line_match, line_delta, "over")
         line_plus_under = line_favors_side(line_match, line_delta, "under")
@@ -820,8 +910,8 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
                 "book_prices": _book_prices(matched_rows),
                 "sharp_over": sharp_over,
                 "sharp_under": sharp_under,
-                "fair_over_pct": pct(fair_over),
-                "fair_under_pct": pct(fair_under),
+                "fair_over_pct": pct(pp_over),
+                "fair_under_pct": pct(pp_under),
                 "fair_source": fair_source,
                 "fair_books": fair_books,
                 "fair_book_count": len(fair_books),
