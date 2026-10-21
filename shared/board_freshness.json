@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-21T16:17:50Z",
+  "checked_at": "2026-10-21T16:40:32Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-21T16:17:50.745487+00:00",
@@ -12,13 +12,32 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-21T16:12:59.226187+00:00",
-      "prop_count": 150,
+      "generated_at": "2026-10-21T16:40:32.740054+00:00",
+      "prop_count": 146,
       "started_removed": 0,
-      "removals": [],
+      "removals": [
+        {
+          "player": "Ilya Lyubushkin",
+          "team": "NSH",
+          "stat": "Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.24,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Scott Morrow",
+          "team": "NYR",
+          "stat": "Points",
+          "line": 0.5,
+          "odds_type": "demon",
+          "projection": 0.28,
+          "reason": "line pulled"
+        }
+      ],
       "removed_reasons": {
         "pp_pull": 12,
-        "superseded_dup": 8,
+        "superseded_dup": 5,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
