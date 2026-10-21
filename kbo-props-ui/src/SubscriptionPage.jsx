@@ -351,7 +351,7 @@ function SubscriptionPage() {
       )}
 
       <div className="sub-combine-banner">
-        <span className="sub-combine-icon">⚾🏀🏈</span>
+        <span className="sub-combine-icon">⚾🏀🏈🏒</span>
         <span>Every All-Access plan unlocks <strong>KBO, WNBA, NFL, NBA, and NHL</strong> — weekly, monthly, yearly, or lifetime.</span>
       </div>
 
@@ -585,7 +585,7 @@ function SubscriptionPage() {
           )}
           <FaqItem
             q="What is Discord Only?"
-            a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, NFL, or NHL boards on the site. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
+            a="A cheaper plan that puts the props in the CGPropz Discord and gives you the Discord props role. It does not unlock the KBO, WNBA, NFL, or NHL boards on the site. Discord Only doesn't include the site boards, NBA included. All-Access includes the site and the site-subscriber Discord role. Connect Discord on this page after you pay."
           />
           <FaqItem
             q="How often is the data updated?"
