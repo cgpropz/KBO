@@ -2,9 +2,10 @@
 //
 // Excluded books stay out of books count, the consensus, CG odds, and
 // Best Over/Under. The shared BetOnline / SportsBetting / Bovada feed
-// counts as one book. On each side the consensus price is BetOnline when
-// that side is posted, else SportsBetting, else Bovada. Best Over/Under
-// may still show the best price among the three.
+// counts as one book. Consensus keeps one skin's own prices: BetOnline
+// when that skin posted both sides, else SportsBetting, else Bovada.
+// A missing side is not filled from another skin. Best Over/Under may
+// still show the best price among the three.
 
 import policy from './bookPolicy.json' with { type: 'json' }
 
@@ -83,12 +84,6 @@ export function sharedFeedInfo(quote) {
   return null
 }
 
-function preference(quote, price) {
-  const info = sharedFeedInfo(quote) || { rank: 99, canonical: false }
-  const number = Number.isFinite(Number(price)) && typeof price !== 'boolean' ? Number(price) : -1e9
-  return [info.rank, info.canonical ? 0 : 1, -number]
-}
-
 function before(left, right) {
   for (let i = 0; i < left.length; i += 1) {
     if (left[i] < right[i]) return true
@@ -133,38 +128,44 @@ export function consensusBookPrices(quotes) {
 
 function collapseSharedQuote(quotes) {
   if (!quotes.length) return null
-  const pick = (side) => {
-    let best = null
-    let bestKey = null
-    for (const quote of quotes) {
+  const byKey = new Map()
+  for (const quote of quotes) {
+    const key = quote.book_key || bookKey(quote.book)
+    if (!key) continue
+    const slot = byKey.get(key) || { key, over: null, under: null, sample: null }
+    for (const side of ['over', 'under']) {
       const price = sidePrice(quote, side)
       if (price == null) continue
-      const key = preference(quote, price)
-      if (!best || before(key, bestKey)) {
-        best = quote
-        bestKey = key
+      if (slot[side] == null || price > slot[side]) {
+        slot[side] = price
+        slot.sample = quote
       }
     }
-    return best
+    if (!slot.sample) slot.sample = quote
+    byKey.set(key, slot)
   }
-  const overQuote = pick('over')
-  const underQuote = pick('under')
-  if (!overQuote && !underQuote) return null
-  const present = [overQuote, underQuote].filter(Boolean)
-  const identity = present.slice().sort((a, b) => {
-    const left = preference(a, sidePrice(a, 'over') ?? sidePrice(a, 'under'))
-    const right = preference(b, sidePrice(b, 'over') ?? sidePrice(b, 'under'))
-    if (before(left, right)) return -1
-    if (before(right, left)) return 1
+  if (!byKey.size) return null
+  const slots = [...byKey.values()]
+  slots.sort((left, right) => {
+    const leftInfo = sharedFeedInfo(left.sample) || { rank: 99, canonical: false }
+    const rightInfo = sharedFeedInfo(right.sample) || { rank: 99, canonical: false }
+    const leftComplete = left.over != null && left.under != null ? 0 : 1
+    const rightComplete = right.over != null && right.under != null ? 0 : 1
+    const leftKey = [leftComplete, leftInfo.rank, leftInfo.canonical ? 0 : 1, left.key]
+    const rightKey = [rightComplete, rightInfo.rank, rightInfo.canonical ? 0 : 1, right.key]
+    if (before(leftKey, rightKey)) return -1
+    if (before(rightKey, leftKey)) return 1
     return 0
-  })[0]
-  const info = sharedFeedInfo(identity) || {}
+  })
+  const winner = slots[0]
+  const sample = winner.sample
+  const info = sharedFeedInfo(sample) || {}
   return {
-    book: identity.book || info.name,
-    book_key: identity.book_key || info.key || bookKey(identity.book || info.name),
-    source_id: identity.source_id ?? info.id,
-    over: overQuote ? overQuote.over : null,
-    under: underQuote ? underQuote.under : null,
+    book: sample.book || info.name,
+    book_key: sample.book_key || info.key || bookKey(sample.book || info.name),
+    source_id: sample.source_id ?? info.id,
+    over: winner.over,
+    under: winner.under,
   }
 }
 

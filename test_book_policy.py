@@ -269,6 +269,45 @@ class SnapshotPolicyTests(unittest.TestCase):
         self.assertEqual(bovada["matched_books_count"], 1)
         self.assertEqual(bovada["fair_source"], "all_books")
 
+    def test_one_sided_shared_skins_do_not_add_a_consensus_book(self):
+        # BetOnline posted only the over and Bovada only the under. Mixing
+        # those sides used to invent a two-sided sharp book, so a row whose
+        # consensus was one book became two. Each skin keeps its own prices.
+        alone = self._snapshot(_pair("Pinnacle", -110, -110))
+        books = _pair("Pinnacle", -110, -110)
+        books.append(_book("over", -105, "BetOnline"))
+        books.append(_book("under", -115, "Bovada"))
+        row = self._snapshot(books)
+        self.assertEqual(row["fair_books"], ["Pinnacle"])
+        self.assertEqual(row["fair_book_count"], 1)
+        self.assertEqual(row["fair_over_pct"], alone["fair_over_pct"])
+        self.assertEqual(row["matched_books_count"], 2)
+        self.assertEqual(row["fair_source"], "sharp_books")
+
+    def test_excluded_exact_line_can_raise_the_count(self):
+        # The PrizePicks line was posted only by an excluded book. After that
+        # book is removed, the nearest real line is used. That line can have
+        # more books, so the count goes up. The row is no longer priced from
+        # the excluded book.
+        pp = _pp(prop="Receptions", pp_line=24.5, projection=26)
+        exact = [
+            _book("over", 150, "Kalshi", prop="Receptions", line=24.5),
+            _book("under", -180, "Kalshi", prop="Receptions", line=24.5),
+        ]
+        nearest = [
+            _book("over", -110, "FanDuel", prop="Receptions", line=25.0),
+            _book("under", -110, "FanDuel", prop="Receptions", line=25.0),
+            _book("over", -108, "DraftKings", prop="Receptions", line=25.0),
+            _book("under", -112, "DraftKings", prop="Receptions", line=25.0),
+        ]
+        row = sharp.build_snapshot([pp], exact + nearest)["records"][0]
+        self.assertEqual(row["line_match"], "nearest")
+        self.assertEqual(row["matched_line"], 25.0)
+        self.assertEqual(row["matched_books_count"], 2)
+        self.assertEqual(row["fair_book_count"], 2)
+        self.assertEqual(set(row["fair_books"]), {"FanDuel", "DraftKings"})
+        self.assertNotIn("Kalshi", {item["book"] for item in row["book_prices"]})
+
     def test_consensus_unchanged_when_no_excluded_or_duplicate_books(self):
         books = _pair("Circa", -150, 130) + _pair("Pinnacle", -140, 120) + _pair("FanDuel", -300, -200)
         row = self._snapshot(books)

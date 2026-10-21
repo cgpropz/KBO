@@ -35,8 +35,10 @@ grade without a second feed.
 Books count, the consensus fair price, and Best Over/Under use
 nfl/book_policy.py. That list drops DraftKings Pick6, Kalshi, Polymarket
 US, Novig, Prophet Exchange, Underdog Prediction Market, and Fliff, and
-counts BetOnline / SportsBetting / Bovada as one book. Best Over/Under can
-still show the best price among those three.
+counts BetOnline / SportsBetting / Bovada as one book, keeping one
+skin's own prices (BetOnline when it posted both sides, else
+SportsBetting, else Bovada). Best Over/Under can still show the best
+price among those three.
 """
 from __future__ import annotations
 

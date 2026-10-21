@@ -199,6 +199,7 @@ def _line(type_key, line_data, sources, side, player, team, event):
     key = book_key(book)
     if not book or key in EXCLUDED_BOOK_KEYS:
         return None
+    source_id = source.get("id", line_data.get("marketSourceId"))
     return {
         "player": player,
         "player_key": nba_name_key(player),
@@ -208,6 +209,7 @@ def _line(type_key, line_data, sources, side, player, team, event):
         "price": price,
         "book": book,
         "book_key": key,
+        "source_id": source_id,
         "event_id": event.get("eventId"),
         "commence_time": event.get("eventStart"),
         "team": team.get("abbreviation"),

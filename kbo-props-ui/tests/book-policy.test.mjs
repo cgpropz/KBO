@@ -42,6 +42,26 @@ test('shared feed counts once and consensus keeps BetOnline', () => {
   assert.equal(policyBestQuote({ book: 'Bovada', book_key: 'bovada', price: 100 }, quotes, 'over').book, 'Bovada')
 })
 
+test('one-sided shared skins do not become a second consensus book', () => {
+  const quotes = [
+    { book: 'Pinnacle', book_key: 'pinnacle', over: -110, under: -110 },
+    { book: 'BetOnline', book_key: 'betonline', over: -105, under: null },
+    { book: 'Bovada', book_key: 'bovada', over: null, under: -115 },
+  ]
+  const consensus = consensusBookPrices(quotes)
+  const shared = consensus.find((quote) => quote.book === 'BetOnline' || quote.book === 'Bovada')
+  assert.equal(shared.book, 'BetOnline')
+  assert.equal(shared.over, -105)
+  assert.equal(shared.under, null)
+  const item = {
+    prop: 'Receptions',
+    pp_line: 4.5,
+    matched_line: 4.5,
+    book_prices: quotes,
+  }
+  assert.deepEqual(computeCgOdds(item, 'over', 119 / 219).books, ['Pinnacle'])
+})
+
 test('consensus is unchanged when no excluded or duplicate books are present', () => {
   const base = {
     prop: 'Receptions',
@@ -107,6 +127,9 @@ test('the strip drops excluded books and still shows the shared feed', () => {
   assert.match(strip, /isExcludedBook/)
   const nfl = readFileSync(new URL('../src/nfl/NflSharpOdds.jsx', import.meta.url), 'utf8')
   const nhl = readFileSync(new URL('../src/nhl/NhlSharpOdds.jsx', import.meta.url), 'utf8')
+  const nba = readFileSync(new URL('../src/nba/NbaSharpOdds.jsx', import.meta.url), 'utf8')
   assert.match(nfl, /policyBestQuote\(item\.best_over/)
   assert.match(nhl, /displayedBookCount\(item\)/)
+  assert.match(nba, /displayedBookCount\(item\)/)
+  assert.match(nba, /policyBestQuote\(item\.best_over/)
 })

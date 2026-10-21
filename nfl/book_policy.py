@@ -19,13 +19,16 @@ Underdog Fantasy stays on the older pick'em list, not this one.
   121 Underdog Prediction Market
   91  Fliff
 
-Shared feed, counted as one book. On each side the consensus price is
-BetOnline (id 9) when that side is posted, else SportsBetting (id 54),
-else Bovada (id 10). ``BetOnline.ag`` and ``SportsBetting.ag`` are the
-same books. The kept book's name is the preferred source that posted a
-side, so a BetOnline price stays a sharp book and a Bovada-only price
-does not. Best Over/Under may still show the best price among the three.
-That group still counts once.
+Shared feed, counted as one book. Consensus keeps one skin, and only
+the prices that skin posted: BetOnline (id 9) when that skin posted
+both sides, else SportsBetting (id 54), else Bovada (id 10). A
+one-sided skin does not take the other side from a different skin, so
+the feed cannot become a new two-sided book and the consensus count
+cannot go up. ``BetOnline.ag`` and ``SportsBetting.ag`` are the same
+books and are used only when the canonical skin did not post both
+sides. A BetOnline price stays sharp. A Bovada-only or
+SportsBetting-only price does not. Best Over/Under may still show the
+best price among the three. That group still counts once.
 """
 from __future__ import annotations
 
@@ -122,13 +125,6 @@ def shared_feed_info(row):
     return None
 
 
-def _preference(row, price):
-    """Lower sorts first: preferred source, then its canonical name, then the better price."""
-    info = shared_feed_info(row) or {"rank": 99, "canonical": False}
-    number = price if isinstance(price, (int, float)) and not isinstance(price, bool) else -10**9
-    return (info["rank"], 0 if info["canonical"] else 1, -number)
-
-
 def books_count(rows) -> int:
     """Unique books after the exclusion list, with the shared feed counted once."""
     keys = set()
@@ -147,10 +143,9 @@ def books_count(rows) -> int:
 def consensus_rows(rows):
     """Rows that enter the fair price.
 
-    Excluded books are dropped. The shared feed becomes one book: each side
-    keeps BetOnline's price when that side is posted, otherwise
-    SportsBetting, otherwise Bovada. The label is the preferred source that
-    posted either side.
+    Excluded books are dropped. The shared feed becomes one book: the
+    preferred skin that posted both sides, otherwise the preferred skin
+    that posted anything. Sides are not mixed across skins.
     """
     kept = []
     shared = []
@@ -165,8 +160,20 @@ def consensus_rows(rows):
     return kept
 
 
+def _skin_rank(row, complete):
+    """Complete skins sort first, then BetOnline, then a canonical name."""
+    info = shared_feed_info(row) or {"rank": 99, "canonical": False}
+    return (0 if complete else 1, info["rank"], 0 if info["canonical"] else 1)
+
+
 def _collapse_shared(rows):
-    chosen = {}
+    """One skin of the shared feed, using only that skin's prices.
+
+    BetOnline wins when it posted both sides, else SportsBetting, else
+    Bovada. Filling a missing side from another skin would turn two
+    one-sided quotes into a two-sided book and raise the consensus count.
+    """
+    by_key = {}
     for row in rows:
         side = row.get("side")
         if side not in {"over", "under"}:
@@ -174,22 +181,20 @@ def _collapse_shared(rows):
         price = row.get("price")
         if isinstance(price, bool) or not isinstance(price, (int, float)):
             continue
-        current = chosen.get(side)
-        if current is None or _preference(row, price) < _preference(current, current.get("price")):
-            chosen[side] = row
-    if not chosen:
+        key = row.get("book_key") or book_key(row.get("book"))
+        if not key:
+            continue
+        slot = by_key.setdefault(key, {})
+        current = slot.get(side)
+        if current is None or price > current.get("price"):
+            slot[side] = row
+    if not by_key:
         return []
-    identity = min(chosen.values(), key=lambda row: _preference(row, row.get("price")))
-    info = shared_feed_info(identity) or {}
-    book = identity.get("book") or info.get("name") or ""
-    key = identity.get("book_key") or info.get("key") or book_key(book)
-    collapsed = []
-    for side, row in chosen.items():
-        copy = dict(row)
-        copy["side"] = side
-        copy["book"] = book
-        copy["book_key"] = key
-        if identity.get("source_id") is not None:
-            copy["source_id"] = identity.get("source_id")
-        collapsed.append(copy)
-    return collapsed
+
+    def sort_key(key):
+        slot = by_key[key]
+        sample = next(iter(slot.values()))
+        return (*_skin_rank(sample, "over" in slot and "under" in slot), key)
+
+    winner = by_key[min(by_key, key=sort_key)]
+    return [dict(row) for row in winner.values()]
