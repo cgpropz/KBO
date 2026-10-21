@@ -21,3 +21,17 @@ export async function fetchNbaData(path, options) {
   const snapshot = await fetchNbaSnapshot(path, options)
   return snapshot.data
 }
+
+export async function fetchNbaSharpOdds({ fresh = false } = {}) {
+  const snapshot = await fetchApiDataset('nba_sharp_odds', { devStaticPath: 'nba/sharp_odds.json', fresh })
+  const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+    ? snapshot.data
+    : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+  return {
+    payload,
+    records: Array.isArray(payload.records) ? payload.records : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+  }
+}

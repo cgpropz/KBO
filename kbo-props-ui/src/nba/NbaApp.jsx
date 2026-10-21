@@ -12,9 +12,11 @@ const NbaPlayers = lazy(() => import('./NbaPlayers'))
 const NbaTeams = lazy(() => import('./NbaTeams'))
 const NbaEdge = lazy(() => import('./NbaEdge'))
 const NbaDashboard = lazy(() => import('./NbaDashboard'))
+const NbaSharpOdds = lazy(() => import('./NbaSharpOdds'))
 
 const NAV_ITEMS = [
   { id: 'projections', label: 'PrizePicks Edge' },
+  { id: 'sharp', label: 'PP Odds' },
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'players', label: 'Players' },
   { id: 'teams', label: 'Teams' },
@@ -81,6 +83,7 @@ export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, o
     )
   } else if (view === 'players') content = <NbaPlayers initialName={playerName} />
   else if (view === 'projections') content = <NbaEdge />
+  else if (view === 'sharp') content = <NbaSharpOdds onSelectPlayer={openPlayer} />
   else if (view === 'slip') {
     content = (
       <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>

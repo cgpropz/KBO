@@ -280,6 +280,15 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
             if (flag === 'missing') return Promise.resolve({ data: null, error: null })
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
+          if (table === 'nba_sharp_odds') {
+            return Promise.resolve({
+              data: {
+                data: { records: [{ player: 'Sample Guard', prop: 'Points', pp_line: 20.5, line_type: 'standard', recommendation: 'OVER' }], status: 'ok' },
+                updated_at: '2026-04-12T00:00:00Z',
+              },
+              error: null,
+            })
+          }
           if (table === 'nba_players' || table === 'nba_teams' || String(table).startsWith('nba_dvp_') || String(table).startsWith('nba_projections_')) {
             const data = String(table).startsWith('nba_dvp_')
               ? { position: 'PG', leagueAvgOppPts: 26.21, teams: [{ team: 'WSH', oppPts: 29.1, dvpFactor: 30 }, { team: 'OKC', oppPts: 22.2, dvpFactor: 1 }] }
@@ -378,7 +387,7 @@ test('a public flag lets all-access through the gate and still denies a failed t
 })
 
 test('a public flag 403s signed-out, discord, and kbo on every NBA dataset', async () => {
-  for (const ds of ['nba_projections_standard', 'nba_players', 'nba_teams', 'nba_dvp_pg']) {
+  for (const ds of ['nba_projections_standard', 'nba_players', 'nba_teams', 'nba_dvp_pg', 'nba_sharp_odds']) {
     for (const token of [undefined, 'tok-discord', 'tok-kbo']) {
       const { res, client } = await call(ds, token, { flag: true })
       assert.equal(res.statusCode, 403, `${ds} ${String(token)}`)
@@ -394,6 +403,22 @@ test('a public flag 403s signed-out, discord, and kbo on every NBA dataset', asy
   assert.deepEqual(kbo.res.body, { open: false })
   const signedOut = await callAccess(undefined, { flag: true })
   assert.deepEqual(signedOut.res.body, { open: false })
+})
+
+test('NBA PP odds follows the same all-access gate', async () => {
+  const owner = await call('nba_sharp_odds', 'tok-owner', { flag: true })
+  assert.equal(owner.res.statusCode, 200)
+  assert.equal(owner.res.body.preview, false)
+  assert.equal(owner.res.body.data.records.length, 1)
+  assert.equal(owner.res.body.data.records[0].player, 'Sample Guard')
+  _clearCache()
+  const fanOff = await call('nba_sharp_odds', 'tok-fan', { flag: false })
+  assert.equal(fanOff.res.statusCode, 403)
+  assert.equal(fanOff.res.body.data, undefined)
+  _clearCache()
+  const fanOn = await call('nba_sharp_odds', 'tok-fan', { flag: true })
+  assert.equal(fanOn.res.statusCode, 200)
+  assert.equal(fanOn.res.body.preview, false)
 })
 
 test('the owner receives nba player and team snapshots while a combined tier is still 403', async () => {

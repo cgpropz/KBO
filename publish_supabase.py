@@ -65,6 +65,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 OPTIONAL_TABLES = {
     "board_status",
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
+    "nba_sharp_odds",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
     "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
     # Correlation tables are created by sql/correlations.sql. A missing table
@@ -502,6 +503,8 @@ def missing_table_message(table):
     hint = ""
     if table == "wnba_sharp_odds":
         hint = " Apply sql/wnba_sharp_odds.sql in the Supabase SQL editor."
+    elif table == "nba_sharp_odds":
+        hint = " Apply sql/nba_sharp_odds.sql in the Supabase SQL editor."
     return (
         f"{table} table does not exist (HTTP 404). "
         f"Skipping this snapshot so the rest of the publish can finish.{hint}"
@@ -941,6 +944,7 @@ TABLES = {
     "nba/projections_standard.json": "nba_projections_standard",
     "nba/projections_demon.json": "nba_projections_demon",
     "nba/projections_goblin.json": "nba_projections_goblin",
+    "nba/sharp_odds.json": "nba_sharp_odds",
     # Published only when PUBLISH_ONLY_PREFIX starts with nhl/. A full publish
     # leaves these alone so a missing local snapshot cannot fail the other sports.
     "nhl/projections.json": "nhl_projections",

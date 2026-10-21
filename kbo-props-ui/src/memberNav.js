@@ -6,7 +6,7 @@ const VIEWS = {
   wnba: new Set(['projections', 'dashboard', 'players', 'teams', 'lineups', 'slip', 'playerDetail']),
   nfl: new Set(['dashboard', 'projections', 'sharp', 'markets', 'lineups', 'slip', 'player']),
   nhl: new Set(['dashboard', 'projections', 'sharp', 'lineups', 'dvp', 'slip', 'player']),
-  nba: new Set(['projections', 'dashboard', 'players', 'teams', 'lineups', 'slip']),
+  nba: new Set(['projections', 'dashboard', 'players', 'teams', 'lineups', 'slip', 'sharp']),
 }
 
 export function homeViewForSport(sport) {

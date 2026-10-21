@@ -59,6 +59,7 @@ const DATASET_SPORT = {
   nba_projections_demon: 'nba',
   nba_projections_goblin: 'nba',
   nba_correlations: 'nba',
+  nba_sharp_odds: 'nba',
   nhl_projections: 'nhl',
   nhl_lineups: 'nhl',
   nhl_sharp_odds: 'nhl',

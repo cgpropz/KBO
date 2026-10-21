@@ -1,0 +1,61 @@
+name: Refresh NBA PP Odds
+
+# Pregame Unabated lines for the NBA PrizePicks board. Its own workflow, so
+# the props refresh stays off this feed. Publishes one snapshot table.
+# Does not commit odds, status, or memory. A pull request cannot publish.
+#
+# The board itself is the last published standard lines. This job does not
+# rebuild projections. Paste sql/nba_sharp_odds.sql before the first publish;
+# a missing table is skipped so the rest of that publish still finishes.
+
+on:
+  schedule:
+    - cron: "27 0-9,11-23 * * *"
+    - cron: "12,42 0-9,11-23 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/nba-pp-odds.yml"
+      - "nba/sharp_odds.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-pp-odds
+  cancel-in-progress: false
+
+jobs:
+  refresh-nba-pp-odds:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install requests
+
+      - name: Restore last published NBA lines
+        run: python pipeline/restore_snapshots.py --prefix nba/projections_standard
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Match PrizePicks lines
+        run: python -m nba.sharp_odds
+
+      - name: Publish NBA odds snapshot
+        timeout-minutes: 10
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nba/sharp_odds.json"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
