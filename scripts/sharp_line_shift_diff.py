@@ -15,11 +15,19 @@ Exit 1 when an exact-match row changes. Nearest-line changes are printed
 and still exit 0. Integer count lines also print the push probability
 P(X = line), in percent. Half-point lines and yardage lines print a dash
 because those models have no push mass.
+
+The free PP Odds preview section is the same selection the site uses:
+``selectFreeSharpOddsPreview`` in ``kbo-props-ui/api/_dataAccess.js``
+(``nflSharpScore`` / ``nhlSharpScore``, ``topN``, ``FREE_ROW_LIMIT``), after
+``isStandardBoardLine`` in ``kbo-props-ui/src/standardBoard.js``. It sorts
+by the corrected ``pp_edge_flex``.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -27,7 +35,22 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from nfl.sharp_odds import _fair_probs, book_key, build_snapshot, name_key, pct, push_probability  # noqa: E402
+from nfl.sharp_odds import (  # noqa: E402
+    GRADE_RANK,
+    _fair_probs,
+    book_key,
+    build_snapshot,
+    name_key,
+    pct,
+    push_probability,
+)
+
+# kbo-props-ui/api/_dataAccess.js selectFreeSharpOddsPreview.
+PREVIEW_SOURCE = (
+    "kbo-props-ui/api/_dataAccess.js selectFreeSharpOddsPreview "
+    "(nflSharpScore / nhlSharpScore, topN, FREE_ROW_LIMIT) after "
+    "kbo-props-ui/src/standardBoard.js isStandardBoardLine"
+)
 
 COMPARED = (
     "pp_edge_over_flex",
@@ -52,6 +75,20 @@ def load_records(path):
     if records is None:
         raise SystemExit(f"{path} has no records list")
     return records
+
+
+def snapshot_sport(payload, path=""):
+    """nfl or nhl. The snapshot's sport field wins, then the file name."""
+    sport = ""
+    if isinstance(payload, dict):
+        sport = str(payload.get("sport") or "")
+        data = payload.get("data")
+        if not sport and isinstance(data, dict):
+            sport = str(data.get("sport") or "")
+    text = f"{sport} {path}".lower()
+    if "nhl" in text:
+        return "nhl"
+    return "nfl"
 
 
 def _records_from(payload):
@@ -165,6 +202,55 @@ def _fmt(value):
     return str(value)
 
 
+def _published_order(records):
+    """Order build_snapshot writes. The preview tie-breaks on that order."""
+    return sorted(
+        records,
+        key=lambda row: (
+            -(row.get("pp_edge_flex") if isinstance(row.get("pp_edge_flex"), (int, float)) else -999),
+            -(GRADE_RANK.get(row.get("grade")) or 0),
+            row.get("player") or "",
+            row.get("prop") or "",
+        ),
+    )
+
+
+def free_preview(records, sport):
+    """Rows the free PP Odds preview keeps. See PREVIEW_SOURCE."""
+    picked = free_preview_pair(records, records, sport)
+    return picked["before"]
+
+
+def free_preview_pair(before, after, sport):
+    """Before and after preview rows, from the site's selector."""
+    node = shutil.which("node")
+    if not node:
+        raise SystemExit("node is required to select the free PP Odds preview")
+    script = """
+import { selectFreeSharpOddsPreview } from './kbo-props-ui/api/_dataAccess.js'
+const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const body = JSON.parse(Buffer.concat(chunks).toString())
+const pick = (rows) => selectFreeSharpOddsPreview(rows, body.sport)
+process.stdout.write(JSON.stringify({
+  before: pick(body.before),
+  after: pick(body.after),
+}))
+"""
+    completed = subprocess.run(
+        [node, "--input-type=module", "-e", script],
+        input=json.dumps({"sport": sport, "before": before, "after": after}),
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "free preview selection failed").strip()
+        raise SystemExit(detail)
+    return json.loads(completed.stdout)
+
+
 def diff_records(records):
     """Return counts and the rows whose edge, fair percent, or grade changed."""
     changed = []
@@ -172,9 +258,12 @@ def diff_records(records):
     grade_changes = 0
     exact_count = 0
     nearest_count = 0
+    before_rows = []
+    after_rows = []
     for record in records or []:
         if not isinstance(record, dict):
             continue
+        before_rows.append(record)
         exact = is_exact(record)
         if exact:
             exact_count += 1
@@ -183,6 +272,7 @@ def diff_records(records):
         ):
             nearest_count += 1
         fresh = recompute(record)
+        after_rows.append(fresh if fresh is not None else record)
         if fresh is None:
             continue
         fields = [name for name in COMPARED if not _same(record.get(name), fresh.get(name))]
@@ -219,6 +309,8 @@ def diff_records(records):
         "changed": changed,
         "exact_changed": exact_changed,
         "grade_changes": grade_changes,
+        "before_rows": before_rows,
+        "after_rows": _published_order(after_rows),
     }
 
 
@@ -252,7 +344,38 @@ def _table(rows):
     return "\n".join(body)
 
 
-def render(summary):
+def _preview_table(rows):
+    headers = ("player", "prop", "side", "edge")
+    display = []
+    for row in rows:
+        edge = row.get("edge")
+        display.append(
+            {
+                "player": str(row.get("player") or ""),
+                "prop": str(row.get("prop") or ""),
+                "side": str(row.get("side") or "—"),
+                "edge": f"{float(edge):.1f}" if isinstance(edge, (int, float)) and not isinstance(edge, bool) else _fmt(edge),
+            }
+        )
+    widths = {key: len(key) for key in headers}
+    for row in display:
+        for key in headers:
+            widths[key] = max(widths[key], len(row[key]))
+
+    def line(row):
+        return "  ".join(row[key].ljust(widths[key]) for key in headers)
+
+    body = [
+        line({key: key for key in headers}),
+        line({key: "-" * widths[key] for key in headers}),
+    ]
+    body.extend(line(row) for row in display)
+    if not display:
+        body.append("(none)")
+    return "\n".join(body)
+
+
+def render(summary, preview=None, sport="nfl"):
     lines = [
         f"records: {summary['records']}",
         f"exact: {summary['exact']}",
@@ -266,6 +389,14 @@ def render(summary):
         lines.append(_table(summary["changed"]))
     else:
         lines.append("no rows changed")
+    if preview is not None:
+        lines.append("")
+        lines.append(f"free PP Odds preview ({sport}), sorted by pp_edge_flex")
+        lines.append(PREVIEW_SOURCE)
+        lines.append("before:")
+        lines.append(_preview_table(preview["before"]))
+        lines.append("after:")
+        lines.append(_preview_table(preview["after"]))
     return "\n".join(lines)
 
 
@@ -275,8 +406,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if not args.snapshot.is_file():
         raise SystemExit(f"snapshot not found: {args.snapshot}")
-    summary = diff_records(load_records(args.snapshot))
-    print(render(summary))
+    payload = json.loads(args.snapshot.read_text(encoding="utf-8"))
+    records = _records_from(payload)
+    if records is None:
+        raise SystemExit(f"{args.snapshot} has no records list")
+    sport = snapshot_sport(payload, args.snapshot)
+    summary = diff_records(records)
+    preview = free_preview_pair(summary["before_rows"], summary["after_rows"], sport)
+    print(render(summary, preview, sport))
     return 1 if summary["exact_changed"] else 0
 
 

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 import nfl.sharp_odds as sharp
-from scripts.sharp_line_shift_diff import diff_records, render
+from scripts.sharp_line_shift_diff import diff_records, free_preview, render, snapshot_sport
 
 ROOT = Path(__file__).resolve().parent
 
@@ -100,6 +100,49 @@ class SharpLineShiftDiffTests(unittest.TestCase):
         self.assertEqual(len(summary["changed"]), 1)
         self.assertEqual(summary["changed"][0]["push"], "—")
 
+    def test_free_preview_uses_the_site_selector(self):
+        rows = [
+            {"player": "LowEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": 9, "pp_edge_flex": 0.2, "line_type": "standard"},
+            {"player": "HighEdge", "prop": "Receiving Yards", "recommendation": "OVER", "ev_pct": -4, "pp_edge_flex": 6, "line_type": "standard"},
+            {"player": "Mid", "prop": "Rush Yards", "recommendation": "UNDER", "ev_pct": 1, "pp_edge_flex": 3, "line_type": "standard"},
+            {"player": "Legacy", "prop": "Pass Yards", "recommendation": "OVER", "ev_pct": 8},
+            {"player": "Goblin", "prop": "Pass Yards", "recommendation": "OVER", "pp_edge_flex": 99, "line_type": "goblin"},
+        ]
+        preview = free_preview(rows, "nfl")
+        self.assertEqual([row["player"] for row in preview], ["Legacy", "HighEdge", "Mid"])
+        self.assertEqual(preview[0]["side"], "OVER")
+        self.assertEqual(preview[0]["edge"], 8)
+        self.assertEqual(preview[2]["side"], "UNDER")
+        self.assertEqual(preview[2]["prop"], "Rush Yards")
+        held = rows + [
+            {"player": "Held", "prop": "Points", "recommendation": "OVER", "pp_edge_flex": 80, "rankEligible": False, "line_type": "standard"},
+        ]
+        self.assertEqual(free_preview(held, "nfl")[0]["player"], "Held")
+        self.assertEqual([row["player"] for row in free_preview(held, "nhl")], ["Legacy", "HighEdge", "Mid"])
+        self.assertEqual(snapshot_sport({"sport": "nhl"}, "odds.json"), "nhl")
+        self.assertEqual(snapshot_sport({"sport": "americanfootball_nfl"}, "nfl_sharp_odds.json"), "nfl")
+
+    def test_an_inflated_edge_changes_who_the_free_preview_keeps(self):
+        books = []
+        props = []
+        prices = (("Alpha", -180, 140), ("Bravo", -150, 120), ("Charlie", -130, 105), ("Delta", -105, -115))
+        for player, over, under in prices:
+            books.extend(_books(player, "Receiving Yards", 50.5, over, under, "Circa", "circa"))
+            props.append(_pp(player, "Receiving Yards", 50.5, 60))
+        snapshot = sharp.build_snapshot(props, books)
+        records = json.loads(json.dumps(snapshot["records"]))
+        delta = next(row for row in records if row["player"] == "Delta")
+        delta["pp_edge_flex"] = delta["pp_edge_pct"] = 40
+        summary = diff_records(records)
+        preview = free_preview(summary["before_rows"], "nfl"), free_preview(summary["after_rows"], "nfl")
+        before, after = preview
+        self.assertEqual(before[0]["player"], "Delta")
+        self.assertNotIn("Delta", [row["player"] for row in after])
+        self.assertEqual([row["player"] for row in after], ["Alpha", "Bravo", "Charlie"])
+        text = render(summary, {"before": before, "after": after}, "nfl")
+        self.assertIn("Delta", text)
+        self.assertIn("sorted by pp_edge_flex", text)
+
     def test_cli_reads_a_data_wrapper_and_rejects_exact_match_drift(self):
         script = ROOT / "scripts" / "sharp_line_shift_diff.py"
         with tempfile.TemporaryDirectory() as tmp:
@@ -109,6 +152,10 @@ class SharpLineShiftDiffTests(unittest.TestCase):
             self.assertEqual(clean.returncode, 0, clean.stderr)
             self.assertIn("exact-match changes: 0", clean.stdout)
             self.assertIn("changed rows: 0", clean.stdout)
+            self.assertIn("free PP Odds preview", clean.stdout)
+            self.assertIn("kbo-props-ui/api/_dataAccess.js selectFreeSharpOddsPreview", clean.stdout)
+            self.assertIn("before:", clean.stdout)
+            self.assertIn("after:", clean.stdout)
 
             records = json.loads(json.dumps(self.snapshot["records"]))
             exact = next(row for row in records if row["line_match"] == "exact")

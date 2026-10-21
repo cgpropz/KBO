@@ -390,6 +390,45 @@ class MatchTests(unittest.TestCase):
             sharp.letter_grade(under_play["pp_edge_flex"], line_plus=True),
         )
 
+    def test_whole_number_line_does_not_credit_the_push_to_either_side(self):
+        props = ("Shots On Goal", "Receptions", "Rush Attempts", "Pass Completions", "Points", "Goalie Saves")
+        books = (1.5, 2.5, 5.5, 15.5, 19.5, 15, 20)
+        prize_lines = (1, 2, 5, 6, 15, 16, 20)
+        probabilities = (0.2, 0.35, 0.5, 0.62, 0.8)
+        flex = sharp.american_to_implied(sharp.PP_FLEX_AMERICAN)
+        seen = 0
+        for prop in props:
+            for book in books:
+                for prize in prize_lines:
+                    if abs(book - prize) < 1e-9 or prize <= 0 or sharp._whole_number(prize) is None:
+                        continue
+                    for probability in probabilities:
+                        over, under = sharp._fair_at_pp_line(probability, 1.0 - probability, book, prize, prop)
+                        push = sharp.push_probability(probability, book, prize, prop)
+                        if push is None or push <= 1e-8:
+                            continue
+                        strict_over = sharp.shift_over(probability, book, prize, prop)
+                        under_with_push = 1.0 - strict_over
+                        over_with_push = strict_over + push
+                        self.assertAlmostEqual(over + under, 1.0)
+                        # Neither side's fair rate is above the rate that would
+                        # count the push as a win for that side.
+                        self.assertLessEqual(under, under_with_push + 1e-9)
+                        self.assertLessEqual(over, over_with_push + 1e-9)
+                        if under_with_push - under >= 0.002:
+                            self.assertLessEqual(
+                                sharp.pp_edge_pct(under, flex),
+                                sharp.pp_edge_pct(under_with_push, flex),
+                            )
+                        if over_with_push - over >= 0.002:
+                            self.assertLessEqual(
+                                sharp.pp_edge_pct(over, flex),
+                                sharp.pp_edge_pct(over_with_push, flex),
+                            )
+                        if under < under_with_push - 1e-6 and over < over_with_push - 1e-6:
+                            seen += 1
+        self.assertGreater(seen, 20)
+
     def test_count_prop_rejects_a_far_line(self):
         snapshot = sharp.build_snapshot(
             [self._pp(prop="Receptions", pp_line=2.5, projection=3.0, id="rec")],

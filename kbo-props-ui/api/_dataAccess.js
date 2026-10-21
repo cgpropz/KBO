@@ -542,6 +542,23 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
     .slice(0, n);
 }
 
+// Rows the free PP Odds preview keeps. nfl_sharp_odds scores with
+// nflSharpScore and nhl_sharp_odds with nhlSharpScore, then topN. Standard
+// lines only, same rule as filterStandardBoard. The NFL preview flag hides
+// that board the same way shapeForTier does. scripts/sharp_line_shift_diff.py
+// calls this so its before/after list is the preview's list.
+export function selectFreeSharpOddsPreview(records, sport = 'nfl') {
+  if (sport !== 'nhl' && !NFL_FREE_PREVIEW_ENABLED) return [];
+  const rows = (Array.isArray(records) ? records : []).filter((row) => isStandardBoardLine(row));
+  const scoreFn = sport === 'nhl' ? nhlSharpScore : nflSharpScore;
+  return topN(rows, scoreFn, FREE_ROW_LIMIT).map(({ item, score }) => ({
+    player: item?.player || '',
+    prop: item?.prop || '',
+    side: item?.recommendation === 'OVER' || item?.recommendation === 'UNDER' ? item.recommendation : '—',
+    edge: score,
+  }));
+}
+
 // ── Preview builders: return { data, lockedCount } ─────────────────────────
 // Every builder keeps the original payload shape so the existing UI code can
 // render the preview without special cases.
