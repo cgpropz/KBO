@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
 
 import pandas as pd
 import requests
+import time
 from zoneinfo import ZoneInfo
 
 from pipeline.memory.freeze_slate import NFL_TEAM_ALIASES
@@ -615,10 +616,63 @@ def _choose_schedule_game(matches, start_time, today):
     return min(pool, key=lambda game: (game['gameday'], game['gametime'] or ''))
 
 
-def _get_prizepicks_page(url):
-    response = requests.get(url, timeout=30)
-    response.raise_for_status()
-    return response.json()
+# PrizePicks sits behind a Cloudflare rate limit (error 1015). publish-data.yml
+# runs the KBO fetch just before this build on the same runner, so the first
+# NFL call can land inside a block that lasts about a minute. Retry 429 and
+# 5xx a bounded number of times; honor Retry-After when it is sent. The total
+# sleep stays well under the `timeout 240` in nfl-odds-live.yml.
+PRIZEPICKS_RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
+PRIZEPICKS_RETRY_DELAYS = (20.0, 40.0)
+PRIZEPICKS_RETRY_AFTER_CAP = 60.0
+PRIZEPICKS_RETRY_TOTAL_CAP = 90.0
+
+
+def _retry_after_seconds(response):
+    headers = getattr(response, 'headers', None) or {}
+    value = headers.get('Retry-After')
+    if value in (None, ''):
+        return None
+    try:
+        seconds = float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    if seconds < 0:
+        return None
+    return seconds
+
+
+def _prizepicks_retry_delay(attempt, response):
+    """Seconds to wait before retry number `attempt` (0-based)."""
+    delay = PRIZEPICKS_RETRY_DELAYS[attempt]
+    retry_after = _retry_after_seconds(response)
+    if retry_after is not None:
+        delay = max(delay, min(retry_after, PRIZEPICKS_RETRY_AFTER_CAP))
+    return delay
+
+
+def _get_prizepicks_page(url, get=None, sleep=None):
+    get = get or requests.get
+    sleep = sleep or time.sleep
+    slept = 0.0
+    attempt = 0
+    while True:
+        response = get(url, timeout=30)
+        status = getattr(response, 'status_code', None)
+        if status in PRIZEPICKS_RETRY_STATUSES and attempt < len(PRIZEPICKS_RETRY_DELAYS):
+            delay = _prizepicks_retry_delay(attempt, response)
+            delay = min(delay, PRIZEPICKS_RETRY_TOTAL_CAP - slept)
+            if delay > 0:
+                print(
+                    f'PrizePicks HTTP {status}; retry {attempt + 1}/'
+                    f'{len(PRIZEPICKS_RETRY_DELAYS)} in {delay:.0f}s',
+                    flush=True,
+                )
+                sleep(delay)
+                slept += delay
+                attempt += 1
+                continue
+        response.raise_for_status()
+        return response.json()
 
 
 def load_prizepicks_payload():
