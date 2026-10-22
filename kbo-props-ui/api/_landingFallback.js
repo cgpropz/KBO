@@ -25,7 +25,10 @@ export function acceptLandingFallback(ds, body, authorization = '') {
   }
   if (ds === 'nhl_projections') {
     if (!Array.isArray(body.data) || body.data.length > MAX_ROWS) return null;
-    return body;
+    return {
+      ...body,
+      data: body.data.filter((row) => !gameAlreadyStarted(row)),
+    };
   }
   return null;
 }

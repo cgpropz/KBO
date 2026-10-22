@@ -56,7 +56,7 @@ on:
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 concurrency:
   # Share the full-refresh lock so a props job never publishes projections built
@@ -212,6 +212,13 @@ jobs:
           PUBLISH_ONLY_PREFIX: "wnba/projections"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Queue the homepage free top 3 bake
+        if: success() && steps.check_lines.outputs.has_lines == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bake-free-top3.yml --ref main
 
       - name: Publish public board status
         if: always()

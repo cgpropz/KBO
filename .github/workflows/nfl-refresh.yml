@@ -122,6 +122,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # Static homepage free top 3. The bake workflow skips if one just shipped.
+      - name: Queue the homepage free top 3 bake
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bake-free-top3.yml --ref main
+
       - name: Publish public board status
         if: always()
         continue-on-error: true
