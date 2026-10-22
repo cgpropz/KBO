@@ -125,6 +125,7 @@ class SharpLineShiftDiffTests(unittest.TestCase):
     def test_free_preview_skips_a_nearest_line_more_than_half_a_point_away(self):
         rows = [
             {"player": "Far", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 70, "matched_line": 74.5, "line_match": "nearest", "pp_edge_flex": 40, "line_type": "standard"},
+            {"player": "Point", "prop": "Pts+Asts", "recommendation": "OVER", "pp_line": 19.5, "matched_line": 20.5, "line_match": "nearest", "pp_edge_flex": 50, "line_type": "standard"},
             {"player": "Half", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 74, "matched_line": 74.5, "line_match": "nearest", "pp_edge_flex": 3, "line_type": "standard"},
             {"player": "Exact", "prop": "Receiving Yards", "recommendation": "UNDER", "pp_line": 74.5, "matched_line": 74.5, "line_match": "exact", "pp_edge_flex": 2, "line_type": "standard"},
             {"player": "None", "prop": "Receiving Yards", "recommendation": "OVER", "pp_line": 74.5, "line_match": "none", "pp_edge_flex": 30, "line_type": "standard"},
@@ -133,8 +134,9 @@ class SharpLineShiftDiffTests(unittest.TestCase):
         for sport in ("nfl", "nhl"):
             picked = free_preview(rows, sport)
             self.assertEqual([row["player"] for row in picked], ["Half", "Exact", "Other"])
+            self.assertNotIn("Point", [row["player"] for row in picked])
         text = render(
-            {"records": 5, "exact": 1, "nearest": 3, "changed": [], "exact_changed": [], "grade_changes": 0},
+            {"records": 6, "exact": 1, "nearest": 4, "changed": [], "exact_changed": [], "grade_changes": 0},
             {"before": free_preview(rows, "nfl"), "after": free_preview(rows, "nfl")},
             "nfl",
         )

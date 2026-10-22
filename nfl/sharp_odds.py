@@ -855,7 +855,7 @@ def _baseline_payload(american):
     }
 
 
-def _select_line(rows, pp_line, prop):
+def _select_line(rows, pp_line, prop, max_abs_line_delta=None):
     by_line = {}
     for row in rows:
         by_line.setdefault(row["line"], []).append(row)
@@ -869,7 +869,10 @@ def _select_line(rows, pp_line, prop):
     )
     nearest = ranked[0]
     delta = round(nearest - pp_line, 2)
-    if abs(nearest - pp_line) > max_line_delta(prop) + 1e-9:
+    # None keeps the shared prop cap (1.5 on NFL counts, 10 elsewhere).
+    # A number, used by NBA, replaces that cap for every prop.
+    limit = max_line_delta(prop) if max_abs_line_delta is None else float(max_abs_line_delta)
+    if abs(nearest - pp_line) > limit + 1e-9:
         return [], None, "none", None
     return by_line[nearest], nearest, "nearest", delta
 
@@ -932,7 +935,7 @@ def _usable_book_row(row):
     return not is_excluded_book(row)
 
 
-def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None):
+def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None, max_abs_line_delta=None):
     book_rows = [row for row in book_rows or [] if _usable_book_row(row)]
     books_by_player_prop = {}
     props_in_feed = set()
@@ -951,6 +954,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
             available,
             pp["pp_line"],
             pp["prop"],
+            max_abs_line_delta,
         )
         unmatched_reason = _unmatched_reason(pp, available, line_match, props_in_feed, players_with_books)
         over_rows = [row for row in matched_rows if row["side"] == "over"]

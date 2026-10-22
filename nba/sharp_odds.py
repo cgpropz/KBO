@@ -3,7 +3,7 @@
 Pregame full-game group only: lg3:pt1:pregame. Live groups are not read.
 The fair price, de-vig, line move, and whole-number push removal are
 nfl.sharp_odds.build_snapshot. This module only maps the NBA feed onto that
-function.
+function, and it caps a nearest book line at one point from the PrizePicks line.
 
     python -m nba.sharp_odds
 
@@ -40,6 +40,11 @@ OUT = ROOT / "kbo-props-ui" / "public" / "data" / "nba" / "sharp_odds.json"
 
 NBA_LEAGUE_ID = 3
 NBA_PREGAME_GROUP = f"lg{NBA_LEAGUE_ID}:pt1:pregame"
+# Inclusive. A book line more than one point from the PrizePicks line is
+# not a match: no book prices, and no CG odds or PP edge from that line.
+# NFL and NHL keep the shared prop cap. The free preview still wants an
+# exact line or a nearest line within half a point.
+NBA_MAX_LINE_DELTA = 1.0
 # Triple Double is not a board market.
 EXCLUDED_BET_TYPES = {83}
 
@@ -303,6 +308,7 @@ def snapshot_from_rows(pp_rows, book_rows, *, events_scanned=0, feed_snapshot_at
         events_scanned=events_scanned,
         feed_snapshot_at=feed_snapshot_at,
         line_type_filter=line_type_filter,
+        max_abs_line_delta=NBA_MAX_LINE_DELTA,
     )
     snapshot["league_id"] = NBA_LEAGUE_ID
     snapshot["sport"] = "nba"
