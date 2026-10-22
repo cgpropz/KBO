@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NhlAvatar from './NhlAvatar.jsx'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
@@ -107,7 +108,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
       cells={[
         { node: (
           <div className="nfl-lines-player">
-            <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
+            <div className="nfl-lines-avatar"><NhlAvatar item={item} initials={initials(item.player)} /></div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
               {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}

@@ -110,6 +110,22 @@ ODDS_RANK = {"standard": 0, "demon": 1, "goblin": 2}
 PULLED_STATUSES = {"removed", "suspended", "held", "hold", "onhold"}
 
 
+
+# PrizePicks sometimes sends its own relative /assets/player-placeholder-*.svg
+# or a placeholder file instead of a headshot. On our domain the relative path
+# 404s, so the card showed a broken image. Empty means the site falls back to
+# the NHL mug for the player id, then initials.
+_PLACEHOLDER = re.compile(r"(?:^|/)(?:player-)?placeholder[^/]*$", re.I)
+
+
+def headshot_url(value) -> str:
+    url = str(value or "").strip()
+    if not re.match(r"^https://[^/]+/.", url, re.I):
+        return ""
+    if _PLACEHOLDER.search(url.split("?", 1)[0].split("#", 1)[0]):
+        return ""
+    return url
+
 def prizepicks_pulled_status(status) -> str | None:
     """Compact PrizePicks status when the line was pulled, else None."""
     compact = re.sub(r"[^a-z]", "", str(status or "").strip().lower())
@@ -359,7 +375,7 @@ def prizepicks_cards(payload):
             "prop": stat,
             "line": line,
             "oddsType": odds,
-            "imageUrl": player.get("image_url") or "",
+            "imageUrl": headshot_url(player.get("image_url")),
             "rank": attrs.get("rank") or 9999,
             "start": attrs.get("start_time"),
             "removed": pulled is not None,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NhlAvatar from './NhlAvatar.jsx'
 import { fetchNhlProjections } from './nhlData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -42,7 +43,7 @@ function Card({ item, onSelectPlayer }) {
         <b className={sideClass(side)}>{side ? `${side} ` : ''}{score == null ? '—' : score.toFixed(1)}</b>
       </div>
       <div className="nfl-card-player">
-        <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt="" loading="lazy" /> : initials(item.player)}</div>
+        <div className="nfl-card-avatar"><NhlAvatar item={item} initials={initials(item.player)} /></div>
         <div>
           <h2 className="nfl-player-link" onClick={() => onSelectPlayer(item)}>{item.player}</h2>
           <p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p>
