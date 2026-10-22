@@ -27,6 +27,10 @@ export const PLACEHOLDER_METHOD = 'placeholder-sharp-odds-no-vig-consensus'
 
 // Book lines further than this from the PrizePicks line are dropped.
 export const MAX_LINE_GAP = 0.5
+// NBA only: the NBA server already matches the nearest book line within one
+// point, so the NBA page passes { maxLineGap: NBA_MAX_LINE_GAP }. NFL and NHL
+// keep MAX_LINE_GAP.
+export const NBA_MAX_LINE_GAP = 1
 
 export const BOOK_WEIGHTS = {
   pinnacle: 3.0, circa: 3.0, bookmaker: 2.0, betonline: 1.5, betonlineag: 1.5,
@@ -158,7 +162,9 @@ export function cgFair(item, options = {}) {
   if (ppLine == null || !Array.isArray(item?.book_prices)) return null
   const bookLine = finite(item?.matched_line) ?? ppLine
   // Code Green's rule: only use book lines within ±0.5 of the PrizePicks line.
-  if (Math.abs(bookLine - ppLine) > MAX_LINE_GAP + 1e-9) return null
+  // A caller may widen this with options.maxLineGap (NBA uses one point).
+  const maxGap = finite(options.maxLineGap) ?? MAX_LINE_GAP
+  if (Math.abs(bookLine - ppLine) > maxGap + 1e-9) return null
   let num = 0
   let den = 0
   const books = []

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { fetchNbaSharpOdds } from './nbaData'
 import { lineWord } from '../lineCount'
 import { fitImage } from '../fitImage.js'
-import { computeCgOdds, lineAdjustDetail } from '../nfl/cgOdds'
+import { computeCgOdds, lineAdjustDetail, NBA_MAX_LINE_GAP } from '../nfl/cgOdds'
+
+const CG_OPTIONS = { maxLineGap: NBA_MAX_LINE_GAP }
 import { BookLineLabel, BookLinePct, LineAdjTag } from '../nfl/LineAdjust.jsx'
 import { displayedBookCount, policyBestQuote } from '../nfl/bookPolicy'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from '../nfl/BookOddsStrip'
@@ -97,7 +99,7 @@ function HitRate({ rate }) {
 
 function cgFor(item, mode) {
   const side = nbaScoredSide(item)
-  return side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven) : null
+  return side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven, CG_OPTIONS) : null
 }
 
 function CgOddsCell({ item, mode }) {
@@ -117,7 +119,7 @@ function CgOddsCell({ item, mode }) {
   const tone = cg.edgePct == null ? 'even' : cg.edgePct > 0 ? 'pos' : cg.edgePct < 0 ? 'neg' : 'even'
   const sideLabel = side === 'under' ? 'Under' : 'Over'
   const bookList = cg.books.join(', ')
-  const adjust = cg.lineAdjusted ? lineAdjustDetail(item) : null
+  const adjust = cg.lineAdjusted ? lineAdjustDetail(item, CG_OPTIONS) : null
   return (
     <td className={`nfl-sharp-cg tone-${tone}`}>
       <div className="cgo-hero" title="CG odds. Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
