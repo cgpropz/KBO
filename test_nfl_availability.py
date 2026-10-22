@@ -197,3 +197,131 @@ class ManualOutAlreadyPulledTest(unittest.TestCase):
         self.assertEqual(flagged, ['Quinshon Judkins (CLE) Rush Yards'])
         self.assertIn('manual_out.json matched 1 row(s) already pulled: Tyler Warren (IND) Receiving Yards', out.getvalue())
         self.assertEqual(rows[0]['pp_status'], 'removed')  # an already-pulled row is not re-stamped
+
+
+class GameDayInactivesTest(unittest.TestCase):
+    """ESPN game rosters are stubbed by URL. Kickoff 2026-10-23 00:15 UTC."""
+
+    KICKOFF = '2026-10-23T00:15Z'
+
+    def setUp(self):
+        from datetime import datetime, timezone
+        self.kickoff = datetime(2026, 10, 23, 0, 15, tzinfo=timezone.utc)
+        self.calls = []
+
+    def entry(self, pid, last):
+        return {'playerId': pid, 'displayName': last, 'didNotPlay': True,
+                'athlete': {'$ref': f'http://core/athletes/{pid}'}}
+
+    def routes(self, tonight, prior, athletes):
+        scoreboard = {'events': [{
+            'id': '900', 'date': self.KICKOFF,
+            'competitions': [{'competitors': [
+                {'team': {'id': '17', 'abbreviation': 'NE'}},
+                {'team': {'id': '3', 'abbreviation': 'CHI'}},
+            ]}],
+        }]}
+        schedule = {'events': [
+            {'id': '800', 'date': '2026-10-18T17:00Z', 'competitions': [{'status': {'type': {'completed': True}}}]},
+            {'id': '900', 'date': self.KICKOFF, 'competitions': [{'status': {'type': {'completed': False}}}]},
+        ]}
+
+        def get(url, timeout=None):
+            self.calls.append(url)
+            if 'scoreboard' in url:
+                return _Response(scoreboard)
+            if '/schedule' in url:
+                return _Response(schedule)
+            if '/roster' in url:
+                team = url.rstrip('/').split('/competitors/')[1].split('/')[0]
+                game = tonight if '/events/900/' in url else prior
+                return _Response({'entries': [
+                    {'playerId': 1, 'displayName': 'Starter', 'didNotPlay': False},
+                    *game.get(team, []),
+                ]})
+            if '/athletes/' in url:
+                pid = int(url.rsplit('/', 1)[1])
+                return _Response({'fullName': athletes[pid]})
+            raise AssertionError(url)
+        return get
+
+    def nfl_board(self):
+        return [
+            {'player': 'TreVeyon Henderson', 'team': 'NE', 'prop': 'Rush Yards'},
+            {'player': 'Kayshon Boutte', 'team': 'NE', 'prop': 'Receiving Yards'},
+            {'player': 'Rome Odunze', 'team': 'CHI', 'prop': 'Receiving Yards'},
+            {'player': "D'Andre Swift", 'team': 'CHI', 'prop': 'Rush Yards'},
+        ] + [{'player': f'Filler {i}', 'team': 'CHI', 'prop': 'Receptions'} for i in range(20)]
+
+    def test_posted_inactive_comes_off_and_questionable_active_stays(self):
+        from datetime import timedelta
+        prior = {'17': [self.entry(50, 'Arkin')], '3': [self.entry(60, 'Keenum')]}
+        tonight = {'17': [self.entry(50, 'Arkin'), self.entry(51, 'Boutte')], '3': [self.entry(60, 'Keenum')]}
+        get = self.routes(tonight, prior, {50: 'Tanner Arkin', 51: 'Kayshon Boutte', 60: 'Case Keenum'})
+        rows = self.nfl_board()
+        # Odunze is Questionable on the injury report but not inactive: he stays.
+        injuries = espn(('Rome Odunze', 'CHI', 'Questionable'), ("D'Andre Swift", 'CHI', 'Doubtful'))
+        flagged = apply_out_filter(rows, get=stub(injuries), manual_path=Path('/nonexistent'),
+                                   inactives_get=get, now=self.kickoff - timedelta(minutes=80))
+        self.assertEqual(flagged, ['Kayshon Boutte (NE) Receiving Yards'])
+        self.assertEqual((rows[1]['removed'], rows[1]['pp_status']), (True, 'out'))
+        self.assertFalse(any(r.get('removed') for i, r in enumerate(rows) if i != 1))
+        # CHI's list is unchanged from its previous game, so it is not trusted.
+        # Arkin (no board player named Arkin) is never looked up.
+        self.assertFalse(any(u.endswith('/athletes/50') or u.endswith('/athletes/60') for u in self.calls))
+
+    def test_list_carried_over_from_previous_game_is_ignored(self):
+        from datetime import timedelta
+        same = {'17': [self.entry(51, 'Boutte')], '3': []}
+        get = self.routes(same, same, {51: 'Kayshon Boutte'})
+        rows = self.nfl_board()
+        before = copy.deepcopy(rows)
+        apply_out_filter(rows, get=stub(espn()), manual_path=Path('/nonexistent'),
+                         inactives_get=get, now=self.kickoff - timedelta(minutes=60))
+        self.assertEqual(rows, before)
+
+    def test_outside_the_window_reads_no_rosters(self):
+        from datetime import timedelta
+        from nfl.availability import fetch_gameday_inactives
+        tonight = {'17': [self.entry(51, 'Boutte')]}
+        get = self.routes(tonight, {}, {51: 'Kayshon Boutte'})
+        for now in (self.kickoff - timedelta(hours=3), self.kickoff + timedelta(hours=5)):
+            self.calls.clear()
+            self.assertEqual(fetch_gameday_inactives(self.nfl_board(), get, now), set())
+            self.assertFalse(any('/roster' in u for u in self.calls))
+
+    def test_oversized_list_is_skipped(self):
+        from datetime import timedelta
+        from nfl.availability import fetch_gameday_inactives
+        big = {'17': [self.entry(100 + i, 'Boutte') for i in range(16)]}
+        get = self.routes(big, {}, {100 + i: 'Kayshon Boutte' for i in range(16)})
+        self.assertEqual(fetch_gameday_inactives(self.nfl_board(), get, self.kickoff), set())
+
+    def test_espn_down_keeps_the_board(self):
+        from datetime import timedelta
+        rows = self.nfl_board()
+        before = copy.deepcopy(rows)
+        self.assertEqual(apply_out_filter(rows, get=stub(espn()), manual_path=Path('/nonexistent'),
+                                          inactives_get=raising, now=self.kickoff - timedelta(minutes=30)), [])
+        self.assertEqual(rows, before)
+
+    def test_last_name_key(self):
+        from nfl.availability import last_name_key
+        self.assertEqual(last_name_key('Davis III'), 'davis')
+        self.assertEqual(last_name_key('A. Clark'), 'clark')
+        self.assertEqual(last_name_key('Tyrique Stevenson Sr.'), 'stevenson')
+        self.assertEqual(last_name_key("D'Andre Swift"), 'swift')
+        self.assertEqual(last_name_key(''), '')
+
+    def test_slow_espn_is_cut_off_by_the_budget(self):
+        import time
+        from unittest import mock
+        import nfl.availability as availability
+        base = self.routes({'17': [self.entry(51, 'Boutte')]}, {}, {51: 'Kayshon Boutte'})
+
+        def slow(url, timeout=None):
+            if '/roster' in url:
+                time.sleep(0.5)
+            return base(url, timeout)
+        with mock.patch.object(availability, 'INACTIVES_BUDGET', 0.1):
+            self.assertEqual(availability.fetch_gameday_inactives(self.nfl_board(), slow, self.kickoff), set())
