@@ -10,13 +10,14 @@ function formatLine(value) {
   return Number.isInteger(number) ? String(number) : number.toFixed(1)
 }
 
-// "Best Over @2.5" above a price cell on an adjusted row.
+// "Best Over @2.5" above a price cell on an adjusted row. Phone cards already
+// print the column name above the cell, so there only "@2.5" shows.
 export function BookLineLabel({ item, side }) {
   const line = adjustedBookLine(item)
   if (line == null) return null
   return (
     <div className="nfl-sharp-at" title={`Book price at the book line ${formatLine(line)}. PrizePicks posts ${formatLine(item.pp_line)}.`}>
-      Best {side === 'under' ? 'Under' : 'Over'} @{formatLine(line)}
+      <span className="nfl-sharp-at-word">Best {side === 'under' ? 'Under' : 'Over'} </span>@{formatLine(line)}
     </div>
   )
 }

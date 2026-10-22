@@ -266,7 +266,9 @@
 .nfl-sharp-cg .cgo-book-pct strong { color: #c9d6d2 !important; }
 .nfl-sharp-cg button.cgo-tag { background: transparent; line-height: inherit; }
 .nfl-sharp-cg .cgo-adj-note { flex-basis: 100%; margin-top: 2px; color: #d9c690; font: 10px/1.35 monospace; white-space: normal; }
+.nfl-sharp-cg .cgo-main:has(.cgo-book-pct) { flex-wrap: wrap; row-gap: 4px; }
 @media (max-width: 640px) {
   .nfl-sharp-at { font-size: 11px; }
+  table[data-card-table="on"] .nfl-sharp-at-word { display: none; }
   .nfl-sharp-cg .cgo-adj-note { font-size: 12px; }
 }
