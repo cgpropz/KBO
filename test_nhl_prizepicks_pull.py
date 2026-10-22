@@ -42,6 +42,16 @@ def _payload(rows):
 
 
 class PrizePicksPullTests(unittest.TestCase):
+    def test_a_missing_odds_type_is_not_filed_as_standard(self):
+        missing = _projection("1", "Sidney Crosby", "Shots On Goal", "standard", 3.5)
+        del missing["attributes"]["odds_type"]
+        blank = _projection("1", "Sidney Crosby", "Points", "", 0.5)
+        goblin = _projection("1", "Sidney Crosby", "Points", "goblin", 0.5)
+        cards = prizepicks_cards(_payload([missing, blank]))
+        self.assertEqual(cards, [])
+        cards = prizepicks_cards(_payload([missing, blank, goblin]))
+        self.assertEqual([(c["prop"], c["oddsType"]) for c in cards], [("Points", "goblin")])
+
     def test_a_pulled_line_is_kept_and_flagged(self):
         cards = prizepicks_cards(_payload([
             _projection("1", "Sidney Crosby", "Shots On Goal", "standard", 3.5, status="Removed"),
