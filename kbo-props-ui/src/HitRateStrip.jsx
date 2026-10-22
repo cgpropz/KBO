@@ -3,7 +3,7 @@ import './hitRateStrip.css'
 
 function pillLabel(pill) {
   const rate = formatHitRate(pill.rate)
-  const sample = formatGameCount(pill.games)
+  const sample = formatGameCount(pill.games, pill.pushes)
   const note = pill.note ? `, ${pill.note}` : ''
   return `${pill.label} ${rate} over${sample ? `, ${sample}` : ''}${note}`
 }
@@ -16,7 +16,7 @@ export default function HitRateStrip({ pills }) {
   return (
     <div className="hit-rate-strip" aria-label="Over hit rate">
       {shown.map(({ pill, tone }) => {
-        const games = formatGameCount(pill.games)
+        const games = formatGameCount(pill.games, pill.pushes)
         return (
           <span
             key={pill.id}

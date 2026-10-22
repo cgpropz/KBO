@@ -121,7 +121,7 @@ export function AltLinesRow({ slider }) {
       {alts.map((item) => {
         const tone = altTone(item)
         const active = Math.abs(item.line - line) < 1e-9
-        const games = formatGameCount(item.games)
+        const games = formatGameCount(item.games, item.pushes)
         return (
           <button
             key={item.line}

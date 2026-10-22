@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AltLinesRow, LinePlot } from '../LineSlider'
 import { useChartLine } from '../useChartLine'
-import { overHitRate } from '../hitRateStrip'
+import { formatGameCount, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -431,7 +431,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
             <button key={option.id} type="button" className={range === option.id ? 'active' : ''} onClick={() => setRange(option.id)}>
               <span>{option.label}</span>
               {line != null && <b style={tone ? { color: tone } : undefined}>{rated?.rate == null ? '—' : `${rated.rate}%`}</b>}
-              <small>{rated ? `${rated.games} gm` : '—'}</small>
+              <small>{rated ? formatGameCount(rated.games, rated.pushes) : '—'}</small>
             </button>
           )
         })}
