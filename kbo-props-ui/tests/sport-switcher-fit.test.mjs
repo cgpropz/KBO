@@ -19,12 +19,14 @@ test('all five sport tabs fit a 320px phone row', () => {
   assert.ok(tabs * minWidth + (tabs - 1) * gap <= row, `${tabs} tabs need ${tabs * minWidth + (tabs - 1) * gap}px`)
 })
 
-test('the narrow rule sits inside the phone stylesheet and survives the build', () => {
+test('the narrow rule follows the phone tab size and survives the build', () => {
   const css = read()
-  const phone = css.indexOf('@media (--phone-board)')
   const narrow = css.indexOf('@media (max-width: 359px) {')
-  assert.ok(phone >= 0 && narrow > phone)
-  assert.ok(narrow > css.indexOf('.sport-switcher button {'), 'must follow the default tab size')
+  const tabs = css.indexOf('.sport-switcher button {', css.indexOf('@media (--phone-board)'))
+  assert.ok(tabs >= 0 && narrow > tabs, 'must follow the default phone tab size')
+  // Other tests read the phone block up to the next @media, so this rule is
+  // a top-level block after it, not nested inside it.
+  assert.ok(narrow > css.indexOf('@media', css.indexOf('@media (--phone-board)') + 1))
   assert.ok(applyPhoneBoardMedia(css).includes('@media (max-width: 359px)'))
 })
 

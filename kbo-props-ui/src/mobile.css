@@ -351,20 +351,6 @@
     line-height: 1.1 !important;
   }
 
-  /* Five tabs (KBO, WNBA, NFL, NHL, NBA) need 352px at the size above, so on a
-     320px phone NBA sat past the right edge of the row. Tighten the tabs so
-     all five fit. The row still scrolls if more are ever added. */
-  @media (max-width: 359px) {
-    :is(.pl-header, .cg-header, .kbo-app-nav, .nfl-nav, .wnba-nav) > .sport-switcher {
-      gap: 4px;
-    }
-
-    .sport-switcher button {
-      min-width: 52px;
-      padding: 6px 4px !important;
-    }
-  }
-
   .cg-page-menu:not(.is-open) {
     display: none !important;
   }
@@ -1124,6 +1110,20 @@
 
   .nfl-root .nfl-edge-card .nfl-card-player > div {
     min-width: 0;
+  }
+}
+
+/* Five tabs (KBO, WNBA, NFL, NHL, NBA) need 352px at the phone tab size set
+   above, so on a 320px phone NBA sat past the right edge of the row. Tighten
+   the tabs so all five fit. The row still scrolls if more are ever added. */
+@media (max-width: 359px) {
+  :is(.pl-header, .cg-header, .kbo-app-nav, .nfl-nav, .wnba-nav) > .sport-switcher {
+    gap: 4px;
+  }
+
+  .sport-switcher button {
+    min-width: 52px;
+    padding: 6px 4px !important;
   }
 }
 
