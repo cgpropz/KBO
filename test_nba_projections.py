@@ -239,5 +239,106 @@ class PositionFallbackTests(unittest.TestCase):
         self.assertEqual(counts["neutral"], 1)
 
 
+class SanityFlagTests(unittest.TestCase):
+    def test_bounds_match_the_existing_check(self):
+        # The logged check is strict: 0.5 and 2.0 stay inside.
+        self.assertEqual(proj.SANITY_LOW, 0.5)
+        self.assertEqual(proj.SANITY_HIGH, 2.0)
+        self.assertFalse(proj.sanity_flag_for_ratio(0.5))
+        self.assertFalse(proj.sanity_flag_for_ratio(2.0))
+        self.assertFalse(proj.sanity_flag_for_ratio(proj.SANITY_LOW))
+        self.assertFalse(proj.sanity_flag_for_ratio(proj.SANITY_HIGH))
+        self.assertFalse(proj.sanity_flag_for_ratio(1.0))
+        self.assertFalse(proj.sanity_flag_for_ratio(None))
+        self.assertTrue(proj.sanity_flag_for_ratio(0.5 - 1e-12))
+        self.assertTrue(proj.sanity_flag_for_ratio(2.0 + 1e-12))
+        self.assertIsNone(proj.projection_line_ratio(10, 0))
+        self.assertIsNone(proj.projection_line_ratio(None, 8))
+        self.assertIsNone(proj.projection_line_ratio(float("nan"), 8))
+
+        # Rounding the stored ratio can land on 0.5 or 2.0. The flag still
+        # follows the raw comparison, the same one the log already uses.
+        low = {"projection": 0.495, "line": 1}
+        proj.attach_sanity(low)
+        self.assertEqual(low["ratio"], 0.5)
+        self.assertIs(low["sanity_flag"], True)
+        high = {"projection": 2.004, "line": 1}
+        proj.attach_sanity(high)
+        self.assertEqual(high["ratio"], 2.0)
+        self.assertIs(high["sanity_flag"], True)
+        on_low = {"projection": 0.5, "line": 1}
+        proj.attach_sanity(on_low)
+        self.assertEqual(on_low["ratio"], 0.5)
+        self.assertIs(on_low["sanity_flag"], False)
+        on_high = {"projection": 2.0, "line": 1}
+        proj.attach_sanity(on_high)
+        self.assertEqual(on_high["ratio"], 2.0)
+        self.assertIs(on_high["sanity_flag"], False)
+
+    def test_published_rows_keep_the_flag_and_stay_on_the_board(self):
+        games = {str(i): [counting_game(30, 30) for _ in range(10)] for i in range(1, 7)}
+        # Ten identical 30-point games project to 30. Lines pick the ratio.
+        players = [
+            self._player("1", "Low Bound", 60),
+            self._player("2", "High Bound", 15),
+            self._player("3", "Inside", 30),
+            self._player("4", "Below", 60.1),
+            self._player("5", "Above", 14.9),
+            self._player("6", "Blank Line", 0),
+        ]
+        filled, counts = proj.apply_board(players, games, {"PG": {}}, {}, {})
+        self.assertEqual([player["name"] for player in filled], [player["name"] for player in players])
+        by_name = {player["name"]: player for player in filled}
+
+        def prop_of(name, stat="Points"):
+            return next(prop for prop in by_name[name]["ppAllProps"] if prop["stat"] == stat)
+
+        for name, line in (("Low Bound", 60), ("High Bound", 15), ("Inside", 30), ("Below", 60.1), ("Above", 14.9)):
+            prop = prop_of(name)
+            raw = prop["projection"] / line
+            self.assertEqual(prop["projection"], 30.0)
+            self.assertEqual(prop["sanity_flag"], proj.sanity_flag_for_ratio(raw))
+            self.assertEqual(prop["ratio"], proj.to_fixed(raw, 2))
+            self.assertEqual(prop["rating"], proj.edge_rating(prop["projection"], prop["line"]))
+
+        self.assertIs(prop_of("Low Bound")["sanity_flag"], False)
+        self.assertEqual(prop_of("Low Bound")["ratio"], 0.5)
+        self.assertIs(prop_of("High Bound")["sanity_flag"], False)
+        self.assertEqual(prop_of("High Bound")["ratio"], 2.0)
+        self.assertIs(prop_of("Inside")["sanity_flag"], False)
+        self.assertIs(prop_of("Below")["sanity_flag"], True)
+        self.assertIs(prop_of("Above")["sanity_flag"], True)
+        self.assertIs(prop_of("Blank Line")["sanity_flag"], False)
+        self.assertIsNone(prop_of("Blank Line")["ratio"])
+
+        flagged = {item["name"] for item in counts["sanity"]}
+        self.assertEqual(flagged, {"Below", "Above"})
+        for item in counts["sanity"]:
+            self.assertEqual(item["ratio"], prop_of(item["name"])["ratio"])
+            self.assertNotIn(item["name"], {"Low Bound", "High Bound", "Inside"})
+
+        pending = proj.apply_player(
+            {"athleteId": "9", "name": "No Log", "position": "PG", "ppAllProps": [{"stat": "Points", "line": 8}]},
+            [],
+            {"PG": {}},
+            {},
+            "PG",
+            "roster",
+        )
+        self.assertEqual(pending["projectionStatus"], "pending")
+        self.assertIsNone(pending["ppAllProps"][0]["projection"])
+        self.assertIs(pending["ppAllProps"][0]["sanity_flag"], False)
+        self.assertIsNone(pending["ppAllProps"][0]["ratio"])
+
+    def _player(self, athlete, name, line):
+        return {
+            "athleteId": athlete,
+            "name": name,
+            "position": "PG",
+            "dvpOpponent": "BOS",
+            "ppAllProps": [{"stat": "Points", "line": line, "opponent": "BOS"}],
+        }
+
+
 if __name__ == "__main__":
     unittest.main()
