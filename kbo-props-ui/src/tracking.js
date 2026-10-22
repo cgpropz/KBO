@@ -158,13 +158,11 @@ export function weeklyCheckoutHref(user, token = '') {
   return readyWeeklyCheckoutUrl(token) || buildCheckoutUrl(STRIPE_LINKS.weekly, user);
 }
 
-// Lifetime ($249.99) and Founders ($99.99) Checkout Sessions. Founders past
-// the cap or the deadline is refused: the response has no URL, and reason is
-// 'sold_out' or 'expired'. Lifetime is not substituted.
+// Lifetime ($249.99) Checkout Session.
 export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const path = plan === 'founders' ? '/api/checkout/founders' : '/api/checkout/lifetime';
+  const path = '/api/checkout/lifetime';
   const res = await fetchImpl(path, {
     method: 'POST',
     headers,

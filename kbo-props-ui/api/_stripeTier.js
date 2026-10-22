@@ -11,16 +11,18 @@
 // adds the other sport.
 //
 // TODO: set these Vercel env vars before deploy if the live Stripe prices
-// change. Defaults live in src/foundersOffer.js and stay recognized even
+// change. Defaults live in src/stripePrices.js and stay recognized even
 // when an env var points checkout at a replacement id:
 //   STRIPE_PRICE_LIFETIME   $249.99 one-time Lifetime (price_1UPJ78PwL0k9PEMvnZPU3k5a)
-//   STRIPE_PRICE_FOUNDERS   $99.99 Founders lifetime (price_1THZjaPwL0k9PEMvARtuGG1F)
 //   STRIPE_PRICE_YEARLY     $149.99/yr All-Access (price_1UPJ7DPwL0k9PEMv2Z9Ca8B5)
 //   STRIPE_PRODUCT_LIFETIME Lifetime product (prod_UG5v4BQ2Mo0wie)
 // The old KBO yearly price price_1THCpZPwL0k9PEMvPlLqiIDu ($49.99/yr) stays
 // tier 'kbo'. Do not point STRIPE_PRICE_YEARLY at it.
 // Lifetime is granted by price id or product id (or price/product metadata
-// tier=combined on a one-time price). The $99.99 amount fallback is only for
+// tier=combined on a one-time price). The archived $99.99 one-time price
+// (LEGACY_LIFETIME_PRICE_ID) is no longer sold but still grants access to
+// past buyers, as does STRIPE_PRICE_FOUNDERS if it is still set (recognition
+// only; nothing charges it). The legacy 9999-cent amount fallback is only for
 // legacy charges that have no price attached — payment links add sales tax,
 // so a taxed buyer never hits exactly 9999 cents.
 //
@@ -36,12 +38,11 @@
 // discord_only, is Discord-only even when the price id is missing.
 
 import {
-  DEFAULT_FOUNDERS_PRICE_ID,
   DEFAULT_LIFETIME_PRICE_ID,
   DEFAULT_LIFETIME_PRODUCT_ID,
   DEFAULT_YEARLY_PRICE_ID,
   LEGACY_LIFETIME_PRICE_ID,
-} from '../src/foundersOffer.js';
+} from '../src/stripePrices.js';
 
 function cleanEnv(value) {
   return (value || '').replace(/\\n/g, '').trim();
@@ -67,7 +68,7 @@ export const TIER_BY_PRICE = {
   'price_1TtFEPPwL0k9PEMvc8kcK6Ut': 'wnba',      // WNBA Monthly      $19.99 / mo (legacy)
   'price_1TtFDNPwL0k9PEMvEzCTHBbL': 'wnba',      // WNBA Weekly       $9.99  / wk (legacy)
   'price_1THCokPwL0k9PEMvcWwT7F2c': 'kbo',       // KBO Monthly       $19.99 / mo (legacy)
-  [LEGACY_LIFETIME_PRICE_ID]: 'combined', // Lifetime / Founders $99.99 once (was KBO Lifetime)
+  [LEGACY_LIFETIME_PRICE_ID]: 'combined', // Legacy lifetime $99.99 once (archived; past buyers keep access)
   'price_1THCpZPwL0k9PEMvPlLqiIDu': 'kbo',       // KBO Full Season   $49.99 / yr (legacy). Leave as KBO-only.
 };
 
@@ -81,15 +82,8 @@ export function lifetimePriceIds(env = process.env) {
   return uniqueIds([
     LEGACY_LIFETIME_PRICE_ID,
     DEFAULT_LIFETIME_PRICE_ID,
-    DEFAULT_FOUNDERS_PRICE_ID,
     envPriceId(env?.STRIPE_PRICE_LIFETIME),
-    envPriceId(env?.STRIPE_PRICE_FOUNDERS),
-  ]);
-}
-
-export function foundersPriceIds(env = process.env) {
-  return uniqueIds([
-    DEFAULT_FOUNDERS_PRICE_ID,
+    // Recognition only, for past buyers. Nothing sells this price any more.
     envPriceId(env?.STRIPE_PRICE_FOUNDERS),
   ]);
 }
@@ -111,10 +105,6 @@ export function lifetimeProductIds(env = process.env) {
 // Price charged at checkout. Defaults stay in the recognition lists above.
 export function activeLifetimePriceId(env = process.env) {
   return envPriceId(env?.STRIPE_PRICE_LIFETIME) || DEFAULT_LIFETIME_PRICE_ID;
-}
-
-export function activeFoundersPriceId(env = process.env) {
-  return envPriceId(env?.STRIPE_PRICE_FOUNDERS) || DEFAULT_FOUNDERS_PRICE_ID;
 }
 
 export function activeYearlyPriceId(env = process.env) {
@@ -212,7 +202,7 @@ function isKnownRecurringPrice(priceId, env) {
   return Object.prototype.hasOwnProperty.call(TIER_BY_PRICE, priceId);
 }
 
-// One-time Lifetime / Founders access. Recurring prices (including the new
+// One-time Lifetime access (current and legacy). Recurring prices (including the new
 // yearly plan and the legacy $49.99 KBO year) are not lifetime, even when
 // their metadata says tier=combined — the subscription grants access only
 // while it is active.
@@ -227,6 +217,7 @@ export function signalsLifetimePurchase({ priceId, price, product, metadata, env
   if (metadata?.cg_plan === 'discord_weekly' || metadata?.cg_plan === 'discord_monthly') return false;
   if (id && lifetimePriceIds(env).includes(id)) return true;
   if (isLifetimeProductId(productRef, env)) return true;
+  // cg_plan=founders: past $99.99 buyers. No new sessions carry it.
   if (metadata?.cg_plan === 'lifetime' || metadata?.cg_plan === 'founders') return true;
   if (isKnownRecurringPrice(id, env)) return false;
   if (priceObj?.recurring || priceObj?.type === 'recurring') return false;
@@ -797,7 +788,7 @@ export async function computeStripeAccess(stripe, email, env = process.env, { st
       else if (t !== 'discord') sports.add(t);
     }
 
-    // One-time Lifetime / Founders purchase (no subscription). Matched by
+    // One-time Lifetime purchase, current or legacy (no subscription). Matched by
     // price id, product id, or one-time price/product metadata tier=combined.
     // The exact $99.99 amount is only a fallback for legacy charges that have
     // no price attached. Taxed totals never match 9999, so they must not be
@@ -832,7 +823,7 @@ export const PLAN_BY_AMOUNT = {
   999: 'weekly',    // Weekly All-Access   $9.99  / wk
   2999: 'monthly',   // Monthly All-Access  $29.99 / mo
   14999: 'yearly',    // Yearly All-Access   $149.99 / yr (pre-tax subtotal)
-  9999: 'lifetime',  // Founders / legacy Lifetime $99.99 (pre-tax subtotal)
+  9999: 'lifetime',  // Legacy $99.99 lifetime, past purchases only (pre-tax subtotal)
   24999: 'lifetime',  // Lifetime All-Access $249.99 (pre-tax subtotal)
 };
 
