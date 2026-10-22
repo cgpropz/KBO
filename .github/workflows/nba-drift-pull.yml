@@ -1,0 +1,95 @@
+name: NBA mid-day drift pull
+
+# Keeps the published NBA standard board honest between the morning build
+# and the props game window (5 hours before the first tip). See
+# nba/drift_pull.py.
+#
+# - Hourly at :41, 12:41-21:41 UTC (8:41 AM-5:41 PM EDT; one hour earlier
+#   in ET under EST). At most 10 starts a day.
+# - The gate makes no PrizePicks call. It needs an NBA game today (Eastern),
+#   a time after the 4:00 AM ET morning build, and the props window not yet
+#   open (pipeline/refresh_window.py). Otherwise the pull is skipped.
+# - A due run makes exactly one PrizePicks request (league_id=7, one page,
+#   no retries). A row stays only when that exact line is still standard;
+#   a moved standard number re-lines the row; no standard line drops it.
+# - No change: nothing is written or published. A change publishes only
+#   nba_projections_standard to Supabase (the site reads it per request).
+#   This job never commits, so it never starts a Vercel deploy.
+# - The raw PrizePicks response is kept as a 7-day artifact (public lines
+#   only; no projections or CG).
+
+on:
+  schedule:
+    - cron: "41 12-21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Same lock as the NBA builds, so a pull never races a full publish.
+  group: nba-refresh-pipeline
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Installed before the gate. The gate itself needs only the standard
+      # library (test_nba_drift_pull checks it with requests unavailable).
+      - name: Install Python dependencies
+        run: pip install requests pandas
+
+      - name: Decide whether a drift pull is due
+        id: gate
+        run: |
+          set +e
+          python nba/drift_pull.py --gate
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            exit "$status"
+          fi
+
+      - name: Restore the published NBA standard board
+        if: steps.gate.outputs.due == 'true'
+        run: python pipeline/restore_snapshots.py --prefix nba/projections_standard
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Pull PrizePicks once and apply drift
+        id: drift
+        if: steps.gate.outputs.due == 'true'
+        run: python nba/drift_pull.py --raw-out "$RUNNER_TEMP/nba-prizepicks-raw.json"
+
+      - name: Save raw PrizePicks NBA feed
+        if: always() && steps.gate.outputs.due == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-prizepicks-raw-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nba-prizepicks-raw.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Publish the NBA standard board to Supabase
+        if: steps.drift.outputs.changed == 'true'
+        timeout-minutes: 10
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nba/projections_standard"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
