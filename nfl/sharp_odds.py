@@ -21,7 +21,10 @@ Over is moved onto the PrizePicks line with the same adjustment the CG odds
 column uses. Half-point lines and yardage lines take the under as the
 complement. A whole-number count line is a PrizePicks push, so the over is
 P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
-CG odds drops that same push before it quotes a side.
+CG odds drops that same push before it quotes a side. When the book line
+itself is a whole number, the Poisson mean is fit to that line's
+push-removed over before the move. NHL and NBA PP Odds build through
+this same snapshot, so that fit is the one on their boards too.
 PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
 default. Power (-137) is stored beside it. Sportsbook EV stays on the book
 line, because that price is not a PrizePicks price. A raw price shop such
@@ -47,6 +50,7 @@ import json
 import math
 import os
 import re
+import sys
 import urllib.parse
 import uuid
 from datetime import datetime, timezone
@@ -54,7 +58,14 @@ from pathlib import Path
 
 import requests
 
-from nfl.book_policy import books_count, consensus_rows, is_excluded_book
+# The refresh workflows run `python nfl/sharp_odds.py`, which puts nfl/ on
+# sys.path[0], not the repo root, so `import nfl` fails without this (same
+# bootstrap as nfl/build_projection_data.py and nfl/game_markets.py).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from nfl.book_policy import books_count, consensus_rows, is_excluded_book  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent
@@ -359,21 +370,39 @@ def _poisson_cdf(k, lam):
     return total
 
 
-def _fit_count_lambda(p_over, book_line):
-    """Poisson mean whose P(X > book_line) matches ``p_over``.
+def _book_count_over(lam, book_line):
+    """Fair over at the book line for the Poisson mean ``lam``.
 
-    Same 80-step search as ``shiftOver`` in cgOdds.js. The book probability
-    is matched to 1 - CDF(floor(book_line)), which is P(X > line) for both
-    a half point and a whole number.
+    A half point has no count on it, so this is P(X > line). A whole number
+    pushes. The posted over is then P(X > line) / (1 - P(X = line)).
+    """
+    book_k = math.floor(book_line)
+    strict = 1.0 - _poisson_cdf(book_k, lam)
+    if _whole_number(book_line) is None:
+        return strict
+    cdf_line = _poisson_cdf(book_k, lam)
+    cdf_below = _poisson_cdf(book_k - 1, lam)
+    decisive = 1.0 - (cdf_line - cdf_below)
+    if decisive <= 0.0:
+        return strict
+    return strict / decisive
+
+
+def _fit_count_lambda(p_over, book_line):
+    """Poisson mean whose book-line over matches ``p_over``.
+
+    Same 80-step search as ``fitCountLambda`` in cgOdds.js. Callers only
+    fit when the PrizePicks line is different. A half-point book line matches
+    P(X > line). A whole-number book line matches the push-removed over, and
+    the caller then moves that mean onto the PrizePicks line.
     """
     lo = _SHIFT_LAMBDA_LO
     hi = _SHIFT_LAMBDA_HI
     lam = lo
-    book_k = math.floor(book_line)
     target = float(p_over)
     for _ in range(_SHIFT_LAMBDA_STEPS):
         lam = (lo + hi) / 2.0
-        if (1.0 - _poisson_cdf(book_k, lam)) < target:
+        if _book_count_over(lam, book_line) < target:
             lo = lam
         else:
             hi = lam
@@ -855,7 +884,7 @@ def _baseline_payload(american):
     }
 
 
-def _select_line(rows, pp_line, prop):
+def _select_line(rows, pp_line, prop, max_abs_line_delta=None):
     by_line = {}
     for row in rows:
         by_line.setdefault(row["line"], []).append(row)
@@ -869,7 +898,10 @@ def _select_line(rows, pp_line, prop):
     )
     nearest = ranked[0]
     delta = round(nearest - pp_line, 2)
-    if abs(nearest - pp_line) > max_line_delta(prop) + 1e-9:
+    # None keeps the shared prop cap (1.5 on NFL counts, 10 elsewhere).
+    # A number, used by NBA, replaces that cap for every prop.
+    limit = max_line_delta(prop) if max_abs_line_delta is None else float(max_abs_line_delta)
+    if abs(nearest - pp_line) > limit + 1e-9:
         return [], None, "none", None
     return by_line[nearest], nearest, "nearest", delta
 
@@ -932,7 +964,7 @@ def _usable_book_row(row):
     return not is_excluded_book(row)
 
 
-def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None):
+def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None, max_abs_line_delta=None):
     book_rows = [row for row in book_rows or [] if _usable_book_row(row)]
     books_by_player_prop = {}
     props_in_feed = set()
@@ -951,6 +983,7 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
             available,
             pp["pp_line"],
             pp["prop"],
+            max_abs_line_delta,
         )
         unmatched_reason = _unmatched_reason(pp, available, line_match, props_in_feed, players_with_books)
         over_rows = [row for row in matched_rows if row["side"] == "over"]

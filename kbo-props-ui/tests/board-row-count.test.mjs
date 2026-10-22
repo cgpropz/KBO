@@ -93,8 +93,14 @@ function rowsFrom(ds, data) {
   return Array.isArray(data) ? data : []
 }
 
+// NFL and NHL rows carry their own start_time, so the member board drops a
+// started game on each request. KBO cards and WNBA players keep theirs until
+// the next publish expires them.
+const STARTED_DROPPED = new Set(['nfl_projections', 'nhl_projections'])
+
 function memberSet(sport, raw) {
-  const standard = raw.filter((line) => isStandardBoardLine(line))
+  let standard = raw.filter((line) => isStandardBoardLine(line))
+  if (STARTED_DROPPED.has(sport.ds)) standard = standard.filter((line) => line.id !== 'started')
   return sport.ds === 'nhl_projections' ? prepareBoardRows(standard) : dropPulledRows(standard)
 }
 
@@ -131,7 +137,7 @@ for (const sport of SPORTS) {
     }
 
     assert.equal(freeRows.some((line) => line.id === 'started'), false)
-    assert.equal(memberRows.some((line) => line.id === 'started'), true)
+    assert.equal(memberRows.some((line) => line.id === 'started'), !STARTED_DROPPED.has(sport.ds))
     assert.equal(freeRows.length, 3)
     assert.ok(free.lockedCount > 0)
 

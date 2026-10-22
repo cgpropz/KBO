@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
@@ -19,10 +20,12 @@ import {
   GAMES_OPTIONS,
   GRADE_OPTIONS,
   HIT_RATE_OPTIONS,
+  MINUTES_OPTIONS,
   POSITIONS,
   PROP_TABS,
   SORT_OPTIONS,
   buildPropRows,
+  cgBoundsAfterEdit,
   dvpColor,
   dvpGrade,
   filterAndSortRows,
@@ -181,22 +184,31 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
   const [expandedRow, setExpandedRow] = useState(null)
   const toggleRow = (id) => setExpandedRow((current) => (current === id ? null : id))
 
-  if (!open) return null
-  return (
-    <div className="wnba-filters-overlay" onClick={onClose}>
-      <div className="wnba-filters-panel" onClick={(event) => event.stopPropagation()}>
+  if (!open || typeof document === 'undefined') return null
+  return createPortal(
+    <div className="wnba-filters-overlay nba-filters-overlay" onClick={onClose}>
+      <div className="wnba-filters-panel" data-testid="nba-filters-panel" onClick={(event) => event.stopPropagation()}>
         <div className="wnba-filters-head">
           <h2>Filters</h2>
-          <button className="wnba-filters-close" onClick={onClose}>Close <span>&times;</span></button>
+          <button type="button" className="wnba-filters-close" onClick={onClose}>Close <span>&times;</span></button>
         </div>
+        <div className="nba-filters-scroll">
         <div className="wnba-filters-side">
           {['All', 'Overs', 'Unders'].map((option) => (
-            <button key={option} className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
+            <button key={option} type="button" className={filters.side === option ? 'active' : ''} onClick={() => updateFilter('side', option)}>{option}</button>
           ))}
         </div>
 
+        <FilterRow id="minutes" label="Minutes" value={filters.minutes || 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
+          <div className="wnba-filter-chip-row" role="group" aria-label="Minutes">
+            {MINUTES_OPTIONS.map((option) => (
+              <button key={option} type="button" className={(filters.minutes || 'All') === option ? 'active' : ''} aria-pressed={(filters.minutes || 'All') === option} onClick={() => updateFilter('minutes', option)}>{option}</button>
+            ))}
+          </div>
+        </FilterRow>
+
         <FilterRow id="sort" label="Sort By" value={filters.sortBy} expandedRow={expandedRow} onToggle={toggleRow}>
-          <select value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
+          <select aria-label="Sort by" value={filters.sortBy} onChange={(event) => updateFilter('sortBy', event.target.value)}>
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </FilterRow>
@@ -233,9 +245,9 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
 
         <FilterRow id="edge" label="CG Score" value={filters.edgeMin || filters.edgeMax ? `${filters.edgeMin || '—'} to ${filters.edgeMax || '—'}` : 'All'} expandedRow={expandedRow} onToggle={toggleRow}>
           <div className="wnba-filter-range-row">
-            <input type="number" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score low bound" placeholder="Min" value={filters.edgeMin} onChange={(event) => updateFilter('edgeMin', event.target.value)} />
             <span>to</span>
-            <input type="number" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
+            <input type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label="CG Score high bound" placeholder="Max" value={filters.edgeMax} onChange={(event) => updateFilter('edgeMax', event.target.value)} />
           </div>
         </FilterRow>
 
@@ -252,13 +264,15 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
             {GRADE_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
         </FilterRow>
+        </div>
 
         <div className="wnba-filters-footer">
-          <button className="wnba-filters-reset" onClick={resetFilters}>Reset</button>
-          <button className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
+          <button type="button" className="wnba-filters-reset" onClick={resetFilters}>Reset</button>
+          <button type="button" className="wnba-filters-apply" onClick={onClose}>Show {resultCount} {lineWord(resultCount)}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -345,6 +359,10 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [lockTop, setLockTop] = useState(null)
 
   const updateFilter = (key, value) => {
+    if (key === 'edgeMin' || key === 'edgeMax') {
+      setFilters((current) => ({ ...current, ...cgBoundsAfterEdit(current, key, value) }))
+      return
+    }
     setFilters((current) => ({ ...current, [key]: value }))
     if (key === 'sortBy') rememberBoardSort('nba', value)
   }

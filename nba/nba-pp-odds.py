@@ -43,6 +43,7 @@ import csv
 import json
 import sys
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -113,10 +114,24 @@ SNAPSHOTS = {
 }
 
 
+# Letters NFKD does not split into a base letter plus a mark.
+_FOLD_LETTERS = str.maketrans({
+    "ø": "o", "Ø": "o", "ł": "l", "Ł": "l", "đ": "d", "Đ": "d",
+    "ß": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "ı": "i",
+})
+
+
 def normalize_player_key(name: object) -> str:
-    """WNBA sports_odds_data.normalize_player_key: letters and digits only."""
-    cleaned = " ".join(str(name or "").strip().split()).lower()
-    return "".join(ch for ch in cleaned if ch.isalnum())
+    """Letters and digits only, lowercase, accents folded.
+
+    PrizePicks spells names with diacritics (Nikola Jokić, Alperen Şengün);
+    the ESPN roster and box scores use plain letters (Nikola Jokic). Both
+    must give the same key or the player is unmatched and gets no games.
+    """
+    cleaned = " ".join(str(name or "").strip().split()).translate(_FOLD_LETTERS)
+    decomposed = unicodedata.normalize("NFKD", cleaned)
+    plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
+    return "".join(ch for ch in plain if ch.isalnum())
 
 
 def canonical_team(value: object) -> str:

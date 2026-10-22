@@ -11,8 +11,12 @@ export function memberBoardPhase({ signedIn, tierConfirmed, sportUnlocked, refre
   return 'member'
 }
 
-export function sportUnlockedFor(sport, tier, user) {
-  if (sport === 'nba') return canSeeNba(user)
+// NBA: the owner email, or any signed-in member whose /api/nba-access check
+// (useNbaOpen) came back open. That endpoint is the same gate api/data.js
+// uses for the full nba_* rows, so the page never unlocks more than the
+// server sends.
+export function sportUnlockedFor(sport, tier, user, nbaOpen = false) {
+  if (sport === 'nba') return canSeeNba(user) || (Boolean(user) && nbaOpen === true)
   return sportAccess(tier)[sport] === true
 }
 

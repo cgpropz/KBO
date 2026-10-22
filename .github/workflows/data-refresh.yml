@@ -45,7 +45,7 @@ on:
 permissions:
   contents: write
   issues: write
-  actions: read
+  actions: write
 
 concurrency:
   # Separate group from the full deploy so odds refreshes don't queue
@@ -114,6 +114,11 @@ jobs:
           # prior snapshot — but that means stats stop refreshing entirely.
           playwright install chromium --with-deps
 
+      # This run's KBO PrizePicks answer (pipeline/kbo_run_signal.py): a
+      # count-only file outside the checkout, stamped with this run's id.
+      - name: Point the KBO odds step at this run's signal file
+        run: echo "KBO_PP_RUN_SIGNAL=${RUNNER_TEMP}/kbo_pp_run.json" >> "$GITHUB_ENV"
+
       - name: Restore last published snapshots (paid data is not in git)
         run: python pipeline/restore_snapshots.py
         env:
@@ -141,6 +146,15 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+
+      # Paid rows do not need a site deploy. The homepage free top 3 is static
+      # HTML, so a successful KBO publish queues that bake on its own.
+      - name: Queue the homepage free top 3 bake
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bake-free-top3.yml --ref main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

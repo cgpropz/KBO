@@ -7,7 +7,7 @@ import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksP
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
-import { gameAlreadyStarted } from '../src/gameStarted.js';
+import { gameAlreadyStarted, startTimePassed } from '../src/gameStarted.js';
 import {
   NBA_MIN_AVG_MINUTES,
   NBA_MIN_GAMES,
@@ -300,8 +300,15 @@ const MEMBER_BOARD_DATASETS = new Set([
   'nhl_projections',
 ]);
 
-function memberBoardRows(ds, rows) {
-  const live = dropPulledRows(rows);
+// Row boards whose rows each carry their own start_time. Between publishes
+// the snapshot still holds a game that has kicked off (pipeline/board_expiry
+// drops it only on the next publish), so these boards also drop started rows
+// on every request. A missing or unparseable start time keeps the row.
+const STARTED_FILTER_DATASETS = new Set(['nfl_projections', 'nhl_projections']);
+
+function memberBoardRows(ds, rows, now = new Date()) {
+  let live = dropPulledRows(rows);
+  if (STARTED_FILTER_DATASETS.has(ds)) live = live.filter((row) => !startTimePassed(row, now));
   if (ds !== 'nhl_projections') return live;
   return live.map(applyPointsOverGate).filter(Boolean);
 }
@@ -314,10 +321,10 @@ function sameRows(next, prev) {
   return true;
 }
 
-function prepareMemberBoard(ds, payload) {
+function prepareMemberBoard(ds, payload, now = new Date()) {
   if (ds === 'nfl_projections' || ds === 'nhl_projections') {
     if (!Array.isArray(payload)) return payload;
-    const rows = memberBoardRows(ds, payload);
+    const rows = memberBoardRows(ds, payload, now);
     return sameRows(rows, payload) ? payload : rows;
   }
   if (ds === 'prizepicks_props') {
@@ -485,17 +492,28 @@ function sharpOddsPreviewLine(row) {
   return Number.isFinite(book) && Number.isFinite(pp) && Math.abs(book - pp) <= 0.5 + 1e-9;
 }
 
-// null and undefined are missing. Number(null) is 0, which would beat every
-// negative edge, so this does not use num().
+// null, undefined, and a blank string are missing. Number(null) and Number('')
+// are both 0, which would beat every negative edge, so this does not use num().
 function presentScore(value) {
   if (value == null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
 
+function firstPresentScore(row, keys) {
+  for (const key of keys) {
+    const score = presentScore(row?.[key]);
+    if (score != null) return score;
+  }
+  return null;
+}
+
 function nflSharpScore(row) {
   if (!sharpOddsPreviewLine(row) || gameAlreadyStarted(row)) return -Infinity;
-  const edge = presentScore(row?.pp_edge_flex ?? row?.pp_edge_pct);
+  // A blank edge falls through the same way a null edge does: try the other
+  // edge field, then a numeric ev_pct. A real 0 stays 0.
+  const edge = firstPresentScore(row, ['pp_edge_flex', 'pp_edge_pct']);
   if (edge != null) return edge;
   const ev = presentScore(row?.ev_pct);
   return ev != null ? ev : -Infinity;
@@ -568,6 +586,25 @@ function previewObjectList(key, scoreFn) {
     return {
       data: { ...obj, [key]: kept },
       lockedCount: Math.max(0, lockable - kept.length),
+    };
+  };
+}
+
+// NFL and NHL PP Odds. When every remaining row has already started, the
+// preview is empty on purpose. Tell the tab, and do not count those rows as
+// a locked upgrade.
+function previewSharpOdds(scoreFn) {
+  const build = previewObjectList('records', scoreFn);
+  return (payload) => {
+    const preview = build(payload);
+    const kept = Array.isArray(preview.data?.records) ? preview.data.records : [];
+    if (kept.length > 0) return preview;
+    const rows = Array.isArray(payload?.records) ? payload.records : [];
+    const live = rows.filter((row) => isStandardBoardLine(row) && !prizepicksPulled(row));
+    if (!live.length || !live.every((row) => gameAlreadyStarted(row))) return preview;
+    return {
+      data: { ...preview.data, empty_state: 'started' },
+      lockedCount: 0,
     };
   };
 }
@@ -831,7 +868,7 @@ export const DATASETS = {
     free: previewNflProjections,
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
-  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewObjectList('records', nflSharpScore) },
+  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewSharpOdds(nflSharpScore) },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewNflGameMarkets },
   correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
   // Opponent-adjusted defense vs position (nflverse play-by-play). Team-level
@@ -857,7 +894,7 @@ export const DATASETS = {
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },
-  nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewObjectList('records', nhlSharpScore) },
+  nhl_sharp_odds: { table: 'nhl_sharp_odds', sport: 'nhl', free: previewSharpOdds(nhlSharpScore) },
   nhl_dvp_f: { table: 'nhl_dvp_f', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_d: { table: 'nhl_dvp_d', sport: 'nhl', free: previewObjectList('teams', () => 0) },
   nhl_dvp_g: { table: 'nhl_dvp_g', sport: 'nhl', free: previewObjectList('teams', () => 0) },
@@ -993,7 +1030,7 @@ export function _resetTierShapeFilters() {
 // Decide what the caller receives for one dataset snapshot.
 // alreadyStandard means the cached board was filtered once for this entry.
 // The hot path must not walk the rows again.
-export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}) {
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false, now = new Date() } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
   // Standard lines are removed before the trim on paid boards and, while
@@ -1007,7 +1044,7 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
   // removed, and non-standard lines are already gone on every paid board.
   // Only nhl_projections then drops Points overs under 0.69 and leaves
   // overs from 0.69 up to 0.78 on the board with rankEligible false.
-  if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload);
+  if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload, now);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }

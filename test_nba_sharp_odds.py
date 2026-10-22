@@ -290,6 +290,102 @@ class SnapshotTests(unittest.TestCase):
             self.assertNotEqual(row["grade"], bumped)
 
 
+def _pa_row(line=19.5):
+    key = nba_sharp.nba_name_key("Sample Wing")
+    return {
+        "player": "Sample Wing",
+        "player_key": key,
+        "prop": "Pts+Asts",
+        "pp_line": line,
+        "line_type": "standard",
+        "projection": 22,
+    }, key
+
+
+def _pa_books(key, book_line, book="DraftKings"):
+    return [
+        {
+            "player": "Sample Wing",
+            "player_key": key,
+            "prop": "Pts+Asts",
+            "side": side,
+            "line": book_line,
+            "price": -110,
+            "book": book,
+            "book_key": book.lower(),
+        }
+        for side in ("over", "under")
+    ]
+
+
+class LineDistanceTests(unittest.TestCase):
+    """NBA nearest-line cap is 1.0. The shared builder and the free preview stay put."""
+
+    def _nba(self, book_lines):
+        pp, key = _pa_row()
+        books = []
+        for offset, book in book_lines:
+            books.extend(_pa_books(key, pp["pp_line"] + offset, book))
+        return nba_sharp.snapshot_from_rows([pp], books)["records"][0]
+
+    def test_half_point_and_one_point_match(self):
+        self.assertEqual(nba_sharp.NBA_MAX_LINE_DELTA, 1.0)
+        for delta in (0.5, -0.5, 1.0, -1.0):
+            row = self._nba([(delta, "DraftKings")])
+            self.assertEqual(row["line_match"], "nearest", delta)
+            self.assertEqual(row["line_delta"], delta)
+            self.assertEqual(row["matched_line"], round(19.5 + delta, 2))
+            self.assertIsNone(row["unmatched_reason"])
+            self.assertTrue(row["book_prices"])
+            self.assertIsNotNone(row["best_over"])
+            self.assertIsNotNone(row["best_under"])
+            self.assertIsNotNone(row["fair_over_pct"])
+            self.assertIsNotNone(row["pp_edge_flex"])
+            self.assertIsNotNone(row["pp_edge_power"])
+            self.assertIsNotNone(row["grade"])
+
+    def test_one_and_a_half_and_two_points_do_not_match(self):
+        for delta in (1.5, -1.5, 2.0, -2.0):
+            row = self._nba([(delta, "FanDuel")])
+            self.assertEqual(row["line_match"], "none", delta)
+            self.assertIsNone(row["matched_line"])
+            self.assertIsNone(row["line_delta"])
+            self.assertEqual(row["unmatched_reason"], "line_too_far")
+            self.assertEqual(row["book_prices"], [])
+            self.assertIsNone(row["best_over"])
+            self.assertIsNone(row["best_under"])
+            self.assertIsNone(row["sharp_over"])
+            self.assertIsNone(row["sharp_under"])
+            self.assertIsNone(row["fair_over_pct"])
+            self.assertIsNone(row["fair_under_pct"])
+            self.assertEqual(row["fair_books"], [])
+            self.assertIsNone(row["pp_edge_flex"])
+            self.assertIsNone(row["pp_edge_power"])
+            self.assertIsNone(row["pp_edge_pct"])
+            self.assertIsNone(row["quoted_price"])
+            self.assertIsNone(row["price_american"])
+            self.assertIsNone(row["ev_pct"])
+            self.assertIsNone(row["grade"])
+            self.assertEqual(row["matched_books_count"], 0)
+
+    def test_a_one_point_line_wins_over_a_two_point_line(self):
+        row = self._nba([(1.0, "DraftKings"), (2.0, "FanDuel")])
+        self.assertEqual(row["line_match"], "nearest")
+        self.assertEqual(row["matched_line"], 20.5)
+        self.assertEqual({item["book"] for item in row["book_prices"]}, {"DraftKings"})
+
+    def test_shared_builder_and_nfl_count_cap_are_unchanged(self):
+        self.assertEqual(nfl_sharp.max_line_delta("Pts+Asts"), 10.0)
+        self.assertEqual(nfl_sharp.max_line_delta("Pass TDs"), 1.5)
+        self.assertEqual(nfl_sharp.max_line_delta("Receiving Yards"), 10.0)
+        pp, key = _pa_row()
+        shared = nfl_sharp.build_snapshot([pp], _pa_books(key, 21.5, "FanDuel"))["records"][0]
+        self.assertEqual(shared["line_match"], "nearest")
+        self.assertEqual(shared["line_delta"], 2.0)
+        self.assertTrue(shared["book_prices"])
+        self.assertIsNotNone(shared["pp_edge_flex"])
+
+
 class PublishTests(unittest.TestCase):
     def test_odds_publish_is_its_own_table_and_the_old_workflows_stay_clean(self):
         selected = tables_for_prefix("nba/sharp_odds.json")

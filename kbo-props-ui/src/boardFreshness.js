@@ -186,13 +186,19 @@ export function buildBoardStatus({ snapshots = {}, previous = [], now = new Date
     if (!raw && prev) raw = prev.board_updated_at
     if (count == null) count = Number.isInteger(prev?.prop_count) ? prev.prop_count : 0
     if (!injury && !present && prev) injury = prev.injuries_checked_at
+    // PrizePicks had 0 KBO props in the run that wrote prev
+    // (pipeline/board_status.py NO_LINES_NOTE). An empty board keeps that
+    // note and the last real clock, and reads stale; props clear it.
+    const noLines = sport === 'kbo' && prev?.note === 'no_lines' && count === 0
+    if (noLines) raw = prev.board_updated_at || null
     const entry = {
       sport,
       board_updated_at: raw ? isoWithEtOffset(raw) : null,
       injuries_checked_at: injury ? isoWithEtOffset(injury) : null,
       prop_count: count,
-      stale: raw ? isBoardStale(raw, sport, now) : true,
+      stale: noLines || !raw ? true : isBoardStale(raw, sport, now),
     }
+    if (noLines) entry.note = 'no_lines'
     if (sport === 'nhl') {
       const reasons = present ? removedReasonCounts(snap.data) : copyRemovedReasons(prev?.removed_reasons)
       if (reasons) entry.removed_reasons = reasons

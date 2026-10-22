@@ -6,6 +6,7 @@
 // same filters as every other player. NHL goal-scorer props are not a board
 // stat; a row whose stat says "goal scorer" is still left off.
 
+import { rowStartPassed } from './etStart.js'
 import { confirmedGoalieStarters, isNeutralHubRow, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
 import { nbaHubRows } from './memberHub.js'
@@ -75,12 +76,14 @@ export function publicTopHitRows(rows, limit = 10, now = new Date()) {
 // Homepage #free-top-3: the top standard lines by CG Score (the board and
 // ledger score), raw score breaking ties, then board order. Held, pulled and
 // removed lines and rows with no score are already out (publicBoardRows), and
-// a neutral 50 is no pick. No one-per-player rule, same as the server preview.
+// a neutral 50 is no pick. A game that has already started is not eligible
+// and does not take a slot. No one-per-player rule, same as the server preview.
 export const FREE_TOP_LIMIT = 3
 
-export function publicFreeTopRows(rows, limit = FREE_TOP_LIMIT) {
+export function publicFreeTopRows(rows, limit = FREE_TOP_LIMIT, now = Date.now()) {
   const raw = (row) => (Number.isFinite(row.rawScore) ? row.rawScore : -Infinity)
   return publicBoardRows(rows)
+    .filter((row) => !rowStartPassed(row, now))
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => Number.isFinite(Number(row.line)) && !isNeutralHubRow(row))
     .sort((a, b) => (b.row.score - a.row.score) || (raw(b.row) - raw(a.row)) || (a.index - b.index))

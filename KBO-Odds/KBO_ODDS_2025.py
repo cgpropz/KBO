@@ -404,6 +404,19 @@ def write_pull_status(payload, path=None, now=None, board_path=None):
     return payload
 
 
+def _write_run_signal(source, frame=None):
+    """Count-only record of this pull for checks later in the same job."""
+    try:
+        repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if repo not in sys.path:
+            sys.path.insert(0, repo)
+        from pipeline.kbo_run_signal import write_signal
+        count = 0 if source == "confirmed_empty" else (len(frame) if source == "fresh" and frame is not None else None)
+        write_signal(source, count)
+    except Exception as exc:  # never fail the fetch over the signal file
+        print(f"  ! KBO run signal not written: {exc}")
+
+
 def _load_cached():
     """Return the last saved JSON as a DataFrame so downstream steps still work."""
     base = os.path.dirname(os.path.abspath(__file__))
@@ -449,10 +462,12 @@ if __name__ == "__main__":
         # still build, and record the empty pull so every KBO prop is marked
         # pulled and leaves the ranking, free top 3 and slips.
         write_pull_status(pull_status_payload("confirmed_empty"))
+        _write_run_signal("confirmed_empty")
         print("⚠ PrizePicks has no KBO lines; keeping the odds file and marking every prop pulled")
         sys.exit(0)
     if source == "cache":
         write_pull_status(pull_status_payload("fetch_error"))
+        _write_run_signal("fetch_error")
         # The live board had no usable KBO lines. Keep this file so pitcher and
         # batter projections are not rebuilt from nothing. It can still be a
         # finished game. The board publish drops those lines before they go out.
@@ -460,12 +475,15 @@ if __name__ == "__main__":
         sys.exit(0)
     if source == "empty" or df is None or df.empty:
         print("✗ No KBO lines in the response and no last-good cache")
+        _write_run_signal("empty")
         sys.exit(1)
     print("Scraping complete... saving local odds files")
     if not save_to_json(df):
         # Refused (batter-only response over cached pitcher markets): the
         # saved file is not this pull, so do not mark lines pulled from it.
         write_pull_status(pull_status_payload("partial"))
+        _write_run_signal("partial")
         sys.exit(1)
     write_pull_status(pull_status_payload("fresh", df))
+    _write_run_signal("fresh", df)
     print("Google Sheets sync disabled")
