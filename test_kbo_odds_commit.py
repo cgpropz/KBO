@@ -14,8 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from pipeline import kbo_odds_commit as merge
-from pipeline.kbo_pulled_lines import confirmed_empty_in_force, confirmed_empty_valid_until
-from pipeline.memory import cutoff
+from pipeline.kbo_pulled_lines import confirmed_empty_valid_until
 
 ROOT = Path(__file__).resolve().parent
 SCRIPT = ROOT / "pipeline" / "commit_kbo_odds.sh"
@@ -33,22 +32,6 @@ def status(kind, checked, **extra):
         payload["valid_until"] = iso(confirmed_empty_valid_until(checked))
     payload.update(extra)
     return payload
-
-
-def confirming_empty_time(now):
-    """A checked_at whose confirmed_empty is still in force at `now`.
-
-    Twenty minutes before the wall clock is not enough. On a Thursday the
-    fallback first pitch is 18:30 KST, so a check from 18:11 expires at 18:30
-    and a fetch error at 18:31 replaces it. Within a few minutes of that
-    pitch, or once it has passed, stamp the check at the pitch itself: it
-    then lasts until the next slate, including the seconds the shell script
-    spends calling datetime.now().
-    """
-    first = cutoff.kbo_first_pitch(now.astimezone(cutoff.KST).date())[0].astimezone(timezone.utc)
-    if now >= first - timedelta(minutes=9):
-        return first
-    return now - timedelta(minutes=5)
 
 
 class PickTests(unittest.TestCase):
@@ -211,11 +194,12 @@ class CommitScriptTests(unittest.TestCase):
 
     def test_later_error_does_not_replace_a_confirmed_empty_on_main(self):
         now = datetime.now(timezone.utc)
-        empty_at = confirming_empty_time(now)
-        self.assertTrue(confirmed_empty_in_force(status("confirmed_empty", empty_at), now))
-        error_at = now if now > empty_at else empty_at + timedelta(seconds=1)
-        self.other_bot_pushes({PULL: json.dumps(status("confirmed_empty", empty_at)) + "\n"})
-        (self.job / PULL).write_text(json.dumps(status("fetch_error", error_at)) + "\n")
+        held = status("confirmed_empty", now - timedelta(minutes=20))
+        # Pin the hold past the test run so a real first pitch between the
+        # check and now (e.g. an 18:30 KST start) can't expire it mid-test.
+        held["valid_until"] = (now + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        self.other_bot_pushes({PULL: json.dumps(held) + "\n"})
+        (self.job / PULL).write_text(json.dumps(status("fetch_error", now - timedelta(minutes=1))) + "\n")
         result = self.run_script(self.job)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(self.main_file(PULL))["status"], "confirmed_empty")

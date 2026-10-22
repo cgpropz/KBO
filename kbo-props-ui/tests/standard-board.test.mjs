@@ -260,6 +260,7 @@ test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds t
 test('free sharp odds preview keeps an exact line or a nearest half point', () => {
   const records = [
     { player: 'Far', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 70, matched_line: 74.5, line_match: 'nearest', pp_edge_flex: 40, line_type: 'standard' },
+    { player: 'Point', prop: 'Pts+Asts', recommendation: 'OVER', pp_line: 19.5, matched_line: 20.5, line_match: 'nearest', pp_edge_flex: 50, line_type: 'standard' },
     { player: 'Half', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 74, matched_line: 74.5, line_match: 'nearest', pp_edge_flex: 3, line_type: 'standard' },
     { player: 'Exact', prop: 'Receiving Yards', recommendation: 'UNDER', pp_line: 74.5, matched_line: 74.5, line_match: 'exact', pp_edge_flex: 2, line_type: 'standard' },
     { player: 'None', prop: 'Receiving Yards', recommendation: 'OVER', pp_line: 74.5, line_match: 'none', pp_edge_flex: 30, line_type: 'standard' },
@@ -269,17 +270,17 @@ test('free sharp odds preview keeps an exact line or a nearest half point', () =
     const picked = selectFreeSharpOddsPreview(records, sport)
     assert.deepEqual(picked.map((row) => row.player), ['Half', 'Exact', 'Other'], sport)
     assert.equal(picked[1].side, 'UNDER')
-    assert.equal(picked.some((row) => row.player === 'Far' || row.player === 'None'), false)
+    assert.equal(picked.some((row) => row.player === 'Far' || row.player === 'Point' || row.player === 'None'), false)
   }
   const payload = { records, message: 'matched' }
   for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
     const paid = shapeForTier(ds, payload, 'combined')
     assert.equal(paid.preview, false)
-    assert.deepEqual(paid.data.records.map((row) => row.player), ['Far', 'Half', 'Exact', 'None', 'Other'], ds)
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['Far', 'Point', 'Half', 'Exact', 'None', 'Other'], ds)
     const free = shapeForTier(ds, payload, 'free')
     assert.equal(free.preview, true)
     assert.deepEqual(free.data.records.map((row) => row.player), ['Half', 'Exact', 'Other'], ds)
-    assert.equal(free.lockedCount, 2)
+    assert.equal(free.lockedCount, 3)
   }
 })
 
