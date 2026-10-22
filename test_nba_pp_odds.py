@@ -666,5 +666,60 @@ class AccentedNameTests(unittest.TestCase):
         self.assertEqual(pp.normalize_player_key("De'Aaron Fox"), "deaaronfox")
 
 
+
+class NameSuffixTests(unittest.TestCase):
+    """PrizePicks dropped a roster suffix (seen 2026-10-22: a "III" name had
+    no athleteId, so every line stayed without a projection)."""
+
+    ROSTER = [
+        {"athleteId": "900001", "name": "Casey Example III", "team": "DAL", "position": "C"},
+        {"athleteId": "900002", "name": "Robin Sample", "team": "BOS", "position": "SG"},
+        {"athleteId": "900003", "name": "Drew Twin", "team": "MIA", "position": "PF"},
+        {"athleteId": "900004", "name": "Drew Twin Jr.", "team": "MIA", "position": "SF"},
+    ]
+
+    @staticmethod
+    def _row(name, team="DEN"):
+        return {"name": name, "team": team, "oddsType": "standard", "stat": "Points", "statKey": "pts",
+                "line": 10.5, "versus": "OKC", "opponent": "OKC", "gameDate": "2026-10-22"}
+
+    def test_suffixless_key(self):
+        self.assertEqual(pp.suffixless_player_key("Casey Example III"), "caseyexample")
+        self.assertEqual(pp.suffixless_player_key("Drew Twin Jr."), "drewtwin")
+        self.assertEqual(pp.suffixless_player_key("Robin Sample"), "robinsample")
+
+    def test_pp_name_without_the_roster_suffix_gets_the_athlete_id(self):
+        boards, match = pp.build_boards([self._row("Casey Example")], self.ROSTER, {})
+        card = boards["standard"][0]
+        self.assertEqual(card["athleteId"], "900001")
+        self.assertEqual(card["position"], "C")
+        self.assertNotIn("Casey Example", match["unmatched"])
+
+    def test_pp_name_with_a_suffix_the_roster_lacks(self):
+        boards, _match = pp.build_boards([self._row("Robin Sample Jr.", "BOS")], self.ROSTER, {})
+        self.assertEqual(boards["standard"][0]["athleteId"], "900002")
+
+    def test_exact_name_wins_and_suffix_collisions_do_not_cross_match(self):
+        index, _ambiguous = pp.index_roster(self.ROSTER)
+        self.assertEqual(pp.roster_lookup(index, "Drew Twin")["athleteId"], "900003")
+        self.assertEqual(pp.roster_lookup(index, "Drew Twin Jr.")["athleteId"], "900004")
+        # "Drew Twin Sr." could be either player: stays unmatched.
+        self.assertIsNone(pp.roster_lookup(index, "Drew Twin Sr."))
+        self.assertIsNone(pp.roster_lookup(index, "Nobody Here"))
+
+    def test_matched_suffix_player_gets_projected_from_box_scores(self):
+        import nba.generate_nba_projections as gen
+
+        boards, _match = pp.build_boards([self._row("Casey Example")], self.ROSTER, {})
+        games = {"900001": [{"date": datetime(2026, 4, 1) - timedelta(days=i), "min": 20.0, "pts": 10.0,
+                             "reb": 6.0, "ast": 1.0, "fgm": 4, "fga": 8, "fg3m": 0, "fg3a": 1, "fg2m": 4, "fg2a": 7,
+                             "ftm": 2, "fta": 2, "stl": 1, "blk": 1, "tov": 1, "oreb": 2, "dreb": 4, "fantasy": 20.0}
+                            for i in range(12)]}
+        filled, counts = gen.apply_board(boards["standard"], games, {}, {}, {})
+        self.assertEqual(counts["projected_lines"], 1)
+        self.assertIsNotNone(filled[0]["ppAllProps"][0]["projection"])
+        self.assertEqual(filled[0]["projectionStatus"], "projected")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -157,7 +157,7 @@ def standard_index(rows: list[dict], roster: list[dict]) -> dict[tuple[str, str,
     for row in rows:
         if row.get("oddsType") != "standard":
             continue
-        roster_player = matched.get(pp.normalize_player_key(row.get("name")))
+        roster_player = pp.roster_lookup(matched, row.get("name"))
         who = _identity((roster_player or {}).get("athleteId"), row.get("name"))
         key = (who, str(row.get("stat") or ""), str(row.get("gameDate") or ""))
         index.setdefault(key, set()).add(float(row["line"]))
