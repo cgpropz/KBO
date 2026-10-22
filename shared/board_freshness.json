@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-22T11:38:19Z",
+  "checked_at": "2026-10-22T11:50:43Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-22T11:38:19.889162+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-22T11:24:10.611251+00:00",
-      "prop_count": 867,
+      "generated_at": "2026-10-22T11:50:43.388742+00:00",
+      "prop_count": 877,
       "started_removed": 0,
       "removals": [
         {
@@ -244,10 +244,10 @@
         {
           "player": "Arseny Gritsyuk",
           "team": "NJD",
-          "stat": "Points",
+          "stat": "Shots On Goal",
           "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.54,
+          "odds_type": "standard",
+          "projection": 2.19,
           "reason": "line pulled"
         },
         {
@@ -740,8 +740,8 @@
           "player": "Connor Dewar",
           "team": "PIT",
           "stat": "Shots On Goal",
-          "line": 4.5,
-          "odds_type": "demon",
+          "line": 1.5,
+          "odds_type": "standard",
           "projection": 1.13,
           "reason": "line pulled"
         },
@@ -912,6 +912,15 @@
           "team": "PIT",
           "stat": "Shots On Goal",
           "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.94,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Declan Carlile",
+          "team": "PIT",
+          "stat": "Shots On Goal",
+          "line": 1.5,
           "odds_type": "standard",
           "projection": 0.94,
           "reason": "line pulled"
@@ -923,15 +932,6 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.34,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Dougie Hamilton",
-          "team": "NJD",
-          "stat": "Points",
-          "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.5,
           "reason": "line pulled"
         },
         {
@@ -1254,15 +1254,6 @@
           "team": "NJD",
           "stat": "Points",
           "line": 0.5,
-          "odds_type": "demon",
-          "projection": 0.46,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Evan Rodrigues",
-          "team": "NJD",
-          "stat": "Points",
-          "line": 1.5,
           "odds_type": "demon",
           "projection": 0.46,
           "reason": "line pulled"
@@ -1666,6 +1657,15 @@
         {
           "player": "Jake DeBrusk",
           "team": "VAN",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.53,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jake DeBrusk",
+          "team": "VAN",
           "stat": "Power Play Points",
           "line": 0.5,
           "odds_type": "demon",
@@ -1749,6 +1749,15 @@
           "team": "SEA",
           "stat": "Shots On Goal",
           "line": 3.5,
+          "odds_type": "demon",
+          "projection": 1.81,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Jared McCann",
+          "team": "SEA",
+          "stat": "Shots On Goal",
+          "line": 4.5,
           "odds_type": "demon",
           "projection": 1.81,
           "reason": "line pulled"
@@ -2584,15 +2593,6 @@
         {
           "player": "Maxim Shabanov",
           "team": "MIN",
-          "stat": "Points",
-          "line": 2.5,
-          "odds_type": "demon",
-          "projection": 0.57,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Maxim Shabanov",
-          "team": "MIN",
           "stat": "Power Play Points",
           "line": 0.5,
           "odds_type": "demon",
@@ -3367,6 +3367,15 @@
         {
           "player": "Shayne Gostisbehere",
           "team": "CAR",
+          "stat": "Points",
+          "line": 2.5,
+          "odds_type": "demon",
+          "projection": 0.69,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Shayne Gostisbehere",
+          "team": "CAR",
           "stat": "Power Play Points",
           "line": 0.5,
           "odds_type": "demon",
@@ -3897,8 +3906,8 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 27,
-        "superseded_dup": 40,
+        "pp_pull": 36,
+        "superseded_dup": 44,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
