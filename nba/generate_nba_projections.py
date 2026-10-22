@@ -28,6 +28,10 @@ final is rejected even if its date sits inside the regular-season window. The
 A player with no qualifying log stays pending. No rookie projection is invented.
 There is no apply_live_formula overlay.
 
+Each prop stores sanity_flag and ratio from the projection/line check
+(outside 0.5-2.0). The flag does not change the projection or the rating.
+0.5 and 2.0 stay unflagged.
+
 An unset roster position uses generate_nba_dvp.assign_slot (ESPN G/F split).
 If that returns no slot, every factor is 1.0.
 
@@ -312,6 +316,29 @@ def project_player(games: list[dict], dvp_factors: dict | None = None) -> dict |
 
 CG_MIN = 0.0
 CG_MAX = 100.0
+
+
+def projection_line_ratio(projection, line) -> float | None:
+    """Projection divided by the PrizePicks line, or None when it cannot be computed."""
+    try:
+        ratio = float(projection) / float(line)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+    if not math.isfinite(ratio):
+        return None
+    return ratio
+
+
+def sanity_flag_for_ratio(ratio) -> bool:
+    """True when ratio is outside the logged window. 0.5 and 2.0 are inside."""
+    return ratio is not None and (ratio < SANITY_LOW or ratio > SANITY_HIGH)
+
+
+def attach_sanity(prop: dict) -> None:
+    """Store the existing check on the prop the snapshot publishes."""
+    ratio = projection_line_ratio(prop.get("projection"), prop.get("line"))
+    prop["ratio"] = to_fixed(ratio, 2) if ratio is not None else None
+    prop["sanity_flag"] = sanity_flag_for_ratio(ratio)
 
 
 def edge_rating(projection, line):
@@ -636,6 +663,7 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
             filled["hitRates"] = {"L5": None, "L10": None, "L15": None, "FULL": None}
             filled["effectiveDvpRank"] = None
             filled["l10Values"] = None
+        attach_sanity(filled)
         props.append(filled)
     updated["ppAllProps"] = props
     sample = None
@@ -675,20 +703,16 @@ def apply_board(players: list[dict], games_by_id: dict, dvp_factors: dict, dvp_r
                 counts["pending_lines"] += 1
                 continue
             counts["projected_lines"] += 1
-            line = prop.get("line")
-            try:
-                ratio = float(prop["projection"]) / float(line)
-            except (TypeError, ValueError, ZeroDivisionError):
+            if prop.get("sanity_flag") is not True:
                 continue
-            if math.isfinite(ratio) and (ratio < SANITY_LOW or ratio > SANITY_HIGH):
-                flags.append({
-                    "name": updated.get("name"),
-                    "stat": prop.get("stat"),
-                    "line": line,
-                    "projection": prop.get("projection"),
-                    "ratio": to_fixed(ratio, 2),
-                    "oddsHint": source,
-                })
+            flags.append({
+                "name": updated.get("name"),
+                "stat": prop.get("stat"),
+                "line": prop.get("line"),
+                "projection": prop.get("projection"),
+                "ratio": prop.get("ratio"),
+                "oddsHint": source,
+            })
     counts["sanity"] = flags
     return filled, counts
 

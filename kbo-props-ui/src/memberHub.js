@@ -461,8 +461,14 @@ function basketballRows(data, scoreFn, roster, sport) {
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
         statusLabel: availabilityLabel({ ...player, ...prop }),
         ...availabilityOf({ ...player, ...prop }),
-        // NBA board field only. WNBA rows stay without it.
-        ...(sport === 'nba' ? { avgMins: player.avgMins } : {}),
+        // NBA board fields only. WNBA rows stay without them.
+        // sanity_flag and ratio are stored by the projection step. They do not
+        // change the score. Only the Top 10 hit-rate list reads the flag.
+        ...(sport === 'nba' ? {
+          avgMins: player.avgMins,
+          sanity_flag: prop.sanity_flag === true,
+          ratio: prop.ratio == null || prop.ratio === '' || !Number.isFinite(num(prop.ratio)) ? null : num(prop.ratio),
+        } : {}),
       })
     }
   }
@@ -523,6 +529,7 @@ export function hitRateBlockReason(row, now = new Date()) {
   if (row.sport === 'nba') {
     if (EXCLUDED_PROP_LABELS.has(row.stat)) return 'excluded-prop'
     if (row.riskPlayer && nbaHighRisk(row.riskPlayer)) return 'high-risk'
+    if (row.sanity_flag === true) return 'sanity'
   } else if (row.sport === 'wnba') {
     if (WNBA_EXCLUDED_PROP_LABELS.has(row.stat)) return 'excluded-prop'
   } else if (row.sport === 'nfl' || row.sport === 'kbo') {
@@ -536,8 +543,9 @@ export function hitRateBlockReason(row, now = new Date()) {
 // Highest L10 hit rate on the board. The sample is the chart's decided games
 // (pushes already left out). A log shorter than 10, or a window with no
 // decided game, is not an L10 and stays off the list. Started games, excluded
-// prop labels, and the NBA high-risk screen use the same functions as the
-// boards. They do not change CG Score order.
+// prop labels, the NBA high-risk screen, and an NBA row with sanity_flag
+// use the same board checks. CG Score order, the free top 3, and the main
+// board do not read the flag.
 export function topHitRateRows(rows, limit = 10, now = new Date()) {
   const ranked = playableRows(rows)
     .filter((row) => (
