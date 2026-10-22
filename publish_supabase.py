@@ -1173,8 +1173,10 @@ def main():
                 from pipeline.nhl_removal_diff import diff_against_memory
                 removals, diff_note = diff_against_memory(data, now=published_moment)
                 print(f"  ℹ {diff_note}")
-                for row in removals:
-                    print(f"    - {row['player']} {row['stat']} {row['line']}: {row['reason']}")
+                # Counts only: Actions logs on a public repo are public.
+                from pipeline.board_freshness_file import removal_counts
+                for reason, count in removal_counts(removals).items():
+                    print(f"    - {reason}: {count}")
 
             # A scrape that returned no lines must not wipe a good board.
             # A board we just emptied because every game has started must publish,
