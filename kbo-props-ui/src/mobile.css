@@ -1143,6 +1143,12 @@
     overflow-x: auto;
   }
 
+  /* The account and alerts menus drop below .hub-tools. overflow-x: auto
+     also clips the y axis, which hid Sign out under the sport bar. */
+  .hub-tools {
+    overflow: visible;
+  }
+
   :is(.nfl-player-search, .kbo-player-search, .wnba-player-search) {
     width: min(190px, 100%);
     max-width: 100%;
