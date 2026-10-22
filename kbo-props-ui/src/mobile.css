@@ -1113,6 +1113,20 @@
   }
 }
 
+/* Five tabs (KBO, WNBA, NFL, NHL, NBA) need 352px at the phone tab size set
+   above, so on a 320px phone NBA sat past the right edge of the row. Tighten
+   the tabs so all five fit. The row still scrolls if more are ever added. */
+@media (max-width: 359px) {
+  :is(.pl-header, .cg-header, .kbo-app-nav, .nfl-nav, .wnba-nav) > .sport-switcher {
+    gap: 4px;
+  }
+
+  .sport-switcher button {
+    min-width: 52px;
+    padding: 6px 4px !important;
+  }
+}
+
 /* A mouse window in this range is not a phone, so the desktop table stays.
    The nav still has to wrap or scroll. Touch phones already match the query
    above; these rules only fill the gap where that query does not. */
