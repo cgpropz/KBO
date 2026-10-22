@@ -626,3 +626,10 @@ def test_zero_standard_rows_with_unknown_schedule_fails_red(tmp_path, monkeypatc
     assert "skipped=true" in out_file.read_text()
     assert "::error title=NBA schedule unknown::" in capsys.readouterr().out
     assert not list(tmp_path.glob("board_*.json"))
+
+
+def test_freeze_name_key_matches_the_board_key():
+    from nba import board_freeze as bf
+    assert bf._norm_name("Nikola Jokić") == bf._norm_name("Nikola Jokic")
+    assert bf._norm_name("Alperen Şengün") == "alperensengun"
+    assert bf._norm_name(None) == ""

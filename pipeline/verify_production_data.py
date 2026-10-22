@@ -14,6 +14,7 @@ Supports Vercel protection bypass when configured:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from dataclasses import dataclass
@@ -26,6 +27,9 @@ _PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 if _PIPELINE_DIR not in sys.path:
 	sys.path.insert(0, _PIPELINE_DIR)
 from snapshot_consistency import age_timestamp, skew_anchor  # noqa: E402
+from kbo_run_signal import NO_LINES_NOTE, no_lines_reason, read_signal  # noqa: E402
+
+LOCAL_STATUS_PATH = os.path.join(os.path.dirname(_PIPELINE_DIR), "kbo-props-ui", "public", "status.json")
 
 
 DEFAULT_BASE_URL = os.environ.get(
@@ -290,8 +294,10 @@ def status_document_error(payload: Any) -> str | None:
 		if not isinstance(row, dict):
 			return "status board row is not an object"
 		extra = set(row) - STATUS_KEYS
-		if extra - {"removed_reasons"}:
+		if extra - {"removed_reasons", "note"}:
 			return "status board row has extra fields"
+		if "note" in row and (row.get("sport") != "kbo" or row.get("note") != NO_LINES_NOTE):
+			return "only the kbo entry may carry the no_lines note"
 		if "removed_reasons" in row:
 			reasons = row.get("removed_reasons")
 			if row.get("sport") != "nhl" or not isinstance(reasons, dict):
@@ -304,6 +310,39 @@ def status_document_error(payload: Any) -> str | None:
 		sports.append(row.get("sport"))
 	if sports != list(STATUS_SPORTS):
 		return "status boards are not the five sports"
+	return None
+
+
+def load_json_file(path: str) -> Any:
+	try:
+		with open(path, encoding="utf-8") as handle:
+			return json.load(handle)
+	except (OSError, ValueError, TypeError):
+		return None
+
+
+def kbo_no_lines_allowance(signal: Any, env: Dict[str, str], status_doc: Any, kbo_board: Any) -> str | None:
+	"""None when empty KBO projections are expected in this run, else why not.
+
+	Allowed only when this run's KBO odds step recorded 0 KBO props from
+	PrizePicks (pipeline/kbo_run_signal.py), the KBO board has no cards, and
+	the status.json this run wrote says prop_count 0 with the no_lines note
+	and a stale clock.
+	"""
+	reason = no_lines_reason(signal, env)
+	if reason is not None:
+		return reason
+	cards = kbo_board.get("cards") if isinstance(kbo_board, dict) else None
+	if not isinstance(cards, list):
+		return "KBO board was not read"
+	if cards:
+		return "the KBO board still has cards"
+	boards = status_doc.get("boards") if isinstance(status_doc, dict) else None
+	kbo = next((row for row in boards or [] if isinstance(row, dict) and row.get("sport") == "kbo"), None)
+	if not kbo:
+		return "status.json has no KBO entry"
+	if kbo.get("prop_count") != 0 or kbo.get("note") != NO_LINES_NOTE or kbo.get("stale") is not True:
+		return "status.json KBO entry is not prop_count 0, stale, with the no_lines note"
 	return None
 
 
@@ -404,6 +443,11 @@ def main() -> int:
 		help="Check the website is up and still hides paid data. Do not fail on stale numbers.",
 	)
 	parser.add_argument(
+		"--status-path",
+		default=LOCAL_STATUS_PATH,
+		help="status.json written by this run (KBO no-lines check)",
+	)
+	parser.add_argument(
 		"--max-age-hours",
 		type=float,
 		default=30.0,
@@ -491,17 +535,32 @@ def main() -> int:
 	if rankings_result and rankings_result.ok:
 		failures.extend(verify_rankings(rankings_result.json_data))
 
+	# Empty KBO projections pass only when PrizePicks returned 0 KBO props in
+	# this same run. Anything else is still a failure.
+	empty_kbo: List[str] = []
 	strikeout_result = results.get("strikeout_projections")
 	if strikeout_result and strikeout_result.ok:
-		failures.extend(
+		empty_kbo.extend(
 			verify_projections_list("strikeout_projections.json", strikeout_result.json_data, "projections")
 		)
 
 	batter_result = results.get("batter_projections")
 	if batter_result and batter_result.ok:
-		failures.extend(
+		empty_kbo.extend(
 			verify_projections_list("batter_projections.json", batter_result.json_data, "projections")
 		)
+	if empty_kbo:
+		pp_board = results.get("prizepicks_props")
+		why = kbo_no_lines_allowance(
+			read_signal(os.environ),
+			os.environ,
+			load_json_file(args.status_path),
+			pp_board.json_data if pp_board and pp_board.ok else None,
+		)
+		if why is None:
+			print("KBO projections are empty: PrizePicks returned 0 KBO props in this run (status.json: no_lines).")
+		else:
+			failures.extend(f"{msg} ({why})" for msg in empty_kbo)
 
 	matchup_result = results.get("matchup_data")
 	if matchup_result and matchup_result.ok:
