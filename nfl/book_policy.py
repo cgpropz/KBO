@@ -34,6 +34,10 @@ books and are used only when the canonical skin did not post both
 sides. A BetOnline price stays sharp. A Bovada-only or
 SportsBetting-only price does not. Best Over/Under may still show the
 best price among the three. That group still counts once.
+
+theScore US (id 36) and theScore CA (id 60) are a second shared feed
+(``"feed": "thescore"``): one book in the count and the consensus,
+theScore US first. A group with no ``feed`` is the BetOnline feed.
 """
 from __future__ import annotations
 
@@ -83,16 +87,21 @@ def _load_excluded():
     return keys, ids
 
 
+# Stable books-count token for the shared feed, whichever skin posted.
+SHARED_COUNT_KEY = "betonline-sportsbetting-bovada"
+
+
 def _load_shared():
     by_key = {}
     by_id = {}
     for group in _POLICY.get("sharedFeed") or []:
         rank = int(group["rank"])
+        feed = group.get("feed") or SHARED_COUNT_KEY
         for source in group.get("sources") or []:
             key = book_key(source.get("name"))
             if not key:
                 continue
-            info = {"rank": rank, "canonical": bool(source.get("canonical")), "name": source.get("name"), "key": key}
+            info = {"feed": feed, "rank": rank, "canonical": bool(source.get("canonical")), "name": source.get("name"), "key": key}
             by_key[key] = info
             if source.get("id") is not None:
                 by_id[int(source["id"])] = info
@@ -101,9 +110,6 @@ def _load_shared():
 
 EXCLUDED_KEYS, EXCLUDED_SOURCE_IDS = _load_excluded()
 SHARED_BY_KEY, SHARED_BY_ID = _load_shared()
-
-# Stable books-count token for the shared feed, whichever skin posted.
-SHARED_COUNT_KEY = "betonline-sportsbetting-bovada"
 
 
 def is_excluded_book(row) -> bool:
@@ -136,8 +142,9 @@ def books_count(rows) -> int:
     for row in rows or []:
         if is_excluded_book(row):
             continue
-        if shared_feed_info(row):
-            keys.add(SHARED_COUNT_KEY)
+        shared = shared_feed_info(row)
+        if shared:
+            keys.add("shared:" + shared["feed"])
             continue
         key, _source_id = _row_bits(row)
         if key:
@@ -153,15 +160,17 @@ def consensus_rows(rows):
     that posted anything. Sides are not mixed across skins.
     """
     kept = []
-    shared = []
+    feeds = {}
     for row in rows or []:
         if not isinstance(row, dict) or is_excluded_book(row):
             continue
-        if shared_feed_info(row):
-            shared.append(row)
+        info = shared_feed_info(row)
+        if info:
+            feeds.setdefault(info["feed"], []).append(row)
         else:
             kept.append(row)
-    kept.extend(_collapse_shared(shared))
+    for group in feeds.values():
+        kept.extend(_collapse_shared(group))
     return kept
 
 
