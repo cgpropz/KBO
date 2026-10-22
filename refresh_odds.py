@@ -88,11 +88,6 @@ def fetch_odds():
     return True
 
 
-KBO_LAST_GOOD_TABLES = {
-    "prizepicks_props",
-    "strikeout_projections",
-    "batter_projections",
-}
 _LAST_GOOD_ROW_KEYS = ("cards", "projections", "players", "rows", "matchups", "pairs", "records", "games")
 
 
@@ -133,13 +128,12 @@ def _post_last_good(table, payload, updated_at):
 
 
 def _upload_kbo_last_good(table, payload, updated_at):
-    """Copy a published KBO line board into the private board-last-good bucket.
+    """Copy any published board into the private bucket.
 
-    Failure only warns. The table publish already succeeded, and a dry run
-    never reaches this helper.
+    The three KBO line tables are the ones the odds job always refreshes.
+    Rankings, matchups, and correlations published in the same run get a
+    copy too. Failure only warns. A dry run never reaches this helper.
     """
-    if table not in KBO_LAST_GOOD_TABLES:
-        return False
     if not _board_has_rows(payload):
         print(f"  ! {table} last-good skipped: empty board")
         return False
