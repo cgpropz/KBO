@@ -87,7 +87,7 @@ export default function AuthPage({ initialMode = 'login', onBack, notice = '' } 
         <button type="button" className="auth-logo" onClick={onBack} disabled={!onBack}>
           <span className="auth-logo-k">cgpropz</span>
         </button>
-        <p className="auth-tagline">Hand-crafted props for ⚾ KBO, 🏀 WNBA & 🏈 NFL</p>
+        <p className="auth-tagline">Hand-crafted props for ⚾ KBO, 🏀 WNBA, 🏈 NFL, 🏀 NBA & 🏒 NHL</p>
 
         {notice ? <p className="auth-notice">{notice}</p> : null}
 
