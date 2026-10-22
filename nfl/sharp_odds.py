@@ -23,7 +23,8 @@ complement. A whole-number count line is a PrizePicks push, so the over is
 P(X > line) and the under is P(X < line), each divided by 1 - P(X = line).
 CG odds drops that same push before it quotes a side. When the book line
 itself is a whole number, the Poisson mean is fit to that line's
-push-removed over before the move.
+push-removed over before the move. NHL and NBA PP Odds build through
+this same snapshot, so that fit is the one on their boards too.
 PP Edge = 100 * (fair side − PrizePicks break-even). Flex (-119) is the
 default. Power (-137) is stored beside it. Sportsbook EV stays on the book
 line, because that price is not a PrizePicks price. A raw price shop such
