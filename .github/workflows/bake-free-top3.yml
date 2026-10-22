@@ -45,7 +45,7 @@ jobs:
             exit 0
           fi
           window=$((45 * 60))
-          html=$(curl -fsS --max-time 20 https://cgpropz.com/ || true)
+          html=$(curl -fsSL --max-time 20 https://www.cgpropz.com/ || true)
           built=$(printf '%s' "$html" | grep -o 'data-built="[^"]*"' | head -1 | cut -d'"' -f2 || true)
           python3 - "$built" "$window" <<'PY'
           import sys
