@@ -50,6 +50,7 @@ import json
 import math
 import os
 import re
+import sys
 import urllib.parse
 import uuid
 from datetime import datetime, timezone
@@ -57,7 +58,14 @@ from pathlib import Path
 
 import requests
 
-from nfl.book_policy import books_count, consensus_rows, is_excluded_book
+# The refresh workflows run `python nfl/sharp_odds.py`, which puts nfl/ on
+# sys.path[0], not the repo root, so `import nfl` fails without this (same
+# bootstrap as nfl/build_projection_data.py and nfl/game_markets.py).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from nfl.book_policy import books_count, consensus_rows, is_excluded_book  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent
