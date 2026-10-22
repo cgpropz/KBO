@@ -945,6 +945,33 @@ def print_report(result: dict) -> None:
     print("Ambiguous roster names: " + (", ".join(ambiguous) if ambiguous else "none"))
 
 
+# Keys a raw-feed artifact may carry. Everything is copied from the PrizePicks
+# response; any key outside these (a board field such as a projection, CG
+# score, rating, hit rate, or removal flag) is dropped, so the artifact holds
+# public PrizePicks lines only.
+RAW_ROW_KEYS = ("id", "type", "attributes", "relationships")
+RAW_INCLUDED_KEYS = ("id", "type", "attributes")
+RAW_BOARD_FIELDS = frozenset({
+    "projection", "projected", "proj", "cg", "cgScore", "cg_score", "score",
+    "rating", "ratings", "edge", "ratio", "hitRate", "hitRates", "hit_rate",
+    "sanity", "removed", "pp_status", "ppStatus", "removedAt", "removed_at",
+    "removal", "pulled", "prizepicksPulled",
+})
+
+
+def _public_attributes(attributes: object) -> dict:
+    if not isinstance(attributes, dict):
+        return {}
+    return {key: value for key, value in attributes.items() if key not in RAW_BOARD_FIELDS}
+
+
+def _public_item(item: dict, keys: tuple[str, ...]) -> dict:
+    out = {key: item[key] for key in keys if key in item}
+    if "attributes" in out:
+        out["attributes"] = _public_attributes(out["attributes"])
+    return out
+
+
 def raw_nba_feed(payload: dict) -> dict:
     """The NBA-family projections from a pull, unchanged, with what they reference.
 
@@ -959,14 +986,14 @@ def raw_nba_feed(payload: dict) -> dict:
     for row in payload.get("data") or []:
         if projection_league(row, leagues, players) not in keep_leagues:
             continue
-        data.append(row)
+        data.append(_public_item(row, RAW_ROW_KEYS))
         for rel in (row.get("relationships") or {}).values():
             ref = (rel or {}).get("data") if isinstance(rel, dict) else None
             if isinstance(ref, dict) and ref.get("id") is not None:
                 refs.add((str(ref.get("type") or ""), str(ref.get("id"))))
     ids = {ref_id for _type, ref_id in refs}
     included = [
-        item for item in payload.get("included") or []
+        _public_item(item, RAW_INCLUDED_KEYS) for item in payload.get("included") or []
         if (str(item.get("type") or ""), str(item.get("id"))) in refs
         or (item.get("type") in ("league", "new_player") and str(item.get("id")) in ids)
     ]

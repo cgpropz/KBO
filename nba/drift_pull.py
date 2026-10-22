@@ -34,14 +34,21 @@ import sys
 from datetime import datetime, time, timezone
 from pathlib import Path
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-import nba.generate_nba_projections as gen  # noqa: E402
+# The gate (--gate) runs before the workflow installs requests/pandas, so it
+# imports only the standard library plus pipeline.refresh_window. The board
+# code (generate_nba_projections) and nba-pp-odds.py (requests) load lazily,
+# only for a due pull.
 from pipeline import refresh_window  # noqa: E402
+
+# Same zone as nba-pp-odds.py SLATE_TIMEZONE.
+EASTERN = ZoneInfo("America/New_York")
 
 NBA_LEAGUE_ID = 7
 PER_PAGE = 1000
@@ -68,8 +75,20 @@ def load_pp():
     return _PP
 
 
+class _LazyGen:
+    """nba.generate_nba_projections, imported on first use (not by the gate)."""
+
+    def __getattr__(self, name: str):
+        import nba.generate_nba_projections as module
+
+        return getattr(module, name)
+
+
+gen = _LazyGen()
+
+
 def eastern():
-    return load_pp().SLATE_TIMEZONE
+    return EASTERN
 
 
 # --- gate -----------------------------------------------------------------
@@ -117,8 +136,8 @@ def fetch_once(get: Callable | None = None) -> dict:
 
 
 def raw_feed(payload: dict) -> dict:
-    """The PrizePicks response as received. Public lines only, no board fields."""
-    return {"data": payload.get("data") or [], "included": payload.get("included") or []}
+    """The PrizePicks NBA lines as received. Public lines only, no board fields."""
+    return load_pp().raw_nba_feed(payload)
 
 
 # --- drift ----------------------------------------------------------------

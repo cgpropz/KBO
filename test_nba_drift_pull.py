@@ -254,5 +254,76 @@ class WorkflowTests(unittest.TestCase):
             self.assertNotIn(field, text)
 
 
+    def test_raw_feed_drops_board_fields_and_keeps_public_lines(self):
+        pp = drift.load_pp()
+        data = payload([projection("a", "Alpha Guard", "Points", 14.5, "standard")])
+        row = data["data"][0]
+        row["attributes"].update({"projection": 16.2, "cgScore": 71, "rating": 3, "hitRates": {}, "removed": True, "pp_status": "removed"})
+        row.update({"cg": 71, "removed": True, "sanity": "ok"})
+        data["included"][0]["attributes"]["rating"] = 4
+        data["included"][0]["edge"] = 1.2
+        raw = drift.raw_feed(data)
+        kept = raw["data"][0]
+        self.assertEqual(set(kept), {"id", "type", "attributes", "relationships"} & set(row))
+        self.assertEqual(kept["attributes"]["line_score"], 14.5)
+        self.assertEqual(kept["attributes"]["odds_type"], "standard")
+        for item in raw["data"] + raw["included"]:
+            self.assertFalse(set(item) - {"id", "type", "attributes", "relationships"})
+            self.assertFalse(set(item.get("attributes") or {}) & pp.RAW_BOARD_FIELDS)
+        self.assertEqual(raw, pp.raw_nba_feed(data))
+
+    def test_raw_feed_artifacts_keep_seven_days_or_less(self):
+        import re
+
+        workflows = Path(__file__).resolve().parent / ".github/workflows"
+        for name in ("nba-drift-pull.yml", "nba-props-refresh.yml", "nba-refresh.yml"):
+            text = (workflows / name).read_text()
+            steps = text.split("      - name: ")
+            raw_steps = [step for step in steps if "nba-prizepicks-raw" in step and "upload-artifact" in step]
+            self.assertEqual(len(raw_steps), 1, name)
+            days = re.search(r"retention-days:\s*(\d+)", raw_steps[0])
+            self.assertIsNotNone(days, name)
+            self.assertLessEqual(int(days.group(1)), 7, name)
+
+    def test_drift_workflow_installs_dependencies_before_the_gate(self):
+        text = (Path(__file__).resolve().parent / ".github/workflows/nba-drift-pull.yml").read_text()
+        install = text.index("pip install requests pandas")
+        gate = text.index("python nba/drift_pull.py --gate")
+        self.assertLess(install, gate)
+
+    def test_gate_runs_without_requests_or_pandas(self):
+        import subprocess
+
+        repo = Path(__file__).resolve().parent
+        script = r"""
+import sys
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+sys.modules["requests"] = None  # import requests -> ImportError
+sys.modules["pandas"] = None
+sys.path.insert(0, sys.argv[1])
+import nba.drift_pull as drift
+eastern = ZoneInfo("America/New_York")
+tip = datetime(2026, 10, 20, 19, 0, tzinfo=eastern)
+due, reason = drift.drift_due([tip], datetime(2026, 10, 20, 11, 0, tzinfo=eastern))
+assert due, reason
+drift.refresh_window.espn_starts = lambda sport: [tip]
+code = drift.main(["--gate"])
+assert code in (0, 2), code
+loaded = [name for name in ("nba.generate_nba_projections", "nba_pp_odds_drift") if name in sys.modules]
+assert not loaded, loaded
+print("gate ok")
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", script, str(repo)],
+            capture_output=True, text=True, timeout=60, env={"PATH": "/usr/bin:/bin"},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        self.assertIn("gate ok", result.stdout)
+
+    def test_eastern_matches_the_pp_odds_slate_zone(self):
+        self.assertEqual(str(drift.eastern()), str(drift.load_pp().SLATE_TIMEZONE))
+
+
 if __name__ == "__main__":
     unittest.main()

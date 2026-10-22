@@ -635,10 +635,6 @@ class CacheAndSnapshotTests(unittest.TestCase):
         self.assertIsNone(demon[0]["ppAllProps"][0]["standardLine"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class AccentedNameTests(unittest.TestCase):
     def test_accented_prizepicks_names_match_the_plain_roster(self):
         rows = [
@@ -668,3 +664,7 @@ class AccentedNameTests(unittest.TestCase):
         ]:
             self.assertEqual(pp.normalize_player_key(accented), pp.normalize_player_key(plain))
         self.assertEqual(pp.normalize_player_key("De'Aaron Fox"), "deaaronfox")
+
+
+if __name__ == "__main__":
+    unittest.main()
