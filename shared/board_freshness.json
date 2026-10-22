@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-22T13:29:04Z",
+  "checked_at": "2026-10-22T13:40:45Z",
   "boards": {
     "nfl": {
       "generated_at": "2026-10-22T13:29:04.579485+00:00",
@@ -12,8 +12,8 @@
       "started_removed": 0
     },
     "nhl": {
-      "generated_at": "2026-10-22T13:13:24.662905+00:00",
-      "prop_count": 890,
+      "generated_at": "2026-10-22T13:40:45.989198+00:00",
+      "prop_count": 904,
       "started_removed": 0,
       "removals": [
         {
@@ -30,6 +30,15 @@
           "team": "NYR",
           "stat": "Shots On Goal",
           "line": 2.5,
+          "odds_type": "demon",
+          "projection": 1.66,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Adam Fox",
+          "team": "NYR",
+          "stat": "Shots On Goal",
+          "line": 3.5,
           "odds_type": "demon",
           "projection": 1.66,
           "reason": "line pulled"
@@ -248,15 +257,6 @@
           "line": 2.5,
           "odds_type": "demon",
           "projection": 1.57,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Arseny Gritsyuk",
-          "team": "NJD",
-          "stat": "Points",
-          "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.54,
           "reason": "line pulled"
         },
         {
@@ -809,15 +809,6 @@
           "reason": "line pulled"
         },
         {
-          "player": "Connor McDavid",
-          "team": "EDM",
-          "stat": "Points",
-          "line": 3.5,
-          "odds_type": "demon",
-          "projection": 1.44,
-          "reason": "line pulled"
-        },
-        {
           "player": "Connor McMichael",
           "team": "STL",
           "stat": "Points",
@@ -986,15 +977,6 @@
           "line": 0.5,
           "odds_type": "demon",
           "projection": 0.34,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Dougie Hamilton",
-          "team": "NJD",
-          "stat": "Points",
-          "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.5,
           "reason": "line pulled"
         },
         {
@@ -1351,15 +1333,6 @@
         {
           "player": "Evan Rodrigues",
           "team": "NJD",
-          "stat": "Points",
-          "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.46,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Evan Rodrigues",
-          "team": "NJD",
           "stat": "Shots On Goal",
           "line": 1.5,
           "odds_type": "goblin",
@@ -1670,6 +1643,15 @@
           "line": 4.5,
           "odds_type": "demon",
           "projection": 2.08,
+          "reason": "line pulled"
+        },
+        {
+          "player": "JJ Peterka",
+          "team": "BOS",
+          "stat": "Points",
+          "line": 1.5,
+          "odds_type": "demon",
+          "projection": 0.6,
           "reason": "line pulled"
         },
         {
@@ -2366,6 +2348,15 @@
           "reason": "line pulled"
         },
         {
+          "player": "Leo Carlsson",
+          "team": "ANA",
+          "stat": "Shots On Goal",
+          "line": 5.5,
+          "odds_type": "demon",
+          "projection": 2.4,
+          "reason": "line pulled"
+        },
+        {
           "player": "Leon Draisaitl",
           "team": "EDM",
           "stat": "Points",
@@ -2687,15 +2678,6 @@
           "line": 2.5,
           "odds_type": "demon",
           "projection": 1.25,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Mason Marchment",
-          "team": "SJS",
-          "stat": "Points",
-          "line": 1.5,
-          "odds_type": "demon",
-          "projection": 0.5,
           "reason": "line pulled"
         },
         {
@@ -3817,15 +3799,6 @@
         {
           "player": "Shayne Gostisbehere",
           "team": "CAR",
-          "stat": "Points",
-          "line": 2.5,
-          "odds_type": "demon",
-          "projection": 0.69,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Shayne Gostisbehere",
-          "team": "CAR",
           "stat": "Power Play Points",
           "line": 0.5,
           "odds_type": "demon",
@@ -4159,15 +4132,6 @@
         {
           "player": "Viktor Arvidsson",
           "team": "DET",
-          "stat": "Points",
-          "line": 2.5,
-          "odds_type": "demon",
-          "projection": 0.97,
-          "reason": "line pulled"
-        },
-        {
-          "player": "Viktor Arvidsson",
-          "team": "DET",
           "stat": "Shots On Goal",
           "line": 4.5,
           "odds_type": "demon",
@@ -4217,6 +4181,15 @@
           "line": 1.5,
           "odds_type": "demon",
           "projection": 0.61,
+          "reason": "line pulled"
+        },
+        {
+          "player": "Vincent Trocheck",
+          "team": "UTA",
+          "stat": "Shots On Goal",
+          "line": 1.5,
+          "odds_type": "standard",
+          "projection": 1.25,
           "reason": "line pulled"
         },
         {
@@ -4446,8 +4419,8 @@
         }
       ],
       "removed_reasons": {
-        "pp_pull": 47,
-        "superseded_dup": 33,
+        "pp_pull": 53,
+        "superseded_dup": 36,
         "manual_out": 0,
         "news_out": 0,
         "lineup_out": 0
