@@ -346,7 +346,9 @@ def prizepicks_cards(payload):
             line = float(attrs.get("line_score"))
         except (TypeError, ValueError):
             continue
-        odds = str(attrs.get("odds_type") or "standard").lower()
+        # A missing or unknown odds_type is not standard. The row is skipped
+        # rather than filed as a standard line.
+        odds = str(attrs.get("odds_type") or "").strip().lower()
         if odds not in ODDS_RANK:
             continue
         rows.append({
