@@ -194,7 +194,11 @@ class CommitScriptTests(unittest.TestCase):
 
     def test_later_error_does_not_replace_a_confirmed_empty_on_main(self):
         now = datetime.now(timezone.utc)
-        self.other_bot_pushes({PULL: json.dumps(status("confirmed_empty", now - timedelta(minutes=20))) + "\n"})
+        held = status("confirmed_empty", now - timedelta(minutes=20))
+        # Pin the hold past the test run so a real first pitch between the
+        # check and now (e.g. an 18:30 KST start) can't expire it mid-test.
+        held["valid_until"] = (now + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        self.other_bot_pushes({PULL: json.dumps(held) + "\n"})
         (self.job / PULL).write_text(json.dumps(status("fetch_error", now - timedelta(minutes=1))) + "\n")
         result = self.run_script(self.job)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
