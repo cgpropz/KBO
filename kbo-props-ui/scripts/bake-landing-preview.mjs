@@ -1,5 +1,9 @@
-// Reads the published NFL snapshots and writes the free preview only.
-// Started games stay out. Total edges stay out. The full board is not written.
+// Reads the published snapshots and writes the free preview JSON only
+// (api/_landingPreview.json and public/landing). This is the API fallback
+// when Supabase cannot be read. It is not the homepage HTML. That HTML,
+// and dist/assets/free-top3-*.js, come from write-free-top3.mjs during the
+// site build. Started games stay out. Total edges stay out. The full board
+// is not written.
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -34,6 +38,7 @@ export function landingPreviewBody(ds, row) {
   if (ds === 'nhl_projections') {
     const rows = Array.isArray(shaped.data) ? shaped.data : [];
     if (rows.length > 3) throw new Error('NHL preview has more than 3 rows');
+    if (rows.some((item) => gameAlreadyStarted(item))) throw new Error('NHL preview includes a started game');
   }
   return {
     data: shaped.data,

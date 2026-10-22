@@ -7,12 +7,15 @@
 // text, and never fails the build. Only a successful empty read says nothing
 // is posted.
 //
-// Data publishes do not redeploy, so the build also bundles a small browser
-// module (scripts/freeTop3Client.mjs -> dist/assets/free-top3-<hash>.js). On
-// the sport pages it re-reads the same anonymous preview and re-renders the
-// rows, so a pulled line, a KBO hold or the end of a hold shows up without a
-// deploy. Rows older than FREE_TOP3_MAX_AGE_MS are hidden if that re-read
-// cannot run. SEO_FREE_TOP3=off skips it; SEO_FREE_TOP3_API overrides the origin.
+// Board publishes do not change this file by themselves. .github/workflows/bake-free-top3.yml
+// rebuilds and deploys after those publishes, and again early morning ET, so
+// the stamp moves. The build also bundles a small browser module
+// (scripts/freeTop3Client.mjs -> dist/assets/free-top3-<hash>.js). On the
+// sport pages it re-reads the same anonymous preview and re-renders the rows,
+// so a pulled line, a KBO hold or the end of a hold shows up without waiting
+// for that deploy. The inline script drops a started game even when the bake
+// is older than FREE_TOP3_MAX_AGE_MS, then hides whatever is left. SEO_FREE_TOP3=off
+// skips it; SEO_FREE_TOP3_API overrides the origin.
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

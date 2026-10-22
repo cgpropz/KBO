@@ -1,0 +1,112 @@
+name: Bake free top 3
+
+# The homepage free top 3 is static HTML. scripts/write-free-top3.mjs stamps
+# it during `npm run build`, into the page and into dist/assets/free-top3-*.js
+# (the browser re-reader). That build used to run only from deploy.yml, which
+# ships when UI or API files change, not when a board is published. The rows
+# and the "as of" stamp then sat at the last site deploy.
+#
+# Board publish jobs queue this workflow. It also runs once early in the
+# America/New_York morning so a slate that tipped overnight is not still the
+# page at dawn. A dispatch that finds a live stamp younger than 20 minutes
+# skips the upload, so several sports publishing together share one production
+# deploy. The morning schedule always bakes. This job uses deploy.yml's
+# concurrency group so two production uploads cannot pass each other.
+
+on:
+  schedule:
+    # 4:15 AM America/New_York. Both UTC hours stay on across the DST switch
+    # (EDT through Nov 1 2026, then EST), same pattern as the NFL pre-lock crons.
+    - cron: "15 8 * * *" # 4:15 AM EDT
+    - cron: "15 9 * * *" # 4:15 AM EST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cgpropz-code-deploy
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: kbo-props-ui
+    steps:
+      - name: Skip when the live free top 3 was just baked
+        id: fresh
+        if: github.event_name != 'schedule'
+        working-directory: ${{ github.workspace }}
+        run: |
+          html=$(curl -fsS --max-time 20 https://cgpropz.com/ || true)
+          built=$(printf '%s' "$html" | grep -o 'data-built="[^"]*"' | head -1 | cut -d'"' -f2 || true)
+          python3 - "$built" "$GITHUB_OUTPUT" <<'PY'
+          import sys
+          from datetime import datetime, timezone
+          raw = sys.argv[1]
+          out = sys.argv[2]
+          fresh = False
+          if raw:
+              try:
+                  built = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                  age = (datetime.now(timezone.utc) - built).total_seconds()
+                  print(f"live stamp age {age:.0f}s ({raw})")
+                  fresh = 0 <= age < 20 * 60
+              except ValueError:
+                  print(f"unparsed stamp {raw}")
+          else:
+              print("no live stamp")
+          with open(out, "a", encoding="utf-8") as fh:
+              fh.write(f"skip={'true' if fresh else 'false'}\n")
+          PY
+
+      - name: Checkout repo
+        if: steps.fresh.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.fresh.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: kbo-props-ui/package-lock.json
+
+      - name: Install dependencies
+        if: steps.fresh.outputs.skip != 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Vercel Hobby function limit
+        if: steps.fresh.outputs.skip != 'true'
+        run: node scripts/check-function-limit.mjs
+
+      # API fallback JSON only. The homepage HTML is written by the build
+      # below. A failed read must not block that HTML.
+      - name: Bake the public preview fallback
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
+        run: node scripts/bake-landing-preview.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Build the site
+        if: steps.fresh.outputs.skip != 'true'
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deploy to Vercel
+        if: steps.fresh.outputs.skip != 'true'
+        run: |
+          npm i -g vercel@latest
+          vercel --prod --token "$VERCEL_TOKEN" --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

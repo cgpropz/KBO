@@ -2,32 +2,12 @@
 // over is promoted only at 0.78 or above. The slice happens after that
 // filter, so a started row does not take a slot that a live row should fill.
 
+import { gameAlreadyStarted } from './gameStarted.js'
 import { pointsOverDisposition } from './nhl/pointsGate.js'
 import { compareSymmetric, rankable, symmetricRankOn } from './sideRank.js'
 
-function etDay(now) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now)
-}
-
 export function pickHasStarted(row, now = new Date()) {
-  if (!row || typeof row !== 'object') return false
-  if (row.started === true || row.locked === true || row.removed === true) return true
-  const raw = row.start_time ?? row.startTime ?? row.start_time_utc ?? row.kickoff_at
-  if (raw != null && String(raw).trim() !== '') {
-    const kick = Date.parse(String(raw))
-    const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now))
-    if (Number.isFinite(kick) && Number.isFinite(nowMs)) return kick <= nowMs
-  }
-  const day = row.game_date || row.gameDate || row.gameday
-  if (typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
-    return day < etDay(now instanceof Date ? now : new Date(now))
-  }
-  return false
+  return gameAlreadyStarted(row, now)
 }
 
 export function isLiveFreePick(row, sport, now = new Date()) {
