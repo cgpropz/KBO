@@ -88,15 +88,33 @@ function poissonCdf(k, lambda) {
   return total
 }
 
-// Same 80-step search as nfl/sharp_odds.py _fit_count_lambda.
+function wholeNumberLine(line) {
+  return Number.isFinite(line) && Math.abs(line - Math.round(line)) <= 1e-9
+}
+
+// P(X > line) on a half point. On a whole number, that strict over divided
+// by 1 - P(X = line). Matches nfl/sharp_odds.py _book_count_over.
+function bookCountOver(lambda, bookLine) {
+  const bookK = Math.floor(bookLine)
+  const strict = 1 - poissonCdf(bookK, lambda)
+  if (!wholeNumberLine(bookLine)) return strict
+  const cdfLine = poissonCdf(bookK, lambda)
+  const cdfBelow = poissonCdf(bookK - 1, lambda)
+  const decisive = 1 - (cdfLine - cdfBelow)
+  if (decisive <= 0) return strict
+  return strict / decisive
+}
+
+// Same 80-step search as nfl/sharp_odds.py _fit_count_lambda. A whole-number
+// book line is fit to the push-removed over. The caller only uses this when
+// the PrizePicks line is different.
 function fitCountLambda(pOver, bookLine) {
   let lo = 0.01
   let hi = 60
   let lambda = lo
-  const bookK = Math.floor(bookLine)
   for (let i = 0; i < 80; i += 1) {
     lambda = (lo + hi) / 2
-    if (1 - poissonCdf(bookK, lambda) < pOver) lo = lambda
+    if (bookCountOver(lambda, bookLine) < pOver) lo = lambda
     else hi = lambda
   }
   return lambda

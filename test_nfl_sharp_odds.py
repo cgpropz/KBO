@@ -1065,3 +1065,187 @@ process.stdout.write(JSON.stringify(out))
             self.assertNotEqual(cg["over"], cg["under"])
         self.assertGreater(cg_rows[0]["over"], cg_rows[0]["under"])
         self.assertGreater(cg_rows[1]["under"], cg_rows[1]["over"])
+
+    def test_whole_book_line_fits_the_push_removed_over_and_matches_js(self):
+        """A whole-number book line is fit with the push removed.
+
+        The PrizePicks line is different, so the mean is then moved. A half
+        point still matches the strict over. Python and the CG odds shift agree.
+        """
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is required to compare the book-line fit")
+
+        def old_shift(probability, book, prize):
+            lo, hi = 0.01, 60.0
+            lam = lo
+            book_k = int(book)
+            for _ in range(80):
+                lam = (lo + hi) / 2.0
+                if (1.0 - sharp._poisson_cdf(book_k, lam)) < probability:
+                    lo = lam
+                else:
+                    hi = lam
+            return 1.0 - sharp._poisson_cdf(int(prize), lam)
+
+        cases = [
+            {"p": 0.62, "book": 2, "pp": 2.5, "prop": "Shots On Goal"},
+            {"p": 0.4, "book": 3, "pp": 2.5, "prop": "Receptions"},
+            {"p": 0.7, "book": 2, "pp": 1.5, "prop": "Points"},
+            {"p": 0.55, "book": 1.5, "pp": 2, "prop": "Shots On Goal"},
+            {"p": 0.48, "book": 4.5, "pp": 4, "prop": "Rush Attempts"},
+        ]
+        for case in cases:
+            lam = sharp._fit_count_lambda(case["p"], case["book"])
+            self.assertAlmostEqual(sharp._book_count_over(lam, case["book"]), case["p"], places=5)
+            strict = 1.0 - sharp._poisson_cdf(int(case["book"]), lam)
+            moved = sharp.shift_over(case["p"], case["book"], case["pp"], case["prop"])
+            previous = old_shift(case["p"], case["book"], case["pp"])
+            if sharp._whole_number(case["book"]) is not None:
+                self.assertGreater(abs(strict - case["p"]), 0.01)
+                self.assertGreater(abs(moved - previous), 1e-4)
+            else:
+                self.assertAlmostEqual(strict, case["p"], places=5)
+                self.assertAlmostEqual(moved, previous, places=6)
+
+        script = """
+import { shiftOver } from './kbo-props-ui/src/nfl/cgOdds.js'
+const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const rows = JSON.parse(Buffer.concat(chunks).toString())
+process.stdout.write(JSON.stringify(rows.map((row) => shiftOver(row.p, row.book, row.pp, row.prop))))
+"""
+        completed = subprocess.run(
+            [node, "--input-type=module", "-e", script],
+            input=json.dumps(cases),
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        js_values = json.loads(completed.stdout)
+        self.assertEqual(len(js_values), len(cases))
+        for case, js_value in zip(cases, js_values):
+            py_value = sharp.shift_over(case["p"], case["book"], case["pp"], case["prop"])
+            self.assertAlmostEqual(py_value, js_value, delta=1e-9)
+
+    def test_shared_snapshot_fits_whole_book_lines_for_nfl_nhl_and_nba(self):
+        """The member PP Edge comes from build_snapshot on every PP Odds board.
+
+        NFL and NHL call it directly. NBA calls it from snapshot_from_rows.
+        A whole-number book line is fit to the push-removed over. A half-point
+        book line still matches the strict over. Prices and names are synthetic.
+        """
+        import nba.sharp_odds as nba_sharp
+        import nhl.sharp_odds as nhl_sharp
+
+        self.assertIs(nhl_sharp.build_snapshot, sharp.build_snapshot)
+        self.assertIs(nba_sharp.build_snapshot, sharp.build_snapshot)
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is required to compare CG odds with the snapshot")
+
+        def old_over(probability, book, prize, prop):
+            lo, hi = 0.01, 60.0
+            lam = lo
+            book_k = int(book)
+            for _ in range(80):
+                lam = (lo + hi) / 2.0
+                if (1.0 - sharp._poisson_cdf(book_k, lam)) < probability:
+                    lo = lam
+                else:
+                    hi = lam
+            if prop in sharp.HALF_POINT_SHIFT or sharp._whole_number(prize) is None:
+                return 1.0 - sharp._poisson_cdf(int(prize), lam)
+            line = int(round(prize))
+            cdf_below = sharp._poisson_cdf(line - 1, lam)
+            cdf_line = sharp._poisson_cdf(line, lam)
+            p_gt = 1.0 - cdf_line
+            decisive = 1.0 - (cdf_line - cdf_below)
+            if decisive <= 0.0:
+                return p_gt
+            return p_gt / decisive
+
+        def quote(player, prop, line):
+            key = sharp.name_key(player)
+            return [
+                {"player": player, "player_key": key, "prop": prop, "side": "over", "line": line, "price": -110, "book": "Pinnacle", "book_key": "pinnacle"},
+                {"player": player, "player_key": key, "prop": prop, "side": "under", "line": line, "price": -110, "book": "Pinnacle", "book_key": "pinnacle"},
+            ]
+
+        def prize_row(player, prop, pp_line):
+            key = sharp.name_key(player)
+            return {
+                "id": f"{key}-{prop}",
+                "player": player,
+                "player_key": key,
+                "team": "SEA",
+                "position": "F",
+                "opponent": "VAN",
+                "imageUrl": "",
+                "prop": prop,
+                "pp_line": pp_line,
+                "line_type": "standard",
+                "projection": pp_line + 0.6,
+            }
+
+        built = []
+        specs = (
+            ("nfl", "Sample Receiver", "Receptions", 3, 2.5, True),
+            ("nhl", "Sample Skater", "Shots On Goal", 2, 2.5, True),
+            ("nba", "Sample Forward", "Points", 20, 20.5, True),
+            ("nfl", "Sample Receiver", "Receptions", 3.5, 3, False),
+            ("nhl", "Sample Skater", "Shots On Goal", 1.5, 2, False),
+            ("nba", "Sample Forward", "Points", 19.5, 20, False),
+        )
+        fair = 0.5
+        flex = sharp.american_to_implied(sharp.PP_FLEX_AMERICAN)
+        for sport, player, prop, book, pp_line, whole_book in specs:
+            pp = prize_row(player, prop, pp_line)
+            books = quote(player, prop, book)
+            if sport == "nba":
+                self.assertEqual(nba_sharp.nba_name_key(player), pp["player_key"])
+                snapshot = nba_sharp.snapshot_from_rows([pp], books)
+                self.assertEqual(snapshot["sport"], "nba")
+                row = snapshot["records"][0]
+            elif sport == "nhl":
+                row = nhl_sharp.build_snapshot([pp], books)["records"][0]
+            else:
+                row = sharp.build_snapshot([pp], books)["records"][0]
+            new_over, _new_under = sharp._fair_at_pp_line(fair, fair, book, pp_line, prop)
+            previous = old_over(fair, book, pp_line, prop)
+            self.assertEqual(row["line_match"], "nearest", sport)
+            self.assertEqual(row["matched_line"], book, sport)
+            self.assertEqual(row["fair_over_pct"], sharp.pct(new_over), sport)
+            self.assertEqual(row["pp_edge_flex"], sharp.pp_edge_pct(new_over, flex), sport)
+            if whole_book:
+                self.assertNotEqual(sharp.pct(new_over), sharp.pct(previous), sport)
+                self.assertNotEqual(row["pp_edge_flex"], sharp.pp_edge_pct(previous, flex), sport)
+            else:
+                self.assertEqual(sharp.pct(new_over), sharp.pct(previous), sport)
+                self.assertEqual(row["pp_edge_flex"], sharp.pp_edge_pct(previous, flex), sport)
+            built.append(row)
+
+        script = """
+import { computeCgOdds } from './kbo-props-ui/src/nfl/cgOdds.js'
+const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const rows = JSON.parse(Buffer.concat(chunks).toString())
+process.stdout.write(JSON.stringify(rows.map((row) => {
+  const cg = computeCgOdds(row, 'over', 0.5)
+  return cg ? cg.probability : null
+})))
+"""
+        completed = subprocess.run(
+            [node, "--input-type=module", "-e", script],
+            input=json.dumps(built),
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        cg_values = json.loads(completed.stdout)
+        self.assertEqual(len(cg_values), len(built))
+        for row, cg_over in zip(built, cg_values):
+            self.assertIsNotNone(cg_over, row["prop"])
+            self.assertEqual(sharp.pct(cg_over), row["fair_over_pct"], row["prop"])

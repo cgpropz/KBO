@@ -4,6 +4,7 @@ import { lineWord } from '../lineCount'
 import { fitImage } from '../fitImage.js'
 import { computeCgOdds } from '../nfl/cgOdds'
 import { displayedBookCount, policyBestQuote } from '../nfl/bookPolicy'
+import { sharpOddsEmptyNotice } from '../sharpOddsEmpty'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from '../nfl/BookOddsStrip'
 import { hitRateColor, priceColor, priceTone } from '../nfl/ppBoardColors'
 import {
@@ -225,6 +226,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [note, setNote] = useState('')
+  const [emptyState, setEmptyState] = useState('')
   const [mode, setMode] = useState('flex')
   const [openId, setOpenId] = useState(null)
 
@@ -235,6 +237,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
         if (!active) return
         setRecords(next)
         setNote(payload?.message || '')
+        setEmptyState(payload?.empty_state || '')
         setLoaded(true)
       })
       .catch((loadError) => active && setError(loadError.message))
@@ -242,6 +245,10 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
   }, [])
 
   const baseline = BASELINES[mode] || BASELINES.flex
+  const emptyNotice = sharpOddsEmptyNotice(records, {
+    emptyState,
+    fallback: note || 'No matched NHL odds right now. The prop board is unchanged.',
+  })
 
   return (
     <section className="nfl-lines-page nfl-sharp-page">
@@ -265,7 +272,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
       </div>
       {error && <div className="nfl-notice">Unable to load odds: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading sportsbook prices.</div>}
-      {!error && loaded && !records.length && <div className="nfl-notice">{note || 'No matched NHL odds right now. The prop board is unchanged.'}</div>}
+      {!error && loaded && emptyNotice && <div className="nfl-notice">{emptyNotice}</div>}
       {!!records.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table nhl-sharp-table">

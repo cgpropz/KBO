@@ -6,6 +6,7 @@ import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { computeCgOdds } from './cgOdds'
 import { displayedBookCount, policyBestQuote } from './bookPolicy'
+import { sharpOddsEmptyNotice } from '../sharpOddsEmpty'
 import { fitImage } from '../fitImage.js'
 import { ALL_MATCHUPS, listMatchups, rowMatchesMatchup } from './matchupFilters'
 import { dvpGrade } from './matchupGrade'
@@ -412,6 +413,11 @@ export default function NflSharpOdds({ onSelectPlayer }) {
 
   const status = payload?.status || 'ok'
   const showStatus = loaded && !error && payload && status !== 'ok'
+  const startedEmpty = !records.length && payload?.empty_state === 'started'
+  const emptyNotice = sharpOddsEmptyNotice(records, {
+    emptyState: payload?.empty_state,
+    fallback: payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.',
+  })
   const snapshotLabel = formatSnapshotTime(payload?.generated_at) ? ` · odds ${formatSnapshotTime(payload.generated_at)}` : ''
 
   return (
@@ -477,9 +483,9 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {!hold && error && <div className="nfl-notice">Unable to load NFL sharp odds: {error}</div>}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
       {!hold && showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
-      {!hold && !error && loaded && !records.length && lockedCount <= 0 && <div className="nfl-notice">{payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.'}</div>}
+      {!hold && !error && loaded && emptyNotice && (lockedCount <= 0 || startedEmpty) && <div className="nfl-notice">{emptyNotice}</div>}
       {!hold && !error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see the full board.`}</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && !startedEmpty && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see the full board.`}</div>}
       {!hold && !!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className={`nfl-lines-table nfl-sharp-table${showCg ? ' has-cg' : ''}`}>
