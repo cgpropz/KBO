@@ -1,6 +1,8 @@
 // Kickoff has arrived. `now` is the clock at the moment the row is judged.
 // A missing or unparseable start stays eligible: there is no kickoff that
-// has passed. A wall clock with no offset is America/New_York (see etStart).
+// has passed. A wall clock with no offset is America/New_York, except
+// start_time_utc / startTimeUTC, which are UTC (see etStart). An explicit
+// started:false with no tip stays eligible (the NBA board has no start time).
 // Shared by the API preview and the hub hit-rate list.
 
 import { etTodayKey, startMsFromText } from './etStart.js'
@@ -12,19 +14,40 @@ function etDayKey(now) {
   return etTodayKey(date)
 }
 
-const STARTED_FLAGS = ['started', 'locked', 'removed']
-const STARTED_TIMES = ['start_time', 'startTime', 'start_time_utc', 'kickoff_at', 'game_date', 'gameDate', 'gameday']
+const STARTED_FLAGS = ['locked', 'removed']
+const INSTANT_KEYS = [
+  ['start_time', false],
+  ['startTime', false],
+  ['start_time_utc', true],
+  ['startTimeUTC', true],
+  ['kickoff_at', false],
+]
+const STARTED_TIMES = ['start_time', 'startTime', 'start_time_utc', 'startTimeUTC', 'kickoff_at', 'game_date', 'gameDate', 'gameday']
+
+function instantFromRow(row) {
+  let date = null
+  for (const [key, utcNaive] of INSTANT_KEYS) {
+    const raw = row?.[key]
+    if (raw == null || String(raw).trim() === '') continue
+    const text = String(raw).trim()
+    if (DATE_ONLY.test(text)) {
+      date = date || text
+      continue
+    }
+    const ms = startMsFromText(text, { utcNaive })
+    if (ms != null) return { ms }
+  }
+  return date ? { date } : null
+}
 
 export function gameAlreadyStarted(row, now = new Date()) {
   if (row?.started === true || row?.locked === true || row?.removed === true) return true
-  const raw = row?.start_time ?? row?.startTime ?? row?.start_time_utc ?? row?.kickoff_at
-  if (raw != null && String(raw).trim() !== '') {
-    const text = String(raw).trim()
-    const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now))
-    if (DATE_ONLY.test(text)) return text < etDayKey(now)
-    const kick = startMsFromText(text)
-    if (kick != null && Number.isFinite(nowMs)) return kick <= nowMs
-  }
+  const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now))
+  const instant = instantFromRow(row)
+  if (instant?.ms != null && Number.isFinite(nowMs)) return instant.ms <= nowMs
+  // NBA: `started: false` and no tip. A gameDate is not a kickoff.
+  if (row?.started === false) return false
+  if (instant?.date) return instant.date < etDayKey(now)
   const day = row?.game_date || row?.gameDate || row?.gameday
   if (typeof day === 'string' && DATE_ONLY.test(day)) return day < etDayKey(now)
   return false
@@ -35,6 +58,7 @@ export function gameAlreadyStarted(row, now = new Date()) {
 export function gameStartFields(source) {
   if (!source || typeof source !== 'object') return {}
   const out = {}
+  if (typeof source.started === 'boolean') out.started = source.started
   for (const key of STARTED_FLAGS) {
     if (source[key] === true) out[key] = true
   }

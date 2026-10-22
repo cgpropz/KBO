@@ -8,8 +8,9 @@
 // is posted.
 //
 // Board publishes do not change this file by themselves. .github/workflows/bake-free-top3.yml
-// rebuilds and deploys after those publishes, and again early morning ET, so
-// the stamp moves. The build also bundles a small browser module
+// rebuilds and deploys after those publishes (waiting out a fresh stamp so
+// the last one still lands) and again early morning ET, so the stamp moves.
+// The build also bundles a small browser module
 // (scripts/freeTop3Client.mjs -> dist/assets/free-top3-<hash>.js). On the
 // sport pages it re-reads the same anonymous preview and re-renders the rows,
 // so a pulled line, a KBO hold or the end of a hold shows up without waiting

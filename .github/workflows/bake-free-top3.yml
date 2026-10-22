@@ -1,17 +1,20 @@
 name: Bake free top 3
 
 # The homepage free top 3 is static HTML. scripts/write-free-top3.mjs stamps
-# it during `npm run build`, into the page and into dist/assets/free-top3-*.js
-# (the browser re-reader). That build used to run only from deploy.yml, which
-# ships when UI or API files change, not when a board is published. The rows
-# and the "as of" stamp then sat at the last site deploy.
+# it during `npm run build`, into the page and into dist/assets/free-top3-*.js.
+# Board publishes queue this workflow. It also runs at 4:15 AM America/New_York.
 #
-# Board publish jobs queue this workflow. It also runs once early in the
-# America/New_York morning so a slate that tipped overnight is not still the
-# page at dawn. A dispatch that finds a live stamp younger than 20 minutes
-# skips the upload, so several sports publishing together share one production
-# deploy. The morning schedule always bakes. This job uses deploy.yml's
-# concurrency group so two production uploads cannot pass each other.
+# A fresh live stamp does not skip the run. This job waits until that stamp
+# is 45 minutes old, then bakes. cancel-in-progress is false, so GitHub keeps
+# the newest pending run and cancels older ones that have not started: the
+# last publish still lands, and a pulled line does not sit until morning.
+# The wait uses its own group so it does not hold deploy.yml's lock.
+#
+# Hobby allows 100 deployments per rolling day (https://vercel.com/docs/limits,
+# also https://vercel.com/docs/plans/hobby). NHL and NFL odds each publish
+# about every 25 minutes. At a 20-minute coalesce that is ~70 prod uploads
+# before code deploys and labeled previews. 45 minutes caps the bake at about
+# 32 a day (1440/45), plus the morning run and deploy.yml.
 
 on:
   schedule:
@@ -23,53 +26,69 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: cgpropz-code-deploy
-  cancel-in-progress: false
+  actions: read
 
 jobs:
-  bake:
+  coalesce:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 70
+    concurrency:
+      group: bake-free-top3-coalesce
+      cancel-in-progress: false
+    steps:
+      - name: Wait until a fresh stamp is 45 minutes old
+        run: |
+          # The morning schedule always bakes. A dispatch waits out the window.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "morning schedule bakes now"
+            exit 0
+          fi
+          window=$((45 * 60))
+          html=$(curl -fsS --max-time 20 https://cgpropz.com/ || true)
+          built=$(printf '%s' "$html" | grep -o 'data-built="[^"]*"' | head -1 | cut -d'"' -f2 || true)
+          python3 - "$built" "$window" <<'PY'
+          import sys
+          import time
+          from datetime import datetime, timezone
+          raw = sys.argv[1]
+          window = int(sys.argv[2])
+          if not raw:
+              print("no live stamp; bake now")
+              sys.exit(0)
+          try:
+              built = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+          except ValueError:
+              print(f"unparsed stamp {raw}; bake now")
+              sys.exit(0)
+          age = (datetime.now(timezone.utc) - built).total_seconds()
+          print(f"live stamp age {age:.0f}s ({raw})")
+          if age >= window:
+              print("stamp is outside the window; bake now")
+              sys.exit(0)
+          wait = window - max(age, 0)
+          if wait > window:
+              wait = window
+          print(f"waiting {wait:.0f}s so this publish still bakes")
+          time.sleep(wait)
+          PY
+
+  bake:
+    needs: coalesce
+    if: github.ref == 'refs/heads/main' && needs.coalesce.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: cgpropz-code-deploy
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: kbo-props-ui
     steps:
-      - name: Skip when the live free top 3 was just baked
-        id: fresh
-        if: github.event_name != 'schedule'
-        working-directory: ${{ github.workspace }}
-        run: |
-          html=$(curl -fsS --max-time 20 https://cgpropz.com/ || true)
-          built=$(printf '%s' "$html" | grep -o 'data-built="[^"]*"' | head -1 | cut -d'"' -f2 || true)
-          python3 - "$built" "$GITHUB_OUTPUT" <<'PY'
-          import sys
-          from datetime import datetime, timezone
-          raw = sys.argv[1]
-          out = sys.argv[2]
-          fresh = False
-          if raw:
-              try:
-                  built = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-                  age = (datetime.now(timezone.utc) - built).total_seconds()
-                  print(f"live stamp age {age:.0f}s ({raw})")
-                  fresh = 0 <= age < 20 * 60
-              except ValueError:
-                  print(f"unparsed stamp {raw}")
-          else:
-              print("no live stamp")
-          with open(out, "a", encoding="utf-8") as fh:
-              fh.write(f"skip={'true' if fresh else 'false'}\n")
-          PY
-
       - name: Checkout repo
-        if: steps.fresh.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        if: steps.fresh.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -77,17 +96,20 @@ jobs:
           cache-dependency-path: kbo-props-ui/package-lock.json
 
       - name: Install dependencies
-        if: steps.fresh.outputs.skip != 'true'
         run: npm ci --no-audit --no-fund
 
       - name: Vercel Hobby function limit
-        if: steps.fresh.outputs.skip != 'true'
         run: node scripts/check-function-limit.mjs
+
+      # Same guards CI runs on a site build: unit tests, then the formula
+      # privacy scan of the built bundle. A main status commit has no PR
+      # check of its own, so this job runs them before it uploads.
+      - name: API unit tests
+        run: npm run test:api
 
       # API fallback JSON only. The homepage HTML is written by the build
       # below. A failed read must not block that HTML.
       - name: Bake the public preview fallback
-        if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
         run: node scripts/bake-landing-preview.mjs
         env:
@@ -95,14 +117,22 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build the site
-        if: steps.fresh.outputs.skip != 'true'
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Built JS keeps the score formula private
+        run: node --test tests/public-formula-privacy.test.mjs
+        env:
+          CHECK_FORMULA_DIST: "1"
+
+      - name: KBO results stay off the built site
+        run: node --test tests/kbo-results-hidden.test.mjs
+        env:
+          CHECK_KBO_RESULTS_DIST: "1"
+
       - name: Deploy to Vercel
-        if: steps.fresh.outputs.skip != 'true'
         run: |
           npm i -g vercel@latest
           vercel --prod --token "$VERCEL_TOKEN" --yes
@@ -110,3 +140,19 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Check the live site still hides paid data
+        working-directory: .
+        run: |
+          pip install requests
+          for attempt in 1 2 3 4; do
+            echo "Site check attempt ${attempt}/4"
+            if python pipeline/verify_production_data.py --base-url https://cgpropz.com --site-only; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 4 ]; then
+              sleep 15
+            fi
+          done
+          echo "The new site failed the paid-data check"
+          exit 1

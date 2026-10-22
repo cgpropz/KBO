@@ -70,6 +70,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # The free top 3 reads this snapshot. The bake waits out its window
+      # instead of deploying once per odds tick.
+      - name: Queue the homepage free top 3 bake
+        if: success() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bake-free-top3.yml --ref main
+
       # Open + closing price per book quote for the CG odds backtest. Reuses
       # the pull above (no new request). Soft-fails until
       # sql/nfl_prop_odds_history.sql is applied. Nothing on the site reads it.
