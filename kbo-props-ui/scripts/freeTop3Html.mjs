@@ -4,7 +4,7 @@
 // same CG Score order as the landing (publicFreeTopRows). Standard lines only;
 // held, pulled and removed lines, rows with no score and started games stay out.
 
-import { etDateKeyFromMs, rowStartMs } from '../src/etStart.js';
+import { rowStartMs } from '../src/etStart.js';
 import { publicFreeTopRows, rowsFromSnapshot } from '../src/publicBoard.js';
 import { LANDING_SPORTS } from '../src/landingSports.js';
 import { escapeHtml, pageUrl } from './seoShared.mjs';
@@ -38,18 +38,17 @@ export const FREE_TOP3_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
 const ET = 'America/New_York';
 
-export function etDate(time) {
-  return new Date(time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: ET });
-}
-
 export function etIsoDate(time) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: ET })
     .formatToParts(new Date(time)).map((part) => [part.type, part.value]));
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-function etShort(time) {
-  return new Date(time).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ET });
+// "Thu 8:15 PM ET", glued with non-breaking spaces so a pick's kickoff never
+// splits across lines on a narrow phone.
+export function etKickoffLabel(time) {
+  const text = new Date(time).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ET });
+  return `${text.replace(/[\s\u202f]+/g, '\u00a0')}\u00a0ET`;
 }
 
 // "Mon, Oct 19, 9:30 PM": the as-of stamp carries the date, not only the clock.
@@ -64,19 +63,6 @@ export function freeTop3Rows(sportId, body, now = Date.now(), lineupBody = null)
   if (!body || body.preview !== true) return [];
   const rows = rowsFromSnapshot(sportId, body.data, lineupBody?.data ?? null);
   return publicFreeTopRows(rows, undefined, now);
-}
-
-// Distinct ET gamedays among the rows, earliest day first. The heading uses
-// every day. One row's day is never the label for a later game.
-export function gameDays(rows) {
-  const days = new Map();
-  for (const row of rows || []) {
-    const ms = rowStartMs(row);
-    if (ms == null) continue;
-    const key = etDateKeyFromMs(ms);
-    if (!days.has(key)) days.set(key, ms);
-  }
-  return [...days.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
 }
 
 // Fails closed on the feed itself: a sport with a lineup feed shows no rows
@@ -117,26 +103,16 @@ function rowItem(row) {
   const start = rowStartMs(row);
   const startAttr = start != null ? ` data-start="${new Date(start).toISOString()}" data-day="${etIsoDate(start)}"` : '';
   const when = start != null
-    ? ` · <time datetime="${new Date(start).toISOString()}">${escapeHtml(etShort(start))} ET</time>`
+    ? ` · <time datetime="${new Date(start).toISOString()}">${escapeHtml(etKickoffLabel(start))}</time>`
     : '';
   const matchup = row.team ? ` (${escapeHtml(row.team)}${row.opponent ? ` vs ${escapeHtml(row.opponent)}` : ''})` : '';
   return `<li${startAttr}><strong>${escapeHtml(row.player)}</strong>${matchup}: ${escapeHtml(row.stat)} ${side ? `${side} ` : ''}${escapeHtml(fmt(row.line))} · CG Score ${escapeHtml(Number(row.score).toFixed(1))}${when}</li>`;
 }
 
-// One ET day: "Next game day". More than one: name each day. The earliest
-// kickoff is not the label for the rest of the list.
-function slateStamp(rows, now) {
-  const days = gameDays(rows);
-  const asOf = `as of ${escapeHtml(etStamp(now))} ET`;
-  if (days.length === 1) {
-    const ms = days[0][1];
-    return `Next game day: <time datetime="${etIsoDate(ms)}">${escapeHtml(etDate(ms))}</time> (ET) · ${asOf}`;
-  }
-  if (days.length > 1) {
-    const list = days.map(([key, ms]) => `<time datetime="${key}">${escapeHtml(etDate(ms))}</time>`).join(' · ');
-    return `Game days: ${list} (ET) · ${asOf}`;
-  }
-  return asOf;
+// Each pick carries its own ET kickoff (rowItem). The stamp names no game
+// day: three Sunday picks must not read as if there is no game tonight.
+function slateStamp(now) {
+  return `Game times in ET · as of ${escapeHtml(etStamp(now))} ET`;
 }
 
 // One block per sport. data-built is when the rows were read (every built
@@ -172,7 +148,7 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
       <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   return `${open}${title}
-      <div data-nosnippet><p class="free-top3-stamp">${slateStamp(rows, now)}</p>
+      <div data-nosnippet><p class="free-top3-stamp">${slateStamp(now)}</p>
       <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
       <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
 }
