@@ -10,12 +10,14 @@ Sources, each failing on its own:
   Doubtful, Day-To-Day and Probable stay on the board. An ESPN entry with
   no team is skipped, so a name never comes off every team.
 - Game-day inactives from ESPN's per-game roster (didNotPlay), read only
-  from INACTIVES_LEAD before kickoff until INACTIVES_TAIL after it. Before
+  from INACTIVES_LEAD before kickoff until kickoff (after kickoff the
+  flag also covers active players who got no snaps). Before
   inactives post, ESPN's game roster still carries the team's previous
   game's inactive list, so a team is used only when its list differs from
   that previous game's list. An unchanged, empty, oversized or unreadable
   list is skipped with a warning. Questionable and Doubtful players are
-  removed only if they are on that posted inactive list.
+  removed only if they are on that posted inactive list. All game-roster
+  reads share one INACTIVES_BUDGET deadline, checked before every call.
 - nfl/manual_out.json, the ops override for a ruling ESPN has not posted.
   A list of {"player": "...", "team": "NYG"} entries. Team is optional
   here only: a manual entry with no team matches that name on any team.
@@ -32,6 +34,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -60,15 +63,16 @@ ESPN_GAME_ROSTER_URL = (
     'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/{event_id}'
     '/competitions/{event_id}/competitors/{team_id}/roster'
 )
-# NFL inactives post 90 minutes before kickoff. Read a little early, and
-# keep reading through the game so a later run does not put them back.
+# NFL inactives post 90 minutes before kickoff. Read a little early, and stop
+# at kickoff: after it, didNotPlay also marks active players with no snaps.
 INACTIVES_LEAD = timedelta(minutes=95)
-INACTIVES_TAIL = timedelta(hours=4)
 # A team lists about 7 inactives. More than this is not an inactive list.
 MAX_TEAM_INACTIVES = 15
 # Total seconds the build waits for team lists, so a slow ESPN cannot eat the
 # refresh job's time limit (nfl-odds-live runs the build under timeout 240).
 INACTIVES_BUDGET = 60
+# Seconds per ESPN request, never more than what is left of the budget.
+ESPN_CALL_TIMEOUT = 8
 NAME_SUFFIXES = {'jr', 'sr', 'ii', 'iii', 'iv', 'v'}
 
 
@@ -132,7 +136,7 @@ def fetch_espn_unavailable(get=None) -> set[tuple[str, str]]:
         if get is None:
             import requests
             get = requests.get
-        response = get(ESPN_INJURIES_URL, timeout=30)
+        response = get(ESPN_INJURIES_URL, timeout=ESPN_CALL_TIMEOUT)
         response.raise_for_status()
         blocked = parse_espn_injuries(response.json())
     except Exception as exc:  # noqa: BLE001 - ESPN down must not block the board
@@ -146,7 +150,19 @@ def fetch_espn_unavailable(get=None) -> set[tuple[str, str]]:
     return blocked
 
 
-def _get_json(get, url, timeout=15):
+class InactivesBudgetSpent(Exception):
+    """The INACTIVES_BUDGET deadline passed before an ESPN call."""
+
+
+def _get_json(get, url, deadline: float | None = None):
+    """GET url as JSON. With a time.monotonic() deadline, refuse to start a call
+    after it and cap the request timeout at the time left."""
+    timeout = ESPN_CALL_TIMEOUT
+    if deadline is not None:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            raise InactivesBudgetSpent()
+        timeout = min(timeout, left)
     response = get(url, timeout=timeout)
     response.raise_for_status()
     return response.json()
@@ -178,7 +194,7 @@ def games_in_inactives_window(scoreboard, now: datetime) -> list[dict]:
     games = []
     for event in (scoreboard or {}).get('events') or []:
         kickoff = _parse_time(event.get('date'))
-        if kickoff is None or not (kickoff - INACTIVES_LEAD <= now <= kickoff + INACTIVES_TAIL):
+        if kickoff is None or not (kickoff - INACTIVES_LEAD <= now < kickoff):
             continue
         competition = (event.get('competitions') or [{}])[0]
         teams = {}
@@ -208,29 +224,32 @@ def previous_game_id(schedule, before: datetime) -> str | None:
     return best[1] if best else None
 
 
-def _athlete_name(get, entry) -> str:
+def _athlete_name(get, entry, deadline=None) -> str:
     ref = ((entry.get('athlete') or {}).get('$ref') or '').replace('http://', 'https://', 1)
     if not ref:
         return ''
-    athlete = _get_json(get, ref)
+    athlete = _get_json(get, ref, deadline)
     return athlete.get('fullName') or athlete.get('displayName') or ''
 
 
-def _team_inactives(get, game, abbr, team_id, board_last_names) -> set[tuple[str, str]]:
-    """Posted inactives for one team that could match a board player. Raises on a bad read."""
-    current = roster_did_not_play(_get_json(get, ESPN_GAME_ROSTER_URL.format(event_id=game['event_id'], team_id=team_id)))
+def _team_inactives(get, game, abbr, team_id, board_last_names, deadline=None) -> set[tuple[str, str]]:
+    """Posted inactives for one team that could match a board player.
+
+    Raises on a bad read or when the deadline passes, so a partial list is never used.
+    """
+    current = roster_did_not_play(_get_json(get, ESPN_GAME_ROSTER_URL.format(event_id=game['event_id'], team_id=team_id), deadline))
     if not current:
         print(f'NFL inactives: {abbr} has no inactive list yet; skipped.')
         return set()
     if len(current) > MAX_TEAM_INACTIVES:
         print(f'WARNING: NFL inactives: {abbr} lists {len(current)} inactives (over {MAX_TEAM_INACTIVES}); skipped.')
         return set()
-    schedule = _get_json(get, ESPN_TEAM_SCHEDULE_URL.format(team_id=team_id))
+    schedule = _get_json(get, ESPN_TEAM_SCHEDULE_URL.format(team_id=team_id), deadline)
     prior_id = previous_game_id(schedule, game['kickoff'])
     if prior_id is None:
         print(f'WARNING: NFL inactives: no previous {abbr} game to compare; skipped.')
         return set()
-    prior = roster_did_not_play(_get_json(get, ESPN_GAME_ROSTER_URL.format(event_id=prior_id, team_id=team_id)))
+    prior = roster_did_not_play(_get_json(get, ESPN_GAME_ROSTER_URL.format(event_id=prior_id, team_id=team_id), deadline))
     ids = lambda entries: sorted(str(e.get('playerId') or e.get('displayName')) for e in entries)  # noqa: E731
     if ids(current) == ids(prior):
         print(f'NFL inactives: {abbr} list matches its previous game (not posted yet); skipped.')
@@ -239,7 +258,7 @@ def _team_inactives(get, game, abbr, team_id, board_last_names) -> set[tuple[str
     for entry in current:
         if last_name_key(entry.get('displayName')) not in board_last_names:
             continue
-        name = _athlete_name(get, entry)
+        name = _athlete_name(get, entry, deadline)
         if name:
             out.add((name_key(name), abbr))
     return out
@@ -251,11 +270,12 @@ def fetch_gameday_inactives(records: list[dict], get=None, now: datetime | None 
         if get is None:
             import requests
             get = requests.get
+        deadline = time.monotonic() + INACTIVES_BUDGET
         now = now or datetime.now(timezone.utc)
         board_last = {}
         for record in records:
             board_last.setdefault(team_key(record.get('team')), set()).add(last_name_key(record.get('player')))
-        games = games_in_inactives_window(_get_json(get, ESPN_SCOREBOARD_URL), now)
+        games = games_in_inactives_window(_get_json(get, ESPN_SCOREBOARD_URL, deadline), now)
         jobs = [
             (game, abbr, team_id) for game in games for abbr, team_id in game['teams'].items()
             if board_last.get(abbr)
@@ -266,15 +286,21 @@ def fetch_gameday_inactives(records: list[dict], get=None, now: datetime | None 
         def one(job):
             game, abbr, team_id = job
             try:
-                return _team_inactives(get, game, abbr, team_id, board_last[abbr])
+                return _team_inactives(get, game, abbr, team_id, board_last[abbr], deadline)
+            except InactivesBudgetSpent:
+                print(f'WARNING: NFL inactives: {abbr} not read within {INACTIVES_BUDGET}s; skipped.')
+                return set()
             except Exception as exc:  # noqa: BLE001 - one team must not block the rest
                 print(f'WARNING: NFL inactives: {abbr} unavailable ({type(exc).__name__}); skipped.')
                 return set()
 
         pool = ThreadPoolExecutor(max_workers=6)
         futures = [pool.submit(one, job) for job in jobs]
-        done, late = wait(futures, timeout=INACTIVES_BUDGET)
-        pool.shutdown(wait=False, cancel_futures=True)
+        # Workers check the deadline before every call and each call is capped at
+        # the time left, so they all end by the deadline (plus one read timeout
+        # at most); waiting for them keeps no thread alive past this function.
+        done, late = wait(futures, timeout=max(0.0, deadline - time.monotonic()) + ESPN_CALL_TIMEOUT)
+        pool.shutdown(wait=not late, cancel_futures=True)
         if late:
             print(f'WARNING: NFL inactives: {len(late)} team list(s) not read within {INACTIVES_BUDGET}s; skipped.')
         found = set().union(*(future.result() for future in done))
