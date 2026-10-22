@@ -52,17 +52,14 @@ test('a mixed-day NHL slate is labeled per game, not by the earliest start', () 
   ], 3, now)
   assert.deepEqual(rows.map((item) => item.player), ['Wednesday One', 'Thursday One', 'Thursday Two'])
   const html = renderSportFreeTop3({ sport: NHL, rows, now })
-  assert.equal(/Next game day:/.test(html), false)
-  assert.match(html, /Game days:/)
-  assert.match(html, /<time datetime="2026-10-21">Wed, Oct 21, 2026<\/time>/)
-  assert.match(html, /<time datetime="2026-10-22">Thu, Oct 22, 2026<\/time>/)
+  assert.equal(/Next game day:|Game days:/.test(html), false)
   const wed = li(html, 'Wednesday One')
   const thu = li(html, 'Thursday One')
   assert.match(wed, /data-day="2026-10-21"/)
-  assert.match(wed, /Wed 7:30 PM ET/)
+  assert.match(wed, /Wed\u00a07:30\u00a0PM\u00a0ET/)
   assert.match(thu, /data-day="2026-10-22"/)
-  assert.match(thu, /Thu 9:00 PM ET/)
-  assert.equal(/Thu 9:00 PM ET/.test(wed), false)
+  assert.match(thu, /Thu\u00a09:00\u00a0PM\u00a0ET/)
+  assert.equal(/Thu\u00a09:00\u00a0PM\u00a0ET/.test(wed), false)
 })
 
 test('NFL Thursday and Sunday games keep their own ET labels and score order', () => {
@@ -77,10 +74,10 @@ test('NFL Thursday and Sunday games keep their own ET labels and score order', (
   const html = renderSportFreeTop3({ sport: NFL, rows, now })
   assert.equal(/Next game day:/.test(html), false)
   assert.match(li(html, 'Thursday Back'), /data-day="2026-10-22"/)
-  assert.match(li(html, 'Thursday Back'), /Thu 8:15 PM ET/)
+  assert.match(li(html, 'Thursday Back'), /Thu\u00a08:15\u00a0PM\u00a0ET/)
   assert.match(li(html, 'Sunday Cap'), /data-day="2026-10-25"/)
-  assert.match(li(html, 'Sunday Cap'), /Sun 1:00 PM ET/)
-  assert.match(li(html, 'Sunday Next'), /Sun 1:00 PM ET/)
+  assert.match(li(html, 'Sunday Cap'), /Sun\u00a01:00\u00a0PM\u00a0ET/)
+  assert.match(li(html, 'Sunday Next'), /Sun\u00a01:00\u00a0PM\u00a0ET/)
   assert.equal(html.includes('Finished Back'), false)
   assert.match(html, /CG Score 100\.0/)
 })
@@ -95,7 +92,7 @@ test('an offset-less wall clock is ET, and the ET date flips at midnight', () =>
     now: beforeMidnight,
   })
   assert.match(lateHtml, /data-day="2026-10-21"/)
-  assert.match(lateHtml, /Wed 11:30 PM ET/)
+  assert.match(lateHtml, /Wed\u00a011:30\u00a0PM\u00a0ET/)
   assert.equal(/Thu, Oct 22/.test(lateHtml), false)
 
   const afterMidnight = Date.parse('2026-10-22T04:10:00Z') // 12:10 AM ET Thu
@@ -109,9 +106,9 @@ test('an offset-less wall clock is ET, and the ET date flips at midnight', () =>
   assert.equal(rowStartMs({ start: '2026-10-22T00:30:00' }), Date.parse('2026-10-22T04:30:00Z'))
   const html = renderSportFreeTop3({ sport: NHL, rows: kept, now: afterMidnight })
   assert.match(li(html, 'After Midnight'), /data-day="2026-10-22"/)
-  assert.match(li(html, 'After Midnight'), /Thu 12:30 AM ET/)
+  assert.match(li(html, 'After Midnight'), /Thu\u00a012:30\u00a0AM\u00a0ET/)
   assert.match(li(html, 'Wall Clock'), /data-day="2026-10-22"/)
-  assert.match(li(html, 'Wall Clock'), /Thu 12:30 AM ET/)
+  assert.match(li(html, 'Wall Clock'), /Thu\u00a012:30\u00a0AM\u00a0ET/)
   assert.match(li(html, 'Wall Clock'), /data-start="2026-10-22T04:30:00.000Z"/)
 
   const afternoon = Date.parse('2026-10-22T21:00:00Z') // 5:00 PM ET Thu
@@ -123,7 +120,7 @@ test('an offset-less wall clock is ET, and the ET date flips at midnight', () =>
     rows: publicFreeTopRows([wall], 3, afternoon),
     now: afternoon,
   })
-  assert.match(wallHtml, /Thu 8:15 PM ET/)
+  assert.match(wallHtml, /Thu\u00a08:15\u00a0PM\u00a0ET/)
   assert.match(wallHtml, /data-day="2026-10-22"/)
 })
 
@@ -187,4 +184,29 @@ test('a stale bake still drops a row whose start has passed', () => {
   assert.deepEqual(dropped, [past])
   assert.equal(block.ol, null)
   assert.equal(block.stamp.textContent, FREE_TOP3_STALE_TEXT)
+})
+
+test('an all-Sunday NFL top 3 on a Thursday names no game day and labels each pick', () => {
+  // Thursday 9:29 AM ET with a TNF game tonight that is not in the top 3.
+  const now = Date.parse('2026-10-22T13:29:00Z')
+  const input = [
+    row('Sunday A', 100, '2026-10-25T17:00:00Z', { stat: 'Receiving Yards', team: 'HOU', opponent: 'NYG' }),
+    row('Sunday B', 92.4, '2026-10-25T17:00:00Z', { stat: 'Rush Attempts', team: 'NYG', opponent: 'HOU' }),
+    row('Sunday C', 88.4, '2026-10-25T20:25:00Z', { stat: 'Receiving Yards', team: 'AAA', opponent: 'BBB' }),
+    row('Thursday D', 84.7, '2026-10-23T00:15:00Z', { stat: 'Rush Yards', team: 'NE', opponent: 'CHI' }),
+  ]
+  const rows = publicFreeTopRows(input, 3, now)
+  // Selection is unchanged: score order, Thursday stays 4th.
+  assert.deepEqual(rows.map((item) => item.player), ['Sunday A', 'Sunday B', 'Sunday C'])
+  const html = renderSportFreeTop3({ sport: NFL, rows, now })
+  assert.equal(/Next game day|Game days/.test(html), false)
+  assert.equal(/Sun, Oct 25/.test(html), false)
+  assert.match(html, /<p class="free-top3-stamp">Game times in ET · as of Thu, Oct 22, 9:29 AM ET<\/p>/)
+  assert.match(li(html, 'Sunday A'), /<time datetime="2026-10-25T17:00:00\.000Z">Sun\u00a01:00\u00a0PM\u00a0ET<\/time>/)
+  assert.match(li(html, 'Sunday C'), />Sun\u00a04:25\u00a0PM\u00a0ET<\/time>/)
+  // The label never breaks inside: no plain or narrow spaces in any <time>.
+  for (const [, label] of html.matchAll(/<time[^>]*>([^<]*)<\/time>/g)) assert.equal(/[ \u202f]/.test(label), false, label)
+  // A Thursday pick in the list gets its own label, not the Sunday one.
+  const mixed = renderSportFreeTop3({ sport: NFL, rows: publicFreeTopRows([input[0], input[3]], 3, now), now })
+  assert.match(li(mixed, 'Thursday D'), />Thu\u00a08:15\u00a0PM\u00a0ET<\/time>/)
 })

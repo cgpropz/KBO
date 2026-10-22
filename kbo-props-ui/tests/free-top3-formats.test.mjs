@@ -63,21 +63,21 @@ test('each sport uses its published start field', () => {
   assert.equal(rowStartMs(nfl), Date.parse('2026-10-23T00:15:00Z'))
   assert.equal(rowStartMs({ gametime: '20:15', gameday: '2026-10-22' }), null)
   const nflHtml = renderSportFreeTop3({ sport: { id: 'nfl', name: 'NFL' }, rows: [nfl], now: NOW })
-  assert.match(nflHtml, /Thu 8:15 PM ET/)
+  assert.match(nflHtml, /Thu\u00a08:15\u00a0PM\u00a0ET/)
   assert.match(nflHtml, /data-day="2026-10-22"/)
 
   assert.equal(rowStartMs(nhl), Date.parse('2026-10-23T01:00:00Z'))
   const nhlHtml = renderSportFreeTop3({ sport: { id: 'nhl', name: 'NHL' }, rows: [nhl], now: NOW })
-  assert.match(nhlHtml, /Thu 9:00 PM ET/)
+  assert.match(nhlHtml, /Thu\u00a09:00\u00a0PM\u00a0ET/)
 
   assert.equal(rowStartMs(wnba), Date.parse('2026-10-22T23:00:00Z'))
   const wnbaHtml = renderSportFreeTop3({ sport: { id: 'wnba', name: 'WNBA' }, rows: [wnba], now: NOW })
-  assert.match(wnbaHtml, /Thu 7:00 PM ET/)
+  assert.match(wnbaHtml, /Thu\u00a07:00\u00a0PM\u00a0ET/)
 
   // 18:30 KST is 09:30 UTC, 5:30 AM ET.
   assert.equal(rowStartMs(kbo), Date.parse('2026-10-22T09:30:00Z'))
   const kboHtml = renderSportFreeTop3({ sport: { id: 'kbo', name: 'KBO' }, rows: [kbo], now: NOW })
-  assert.match(kboHtml, /Thu 5:30 AM ET/)
+  assert.match(kboHtml, /Thu\u00a05:30\u00a0AM\u00a0ET/)
 
   const afterNfl = Date.parse('2026-10-23T00:15:00Z')
   assert.equal(gameAlreadyStarted(nfl, new Date(afterNfl)), true)
