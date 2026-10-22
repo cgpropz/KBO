@@ -53,6 +53,16 @@ export function gameAlreadyStarted(row, now = new Date()) {
   return false
 }
 
+// True only when the row carries a parseable start instant that is at or
+// before now. Unlike gameAlreadyStarted, no flag and no date-only gameday
+// counts: a row with a missing or unparseable start time is kept. Used by
+// the per-request member board filter (api/_dataAccess.js).
+export function startTimePassed(row, now = new Date()) {
+  const nowMs = now instanceof Date ? now.getTime() : Date.parse(String(now))
+  const instant = instantFromRow(row)
+  return instant?.ms != null && Number.isFinite(nowMs) && instant.ms <= nowMs
+}
+
 // The fields gameAlreadyStarted reads, copied off a player or prop so the
 // hub can call that function without keeping the whole source row.
 export function gameStartFields(source) {
