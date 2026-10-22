@@ -21,6 +21,9 @@ import {
   lineResult,
   nflHitPills,
   nhlHitPills,
+  nhlWindowPushes,
+  openPill,
+  storedPill,
   overHitRate,
   wnbaHitPills,
 } from '../src/hitRateStrip.js'
@@ -75,8 +78,8 @@ test('the chart bar and the L10 rate share one count, including a string line', 
   assert.equal(barResult(3, 15.5, 'UNDER'), 'hit')
   assert.equal(barResult('nope', 15.5, 'OVER'), null)
   const window = ['22', 15.5, '40', 3, '18', 30, '12', 16, 9, '28']
-  assert.deepEqual(chartWindowRate(window, '15.5', 'OVER'), { rate: 67, hits: 6, games: 9 })
-  assert.deepEqual(chartWindowRate(window, 15.5, 'UNDER'), { rate: 33, hits: 3, games: 9 })
+  assert.deepEqual(chartWindowRate(window, '15.5', 'OVER'), { rate: 67, hits: 6, games: 9, pushes: 1 })
+  assert.deepEqual(chartWindowRate(window, 15.5, 'UNDER'), { rate: 33, hits: 3, games: 9, pushes: 1 })
   assert.equal(chartWindowRate([15.5, '15.5'], 15.5, 'OVER'), null)
 })
 
@@ -86,9 +89,10 @@ test('a push is neither a hit nor a miss and leaves the sample', () => {
   assert.equal(lineResult(1, 1.5), 'miss')
   assert.equal(lineResult(null, 1.5), null)
   const rated = overHitRate([2, 1.5, 1], 1.5)
-  assert.deepEqual(rated, { rate: 50, hits: 1, games: 2 })
+  assert.deepEqual(rated, { rate: 50, hits: 1, games: 2, pushes: 1 })
   assert.equal(overHitRate([1.5, 1.5], 1.5), null)
   assert.equal(formatGameCount(rated.games), '2 gm')
+  assert.equal(formatGameCount(rated.games, rated.pushes), '2 decided · 1 push')
 })
 
 test('a short window is hidden unless the chart already shows a count', () => {
@@ -292,6 +296,78 @@ test('homepage L10 uses the board pill and leaves pushes out', () => {
   const pills = kboHitPills({ games, stat: 'Total Bases', line: 2, opponent: 'Samsung' })
   const shown = l10Display(pills)
   assert.equal(shown.text, '43%')
-  assert.equal(shown.games, '7 gm')
+  // A whole-number line: three games tied 2, so the count names them.
+  assert.equal(shown.games, '7 decided · 3 push')
   assert.equal(shown.decided, 7)
+})
+
+test('the count names pushes and keeps the bare count when there are none', () => {
+  assert.equal(formatGameCount(3, 4), '3 decided · 4 push')
+  assert.equal(formatGameCount(3, 0), '3 gm')
+  assert.equal(formatGameCount(3), '3 gm')
+  assert.equal(formatGameCount(3, null), '3 gm')
+  assert.equal(formatGameCount(0, 4), '')
+})
+
+test('pushes never change the rate or the decided count', () => {
+  const whole = overHitRate([3, 2, 2, 2, 3, 0, 2], 2)
+  assert.deepEqual(whole, { rate: 67, hits: 2, games: 3, pushes: 4 })
+  const half = overHitRate([3, 2, 2, 2, 3, 0, 2], 2.5)
+  assert.deepEqual(half, { rate: 29, hits: 2, games: 7, pushes: 0 })
+  const pill = openPill([3, 2, 2, 2, 3, 0, 2], 2, { id: 'season', label: 'Season' })
+  assert.equal(pill.rate, 67)
+  assert.equal(pill.games, 3)
+  assert.equal(pill.pushes, 4)
+  const stored = storedPill({ id: 'season', label: 'Season', rate: 66.7, games: 3, pushes: 4 })
+  assert.equal(stored.rate, 66.7)
+  assert.equal(stored.games, 3)
+  assert.equal(stored.pushes, 4)
+  assert.equal(storedPill({ id: 'season', label: 'Season', rate: 66.7, games: 3 }).pushes, 0)
+})
+
+// Made-up NHL row: 3 prior-season games, then 7 this season, oldest-first.
+const NHL_WHOLE_LINE = {
+  line: 2,
+  opponent: 'BOS',
+  log: [5, 3, 2, 2, 0, 3, 2, 2, 2, 3],
+  logSeasons: ['2025-26', '2025-26', '2025-26', '2026-27', '2026-27', '2026-27', '2026-27', '2026-27', '2026-27', '2026-27'],
+  logOpponents: ['BOS', 'NYR', 'TOR', 'BOS', 'MTL', 'NYR', 'TOR', 'BOS', 'MTL', 'NYR'],
+  hitRateL5: 50,
+  gamesL5: 2,
+  hitRate: 80,
+  gamesL10: 5,
+  hitRateL20: null,
+  gamesL20: 0,
+  h2hHitRate: 100,
+  h2hGames: 1,
+  seasonHitRate: 66.7,
+  seasonGames: 3,
+}
+
+test('NHL pills on a whole-number line say how many games pushed', () => {
+  const pills = nhlHitPills(NHL_WHOLE_LINE)
+  const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
+  assert.equal(byId.season.games, 3)
+  assert.equal(byId.season.rate, 66.7)
+  assert.equal(byId.season.pushes, 4)
+  assert.equal(formatGameCount(byId.season.games, byId.season.pushes), '3 decided · 4 push')
+  assert.equal(byId.l5.pushes, 3)
+  assert.equal(byId.l10.pushes, 5)
+  assert.equal(byId.h2h.pushes, 2)
+  assert.equal(l10Display(pills).games, '5 decided · 5 push')
+})
+
+test('NHL push note is skipped when the log does not cover the stored count', () => {
+  assert.equal(nhlWindowPushes({ ...NHL_WHOLE_LINE, seasonGames: 5 }, 'season', 5), 0)
+  assert.equal(nhlWindowPushes({ ...NHL_WHOLE_LINE, log: [] }, 'season', 3), 0)
+  assert.equal(nhlWindowPushes({ ...NHL_WHOLE_LINE, line: null }, 'season', 3), 0)
+  const noLog = nhlHitPills({ ...NHL_WHOLE_LINE, log: undefined })
+  assert.equal(formatGameCount(noLog.find((pill) => pill.id === 'season').games, 0), '3 gm')
+})
+
+test('NHL half-point lines keep the bare count', () => {
+  const half = { ...NHL_WHOLE_LINE, line: 2.5, seasonGames: 7, seasonHitRate: 28.6 }
+  const season = nhlHitPills(half).find((pill) => pill.id === 'season')
+  assert.equal(season.pushes, 0)
+  assert.equal(formatGameCount(season.games, season.pushes), '7 gm')
 })

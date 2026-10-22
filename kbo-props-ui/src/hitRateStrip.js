@@ -3,7 +3,8 @@
 // Every sport uses the same rule. A game over the line is a hit. A game under
 // the line is a miss. A push (the result equals the line) is neither, so it
 // leaves both the numerator and the denominator. The count under a pill is
-// decided games only.
+// decided games only. When a window had pushes the count says so
+// ("3 decided · 4 push") so it does not read like games played.
 //
 // A fixed window (L5, L10, L20) is hidden when the log is shorter than that
 // window. The NHL chart already prints the game count on a short window, so
@@ -121,9 +122,13 @@ export function hitRatePillStyle(pill) {
   }
 }
 
-export function formatGameCount(games) {
+// `pushes` is how many games in the window tied the line. With none, the
+// count stays "N gm". Display only: the rate never changes.
+export function formatGameCount(games, pushes = 0) {
   const count = Number(games)
   if (!Number.isFinite(count) || count <= 0) return ''
+  const tied = Number(pushes)
+  if (Number.isFinite(tied) && tied > 0) return `${count} decided · ${tied} push`
   return `${count} gm`
 }
 
@@ -146,7 +151,7 @@ export function l10Display(pills) {
   if (!text) return null
   return {
     text,
-    games: formatGameCount(pill.games),
+    games: formatGameCount(pill.games, pill.pushes),
     rate: pill.rate,
     decided: pill.games,
   }
@@ -169,14 +174,16 @@ export function overHitRate(values, line) {
   if (!Number.isFinite(target)) return null
   let hits = 0
   let decided = 0
+  let pushes = 0
   for (const raw of values || []) {
     const result = lineResult(raw, target)
+    if (result === 'push') pushes += 1
     if (result == null || result === 'push') continue
     decided += 1
     if (result === 'hit') hits += 1
   }
   if (!decided) return null
-  return { rate: Math.round((hits / decided) * 100), hits, games: decided }
+  return { rate: Math.round((hits / decided) * 100), hits, games: decided, pushes }
 }
 
 // Same bar the Today chart paints. A push ties the line. An under play hits
@@ -196,14 +203,16 @@ export function barResult(value, line, side) {
 export function chartWindowRate(values, line, side) {
   let hits = 0
   let decided = 0
+  let pushes = 0
   for (const raw of values || []) {
     const result = barResult(raw, line, side)
+    if (result === 'push') pushes += 1
     if (result == null || result === 'push') continue
     decided += 1
     if (result === 'hit') hits += 1
   }
   if (!decided) return null
-  return { rate: Math.round((hits / decided) * 100), hits, games: decided }
+  return { rate: Math.round((hits / decided) * 100), hits, games: decided, pushes }
 }
 
 function finiteValues(values) {
@@ -229,6 +238,7 @@ export function fixedWindowPill(values, line, { id, label, size, partial = 'hide
     label,
     rate: rated.rate,
     games: rated.games,
+    pushes: rated.pushes,
     count: games.length < size ? rated.games : null,
   }
 }
@@ -242,16 +252,18 @@ export function windowPills(values, line, options = {}) {
 export function openPill(values, line, { id, label }) {
   const rated = overHitRate(finiteValues(values), line)
   if (!rated) return null
-  return { id, label, rate: rated.rate, games: rated.games, count: null }
+  return { id, label, rate: rated.rate, games: rated.games, pushes: rated.pushes, count: null }
 }
 
 // Precomputed NHL chart rates. `games` is the decided-game count from hit_rate,
 // which already leaves pushes out. NFL pills are recomputed from the log.
-export function storedPill({ id, label, rate, games, size = null, partial = 'hide', note = null }) {
+// `pushes` is only for the label; it never touches the stored rate.
+export function storedPill({ id, label, rate, games, size = null, partial = 'hide', note = null, pushes = 0 }) {
   const value = Number(rate)
   const count = Number(games)
   if (!Number.isFinite(value) || !Number.isFinite(count) || count <= 0) return null
-  const pill = { id, label, rate: value, games: count, count: null, note: note || null }
+  const tied = Number(pushes)
+  const pill = { id, label, rate: value, games: count, pushes: Number.isFinite(tied) && tied > 0 ? tied : 0, count: null, note: note || null }
   if (size != null && count < size) {
     if (partial !== 'count') return null
     pill.count = count
@@ -357,19 +369,43 @@ export function nflHitPills(row) {
   ].filter(Boolean)
 }
 
+export const NHL_CURRENT_SEASON_LABEL = '2026-27'
+
+// Pushes in one NHL window, read from the shipped game log (oldest-first,
+// the same windows as the player-page chart). The stored rate and count stay
+// as shipped. If the log's decided count does not match the stored count, the
+// log does not cover that window, so no push note is shown.
+export function nhlWindowPushes(row, id, storedGames) {
+  const values = Array.isArray(row?.log) ? row.log : []
+  const line = Number(row?.line ?? row?.pp_line)
+  if (!values.length || row?.line == null || !Number.isFinite(line)) return 0
+  const seasons = Array.isArray(row.logSeasons) ? row.logSeasons : []
+  const opponents = Array.isArray(row.logOpponents) ? row.logOpponents : []
+  let picked = values.map((value, index) => ({ value, index }))
+  if (id === 'season') picked = picked.filter(({ index }) => seasons[index] === NHL_CURRENT_SEASON_LABEL)
+  if (id === 'h2h') picked = picked.filter(({ index }) => sameTeam(opponents[index], row.opponent))
+  const size = { l5: 5, l10: 10, l20: 20 }[id]
+  if (size) picked = picked.slice(-size)
+  const rated = overHitRate(picked.map(({ value }) => value), line)
+  if (!rated || rated.games !== Number(storedGames)) return 0
+  return rated.pushes
+}
+
 export function nhlHitPills(row) {
   if (!row) return []
+  const pushes = (id, games) => nhlWindowPushes(row, id, games)
   return [
-    storedPill({ id: 'l5', label: 'L5', rate: row.hitRateL5, games: row.gamesL5, size: 5, partial: 'count' }),
-    storedPill({ id: 'l10', label: 'L10', rate: row.hitRate, games: row.gamesL10, size: 10, partial: 'count' }),
-    storedPill({ id: 'l20', label: 'L20', rate: row.hitRateL20, games: row.gamesL20, size: 20, partial: 'count' }),
+    storedPill({ id: 'l5', label: 'L5', rate: row.hitRateL5, games: row.gamesL5, size: 5, partial: 'count', pushes: pushes('l5', row.gamesL5) }),
+    storedPill({ id: 'l10', label: 'L10', rate: row.hitRate, games: row.gamesL10, size: 10, partial: 'count', pushes: pushes('l10', row.gamesL10) }),
+    storedPill({ id: 'l20', label: 'L20', rate: row.hitRateL20, games: row.gamesL20, size: 20, partial: 'count', pushes: pushes('l20', row.gamesL20) }),
     storedPill({
       id: 'h2h',
       label: 'H2H',
       rate: row.h2hHitRate,
       games: row.h2hGames,
       note: row.h2hIncludesPriorSeason ? 'includes 2025-26' : null,
+      pushes: pushes('h2h', row.h2hGames),
     }),
-    storedPill({ id: 'season', label: 'Season', rate: row.seasonHitRate, games: row.seasonGames }),
+    storedPill({ id: 'season', label: 'Season', rate: row.seasonHitRate, games: row.seasonGames, pushes: pushes('season', row.seasonGames) }),
   ].filter(Boolean)
 }

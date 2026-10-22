@@ -14,9 +14,9 @@ import {
 const GAMES = [5, 1, 3, 3, 0]
 
 test('a push is left out when the line moves onto a logged result', () => {
-  assert.deepEqual(overHitRate(GAMES, 2.5), { rate: 60, hits: 3, games: 5 })
+  assert.deepEqual(overHitRate(GAMES, 2.5), { rate: 60, hits: 3, games: 5, pushes: 0 })
   const onThree = overHitRate(GAMES, 3)
-  assert.deepEqual(onThree, { rate: 33, hits: 1, games: 3 })
+  assert.deepEqual(onThree, { rate: 33, hits: 1, games: 3, pushes: 2 })
   assert.equal(overHitRate([3, 3], 3), null)
 })
 

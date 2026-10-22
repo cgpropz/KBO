@@ -4,7 +4,7 @@ import BoardStatus from '../BoardStatus'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import HitRateStrip from '../HitRateStrip'
-import { pillById, wnbaHitPills } from '../hitRateStrip'
+import { formatGameCount, pillById, wnbaHitPills } from '../hitRateStrip'
 import { HOT_L10_GAMES, HOT_L10_RATE, buildSlate, hotStreakRows, propsOnBoardCount, sortWnbaRows } from '../wnbaBoard'
 import { wnbaCgScore } from './wnbaScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -740,7 +740,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                       <MiniRow
                         key={r.id} rank={i + 1} player={r._player} stat={r.prop} side="OVER"
                         primary={`${Math.round(l10.rate)}%`} primaryColor={hitColor(l10.rate)}
-                        sub={`${l10.games} gm · line ${r.line}`}
+                        sub={`${formatGameCount(l10.games, l10.pushes)} · line ${r.line}`}
                         onClick={() => goPlayer(r.player)}
                         last={i === hotStreaks.length - 1 && (isPaid || hotStreaks.length < FREE_ROW_LIMIT)}
                       />

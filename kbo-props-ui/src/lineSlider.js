@@ -123,8 +123,8 @@ export function formatLineValue(value) {
 }
 
 function rateFields(rated) {
-  if (!rated) return { rate: null, hits: 0, games: 0 }
-  return { rate: rated.rate, hits: rated.hits, games: rated.games }
+  if (!rated) return { rate: null, hits: 0, games: 0, pushes: 0 }
+  return { rate: rated.rate, hits: rated.hits, games: rated.games, pushes: rated.pushes || 0 }
 }
 
 export function rateTextColor(rate, games) {
