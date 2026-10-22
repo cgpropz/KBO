@@ -285,7 +285,10 @@ class GameDayInactivesTest(unittest.TestCase):
         from nfl.availability import fetch_gameday_inactives
         tonight = {'17': [self.entry(51, 'Boutte')]}
         get = self.routes(tonight, {}, {51: 'Kayshon Boutte'})
-        for now in (self.kickoff - timedelta(hours=3), self.kickoff + timedelta(hours=5)):
+        # Before the 95-minute lead, and from kickoff on: after kickoff didNotPlay
+        # also marks active players who got no snaps, so it is never read.
+        for now in (self.kickoff - timedelta(minutes=96), self.kickoff,
+                    self.kickoff + timedelta(minutes=1), self.kickoff + timedelta(hours=3)):
             self.calls.clear()
             self.assertEqual(fetch_gameday_inactives(self.nfl_board(), get, now), set())
             self.assertFalse(any('/roster' in u for u in self.calls))
@@ -295,7 +298,7 @@ class GameDayInactivesTest(unittest.TestCase):
         from nfl.availability import fetch_gameday_inactives
         big = {'17': [self.entry(100 + i, 'Boutte') for i in range(16)]}
         get = self.routes(big, {}, {100 + i: 'Kayshon Boutte' for i in range(16)})
-        self.assertEqual(fetch_gameday_inactives(self.nfl_board(), get, self.kickoff), set())
+        self.assertEqual(fetch_gameday_inactives(self.nfl_board(), get, self.kickoff - timedelta(minutes=30)), set())
 
     def test_espn_down_keeps_the_board(self):
         from datetime import timedelta
@@ -313,8 +316,75 @@ class GameDayInactivesTest(unittest.TestCase):
         self.assertEqual(last_name_key("D'Andre Swift"), 'swift')
         self.assertEqual(last_name_key(''), '')
 
+    def test_window_opens_95_minutes_before_kickoff(self):
+        from datetime import timedelta
+        from nfl.availability import fetch_gameday_inactives
+        tonight = {'17': [self.entry(51, 'Boutte')]}
+        get = self.routes(tonight, {}, {51: 'Kayshon Boutte'})
+        for now in (self.kickoff - timedelta(minutes=95), self.kickoff - timedelta(seconds=1)):
+            self.calls.clear()
+            fetch_gameday_inactives(self.nfl_board(), get, now)
+            self.assertTrue(any('/events/900/' in u and '/roster' in u for u in self.calls))
+
+    def test_hung_espn_stays_within_the_budget(self):
+        """Every ESPN answer takes its full timeout, so one team's four reads
+        (roster, schedule, previous roster, athlete) need more than the budget.
+        No call starts after the deadline, no timeout runs past it, the whole
+        read ends on time, and no partial list is used."""
+        import threading
+        import time
+        from datetime import timedelta
+        from unittest import mock
+        import nfl.availability as availability
+        base = self.routes({'17': [self.entry(51, 'Boutte')], '3': [self.entry(61, 'Odunze')]},
+                           {}, {51: 'Kayshon Boutte', 61: 'Rome Odunze'})
+        lock, starts = threading.Lock(), []
+
+        def hung(url, timeout=None):
+            with lock:
+                starts.append((time.monotonic(), timeout))
+            if 'scoreboard' in url:
+                return base(url, timeout)
+            time.sleep(timeout)  # each answer arrives just inside its timeout
+            return base(url, timeout)
+        with mock.patch.object(availability, 'INACTIVES_BUDGET', 0.5), \
+                mock.patch.object(availability, 'ESPN_CALL_TIMEOUT', 0.2):
+            began = time.monotonic()
+            found = availability.fetch_gameday_inactives(self.nfl_board(), hung, self.kickoff - timedelta(minutes=30))
+            elapsed = time.monotonic() - began
+        self.assertEqual(found, set())
+        self.assertLess(elapsed, 0.5 + 0.2 + 0.3)
+        deadline = began + 0.5
+        for started, timeout in starts:
+            self.assertLessEqual(timeout, 0.2)
+            self.assertLess(started, deadline + 0.05)
+            self.assertLessEqual(started + timeout, deadline + 0.05)
+
+    def test_deadline_is_checked_inside_the_athlete_loop(self):
+        """A team whose roster reads finish but whose athlete lookups would run
+        past the deadline yields nothing rather than a partial list."""
+        import time
+        from datetime import timedelta
+        from unittest import mock
+        import nfl.availability as availability
+        prior = {'17': []}
+        tonight = {'17': [self.entry(51, 'Boutte'), self.entry(52, 'Henderson')]}
+        base = self.routes(tonight, prior, {51: 'Kayshon Boutte', 52: 'TreVeyon Henderson'})
+        clock = [1000.0]
+
+        def get(url, timeout=None):
+            if '/athletes/' in url:
+                clock[0] += 100  # the first athlete read uses up the budget
+            return base(url, timeout)
+        game = {'event_id': '900', 'kickoff': self.kickoff, 'teams': {'NE': '17'}}
+        with mock.patch.object(availability.time, 'monotonic', lambda: clock[0]):
+            with self.assertRaises(availability.InactivesBudgetSpent):
+                availability._team_inactives(get, game, 'NE', '17', {'boutte', 'henderson'}, deadline=1060.0)
+        self.assertEqual(sum('/athletes/' in u for u in self.calls), 1)
+
     def test_slow_espn_is_cut_off_by_the_budget(self):
         import time
+        from datetime import timedelta
         from unittest import mock
         import nfl.availability as availability
         base = self.routes({'17': [self.entry(51, 'Boutte')]}, {}, {51: 'Kayshon Boutte'})
@@ -324,4 +394,15 @@ class GameDayInactivesTest(unittest.TestCase):
                 time.sleep(0.5)
             return base(url, timeout)
         with mock.patch.object(availability, 'INACTIVES_BUDGET', 0.1):
-            self.assertEqual(availability.fetch_gameday_inactives(self.nfl_board(), slow, self.kickoff), set())
+            self.assertEqual(availability.fetch_gameday_inactives(self.nfl_board(), slow, self.kickoff - timedelta(minutes=30)), set())
+
+    def test_injury_report_uses_the_short_timeout(self):
+        from nfl.availability import ESPN_CALL_TIMEOUT, fetch_espn_unavailable
+        seen = []
+
+        def get(url, timeout=None):
+            seen.append(timeout)
+            return _Response(espn(('Kayshon Boutte', 'NE', 'Out')))
+        fetch_espn_unavailable(get)
+        self.assertEqual(seen, [ESPN_CALL_TIMEOUT])
+        self.assertLessEqual(ESPN_CALL_TIMEOUT, 8)
