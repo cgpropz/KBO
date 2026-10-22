@@ -212,3 +212,103 @@ export function computeCgOdds(item, side, breakeven, options) {
     method: CG_METHOD,
   }
 }
+
+// --- Line-adjust explainer (display only) ---------------------------------
+// Nothing below feeds cgFair or computeCgOdds. It restates, at the book line,
+// what the books say, so the "line adj" tag can show how CG got from the
+// book line to the PrizePicks line.
+
+function lineGapAllowed(item, options = {}) {
+  const ppLine = finite(item?.pp_line)
+  if (ppLine == null || !Array.isArray(item?.book_prices)) return null
+  const bookLine = finite(item?.matched_line) ?? ppLine
+  const maxGap = finite(options.maxLineGap) ?? MAX_LINE_GAP
+  if (Math.abs(bookLine - ppLine) > maxGap + 1e-9) return null
+  return { ppLine, bookLine }
+}
+
+// The same books, de-vig, and weights as cgFair, with no line shift: the
+// books' fair Over at their own line.
+export function bookLineFair(item, options = {}) {
+  const lines = lineGapAllowed(item, options)
+  if (!lines) return null
+  let num = 0
+  let den = 0
+  const quotes = options.applyBookPolicy === false ? item.book_prices : consensusBookPrices(item.book_prices)
+  for (const quote of quotes) {
+    const qOver = impliedProbability(quote?.over)
+    const qUnder = impliedProbability(quote?.under)
+    if (qOver == null || qUnder == null) continue
+    const hold = qOver + qUnder - 1
+    if (hold <= 0 || hold > MAX_HOLD) continue
+    const [fairOver] = devigPower(qOver, qUnder)
+    if (!(fairOver > 0 && fairOver < 1)) continue
+    const key = String(quote.book_key || '').toLowerCase()
+    let weight = BOOK_WEIGHTS[key] ?? DEFAULT_WEIGHT
+    weight *= Math.min(1, hold > HOLD_PENALTY ? HOLD_PENALTY / hold : 1)
+    num += weight * logit(fairOver)
+    den += weight
+  }
+  if (!den) return null
+  const over = expit(num / den)
+  return { over, under: 1 - over, line: lines.bookLine }
+}
+
+function poissonPmf(k, lambda) {
+  if (k < 0) return 0
+  return poissonCdf(k, lambda) - poissonCdf(k - 1, lambda)
+}
+
+// { bookLine, ppLine, bookOver, cgOver, pushPct, kind } for a row whose book
+// line differs from the PrizePicks line, else null. pushPct is P(X = PP line)
+// from one Poisson fit to the blended book Over (approximate), only on a
+// whole-number count line where CG removes the push.
+export function lineAdjustDetail(item, options = {}) {
+  const fair = cgFair(item, options)
+  if (!fair || !fair.lineAdjusted) return null
+  const atBook = bookLineFair(item, options)
+  if (!atBook) return null
+  const ppLine = finite(item.pp_line)
+  const bookLine = atBook.line
+  const yardage = HALF_POINT_SHIFT[item.prop] != null
+  let kind = yardage ? 'shift' : 'count'
+  let pushPct = null
+  if (!yardage && wholeCountLine(ppLine, item.prop)) {
+    const lambda = fitCountLambda(atBook.over, bookLine)
+    pushPct = poissonPmf(Math.round(ppLine), lambda)
+    kind = 'push'
+  }
+  return { bookLine, ppLine, bookOver: atBook.over, cgOver: fair.over, pushPct, kind }
+}
+
+function lineText(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function pctText(probability) {
+  return `${Math.round(probability * 100)}%`
+}
+
+// Tooltip copy for the "line adj" tag, built from the row's own numbers.
+export function lineAdjustNote(detail) {
+  if (!detail) return ''
+  const book = lineText(detail.bookLine)
+  const pp = lineText(detail.ppLine)
+  const bookPush = detail.kind !== 'shift' && Number.isInteger(detail.bookLine)
+  const head = `Books ${book}: ${pctText(detail.bookOver)} Over${bookPush ? ` (an exact ${book} is a push for the books)` : ''}.`
+  if (detail.kind === 'push') {
+    return `${head} At PP ${pp}, exactly ${pp} is a push (~${pctText(detail.pushPct)}) and is removed: ${pctText(detail.cgOver)} Over.`
+  }
+  if (detail.kind === 'count') {
+    return `${head} At PP ${pp} there is no push: ${pctText(detail.cgOver)} Over.`
+  }
+  return `${head} Moved to PP ${pp}: ${pctText(detail.cgOver)} Over.`
+}
+
+// The book line when it differs from the PrizePicks line, else null.
+export function adjustedBookLine(item) {
+  const pp = Number(item?.pp_line)
+  const book = item?.matched_line
+  if (book == null || book === '' || !Number.isFinite(pp) || !Number.isFinite(Number(book))) return null
+  return Math.abs(Number(book) - pp) > 1e-9 ? Number(book) : null
+}

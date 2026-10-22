@@ -4,7 +4,8 @@ import { MemberBoardStatus } from '../MemberBoardStatus'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
-import { computeCgOdds } from './cgOdds'
+import { computeCgOdds, lineAdjustDetail } from './cgOdds'
+import { BookLineLabel, BookLinePct, LineAdjTag } from './LineAdjust.jsx'
 import { displayedBookCount, policyBestQuote } from './bookPolicy'
 import { sharpOddsEmptyNotice } from '../sharpOddsEmpty'
 import { fitImage } from '../fitImage.js'
@@ -183,6 +184,7 @@ function CgOddsCell({ item, mode }) {
   const tone = cg.edgePct == null ? 'even' : cg.edgePct > 0 ? 'pos' : cg.edgePct < 0 ? 'neg' : 'even'
   const sideLabel = side === 'under' ? 'Under' : 'Over'
   const bookList = cg.books.join(', ')
+  const adjust = cg.lineAdjusted ? lineAdjustDetail(item) : null
   return (
     <td className={`nfl-sharp-cg tone-${tone}`}>
       <div className="cgo-hero" title="CG odds. Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
@@ -196,12 +198,11 @@ function CgOddsCell({ item, mode }) {
         <div className="cgo-main">
           <b className="cgo-price">{formatAmerican(cg.american)}</b>
           <span className="cgo-prob"><strong>{(cg.probability * 100).toFixed(1)}%</strong><small>{sideLabel} fair win</small></span>
+          <BookLinePct detail={adjust} side={side} />
         </div>
         <div className="cgo-tags">
           <span className="cgo-tag" title={bookList ? `Books in the CG price: ${bookList}` : 'Books in the CG price'}>{cg.books.length} book{cg.books.length === 1 ? '' : 's'}</span>
-          {cg.lineAdjusted && (
-            <span className="cgo-tag adj" title={`Books post ${formatValue(item.matched_line)}, PrizePicks posts ${formatValue(item.pp_line)}. CG shifted the book price to the PrizePicks line, so this number is less certain.`}>line adj {formatValue(item.matched_line)}→{formatValue(item.pp_line)}</span>
-          )}
+          {cg.lineAdjusted && <LineAdjTag item={item} detail={adjust} extra="CG shifted the book price to the PrizePicks line, so this number is less certain." />}
         </div>
       </div>
     </td>
@@ -254,8 +255,8 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           )}
         </td>
         {showCg && <CgOddsCell item={item} mode={mode} />}
-        <td><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
-        <td><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
+        <td><BookLineLabel item={item} side="over" /><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
+        <td><BookLineLabel item={item} side="under" /><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
         <td>{formatValue(item.projection)}</td>
         <td>
           <div className="nfl-sharp-matchup-cell">
@@ -494,8 +495,8 @@ export default function NflSharpOdds({ onSelectPlayer }) {
                 <th>Player</th>
                 <th>Prop</th>
                 {showCg && <th className="nfl-sharp-cg-th" title="CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>}
-                <th>Best Over</th>
-                <th>Best Under</th>
+                <th title="Best book price at the book line. When the book line differs from PrizePicks, the cell says Best Over @line.">Best Over</th>
+                <th title="Best book price at the book line. When the book line differs from PrizePicks, the cell says Best Under @line.">Best Under</th>
                 <th>Our Proj</th>
                 <th>Matchup</th>
                 <th>L5</th>
