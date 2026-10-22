@@ -238,9 +238,10 @@ def build_rows_published_only(pub: list[dict], captured_at: str, reason: str) ->
 
 
 def _norm_name(s: str | None) -> str:
+    """Same key as the board build (accents folded), so Jokić matches Jokic."""
     if not s:
         return ""
-    return "".join(c for c in s.lower() if c.isalnum())
+    return _load_pp_odds().normalize_player_key(s)
 
 
 def _norm_stat(s: str | None) -> str:

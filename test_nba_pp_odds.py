@@ -637,3 +637,34 @@ class CacheAndSnapshotTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AccentedNameTests(unittest.TestCase):
+    def test_accented_prizepicks_names_match_the_plain_roster(self):
+        rows = [
+            projection("7", "NBA", "nj", "Nikola Jokić", team="DEN", stat="Points", line=27.5, description="OKC"),
+            projection("7", "NBA", "as", "Alperen Şengün", team="HOU", stat="Rebounds", line=9.5, description="OKC"),
+        ]
+        roster = [
+            {"athleteId": "3112335", "name": "Nikola Jokic", "team": "DEN", "position": "C"},
+            {"athleteId": "4871144", "name": "Alperen Sengun", "team": "HOU", "position": "C"},
+        ]
+        result = pp.prepare(payload_from(rows), roster, today=FETCH, teams={})
+        standard = {player["name"]: player for player in result["boards"]["standard"]}
+        self.assertEqual(standard["Nikola Jokic"]["athleteId"], "3112335")
+        self.assertTrue(standard["Nikola Jokic"]["matched"])
+        self.assertEqual(standard["Alperen Sengun"]["athleteId"], "4871144")
+        self.assertEqual(result["match"]["unmatched"], [])
+
+    def test_player_key_folds_accents(self):
+        for accented, plain in [
+            ("Nikola Jokić", "Nikola Jokic"),
+            ("Luka Dončić", "Luka Doncic"),
+            ("Jonas Valančiūnas", "Jonas Valanciunas"),
+            ("Dario Šarić", "Dario Saric"),
+            ("Jusuf Nurkić", "Jusuf Nurkic"),
+            ("Kristaps Porziņģis", "Kristaps Porzingis"),
+            ("Alperen Şengün", "Alperen Sengun"),
+        ]:
+            self.assertEqual(pp.normalize_player_key(accented), pp.normalize_player_key(plain))
+        self.assertEqual(pp.normalize_player_key("De'Aaron Fox"), "deaaronfox")
