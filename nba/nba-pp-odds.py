@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -929,6 +930,40 @@ def print_report(result: dict) -> None:
     print("Ambiguous roster names: " + (", ".join(ambiguous) if ambiguous else "none"))
 
 
+def raw_nba_feed(payload: dict) -> dict:
+    """The NBA-family projections from a pull, unchanged, with what they reference.
+
+    Saved as a short-lived workflow artifact so how PrizePicks labeled each
+    line (odds_type, is_promo) can be checked later. Public PrizePicks data
+    only: no projection, rating, or other board field is added.
+    """
+    leagues, players = _index_included(payload)
+    keep_leagues = {ALLOWED_LEAGUE, *EXCLUDED_LEAGUES}
+    data = []
+    refs: set[tuple[str, str]] = set()
+    for row in payload.get("data") or []:
+        if projection_league(row, leagues, players) not in keep_leagues:
+            continue
+        data.append(row)
+        for rel in (row.get("relationships") or {}).values():
+            ref = (rel or {}).get("data") if isinstance(rel, dict) else None
+            if isinstance(ref, dict) and ref.get("id") is not None:
+                refs.add((str(ref.get("type") or ""), str(ref.get("id"))))
+    ids = {ref_id for _type, ref_id in refs}
+    included = [
+        item for item in payload.get("included") or []
+        if (str(item.get("type") or ""), str(item.get("id"))) in refs
+        or (item.get("type") in ("league", "new_player") and str(item.get("id")) in ids)
+    ]
+    return {"data": data, "included": included}
+
+
+def write_raw_feed(path: str | os.PathLike, payload: dict) -> None:
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(raw_nba_feed(payload)), encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Fetch NBA PrizePicks lines")
     parser.add_argument("--odds-type", default="all", choices=["standard", "demon", "goblin", "all"])
@@ -940,6 +975,10 @@ def main(argv: list[str] | None = None) -> int:
     except InconsistentPrizePicksSnapshot:
         # ::error is already printed. Do not replace the restored snapshots.
         return 1
+    raw_out = os.environ.get("NBA_PP_RAW_OUT", "").strip()
+    if raw_out:
+        write_raw_feed(raw_out, payload)
+        print(f"saved raw NBA PrizePicks feed: {raw_out}")
     roster = load_roster()
     result = prepare(payload, roster)
     if args.json:

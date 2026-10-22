@@ -131,6 +131,8 @@ jobs:
 
       - name: Fetch NBA PrizePicks lines
         id: lines
+        env:
+          NBA_PP_RAW_OUT: ${{ runner.temp }}/nba-prizepicks-raw.json
         run: |
           set -o pipefail
           python nba/nba-pp-odds.py | tee "$RUNNER_TEMP/nba-pp.txt"
@@ -147,6 +149,18 @@ jobs:
             echo "has_lines=false" >> "$GITHUB_OUTPUT"
             echo "No PrizePicks lines this run. Publish will be skipped."
           fi
+
+      # Raw PrizePicks NBA feed for this build (public lines only, no
+      # projections or CG), kept 7 days to show how each line was labeled.
+      - name: Save raw PrizePicks NBA feed
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-prizepicks-raw-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nba-prizepicks-raw.json
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Fill NBA projections and edges
         run: |

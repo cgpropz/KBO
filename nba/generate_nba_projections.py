@@ -632,11 +632,37 @@ def ranks_for(slot: str, opponent: str, dvp_ranks: dict) -> dict | None:
     return dict(found) if found else {}
 
 
+def qualifying_games(games: list[dict]) -> list[dict]:
+    """Games with minutes played: the sample every per-prop field reads."""
+    return [game for game in games if (game.get("min") or 0) > 0]
+
+
+def fill_line_fields(filled: dict, qualifying: list[dict], label: str) -> None:
+    """Every prop field that depends on the line: rating, hit rates, sanity.
+
+    Reads filled["projection"] and filled["line"]. The projection itself does
+    not depend on the line, so a line change only needs this step.
+    """
+    projection = filled.get("projection")
+    line = filled.get("line")
+    filled["rating"] = edge_rating(projection, line)
+    if qualifying and projection is not None:
+        filled["hitRates"] = {
+            "L5": hit_rate(qualifying, label, line, 5),
+            "L10": hit_rate(qualifying, label, line, 10),
+            "L15": hit_rate(qualifying, label, line, 15),
+            "FULL": hit_rate(qualifying, label, line, None),
+        }
+    else:
+        filled["hitRates"] = {"L5": None, "L10": None, "L15": None, "FULL": None}
+    attach_sanity(filled)
+
+
 def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: dict, slot: str, source: str) -> dict:
     updated = dict(player)
     updated["dvpSlot"] = slot
     updated["dvpSlotSource"] = source
-    qualifying = [game for game in games if (game.get("min") or 0) > 0]
+    qualifying = qualifying_games(games)
     props = []
     any_projection = False
     for prop in player.get("ppAllProps") or []:
@@ -645,25 +671,16 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
         opponent = str(prop.get("opponent") or player.get("dvpOpponent") or "").strip().upper()
         bundle = project_player(qualifying, factors_for(slot, opponent, dvp_factors)) if qualifying else None
         projection = projection_for_label(label, bundle)
-        rating = edge_rating(projection, prop.get("line"))
         filled["projection"] = projection
-        filled["rating"] = rating
+        fill_line_fields(filled, qualifying, label)
         if qualifying and projection is not None:
-            filled["hitRates"] = {
-                "L5": hit_rate(qualifying, label, prop.get("line"), 5),
-                "L10": hit_rate(qualifying, label, prop.get("line"), 10),
-                "L15": hit_rate(qualifying, label, prop.get("line"), 15),
-                "FULL": hit_rate(qualifying, label, prop.get("line"), None),
-            }
             rank_map = ranks_for(slot, opponent, dvp_ranks)
             filled["effectiveDvpRank"] = effective_dvp_rank(label, rank_map)
             filled["l10Values"] = l10_values(qualifying, label)
             any_projection = True
         else:
-            filled["hitRates"] = {"L5": None, "L10": None, "L15": None, "FULL": None}
             filled["effectiveDvpRank"] = None
             filled["l10Values"] = None
-        attach_sanity(filled)
         props.append(filled)
     updated["ppAllProps"] = props
     sample = None
