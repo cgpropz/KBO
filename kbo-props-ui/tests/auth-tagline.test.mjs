@@ -14,3 +14,13 @@ test('the sign-in tagline names every live sport', () => {
     assert.match(tagline[1], new RegExp(`\\b${sport}\\b`))
   }
 })
+
+test('each tagline emoji is glued to its sport with a non-breaking space', () => {
+  const src = readFileSync(join(root, 'src/AuthPage.jsx'), 'utf8')
+  const [, tagline] = src.match(/<p className="auth-tagline">([^<]*)<\/p>/)
+  const pairs = [...tagline.matchAll(/(\p{Extended_Pictographic})(\s)([A-Z]+)/gu)]
+  assert.equal(pairs.length, 5, 'five emoji + sport pairs')
+  for (const [pair, , space] of pairs) {
+    assert.equal(space, '\u00A0', `non-breaking space in "${pair}"`)
+  }
+})
