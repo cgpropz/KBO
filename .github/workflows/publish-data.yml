@@ -55,6 +55,11 @@ jobs:
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         continue-on-error: true
 
+      # This run's KBO PrizePicks answer (pipeline/kbo_run_signal.py): a
+      # count-only file outside the checkout, stamped with this run's id.
+      - name: Point the KBO odds step at this run's signal file
+        run: echo "KBO_PP_RUN_SIGNAL=${RUNNER_TEMP}/kbo_pp_run.json" >> "$GITHUB_ENV"
+
       - name: Restore last published snapshots (paid data is not in git)
         run: python pipeline/restore_snapshots.py
         env:

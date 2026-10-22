@@ -33,6 +33,15 @@ ENTRY_KEYS = ("sport", "board_updated_at", "injuries_checked_at", "prop_count", 
 # Optional on an entry: why the last run did not publish. Set by a failed
 # build step (e.g. nhl/fetch_history.py), cleared by the next publish.
 FAILURE_REASONS = ("download_failed",)
+# Optional on the KBO entry: PrizePicks returned 0 KBO props in the run that
+# wrote it (pipeline/kbo_run_signal.py). prop_count is 0, the board clock is
+# not moved forward, and the entry reads stale, so an empty board never shows
+# a fresh stamp. The next publish with KBO props clears it.
+NO_LINES_NOTE = "no_lines"
+
+
+def copy_note(sport: str, value: Any) -> str | None:
+    return NO_LINES_NOTE if sport == "kbo" and value == NO_LINES_NOTE else None
 
 
 def copy_failure(value: Any) -> dict | None:
@@ -136,6 +145,11 @@ def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) 
             reasons = copy_removed_reasons(update.get("removed_reasons"))
             # A publish clears the failure; prefer_fresher passes it through.
             failure = copy_failure(update.get("last_failure"))
+            note = copy_note(sport, update.get("note"))
+            if note is not None:
+                # Nothing new to show: keep the last real publish clock.
+                raw = prev.get("board_updated_at")
+                count = 0
         else:
             raw = prev.get("board_updated_at")
             injury = prev.get("injuries_checked_at")
@@ -143,15 +157,18 @@ def merge_status(previous: list[dict], updates: dict[str, dict], now: datetime) 
             count = int(count) if isinstance(count, int) and not isinstance(count, bool) else 0
             reasons = copy_removed_reasons(prev.get("removed_reasons"))
             failure = copy_failure(prev.get("last_failure"))
+            note = copy_note(sport, prev.get("note"))
         entry = {
             "sport": sport,
             "board_updated_at": iso_with_et_offset(raw),
             "injuries_checked_at": iso_with_et_offset(injury),
             "prop_count": count,
-            "stale": is_stale(raw, sport, now),
+            "stale": True if note is not None else is_stale(raw, sport, now),
         }
         if reasons is not None:
             entry["removed_reasons"] = reasons
+        if note is not None:
+            entry["note"] = note
         if failure is not None:
             entry["last_failure"] = failure
         boards.append(entry)
@@ -181,6 +198,7 @@ def prefer_fresher(local: list[dict], remote: list[dict], now: datetime) -> dict
     left = {row["sport"]: row for row in local if isinstance(row, dict) and row.get("sport")}
     right = {row["sport"]: row for row in remote if isinstance(row, dict) and row.get("sport")}
     updates = {}
+    previous = []
     for sport in SPORTS:
         chosen = _later_row(left.get(sport) or {}, right.get(sport) or {})
         count = chosen.get("prop_count")
@@ -195,7 +213,11 @@ def prefer_fresher(local: list[dict], remote: list[dict], now: datetime) -> dict
         failure = copy_failure(chosen.get("last_failure"))
         if failure is not None:
             updates[sport]["last_failure"] = failure
-    return merge_status([], updates, now)
+        note = copy_note(sport, chosen.get("note"))
+        previous.append({"sport": sport, "board_updated_at": chosen.get("board_updated_at")})
+        if note is not None:
+            updates[sport]["note"] = note
+    return merge_status(previous, updates, now)
 
 
 def record_failure(sport: str, reason: str, missing=None, now: datetime | None = None,
@@ -227,7 +249,7 @@ def apply_published(updates: dict[str, dict], now: datetime | None = None, path:
     return document
 
 
-def record_from_payload(sport: str, data: Any, published_at: str) -> dict:
+def record_from_payload(sport: str, data: Any, published_at: str, env=None) -> dict:
     record = {
         "board_updated_at": published_at,
         "injuries_checked_at": injury_checked_at(data),
@@ -235,4 +257,9 @@ def record_from_payload(sport: str, data: Any, published_at: str) -> dict:
     }
     if sport == "nhl":
         record["removed_reasons"] = removed_reason_counts(data if isinstance(data, list) else [])
+    if sport == "kbo" and record["prop_count"] == 0:
+        from pipeline.kbo_run_signal import no_kbo_lines_this_run
+
+        if no_kbo_lines_this_run(env):
+            record["note"] = NO_LINES_NOTE
     return record
