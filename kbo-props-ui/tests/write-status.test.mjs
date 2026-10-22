@@ -70,6 +70,38 @@ test('the UI package alone keeps the uploaded status file when snapshots are abs
   }
 })
 
+test('a missing public folder is created and the status file is written', () => {
+  const root = mkdtempSync(join(tmpdir(), 'status-mkdir-'))
+  try {
+    writeFileSync(join(root, 'package.json'), '{"name":"kbo-props-ui"}\n')
+    const document = writeBoardStatus({ root, now: NOW })
+    const written = JSON.parse(readFileSync(join(root, 'public/status.json'), 'utf8'))
+    assert.equal(written.boards.length, document.boards.length)
+    assert.equal(written.boards.find((board) => board.sport === 'kbo').prop_count, 0)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('a status write that cannot create its folder warns and does not throw', () => {
+  const root = mkdtempSync(join(tmpdir(), 'status-warn-'))
+  const warnings = []
+  const original = console.warn
+  console.warn = (...args) => { warnings.push(args.join(' ')) }
+  try {
+    writeFileSync(join(root, 'package.json'), '{"name":"kbo-props-ui"}\n')
+    writeFileSync(join(root, 'public'), 'not-a-directory\n')
+    const document = writeBoardStatus({ root, now: NOW })
+    assert.equal(document.boards.length, 5)
+    assert.equal(warnings.length, 1)
+    assert.match(warnings[0], /\[status\] could not write/)
+    assert.match(warnings[0], /public/)
+  } finally {
+    console.warn = original
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
 test('node scripts/write-status.mjs succeeds when the upload root is the UI package', () => {
   const root = mkdtempSync(join(tmpdir(), 'status-vercel-'))
   try {
