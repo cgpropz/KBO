@@ -86,6 +86,11 @@ test('sport access stays per sport, and NBA follows the owner account', () => {
   assert.equal(sportUnlockedFor('nhl', 'combined', member), true)
   assert.equal(sportUnlockedFor('nba', 'owner', member), false)
   assert.equal(sportUnlockedFor('nba', 'free', owner), true)
+  // All-Access member: unlocked only once the NBA access check is open.
+  assert.equal(sportUnlockedFor('nba', 'combined', member, true), true)
+  assert.equal(sportUnlockedFor('nba', 'combined', member, false), false)
+  assert.equal(sportUnlockedFor('nba', 'combined', member), false)
+  assert.equal(sportUnlockedFor('nba', 'free', null, true), false)
 })
 
 test('every sport board holds the paywall until the plan is confirmed', () => {
