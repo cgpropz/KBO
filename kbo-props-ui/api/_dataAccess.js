@@ -7,7 +7,7 @@ import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksP
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
-import { gameAlreadyStarted } from '../src/gameStarted.js';
+import { gameAlreadyStarted, startTimePassed } from '../src/gameStarted.js';
 import {
   NBA_MIN_AVG_MINUTES,
   NBA_MIN_GAMES,
@@ -300,8 +300,15 @@ const MEMBER_BOARD_DATASETS = new Set([
   'nhl_projections',
 ]);
 
-function memberBoardRows(ds, rows) {
-  const live = dropPulledRows(rows);
+// Row boards whose rows each carry their own start_time. Between publishes
+// the snapshot still holds a game that has kicked off (pipeline/board_expiry
+// drops it only on the next publish), so these boards also drop started rows
+// on every request. A missing or unparseable start time keeps the row.
+const STARTED_FILTER_DATASETS = new Set(['nfl_projections', 'nhl_projections']);
+
+function memberBoardRows(ds, rows, now = new Date()) {
+  let live = dropPulledRows(rows);
+  if (STARTED_FILTER_DATASETS.has(ds)) live = live.filter((row) => !startTimePassed(row, now));
   if (ds !== 'nhl_projections') return live;
   return live.map(applyPointsOverGate).filter(Boolean);
 }
@@ -314,10 +321,10 @@ function sameRows(next, prev) {
   return true;
 }
 
-function prepareMemberBoard(ds, payload) {
+function prepareMemberBoard(ds, payload, now = new Date()) {
   if (ds === 'nfl_projections' || ds === 'nhl_projections') {
     if (!Array.isArray(payload)) return payload;
-    const rows = memberBoardRows(ds, payload);
+    const rows = memberBoardRows(ds, payload, now);
     return sameRows(rows, payload) ? payload : rows;
   }
   if (ds === 'prizepicks_props') {
@@ -1023,7 +1030,7 @@ export function _resetTierShapeFilters() {
 // Decide what the caller receives for one dataset snapshot.
 // alreadyStandard means the cached board was filtered once for this entry.
 // The hot path must not walk the rows again.
-export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}) {
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false, now = new Date() } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
   // Standard lines are removed before the trim on paid boards and, while
@@ -1037,7 +1044,7 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false } = {}
   // removed, and non-standard lines are already gone on every paid board.
   // Only nhl_projections then drops Points overs under 0.69 and leaves
   // overs from 0.69 up to 0.78 on the board with rankEligible false.
-  if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload);
+  if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload, now);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }
