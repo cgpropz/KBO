@@ -17,6 +17,7 @@ import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } f
 import { observeVisibleOnce, trackCheckoutClick, trackFreeTop3View } from './analytics';
 import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
+import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
@@ -50,7 +51,13 @@ function ordinal(value) {
   return `${n}${suffix}`;
 }
 
-function BoardTable({ rows, showHitRate, sport }) {
+function kickoffText(row) {
+  const ms = rowStartMs(row);
+  if (ms == null) return '';
+  return `${new Date(ms).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`;
+}
+
+function BoardTable({ rows, showHitRate, sport, showKickoff = false }) {
   if (!rows.length) return null;
   return (
     <div className="pl-table" role="table">
@@ -62,12 +69,12 @@ function BoardTable({ rows, showHitRate, sport }) {
         <span>CG</span>
       </div>
       {rows.map((row) => (
-        <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}`}>
+        <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}|${row.start || ''}`}>
           <span className="pl-player">
             <PlayerMark name={row.player} team={row.team} sport={sport} image={row.ppImageUrl} />
             <span>
               <b>{row.player}</b>
-              <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}</small>
+              <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}{showKickoff && kickoffText(row) ? ` · ${kickoffText(row)}` : ''}</small>
             </span>
           </span>
           <span className="pl-num">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)}</span>
@@ -334,7 +341,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             ))}
           </div>
           <div className="pl-card">
-            {hitRows.length ? <BoardTable rows={hitRows} showHitRate sport={hitSport.id} /> : (
+            {hitRows.length ? <BoardTable rows={hitRows} showHitRate showKickoff sport={hitSport.id} /> : (
               <p className="pl-empty">{freeTopEmptyText({ sportName: hitSport.name, settled: settled || !!hitState?.hold, hold: hitState?.hold })}</p>
             )}
             {hitState?.preview && hitState.lockedCount > 0 && (

@@ -48,10 +48,13 @@ test('the baked NFL preview drops started games and refuses total edges', () => 
 
   const nhl = acceptLandingFallback('nhl_projections', {
     preview: true,
-    data: [{ player: 'Evgeni Malkin', imageUrl: 'https://static.prizepicks.com/images/players/NHL/Evgeni_Malkin__NHL_player_abc.webp' }],
+    data: [
+      { player: 'Finished Skater', start_time: past },
+      { player: 'Evgeni Malkin', imageUrl: 'https://static.prizepicks.com/images/players/NHL/Evgeni_Malkin__NHL_player_abc.webp' },
+    ],
     lockedCount: 2,
   });
-  assert.equal(nhl.data[0].player, 'Evgeni Malkin');
+  assert.deepEqual(nhl.data.map((row) => row.player), ['Evgeni Malkin']);
   assert.equal(acceptLandingFallback('nhl_projections', {
     preview: true,
     data: [{ player: 'A' }, { player: 'B' }, { player: 'C' }, { player: 'D' }],
@@ -88,4 +91,16 @@ test('the bake keeps the free top 3 and strips total edges', () => {
   });
   assert.equal(markets.data.games.some((game) => Object.hasOwn(game.total, 'edge')), false);
   assert.equal(markets.data.games[0].spread.edge, 4);
+
+  const nhl = landingPreviewBody('nhl_projections', {
+    updated_at: now,
+    data: [
+      { player: 'Finished Skater', line: 1.5, projection: 4, prop: 'Shots On Goal', oddsType: 'standard', start_time: '2000-01-01T00:00:00.000Z' },
+      { player: 'Later Skater', line: 1.5, projection: 3, prop: 'Shots On Goal', oddsType: 'standard', start_time: '2099-01-01T00:00:00.000Z' },
+      { player: 'Next Skater', line: 1.5, projection: 2.4, prop: 'Shots On Goal', oddsType: 'standard', start_time: '2099-01-02T00:00:00.000Z' },
+    ],
+  });
+  assert.equal(nhl.preview, true);
+  assert.equal(nhl.data.some((row) => row.player === 'Finished Skater'), false);
+  assert.ok(nhl.data.some((row) => row.player === 'Later Skater'));
 });
