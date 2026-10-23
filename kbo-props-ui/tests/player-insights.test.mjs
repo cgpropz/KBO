@@ -1,8 +1,9 @@
 // Player-page Splits / Advanced stats math. Made-up game logs only.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildSplits, formatMetric, metricWindows, parseGameDay, withRest } from '../src/playerInsights/insightsCore.js'
-import { basketballSeasonLabel, kboInsights, nbaInsights, nflInsights, nhlInsights } from '../src/playerInsights/insightsSports.js'
+import { buildSplits, formatMetric, metricSeries, metricWindows, parseGameDay, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel, withRest } from '../src/playerInsights/insightsCore.js'
+import { basketballSeasonLabel, EARLY_SEASON_GAMES, kboInsights, nbaInsights, nflInsights, nflTeamKey, nhlInsights, wnbaInsights } from '../src/playerInsights/insightsSports.js'
+import { averageMetric } from '../src/nba/nbaMinutesUsage.js'
 
 test('parses each sport date shape', () => {
   assert.equal(parseGameDay('2026-10-01'), parseGameDay('10/01/2026'))
@@ -105,4 +106,135 @@ test('NHL splits stay off the non-commercial logs until a source is approved', (
   const approved = nhlInsights(item, { sourceApproved: true })
   assert.equal(approved.splitsBlocked, null)
   assert.equal(approved.games[0].opp, 'B')
+})
+
+test('basketball: 0-minute games are left out of every metric and split; Minutes matches Minutes & Usage', () => {
+  const logs = [
+    nbaLog('10/22/2026', 30, 'AAA vs. BBB', 'W'),
+    { ...nbaLog('10/21/2026', 0, 'AAA @ CCC', 'L'), min: 0, usg: null, reb: 0, ast: 0, fga: 0, fgm: 0, fg3a: 0, fg3m: 0, fta: 0, ftm: 0, tov: 0 },
+    { ...nbaLog('10/19/2026', 22, 'AAA vs. BBB', 'W'), min: 24 },
+    nbaLog('10/17/2026', 25, 'AAA @ BBB', 'W'),
+    nbaLog('10/15/2026', 18, 'AAA vs. DDD', 'L'),
+    nbaLog('10/13/2026', 20, 'AAA vs. DDD', 'L'),
+  ]
+  const model = nbaInsights(logs, { valueOf: (game) => game.pts, opponent: 'CCC' })
+  const splits = buildSplits(model.games, { ...model, line: 19.5, today: parseGameDay('10/23/2026') })
+  const byId = Object.fromEntries(splits.rows.map((row) => [row.id, row]))
+  assert.equal(byId.season.n, 5)
+  assert.equal(byId.vsopp.n, 0)
+  assert.equal(byId.away.n, 1)
+  for (const metric of model.metrics) {
+    const windows = metricWindows(metric, model.games, model)
+    assert.ok(windows.every((window) => window.n <= 5), `${metric.id} skips the DNP`)
+    assert.ok(metricSeries(metric, model.games).length <= 5)
+  }
+  const minutes = model.metrics.find((metric) => metric.id === 'min')
+  const [l5, l10, season] = metricWindows(minutes, model.games, model)
+  assert.equal(l5.n, 4)
+  assert.equal(l5.value, averageMetric(logs.slice(0, 5), 'min'))
+  assert.equal(l10.value, averageMetric(logs.slice(0, 10), 'min'))
+  assert.equal(season.value, averageMetric(logs, 'min'))
+})
+
+test('a capped log labels its oldest season as the last N games', () => {
+  const games = Array.from({ length: 200 }, (_, index) => ({ date: `2026-09-${String((index % 28) + 1).padStart(2, '0')}`, hrr: index % 4, season: index < 144 ? 2026 : 2025, opp: 'X', h: 1, ab: 4 }))
+  const model = kboInsights({ type: 'batter', games }, { valueOf: (game) => game.hrr })
+  const splits = buildSplits(model.games, { ...model, line: 1.5, today: parseGameDay('2026-10-01') })
+  const byId = Object.fromEntries(splits.rows.map((row) => [row.id, row]))
+  assert.equal(byId.season.label, '2026 season')
+  assert.equal(byId.prior.label, 'Last 56 games of 2025')
+  const avg = model.metrics.find((metric) => metric.id === 'avg')
+  const windows = metricWindows(avg, model.games, model)
+  assert.equal(windows.find((window) => window.id === 'prior').label, 'Last 56 of 2025')
+  const short = kboInsights({ type: 'batter', games: games.slice(0, 199) }, { valueOf: (game) => game.hrr })
+  assert.equal(buildSplits(short.games, { ...short, line: 1.5 }).rows.find((row) => row.id === 'prior').label, '2025 season')
+})
+
+test('WNBA: a 40-game log with playoffs is labeled as such', () => {
+  const logs = Array.from({ length: 40 }, (_, index) => ({ date: `09/${String(30 - (index % 28)).padStart(2, '0')}/2026`, pts: 10 + (index % 5), min: 30, matchup: 'AAA vs BBB', ...(index < 3 ? { postseason: true } : {}) }))
+  const model = wnbaInsights(logs, { valueOf: (game) => game.pts })
+  const season = buildSplits(model.games, { ...model, line: 11.5 }).rows.find((row) => row.id === 'season')
+  assert.equal(season.label, 'Last 40 games of 2026, incl. playoffs')
+  const minutes = model.metrics.find((metric) => metric.id === 'min')
+  const windows = metricWindows(minutes, model.games, model)
+  assert.equal(windows.find((window) => window.id === 'season').label, 'Last 40 of 2026')
+  assert.ok(windows.some((window) => window.playoffs))
+})
+
+test('pushes leave the hit rate and the shown n', () => {
+  const games = [6, 5, 5, 4, 7].map((so, index) => ({ date: `2026-09-${10 + index * 5}`, so, outs: 18, season: 2026, opp: 'X' }))
+  const model = kboInsights({ type: 'pitcher', games }, { valueOf: (game) => game.so })
+  const season = buildSplits(model.games, { ...model, line: 5 }).rows.find((row) => row.id === 'season')
+  assert.equal(season.n, 5)
+  assert.equal(season.pushes, 2)
+  assert.equal(season.shown, 3)
+  assert.equal(season.rate, 67)
+})
+
+test('NFL opponent split matches team-code aliases', () => {
+  assert.equal(nflTeamKey('LA'), nflTeamKey('LAR'))
+  assert.equal(nflTeamKey('JAC'), nflTeamKey('JAX'))
+  assert.equal(nflTeamKey('WSH'), nflTeamKey('WAS'))
+  assert.equal(nflTeamKey('OAK'), nflTeamKey('LV'))
+  const row = { prop: 'Rush Yards', recent: [50, 80], gameDates: ['9/7', '9/14'], gameSeasons: [2026, 2026], gameOpponents: ['LA', 'SF'], opponent: 'LAR' }
+  const model = nflInsights(row, [row], { currentSeason: 2026 })
+  const vs = buildSplits(model.games, { ...model, line: 60.5 }).rows.find((entry) => entry.id === 'vsopp')
+  assert.equal(vs.label, 'vs LAR')
+  assert.equal(vs.n, 1)
+})
+
+test('KBO pitchers hide empty rest rows; hitters keep them', () => {
+  const games = [{ date: '2026-09-12', so: 6, season: 2026 }, { date: '2026-09-06', so: 5, season: 2026 }, { date: '2026-09-01', so: 7, season: 2026 }]
+  const pitcher = kboInsights({ type: 'pitcher', games }, { valueOf: (game) => game.so })
+  const rows = buildSplits(pitcher.games, { ...pitcher, line: 5.5 }).rows
+  assert.deepEqual(rows.filter((row) => row.group === 'Rest').map((row) => row.id), ['rest2'])
+  const hitter = kboInsights({ type: 'batter', games: games.map((game) => ({ ...game, hrr: 1 })) }, { valueOf: (game) => game.hrr })
+  assert.equal(buildSplits(hitter.games, { ...hitter, line: 0.5 }).rows.filter((row) => row.group === 'Rest').length, 3)
+})
+
+test('early-season notice uses a per-sport threshold', () => {
+  assert.deepEqual({ ...EARLY_SEASON_GAMES }, { nba: 10, wnba: 6, nfl: 4, kboHitter: 15, kboPitcher: 5, nhl: 10 })
+  const nfl = (count) => {
+    const recent = Array.from({ length: count }, () => 50)
+    const row = { prop: 'Rush Yards', recent, gameDates: recent.map((_, i) => `9/${7 + i * 7}`), gameSeasons: recent.map(() => 2026), gameOpponents: recent.map(() => 'SF') }
+    const model = nflInsights(row, [row], { currentSeason: 2026 })
+    return buildSplits(model.games, { ...model, line: 40.5 }).rows.find((entry) => entry.id === 'season').early
+  }
+  assert.equal(nfl(3), true)
+  assert.equal(nfl(4), false)
+})
+
+test('item 1 switch: this season only, or both seasons labeled', () => {
+  const logs = [
+    nbaLog('10/22/2026', 30, 'AAA vs. BBB', 'W'),
+    nbaLog('10/20/2026', 12, 'AAA @ BBB', 'L'),
+    ...Array.from({ length: 8 }, (_, i) => nbaLog(`04/${String(10 - i).padStart(2, '0')}/2026`, 20, 'AAA vs. CCC', 'W', '2026')),
+  ]
+  const model = nbaInsights(logs, { valueOf: (game) => game.pts, opponent: 'BBB' })
+  assert.equal(model.recentScope, 'all')
+  const minutes = model.metrics.find((metric) => metric.id === 'min')
+  assert.deepEqual(metricWindows(minutes, model.games, model).map((window) => window.label), ['L5', 'L10', "'26-27", "'25-26"])
+
+  const seasonOnly = { ...model, recentScope: 'season' }
+  assert.deepEqual(metricWindows(minutes, model.games, seasonOnly).map((window) => window.id), ['season', 'prior'])
+  const home = buildSplits(model.games, { ...seasonOnly, line: 19.5 }).rows.find((row) => row.id === 'home')
+  assert.equal(home.n, 1)
+
+  const both = { ...model, recentScope: 'both' }
+  assert.deepEqual(metricWindows(minutes, model.games, both).slice(0, 2).map((window) => window.label), ['L5 · both seasons', 'L10 · both seasons'])
+  const bothRows = buildSplits(model.games, { ...both, line: 19.5 }).rows
+  assert.equal(bothRows.find((row) => row.id === 'home').group, 'Venue · both seasons')
+  assert.equal(bothRows.find((row) => row.id === 'home').n, 9)
+})
+
+test('bar labels stay short enough for a 320px strip', () => {
+  const days = ['2026-09-29', '2026-10-01', '2026-10-10', '2026-10-12'].map((text) => parseGameDay(text))
+  assert.deepEqual(seriesDayLabels(days), ['29', '1', '10', '12'])
+  assert.equal(seriesRange(days), '9/29–10/12')
+  assert.equal(seriesValueLabel(34.46, 'one'), '34')
+  assert.equal(seriesValueLabel(4.5, 'two'), '4.5')
+  assert.equal(seriesValueLabel(0.256, 'pct'), '26')
+  assert.equal(seriesValueLabel(0.5, 'avg3'), '.500')
+  assert.equal(seriesLabelsVertical(['34', '4.5', '100']), false)
+  assert.equal(seriesLabelsVertical(['.500', '.250']), true)
 })

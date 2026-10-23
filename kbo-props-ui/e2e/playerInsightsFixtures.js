@@ -16,7 +16,7 @@ const nflBase = {
 }
 
 const kboGames = Array.from({ length: 12 }, (_, index) => ({
-  date: `2026-09-${String(20 - index).padStart(2, '0')}`,
+  date: `2026-10-${String(20 - index).padStart(2, '0')}`,
   season: 2026,
   opp: index % 2 ? 'Synth B' : 'Synth C',
   opp_hand: index % 3 ? 'R' : 'L',
@@ -131,6 +131,26 @@ export async function checkInsights(page, { expect, label }) {
   await expect(page.getByTestId('pi-adv-toggle')).toContainText(second)
   await expect(advanced).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} advanced`, expect)
+  await expectSeriesLabelsApart(page, label, expect)
+}
+
+// Bar-chart value and date labels never run into the next bar's label.
+async function expectSeriesLabelsApart(page, label, expect) {
+  const touching = await page.evaluate(() => {
+    const out = []
+    for (const selector of ['.pi-series-col b', '.pi-series-col small']) {
+      const boxes = [...document.querySelectorAll(selector)].map((node) => {
+        const range = document.createRange()
+        range.selectNodeContents(node)
+        return range.getBoundingClientRect()
+      }).filter((box) => box.width > 0)
+      for (let i = 1; i < boxes.length; i += 1) {
+        if (boxes[i].left < boxes[i - 1].right + 1) out.push(`${selector} #${i}`)
+      }
+    }
+    return out
+  })
+  expect(touching, `${label} bar labels overlap`).toEqual([])
 }
 
 // No Splits / Advanced markup at all (logged out, or NHL).
