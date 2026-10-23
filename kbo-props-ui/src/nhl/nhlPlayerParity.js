@@ -15,7 +15,11 @@ import { cgScore } from '../cgScore.js'
 import { isStandardBoardLine } from '../standardBoard.js'
 import { pickSide } from '../pickSide.js'
 import { parseGameDay, meanOf, ratio, sumOf } from '../playerInsights/insightsCore.js'
-import { NHL_BASELINE_SOURCE, nhlBaseline, nhlBaselineGroup, nhlStatDirection } from './nhlStatScale.js'
+import { NHL_BASELINE_SOURCE, nhlBaseline, nhlBaselineGroup, nhlStatDirection, registerNhlStrengthScale } from './nhlStatScale.js'
+import { registerBaselineProvider, registerStatDirection } from '../playerInsights/strengthScale.js'
+
+// NHL directions and position baselines for the shared strength scale.
+registerNhlStrengthScale({ registerStatDirection, registerBaselineProvider })
 import { EARLY_SEASON_GAMES as SPLITS_EARLY_SEASON } from '../playerInsights/insightsSports.js'
 import { inRange, metricBounds, resolveRange } from '../nba/nbaGameFilters.js'
 import { averageMetric, trendDirection, EARLY_SEASON_GAMES } from '../nba/nbaMinutesUsage.js'
@@ -450,6 +454,7 @@ export function nhlApiInsights(item, games, { seasons = nhlSeasons() } = {}) {
       return {
         ...metric,
         better: nhlStatDirection(metric.id),
+        lowerIsBetter: nhlStatDirection(metric.id) === 'lower',
         baseline: value == null ? null : { value, group: metric.id === 'foPct' ? 'C' : group, source: NHL_BASELINE_SOURCE },
       }
     })

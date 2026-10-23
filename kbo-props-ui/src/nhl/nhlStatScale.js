@@ -54,3 +54,29 @@ export function nhlBaseline(id, group) {
   const value = NHL_POSITION_BASELINES[group]?.[id]
   return Number.isFinite(value) ? value : null
 }
+
+// Wire NHL into the shared scale (src/playerInsights/strengthScale.js).
+// Lower-is-better stats by id and by label.
+const NHL_LOWER_LABELS = /\bgaa\b|goals against|giveaways?|\bpim\b|penalty min|opp(onent)?\.? def(ense)? rank/i
+
+export function nhlBaselineLabel(group) {
+  const name = { F: 'forward', D: 'defense', C: 'center', G: 'goalie' }[group] || 'league'
+  return `${NHL_BASELINE_SEASON} NHL ${name} average`
+}
+
+// Published position baseline for an NHL API metric, or null (the shared
+// scale then falls back to the player's own season).
+export function nhlBaselineProvider(metric, model) {
+  const group = metric?.id === 'foPct' ? 'C' : (metric?.baseline?.group || model?.baselineGroup)
+  const value = Number.isFinite(metric?.baseline?.value) ? metric.baseline.value : nhlBaseline(metric?.id, group)
+  if (!Number.isFinite(value)) return null
+  return { value, label: nhlBaselineLabel(group) }
+}
+
+export function registerNhlStrengthScale({ registerStatDirection, registerBaselineProvider }) {
+  for (const [id, direction] of Object.entries(NHL_STAT_DIRECTIONS)) {
+    if (direction === 'lower') registerStatDirection('nhl', id, { lowerIsBetter: true })
+  }
+  registerStatDirection('nhl', NHL_LOWER_LABELS, { lowerIsBetter: true })
+  registerBaselineProvider('nhl', nhlBaselineProvider)
+}
