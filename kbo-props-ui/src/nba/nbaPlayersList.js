@@ -96,6 +96,8 @@ export function topProps(projections, players) {
       short: statShort(row.prop),
       line: row.line,
       side: row.side,
+      projection: row.projection,
+      score: row.score,
       opponent: row.opponent || null,
       hitRate: row._hit || row.gamesPlayed ? row.hitRate : null,
       hits: row._hit ? row._hit.hits : null,
