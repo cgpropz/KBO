@@ -1,0 +1,19 @@
+/* Board mini hit-rate chart with a date + opponent logo under each bar.
+   Bars and labels share one width and one gap, so each label sits under its
+   bar. Desktop tables get a wider chart so the labels fit; phones use the
+   full card width (mobile.css), which fits ten labels at 390px. */
+.mini-hit-bars { display: flex; flex-direction: column; gap: 3px; width: 280px; max-width: 100%; min-width: 0; }
+.mini-hit-bars > :first-child { width: 100% !important; max-width: 100% !important; gap: 2px; }
+.mini-hit-dates { display: flex; gap: 2px; width: 100%; min-width: 0; color: #a1a1aa; }
+.mini-hit-dates > span { display: flex; flex: 1 1 0; justify-content: center; min-width: 0; }
+.mini-hit-dates .hr-game .hr-game-date { font-size: 10px; }
+@media (max-width: 900px) {
+  .mini-hit-bars { width: 100%; }
+}
+@media (max-width: 480px) {
+  /* Ten labels at 390px: no gap between labels (they stay centred under the
+     bars), so each label gets the bar's width plus its share of the gap. */
+  .mini-hit-dates { gap: 0; }
+}
+/* NFL / NHL projection cards draw their own bars (3px gap, 4px top pad). */
+.nfl-edge-card .mini-hit-dates { gap: 3px; padding-top: 4px; }

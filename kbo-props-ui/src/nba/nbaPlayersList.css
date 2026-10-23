@@ -237,6 +237,8 @@
   gap: 10px;
   width: 100%;
   min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 3px;
   min-height: 68px;
   padding: 8px 10px 8px 12px;
   overflow: hidden;
@@ -289,7 +291,8 @@
 
 .nba-plist-main {
   display: flex;
-  flex: 1 1 auto;
+  /* Basis 0 keeps it on the first row beside the prop; the trend row wraps. */
+  flex: 1 1 0;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
@@ -353,6 +356,31 @@
   font-style: normal;
   font-weight: 700;
 }
+
+/* "MIN ↑ 31.2  USG ↓ 22%": L5 average with the L5 vs season arrow. */
+.nba-plist-trends {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding-left: 54px;
+  color: #b7cac3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.nba-plist-trend em {
+  margin-right: 3px;
+  color: #5d756d;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.nba-plist-trend b { margin-right: 3px; }
 
 /* Top prop pill: stat + line over a five-game spark and the L10 rate. */
 .nba-plist-prop {
@@ -452,6 +480,7 @@
   .nba-plist-card { min-height: 0; }
   .nba-plist-card .nba-plist-name { font-size: 15px !important; }
   .nba-plist-card :is(.nba-plist-meta, .nba-plist-season, .nba-plist-season em, .nba-plist-season i,
+    .nba-plist-trends, .nba-plist-trend em, .nba-plist-trend b,
     .nba-plist-prop-line, .nba-plist-prop-rate small, .nba-plist-prop-rate b) { font-size: 12px !important; }
   .nba-plist-card .nba-plist-meta { gap: 4px; }
   .nba-plist-card .nba-plist-season em { margin-right: 5px; }

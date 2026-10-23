@@ -1,3 +1,5 @@
+import MiniHitBars from '../MiniHitBars'
+import { tailChartBars } from '../chartLabels'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
@@ -91,16 +93,6 @@ function FilterIcon() {
   )
 }
 
-function MiniChart({ recent, line }) {
-  const maxValue = Math.max(line, ...recent, 1)
-  return (
-    <div className="nfl-lines-chart" aria-hidden="true">
-      {recent.map((value, index) => (
-        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
-      ))}
-    </div>
-  )
-}
 
 function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone, matchupDefense }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
@@ -151,7 +143,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
         ) },
-        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: 'hit-rate-chart', node: <MiniHitBars bars={tailChartBars(item)} line={item.line} chartClass="nfl-lines-chart" logoFor={teamLogoUrl} /> },
         { className: `hit-rate-score ${sideClass}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={item.side} symmetric={symmetricRankOn('nfl')} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },

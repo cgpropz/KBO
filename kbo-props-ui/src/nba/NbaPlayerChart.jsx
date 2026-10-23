@@ -10,6 +10,7 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 import NbaRangeSlider from './NbaRangeSlider'
 import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newestSeasonLogs, resolveRange } from './nbaGameFilters'
+import NbaMinutesUsage from './NbaMinutesUsage'
 import { PENDING, pickText, seasonShortLabel, todayPick } from './nbaTodayPick'
 import PlayerInsights from '../playerInsights/PlayerInsights'
 import { insightsLayout } from '../playerInsights/insightsPreview'
@@ -168,7 +169,24 @@ export default function NbaPlayerChart({ player, projection }) {
     })
     : null), [allLogs, current, insightsMode])
 
-  if (!current || slider.line == null) return <NoLineToday projection={projection} />
+  // Minutes & Usage: the same window over every logged game (newest first);
+  // games the sliders filter out stay in place, dimmed.
+  const muOption = RANGES.find((option) => option.id === range) || RANGES[1]
+  const muPool = Number.isFinite(muOption.count) ? allLogs : newestSeasonLogs(allLogs, allLogs[0]?.season)
+  const muWindow = Number.isFinite(muOption.count) ? muPool.slice(0, muOption.count) : muPool.slice()
+  const minutesUsage = (
+    <NbaMinutesUsage logs={allLogs} windowGames={muWindow} keptGames={narrowed ? new Set(filteredLogs) : null} />
+  )
+
+  // No line today: the header card says so, and Minutes & Usage still shows.
+  if (!current || slider.line == null) {
+    return (
+      <>
+        <NoLineToday projection={projection} />
+        {minutesUsage}
+      </>
+    )
+  }
 
   const chartProp = current.rows.find((prop) => Number(prop.line) === Number(current.posted)) || current.rows[0]
   const chartLogs = Array.isArray(player?.gameLogs) ? player.gameLogs : []
@@ -292,8 +310,11 @@ export default function NbaPlayerChart({ player, projection }) {
   ) : null
 
   return (
-    <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={current.stat} chips={statChips}>
-      {chartCard}
-    </PlayerInsights>
+    <>
+      <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={current.stat} chips={statChips}>
+        {chartCard}
+      </PlayerInsights>
+      {minutesUsage}
+    </>
   )
 }

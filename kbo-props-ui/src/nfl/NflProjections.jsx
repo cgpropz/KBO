@@ -18,6 +18,8 @@ import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { lineClause } from '../lineCount'
 import { nflSeasonAverage } from './seasonAverage'
+import { ChartDateRow } from '../MiniHitBars'
+import { tailChartBars } from '../chartLabels'
 
 // This season's per-game average, or '—' (src/nfl/seasonAverage.js).
 function seasonAvgText(row) {
@@ -52,8 +54,9 @@ function snapColor(pct) {
 }
 
 function ProjectionCard({ item, onSelectPlayer }) {
-  const recent = Array.isArray(item.recent) ? item.recent : []
-  const gameDates = Array.isArray(item.gameDates) ? item.gameDates : []
+  // Same ten games as the board chart, each with its own date and opponent.
+  const bars = tailChartBars(item)
+  const recent = bars.map((bar) => bar.value)
   const maxValue = Math.max(item.line, ...recent, 1)
   // Side comes from the score: exactly 50 is no pick (no side, no color).
   const side = cgSide(item.score)
@@ -76,11 +79,11 @@ function ProjectionCard({ item, onSelectPlayer }) {
       <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
       <div className="nfl-history-bars" aria-label={`Last ${recent.length} games for ${item.player}`}>
         {recent.map((value, index) => {
-          const date = gameDates[index] || 'Game log'
+          const date = bars[index]?.date || 'Game log'
           return <span className={lineResult(value, item.line) || 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`} tabIndex={0}><i>{formatValue(value)} · {date}</i></span>
         })}
       </div>
-      <div className="nfl-history-dates">{gameDates.map((date, index) => <span key={`${item.id}-date-${index}`}>{date}</span>)}</div>
+      <ChartDateRow bars={bars} logoFor={teamLogoUrl} />
     </article>
   )
 }
