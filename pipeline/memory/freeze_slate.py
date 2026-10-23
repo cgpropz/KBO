@@ -563,6 +563,16 @@ def append_nfl_history(d: date, rows: list[dict]) -> tuple[Path, int]:
     return path, len(fresh)
 
 
+def nfl_odds_type(row: dict) -> str:
+    """The PrizePicks odds_type of the NFL board card, from its line_type.
+
+    build_projection_data.py writes line_type on every row. Older
+    projections.json files had none; those were standard-only boards, so a
+    blank line_type still reads as standard.
+    """
+    return str(row.get("line_type") or "").strip().lower() or "standard"
+
+
 def freeze_nfl(
     slate_date: date | None = None,
     dry_run: bool = False,
@@ -611,7 +621,7 @@ def freeze_nfl(
             "position": row.get("position"),
             "stat": row.get("prop"),
             "line": line,
-            "odds_type": "standard",
+            "odds_type": nfl_odds_type(row),
             "recommendation": "OVER" if (projection or 0) >= (line or 0) else "UNDER",
             "projection": projection,
             "projection_source": "nfl/build_projection_data.py" if projection is not None else None,
