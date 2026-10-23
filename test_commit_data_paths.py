@@ -89,6 +89,25 @@ class CommitDataPathsTests(unittest.TestCase):
         self.assertEqual(git(self.job, "stash", "list").stdout, "")
         self.assertEqual(git(self.job, "worktree", "list").stdout.count("\n"), 1)
 
+    def test_one_missing_path_does_not_drop_the_others(self):
+        # data/gone.csv is listed and gone from both the job and main;
+        # box.csv must still be committed.
+        (self.job / "data" / "gone.csv").write_text("g,p\n0,0\n")
+        git(self.job, "add", "data/gone.csv")
+        git(self.job, "commit", "-qm", "add gone")
+        git(self.job, "push", "-q", "origin", "HEAD:main")
+        other = self.clone("remover")
+        git(other, "rm", "-q", "data/gone.csv")
+        git(other, "commit", "-qm", "remove gone")
+        git(other, "push", "-q", "origin", "main")
+        (self.job / "data" / "gone.csv").unlink()
+        (self.job / "data" / "box.csv").write_text("g,p\n4,40\n")
+        result = self.run_script("data/gone.csv", "data/box.csv", "data/optional_absent.csv")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("No data changes", result.stdout)
+        self.assertEqual(self.main_file("data/box.csv"), "g,p\n4,40\n")
+        self.assertEqual(self.main_file("data/gone.csv"), "")
+
     def test_fails_loudly_when_push_never_lands(self):
         (self.job / "data" / "box.csv").write_text("g,p\n9,90\n")
         self.reject_pushes(-1)

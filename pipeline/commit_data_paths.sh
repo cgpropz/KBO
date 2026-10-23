@@ -3,7 +3,8 @@
 #
 #   bash pipeline/commit_data_paths.sh "chore: message" path [path ...]
 #
-# Same approach as commit_kbo_odds.sh and memory/commit_memory.sh. The old
+# Same approach as pipeline/commit_kbo_odds.sh and
+# pipeline/memory/commit_memory.sh. The old
 # inline commit step ran `git pull --rebase` in the job's checkout. The
 # refresh leaves other generated files modified there, so when main moved
 # mid-run the rebase refused ("You have unstaged changes"), the step logged
@@ -74,7 +75,8 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   if [[ -d "$WT" ]]; then
     git -C "$WT" checkout -q --detach origin/main \
       && git -C "$WT" reset -q --hard origin/main \
-      && git -C "$WT" clean -qfd
+      && git -C "$WT" clean -qfd \
+      || { echo "Worktree reset failed (attempt ${attempt}/${ATTEMPTS})"; continue; }
   elif ! git worktree add -q --detach "$WT" origin/main >/dev/null 2>&1; then
     echo "Worktree failed (attempt ${attempt}/${ATTEMPTS})"
     continue
@@ -93,7 +95,19 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     fi
   done
 
-  git -C "$WT" add -- "${CHANGED[@]}" 2>/dev/null || true
+  # Stage each path on its own. A listed path that is absent here (an
+  # optional file this run did not write, or one already removed above) is
+  # skipped; any other add failure fails the step.
+  for f in "${CHANGED[@]}"; do
+    if [[ ! -e "$WT/$f" ]]; then
+      echo "Skipping absent path: $f"
+      continue
+    fi
+    if ! git -C "$WT" add -- "$f"; then
+      echo "::error title=Data commit failed::could not stage $f"
+      exit 1
+    fi
+  done
   if git -C "$WT" diff --cached --name-only | grep -q 'public/data/'; then
     echo "::error title=Data commit refused::paid snapshot staged"
     exit 1
