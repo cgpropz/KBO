@@ -12,6 +12,7 @@
 //    Nothing in this file reads the MoneyPuck logs (log / logDates / profile).
 
 import { cgScore } from '../cgScore.js'
+import { isStandardBoardLine } from '../standardBoard.js'
 import { pickSide } from '../pickSide.js'
 import { parseGameDay, meanOf, ratio, sumOf } from '../playerInsights/insightsCore.js'
 import { NHL_BASELINE_SOURCE, nhlBaseline, nhlBaselineGroup, nhlStatDirection } from './nhlStatScale.js'
@@ -40,8 +41,41 @@ export function nhlApiSectionsOn({
 }
 
 export const PENDING = 'Pending'
-export const CURRENT_SEASON = '2026-27'
-export const PRIOR_SEASON = '2025-26'
+// NHL season label from a date: a season starts in the fall, so August on
+// is the new season ('2026-10-12' -> '2026-27', '2027-04-10' -> '2026-27').
+export function nhlSeasonFor(date) {
+  let year = null
+  let month = null
+  if (date instanceof Date) {
+    if (Number.isNaN(date.getTime())) return null
+    year = date.getFullYear()
+    month = date.getMonth() + 1
+  } else {
+    const match = /^(\d{4})-(\d{2})/.exec(String(date || ''))
+    if (!match) return null
+    year = Number(match[1])
+    month = Number(match[2])
+  }
+  const start = month >= 8 ? year : year - 1
+  return `${start}-${String(start + 1).slice(-2)}`
+}
+
+// This season and last season, from today's date.
+export function nhlSeasons(now = new Date()) {
+  const current = nhlSeasonFor(now)
+  const start = Number(String(current || '').slice(0, 4))
+  const prior = Number.isFinite(start) ? `${start - 1}-${String(start).slice(-2)}` : null
+  return { current, prior }
+}
+
+// A game counts only with time on ice above 0.
+export function nhlPlayed(game) {
+  return (finite(game?.toi) ?? 0) > 0
+}
+
+export function playedOnly(games) {
+  return (Array.isArray(games) ? games : []).filter(nhlPlayed)
+}
 
 function finite(value) {
   if (value == null || value === '') return null
@@ -74,21 +108,21 @@ export function cgText(value) {
 
 const PROP_ORDER = ['Shots On Goal', 'Points', 'Power Play Points', 'Goalie Saves']
 
-// One chip per prop the player has on today's board (standard line first).
+// One chip per prop the player has on today's standard board. Goblin and
+// demon lines never show; a prop with no standard line has no chip.
 export function playerPropRows(rows, player) {
   const name = String(player || '').trim().toLowerCase()
   const byProp = new Map()
   for (const row of Array.isArray(rows) ? rows : []) {
     if (String(row?.player || '').trim().toLowerCase() !== name) continue
+    if (!isStandardBoardLine(row)) continue
     const prop = row.prop || row.stat
-    if (!prop) continue
-    const current = byProp.get(prop)
-    const standard = !row.oddsType || row.oddsType === 'standard'
-    if (!current || (standard && current.oddsType && current.oddsType !== 'standard')) byProp.set(prop, row)
+    if (!prop || byProp.has(prop)) continue
+    byProp.set(prop, row)
   }
   return [...byProp.values()].sort((a, b) => {
-    const ai = PROP_ORDER.indexOf(a.prop)
-    const bi = PROP_ORDER.indexOf(b.prop)
+    const ai = PROP_ORDER.indexOf(a.prop || a.stat)
+    const bi = PROP_ORDER.indexOf(b.prop || b.stat)
     return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi)
   })
 }
@@ -117,6 +151,8 @@ export function decodeNhlApiLog(log) {
       else game[col] = finite(value)
     })
     if (!game.date) continue
+    game.season = nhlSeasonFor(game.date) || game.season
+    game.played = nhlPlayed(game)
     games.push(game)
   }
   return games.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
@@ -171,13 +207,14 @@ export function anyNarrowed(ranges) {
 
 // The hit-rate windows over NHL API games (newest first in, oldest first out),
 // in the same shape the page's chart already draws.
-export function apiWindow(games, range, { prop, opponent } = {}) {
-  let picked = games
-  if (range === 'season') picked = games.filter((game) => game.season === CURRENT_SEASON)
-  else if (range === 'prior') picked = games.filter((game) => game.season === PRIOR_SEASON)
-  else if (range === 'h2h') picked = opponent ? games.filter((game) => game.opp === opponent) : []
+// 0-TOI games are left out.
+export function apiWindow(games, range, { prop, opponent, seasons = nhlSeasons() } = {}) {
+  let picked = playedOnly(games)
+  if (range === 'season') picked = picked.filter((game) => game.season === seasons.current)
+  else if (range === 'prior') picked = picked.filter((game) => game.season === seasons.prior)
+  else if (range === 'h2h') picked = opponent ? picked.filter((game) => game.opp === opponent) : []
   else if (range === 'l5' || range === 'l10' || range === 'l20' || range === 'l30') {
-    picked = games.slice(0, Number(range.slice(1)))
+    picked = picked.slice(0, Number(range.slice(1)))
   }
   return picked.slice().reverse().map((game) => ({
     value: propValue(game, prop),
@@ -220,10 +257,10 @@ function valued(games, field) {
 
 // L5 / L10 over the newest games, Season over this season's games. No arrow
 // until EARLY_SEASON_GAMES games this season have a value.
-export function nhlTrendSummary(games, metric) {
-  const list = Array.isArray(games) ? games : []
+export function nhlTrendSummary(games, metric, { seasons = nhlSeasons() } = {}) {
+  const list = playedOnly(games)
   const all = valued(list, metric.field)
-  const season = valued(list.filter((game) => game.season === CURRENT_SEASON), metric.field)
+  const season = valued(list.filter((game) => game.season === seasons.current), metric.field)
   const l5 = averageMetric(all.slice(0, 5), metric.field)
   const l10 = averageMetric(all.slice(0, 10), metric.field)
   const seasonAvg = averageMetric(season, metric.field)
@@ -400,7 +437,7 @@ function yearFor(season) {
 // Same as MAX_GAMES in nhl/ui_game_logs.py.
 export const NHL_API_LOG_CAP = 60
 
-export function nhlApiInsights(item, games) {
+export function nhlApiInsights(item, games, { seasons = nhlSeasons() } = {}) {
   const list = Array.isArray(games) ? games : []
   const kind = list[0]?.kind === 'goalie' || item?.prop === 'Goalie Saves' ? 'goalie' : 'skater'
   const faceoffs = list.some((game) => game.fot > 0)
@@ -428,10 +465,12 @@ export function nhlApiInsights(item, games) {
       // Overtime and shootout losses count as team losses.
       result: game.res === 'W' ? 'W' : game.res === 'L' || game.res === 'OTL' ? 'L' : null,
       oppHand: null,
+      // 0-TOI games stay in the log (for the 60-game cap) but count nowhere.
+      played: nhlPlayed(game),
     })),
     opponent: item?.opponent || null,
-    currentSeason: CURRENT_SEASON,
-    priorSeason: PRIOR_SEASON,
+    currentSeason: seasons.current,
+    priorSeason: seasons.prior,
     seasonLabel: (season) => String(season ?? ''),
     earlySeasonGames: SPLITS_EARLY_SEASON.nhl,
     // Splits compare with the player's own overall average; every NHL prop is higher-is-better.

@@ -287,3 +287,20 @@ test('keeping ten chart games adds a small slice next to the stripped log', () =
   }
   console.log(JSON.stringify(report, null, 2))
 })
+
+test('nhlApiLog leaves the server only with NHL_API_SECTIONS_SERVER=1', () => {
+  const full = [
+    { player: 'Synth Center', prop: 'Shots On Goal', line: 2.5, oddsType: 'standard', nhlApiLog: { v: 1, games: [[1]] } },
+    { player: 'Synth Center', prop: 'Points', line: 0.5, oddsType: 'standard' },
+  ]
+  const off = presentBoardPayload('Synth Center', { data: full }, full, { env: {} })
+  assert.equal(off.length, 2)
+  assert.ok(off.every((row) => !('nhlApiLog' in row)))
+  assert.equal(off[0].line, 2.5)
+  const wrong = presentBoardPayload('Synth Center', { data: full }, full, { env: { NHL_API_SECTIONS_SERVER: 'true' } })
+  assert.ok(wrong.every((row) => !('nhlApiLog' in row)))
+  const on = presentBoardPayload('Synth Center', { data: full }, full, { env: { NHL_API_SECTIONS_SERVER: '1' } })
+  assert.deepEqual(on[0].nhlApiLog, { v: 1, games: [[1]] })
+  const board = presentBoardPayload('', { data: full }, full, { env: { NHL_API_SECTIONS_SERVER: '1' } })
+  assert.ok(board.every((row) => !('nhlApiLog' in row)))
+})

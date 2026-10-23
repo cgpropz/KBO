@@ -169,10 +169,25 @@ def goalie_games(ids: list[int], season: str, get=_get) -> dict[int, list[list]]
     return out
 
 
+ODDS_TYPE_KEYS = ("odds_type", "oddsType", "line_type", "lineType")
+
+
+def is_standard_line(row: dict) -> bool:
+    """Same rule as isStandardBoardLine (kbo-props-ui/src/standardBoard.js):
+    no odds-type field (or null) stays; a present type stays only when it is
+    exactly 'standard'. Goblin, demon, blank and unknown rows are skipped."""
+    for key in ODDS_TYPE_KEYS:
+        if key in row and row[key] is not None:
+            return str(row[key]).strip().lower() == "standard"
+    return True
+
+
 def board_players(rows: list[dict]) -> dict[int, str]:
-    """NHL player id -> 'skater' / 'goalie' for every row with a numeric id."""
+    """NHL player id -> 'skater' / 'goalie' for every standard row with a numeric id."""
     players: dict[int, str] = {}
     for row in rows:
+        if not is_standard_line(row):
+            continue
         try:
             pid = int(str(row.get("playerId") or "").strip())
         except ValueError:
@@ -253,13 +268,14 @@ def collect(players: dict[int, str], cache: Path, *, now: datetime | None = None
 
 
 def attach(rows: list[dict], logs: dict[str, dict]) -> int:
-    """Put each player's log on that player's first row only. Returns rows touched."""
+    """Put each player's log on that player's first standard row only (never a
+    goblin or demon row, which the site filters out). Returns rows touched."""
     seen = set()
     touched = 0
     for row in rows:
         row.pop("nhlApiLog", None)
         pid = str(row.get("playerId") or "").strip()
-        if pid in seen or pid not in logs:
+        if pid in seen or pid not in logs or not is_standard_line(row):
             continue
         seen.add(pid)
         row["nhlApiLog"] = logs[pid]

@@ -7,8 +7,11 @@ import { HISTORY_KEYS, stripBoardHistory } from '../api/_boardPayload.js'
 import {
   NHL_API_SECTIONS_APPROVED, PENDING, MONEYPUCK_ONLY, anyNarrowed, apiWindow, applyFilters, decodeNhlApiLog,
   filterBounds, filtersFor, formatIceMinutes, nhlApiInsights, nhlApiSectionsOn, nhlTodayPick, nhlTrendSummary,
-  playerPropRows, resolveFilters, SKATER_TRENDS, GOALIE_TRENDS,
+  playerPropRows, resolveFilters, SKATER_TRENDS, GOALIE_TRENDS, nhlSeasonFor, nhlSeasons, nhlPlayed,
 } from '../src/nhl/nhlPlayerParity.js'
+
+// Fixed so the tests do not move with the calendar.
+const SEASONS = { current: '2026-27', prior: '2025-26' }
 
 const COLS = ['d', 's', 'opp', 'h', 'res', 'g', 'a', 'pts', 'sog', 'ppg', 'ppp', 'toi', 'ev', 'pp', 'sh', 'shf', 'hit', 'blk', 'fow', 'fot']
 
@@ -27,7 +30,7 @@ const LOG = skaterLog([
   g('2026-10-20', '2026-27', 'TST', 1, 'OTL', 2, 1, 4, 2, 1200, 180, 4, 10),
   g('2026-10-17', '2026-27', 'MOK', 1, 'W', 0, 0, 1, 0, 960, 0),
   g('2026-10-12', '2026-27', 'FAK', 0, 'W', 0, 2, 2, 1, 1140, 150),
-  g('2027-04-10', '2025-26', 'MOK', 0, 'L', 1, 1, 2, 0, 1020, 60),
+  g('2026-04-10', '2025-26', 'MOK', 0, 'L', 1, 1, 2, 0, 1020, 60),
 ])
 
 test('the NHL API sections are off by default and only a dev build can preview them', () => {
@@ -55,20 +58,54 @@ test('pick card uses the board CG Score and shows Pending, never 0', () => {
   assert.equal(PENDING, 'Pending')
 })
 
-test('stat chips keep one row per prop, standard line first, in board order', () => {
+test('stat chips are standard lines only; a prop with only goblin/demon lines has no chip', () => {
   const rows = playerPropRows([
     { player: 'Test Skater', prop: 'Points', line: 0.5, oddsType: 'demon' },
     { player: 'Test Skater', prop: 'Points', line: 1.5, oddsType: 'standard' },
     { player: 'Test Skater', prop: 'Shots On Goal', line: 2.5 },
+    { player: 'Test Skater', prop: 'Power Play Points', line: 0.5, oddsType: 'demon' },
+    { player: 'Test Skater', prop: 'Goalie Saves', line: 20.5, odds_type: 'goblin' },
+    { player: 'Test Skater', prop: 'Blocked Shots', line: 1.5, oddsType: '' },
     { player: 'Someone Else', prop: 'Power Play Points', line: 0.5 },
   ], 'Test Skater')
   assert.deepEqual(rows.map((row) => [row.prop, row.line]), [['Shots On Goal', 2.5], ['Points', 1.5]])
 })
 
+test('season labels come from the date, not a constant', () => {
+  assert.equal(nhlSeasonFor('2026-10-12'), '2026-27')
+  assert.equal(nhlSeasonFor('2027-04-10'), '2026-27')
+  assert.equal(nhlSeasonFor('2027-08-01'), '2027-28')
+  assert.equal(nhlSeasonFor('nope'), null)
+  assert.deepEqual(nhlSeasons(new Date(2026, 9, 23)), { current: '2026-27', prior: '2025-26' })
+  assert.deepEqual(nhlSeasons(new Date(2028, 0, 5)), { current: '2027-28', prior: '2026-27' })
+  // A log row's season string is replaced by the one its date implies.
+  const [game] = decodeNhlApiLog(skaterLog([g('2027-10-15', '2026-27', 'TST', 1, 'W', 0, 0, 1, 0, 900, 0)]))
+  assert.equal(game.season, '2027-28')
+})
+
+test('0-TOI games count nowhere: trends, hit rates, splits, early-season count', () => {
+  const zero = decodeNhlApiLog(skaterLog([g('2026-10-23', '2026-27', 'FAK', 1, 'W', 0, 0, 0, 0, 0, 0)]))[0]
+  assert.equal(zero.played, false)
+  assert.equal(nhlPlayed(GAMES[0]), true)
+  const withZero = [zero, ...GAMES]
+  const opts = { prop: 'Shots On Goal', opponent: 'FAK', seasons: SEASONS }
+  assert.equal(apiWindow(withZero, 'season', opts).length, 5)
+  assert.equal(apiWindow(withZero, 'h2h', opts).length, 2)
+  assert.ok(!apiWindow(withZero, 'l5', opts).some((bar) => bar.date === '2026-10-23'))
+  const sog = SKATER_TRENDS.find((metric) => metric.id === 'sog')
+  assert.deepEqual(nhlTrendSummary(withZero, sog, { seasons: SEASONS }), nhlTrendSummary(GAMES, sog, { seasons: SEASONS }))
+  const model = nhlApiInsights({ prop: 'Shots On Goal', opponent: 'FAK' }, withZero, { seasons: SEASONS })
+  assert.equal(model.games[0].played, false)
+  const splits = buildSplits(model.games, { ...model, line: 2.5, today: model.games[1].day })
+  const season = splits.rows.find((row) => row.id === 'season')
+  assert.equal(season.n, 5)
+  assert.equal(splits.rows.find((row) => row.id === 'vsopp').n, 2)
+})
+
 test('decodes the columnar NHL API log newest first with TOI in minutes', () => {
   const games = decodeNhlApiLog(LOG)
   assert.equal(games.length, 6)
-  assert.equal(games[0].date, '2027-04-10')
+  assert.equal(games[0].date, '2026-10-22')
   const latest = games.find((game) => game.date === '2026-10-22')
   assert.equal(latest.toi, 21)
   assert.equal(latest.pp, 4)
@@ -99,7 +136,7 @@ test('TOI and PP TOI sliders narrow the games the chart uses', () => {
 })
 
 test('hit-rate windows read the prop from the NHL API games', () => {
-  const opts = { prop: 'Power Play Points', opponent: 'FAK' }
+  const opts = { prop: 'Power Play Points', opponent: 'FAK', seasons: SEASONS }
   assert.equal(apiWindow(GAMES, 'season', opts).length, 5)
   assert.equal(apiWindow(GAMES, 'prior', opts).length, 1)
   assert.deepEqual(apiWindow(GAMES, 'h2h', opts).map((bar) => bar.value), [1, 1])
@@ -108,10 +145,10 @@ test('hit-rate windows read the prop from the NHL API games', () => {
 
 test('trend arrow waits for 5 games this season, then compares L5 with this season', () => {
   const toi = SKATER_TRENDS.find((metric) => metric.id === 'toi')
-  const four = nhlTrendSummary(GAMES.filter((game) => game.date !== '2026-10-03'), toi)
+  const four = nhlTrendSummary(GAMES.filter((game) => game.date !== '2026-10-03'), toi, { seasons: SEASONS })
   assert.equal(four.seasonGames, 4)
   assert.equal(four.trend, null)
-  const five = nhlTrendSummary(GAMES, toi)
+  const five = nhlTrendSummary(GAMES, toi, { seasons: SEASONS })
   assert.equal(five.seasonGames, 5)
   assert.equal(five.trend, 'flat') // L5 is this season's 5 games
   assert.equal(formatIceMinutes(five.l5), '18:48')
@@ -119,7 +156,7 @@ test('trend arrow waits for 5 games this season, then compares L5 with this seas
 })
 
 test('splits and advanced use NHL stats and list MoneyPuck-only stats as unavailable', () => {
-  const model = nhlApiInsights({ prop: 'Shots On Goal', opponent: 'FAK' }, GAMES)
+  const model = nhlApiInsights({ prop: 'Shots On Goal', opponent: 'FAK' }, GAMES, { seasons: SEASONS })
   assert.equal(model.earlySeasonGames, 10)
   assert.equal(model.logCap, 60)
   assert.equal(model.splitsBlocked, null)
@@ -139,9 +176,9 @@ test('splits and advanced use NHL stats and list MoneyPuck-only stats as unavail
   const fo = model.metrics.find((metric) => metric.id === 'foPct')
   assert.equal(metricWindows(fo, model.games, model).find((window) => window.id === 'season').value, 0.5)
 
-  const noFaceoffs = nhlApiInsights({ prop: 'Points' }, GAMES.map((game) => ({ ...game, fot: 0, fow: 0 })))
+  const noFaceoffs = nhlApiInsights({ prop: 'Points' }, GAMES.map((game) => ({ ...game, fot: 0, fow: 0 })), { seasons: SEASONS })
   assert.ok(!noFaceoffs.metrics.some((metric) => metric.id === 'foPct'))
-  assert.ok(nhlApiInsights({ prop: 'Points' }, []).splitsBlocked)
+  assert.ok(nhlApiInsights({ prop: 'Points' }, [], { seasons: SEASONS }).splitsBlocked)
 })
 
 test('goalies get save stats and goalie-only unavailable notes', () => {
@@ -150,7 +187,7 @@ test('goalies get save stats and goalie-only unavailable notes', () => {
     cols: ['d', 's', 'opp', 'h', 'res', 'sa', 'sv', 'ga', 'toi'],
     games: [['2026-10-20', '2026-27', 'TST', 1, 'W', 30, 28, 2, 3600], ['2026-10-18', '2026-27', 'FAK', 0, 'OTL', 20, 17, 3, 3700]],
   })
-  const model = nhlApiInsights({ prop: 'Goalie Saves' }, games)
+  const model = nhlApiInsights({ prop: 'Goalie Saves' }, games, { seasons: SEASONS })
   assert.deepEqual(model.metrics.map((metric) => metric.id), ['svPct', 'gaa', 'saves', 'sa'])
   assert.deepEqual(model.unavailable, MONEYPUCK_ONLY.goalie)
   assert.deepEqual(model.games.map((game) => game.value), [28, 17])
@@ -174,14 +211,14 @@ test('NHL stat directions and position baselines for the shared scale', async ()
   assert.ok(nhlBaseline('blocks', 'D') > nhlBaseline('blocks', 'F'))
   assert.equal(nhlBaseline('foPct', 'D'), nhlBaseline('foPct', 'F'))
   assert.equal(nhlBaseline('nope', 'F'), null)
-  const model = nhlApiInsights({ prop: 'Shots On Goal', position: 'D' }, GAMES)
+  const model = nhlApiInsights({ prop: 'Shots On Goal', position: 'D' }, GAMES, { seasons: SEASONS })
   assert.equal(model.better, 'higher')
   assert.equal(model.baselineGroup, 'D')
   const shPct = model.metrics.find((metric) => metric.id === 'shPct')
   assert.equal(shPct.better, 'higher')
   assert.equal(shPct.baseline.group, 'D')
   assert.equal(shPct.baseline.value, nhlBaseline('shPct', 'D'))
-  const goalie = nhlApiInsights({ prop: 'Goalie Saves' }, GAMES.map((game) => ({ ...game, kind: 'goalie' })))
+  const goalie = nhlApiInsights({ prop: 'Goalie Saves' }, GAMES.map((game) => ({ ...game, kind: 'goalie' })), { seasons: SEASONS })
   assert.equal(goalie.metrics.find((metric) => metric.id === 'gaa').better, 'lower')
   assert.equal(goalie.metrics.find((metric) => metric.id === 'sa').better, 'neutral')
 })

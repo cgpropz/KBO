@@ -31,7 +31,10 @@ export function NhlPickCard({ item }) {
       </span>
       <span>
         <small>CG Score</small>
-        <b data-testid="nhl-pick-cg" className={cg ? sideClass : 'is-pending'}>{cg || PENDING}</b>
+        <span className="nhl-pick-cgrow">
+          <b data-testid="nhl-pick-cg" className={cg ? sideClass : 'is-pending'}>{cg || PENDING}</b>
+          {cg && pick.side && <em className={`nhl-pick-side ${sideClass}`} data-testid="nhl-pick-side">{pick.side}</em>}
+        </span>
       </span>
     </div>
   )
@@ -104,8 +107,8 @@ export function NhlFilters({ filters, bounds, ranges, kept, total, onChange, onR
 
 const TREND_WORDS = { up: 'trending up', down: 'trending down', flat: 'steady' }
 
-function TrendChart({ metric, games, windowGames, keptGames }) {
-  const summary = nhlTrendSummary(games, metric)
+function TrendChart({ metric, games, windowGames, keptGames, seasons }) {
+  const summary = nhlTrendSummary(games, metric, seasons ? { seasons } : undefined)
   const bars = windowGames.slice().reverse().map((game) => {
     const raw = Number(game?.[metric.field])
     const value = Number.isFinite(raw) && !(metric.field === 'toi' && raw <= 0) && game?.[metric.field] != null ? raw : null
@@ -168,13 +171,13 @@ function TrendChart({ metric, games, windowGames, keptGames }) {
 // TOI, shots and power-play time (goalies: TOI, shots against, saves) for the
 // chart's window. The arrow compares L5 with this season and appears from the
 // fifth game this season. Bars are in minutes for TOI.
-export function NhlUsageTrends({ kind, games, windowGames, keptGames, seasonGames }) {
+export function NhlUsageTrends({ kind, games, windowGames, keptGames, seasonGames, seasons }) {
   if (!Array.isArray(games) || !games.length) return null
   return (
     <section className="nhl-mu" aria-label="Ice time and usage" data-testid="nhl-usage-trends">
       <p className="nhl-mu-title">Ice Time &amp; Usage</p>
       {trendsFor(kind).map((metric) => (
-        <TrendChart key={metric.id} metric={metric} games={games} windowGames={windowGames} keptGames={keptGames} />
+        <TrendChart key={metric.id} metric={metric} games={games} windowGames={windowGames} keptGames={keptGames} seasons={seasons} />
       ))}
       {seasonGames < 5 && <p className="nhl-mu-note" data-testid="nhl-trend-early">Trend arrows start at 5 games this season ({seasonGames} so far).</p>}
       {keptGames && <p className="nhl-mu-note">Dimmed games are outside the filters.</p>}

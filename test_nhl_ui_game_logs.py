@@ -114,3 +114,20 @@ def test_model_fields_untouched(tmp_path, monkeypatch):
     out = json.loads(board.read_text())[0]
     assert {k: out[k] for k in rows[0]} == rows[0]
     assert out["nhlApiLog"] == {"games": [[1]]}
+
+
+def test_log_goes_on_the_standard_row_never_a_demon_or_goblin():
+    rows = [
+        {"playerId": 1, "prop": "Power Play Points", "line": 0.5, "oddsType": "demon"},
+        {"playerId": 1, "prop": "Shots On Goal", "line": 1.5, "oddsType": "standard"},
+        {"playerId": 1, "prop": "Points", "line": 0.5, "oddsType": "standard"},
+        {"playerId": 2, "prop": "Shots On Goal", "line": 3.5, "oddsType": "goblin"},
+        {"playerId": 3, "prop": "Points", "line": 0.5},
+    ]
+    assert ui.board_players(rows) == {1: "skater", 3: "skater"}
+    logs = {"1": {"games": []}, "2": {"games": []}, "3": {"games": []}}
+    assert ui.attach(rows, logs) == 2
+    assert [("nhlApiLog" in row) for row in rows] == [False, True, False, False, True]
+    assert ui.is_standard_line({"odds_type": " Standard "})
+    assert not ui.is_standard_line({"oddsType": ""})
+    assert ui.is_standard_line({"oddsType": None})

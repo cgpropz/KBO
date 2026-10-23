@@ -196,3 +196,17 @@
   .nhl-mu-avgs { gap: 6px; font-size: 11px; }
   .nhl-mu-label { font-size: 12px; }
 }
+.nhl-pick-side {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: 2px;
+}
+.nhl-pick-cgrow { display: inline-flex; align-items: center; flex-wrap: nowrap; }
+.nhl-pick-side.is-over { color: #7efc6a; }
+.nhl-pick-side.is-under { color: #ff7b79; }

@@ -15,13 +15,15 @@ import PlayerInsights from '../playerInsights/PlayerInsights'
 import { NHL_LOG_SOURCE_APPROVED, nhlInsights } from '../playerInsights/insightsSports'
 import { NhlFilters, NhlPickCard, NhlPropChips, NhlUsageTrends } from './NhlParitySections'
 import {
-  CURRENT_SEASON, anyNarrowed, apiWindow, applyFilters, decodeNhlApiLog, filterBounds, filtersFor,
+  anyNarrowed, nhlSeasons, playedOnly, apiWindow, applyFilters, decodeNhlApiLog, filterBounds, filtersFor,
   nhlApiInsights, nhlApiSectionsOn, playerPropRows, resolveFilters,
 } from './nhlPlayerParity.js'
 
+// Season labels come from today's date (nhlSeasons), never hard-coded.
+const SEASONS = nhlSeasons()
 const RANGES = [
-  { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
-  { id: 'prior', label: '2025-26', rate: 'priorSeasonHitRate', games: 'priorSeasonGames' },
+  { id: 'season', label: SEASONS.current, rate: 'seasonHitRate', games: 'seasonGames' },
+  { id: 'prior', label: SEASONS.prior, rate: 'priorSeasonHitRate', games: 'priorSeasonGames' },
   { id: 'h2h', label: 'H2H', rate: 'h2hHitRate', games: 'h2hGames' },
   { id: 'l5', label: 'L5', rate: 'hitRateL5', games: 'gamesL5' },
   { id: 'l10', label: 'L10', rate: 'hitRate', games: 'gamesL10' },
@@ -84,8 +86,8 @@ function chartWindow(item, range) {
   const teams = Array.isArray(item.logTeams) ? item.logTeams : []
   const indexes = []
   values.forEach((_, index) => {
-    if (range === 'season' && seasons[index] !== '2026-27') return
-    if (range === 'prior' && seasons[index] !== '2025-26') return
+    if (range === 'season' && seasons[index] !== SEASONS.current) return
+    if (range === 'prior' && seasons[index] !== SEASONS.prior) return
     if (range === 'h2h' && opponents[index] !== item.opponent) return
     indexes.push(index)
   })
@@ -346,10 +348,12 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   const useApi = apiGames.length > 0
   const apiKind = apiGames[0]?.kind || (item?.prop === 'Goalie Saves' ? 'goalie' : 'skater')
   const filters = filtersFor(apiKind)
-  const bounds = useMemo(() => filterBounds(apiGames, filters), [apiGames, filters])
+  // 0-TOI games are left out of sliders, chart, trends and the season count.
+  const playedApiGames = useMemo(() => playedOnly(apiGames), [apiGames])
+  const bounds = useMemo(() => filterBounds(playedApiGames, filters), [playedApiGames, filters])
   const ranges = useMemo(() => resolveFilters(bounds, filterPicks, filters), [bounds, filterPicks, filters])
   const narrowed = anyNarrowed(ranges)
-  const keptGames = useMemo(() => applyFilters(apiGames, ranges, filters), [apiGames, ranges, filters])
+  const keptGames = useMemo(() => applyFilters(playedApiGames, ranges, filters), [playedApiGames, ranges, filters])
   const [dvpState, setDvpState] = useState({ position: '', payload: null })
   const position = positionGroup(item)
   const dvp = dvpState.position === position ? dvpState.payload : null
@@ -367,7 +371,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
     if (!item) return { posted: null, bars: [], values: [], windows: [], offered: null }
     const windows = RANGES.map((option) => {
       const windowBars = useApi
-        ? apiWindow(keptGames, option.id, { prop: item.prop, opponent: item.opponent })
+        ? apiWindow(keptGames, option.id, { prop: item.prop, opponent: item.opponent, seasons: SEASONS })
         : chartWindow(item, option.id)
       return {
         id: option.id,
@@ -401,7 +405,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   // With the NHL API flag on, they come from the NHL API logs instead.
   const insightsModel = useMemo(() => {
     if (!item) return null
-    if (useApi) return nhlApiInsights(item, apiGames)
+    if (useApi) return nhlApiInsights(item, apiGames, { seasons: SEASONS })
     return NHL_LOG_SOURCE_APPROVED ? nhlInsights(item, { sourceApproved: true }) : null
   }, [item, useApi, apiGames])
 
@@ -409,9 +413,9 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   // capped at 20 bars); games the sliders drop stay in place, dimmed.
   const trendWindow = useMemo(() => {
     if (!useApi) return []
-    const all = apiWindow(apiGames, range, { prop: item?.prop, opponent: item?.opponent }).map((bar) => bar.game)
+    const all = apiWindow(playedApiGames, range, { prop: item?.prop, opponent: item?.opponent, seasons: SEASONS }).map((bar) => bar.game)
     return all.slice(-20).reverse()
-  }, [useApi, apiGames, range, item])
+  }, [useApi, playedApiGames, range, item])
   const keptSet = useMemo(() => (narrowed ? new Set(keptGames) : null), [narrowed, keptGames])
 
   if (!item) return null
@@ -423,10 +427,13 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
   const hitColor = rateTextColor(chartHit.rate, chartHit.games)
   const selected = RANGES.find((option) => option.id === range) || RANGES[4]
-  const includesPrior = bars.some((bar) => bar.season === '2025-26')
+  const includesPrior = bars.some((bar) => bar.season === SEASONS.prior)
   const profile = item.profile && typeof item.profile === 'object' ? item.profile : null
   const usage = item.usage && typeof item.usage === 'object' ? item.usage : null
-  const keys = statKeys(position, item.prop)
+  // With the NHL API sections on, ice time comes only from the NHL API
+  // (Ice time & usage), so the profile table drops its own TOI and PP TOI
+  // rather than show a second, differently sourced number.
+  const keys = statKeys(position, item.prop).filter((key) => !useApi || (key !== 'toi' && key !== 'ppToi'))
   const stat = dvpStat(position, item.prop)
   const seasonDvp = dvpLookup(dvp, 'blend', stat, item.opponent)
   const l10Dvp = dvpLookup(dvp, 'l10', stat, item.opponent)
@@ -468,7 +475,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
           <>{item.prop} line <b>{formatCount(line)}</b>.</>
         )}
         {item.latestGame ? ` Latest game ${item.latestGame}.` : ''}
-        {' '}2026-27 is this season only. 2025-26 is last season, including a previous team.
+        {' '}{SEASONS.current} is this season only. {SEASONS.prior} is last season, including a previous team.
       </p>
       <NhlPickCard item={item} />
       <NhlPropChips rows={propRows} current={item.prop} onSelect={(row) => setItem({ ...initialItem, ...row })} />
@@ -493,14 +500,14 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
           bounds={bounds}
           ranges={ranges}
           kept={keptGames.length}
-          total={apiGames.length}
+          total={playedApiGames.length}
           onChange={(id, next) => setFilterPicks((current) => ({ ...current, [id]: next }))}
           onReset={() => setFilterPicks({})}
         />
       )}
       <div className="nhl-chart-card">
         <div className="nhl-chart-head">
-          <span>{selected.label}{includesPrior && range !== 'prior' && range !== 'season' ? ' · includes 2025-26' : ''}</span>
+          <span>{selected.label}{includesPrior && range !== 'prior' && range !== 'season' ? ` · includes ${SEASONS.prior}` : ''}</span>
           {line == null ? (
             <b className="nhl-no-line">{noLineCopy(item.prop)}</b>
           ) : (
@@ -557,10 +564,11 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
       {useApi && (
         <NhlUsageTrends
           kind={apiKind}
-          games={apiGames}
+          games={playedApiGames}
+          seasons={SEASONS}
           windowGames={trendWindow}
           keptGames={keptSet}
-          seasonGames={apiGames.filter((game) => game.season === CURRENT_SEASON).length}
+          seasonGames={playedApiGames.filter((game) => game.season === SEASONS.current).length}
         />
       )}
       </PlayerInsights>

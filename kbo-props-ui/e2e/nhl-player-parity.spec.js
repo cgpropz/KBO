@@ -24,6 +24,8 @@ function games() {
     out.push([`2026-04-${String(14 - index).padStart(2, '0')}`, '2025-26', index % 2 ? 'DDD' : 'BBB', index % 2, index % 2 ? 'L' : 'W',
       0, 1, 1, 2 + (index % 3), 0, 0, 1000, 820, 120, 60, 20, 1, 1, 4, 10])
   }
+  // Dressed but no ice time: counts nowhere (played = TOI > 0).
+  out.push(['2026-10-07', '2026-27', 'BBB', 1, 'W', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
   return out
 }
 
@@ -34,6 +36,9 @@ const ROWS = [
   { ...BASE, id: 'nhl-1', player: 'Synth Center', prop: 'Shots On Goal', line: 2.5, projection: 3,
     nhlApiLog: { v: 1, source: 'api.nhle.com/stats/rest', kind: 'skater', fetchedAt: '2026-10-23T12:00:00+00:00', cols: COLS, games: games() } },
   { ...BASE, id: 'nhl-2', player: 'Synth Center', prop: 'Points', line: 0.5, projection: 0.54 },
+  // Demon-only prop: never a chip.
+  { ...BASE, id: 'nhl-4', player: 'Synth Center', prop: 'Power Play Points', line: 0.5, projection: 0.9, oddsType: 'demon' },
+  { ...BASE, id: 'nhl-5', player: 'Synth Center', prop: 'Points', line: 1.5, projection: 0.54, oddsType: 'goblin' },
   { ...BASE, id: 'nhl-3', player: 'Synth Winger', position: 'L', prop: 'Points', line: 0.5, projection: null },
 ]
 
@@ -63,6 +68,8 @@ async function installMember(page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Season labels come from the date; pin it to the fixture's season.
+  await page.clock.setFixedTime(new Date('2026-10-23T16:00:00Z'))
   await installFixtures(page, { member: true })
   await page.route('**/api/data**', async (route) => {
     const url = new URL(route.request().url())
@@ -95,7 +102,11 @@ test('production bundle: line, projection and CG Score; NHL API sections stay of
   await expect(page.getByTestId('nhl-pick-projection')).toHaveText('3')
   await expect(page.getByTestId('nhl-pick-cg')).toHaveText('60.0')
   await expect(page.getByTestId('nhl-pick-cg')).toHaveClass(/is-over/)
-  await expect(page.getByTestId('nhl-prop-chips')).toBeVisible()
+  await expect(page.getByTestId('nhl-pick-side')).toHaveText('OVER')
+  const chips = page.getByTestId('nhl-prop-chips')
+  await expect(chips).toBeVisible()
+  await expect(chips.getByRole('tab')).toHaveCount(2)
+  await expect(chips.getByRole('tab', { name: 'Power Play Points' })).toHaveCount(0)
   await page.waitForTimeout(600)
   await expect(page.getByTestId('nhl-filters')).toHaveCount(0)
   await expect(page.getByTestId('nhl-usage-trends')).toHaveCount(0)
@@ -105,6 +116,7 @@ test('production bundle: line, projection and CG Score; NHL API sections stay of
   await page.getByTestId('nhl-prop-chips').getByRole('tab', { name: 'Points' }).click()
   await expect(page.getByTestId('nhl-pick-line')).toHaveText('0.5 Points')
   await expect(page.getByTestId('nhl-pick-projection')).toHaveText('0.5')
+  await expect(page.locator('.nhl-player-sheet')).toContainText('2026-27 is this season only. 2025-26 is last season')
 })
 
 test('blank projection shows Pending, never 0', async ({ page }) => {

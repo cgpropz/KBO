@@ -164,10 +164,27 @@ export function historyForPlayer(fullData, visibleData, player) {
   return filterToPlayer(fullData, wanted)
 }
 
-export function presentBoardPayload(player, shaped, fullData) {
+// NHL API game logs (nhl/ui_game_logs.py) leave the server only when
+// NHL_API_SECTIONS_SERVER is exactly '1' (unset by default). Turning on the
+// collector (vars.NHL_API_UI_LOGS) alone can't ship them to members.
+export function nhlApiLogsServed(env = process.env) {
+  return String(env?.NHL_API_SECTIONS_SERVER || '').trim() === '1'
+}
+
+function withoutNhlApiLog(data) {
+  if (!Array.isArray(data) || !data.some((row) => row && typeof row === 'object' && 'nhlApiLog' in row)) return data
+  return data.map((row) => {
+    if (!row || typeof row !== 'object' || !('nhlApiLog' in row)) return row
+    const { nhlApiLog: _dropped, ...rest } = row
+    return rest
+  })
+}
+
+export function presentBoardPayload(player, shaped, fullData, { env = process.env } = {}) {
   const name = String(player || '').trim()
   if (!name) return stripBoardHistory(shaped?.data)
-  return historyForPlayer(fullData, shaped?.data, name)
+  const rows = historyForPlayer(fullData, shaped?.data, name)
+  return nhlApiLogsServed(env) ? rows : withoutNhlApiLog(rows)
 }
 
 export function payloadBytes(data) {
