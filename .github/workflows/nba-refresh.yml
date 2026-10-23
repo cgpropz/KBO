@@ -119,14 +119,18 @@ jobs:
 
       - name: Commit non-paid NBA artifacts
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # kbo-props-ui/public/data/nba/* is paid data. It is git-ignored.
-          # Never add it. The optional 2026-27 CSV is committed only once a
-          # refresh writes it.
-          git add \
+          # kbo-props-ui/public/data/nba/* is paid data. It is git-ignored and
+          # the helper refuses it. The optional 2026-27 CSV is committed only
+          # once a refresh writes it (the helper skips files this run did not
+          # change or create).
+          # commit_data_paths.sh commits from a clean worktree of origin/main,
+          # so the other generated files this job leaves modified can no
+          # longer block a rebase when main moves mid-run. A rejected push is
+          # rebuilt on the new main with backoff, and the step fails if the
+          # files still do not reach main.
+          bash pipeline/commit_data_paths.sh "chore: auto-refresh NBA data" \
             nba/nba_boxscores_2025_26.csv \
+            nba/nba_boxscores_2026_27.csv \
             nba/mappings/player_positions.json \
             nba/mappings/team_mappings.json \
             nba/mappings/unset_positions.json \
@@ -135,49 +139,6 @@ jobs:
             nba/nbaSFdvp.csv \
             nba/nbaPFdvp.csv \
             nba/nbaCdvp.csv
-          if [ -f nba/nba_boxscores_2026_27.csv ]; then
-            git add nba/nba_boxscores_2026_27.csv
-          fi
-
-          if git diff --cached --name-only | grep -q 'kbo-props-ui/public/data/nba/'; then
-            echo "Refusing to commit paid NBA snapshots"
-            exit 1
-          fi
-
-          if git diff --cached --quiet; then
-            echo "No NBA data changes to commit"
-            exit 0
-          fi
-
-          git commit -m "chore: auto-refresh NBA data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          if git push origin HEAD:main; then
-            echo "Push succeeded on first attempt"
-            exit 0
-          fi
-
-          echo "Push rejected; fetching latest and rebasing..."
-          if git pull --rebase origin main; then
-            git push origin HEAD:main \
-              && echo "Push succeeded after clean rebase" \
-              || git push --force-with-lease origin HEAD:main \
-              && echo "Push succeeded with --force-with-lease" \
-              || echo "All push attempts failed — snapshots still published to Supabase"
-          else
-            CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-            if [ -n "$CONFLICTS" ]; then
-              echo "Conflicted files: $CONFLICTS"
-              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
-              echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
-            fi
-            GIT_EDITOR=true git rebase --continue \
-              && git push origin HEAD:main \
-              && echo "Push succeeded after conflict auto-resolution" \
-              || {
-                git rebase --abort >/dev/null 2>&1 || true
-                echo "Push failed after conflict resolution — snapshots still published to Supabase"
-              }
-          fi
 
       - name: Notify on failure (open/update issue)
         if: failure()
