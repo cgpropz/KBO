@@ -120,6 +120,8 @@ test('trend arrow waits for 5 games this season, then compares L5 with this seas
 
 test('splits and advanced use NHL stats and list MoneyPuck-only stats as unavailable', () => {
   const model = nhlApiInsights({ prop: 'Shots On Goal', opponent: 'FAK' }, GAMES)
+  assert.equal(model.earlySeasonGames, 10)
+  assert.equal(model.logCap, 60)
   assert.equal(model.splitsBlocked, null)
   const ids = model.metrics.map((metric) => metric.id)
   assert.deepEqual(ids, ['shPct', 'sog60', 'ppPts', 'evToi', 'ppToi', 'shToi', 'ppShare', 'foPct', 'blocks', 'hits', 'pts60', 'shifts'])

@@ -14,6 +14,7 @@
 import { cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
 import { parseGameDay, meanOf, ratio, sumOf } from '../playerInsights/insightsCore.js'
+import { EARLY_SEASON_GAMES as SPLITS_EARLY_SEASON } from '../playerInsights/insightsSports.js'
 import { inRange, metricBounds, resolveRange } from '../nba/nbaGameFilters.js'
 import { averageMetric, trendDirection, EARLY_SEASON_GAMES } from '../nba/nbaMinutesUsage.js'
 
@@ -395,6 +396,9 @@ function yearFor(season) {
   return (month) => (start > 0 ? (month >= 8 ? start : start + 1) : null)
 }
 
+// Same as MAX_GAMES in nhl/ui_game_logs.py.
+export const NHL_API_LOG_CAP = 60
+
 export function nhlApiInsights(item, games) {
   const list = Array.isArray(games) ? games : []
   const kind = list[0]?.kind === 'goalie' || item?.prop === 'Goalie Saves' ? 'goalie' : 'skater'
@@ -418,6 +422,10 @@ export function nhlApiInsights(item, games) {
     currentSeason: CURRENT_SEASON,
     priorSeason: PRIOR_SEASON,
     seasonLabel: (season) => String(season ?? ''),
+    earlySeasonGames: SPLITS_EARLY_SEASON.nhl,
+    // ui_game_logs.py ships the newest NHL_API_LOG_CAP games per player, so a
+    // full log starts part-way through last season.
+    logCap: NHL_API_LOG_CAP,
     restApplies: true,
     handApplies: false,
     metrics,
