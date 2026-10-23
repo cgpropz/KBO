@@ -5,6 +5,7 @@ import { nbaLogoUrl } from './nbaPropLines'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { fitImage } from '../fitImage.js'
 import { NBA_DVP_POSITIONS } from './positions'
+import { pickText } from './nbaTodayPick'
 import {
   SORTS, SUMMARY_SEASON, averageMinutes, displaySlot, easternDateKey, filterPlayers, gameText, hitTone,
   isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, seasonLabel, scheduleFromTeams, sortPlayers, sparkBars,
@@ -99,7 +100,14 @@ function TopPropPill({ top }) {
         <small>L10</small>
         <b>{top.hitRate == null ? '—' : `${top.hitRate}%`}</b>
       </span>
-      <Spark values={top.last5} line={top.line} />
+      <span className="nba-plist-prop-foot">
+        <Spark values={top.last5} line={top.line} />
+        {pickText(top.projection) && pickText(top.score) && (
+          <span className="nba-plist-prop-pick" data-testid="nba-plist-prop-pick">
+            {pickText(top.projection)} <small>CG</small> {pickText(top.score)}
+          </span>
+        )}
+      </span>
     </span>
   )
 }
