@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { buildSplits, dayLabel, formatAvg, formatMetric, metricSeries, metricWindows } from './insightsCore.js'
+import { buildSplits, formatAvg, formatMetric, metricSeries, metricWindows, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel } from './insightsCore.js'
 import { formatLineValue, rateTextColor } from '../lineSlider'
 import './playerInsights.css'
 
@@ -31,7 +31,10 @@ function SplitRow({ row }) {
       <span className="pi-split-bar" aria-hidden="true"><i style={{ width: `${width}%`, background: color || '#52525b' }} /></span>
       <b className="pi-split-rate" style={color ? { color } : undefined}>{rateText(row)}</b>
       <span className="pi-split-avg">{formatAvg(row.avg)}<small> avg</small></span>
-      <span className={`pi-split-n${row.small ? ' is-small' : ''}`}>n={row.n}</span>
+      <span className={`pi-split-n${row.small ? ' is-small' : ''}`}>
+        n={row.shown}
+        {row.pushes > 0 && <small className="pi-split-push" data-testid="pi-split-push">+{row.pushes} push</small>}
+      </span>
     </li>
   )
 }
@@ -46,8 +49,11 @@ function SplitsPanel({ splits, model, line, statLabel }) {
   return (
     <div className="pi-splits" data-testid="pi-splits">
       <p className="pi-sub">
-        {statLabel} · hit rate over {line == null ? '—' : formatLineValue(line)} · avg · games (n)
+        {statLabel} · hit rate over {line == null ? '—' : formatLineValue(line)} · avg · n = games decided
       </p>
+      {splits.rows.some((row) => row.pushes > 0) && (
+        <p className="pi-sub pi-push-note" data-testid="pi-push-note">Pushes (exactly on the line) are left out of the hit rate and n.</p>
+      )}
       <SampleNote splits={splits} model={model} />
       {groups.map((group) => (
         <div className="pi-split-group" key={group.name}>
@@ -91,23 +97,23 @@ function MetricPicker({ metrics, value, onChange }) {
   )
 }
 
-// Bar labels drop the % sign and decimals so ten of them fit across a 320px
-// phone; the caption carries the unit.
-const SERIES_FORMAT = { pct: 'pctInt', pct100: 'int', two: 'one' }
-
 function MiniSeries({ series, format }) {
   const values = series.map((point) => point.value).filter((value) => value != null)
   if (!values.length) return null
   const max = Math.max(...values, 0) || 1
+  const dayList = series.map((point) => point.day)
+  const days = seriesDayLabels(dayList)
+  const labels = series.map((point) => seriesValueLabel(point.value, format))
+  const range = seriesRange(dayList)
   return (
     <>
-    <p className="pi-series-cap">Last {series.length} games{format === 'pct' || format === 'pct100' ? ' (%)' : ''}</p>
-    <div className="pi-series" aria-label="Last 10 games">
+    <p className="pi-series-cap">Last {series.length} games{format === 'pct' || format === 'pct100' ? ' (%)' : ''}{range ? ` · ${range}` : ''}</p>
+    <div className={`pi-series${seriesLabelsVertical(labels) ? ' is-vertical' : ''}`} aria-label="Last 10 games" data-testid="pi-series">
       {series.map((point, index) => (
         <span className="pi-series-col" key={`${point.day}-${index}`}>
           <i style={{ height: `${point.value == null ? 0 : Math.max(4, (point.value / max) * 100)}%` }} />
-          <b>{formatMetric(point.value, SERIES_FORMAT[format] || format)}</b>
-          <small>{dayLabel(point.day)}</small>
+          <b>{labels[index]}</b>
+          <small>{days[index]}</small>
         </span>
       ))}
     </div>
@@ -151,7 +157,10 @@ function AdvancedPanel({ model }) {
         ))}
       </div>
       <MiniSeries series={series} format={metric.format} />
-      <p className="pi-note">{metric.note} From our game logs.</p>
+      <p className="pi-note">
+        {metric.note} From our game logs.
+        {windows.some((window) => window.playoffs) ? ' Includes playoff games.' : ''}
+      </p>
       <Unavailable model={model} />
     </div>
   )

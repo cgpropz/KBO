@@ -1,10 +1,28 @@
-// Per-sport adapters for the Insights preview: how each player page's game
+// Per-sport adapters for the player-page Splits + Advanced stats: how each player page's game
 // logs map onto the shared game shape, which splits apply, and which advanced
 // metrics the logs can support. Every metric is derived from fields already in
 // the page's own logs. No new data source is read here.
 
 import { meanOf, parseGameDay, ratio, sumOf } from './insightsCore.js'
 import { nflGameLog } from '../nfl/nflPlayerGames.js'
+
+// "Early season" notice below this many games in the current season.
+// NBA 82 games, WNBA 44, NFL 17, KBO 144 for hitters and ~30 starts for
+// pitchers: roughly the first eighth of a season (NFL: the first month).
+export const EARLY_SEASON_GAMES = Object.freeze({ nba: 10, wnba: 6, nfl: 4, kboHitter: 15, kboPitcher: 5, nhl: 10 })
+
+// Rows the pipeline ships per player. A log at its cap starts part-way
+// through its oldest season, so that season is labeled "Last N games of ...".
+//   KBO: generate_props.py keeps games[:200]
+//   WNBA: recentGames is the newest 40 games, playoffs included
+//   NFL: recent / gameDates / gameSeasons are the newest 30 games
+// NBA gameLogs carry every stored season (no cap).
+export const LOG_CAPS = Object.freeze({ kbo: 200, wnba: 40, nfl: 30 })
+
+// Item 1 (NBA last-season games in L5/L10 and the context splits) is waiting
+// on a display decision. 'all' keeps today's behavior; 'season' is option (a),
+// 'both' is option (b). See RECENT_SCOPES in insightsCore.js.
+export const NBA_RECENT_SCOPE = 'all'
 
 function finite(value) {
   if (value == null || value === '') return null
@@ -47,6 +65,13 @@ export function basketballSeasonLabel(season) {
 
 const has = (...keys) => (raw) => keys.every((key) => finite(raw?.[key]) != null)
 
+// Basketball: a game counts only with minutes above 0 (a 0 or blank is a
+// DNP), the same rule as the NBA Minutes & Usage card. It applies to every
+// metric and every split.
+export function basketballPlayed(raw) {
+  return finite(raw?.min) > 0
+}
+
 // ---- NBA / WNBA ------------------------------------------------------------
 
 function basketballMetrics({ usageKey = 'usg' } = {}) {
@@ -54,7 +79,7 @@ function basketballMetrics({ usageKey = 'usg' } = {}) {
     { id: 'usg', label: 'Usage %', format: 'pct100', note: 'Share of team plays used while on court (from the box-score refresh).', has: (raw) => finite(raw?.[usageKey]) != null && finite(raw?.min) > 0, total: (rows) => meanOf(rows, usageKey), game: (raw) => finite(raw?.[usageKey]) },
     { id: 'ts', label: 'True shooting %', format: 'pct', note: 'PTS / (2 × (FGA + 0.44 × FTA)), summed over the games.', has: has('pts', 'fga', 'fta'), total: (rows) => ratio(sumOf(rows, 'pts'), 2 * (sumOf(rows, 'fga') + 0.44 * sumOf(rows, 'fta'))), game: (raw) => ratio(finite(raw.pts), 2 * (finite(raw.fga) + 0.44 * finite(raw.fta))) },
     { id: 'efg', label: 'Effective FG %', format: 'pct', note: '(FGM + 0.5 × 3PM) / FGA.', has: has('fgm', 'fg3m', 'fga'), total: (rows) => ratio(sumOf(rows, 'fgm') + 0.5 * sumOf(rows, 'fg3m'), sumOf(rows, 'fga')), game: (raw) => ratio(finite(raw.fgm) + 0.5 * finite(raw.fg3m), finite(raw.fga)) },
-    { id: 'min', label: 'Minutes', format: 'one', note: 'Average minutes per game.', has: has('min'), total: (rows) => meanOf(rows, 'min'), game: (raw) => finite(raw.min) },
+    { id: 'min', label: 'Minutes', format: 'one', note: 'Average minutes per game played; 0-minute games are left out.', has: basketballPlayed, total: (rows) => meanOf(rows, 'min'), game: (raw) => finite(raw.min) },
     { id: 'fg3r', label: '3PA rate', format: 'pct', note: 'Share of shots taken from three: 3PA / FGA.', has: has('fg3a', 'fga'), total: (rows) => ratio(sumOf(rows, 'fg3a'), sumOf(rows, 'fga')), game: (raw) => ratio(finite(raw.fg3a), finite(raw.fga)) },
     { id: 'ftr', label: 'FT rate', format: 'pct', note: 'FTA / FGA.', has: has('fta', 'fga'), total: (rows) => ratio(sumOf(rows, 'fta'), sumOf(rows, 'fga')), game: (raw) => ratio(finite(raw.fta), finite(raw.fga)) },
     { id: 'pts36', label: 'Points per 36', format: 'one', note: 'Points per 36 minutes played.', has: has('pts', 'min'), total: (rows) => ratio(sumOf(rows, 'pts'), sumOf(rows, 'min'), 36), game: (raw) => ratio(finite(raw.pts), finite(raw.min), 36) },
@@ -75,6 +100,7 @@ export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
     home: homeFrom(raw?.matchup),
     result: raw?.result === 'W' || raw?.result === 'L' ? raw.result : null,
     oppHand: null,
+    played: basketballPlayed(raw),
   }))
   return {
     sport: 'nba',
@@ -82,6 +108,9 @@ export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
     opponent,
     ...seasonsOf(games),
     seasonLabel: basketballSeasonLabel,
+    earlySeasonGames: EARLY_SEASON_GAMES.nba,
+    recentScope: NBA_RECENT_SCOPE,
+    windowFrom: 'logged',
     restApplies: true,
     handApplies: false,
     metrics: basketballMetrics(),
@@ -106,6 +135,8 @@ export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
       home: homeFrom(raw?.matchup),
       result: raw?.result === 'W' || raw?.result === 'L' ? raw.result : null,
       oppHand: null,
+      played: basketballPlayed(raw),
+      postseason: raw?.postseason === true,
     }
   })
   return {
@@ -114,6 +145,9 @@ export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
     opponent,
     ...seasonsOf(games),
     seasonLabel: (season) => String(season ?? ''),
+    earlySeasonGames: EARLY_SEASON_GAMES.wnba,
+    logCap: LOG_CAPS.wnba,
+    windowFrom: 'logged',
     restApplies: true,
     handApplies: false,
     metrics: basketballMetrics({ usageKey: 'usagePct' }),
@@ -178,6 +212,15 @@ export function nhlInsights(item, { sourceApproved = NHL_LOG_SOURCE_APPROVED } =
 function nflYearFor(season) {
   const start = Number(season)
   return (month) => (Number.isFinite(start) && start > 0 ? (month >= 8 ? start : start + 1) : null)
+}
+
+// Logs and the board spell a few teams differently (LA vs LAR, ...). Both
+// sides go through this before the opponent split compares them.
+const NFL_TEAM_ALIASES = Object.freeze({ LA: 'LAR', STL: 'LAR', JAC: 'JAX', WSH: 'WAS', OAK: 'LV', LVR: 'LV', SD: 'LAC' })
+
+export function nflTeamKey(team) {
+  const code = String(team ?? '').trim().toUpperCase()
+  return NFL_TEAM_ALIASES[code] || code
 }
 
 function nflKey(season, date) {
@@ -262,9 +305,9 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
   const ranked = (game) => season != null && String(game.season) === season && finite(game.dvp) != null
   const rankLabel = `vs ${season ?? ''} D rank`
   const extraSplits = [
-    { group: 'Defense', id: 'dvptough', label: `${rankLabel} 1–10`, test: (game) => ranked(game) && game.dvp <= 10 },
-    { group: 'Defense', id: 'dvpmid', label: `${rankLabel} 11–22`, test: (game) => ranked(game) && game.dvp > 10 && game.dvp <= 22 },
-    { group: 'Defense', id: 'dvpsoft', label: `${rankLabel} 23–32`, test: (game) => ranked(game) && game.dvp > 22 },
+    { group: 'Defense', id: 'dvptough', ownScope: true, label: `${rankLabel} 1–10`, test: (game) => ranked(game) && game.dvp <= 10 },
+    { group: 'Defense', id: 'dvpmid', ownScope: true, label: `${rankLabel} 11–22`, test: (game) => ranked(game) && game.dvp > 10 && game.dvp <= 22 },
+    { group: 'Defense', id: 'dvpsoft', ownScope: true, label: `${rankLabel} 23–32`, test: (game) => ranked(game) && game.dvp > 22 },
     { group: 'Snaps', id: 'snaphigh', label: 'Snap % 70+', test: (game) => finite(game.raw.snap) != null && game.raw.snap >= 70 },
     { group: 'Snaps', id: 'snaplow', label: 'Snap % under 70', test: (game) => finite(game.raw.snap) != null && game.raw.snap < 70 },
   ]
@@ -275,6 +318,9 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
     currentSeason: season,
     priorSeason: row?.priorSeasonLabel != null ? String(row.priorSeasonLabel) : seasonsOf(games).priorSeason,
     seasonLabel: (season) => String(season ?? ''),
+    earlySeasonGames: EARLY_SEASON_GAMES.nfl,
+    logCap: LOG_CAPS.nfl,
+    oppKey: nflTeamKey,
     restApplies: false,
     handApplies: false,
     extraSplits,
@@ -339,6 +385,10 @@ export function kboInsights(player, { valueOf } = {}) {
     opponent: player?.opponent || null,
     ...seasonsOf(games),
     seasonLabel: (season) => String(season ?? ''),
+    earlySeasonGames: pitcher ? EARLY_SEASON_GAMES.kboPitcher : EARLY_SEASON_GAMES.kboHitter,
+    logCap: LOG_CAPS.kbo,
+    // Starters rarely pitch on 0 or 1 day of rest; empty rows are noise.
+    hideEmptyRest: pitcher,
     restApplies: true,
     handApplies: !pitcher,
     metrics: pitcher ? KBO_PITCHER_METRICS : KBO_BATTER_METRICS,
