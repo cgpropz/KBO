@@ -123,8 +123,8 @@ export async function checkInsights(page, { expect, label }) {
   const tones = await page.getByTestId('pi-split-row').evaluateAll((rows) => rows.map((row) => [row.dataset.tone, row.getAttribute('aria-label') || '']))
   expect(tones.length, `${label}: split rows`).toBeGreaterThan(0)
   for (const [tone, name] of tones) {
-    expect(['strong', 'good', 'neutral', 'soft', 'weak', 'muted'], `${label}: tone`).toContain(tone)
-    expect(name, `${label}: aria-label names the tone`).toMatch(/strong|good|about usual|soft|weak|too few games|not rated/)
+    expect(['strong', 'good', 'neutral', 'soft', 'weak', 'muted', 'unrated'], `${label}: tone`).toContain(tone)
+    expect(name, `${label}: aria-label names the tone`).toMatch(/overs than usual|about usual|above usual|below usual|too few games|not rated/)
   }
   await expect(splits).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} splits`, expect)
