@@ -454,7 +454,8 @@
   .nba-plist-card .nba-plist-season em { margin-right: 5px; }
   .nba-plist-card .nba-plist-prop { min-width: 0; padding: 4px 6px; }
   /* Full name and season line at 390px: they wrap instead of clipping, and
-     the prop pill gives up width (its stat label wraps) before they do. */
+     the prop pill gives up width (its stat label wraps) before they do. The
+     team / game row stays one line; its game text ellipsizes as before. */
   .nba-plist-card { align-items: flex-start; }
   .nba-plist-card .nba-plist-headshot { margin-top: 2px; }
   .nba-plist-card .nba-plist-name {
@@ -464,7 +465,6 @@
     overflow-wrap: anywhere;
     line-height: 1.15;
   }
-  .nba-plist-card .nba-plist-meta { flex-wrap: wrap; row-gap: 0; overflow: visible; line-height: 1.25; }
   .nba-plist-card .nba-plist-season {
     display: flex;
     flex-wrap: wrap;
