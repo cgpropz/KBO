@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""NFL freeze labels odds_type from the board row's line_type, and the demon
-Pass TDs rows frozen before #388 are gone from the 10/25 and 10/26 slates."""
+"""NFL freeze labels odds_type from the board row's line_type, and the
+non-standard rows frozen before #388 are gone from the 10/25 and 10/26 slates."""
 from __future__ import annotations
 
 import sys
@@ -35,9 +35,9 @@ class NflFreezeOddsTypeTests(NflCutoffHistoryTests):
         self.assertEqual(rows["Dem"]["odds_type"], "demon")
 
 
-class DemonPassTdsCleanupTests(unittest.TestCase):
+class NonstandardRowCleanupTests(unittest.TestCase):
     def test_drops_only_exact_demon_matches(self):
-        day, name, line, pid = cleanup.DEMON_PASS_TDS[0]
+        day, name, _stat, line, pid, _odds = cleanup.NONSTANDARD_ROWS[0]
         props = [
             {"player": name, "stat": "Pass TDs", "line": line, "projection_id": pid},
             {"player": name, "stat": "Pass TDs", "line": line, "projection_id": "999"},  # other card
@@ -49,8 +49,24 @@ class DemonPassTdsCleanupTests(unittest.TestCase):
         self.assertEqual(kept, props[1:])
         self.assertEqual(cleanup.drop_rows(props, "2026-01-01")[1], [])
 
+    def test_receptions_rows_match_on_stat(self):
+        rec = [r for r in cleanup.NONSTANDARD_ROWS if r[2] == "Receptions"]
+        self.assertEqual(len(rec), 4)
+        self.assertEqual(sorted(r[5] for r in rec), ["demon", "demon", "goblin", "goblin"])
+        day, name, stat, line, pid, _odds = rec[0]
+        hit = {"player": name, "stat": stat, "line": line, "projection_id": pid, "removed": True}
+        other_stat = {"player": name, "stat": "Receiving Yards", "line": line, "projection_id": pid}
+        kept, dropped = cleanup.drop_rows([hit, other_stat], day)
+        self.assertEqual(dropped, [hit])
+        self.assertEqual(kept, [other_stat])
+
+    def test_every_listed_row_is_non_standard(self):
+        self.assertEqual(len(cleanup.NONSTANDARD_ROWS), 24)
+        self.assertEqual(len({r[:5] for r in cleanup.NONSTANDARD_ROWS}), 24)
+        self.assertTrue(all(r[5] in ("demon", "goblin") for r in cleanup.NONSTANDARD_ROWS))
+
     def test_clean_slate_is_idempotent_and_updates_meta(self):
-        day, name, line, pid = cleanup.DEMON_PASS_TDS[0]
+        day, name, _stat, line, pid, _odds = cleanup.NONSTANDARD_ROWS[0]
         d = date.fromisoformat(day)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -63,11 +79,11 @@ class DemonPassTdsCleanupTests(unittest.TestCase):
             self.assertEqual(common.load_json(base / "slate.json")["props"], [keep])
             self.assertEqual(common.load_json(base / "meta.json")["props_total"], 1)
 
-    def test_committed_slates_have_no_demon_pass_tds(self):
+    def test_committed_slates_have_none_of_the_24_rows(self):
         counts = {}
-        for day, *_ in cleanup.DEMON_PASS_TDS:
+        for day, *_ in cleanup.NONSTANDARD_ROWS:
             counts[day] = counts.get(day, 0) + 1
-        self.assertEqual(counts, {"2026-10-25": 18, "2026-10-26": 2})
+        self.assertEqual(counts, {"2026-10-25": 22, "2026-10-26": 2})
         for day in counts:
             path = common.memory_dir("nfl", date.fromisoformat(day)) / "slate.json"
             if not path.exists():
