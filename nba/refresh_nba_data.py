@@ -572,7 +572,10 @@ def build_player_snapshot(
                 })
         summary = summary_grouped.get(athlete_id) if summary_logs is not None else rows
         headshot = athlete.get("headshot") or {}
-        position = positions_by_id.get(athlete_id) or boxscore_position(game_logs)
+        # position is the depth-chart slot the model reads (props snapshot,
+        # DvP slot). The box-score slot only fills displayPosition for the UI.
+        position = positions_by_id.get(athlete_id) or ""
+        display_position = position or boxscore_position(game_logs)
         players.append({
             "athleteId": athlete_id,
             "name": (athlete.get("displayName") or "").strip(),
@@ -580,7 +583,8 @@ def build_player_snapshot(
             "teamFull": info.get("fullName") or team,
             "teamColor": info.get("color") or "#94a3b8",
             "position": position,
-            "positionSource": "" if not position else ("depth" if positions_by_id.get(athlete_id) else "boxscore"),
+            "displayPosition": display_position,
+            "positionSource": "" if not display_position else ("depth" if position else "boxscore"),
             "image": headshot.get("href") or None,
             "age": athlete.get("age") or "",
             "height": athlete.get("displayHeight") or athlete.get("height") or "",
@@ -597,7 +601,38 @@ def build_player_snapshot(
     return players
 
 
-def build_team_snapshot(teams: dict[str, dict], roster: list[dict]) -> list[dict]:
+def schedule_from_scoreboard(payload: dict, day: date) -> dict[str, dict]:
+    """Team -> that day's game (opponent, home, tip) from one scoreboard page.
+    The Players list falls back to it when the browser cannot read ESPN."""
+    schedule: dict[str, dict] = {}
+    for event in payload.get("events") or []:
+        competition = (event.get("competitions") or [{}])[0]
+        sides = competition.get("competitors") or []
+        if len(sides) != 2:
+            continue
+        tip = competition.get("date") or event.get("date") or ""
+        for index, side in enumerate(sides):
+            team = str((side.get("team") or {}).get("abbreviation") or "").strip().upper()
+            other = str((sides[1 - index].get("team") or {}).get("abbreviation") or "").strip().upper()
+            if team and other:
+                schedule[team] = {
+                    "date": day.isoformat(),
+                    "opponent": other,
+                    "home": side.get("homeAway") == "home",
+                    "tip": tip,
+                }
+    return schedule
+
+
+def fetch_today_schedule(day: date) -> dict[str, dict]:
+    try:
+        return schedule_from_scoreboard(fetch_json(SCOREBOARD_URL, {"dates": day.strftime("%Y%m%d")}), day)
+    except Exception as error:  # display-only extra; never fail the refresh on it
+        print(f"   Today's scoreboard unavailable ({type(error).__name__}); teams.json has no game field")
+        return {}
+
+
+def build_team_snapshot(teams: dict[str, dict], roster: list[dict], schedule: dict[str, dict] | None = None) -> list[dict]:
     counts: dict[str, int] = {}
     for athlete in roster:
         team = (athlete.get("_team") or "").strip()
@@ -610,6 +645,7 @@ def build_team_snapshot(teams: dict[str, dict], roster: list[dict]) -> list[dict
             "color": info.get("color") or "#94a3b8",
             "espnId": info.get("espnId") or "",
             "players": counts.get(abbreviation, 0),
+            **({"game": schedule[abbreviation]} if schedule and abbreviation in schedule else {}),
         })
     return snapshot
 
@@ -674,13 +710,14 @@ def write_snapshots(
     logs: pd.DataFrame,
     teams: dict[str, dict],
     summary_logs: pd.DataFrame | None = None,
+    schedule: dict[str, dict] | None = None,
 ) -> None:
     PUBLIC_NBA.mkdir(parents=True, exist_ok=True)
     players = build_player_snapshot(roster, positions_by_id, logs, teams, summary_logs)
     filled = sum(1 for player in players if player.get("positionSource") == "boxscore")
-    still_unset = sum(1 for player in players if not player.get("position"))
-    print(f"   Positions filled from box scores: {filled}; still unset: {still_unset}")
-    team_rows = build_team_snapshot(teams, roster)
+    still_unset = sum(1 for player in players if not player.get("displayPosition"))
+    print(f"   Display positions filled from box scores: {filled}; still unset: {still_unset}")
+    team_rows = build_team_snapshot(teams, roster, schedule)
     PLAYERS_JSON.write_text(json.dumps(players, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     TEAMS_SNAPSHOT.write_text(json.dumps(team_rows, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"✅ Wrote {PLAYERS_JSON.relative_to(REPO)}: {len(players)} players (gitignored snapshot)")
@@ -770,7 +807,7 @@ def main() -> int:
     stored = [frame for frame in by_season.values() if not frame.empty]
     combined = pd.concat(stored, ignore_index=True) if len(stored) > 1 else stored[0]
     logs = by_season[SEASONS[0].label]
-    write_snapshots(roster, positions_by_id, combined, teams, summary_logs=logs)
+    write_snapshots(roster, positions_by_id, combined, teams, summary_logs=logs, schedule=fetch_today_schedule(today))
     newest_season = by_season[SEASONS[-1].label]
     print(f"\n   {SEASONS[-1].label} rows: {len(newest_season)}, games: {unique_games(newest_season) if not newest_season.empty else 0}")
     current_logs = newest_season if not newest_season.empty else logs

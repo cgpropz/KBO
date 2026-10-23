@@ -57,9 +57,16 @@ export function playerKey(player) {
   return id ? `id:${id}` : `name:${nameKey(player?.name)}`
 }
 
+// Slot shown on the list. displayPosition (depth chart, else box score) is
+// display only; position is the depth-chart slot the model reads.
+export function displaySlot(player) {
+  const slot = key(player?.displayPosition || player?.position).toUpperCase()
+  return POSITION_SLOTS.includes(slot) ? slot : ''
+}
+
 // All, the five slots, and Unset only when some player has no slot.
 export function positionChips(players) {
-  const hasUnset = (players || []).some((player) => !POSITION_SLOTS.includes(key(player?.position)))
+  const hasUnset = (players || []).some((player) => !displaySlot(player))
   return ['All', ...POSITION_SLOTS, ...(hasUnset ? [UNSET] : [])]
 }
 
@@ -68,7 +75,9 @@ export function teamOptions(players) {
 }
 
 // One entry per projected player: the first of his rows in the board's CG
-// Score order. rank is that row's place in the whole board's order.
+// Score order that has a side. A row with no side (projection on the line, or
+// a CG Score of exactly 50) is no pick, so it is never shown as the top prop.
+// rank is that row's place in the whole board's order.
 export function topProps(projections, players) {
   const rows = buildPropRows(projections, players)
   const ordered = filterAndSortRows(rows, 'All Props', { ...DEFAULT_FILTERS, sortBy: 'CG Score' })
@@ -81,7 +90,7 @@ export function topProps(projections, players) {
   ordered.forEach((row, rank) => {
     const id = idByName.get(nameKey(row.player))
     const k = id ? `id:${id}` : `name:${nameKey(row.player)}`
-    if (byPlayer.has(k)) return
+    if (byPlayer.has(k) || !row.side) return
     byPlayer.set(k, {
       rank,
       stat: row.prop,
@@ -142,8 +151,22 @@ export function formatTip(iso) {
   return `${time.replace(':00 ', ' ')} ET`
 }
 
+// teams.json carries each team's game for the day the data refreshed. Used
+// when the browser cannot read ESPN's scoreboard; only today's rows count.
+export function scheduleFromTeams(teams, now = new Date()) {
+  const today = easternDateKey(now)
+  const schedule = new Map()
+  ;(teams || []).forEach((team) => {
+    const game = team?.game
+    const abbr = key(team?.abbr).toUpperCase()
+    if (!abbr || !game?.opponent || key(game.date).replace(/-/g, '') !== today) return
+    schedule.set(abbr, { opponent: key(game.opponent).toUpperCase(), home: game.home === true ? true : game.home === false ? false : null, tip: game.tip || null, state: 'pre' })
+  })
+  return schedule
+}
+
 // Today's game for a player. The scoreboard wins; the prop board's opponent
-// stands in (no tip time) when the scoreboard did not load.
+// stands in (no tip time, home/away unknown) when neither schedule loaded.
 export function todayGame(player, schedule, top) {
   const team = key(player?.team).toUpperCase()
   const game = schedule?.get?.(team)
@@ -154,7 +177,8 @@ export function todayGame(player, schedule, top) {
 
 export function gameText(game) {
   if (!game) return ''
-  const versus = game.home === false ? '@' : 'vs'
+  // Home/away unknown (board fallback): name the opponent without claiming either.
+  const versus = game.home === true ? 'vs' : game.home === false ? '@' : 'Opp'
   const tail = game.state === 'in' ? 'Live' : game.state === 'post' ? 'Final' : formatTip(game.tip)
   return [`${versus} ${game.opponent}`, tail].filter(Boolean).join(' · ')
 }
@@ -193,8 +217,8 @@ export function filterPlayers(players, filters, context = {}) {
   const team = filters?.team || 'All'
   return (players || []).filter((player) => {
     if (search && !nameKey(player?.name).includes(search)) return false
-    const slot = key(player?.position)
-    if (position === UNSET ? POSITION_SLOTS.includes(slot) : position !== 'All' && slot !== position) return false
+    const slot = displaySlot(player)
+    if (position === UNSET ? Boolean(slot) : position !== 'All' && slot !== position) return false
     if (team !== 'All' && key(player?.team) !== team) return false
     if (filters?.playingToday && !todayGame(player, context.schedule, topPropFor(context.tops, player))) return false
     return true
@@ -220,12 +244,23 @@ export function sortPlayers(players, sortBy, context = {}) {
   if (sortBy === 'name') return list.sort(byName)
   if (sortBy === 'minutes') return list.sort((a, b) => nullsLast(a, b, averageMinutes, byName))
   if (sortBy === 'l10') {
-    return list.sort((a, b) => nullsLast(a, b, (p) => topPropFor(tops, p)?.hitRate ?? null, (x, y) => {
-      const rx = topPropFor(tops, x)?.rank
-      const ry = topPropFor(tops, y)?.rank
-      if (rx != null && ry != null) return rx - ry
-      return byName(x, y)
-    }))
+    // Players with a top prop first (rated ones by rate, then unrated ones),
+    // players with no prop last. Ties keep the board's CG order, then name.
+    const tier = (p) => {
+      const top = topPropFor(tops, p)
+      if (!top) return 2
+      return top.hitRate == null ? 1 : 0
+    }
+    return list.sort((a, b) => {
+      const ta = tier(a)
+      const tb = tier(b)
+      if (ta !== tb) return ta - tb
+      const ra = topPropFor(tops, a)
+      const rb = topPropFor(tops, b)
+      if (ta === 0 && rb.hitRate !== ra.hitRate) return rb.hitRate - ra.hitRate
+      if (ta < 2) return ra.rank - rb.rank || byName(a, b)
+      return byName(a, b)
+    })
   }
   // CG Score: the board's order of each player's top prop, then by name.
   return list.sort((a, b) => {

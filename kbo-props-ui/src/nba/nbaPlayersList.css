@@ -461,3 +461,8 @@
   .nba-plist-search { width: 260px; }
   .nba-plist-row { flex: 1 1 auto; }
 }
+
+/* Initials sit in the ring until the photo loads, then the photo covers them. */
+.nba-headshot-frame { position: relative; }
+.nba-headshot-frame img { position: absolute; inset: 0; opacity: 0; transition: opacity 0.15s ease; }
+.nba-headshot-frame img.is-loaded { opacity: 1; }

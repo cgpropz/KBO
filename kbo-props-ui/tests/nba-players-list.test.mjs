@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  averageMinutes, easternDateKey, filterPlayers, formatTip, gameText, hitTone, isGameDay,
-  positionChips, priorTeam, scheduleFromScoreboard, sortPlayers, sparkBars, statShort,
+  averageMinutes, displaySlot, easternDateKey, filterPlayers, formatTip, gameText, hitTone, isGameDay,
+  positionChips, priorTeam, scheduleFromScoreboard, scheduleFromTeams, sortPlayers, sparkBars, statShort,
   todayGame, topPropFor, topProps,
 } from '../src/nba/nbaPlayersList.js'
 
@@ -75,7 +75,7 @@ test('schedule from the scoreboard, with the board opponent as a stand-in', () =
   assert.equal(gameText(schedule.get('CCC')), '@ AAA · 7:30 PM ET')
   const tops = topProps(projections, players)
   assert.equal(todayGame(players[1], new Map(), topPropFor(tops, players[1])).opponent, 'AAA')
-  assert.equal(gameText({ opponent: 'AAA', home: null, tip: null, state: 'pre' }), 'vs AAA')
+  assert.equal(gameText({ opponent: 'AAA', home: null, tip: null, state: 'pre' }), 'Opp AAA', 'unknown home/away claims neither')
   assert.equal(gameText({ opponent: 'AAA', home: false, state: 'in' }), '@ AAA · Live')
   assert.equal(todayGame(players[1], schedule, null), null)
   assert.equal(isGameDay(new Map(), new Map()), false)
@@ -131,4 +131,66 @@ test('display helpers', () => {
   assert.deepEqual(spark.bars.map((bar) => bar.hit), [false, true])
   assert.equal(spark.bars[1].height, 20)
   assert.equal(spark.lineY, 7)
+})
+
+test('null projections never become a top prop', () => {
+  const roster = [{ athleteId: '9', name: 'Echo Nine', team: 'EEE', position: 'SG', gameLogs: logs([12, 14, 9, 11, 13]) }]
+  const onlyNull = [{ athleteId: '9', name: 'Echo Nine', team: 'EEE', ppAllProps: [
+    { stat: 'Points', line: 10.5, projection: null, opponent: 'AAA' },
+  ] }]
+  assert.equal(topPropFor(topProps(onlyNull, roster), roster[0]), null)
+  const mixed = [{ athleteId: '9', name: 'Echo Nine', team: 'EEE', ppAllProps: [
+    { stat: 'Points', line: 10.5, projection: null, opponent: 'AAA' },
+    { stat: 'Rebounds', line: 4.5, projection: 6, opponent: 'AAA' },
+  ] }]
+  const top = topPropFor(topProps(mixed, roster), roster[0])
+  assert.equal(top.stat, 'Rebounds')
+  assert.equal(top.side, 'OVER')
+})
+
+test('a CG Score of exactly 50 (no side) is never the top prop', () => {
+  const roster = [{ athleteId: '8', name: 'Foxtrot Eight', team: 'FFF', position: 'PF', gameLogs: logs([10, 10, 9, 11, 10]) }]
+  const board = [{ athleteId: '8', name: 'Foxtrot Eight', team: 'FFF', ppAllProps: [
+    { stat: 'Points', line: 10, projection: 10, opponent: 'AAA' },
+    { stat: 'Rebounds', line: 5, projection: 3, opponent: 'AAA' },
+  ] }]
+  const top = topPropFor(topProps(board, roster), roster[0])
+  assert.equal(top.stat, 'Rebounds')
+  assert.equal(top.side, 'UNDER')
+  const neutralOnly = [{ ...board[0], ppAllProps: [board[0].ppAllProps[0]] }]
+  assert.equal(topPropFor(topProps(neutralOnly, roster), roster[0]), null)
+})
+
+test('away games read "@" in the teams.json fallback; other days are ignored', () => {
+  const now = new Date('2026-10-23T16:00:00Z')
+  const schedule = scheduleFromTeams([
+    { abbr: 'AAA', game: { date: '2026-10-23', opponent: 'BBB', home: false, tip: '2026-10-23T23:00Z' } },
+    { abbr: 'BBB', game: { date: '2026-10-23', opponent: 'AAA', home: true, tip: '2026-10-23T23:00Z' } },
+    { abbr: 'CCC', game: { date: '2026-10-22', opponent: 'DDD', home: true, tip: '2026-10-22T23:00Z' } },
+    { abbr: 'DDD' },
+  ], now)
+  assert.equal(gameText(todayGame(players[0], schedule, null)), '@ BBB · 7 PM ET')
+  assert.equal(gameText(todayGame(players[1], schedule, null)), 'vs AAA · 7 PM ET')
+  assert.equal(schedule.has('CCC'), false)
+  assert.equal(schedule.has('DDD'), false)
+})
+
+test('L10 sort: a top prop with no hit rate still sorts ahead of players with no prop', () => {
+  const tops = new Map([
+    ['id:1', { rank: 3, hitRate: 60 }],
+    ['id:2', { rank: 0, hitRate: null }],
+    ['id:4', { rank: 1, hitRate: 90 }],
+  ])
+  const order = sortPlayers(players, 'l10', { tops }).map((p) => p.athleteId)
+  assert.deepEqual(order, ['4', '1', '2', '3'])
+})
+
+test('displayPosition fills the list slot without touching position', () => {
+  const filled = { athleteId: '7', name: 'Golf Seven', team: 'GGG', position: '', displayPosition: 'PF' }
+  assert.equal(displaySlot(filled), 'PF')
+  assert.equal(filled.position, '')
+  assert.deepEqual(positionChips([filled]), ['All', 'PG', 'SG', 'SF', 'PF', 'C'])
+  assert.deepEqual(filterPlayers([filled], { position: 'PF' }).map((p) => p.athleteId), ['7'])
+  assert.equal(displaySlot({ position: 'C' }), 'C')
+  assert.equal(displaySlot({ position: '' }), '')
 })

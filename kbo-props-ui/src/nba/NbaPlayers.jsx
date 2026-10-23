@@ -6,8 +6,8 @@ import { CardTeamLogo } from '../CardTeamLogo'
 import { fitImage } from '../fitImage.js'
 import { NBA_DVP_POSITIONS } from './positions'
 import {
-  SORTS, SUMMARY_SEASON, UNSET, averageMinutes, easternDateKey, filterPlayers, gameText, hitTone,
-  isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, sortPlayers, sparkBars,
+  SORTS, SUMMARY_SEASON, UNSET, averageMinutes, displaySlot, easternDateKey, filterPlayers, gameText, hitTone,
+  isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, scheduleFromTeams, sortPlayers, sparkBars,
   teamOptions, todayGame, topPropFor, topProps,
 } from './nbaPlayersList.js'
 import './nbaPlayersList.css'
@@ -38,12 +38,26 @@ function logoSrc(team, width = 40) {
 function PlayerHeadshot({ player, size = 128, className = 'nba-profile-headshot' }) {
   const src = player?.image ? fitImage(player.image, size) : ''
   const [failedSrc, setFailedSrc] = useState('')
+  const [loadedSrc, setLoadedSrc] = useState('')
   const color = player?.teamColor || '#1f3f3d'
+  const usable = Boolean(src) && src !== failedSrc
+  const shown = usable && loadedSrc === src
+  // Initials hold the ring until the photo has loaded, so a slow or failed
+  // image never leaves it empty.
   return (
-    <div className={className} style={{ borderColor: color }}>
-      {src && src !== failedSrc
-        ? <img src={src} alt="" loading="lazy" onError={() => setFailedSrc(src)} />
-        : <span>{initials(player?.name)}</span>}
+    <div className={`${className} nba-headshot-frame`} style={{ borderColor: color }}>
+      {!shown && <span>{initials(player?.name)}</span>}
+      {usable && (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className={shown ? 'is-loaded' : ''}
+          onLoad={() => setLoadedSrc(src)}
+          onError={() => setFailedSrc(src)}
+        />
+      )}
     </div>
   )
 }
@@ -91,7 +105,7 @@ function TopPropPill({ top }) {
 }
 
 function PlayerRow({ player, top, game, minutes, onOpen }) {
-  const slot = player.position || ''
+  const slot = displaySlot(player)
   const prior = priorTeam(player)
   return (
     <button type="button" className="nba-plist-card" data-testid="nba-player-card" onClick={() => onOpen(player)}>
@@ -209,15 +223,16 @@ export default function NbaPlayers({ initialName = '' }) {
     let cancelled = false
     ;(async () => {
       try {
-        const [rows, lines, games] = await Promise.all([
+        const [rows, lines, games, teamRows] = await Promise.all([
           fetchNbaData('nba/players.json'),
           fetchNbaData('nba/projections_standard.json').catch(() => []),
           fetchSchedule(),
+          fetchNbaData('nba/teams.json').catch(() => []),
         ])
         if (!cancelled) {
           setPlayers(Array.isArray(rows) ? rows : [])
           setBoard(Array.isArray(lines) ? lines : [])
-          setSchedule(games)
+          setSchedule(games.size ? games : scheduleFromTeams(Array.isArray(teamRows) ? teamRows : []))
         }
       } catch (err) {
         if (!cancelled) setError(err.message)
@@ -304,7 +319,7 @@ export default function NbaPlayers({ initialName = '' }) {
               <CardTeamLogo team={selected.team} src={nbaLogoUrl(selected.team) ? fitImage(nbaLogoUrl(selected.team), 40) : ''} />
               <span>
                 {selected.teamFull || selected.team}
-                {selected.position ? ` · ${selected.position}` : ' · Position unset'}
+                {displaySlot(selected) ? ` · ${displaySlot(selected)}` : ' · Position unset'}
               </span>
             </p>
           </div>
