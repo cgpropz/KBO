@@ -48,7 +48,7 @@ const EXPECTED = {
   '/nfl-player-props': 'NFL Player Props Today: CG Score & Hit Rates | CGPropz',
   '/nhl-player-props': 'NHL Player Props Today: Free Top 3 & CG Score | CGPropz',
   '/wnba-player-props': 'WNBA Player Props Today: Free Top 3 & CG Score | CGPropz',
-  '/kbo-player-props': 'KBO Player Props Today: Free Top 3 & Playoffs | CGPropz',
+  '/kbo-player-props': 'KBO Playoffs Player Props & PrizePicks Picks | CGPropz',
   '/pricing': 'All-Access Pricing: Plans for Every Board | CGPropz',
 }
 

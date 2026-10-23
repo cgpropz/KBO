@@ -11,6 +11,7 @@ import { CgScoreNote } from '../CgScoreExplainer'
 import NbaRangeSlider from './NbaRangeSlider'
 import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newestSeasonLogs, resolveRange } from './nbaGameFilters'
 import NbaMinutesUsage from './NbaMinutesUsage'
+import { PENDING, pickText, seasonShortLabel, todayPick } from './nbaTodayPick'
 
 const RANGES = [
   { id: 'l5', label: 'L5', count: 5 },
@@ -50,6 +51,45 @@ function groupProps(player, projection) {
       const bi = PROP_ORDER.indexOf(b.stat)
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi) || a.stat.localeCompare(b.stat)
     })
+}
+
+// Today's board projection and CG Score beside the PrizePicks line. Both
+// show Pending until the board has a projection for this stat.
+function TodayPick({ pick }) {
+  const projection = pickText(pick.projection)
+  const cg = pickText(pick.cg)
+  const sideClass = pick.side === 'OVER' ? ' is-over' : pick.side === 'UNDER' ? ' is-under' : ''
+  return (
+    <div className="nba-player-pick" data-testid="nba-player-pick">
+      <span>
+        <small>Projection</small>
+        <b data-testid="nba-player-projection" className={projection ? '' : 'is-pending'}>{projection || PENDING}</b>
+      </span>
+      <span>
+        <small>CG Score</small>
+        <b data-testid="nba-player-cg" className={cg ? sideClass.trim() : 'is-pending'}>{cg || (projection ? '—' : PENDING)}</b>
+      </span>
+    </div>
+  )
+}
+
+// No chartable line today: the header still says so, with no numbers.
+function NoLineToday({ projection }) {
+  const prop = (Array.isArray(projection?.ppAllProps) ? projection.ppAllProps : [])
+    .find((row) => row?.stat && postedLineFor([row]) != null)
+  const posted = prop ? postedLineFor([prop]) : null
+  return (
+    <section className="nba-player-chart-card card" aria-label="Today's line">
+      <div className="nba-player-chart-head">
+        <div>
+          <p className="stat-label">PrizePicks line</p>
+          <strong>{posted == null ? '—' : `${formatLineValue(posted)} ${prop.stat}`}</strong>
+          <span>{posted == null ? 'No line today' : 'No game log for this stat yet'}</span>
+        </div>
+        <TodayPick pick={todayPick(prop, posted, prop?.stat)} />
+      </div>
+    </section>
+  )
 }
 
 function windowLogs(logs, count) {
@@ -96,7 +136,7 @@ export default function NbaPlayerChart({ player, projection }) {
         : windowLogs(newestSeasonLogs(logs, allLogs[0]?.season), option.count)
       return {
         id: option.id,
-        label: option.label,
+        label: option.id === 'season' ? seasonShortLabel(allLogs[0]?.season, option.label) : option.label,
         games,
         values: games.map((game) => statValue(game, current.stat)),
       }
@@ -126,11 +166,21 @@ export default function NbaPlayerChart({ player, projection }) {
     <NbaMinutesUsage logs={allLogs} windowGames={muWindow} keptGames={narrowed ? new Set(filteredLogs) : null} />
   )
 
-  if (!current || slider.line == null) return minutesUsage
+  // No line today: the header card says so, and Minutes & Usage still shows.
+  if (!current || slider.line == null) {
+    return (
+      <>
+        <NoLineToday projection={projection} />
+        {minutesUsage}
+      </>
+    )
+  }
 
   const chartProp = current.rows.find((prop) => Number(prop.line) === Number(current.posted)) || current.rows[0]
   const chartLogs = Array.isArray(player?.gameLogs) ? player.gameLogs : []
-  const scoreNote = buildCgScoreExplainer({
+  const pick = todayPick(chartProp, current.posted, current.stat)
+  // A blank projection has no CG Score yet, so there is no note to explain.
+  const scoreNote = pick.cg == null ? null : buildCgScoreExplainer({
     player: player?.name,
     projection: chartProp?.projection,
     line: current.posted,
@@ -155,10 +205,11 @@ export default function NbaPlayerChart({ player, projection }) {
           <strong style={hitColor ? { color: hitColor } : undefined}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong>
           <span>{chartHit.games ? `${chartHit.hits}/${chartHit.games}${slider.moved ? ` over ${formatLineValue(chartLine)}` : ''}` : 'No decided games'}</span>
         </div>
-        <div>
+        <div className="nba-player-line">
           <p className="stat-label">PrizePicks line</p>
           <strong>{formatLineValue(slider.postedLine)} {current.stat}</strong>
         </div>
+        <TodayPick pick={pick} />
       </div>
       {groups.length > 1 && (
         <div className="nba-player-props">

@@ -165,6 +165,31 @@
   font-size: 12px;
 }
 
+.nba-player-chart-head:has(.nba-player-pick) { flex-wrap: wrap; row-gap: 8px; }
+.nba-player-chart-head .nba-player-line { min-width: 0; text-align: right; }
+.nba-player-pick {
+  flex: 1 0 100%;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nba-player-chart-head .nba-player-pick > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0b1714;
+  white-space: nowrap;
+}
+.nba-player-pick small { color: #a1a1aa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.nba-player-pick b { color: #f4f4f5; font-size: 15px; font-weight: 800; }
+.nba-player-pick b.is-over { color: #7efc6a; }
+.nba-player-pick b.is-under { color: #ff7b79; }
+.nba-player-pick b.is-pending { color: #a1a1aa; font-size: 12px; font-weight: 700; }
+
 .nba-player-props,
 .nba-player-ranges {
   display: flex;

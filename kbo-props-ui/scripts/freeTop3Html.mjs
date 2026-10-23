@@ -131,10 +131,18 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
   // byte-stable between generator runs and a skipped build step says nothing false.
   const built = now == null ? '' : ` data-built="${new Date(now).toISOString()}"`;
   const open = `<div class="free-top3-block" data-sport="${escapeHtml(sport.id)}"${built}${live ? ' data-live' : ''}${failed ? ' data-failed' : ''}>`;
-  const title = `<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>`;
+  // A sport whose lines may be off for days (KBO after Oct 21) says when a free
+  // top 3 exists instead of promising one today; with rows it is today's.
+  const conditional = CONDITIONAL_FREE_TOP3.has(sport.id) && !(rows && rows.length);
+  const title = conditional
+    ? `<${heading}>Free ${escapeHtml(sport.name)} top 3, when lines are posted</${heading}>`
+    : `<${heading}>Today's free ${escapeHtml(sport.name)} top 3</${heading}>`;
   if (now == null) {
+    const fallback = conditional
+      ? `When ${escapeHtml(sport.name)} lines are posted, the free ${escapeHtml(sport.name)} top 3 shows here. Check the live board for current lines.`
+      : `Check the live board for today's free ${escapeHtml(sport.name)} top 3.`;
     return `${open}${title}
-      <div data-nosnippet><p class="free-top3-stamp">Check the live board for today's free ${escapeHtml(sport.name)} top 3.</p></div>
+      <div data-nosnippet><p class="free-top3-stamp">${fallback}</p></div>
       <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   if (failed) {
@@ -152,6 +160,9 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
       <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
       <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
 }
+
+// Sports whose free top 3 copy is conditional ("when lines are posted").
+export const CONDITIONAL_FREE_TOP3 = new Set(['kbo']);
 
 export const FREE_TOP3_STALE_TEXT = 'This free top 3 may be out of date. Open the board for the current lines.';
 export const FREE_TOP3_STARTED_TEXT = 'Today\u2019s free top 3 games have started. Open the board for the next slate.';
