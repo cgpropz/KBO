@@ -74,7 +74,8 @@ jobs:
 
   phone-width:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30: room for the NHL parity suite after a slow browser install.
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: kbo-props-ui
