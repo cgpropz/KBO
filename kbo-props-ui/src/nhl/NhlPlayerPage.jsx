@@ -11,6 +11,8 @@ import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 import GameDateLogo from '../GameDateLogo'
+import PlayerInsights from '../playerInsights/PlayerInsights'
+import { NHL_LOG_SOURCE_APPROVED, nhlInsights } from '../playerInsights/insightsSports'
 
 const RANGES = [
   { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
@@ -366,6 +368,10 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
     resetKey: `${item?.playerId || item?.player || ''}|${item?.prop || ''}`,
   })
 
+  // Splits + Advanced stats stay hidden on NHL until a licensed or official
+  // game feed replaces the non-commercial logs (NHL_LOG_SOURCE_APPROVED).
+  const insightsModel = useMemo(() => (NHL_LOG_SOURCE_APPROVED && item ? nhlInsights(item, { sourceApproved: true }) : null), [item])
+
   if (!item) return null
 
   const line = chartInput.posted
@@ -423,6 +429,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         {item.latestGame ? ` Latest game ${item.latestGame}.` : ''}
         {' '}2026-27 is this season only. 2025-26 is last season, including a previous team.
       </p>
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={item.prop}>
       <div className="nfl-player-range-strip">
         {RANGES.map((option) => {
           const window = chartInput.windows.find((entry) => entry.id === option.id)
@@ -493,6 +500,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         </div>
         <AltLinesRow slider={slider} />
       </div>
+      </PlayerInsights>
 
       <section className="nhl-profile" aria-label={profileTitle(position, item.prop)}>
         <h2>{profileTitle(position, item.prop)}</h2>

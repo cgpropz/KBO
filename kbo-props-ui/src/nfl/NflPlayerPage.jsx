@@ -18,6 +18,10 @@ import { AdjMatchupStat } from './MatchupDefense'
 import { useNflMatchupDefense } from './useNflMatchupDefense'
 import { nflSeasonAverage } from './seasonAverage'
 import GameDateLogo from '../GameDateLogo'
+import PlayerInsights from '../playerInsights/PlayerInsights'
+import { useAuth } from '../AuthContext'
+import { sportAccess } from '../entitlements'
+import { nflInsights } from '../playerInsights/insightsSports'
 
 // This season's per-game average, or '—' (src/nfl/seasonAverage.js).
 function seasonAvgText(row) {
@@ -236,6 +240,12 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     offeredLines: chartInput.offered,
     resetKey: currentRow?.id || '',
   })
+  // Splits + Advanced stats: NFL members only.
+  const { tier } = useAuth()
+  const insightsAllowed = sportAccess(tier).nfl
+  const insightsModel = useMemo(() => (insightsAllowed && currentRow
+    ? nflInsights(currentRow, playerRows, { currentSeason: nflCurrentSeason(currentRow) })
+    : null), [insightsAllowed, currentRow, playerRows])
 
   if (error) return <div className="nfl-notice">Unable to load player data: {error}</div>
   if (!loaded) return <div className="nfl-notice">Loading player data for {player}.</div>
@@ -331,6 +341,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         )}
       </div>
 
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={currentRow.prop}>
       <div className="nfl-player-range-strip">
         {rangeOptions.map((option) => (
           <button
@@ -441,6 +452,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         })} />
       </div>
       <AltLinesRow slider={slider} />
+      </PlayerInsights>
       <PlayerOddsTable key={currentRow.prop} propLabel={currentRow.prop} rows={oddsRows} status={oddsStatus} />
     </section>
   )
