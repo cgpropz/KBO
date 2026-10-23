@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { buildSplits, formatAvg, formatMetric, metricSeries, metricWindows, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel } from './insightsCore.js'
-import { formatLineValue, rateTextColor } from '../lineSlider'
+import { buildSplits, formatAvg, formatMetric, metricSeries, metricWindows, rateWindows, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel } from './insightsCore.js'
+import { isLowerBetter, STRENGTH_COLORS, STRENGTH_MIN_GAMES } from './strengthScale.js'
+import { formatLineValue } from '../lineSlider'
 import './playerInsights.css'
 
 function rateText(row) {
@@ -22,20 +23,46 @@ function Skipped({ splits }) {
   return <p className="pi-skipped">Not in our logs: {splits.skipped.map((item) => item.replace(/\s*\(.*\)$/, '')).join(' · ')}</p>
 }
 
+function StrengthCue({ strength }) {
+  if (!strength?.cue) return null
+  return <i className={`pi-cue tone-${strength.tone}`} aria-hidden="true">{strength.cue}</i>
+}
+
 function SplitRow({ row }) {
-  const color = rateTextColor(row.rate, row.decided)
+  const strength = row.strength || { tone: 'muted', label: 'not rated' }
+  const color = STRENGTH_COLORS[strength.tone]
   const width = row.rate == null ? 0 : Math.max(2, row.rate)
+  const muted = strength.tone === 'muted'
   return (
-    <li className={`pi-split${row.n === 0 ? ' is-empty' : ''}`} data-testid="pi-split-row">
+    <li
+      className={`pi-split tone-${strength.tone}${row.n === 0 ? ' is-empty' : ''}`}
+      data-testid="pi-split-row"
+      data-tone={strength.tone}
+      aria-label={`${row.label}: ${rateText(row)} hit rate, ${formatAvg(row.avg)} average, ${row.shown} games, ${strength.label}`}
+    >
       <span className="pi-split-label">{row.label}</span>
-      <span className="pi-split-bar" aria-hidden="true"><i style={{ width: `${width}%`, background: color || '#52525b' }} /></span>
-      <b className="pi-split-rate" style={color ? { color } : undefined}>{rateText(row)}</b>
+      <span className="pi-split-bar" aria-hidden="true"><i style={{ width: `${width}%`, background: muted ? '#52525b' : color }} /></span>
+      <b className="pi-split-rate" style={{ color }}><StrengthCue strength={strength} />{rateText(row)}</b>
       <span className="pi-split-avg">{formatAvg(row.avg)}<small> avg</small></span>
       <span className={`pi-split-n${row.small ? ' is-small' : ''}`}>
         n={row.shown}
         {row.pushes > 0 && <small className="pi-split-push" data-testid="pi-split-push">+{row.pushes} push</small>}
       </span>
     </li>
+  )
+}
+
+function SplitsScaleNote({ splits, line }) {
+  const base = splits.baseline
+  if (!base || base.value == null) return null
+  const what = base.kind === 'rate'
+    ? `overall hit rate over ${formatLineValue(line)} (${Math.round(base.value)}%)`
+    : `overall average (${formatAvg(base.value)})`
+  return (
+    <p className="pi-sub pi-scale-note" data-testid="pi-scale-note">
+      Colors: each row vs the player&apos;s {what} across all {base.n} logged games. ▲ stronger, ▼ weaker
+      {base.lowerIsBetter ? ' (lower is better for this stat)' : ''}. Under {STRENGTH_MIN_GAMES} games: gray, not rated.
+    </p>
   )
 }
 
@@ -54,6 +81,7 @@ function SplitsPanel({ splits, model, line, statLabel }) {
       {splits.rows.some((row) => row.pushes > 0) && (
         <p className="pi-sub pi-push-note" data-testid="pi-push-note">Pushes (exactly on the line) are left out of the hit rate and n.</p>
       )}
+      <SplitsScaleNote splits={splits} line={line} />
       <SampleNote splits={splits} model={model} />
       {groups.map((group) => (
         <div className="pi-split-group" key={group.name}>
@@ -131,10 +159,25 @@ function Unavailable({ model }) {
   )
 }
 
+function AdvancedScaleNote({ rated, metric }) {
+  const base = rated.baseline
+  const lower = rated.lowerIsBetter ? ' Lower is better for this stat.' : ''
+  if (!base) {
+    return <p className="pi-sub pi-scale-note" data-testid="pi-adv-baseline">Not colored yet: under {STRENGTH_MIN_GAMES} games to compare against.</p>
+  }
+  const source = base.source === 'published' ? `${base.label} (${formatMetric(base.value, metric.format)})` : `the player's ${base.label.replace(/^own /, '')} (${formatMetric(base.value, metric.format)}); no league or position baseline in our data for this stat`
+  return (
+    <p className="pi-sub pi-scale-note" data-testid="pi-adv-baseline">
+      Colors: vs {source}. ▲ stronger, ▼ weaker; under {STRENGTH_MIN_GAMES} games gray.{lower}
+    </p>
+  )
+}
+
 function AdvancedPanel({ model }) {
   const [metricId, setMetricId] = useState(model.metrics[0]?.id || '')
   const metric = model.metrics.find((entry) => entry.id === metricId) || model.metrics[0]
-  const windows = useMemo(() => (metric ? metricWindows(metric, model.games, model) : []), [metric, model])
+  const rated = useMemo(() => (metric ? rateWindows(metricWindows(metric, model.games, model), metric, model) : { windows: [], baseline: null }), [metric, model])
+  const windows = rated.windows
   const series = useMemo(() => (metric?.game ? metricSeries(metric, model.games, 10) : []), [metric, model])
   if (!metric) {
     return (
@@ -149,13 +192,20 @@ function AdvancedPanel({ model }) {
       <MetricPicker metrics={model.metrics} value={metric.id} onChange={setMetricId} />
       <div className="pi-windows">
         {windows.map((window) => (
-          <div key={window.id} className="pi-window">
+          <div
+            key={window.id}
+            className={`pi-window tone-${window.strength.tone}${window.isBaseline ? ' is-baseline' : ''}`}
+            data-testid="pi-window"
+            data-tone={window.strength.tone}
+            aria-label={`${window.label}: ${window.n ? formatMetric(window.value, metric.format) : 'no games'}, ${window.n} games, ${window.strength.label}`}
+          >
             <small>{window.label}</small>
-            <b>{window.n ? formatMetric(window.value, metric.format) : '—'}</b>
+            <b style={{ color: STRENGTH_COLORS[window.strength.tone] }}><StrengthCue strength={window.strength} />{window.n ? formatMetric(window.value, metric.format) : '—'}</b>
             <span className={window.small ? 'is-small' : ''}>n={window.n}</span>
           </div>
         ))}
       </div>
+      <AdvancedScaleNote rated={rated} metric={metric} />
       <MiniSeries series={series} format={metric.format} />
       <p className="pi-note">
         {metric.note} From our game logs.
@@ -172,7 +222,8 @@ function AdvancedPanel({ model }) {
 // anyone else. A blocked model (NHL until its game feed is approved) or no
 // model renders just the children.
 export default function PlayerInsights({ model, line, statLabel, children }) {
-  const splits = useMemo(() => (model && !model.splitsBlocked ? buildSplits(model.games, { ...model, line }) : null), [model, line])
+  const lowerIsBetter = model ? isLowerBetter(model.sport, statLabel) : false
+  const splits = useMemo(() => (model && !model.splitsBlocked ? buildSplits(model.games, { ...model, line, lowerIsBetter }) : null), [model, line, lowerIsBetter])
   if (!model || model.splitsBlocked || !splits) return children
   return (
     <>

@@ -117,6 +117,15 @@ export async function checkInsights(page, { expect, label }) {
   const splits = page.getByTestId('pi-splits-card')
   await expect(splits).toBeVisible()
   await expect(page.getByTestId('pi-split-row').first()).toBeVisible()
+  // Strength scale: every row carries a tone, the baseline is explained, and
+  // a colored row also has a text cue in its accessible name.
+  await expect(page.getByTestId('pi-scale-note')).toBeVisible()
+  const tones = await page.getByTestId('pi-split-row').evaluateAll((rows) => rows.map((row) => [row.dataset.tone, row.getAttribute('aria-label') || '']))
+  expect(tones.length, `${label}: split rows`).toBeGreaterThan(0)
+  for (const [tone, name] of tones) {
+    expect(['strong', 'good', 'neutral', 'soft', 'weak', 'muted'], `${label}: tone`).toContain(tone)
+    expect(name, `${label}: aria-label names the tone`).toMatch(/strong|good|about usual|soft|weak|too few games|not rated/)
+  }
   await expect(splits).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} splits`, expect)
 
@@ -131,6 +140,7 @@ export async function checkInsights(page, { expect, label }) {
   await expect(page.getByTestId('pi-adv-toggle')).toContainText(second)
   await expect(advanced).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} advanced`, expect)
+  await expect(page.getByTestId('pi-adv-baseline')).toBeVisible()
   await expectSeriesLabelsApart(page, label, expect)
 }
 
