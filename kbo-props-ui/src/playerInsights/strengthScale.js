@@ -5,7 +5,12 @@
 // Registering a sport (see the PR body for the full API):
 //   registerStatDirection('nhl', /goals against|save/i, { lowerIsBetter: true })
 //   registerBaselineProvider('nhl', (metric, model) => ({ value, label }) | null)
-// A metric object can also carry `lowerIsBetter: true` itself.
+//   registerStatDirection('nhl', /sh toi|shifts|shots against/i, { neutral: true })
+// A metric object can also carry its direction itself: `better: 'lower'` or
+// `lowerIsBetter: true` (both accepted), or `better: 'neutral'` /
+// `neutral: true` for a stat with no better or worse side: its windows show
+// the value uncolored, with no ▲/▼ (tone 'unrated'). Direction applies to
+// Advanced metrics only; split rows always color by over rate (higher = green).
 
 export const STRENGTH_MIN_GAMES = 3
 export const STRENGTH_LEVELS = Object.freeze(['weak', 'soft', 'neutral', 'good', 'strong'])
@@ -26,27 +31,59 @@ function normalize(text) {
 
 // `stat` is a prop name / metric id (exact, case-insensitive) or a RegExp.
 // sport '*' applies everywhere; a sport's own entry wins over '*'.
-export function registerStatDirection(sport, stat, { lowerIsBetter = false } = {}) {
-  const key = normalize(sport) || '*'
-  if (!directions.has(key)) directions.set(key, [])
-  directions.get(key).unshift({ stat, lowerIsBetter: Boolean(lowerIsBetter) })
+// Direction can be written either way: { lowerIsBetter: true } or
+// { better: 'lower' } (and { better: 'higher' } / lowerIsBetter: false).
+export function isNeutralSpec(spec) {
+  return Boolean(spec && typeof spec === 'object' && (spec.neutral === true || spec.better === 'neutral'))
 }
 
-function lookup(sport, stat) {
+export function directionOf(spec) {
+  if (!spec || typeof spec !== 'object' || isNeutralSpec(spec)) return null
+  if (spec.better === 'lower') return true
+  if (spec.better === 'higher') return false
+  if (typeof spec.lowerIsBetter === 'boolean') return spec.lowerIsBetter
+  return null
+}
+
+export function registerStatDirection(sport, stat, spec = {}) {
+  const key = normalize(sport) || '*'
+  if (!directions.has(key)) directions.set(key, [])
+  directions.get(key).unshift({ stat, lowerIsBetter: directionOf(spec) ?? false, neutral: isNeutralSpec(spec) })
+}
+
+function findEntry(sport, stat) {
+  if (stat == null) return null
   const name = normalize(stat)
   for (const key of [normalize(sport), '*']) {
     for (const entry of directions.get(key) || []) {
       const hit = entry.stat instanceof RegExp ? entry.stat.test(String(stat ?? '')) : normalize(entry.stat) === name
-      if (hit) return entry.lowerIsBetter
+      if (hit) return entry
     }
   }
   return null
 }
 
-export function isLowerBetter(sport, stat, metric = null) {
-  if (metric && typeof metric.lowerIsBetter === 'boolean') return metric.lowerIsBetter
-  return lookup(sport, metric?.id ?? stat) ?? (metric ? lookup(sport, metric.label) : null) ?? false
+function entryFor(sport, stat, metric) {
+  return findEntry(sport, metric?.id ?? stat) ?? (metric ? findEntry(sport, metric.label) : null)
 }
+
+// True when the stat has no better or worse side (metric.neutral,
+// better: 'neutral', or a registered { neutral: true }).
+export function isNeutralStat(sport, stat, metric = null) {
+  if (isNeutralSpec(metric)) return true
+  if (directionOf(metric) != null) return false
+  return entryFor(sport, stat, metric)?.neutral === true
+}
+
+export function isLowerBetter(sport, stat, metric = null) {
+  if (isNeutralStat(sport, stat, metric)) return false
+  const own = directionOf(metric)
+  if (own != null) return own
+  return entryFor(sport, stat, metric)?.lowerIsBetter ?? false
+}
+
+// The strength a window gets for a neutral stat: value shown, no color, no cue.
+export const UNRATED_STRENGTH = Object.freeze({ level: null, tone: 'unrated', cue: '', label: 'no better or worse direction' })
 
 // A provider returns { value, label } for a metric when our published data
 // has a position/league baseline, or null to fall back to the player's season.
@@ -55,11 +92,16 @@ export function registerBaselineProvider(sport, provider) {
   else baselineProviders.delete(normalize(sport))
 }
 
-export function baselineFor(metric, model, windows = []) {
+// `scope` (optional) is the player's own number over the scope the recent
+// windows use (basketball 'both seasons'); it beats the single-season window.
+export function baselineFor(metric, model, windows = [], scope = null) {
   const provider = baselineProviders.get(normalize(model?.sport))
   const published = provider ? provider(metric, model) : null
   if (published && Number.isFinite(Number(published.value))) {
     return { value: Number(published.value), label: published.label || 'league average', source: 'published' }
+  }
+  if (scope && scope.value != null && scope.n >= STRENGTH_MIN_GAMES) {
+    return { value: scope.value, label: `own ${scope.label} average`, source: 'scope' }
   }
   const season = windows.find((window) => window.id === 'season' && window.value != null && window.n >= STRENGTH_MIN_GAMES)
   if (season) return { value: season.value, label: `own ${season.label} average`, source: 'season', windowId: 'season' }
@@ -95,6 +137,7 @@ export const STRENGTH_COLORS = Object.freeze({
   soft: '#fdba74',
   weak: '#f87171',
   muted: '#a1a1aa',
+  unrated: '#f4f4f5',
 })
 
 // Defaults: stats where a smaller number is the better result.

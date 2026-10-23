@@ -18,10 +18,35 @@ export const EARLY_SEASON_GAMES = Object.freeze({ nba: 10, wnba: 6, nfl: 4, kboH
 // NBA gameLogs carry every stored season (no cap).
 export const LOG_CAPS = Object.freeze({ kbo: 200, wnba: 40, nfl: 30 })
 
-// Item 1 (NBA last-season games in L5/L10 and the context splits) is waiting
-// on a display decision. 'all' keeps today's behavior; 'season' is option (a),
-// 'both' is option (b). See RECENT_SCOPES in insightsCore.js.
-export const NBA_RECENT_SCOPE = 'all'
+// Basketball recent-games scope (Code Green, Oct 23): while a player has
+// fewer than this many PLAYED games (min > 0) in the current season, the
+// Advanced L5/L10 windows and the Venue/Opponent/Result/Rest splits use the
+// current + prior season, labeled "both seasons". From this game on they use
+// the current season only, labeled "this season". It is the NBA early-season
+// threshold, so the early-season note and the switch flip on the same game.
+export const SEASON_ONLY_FROM_GAMES = EARLY_SEASON_GAMES.nba
+
+// The league's current season from the calendar, in the label the logs use:
+// NBA "2027" for 2026-27 (rolls over in July), WNBA the calendar year.
+export function leagueSeasonFor(sport, now = new Date()) {
+  const year = now.getFullYear()
+  if (sport === 'nba') return String(now.getMonth() >= 6 ? year + 1 : year)
+  return String(year)
+}
+
+// Returns { recentScope, scopeSeasons }. A player who has not played in the
+// league's current season yet counts as 0 games: the scope is 'both', and the
+// two seasons are this one (empty) and last, so nothing gets a "both seasons"
+// label unless games from two seasons really are mixed.
+export function basketballRecentScope(games, currentSeason, leagueSeason = null) {
+  const season = leagueSeason ?? currentSeason
+  if (season == null) return { recentScope: 'all', scopeSeasons: null }
+  // `played` is basketballPlayed(raw) (min > 0), set by the adapters.
+  const played = games.filter((game) => game.season === season && game.played === true).length
+  if (played >= SEASON_ONLY_FROM_GAMES) return { recentScope: 'season', scopeSeasons: [season] }
+  const prior = String(Number(season) - 1)
+  return { recentScope: 'both', scopeSeasons: [season, prior] }
+}
 
 function finite(value) {
   if (value == null || value === '') return null
@@ -104,7 +129,7 @@ function basketballMetrics({ usageKey = 'usg' } = {}) {
   ]
 }
 
-export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
+export function nbaInsights(logs, { valueOf, opponent = null, now = new Date() } = {}) {
   const games = (Array.isArray(logs) ? logs : []).map((raw) => ({
     raw,
     value: valueOf ? valueOf(raw) : null,
@@ -116,14 +141,15 @@ export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
     oppHand: null,
     played: basketballPlayed(raw),
   }))
+  const seasons = seasonsOf(games)
   return {
     sport: 'nba',
     games,
     opponent,
-    ...seasonsOf(games),
+    ...seasons,
     seasonLabel: basketballSeasonLabel,
     earlySeasonGames: EARLY_SEASON_GAMES.nba,
-    recentScope: NBA_RECENT_SCOPE,
+    ...basketballRecentScope(games, seasons.currentSeason, leagueSeasonFor('nba', now)),
     oppKey: nbaTeamKey,
     windowFrom: 'logged',
     restApplies: true,
@@ -137,7 +163,7 @@ export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
   }
 }
 
-export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
+export function wnbaInsights(logs, { valueOf, opponent = null, now = new Date() } = {}) {
   const games = (Array.isArray(logs) ? logs : []).map((raw) => {
     const day = parseGameDay(raw?.date)
     const year = String(raw?.date || '').match(/(\d{4})$/)?.[1] || null
@@ -154,11 +180,13 @@ export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
       postseason: raw?.postseason === true,
     }
   })
+  const seasons = seasonsOf(games)
   return {
     sport: 'wnba',
     games,
     opponent,
-    ...seasonsOf(games),
+    ...seasons,
+    ...basketballRecentScope(games, seasons.currentSeason, leagueSeasonFor('wnba', now)),
     seasonLabel: (season) => String(season ?? ''),
     earlySeasonGames: EARLY_SEASON_GAMES.wnba,
     logCap: LOG_CAPS.wnba,
