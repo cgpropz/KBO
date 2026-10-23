@@ -52,6 +52,17 @@ export function compareNflScores(aScore, aRaw, bScore, bRaw) {
   return ar === br ? 0 : br - ar
 }
 
+// A free-preview row needs a real projection. Number(null) and Number('') are
+// both 0, so a blank projection would otherwise score 0 and could still fill
+// a free slot when fewer than 3 players are eligible. Blank, null, non-numeric
+// and <= 0 projections are Pending, not a pick.
+export function nflHasProjection(projection) {
+  if (projection == null) return false
+  if (typeof projection === 'string' && projection.trim() === '') return false
+  const p = Number(projection)
+  return Number.isFinite(p) && p > 0
+}
+
 export function nflCgScore(projection, line, stat) {
   if (!lineMatchesStat(stat, line)) return null
   const p = Number(projection)

@@ -6,7 +6,7 @@ import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
 import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip';
 import { wnbaCgScore } from './wnba/wnbaScore';
-import { nflCgScore, nflRawScore } from './nfl/nflLineFloors';
+import { nflCgScore, nflHasProjection, nflRawScore } from './nfl/nflLineFloors';
 import { cgScore as plainCgScore } from './cgScore';
 import { freeTop3SectionState } from './freePreviewCopy';
 import { selectFreeTop3 } from './freeTopPicks';
@@ -69,8 +69,10 @@ function kboRows(data) {
 }
 
 // NFL uses the floored, bounded score; exactly 50 is no pick and takes no
-// free slot. NHL keeps its plain line ratio.
+// free slot. A blank, null or <= 0 projection is Pending and takes no free
+// slot either. NHL keeps its plain line ratio.
 function nflFreeScore(row) {
+  if (!nflHasProjection(row.projection)) return -Infinity;
   const score = nflCgScore(row.projection, row.line, row.prop ?? row.stat);
   return score == null || score === 50 ? -Infinity : score;
 }

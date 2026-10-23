@@ -1,6 +1,6 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { kboRawRating, modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
-import { nflCgScore, nflRawScore } from '../src/nfl/nflLineFloors.js';
+import { nflCgScore, nflHasProjection, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
@@ -233,8 +233,10 @@ function nbaPropRawScore(player, prop) {
 // Receiving and rushing yards use the Middle floors (15.5 and 18.5).
 // A yardage line at or below 0.5 still does not score.
 // Exactly 50 is no pick (projection on the line, or a short over the floor
-// holds at 50), so it never takes a free slot.
+// holds at 50), so it never takes a free slot. A blank, null or <= 0
+// projection is Pending and never takes a free slot either.
 function nflScore(row) {
+  if (!nflHasProjection(row?.projection)) return -Infinity;
   const score = nflCgScore(row?.projection, row?.line, row?.prop ?? row?.stat);
   return score == null || score === 50 ? -Infinity : score;
 }
