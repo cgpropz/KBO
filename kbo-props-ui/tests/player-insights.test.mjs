@@ -433,6 +433,26 @@ test('NBA: both seasons labeled at 9 games this season, this season only at 10',
   assert.equal(tenSplits.rows.find((row) => row.id === 'prior').strength.tone, 'weak')
 })
 
+test('NBA scope at 1, 4 and 11 played games', () => {
+  const expected = {
+    1: { scope: 'both', windows: [['L5 · both seasons', 5], ['L10 · both seasons', 10]], group: 'Venue · both seasons', home: 11, base: [21, 'over both seasons'], early: true },
+    4: { scope: 'both', windows: [['L5 · both seasons', 5], ['L10 · both seasons', 10]], group: 'Venue · both seasons', home: 12, base: [24, 'over both seasons'], early: true },
+    11: { scope: 'season', windows: [['L5', 5], ['L10', 10]], group: 'Venue · this season', home: 6, base: [11, "in '26-27"], early: false },
+  }
+  for (const [count, want] of Object.entries(expected)) {
+    const model = nbaWithCurrent(Number(count))
+    assert.equal(model.recentScope, want.scope, `count ${count}`)
+    assert.deepEqual(model.scopeSeasons, want.scope === 'both' ? ['2027', '2026'] : ['2027'], `count ${count}`)
+    const usage = model.metrics.find((metric) => metric.id === 'usg')
+    assert.deepEqual(metricWindows(usage, model.games, model).slice(0, 2).map((w) => [w.label, w.n]), want.windows, `count ${count}`)
+    const splits = buildSplits(model.games, { ...model, line: 19.5 })
+    const home = splits.rows.find((row) => row.id === 'home')
+    assert.deepEqual([home.group, home.n], [want.group, want.home], `count ${count}`)
+    assert.deepEqual([splits.baseline.n, splits.baseline.scope], want.base, `count ${count}`)
+    assert.equal(splits.rows.find((row) => row.id === 'season').early, want.early, `count ${count}`)
+  }
+})
+
 test('NBA: 0-minute games do not count toward the 10-game switch', () => {
   const nineWithDnps = nbaWithCurrent(9, { dnp: 3 })
   assert.equal(nineWithDnps.recentScope, 'both')
@@ -470,20 +490,22 @@ test('NBA advanced baseline follows the scope: both seasons under 10, the season
   assert.equal(tenRated.windows.find((w) => w.id === 'season').isBaseline, true)
 })
 
-test('WNBA uses the same 10-game rule', () => {
+test('WNBA keeps its original scope: no 10-game switch, no season tags', () => {
   const log = (date, pts, opponent) => ({ date, opponent, matchup: `ATL vs. ${opponent}`, pts, min: 30 })
   const build = (count) => wnbaInsights([
     ...Array.from({ length: count }, (_, i) => log(`08/${String(28 - i).padStart(2, '0')}/2026`, 20, 'NY')),
     ...Array.from({ length: 15 }, (_, i) => log(`08/${String(28 - i).padStart(2, '0')}/2025`, 10, 'NY')),
-  ], { valueOf: (game) => game.pts, opponent: 'NYL', now: OCT_23 })
-  const nine = build(9)
-  assert.equal(nine.recentScope, 'both')
-  const nineVs = buildSplits(nine.games, { ...nine, line: 15.5 }).rows.find((row) => row.id === 'vsopp')
-  assert.equal(nineVs.group, 'Opponent · both seasons')
-  assert.equal(nineVs.n, 24)
-  const ten = build(10)
-  assert.equal(ten.recentScope, 'season')
-  const tenVs = buildSplits(ten.games, { ...ten, line: 15.5 }).rows.find((row) => row.id === 'vsopp')
-  assert.equal(tenVs.group, 'Opponent · this season')
-  assert.equal(tenVs.n, 10)
+  ], { valueOf: (game) => game.pts, opponent: 'NYL' })
+  for (const count of [1, 9, 10, 11]) {
+    const model = build(count)
+    assert.equal(model.recentScope, undefined, `count ${count}`)
+    assert.equal(model.scopeSeasons, undefined, `count ${count}`)
+    const splits = buildSplits(model.games, { ...model, line: 15.5 })
+    const vs = splits.rows.find((row) => row.id === 'vsopp')
+    assert.equal(vs.group, 'Opponent', `count ${count}`)
+    assert.equal(vs.n, count + 15, `count ${count}`)
+    assert.ok(splits.rows.every((row) => !/both seasons|this season/.test(row.group)), `count ${count}`)
+    const usage = model.metrics.find((metric) => metric.id === 'usg')
+    assert.ok(metricWindows(usage, model.games, model).every((w) => !/both seasons|this season/.test(w.label)), `count ${count}`)
+  }
 })
