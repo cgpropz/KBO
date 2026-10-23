@@ -1,3 +1,4 @@
+import MiniHitBars from '../MiniHitBars'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
@@ -96,17 +97,6 @@ function FilterIcon() {
   )
 }
 
-function MiniChart({ recent, line }) {
-  const maxValue = Math.max(line, ...recent, 1)
-  if (!recent.length) return <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span>
-  return (
-    <div className="wnba-lines-chart" aria-hidden="true">
-      {recent.map((value, index) => (
-        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
-      ))}
-    </div>
-  )
-}
 
 function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
@@ -144,7 +134,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             </div>
           </div>
         ) },
-        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={item.line} /> },
+        { className: 'hit-rate-chart', node: recent.length ? <MiniHitBars bars={Array.isArray(item.recentBars) ? item.recentBars : recent.map((value) => ({ value }))} line={item.line} chartClass="wnba-lines-chart" logoFor={nbaLogoUrl} /> : <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span> },
         { className: `hit-rate-score ${sideClass(item.side)}`, node: (
           <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },

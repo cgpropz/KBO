@@ -16,6 +16,8 @@ import { cgScore, lineMatchesStat } from '../cgScore'
 import { prepareBoardRows } from './pointsGate.js'
 import { BoardLoadError } from '../BoardLoadError'
 import { pickSide, sideClass } from '../pickSide.js'
+import { ChartDateRow } from '../MiniHitBars'
+import { tailChartBars } from '../chartLabels'
 
 const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
 
@@ -30,9 +32,11 @@ function initials(name) {
 }
 
 function Card({ item, onSelectPlayer }) {
-  const recent = Array.isArray(item.recent) ? item.recent : []
-  const dates = Array.isArray(item.gameDates) ? item.gameDates : []
-  const seasons = Array.isArray(item.chartSeasons) ? item.chartSeasons : []
+  const bars = tailChartBars(item)
+  const recent = bars.map((bar) => bar.value)
+  const fullRecent = Array.isArray(item.recent) ? item.recent : []
+  const allSeasons = Array.isArray(item.chartSeasons) ? item.chartSeasons : []
+  const seasons = allSeasons.length === fullRecent.length ? allSeasons.slice(-recent.length) : []
   const score = cgScore(item.projection, item.line, item.prop)
   const side = pickSide(item.projection, item.line, score)
   const maxValue = Math.max(item.line, ...recent, 1)
@@ -69,10 +73,11 @@ function Card({ item, onSelectPlayer }) {
       <div className="nfl-history-bars">
         {recent.map((value, index) => (
           <span className={value > item.line ? 'hit' : value === item.line ? 'push' : 'miss'} style={{ height: `${Math.max(12, (value / maxValue) * 52)}px` }} key={`${item.id}-${index}`}>
-            <i>{formatValue(value)} · {dates[index] || ''} {seasons[index] === '2025-26' ? 'last season' : ''}</i>
+            <i>{formatValue(value)} · {bars[index]?.date || ''} {seasons[index] === '2025-26' ? 'last season' : ''}</i>
           </span>
         ))}
       </div>
+      <ChartDateRow bars={bars} logoFor={teamLogoUrl} />
     </article>
   )
 }

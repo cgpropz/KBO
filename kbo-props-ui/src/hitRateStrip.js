@@ -22,7 +22,7 @@ const WINDOWS = [
 ]
 
 // Same stat map as KboPlayerPage. Missing box-score fields count as 0.
-const KBO_VALUE = {
+export const KBO_VALUE = {
   'Hits+Runs+RBIs': (game) => game.hrr ?? 0,
   'Total Bases': (game) => game.tb ?? 0,
   'Hitter Fantasy Score': (game) => game.fs ?? 0,

@@ -8,6 +8,13 @@
 //   recent_values   KBO props. Newest first. Head.
 //   recentGames     WNBA log (slice of a newest-first gamelog). Head.
 //   gameLogs        NBA roster log, sorted newest first. Head.
+//
+// The bars also show each game's date and opponent. NFL and NHL rows, and each
+// KBO prop, get two short label arrays (l10Dates, l10Opps) lined up with the
+// trimmed chart values. See src/chartLabels.js.
+
+import { deriveHeadLabels, deriveTailLabels } from '../src/chartLabels.js'
+import { KBO_VALUE } from '../src/hitRateStrip.js'
 
 export const L10_LIMIT = 10
 
@@ -61,9 +68,26 @@ export function stripBoardHistory(data) {
   return stripNode(data)
 }
 
+// Labels for the trimmed bars, built from the full arrays before they go.
+function chartLabelsFor(node) {
+  if (Array.isArray(node.recent) && Array.isArray(node.gameDates)) return deriveTailLabels(node, L10_LIMIT)
+  return null
+}
+
+function kboPropLabels(node) {
+  if (!isKboCard(node) || !Array.isArray(node.games) || !Array.isArray(node.props)) return null
+  return node.props.map((prop) => (
+    prop && Array.isArray(prop.recent_values)
+      ? deriveHeadLabels(node.games, prop.recent_values, KBO_VALUE[prop.stat], L10_LIMIT)
+      : null
+  ))
+}
+
 function stripNode(node) {
   if (Array.isArray(node)) return node.map((item) => stripNode(item))
   if (!node || typeof node !== 'object') return node
+  const labels = chartLabelsFor(node)
+  const propLabels = kboPropLabels(node)
   const out = {}
   for (const [key, value] of Object.entries(node)) {
     if (L10_TAIL.has(key) || L10_HEAD.has(key)) {
@@ -74,8 +98,16 @@ function stripNode(node) {
     if (HISTORY.has(key)) continue
     if (key === 'profile' && isBoardRow(node)) continue
     if (key === 'games' && isKboCard(node)) continue
+    if (key === 'props' && propLabels) {
+      out[key] = value.map((prop, index) => {
+        const stripped = stripNode(prop)
+        return propLabels[index] && stripped && typeof stripped === 'object' ? { ...stripped, ...propLabels[index] } : stripped
+      })
+      continue
+    }
     out[key] = stripNode(value)
   }
+  if (labels) Object.assign(out, labels)
   return out
 }
 

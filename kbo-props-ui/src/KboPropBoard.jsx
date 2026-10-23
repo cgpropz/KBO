@@ -1,8 +1,10 @@
+import MiniHitBars from './MiniHitBars'
+import { headChartBars } from './chartLabels'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
 import BoardStatus from './BoardStatus'
 import HitRateStrip from './HitRateStrip'
-import { kboHitPills } from './hitRateStrip'
+import { KBO_VALUE, kboHitPills } from './hitRateStrip'
 import { directionFor, scoreFor } from './kboBoardScore'
 import { buildCgScoreExplainer } from './cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from './CgScoreExplainer'
@@ -100,21 +102,6 @@ function FilterIcon() {
   )
 }
 
-function MiniChart({ values, line }) {
-  const recent = Array.isArray(values) ? values.slice(0, 10).reverse() : []
-  const max = Math.max(Number(line) || 0, ...recent.map(Number).filter(Number.isFinite), 1)
-  return (
-    <div className="kbo-lines-chart" aria-label="Last ten game values">
-      {recent.map((recentValue, index) => (
-        <span
-          key={`${recentValue}-${index}`}
-          className={Number(recentValue) > Number(line) ? 'hit' : Number(recentValue) === Number(line) ? 'push' : 'miss'}
-          style={{ height: `${Math.max(14, (Number(recentValue) / max) * 100)}%` }}
-        />
-      ))}
-    </div>
-  )
-}
 
 function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropTab, count }) {
   if (!open) return null
@@ -195,7 +182,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
             </div>
           ),
         },
-        { className: 'hit-rate-chart', node: <MiniChart values={prop.recent_values} line={prop.line} /> },
+        { className: 'hit-rate-chart', node: <MiniHitBars bars={headChartBars(prop, card?.games, KBO_VALUE[prop.stat])} line={prop.line} chartClass="kbo-lines-chart" logoFor={kboLogoUrl} ariaLabel="Last ten game values" /> },
         { className: `hit-rate-score ${direction}`, node: (
           <CgScoreCell
             scoreText={score == null ? '-' : value(score)}

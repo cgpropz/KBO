@@ -1,3 +1,5 @@
+import MiniHitBars from '../MiniHitBars'
+import { tailChartBars } from '../chartLabels'
 import { useEffect, useMemo, useState } from 'react'
 import NhlAvatar from './NhlAvatar.jsx'
 import { dvpGrade } from '../nfl/matchupGrade'
@@ -56,17 +58,6 @@ function gradeClass(grade) {
   return `grade-${grade[0].toLowerCase()}`
 }
 
-function MiniChart({ recent, line }) {
-  const values = Array.isArray(recent) ? recent : []
-  const maxValue = Math.max(line || 0, ...values, 1)
-  return (
-    <div className="nfl-lines-chart" aria-hidden="true">
-      {values.map((value, index) => (
-        <span key={index} className={value > line ? 'hit' : value === line ? 'push' : 'miss'} style={{ height: `${Math.max(14, (value / maxValue) * 100)}%` }} />
-      ))}
-    </div>
-  )
-}
 
 function rowScore(item) {
   return cgScore(item.projection, item.line, item.prop ?? item.stat)
@@ -121,7 +112,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
             <OddsChevron open={open} player={item.player} onToggle={onToggle} />
           </div>
         ) },
-        { className: 'hit-rate-chart', node: <MiniChart recent={recent} line={Number(item.line)} /> },
+        { className: 'hit-rate-chart', node: <MiniHitBars bars={tailChartBars(item)} line={Number(item.line)} chartClass="nfl-lines-chart" logoFor={teamLogoUrl} /> },
         { className: `hit-rate-score ${sideClass(side)}`, node: (
           <CgScoreCell
             scoreText={score == null ? '—' : score.toFixed(1)}

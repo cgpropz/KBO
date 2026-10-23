@@ -6,6 +6,9 @@ import { windowPills } from '../hitRateStrip.js'
 import { boundCg, cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
 import { expectedMinutesPill } from './expectedMinutes.js'
+import { gameChartBars } from '../chartLabels.js'
+import { newestSeasonLogs } from './nbaGameFilters.js'
+import { seasonShortLabel } from './nbaTodayPick.js'
 
 export const EXCLUDED_PROP_LABELS = new Set(['Points - 1st 3 Minutes'])
 export const NBA_TEAM_COUNT = 30
@@ -203,6 +206,23 @@ function fixedLogPill(games, label, line, size, id, pillLabel) {
   return pillFromRate(id, pillLabel, computeRate(slice, label, line))
 }
 
+// Board logs are trimmed to ten games (api/_boardPayload.js).
+export const BOARD_LOG_LIMIT = 10
+
+// This season only, labelled like the profile ('26-27), with its true game
+// count (#383). Logs without a season keep the old 'Season' pill. When every
+// one of ten board logs is this season the sample may be cut off, so the true
+// count is unknown and the pill is left out rather than repeating L10.
+function seasonPill(games, stat, line) {
+  const newest = games[0]?.season
+  if (newest == null || String(newest).trim() === '') {
+    return pillFromRate('season', 'Season', computeRate(games, stat, line))
+  }
+  const seasonGames = newestSeasonLogs(games, newest)
+  if (seasonGames.length >= BOARD_LOG_LIMIT && seasonGames.length === games.length) return null
+  return pillFromRate('season', seasonShortLabel(newest, 'Season'), computeRate(seasonGames, stat, line))
+}
+
 // Board strip. Full windows only: the NBA chart does not label a short sample.
 // When the box score is missing a stat, the chart falls back to the saved
 // newest-first L10 series, which can fill L5 and L10 and nothing else.
@@ -214,7 +234,7 @@ export function nbaHitPills(games, stat, line, opponent, series = null) {
       fixedLogPill(supported, stat, line, 10, 'l10', 'L10'),
       fixedLogPill(supported, stat, line, 20, 'l20', 'L20'),
       pillFromRate('h2h', 'H2H', computeH2H(supported, stat, line, opponent)),
-      pillFromRate('season', 'Season', computeRate(supported, stat, line)),
+      seasonPill(supported, stat, line),
     ].filter(Boolean)
   }
   return windowPills(series, line)
@@ -306,14 +326,16 @@ export function buildPropRows(projections, players) {
       let l10Obj = computeRate(l10Games, prop.stat, line)
       const seasonObj = computeRate(recentGames, prop.stat, line)
       const h2hObj = computeH2H(recentGames, prop.stat, line, prop.opponent ?? null)
-      let recent = l10Obj
-        ? l10Games.map((game) => statValue(game, prop.stat)).filter((value) => value != null).reverse()
+      let recentBars = l10Obj
+        ? gameChartBars(l10Games, (game) => statValue(game, prop.stat), (game) => opponentFromMatchup(game?.matchup))
         : []
+      let recent = recentBars.map((bar) => bar.value)
       if (!recent.length) {
         const series = storedL10Values(prop)
         if (series) {
           l10Obj = rateFromSeries(series, line)
           recent = series.slice().reverse()
+          recentBars = recent.map((value) => ({ value, date: '', team: '' }))
         }
       }
       const storedL10 = percent(prop.hitRates?.L10)
@@ -336,6 +358,7 @@ export function buildPropRows(projections, players) {
         side: pickSide(projection, line, score),
         isOver: pickSide(projection, line, score) === 'OVER',
         recent,
+        recentBars,
         hitRate: l10Obj ? Math.round(l10Obj.pct) : (storedL10 ?? 0),
         gamesPlayed,
         seasonHitRate: seasonObj ? Math.round(seasonObj.pct) : storedSeason,
