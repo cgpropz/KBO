@@ -866,26 +866,23 @@ def write_snapshot(path: Path, players: list[dict]) -> None:
     path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
 
 
-def star_lines(players: list[dict]) -> list[str]:
-    by_name = {player.get("name"): player for player in players}
-    lines = []
-    for name in STAR_NAMES:
-        player = by_name.get(name)
-        if not player:
-            continue
-        interesting = [
-            prop for prop in player.get("ppAllProps") or []
-            if prop.get("stat") in ("Points", "Pts+Rebs+Asts", "Rebounds", "Assists", "3-PT Made")
-        ]
-        if not interesting:
-            interesting = list(player.get("ppAllProps") or [])[:2]
-        for prop in interesting:
-            lines.append(
-                f"  {name} {prop.get('stat')}: line {prop.get('line')} proj {prop.get('projection')} "
-                f"edge {prop.get('rating')} L10 {((prop.get('hitRates') or {}).get('L10'))} "
-                f"vs {prop.get('opponent')} slot {player.get('dvpSlot') or 'none'} ({player.get('dvpSlotSource')})"
-            )
-    return lines
+def star_summary(players: list[dict]) -> str:
+    """Counts only for the tracked stars on the standard board.
+
+    Actions logs on this public repo are public, so no player name is ever
+    paired with a projection, edge, or hit rate here.
+    """
+    names = {player.get("name") for player in players}
+    on_board = [player for player in players if player.get("name") in STAR_NAMES]
+    lines = sum(len(player.get("ppAllProps") or []) for player in on_board)
+    projected = sum(
+        1
+        for player in on_board
+        for prop in player.get("ppAllProps") or []
+        if prop.get("projection") is not None
+    )
+    present = sum(1 for name in STAR_NAMES if name in names)
+    return f"  tracked stars on board {present}/{len(STAR_NAMES)}, lines {lines}, projected {projected}"
 
 
 def format_report(slate_note: str, per_type: dict[str, dict], position_note: str) -> str:
@@ -904,11 +901,15 @@ def format_report(slate_note: str, per_type: dict[str, dict], position_note: str
         if not flags:
             chunks.append(f"  sanity flags: none")
         else:
-            chunks.append(f"  sanity flags: {len(flags)}")
-            for flag in flags[:12]:
-                chunks.append(
-                    f"    {flag['name']} {flag['stat']}: proj {flag['projection']} vs line {flag['line']} (ratio {flag['ratio']})"
-                )
+            # Counts only: Actions logs on a public repo are public, so no
+            # player name is paired with a projection, line ratio, or edge.
+            by_stat: dict[str, int] = {}
+            for flag in flags:
+                stat = str(flag.get("stat") or "unknown")
+                by_stat[stat] = by_stat.get(stat, 0) + 1
+            breakdown = ", ".join(f"{stat} {count}" for stat, count in sorted(by_stat.items()))
+            players = len({flag.get("name") for flag in flags})
+            chunks.append(f"  sanity flags: {len(flags)} lines / {players} players ({breakdown})")
     return "\n".join(chunks)
 
 
@@ -922,7 +923,7 @@ def main() -> int:
         print("No PrizePicks snapshots in public/data/nba. Run python nba/nba-pp-odds.py first.")
         return 1
     per_type = {}
-    samples = []
+    star_note = "  (no standard board this run)"
     neutral_names = []
     fallback_names = []
     # ESPN injury tags for the free NBA top 3 (nba/availability.py). One read
@@ -944,7 +945,7 @@ def main() -> int:
             if player.get("dvpSlotSource") == "fallback" and player.get("projectionStatus") == "projected":
                 fallback_names.append(f"{player.get('name')}->{player.get('dvpSlot')}")
         if odds_type == "standard":
-            samples = star_lines(filled)
+            star_note = star_summary(filled)
         print(f"wrote {path.name}")
     note = (
         f"Qualifying 2025-26 logs: {sum(len(rows) for rows in games.values())} games "
@@ -962,11 +963,8 @@ def main() -> int:
         "ESPN injury tags: "
         + (f"{injury_tagged} player row(s) tagged" if injury_report is not None else "report unavailable, rows tagged espnInjuryChecked=false")
     )
-    print("Standard star sample:")
-    if samples:
-        print("\n".join(samples))
-    else:
-        print("  (none of the tracked stars are on the standard board)")
+    print("Standard star sample (counts only):")
+    print(star_note)
     return 0
 
 
