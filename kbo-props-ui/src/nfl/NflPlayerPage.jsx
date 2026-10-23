@@ -17,6 +17,7 @@ import { gameMatchesTeammates, teammateFilterLabel } from './teammateFilters'
 import { AdjMatchupStat } from './MatchupDefense'
 import { useNflMatchupDefense } from './useNflMatchupDefense'
 import { nflSeasonAverage } from './seasonAverage'
+import GameDateLogo from '../GameDateLogo'
 
 // This season's per-game average, or '—' (src/nfl/seasonAverage.js).
 function seasonAvgText(row) {
@@ -425,8 +426,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       <div className="nfl-player-dates">
         {chartDates.map((date, index) => (
           <span key={`${currentRow.id}-date-${chartIndices[index]}`}>
-            <TeamLogo team={chartOpponents[index]} className="nfl-player-date-logo" />
-            {date}
+            <GameDateLogo date={date} team={chartOpponents[index]} logo={teamLogoUrl(chartOpponents[index])} />
           </span>
         ))}
       </div>

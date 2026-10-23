@@ -39,7 +39,7 @@
   align-items: flex-end;
   gap: clamp(0.35rem, 1.2vw, 0.75rem);
   height: 128px;
-  padding: 0.35rem 0.2rem 1.45rem;
+  padding: 0.35rem 0.2rem 2.6rem;
   border-bottom: 1px solid #29404e;
   background: repeating-linear-gradient(to top, transparent 0, transparent 31px, rgba(120, 160, 180, 0.12) 32px);
 }
@@ -51,7 +51,7 @@
 .rgl-miss { background: #ed5c68; }
 .rgl-push { background: #3f3f46; }
 .rgl-value.is-push { color: #a1a1aa; }
-.rgl-date { position: absolute; bottom: -1.2rem; color: #718b9b; font-size: 0.62rem; white-space: nowrap; }
+.rgl-date { position: absolute; top: calc(100% + 0.3rem); left: 50%; color: #718b9b; font-size: 0.62rem; white-space: nowrap; transform: translateX(-50%); }
 .rgl-line { position: absolute; z-index: 2; left: 0; right: 0; border-top: 2px dashed #f2c94c; pointer-events: none; }
 .rgl-line span { position: absolute; right: 0; top: -1rem; padding-left: 0.25rem; color: #f2c94c; background: #0a151f; font-size: 0.62rem; }
 .rgl-empty { padding: 1.3rem 0; color: #8ca7b9; font-size: 0.8rem; text-align: center; }

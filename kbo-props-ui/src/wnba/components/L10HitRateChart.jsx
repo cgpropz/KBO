@@ -1,7 +1,11 @@
 import Highcharts from 'highcharts'
 import HighchartsReactModule from 'highcharts-react-official'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatDate } from '../utils/formatters'
+import { fitImage } from '../../fitImage.js'
+import { formatGameDate, gameDateLabelHtml, matchupOpponent } from '../../gameDateLabel.js'
+import { wnbaLogoUrl } from '../../slipBoardModel.js'
+import '../../GameDateLogo.css'
 
 const HighchartsReact = HighchartsReactModule.default || HighchartsReactModule
 
@@ -39,11 +43,28 @@ function getGameValue(game, stat) {
   return getter ? getter(game) : null
 }
 
-function formatShortGameDate(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-  return `${date.getMonth() + 1}/${date.getDate()}`
+function gameOpponent(game) {
+  return String(game?.opponent || '').trim().toUpperCase() || matchupOpponent(game?.matchup)
+}
+
+// Highcharts labels are markup, so a logo that fails to load is noticed here
+// and the label falls back to the abbreviation on the next render.
+function useFailedLogos(srcs) {
+  const [failed, setFailed] = useState(() => new Set())
+  const key = srcs.filter(Boolean).join('|')
+  useEffect(() => {
+    if (typeof Image === 'undefined') return undefined
+    let live = true
+    for (const src of new Set(key.split('|').filter(Boolean))) {
+      const probe = new Image()
+      probe.onerror = () => {
+        if (live) setFailed(prev => (prev.has(src) ? prev : new Set(prev).add(src)))
+      }
+      probe.src = src
+    }
+    return () => { live = false }
+  }, [key])
+  return failed
 }
 
 export default function L10HitRateChart({ games = [], stat, line }) {
@@ -70,8 +91,11 @@ export default function L10HitRateChart({ games = [], stat, line }) {
         else if (value === numericLine) result = 'push'
       }
       const hit = result === 'hit'
+      const opponent = gameOpponent(game)
       return {
-        xLabel: formatShortGameDate(game.date),
+        xLabel: formatGameDate(game.date),
+        opponent,
+        logoSrc: fitImage(wnbaLogoUrl(opponent), 16),
         dateLabel: formatDate(game.date),
         matchup: game.matchup || 'Unknown matchup',
         y: value,
@@ -81,6 +105,8 @@ export default function L10HitRateChart({ games = [], stat, line }) {
       }
     })
     .filter(point => point.y != null)
+
+  const failedLogos = useFailedLogos(chartGames.map(point => point.logoSrc))
 
   if (!chartGames.length || !Number.isFinite(numericLine)) {
     return (
@@ -107,8 +133,8 @@ export default function L10HitRateChart({ games = [], stat, line }) {
     chart: {
       type: 'column',
       backgroundColor: 'transparent',
-      height: 156,
-      spacing: [4, 2, 24, 0],
+      height: 176,
+      spacing: [4, 2, 4, 0],
       animation: false,
     },
     title: { text: null },
@@ -123,14 +149,20 @@ export default function L10HitRateChart({ games = [], stat, line }) {
       tickmarkPlacement: 'on',
       labels: {
         autoRotation: false,
-        rotation: -45,
+        rotation: 0,
         step: xAxisLabelStep,
         staggerLines: 1,
         reserveSpace: true,
-        align: 'right',
-        x: 2,
-        y: 16,
-        style: { color: '#67827c', fontSize: '7px', fontWeight: '700', textOutline: 'none' },
+        useHTML: true,
+        align: 'center',
+        y: 12,
+        style: { color: '#67827c', fontSize: '9px', fontWeight: '700', textOutline: 'none', textOverflow: 'clip' },
+        formatter() {
+          const point = chartGames[this.pos]
+          if (!point) return ''
+          const src = point.logoSrc && !failedLogos.has(point.logoSrc) ? point.logoSrc : ''
+          return gameDateLabelHtml({ date: point.xLabel, team: point.opponent, src })
+        },
       },
     },
     yAxis: {
