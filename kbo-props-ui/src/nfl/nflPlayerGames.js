@@ -233,13 +233,13 @@ export function formatTrend(value, unit = '') {
 // Today's DvP rank for the boards' DvP column, or null when the opponent has
 // no rank. The builder keeps its neutral 16 (and ratio 1.0) for unranked
 // opponents because the grade, sort, sharp odds and memory slate use it; it
-// marks those rows dvpRanked: false. Rows published before that flag existed
-// read 16 with ratio exactly 1.0 as unranked. Display only.
+// marks those rows dvpRanked: false. Only that flag hides the rank: a real
+// 16th-ranked defense also rounds to ratio 1.0, so 16 / 1.0 alone is not
+// proof of an unranked opponent. Display only.
 export function nflBoardDvpRank(row) {
   const rank = Number(row?.dvpRank)
   if (!Number.isFinite(rank) || rank <= 0) return null
   if (row?.dvpRanked === false) return null
-  if (row?.dvpRanked == null && rank === 16 && Number(row?.dvpRatio) === 1) return null
   return rank
 }
 

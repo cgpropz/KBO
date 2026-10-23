@@ -209,8 +209,9 @@ test('board DvP: unranked opponents show no rank, ranked ones keep theirs', () =
   assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.04, dvpRanked: true }), 16)
   assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0, dvpRanked: true }), 16)
   assert.equal(nflBoardDvpRank({ dvpRank: 3, dvpRatio: 1.2, dvpRanked: true }), 3)
-  // Rows from before the flag: the builder's neutral default reads as unranked.
-  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0 }), null)
+  // Rows without the flag keep their rank: a real 16th rounds to ratio 1.0 too.
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0 }), 16)
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1 }), 16)
   assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 0.97 }), 16)
   assert.equal(nflBoardDvpRank({ dvpRank: 28, dvpRatio: 1.0 }), 28)
   assert.equal(nflBoardDvpRank({}), null)
