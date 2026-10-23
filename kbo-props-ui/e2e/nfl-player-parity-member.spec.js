@@ -75,11 +75,16 @@ test('nfl sliders use snaps, rush att, targets, touches and def rank', async ({ 
   }
   await expect(page.getByTestId('nfl-filter-usage')).toContainText('Rush Att')
   await expect(panel).toContainText('all 10 games')
+  await expect(page.getByTestId('nfl-filter-hidden-snap')).toHaveCount(0)
   const low = page.getByTestId('nfl-filter-snap').locator('[data-handle="low"]')
   await low.focus()
   for (let step = 0; step < 15; step += 1) await page.keyboard.press('ArrowRight')
   await expect(panel).toContainText(/filtered: \d+ of 10 games/)
   await expect(page.locator('.nfl-su-col.is-dimmed').first()).toBeVisible()
+  // The one game with no snap data was in until the snap slider moved.
+  await expect(page.getByTestId('nfl-filter-hidden-snap')).toHaveText('1 game without snap data hidden')
+  await expect(page.getByTestId('nfl-filter-dvp')).toContainText('Def rank (2026)')
+  await expect(page.getByTestId('nfl-filter-hidden-dvp')).toHaveCount(0)
   await expectFits(page, 'nfl sliders', expect)
 })
 
@@ -95,7 +100,9 @@ test('nfl snaps & usage trends show snap %, touches and targets with an arrow af
 
 test('nfl splits and advanced stats use NFL stats and fit', async ({ page }) => {
   await openPlayer(page, 'Synth Back')
-  await expect(page.getByTestId('pi-splits-card')).toContainText('vs top-10 D')
+  const splitsCard = page.getByTestId('pi-splits-card')
+  await expect(splitsCard).toContainText('vs 2026 D rank 1–10')
+  await expect(splitsCard).not.toContainText(/top-10 D|bottom-10 D/)
   await expect(page.getByTestId('pi-splits-card')).toContainText('Snap % 70+')
   await page.getByTestId('pi-adv-toggle').click()
   const options = page.getByTestId('pi-adv-option')
@@ -116,4 +123,12 @@ test('nfl blank projection shows Pending and no trend arrow under 5 games', asyn
   await expect(page.getByTestId('nfl-su-trend')).toHaveCount(0)
   await expect(page.getByTestId('nfl-snaps-usage')).toContainText('after 5 games')
   await expectFits(page, 'nfl pending', expect)
+})
+
+test('nfl board shows Pending, not 0, for a blank projection', async ({ page }) => {
+  await page.goto('/?sport=nfl', { waitUntil: 'load' })
+  const row = page.locator('.nfl-lines-row, .nfl-edge-card').filter({ hasText: 'Synth Rookie' }).first()
+  await expect(row).toBeVisible()
+  await expect(row).toContainText('Pending')
+  await expect(row).not.toContainText(/(^|[^0-9.])0\.0([^0-9]|$)|NaN|undefined/)
 })

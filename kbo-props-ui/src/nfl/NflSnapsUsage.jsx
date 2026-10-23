@@ -1,5 +1,5 @@
 import GameDateLogo from '../GameDateLogo'
-import { TREND_ARROWS, TREND_COLORS } from '../nba/nbaMinutesUsage.js'
+import { EARLY_SEASON_GAMES, TREND_ARROWS, TREND_COLORS } from '../nba/nbaMinutesUsage.js'
 import { teamLogoUrl } from './nflTeams'
 import { formatTrend, nflTrendSummary } from './nflPlayerGames.js'
 
@@ -76,7 +76,15 @@ export default function NflSnapsUsage({ games, windowIndices, kept, metrics, cur
   if (!Array.isArray(games) || !games.length || !metrics?.length) return null
   const newestFirst = [...games].reverse()
   const windowGames = (windowIndices || []).map((index) => games[index]).filter(Boolean)
-  const seasonCount = currentSeason == null ? games.length : games.filter((game) => game.season === String(currentSeason)).length
+  // Same rule as the arrow: only this season's games that have a value for
+  // that stat count toward the 5.
+  const seasonCounts = metrics.map((metric) => nflTrendSummary(newestFirst, metric, currentSeason).seasonGames)
+  const ready = seasonCounts.filter((count) => count >= EARLY_SEASON_GAMES).length
+  const arrowNote = ready === 0
+    ? `Trend arrows start after ${EARLY_SEASON_GAMES} games this season. `
+    : ready < metrics.length
+      ? `Arrow: last 5 games vs this season, once a stat has ${EARLY_SEASON_GAMES} games logged this season. `
+      : 'Arrow: last 5 games vs this season. '
   return (
     <section className="nfl-su" aria-label="Snaps and usage" data-testid="nfl-snaps-usage">
       <p className="nfl-su-title">Snaps &amp; Usage</p>
@@ -84,7 +92,7 @@ export default function NflSnapsUsage({ games, windowIndices, kept, metrics, cur
         <TrendChart key={metric.id} metric={metric} newestFirst={newestFirst} windowGames={windowGames} kept={kept} currentSeason={currentSeason} />
       ))}
       <p className="nfl-su-note">
-        {seasonCount < 5 ? 'Trend arrows start after 5 games this season. ' : 'Arrow: last 5 games vs this season. '}
+        {arrowNote}
         {kept ? 'Dimmed games are outside the filters.' : ''}
       </p>
     </section>

@@ -26,7 +26,7 @@ import NbaRangeSlider from '../nba/NbaRangeSlider'
 import { formatMetric } from '../nba/nbaGameFilters'
 import NflSnapsUsage from './NflSnapsUsage'
 import {
-  PENDING, gamePassesRanges, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, pickText, rangesActive, resolveFilterRanges,
+  PENDING, gamePassesRanges, hiddenForMissing, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, pickText, rangesActive, resolveFilterRanges,
 } from './nflPlayerGames.js'
 import './nflPlayerParity.css'
 
@@ -201,8 +201,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     setTeammateModes({})
   }
 
-  const games = useMemo(() => (currentRow ? nflGameLog(currentRow, playerRows) : []), [currentRow, playerRows])
-  const gameFilters = useMemo(() => nflGameFilters(currentRow, games), [currentRow, games])
+  const rowSeason = currentRow ? nflCurrentSeason(currentRow) : null
+  const games = useMemo(() => (currentRow ? nflGameLog(currentRow, playerRows, { currentSeason: rowSeason }) : []), [currentRow, playerRows, rowSeason])
+  const gameFilters = useMemo(() => nflGameFilters(currentRow, games, { currentSeason: rowSeason }), [currentRow, games, rowSeason])
   const filterRanges = useMemo(() => resolveFilterRanges(gameFilters, filterSelections), [gameFilters, filterSelections])
 
   const chartInput = useMemo(() => {
@@ -285,6 +286,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
 
   const slidersNarrowed = rangesActive(filterRanges)
+  const hiddenNotes = hiddenForMissing(chartInput.windowIndices.map((index) => games[index]), gameFilters, filterRanges)
   const clearFilters = () => { setFilterSelections({}); setTeammateModes({}) }
   const setTeammateMode = (id, mode) => {
     setTeammateModes((current) => {
@@ -360,6 +362,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           </div>
           {gameFilters.map((filter) => {
             const range = filterRanges[filter.id]
+            const hidden = hiddenNotes.find((item) => item.id === filter.id)
             const unitText = filter.unit === '%' ? '%' : filter.unit ? ` ${filter.unit}` : ''
             return (
               <div className="nfl-filter" key={filter.id} data-testid={`nfl-filter-${filter.id}`}>
@@ -377,10 +380,11 @@ export default function NflPlayerPage({ player, prop, onBack }) {
                   high={range.high}
                   onChange={(low, high) => setFilterSelections((prev) => ({ ...prev, [filter.id]: { low, high } }))}
                 />
+                {hidden && <small className="nfl-filter-hidden" data-testid={`nfl-filter-hidden-${filter.id}`}>{hidden.text}</small>}
               </div>
             )
           })}
-          {gameFilters.some((filter) => filter.id === 'dvp') && <small className="nfl-filters-note">Def rank: 1 = toughest defense vs this position, 32 = easiest.</small>}
+          {gameFilters.some((filter) => filter.id === 'dvp') && <small className="nfl-filters-note">Def rank: this season's rank vs this position, 1 = toughest, 32 = easiest. Earlier seasons have no rank.</small>}
         </div>
       )}
 

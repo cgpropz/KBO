@@ -1,5 +1,6 @@
 // Made-up NFL players for the NFL player-page parity specs. No real names,
 // teams or numbers.
+import { nflCgScore } from '../src/nfl/nflLineFloors.js'
 
 const seasons = [2025, 2025, 2025, 2025, 2026, 2026, 2026, 2026, 2026, 2026, 2026]
 const backBase = {
@@ -11,9 +12,9 @@ const backBase = {
   gameDates: ['12/7', '12/14', '12/21', '12/28', '9/6', '9/13', '9/20', '9/27', '10/4', '10/11', '10/18'],
   gameSeasons: seasons,
   gameOpponents: ['CCC', 'DDD', 'BBB', 'CCC', 'DDD', 'BBB', 'CCC', 'DDD', 'EEE', 'CCC', 'DDD'],
-  recentSnapPercents: [60, 62, 58, 65, 70, 72, 75, 80, 82, 85, 88],
+  recentSnapPercents: [60, 62, 58, 65, 70, null, 75, 80, 82, 85, 88],
   recentUsage: [12, 14, 10, 13, 15, 16, 18, 20, 22, 21, 24],
-  recentDvpRanks: [5, 12, 25, 30, 3, 8, 15, 20, 26, 31, 10],
+  recentDvpRanks: [5, 12, 25, 30, 3, 8, null, 20, 26, 31, 10],
   usageLabel: 'Rush Att',
   priorSeasonLabel: 2025,
   currentSeasonGames: 7,
@@ -50,7 +51,21 @@ export const nflParityRows = [
   { ...rookieBase, id: 'nflp-4', player: 'Synth Rookie', prop: 'Receiving Yards', line: 40.5, projection: null, recent: [30, 45, 52] },
 ]
 
+// What a signed-out visitor receives, the same shape as the server's free NFL
+// preview: each player's best-scoring prop, top 3 players, nothing else.
+export function nflFreePreviewRows(rows = nflParityRows) {
+  const best = new Map()
+  rows.forEach((row) => {
+    const score = nflCgScore(row.projection, row.line, row.prop)
+    if (row.projection == null || score == null || score === 50) return
+    const current = best.get(row.player)
+    if (!current || score > current.score) best.set(row.player, { row, score })
+  })
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.row)
+}
+
 // Serves the made-up NFL rows on top of the shared fixtures (later routes win).
+// Signed out gets only the free preview rows, as the server sends.
 export async function installNflParityRows(page, { member = false } = {}) {
   await page.route('**/api/data**', async (route) => {
     const url = new URL(route.request().url())
@@ -61,7 +76,7 @@ export async function installNflParityRows(page, { member = false } = {}) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: nflParityRows, updatedAt: '2026-10-21T20:00:00Z', preview: !member, lockedCount: 0, tier: member ? 'combined' : 'free' }),
+      body: JSON.stringify({ data: member ? nflParityRows : nflFreePreviewRows(), updatedAt: '2026-10-21T20:00:00Z', preview: !member, lockedCount: member ? 0 : nflParityRows.length - nflFreePreviewRows().length, tier: member ? 'combined' : 'free' }),
     })
   })
 }

@@ -187,7 +187,7 @@ function nflKey(season, date) {
 // `row` is the selected prop; `rows` are every prop the player has today, so
 // rate stats (yards per target, catch rate, ...) can pair two props by game.
 export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
-  const log = nflGameLog(row, rows)
+  const log = nflGameLog(row, rows, { currentSeason })
   const byProp = new Map()
   ;(Array.isArray(rows) ? rows : []).forEach((other) => {
     const map = new Map()
@@ -255,11 +255,16 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
     ...pair('Pass TDs', 'Pass Attempts', 'TD rate', 'tdr', 'Pass TDs / attempts.', 'pct'),
   ]
   // NFL-only splits from the logs: the opponent's defense rank against this
-  // position (1 = toughest) and the player's snap share that week.
+  // position (1 = toughest) and the player's snap share that week. Defense
+  // ranks are this season's, so only this season's games with a known rank
+  // count; earlier seasons and unranked opponents are left out.
+  const season = currentSeason != null ? String(currentSeason) : seasonsOf(games).currentSeason
+  const ranked = (game) => season != null && String(game.season) === season && finite(game.dvp) != null
+  const rankLabel = `vs ${season ?? ''} D rank`
   const extraSplits = [
-    { group: 'Defense', id: 'dvptough', label: 'vs top-10 D', test: (game) => game.dvp != null && game.dvp <= 10 },
-    { group: 'Defense', id: 'dvpmid', label: 'vs D 11–22', test: (game) => game.dvp != null && game.dvp > 10 && game.dvp <= 22 },
-    { group: 'Defense', id: 'dvpsoft', label: 'vs bottom-10 D', test: (game) => game.dvp != null && game.dvp > 22 },
+    { group: 'Defense', id: 'dvptough', label: `${rankLabel} 1–10`, test: (game) => ranked(game) && game.dvp <= 10 },
+    { group: 'Defense', id: 'dvpmid', label: `${rankLabel} 11–22`, test: (game) => ranked(game) && game.dvp > 10 && game.dvp <= 22 },
+    { group: 'Defense', id: 'dvpsoft', label: `${rankLabel} 23–32`, test: (game) => ranked(game) && game.dvp > 22 },
     { group: 'Snaps', id: 'snaphigh', label: 'Snap % 70+', test: (game) => finite(game.raw.snap) != null && game.raw.snap >= 70 },
     { group: 'Snaps', id: 'snaplow', label: 'Snap % under 70', test: (game) => finite(game.raw.snap) != null && game.raw.snap < 70 },
   ]
@@ -267,7 +272,7 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
     sport: 'nfl',
     games,
     opponent: row?.opponent || null,
-    currentSeason: currentSeason != null ? String(currentSeason) : seasonsOf(games).currentSeason,
+    currentSeason: season,
     priorSeason: row?.priorSeasonLabel != null ? String(row.priorSeasonLabel) : seasonsOf(games).priorSeason,
     seasonLabel: (season) => String(season ?? ''),
     restApplies: false,

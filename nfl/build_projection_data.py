@@ -315,6 +315,19 @@ def dvp_for(position, stat, opponent, ratings):
     return int(rank), round(float(ratio), 2)
 
 
+def recent_dvp_rank(position, stat, opponent, ratings):
+    """Rank for one past opponent on the player page's per-game chart filter.
+
+    Display only (recentDvpRanks). Unlike dvp_for, an opponent with no rank is
+    None, not the neutral 16, so the page can leave that game out of rank
+    filters and defense splits instead of showing a made-up rank. dvp_for and
+    today's dvpRank/dvpRatio are unchanged.
+    """
+    ranks, _ratios = ratings.get((position, stat), ({}, {}))
+    rank = ranks.get(canonical_team(opponent))
+    return None if rank is None else int(rank)
+
+
 def load_history():
     stats = pd.concat([
         pd.read_csv(STATS_URL.format(season=season), low_memory=False)
@@ -783,7 +796,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
     dvp_rank, dvp_ratio = dvp_for(rated_position, row.prop, row.opponent, dvp_ratings)
 
     # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
-    recent_dvp_ranks = [dvp_for(rated_position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
+    recent_dvp_ranks = [recent_dvp_rank(rated_position, row.prop, opponent, dvp_ratings) for opponent in recent_opponents]
     recent_snap_pcts = []
     for season_value, week_value in zip(recent_seasons, recent_weeks):
         try:

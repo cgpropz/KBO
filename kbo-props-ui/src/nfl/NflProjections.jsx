@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
+import { nflTodayPick } from './nflPlayerGames.js'
 import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
@@ -59,10 +60,13 @@ function ProjectionCard({ item, onSelectPlayer }) {
   const recent = bars.map((bar) => bar.value)
   const maxValue = Math.max(item.line, ...recent, 1)
   // Side comes from the score: exactly 50 is no pick (no side, no color).
-  const side = cgSide(item.score)
+  // No CG Score (blank projection or line) shows Pending, never 0 and no side.
+  // `score` keeps its old value for sorting; this is display only.
+  const pending = item.cgScore == null
+  const side = pending ? null : cgSide(item.cgScore)
   const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
   // NFL admin pilot: an under shows its same-side strength. Score unchanged.
-  const shownScore = symmetricRankOn('nfl') && side ? displayScoreText(item.score, side) : item.score.toFixed(1)
+  const shownScore = pending ? 'Pending' : symmetricRankOn('nfl') && side ? displayScoreText(item.cgScore, side) : item.cgScore.toFixed(1)
   const l10 = overHitRate(recent.slice(-10), item.line)
   const shown = overHitRate(recent, item.line)
 
@@ -145,7 +149,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
   const rows = useMemo(() => projections
     .filter((item) => lineMatchesStat(item.prop, item.line))
-    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) }))
+    .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
     .filter((item) => position === 'ALL' || item.position === position)
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)

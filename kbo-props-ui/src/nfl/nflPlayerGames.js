@@ -66,7 +66,10 @@ function propSeries(rows, prop) {
 // player's own prop row for it, matched by season and week date. A stat with
 // neither source is null; nothing is filled in.
 //   touches = rush attempts + receptions, only when both are known.
-export function nflGameLog(row, rows = []) {
+//   dvp = the opponent's defense rank this season (1 = toughest). It is only
+//   kept for this season's games: a past season's game gets null rather than
+//   today's rank, and an unranked opponent is null too.
+export function nflGameLog(row, rows = [], { currentSeason = null } = {}) {
   const recent = list(row?.recent)
   const dates = list(row?.gameDates)
   const seasons = list(row?.gameSeasons)
@@ -103,7 +106,7 @@ export function nflGameLog(row, rows = []) {
       value: finite(value),
       snap: finite(snaps[index]),
       usage: used,
-      dvp: finite(dvp[index]),
+      dvp: currentSeason == null || String(seasons[index]) === String(currentSeason) ? finite(dvp[index]) : null,
       teammateOn: teammateOn[index],
       targets: pick('targets'),
       carries,
@@ -121,15 +124,20 @@ export function nflGameLog(row, rows = []) {
 const USAGE_UNITS = { Targets: 'tgt', 'Rush Att': 'att', 'Pass Att': 'att' }
 
 // The sliders this player gets. A filter whose stat has no logged values is
-// left out. Def rank: 1 = toughest matchup, 32 = easiest.
-export function nflGameFilters(row, games) {
+// left out. Def rank: this season's rank, 1 = toughest matchup, 32 = easiest.
+// `missing` names what a game lacks when a narrowed slider hides it.
+export function nflGameFilters(row, games, { currentSeason = null } = {}) {
   const usageLabel = row?.usageLabel || 'Usage'
+  const season = currentSeason != null ? String(currentSeason) : null
   const candidates = [
-    { id: 'snap', field: 'snap', label: 'Snap %', unit: '%', step: 1 },
-    { id: 'usage', field: 'usage', label: usageLabel, unit: USAGE_UNITS[usageLabel] || '', step: 1 },
-    ...(usageLabel !== 'Targets' ? [{ id: 'targets', field: 'targets', label: 'Targets', unit: 'tgt', step: 1 }] : []),
-    { id: 'touches', field: 'touches', label: 'Touches', unit: 'tch', step: 1 },
-    { id: 'dvp', field: 'dvp', label: 'Def rank', unit: '', step: 1, fixed: { min: 1, max: 32 } },
+    { id: 'snap', field: 'snap', label: 'Snap %', unit: '%', step: 1, missing: 'snap data' },
+    { id: 'usage', field: 'usage', label: usageLabel, unit: USAGE_UNITS[usageLabel] || '', step: 1, missing: `${usageLabel.toLowerCase()} data` },
+    ...(usageLabel !== 'Targets' ? [{ id: 'targets', field: 'targets', label: 'Targets', unit: 'tgt', step: 1, missing: 'target data' }] : []),
+    { id: 'touches', field: 'touches', label: 'Touches', unit: 'tch', step: 1, missing: 'touch data' },
+    {
+      id: 'dvp', field: 'dvp', label: season ? `Def rank (${season})` : 'Def rank', unit: '', step: 1, fixed: { min: 1, max: 32 },
+      missing: season ? `a ${season} D rank` : 'a D rank',
+    },
   ]
   return candidates
     .map((filter) => {
@@ -148,6 +156,18 @@ export function resolveFilterRanges(filters, selections = {}) {
 
 export function gamePassesRanges(game, filters, ranges) {
   return filters.every((filter) => inRange(gameMetric(game, filter.field), ranges[filter.id]))
+}
+
+// A game with no value for a stat stays in until that stat's slider is
+// narrowed. Then it is hidden, and this says how many, per slider.
+export function hiddenForMissing(games, filters, ranges) {
+  return filters
+    .filter((filter) => ranges?.[filter.id] && !ranges[filter.id].full)
+    .map((filter) => {
+      const count = (games || []).filter((game) => game && gameMetric(game, filter.field) == null).length
+      return { id: filter.id, count, text: `${count} game${count === 1 ? '' : 's'} without ${filter.missing} hidden` }
+    })
+    .filter((item) => item.count > 0)
 }
 
 export function rangesActive(ranges) {

@@ -340,6 +340,14 @@ class DvpRankTests(unittest.TestCase):
     def test_missing_defense_stays_neutral(self):
         self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'JAC', {}), (16, 1.0))
 
+    def test_past_game_rank_is_none_for_an_unranked_opponent(self):
+        ratings = {('WR', 'Receiving Yards'): ({'SEA': 1, 'JAX': 7}, {'SEA': 0.8, 'JAX': 1.0})}
+        self.assertEqual(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'JAC', ratings), 7)
+        self.assertEqual(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'SEA', ratings), 1)
+        self.assertIsNone(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'XXX', ratings))
+        self.assertIsNone(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'SEA', {}))
+        self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'XXX', ratings), (16, 1.0))
+
     def test_non_skill_positions_use_the_prop_table(self):
         self.assertEqual(nfl.dvp_position('WR', 'Receiving Yards'), 'WR')
         self.assertEqual(nfl.dvp_position('FB', 'Receiving Yards'), 'RB')
