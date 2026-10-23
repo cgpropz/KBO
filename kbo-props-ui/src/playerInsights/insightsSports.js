@@ -4,6 +4,7 @@
 // the page's own logs. No new data source is read here.
 
 import { meanOf, parseGameDay, ratio, sumOf } from './insightsCore.js'
+import { nflGameLog } from '../nfl/nflPlayerGames.js'
 
 function finite(value) {
   if (value == null || value === '') return null
@@ -186,12 +187,7 @@ function nflKey(season, date) {
 // `row` is the selected prop; `rows` are every prop the player has today, so
 // rate stats (yards per target, catch rate, ...) can pair two props by game.
 export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
-  const recent = Array.isArray(row?.recent) ? row.recent : []
-  const dates = Array.isArray(row?.gameDates) ? row.gameDates : []
-  const seasons = Array.isArray(row?.gameSeasons) ? row.gameSeasons : []
-  const opponents = Array.isArray(row?.gameOpponents) ? row.gameOpponents : []
-  const snaps = Array.isArray(row?.recentSnapPercents) ? row.recentSnapPercents : []
-  const usage = Array.isArray(row?.recentUsage) ? row.recentUsage : []
+  const log = nflGameLog(row, rows)
   const byProp = new Map()
   ;(Array.isArray(rows) ? rows : []).forEach((other) => {
     const map = new Map()
@@ -203,39 +199,69 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
     byProp.set(other.prop, map)
   })
   const usageLabel = row?.usageLabel || 'Usage'
-  const games = recent.map((value, index) => {
-    const key = nflKey(seasons[index], dates[index])
-    const raw = { snap: finite(snaps[index]), usage: finite(usage[index]) }
+  const games = log.map((game) => {
+    const key = nflKey(game.season, game.date)
+    const raw = {
+      snap: game.snap,
+      usage: game.usage,
+      targets: game.targets,
+      carries: game.carries,
+      receptions: game.receptions,
+      touches: game.touches,
+      recYds: game.recYds,
+      rushYds: game.rushYds,
+      passAtt: game.passAtt,
+    }
+    raw.scrimmage = game.touches != null && game.rushYds != null && game.recYds != null ? game.rushYds + game.recYds : null
     byProp.forEach((map, prop) => { if (map.has(key)) raw[prop] = map.get(key) })
     return {
       raw,
-      value: finite(value),
-      day: dates[index] ? parseGameDay(dates[index], nflYearFor(seasons[index])) : null,
-      season: seasons[index] != null ? String(seasons[index]) : null,
-      opp: opponents[index] || null,
+      value: game.value,
+      dvp: game.dvp,
+      day: game.date ? parseGameDay(game.date, nflYearFor(game.season)) : null,
+      season: game.season,
+      opp: game.opp || null,
       home: null,
       result: null,
       oppHand: null,
     }
   }).reverse()
+  const has = (field) => games.some((game) => finite(game.raw[field]) != null)
   const props = new Set(byProp.keys())
-  const pair = (num, den, label, id, note, format = 'one', scale = 1) => (
-    props.has(num) && (den === 'usage' || props.has(den))
+  const perGame = (field, label, id, note) => (has(field)
+    ? [{ id, label, note, format: 'one', has: (raw) => finite(raw[field]) != null, total: (list) => meanOf(list, field), game: (raw) => finite(raw[field]) }]
+    : [])
+  const rate = (num, den, label, id, note, format = 'one', scale = 1) => (
+    has(num) && has(den)
       ? [{ id, label, note, format, has: (raw) => finite(raw[num]) != null && finite(raw[den]) != null && raw[den] > 0, total: (list) => ratio(sumOf(list, num), sumOf(list, den), scale), game: (raw) => ratio(raw[num], raw[den], scale) }]
       : []
   )
-  const targets = usageLabel === 'Targets'
+  const pair = (num, den, label, id, note, format = 'one', scale = 1) => (
+    props.has(num) && props.has(den) ? rate(num, den, label, id, note, format, scale) : []
+  )
   const metrics = [
     { id: 'snap', label: 'Snap %', format: 'pct100', note: 'Share of offensive snaps played.', has: (raw) => finite(raw.snap) != null, total: (list) => meanOf(list, 'snap'), game: (raw) => finite(raw.snap) },
-    { id: 'usage', label: `${usageLabel} per game`, format: 'one', note: `${usageLabel} per game from the box score.`, has: (raw) => finite(raw.usage) != null, total: (list) => meanOf(list, 'usage'), game: (raw) => finite(raw.usage) },
-    ...(targets ? pair('Receptions', 'usage', 'Catch rate', 'catch', 'Receptions / targets.', 'pct') : []),
-    ...(targets ? pair('Receiving Yards', 'usage', 'Yards per target', 'ypt', 'Receiving yards / targets.') : []),
-    ...pair('Receiving Yards', 'Receptions', 'Yards per catch', 'ypc', 'Receiving yards / receptions.'),
-    ...pair('Rush Yards', 'Rush Attempts', 'Yards per carry', 'ypcarry', 'Rush yards / rush attempts.'),
-    ...(usageLabel === 'Rush Att' && !props.has('Rush Attempts') ? pair('Rush Yards', 'usage', 'Yards per carry', 'ypcarry', 'Rush yards / rush attempts.') : []),
+    ...perGame('touches', 'Touches per game', 'touches', 'Rush attempts + receptions per game.'),
+    ...perGame('targets', 'Targets per game', 'targets', 'Targets per game from the box score.'),
+    ...perGame('carries', 'Rush att per game', 'carries', 'Rush attempts per game from the box score.'),
+    ...perGame('passAtt', 'Pass att per game', 'passatt', 'Pass attempts per game from the box score.'),
+    ...rate('receptions', 'targets', 'Catch rate', 'catch', 'Receptions / targets.', 'pct'),
+    ...rate('recYds', 'targets', 'Yards per target', 'ypt', 'Receiving yards / targets.'),
+    ...rate('recYds', 'receptions', 'Yards per catch', 'ypc', 'Receiving yards / receptions.'),
+    ...rate('rushYds', 'carries', 'Yards per carry', 'ypcarry', 'Rush yards / rush attempts.'),
+    ...rate('scrimmage', 'touches', 'Yards per touch', 'yptouch', 'Rush + receiving yards / touches.'),
     ...pair('Pass Yards', 'Pass Attempts', 'Yards per attempt', 'ypa', 'Pass yards / pass attempts.'),
     ...pair('Pass Completions', 'Pass Attempts', 'Completion %', 'comp', 'Completions / attempts.', 'pct'),
     ...pair('Pass TDs', 'Pass Attempts', 'TD rate', 'tdr', 'Pass TDs / attempts.', 'pct'),
+  ]
+  // NFL-only splits from the logs: the opponent's defense rank against this
+  // position (1 = toughest) and the player's snap share that week.
+  const extraSplits = [
+    { group: 'Defense', id: 'dvptough', label: 'vs top-10 D', test: (game) => game.dvp != null && game.dvp <= 10 },
+    { group: 'Defense', id: 'dvpmid', label: 'vs D 11–22', test: (game) => game.dvp != null && game.dvp > 10 && game.dvp <= 22 },
+    { group: 'Defense', id: 'dvpsoft', label: 'vs bottom-10 D', test: (game) => game.dvp != null && game.dvp > 22 },
+    { group: 'Snaps', id: 'snaphigh', label: 'Snap % 70+', test: (game) => finite(game.raw.snap) != null && game.raw.snap >= 70 },
+    { group: 'Snaps', id: 'snaplow', label: 'Snap % under 70', test: (game) => finite(game.raw.snap) != null && game.raw.snap < 70 },
   ]
   return {
     sport: 'nfl',
@@ -246,11 +272,14 @@ export function nflInsights(row, rows = [], { currentSeason = null } = {}) {
     seasonLabel: (season) => String(season ?? ''),
     restApplies: false,
     handApplies: false,
+    extraSplits,
+    usageLabel,
     metrics,
     unavailable: [
       'Home/Away and Wins/Losses: the NFL prop logs carry only week date, opponent, snaps and usage.',
       'Rest days: weekly schedule, so 0/1/2+ days does not apply.',
-      'Target share, air yards, routes, red-zone touches: not in the pipeline. Needs a licensed play-by-play or charting feed (your call).',
+      'Target share: not published in our NFL data yet.',
+      'Air yards, routes, red-zone touches: need a licensed play-by-play or charting feed.',
     ],
   }
 }

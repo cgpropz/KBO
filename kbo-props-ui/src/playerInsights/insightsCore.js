@@ -99,6 +99,7 @@ export function buildSplits(games, {
   seasonLabel = (season) => String(season ?? ''),
   restApplies = true,
   handApplies = false,
+  extraSplits = [],
 } = {}) {
   const list = withRest(Array.isArray(games) ? games : [])
   const out = []
@@ -143,6 +144,12 @@ export function buildSplits(games, {
       out.push(row('Pitcher', 'vsrhp', 'vs RHP', list.filter((game) => game.oppHand === 'R'), line))
     } else skipped.push('vs LHP/RHP (no starter hand in logs)')
   }
+  // Sport-specific splits ({ group, id, label, test(game) }); a split with no
+  // matching games is left out.
+  ;(Array.isArray(extraSplits) ? extraSplits : []).forEach((split) => {
+    const matched = list.filter((game) => split.test(game))
+    if (matched.length) out.push(row(split.group, split.id, split.label, matched, line))
+  })
   return { rows: out, skipped, seasonGames: seasonGames.length }
 }
 

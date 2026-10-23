@@ -11,7 +11,7 @@ const preview = process.env.PHONE_SKIP_BUILD === '1'
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['phone-width.spec.js', 'player-insights-phone.spec.js'],
+  testMatch: ['phone-width.spec.js', 'player-insights-phone.spec.js', 'nfl-player-parity-phone.spec.js'],
   timeout: 90_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
