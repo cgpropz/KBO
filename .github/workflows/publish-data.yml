@@ -196,8 +196,18 @@ jobs:
                 CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
                 if [ -n "$CONFLICTS" ]; then
                   echo "Conflicted files: $CONFLICTS"
-                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
-                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                  # The board clock file is merged per board (newest generated_at wins),
+                  # never taken whole from this run: its copy can be older than main's.
+                  if echo "$CONFLICTS" | grep -qx 'shared/board_freshness.json'; then
+                    python -m pipeline.board_freshness_file resolve-conflict shared/board_freshness.json \
+                      && git add shared/board_freshness.json \
+                      || { echo "Freshness merge failed; keeping main's copy"; git checkout --ours -- shared/board_freshness.json; git add shared/board_freshness.json; }
+                    CONFLICTS=$(echo "$CONFLICTS" | grep -vx 'shared/board_freshness.json' || true)
+                  fi
+                  if [ -n "$CONFLICTS" ]; then
+                    echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+                    echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                  fi
                 fi
                 GIT_EDITOR=true git rebase --continue \
                   && git push origin HEAD:main \

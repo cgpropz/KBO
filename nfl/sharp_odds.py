@@ -721,10 +721,12 @@ def load_pp_rows(path):
         index_by_key[key] = len(rows)
         kept_standard[key] = standard
         rows.append(row)
-    out_players = sorted({f"{d.get('player')} ({d.get('team')})" for d in dropped
-                          if str(d.get("pp_status") or "").lower() == "out"})
-    print(f"Sharp odds skipped {len(dropped)} pulled/OUT PrizePicks rows"
-          + (f"; OUT: {', '.join(out_players)}" if out_players else "."))
+    # Actions logs are public: counts only, never player names.
+    out_rows = [d for d in dropped if str(d.get("pp_status") or "").lower() == "out"]
+    out_players = {(d.get("player"), d.get("team")) for d in out_rows}
+    print(f"Sharp odds skipped {len(dropped)} pulled/OUT PrizePicks rows "
+          f"({len(out_rows)} OUT rows across {len(out_players)} players; "
+          f"{len(dropped) - len(out_rows)} pulled).")
     return rows
 
 
