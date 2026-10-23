@@ -18,7 +18,8 @@ export const EARLY_SEASON_GAMES = Object.freeze({ nba: 10, wnba: 6, nfl: 4, kboH
 // NBA gameLogs carry every stored season (no cap).
 export const LOG_CAPS = Object.freeze({ kbo: 200, wnba: 40, nfl: 30 })
 
-// Basketball recent-games scope (Code Green, Oct 23): while a player has
+// NBA recent-games scope (Code Green, Oct 23; NBA only, WNBA keeps its
+// original scope): while a player has
 // fewer than this many PLAYED games (min > 0) in the current season, the
 // Advanced L5/L10 windows and the Venue/Opponent/Result/Rest splits use the
 // current + prior season, labeled "both seasons". From this game on they use
@@ -163,7 +164,9 @@ export function nbaInsights(logs, { valueOf, opponent = null, now = new Date() }
   }
 }
 
-export function wnbaInsights(logs, { valueOf, opponent = null, now = new Date() } = {}) {
+// WNBA keeps its original scope: no 10-game switch and no season tags (the
+// 10-game rule is NBA-only for now).
+export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
   const games = (Array.isArray(logs) ? logs : []).map((raw) => {
     const day = parseGameDay(raw?.date)
     const year = String(raw?.date || '').match(/(\d{4})$/)?.[1] || null
@@ -180,13 +183,11 @@ export function wnbaInsights(logs, { valueOf, opponent = null, now = new Date() 
       postseason: raw?.postseason === true,
     }
   })
-  const seasons = seasonsOf(games)
   return {
     sport: 'wnba',
     games,
     opponent,
-    ...seasons,
-    ...basketballRecentScope(games, seasons.currentSeason, leagueSeasonFor('wnba', now)),
+    ...seasonsOf(games),
     seasonLabel: (season) => String(season ?? ''),
     earlySeasonGames: EARLY_SEASON_GAMES.wnba,
     logCap: LOG_CAPS.wnba,
