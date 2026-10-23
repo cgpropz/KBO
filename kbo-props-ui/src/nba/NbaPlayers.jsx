@@ -6,8 +6,8 @@ import { CardTeamLogo } from '../CardTeamLogo'
 import { fitImage } from '../fitImage.js'
 import { NBA_DVP_POSITIONS } from './positions'
 import {
-  SORTS, SUMMARY_SEASON, UNSET, averageMinutes, displaySlot, easternDateKey, filterPlayers, gameText, hitTone,
-  isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, scheduleFromTeams, sortPlayers, sparkBars,
+  SORTS, SUMMARY_SEASON, averageMinutes, displaySlot, easternDateKey, filterPlayers, gameText, hitTone,
+  isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, seasonLabel, scheduleFromTeams, sortPlayers, sparkBars,
   teamOptions, todayGame, topPropFor, topProps,
 } from './nbaPlayersList.js'
 import './nbaPlayersList.css'
@@ -107,6 +107,7 @@ function TopPropPill({ top }) {
 function PlayerRow({ player, top, game, minutes, onOpen }) {
   const slot = displaySlot(player)
   const prior = priorTeam(player)
+  const label = seasonLabel(player, SEASON_SHORT)
   return (
     <button type="button" className="nba-plist-card" data-testid="nba-player-card" onClick={() => onOpen(player)}>
       <span className="nba-plist-accent" style={{ background: player.teamColor || '#1f3f3d' }} />
@@ -116,7 +117,7 @@ function PlayerRow({ player, top, game, minutes, onOpen }) {
         <span className="nba-plist-meta">
           <CardTeamLogo team={player.team} src={logoSrc(player.team)} />
           <span className="nba-plist-team">{player.team}</span>
-          <span className="nba-plist-pos" style={{ color: positionColor(slot) }}>{slot || '—'}</span>
+          {slot && <span className="nba-plist-pos" style={{ color: positionColor(slot) }}>{slot}</span>}
           {game && <span className="nba-plist-game">{gameText(game)}</span>}
           {minutes != null && <span className="nba-plist-min">{minutes.toFixed(1)} MIN</span>}
         </span>
@@ -126,9 +127,13 @@ function PlayerRow({ player, top, game, minutes, onOpen }) {
             ? `${SEASON_SHORT}${prior ? ` with ${prior}` : ''}: ${statText(player.pts)} points, ${statText(player.reb)} rebounds, ${statText(player.ast)} assists`
             : `${SEASON_SHORT}: no games`}
         >
-          <em>{SEASON_SHORT}{prior ? ` ${prior}` : ''}</em>
+          <em>{label}</em>
           {player.gp
-            ? <>{statText(player.pts)}<i>P</i> {statText(player.reb)}<i>R</i> {statText(player.ast)}<i>A</i></>
+            ? <>
+                <span className="nba-plist-stat">{statText(player.pts)}<i>P</i></span>{' '}
+                <span className="nba-plist-stat">{statText(player.reb)}<i>R</i></span>{' '}
+                <span className="nba-plist-stat">{statText(player.ast)}<i>A</i></span>
+              </>
             : <>no games</>}
         </span>
       </span>
@@ -268,7 +273,7 @@ export default function NbaPlayers({ initialName = '' }) {
   }, [selectedId])
 
   const tops = useMemo(() => topProps(board, players || []), [board, players])
-  const chips = useMemo(() => positionChips(players), [players])
+  const chips = positionChips()
   const teams = useMemo(() => teamOptions(players), [players])
   const gameDay = isGameDay(schedule, tops)
   const playingToday = playingChoice ?? gameDay
@@ -383,7 +388,7 @@ export default function NbaPlayers({ initialName = '' }) {
               type="button"
               aria-pressed={activePos === position}
               className={`nba-plist-chip${activePos === position ? ' active' : ''}`}
-              style={activePos === position && position !== 'All' && position !== UNSET ? { borderColor: positionColor(position), color: positionColor(position) } : undefined}
+              style={activePos === position && position !== 'All' ? { borderColor: positionColor(position), color: positionColor(position) } : undefined}
               onClick={() => setPosFilter(position)}
             >
               {position}

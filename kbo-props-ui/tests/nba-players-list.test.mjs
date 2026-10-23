@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 import {
   averageMinutes, displaySlot, easternDateKey, filterPlayers, formatTip, gameText, hitTone, isGameDay,
-  positionChips, priorTeam, scheduleFromScoreboard, scheduleFromTeams, sortPlayers, sparkBars, statShort,
+  positionChips, priorTeam, scheduleFromScoreboard, seasonLabel, scheduleFromTeams, sortPlayers, sparkBars, statShort,
   todayGame, topPropFor, topProps,
 } from '../src/nba/nbaPlayersList.js'
 
@@ -36,9 +36,10 @@ const projections = [
   },
 ]
 
-test('Unset chip only shows when a player has no slot', () => {
-  assert.deepEqual(positionChips(players), ['All', 'PG', 'SG', 'SF', 'PF', 'C', 'Unset'])
-  assert.deepEqual(positionChips(players.filter((p) => p.position)), ['All', 'PG', 'SG', 'SF', 'PF', 'C'])
+test('no Unset chip, even when a player has no slot', () => {
+  assert.ok(players.some((p) => !displaySlot(p)))
+  assert.deepEqual(positionChips(players), ['All', 'PG', 'SG', 'SF', 'PF', 'C'])
+  assert.deepEqual(positionChips(), ['All', 'PG', 'SG', 'SF', 'PF', 'C'])
 })
 
 test('top prop is the first row in the board CG Score order', () => {
@@ -89,12 +90,13 @@ test('tip time and date are Eastern', () => {
   assert.equal(easternDateKey(new Date('2026-10-24T02:00Z')), '20261023')
 })
 
-test('filters: search, slot, Unset, team, playing today', () => {
+test('filters: search, slot, team, playing today', () => {
   const tops = topProps(projections, players)
   const schedule = new Map([['CCC', { opponent: 'EEE', home: true, tip: null, state: 'pre' }]])
   const names = (list) => list.map((p) => p.name)
   assert.deepEqual(names(filterPlayers(players, { search: 'bra' })), ['Bravo Two'])
-  assert.deepEqual(names(filterPlayers(players, { position: 'Unset' })), ['Charlie Three'])
+  // A player with no slot is listed under All.
+  assert.ok(names(filterPlayers(players, { position: 'All' })).includes('Charlie Three'))
   assert.deepEqual(names(filterPlayers(players, { position: 'SF' })), ['Delta Four'])
   assert.deepEqual(names(filterPlayers(players, { team: 'AAA' })), ['Alpha One', 'Delta Four'])
   assert.deepEqual(
@@ -118,6 +120,8 @@ test('prior team labels the 2025-26 line after a move', () => {
   assert.equal(priorTeam(players[3]), 'DDD')
   assert.equal(priorTeam(players[0]), '')
   assert.equal(priorTeam({ team: 'AAA', gameLogs: [{ season: '2027', team: 'AAA' }, { season: '2026', team: 'FFF' }] }), 'FFF')
+  assert.equal(seasonLabel(players[3], "'25-26"), "'25-26 w/ DDD")
+  assert.equal(seasonLabel(players[0], "'25-26"), "'25-26")
 })
 
 test('display helpers', () => {
