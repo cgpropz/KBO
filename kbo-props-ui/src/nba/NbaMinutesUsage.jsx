@@ -29,11 +29,14 @@ function TrendChart({ metric, logs, windowGames, keptGames }) {
           <b
             className={`nba-mu-trend ${trend}`}
             style={{ color: TREND_COLORS[trend] }}
-            aria-label={`L5 vs season: ${TREND_WORDS[trend]}`}
-            title="L5 vs season"
+            aria-label={`L5 vs ${summary.baselineLabel || 'season'}: ${TREND_WORDS[trend]}`}
+            title={`L5 vs ${summary.baselineLabel || 'season'}`}
           >
             {TREND_ARROWS[trend]}
           </b>
+        )}
+        {trend && summary.baselineLabel && (
+          <span className="nba-mu-base" data-testid={`nba-mu-${metric.id}-base`}>vs {summary.baselineLabel}</span>
         )}
         <span className="nba-mu-avgs">
           <span><em>L5</em>{formatTrendValue(summary.l5, metric.unit)}</span>

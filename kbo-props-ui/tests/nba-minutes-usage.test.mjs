@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  TREND_THRESHOLD, TREND_METRICS, averageMetric, cardTrend, formatTrendValue, metricSummary, metricValue, trendBars, trendDirection,
+  EARLY_SEASON_GAMES, TREND_THRESHOLD, TREND_METRICS, averageMetric, cardTrend, formatTrendValue, metricSummary, metricValue,
+  seasonLabel, trendBars, trendBaseline, trendDirection,
 } from '../src/nba/nbaMinutesUsage.js'
 import { filterGames, resolveRange, metricBounds } from '../src/nba/nbaGameFilters.js'
 
@@ -41,11 +42,17 @@ test('L5 / L10 / Season averages', () => {
   close(minutes.l10, (36 + 34 + 32 + 30 + 20 + 22 + 24 + 26 + 28) / 9)
   // Season = newest season only: 36 34 32 30 20.
   close(minutes.season, 30.4)
+  // 5 minutes games this season: the arrow is against this season.
+  close(minutes.baseline, 30.4)
+  assert.equal(minutes.baselineLabel, null)
   assert.equal(minutes.trend, 'up')
 
   const usage = metricSummary(LOGS, 'usg')
   close(usage.l5, (28 + 27 + 26.5) / 3)
   close(usage.season, (28 + 27 + 26.5 + 18) / 4)
+  // Only 4 usage games this season: the arrow is against last season (21.5).
+  close(usage.baseline, 21.5)
+  assert.equal(usage.baselineLabel, "'25-26")
   assert.equal(usage.trend, 'up')
 
   const empty = metricSummary([], 'usg')
@@ -98,4 +105,51 @@ test('list card line: L5 average and arrow', () => {
   assert.equal(cardTrend({}, minMetric), null)
   assert.equal(formatTrendValue(22.4, '%'), '22%')
   assert.equal(formatTrendValue(null, 'min'), '—')
+})
+
+test('early season: under 5 games this season the arrow uses last season, labeled', () => {
+  assert.equal(EARLY_SEASON_GAMES, 5)
+  assert.equal(seasonLabel('2026'), "'25-26")
+  assert.equal(seasonLabel('2027'), "'26-27")
+  assert.equal(seasonLabel(null), null)
+
+  const season = (year, minutes) => minutes.map((min) => ({ season: year, min }))
+  // 1 game this season (18 min) after 5 at 30 last season: L5 = (18+30*4)/5 = 27.6,
+  // 2.4 under last season's 30 -> down vs '25-26 (not up vs this season's 18).
+  const oneGame = [...season('2027', [18]), ...season('2026', [30, 30, 30, 30, 30])]
+  assert.deepEqual(trendBaseline(oneGame, 'min'), { value: 30, season: '2026', label: "'25-26" })
+  const early = metricSummary(oneGame, 'min')
+  close(early.season, 18)
+  assert.equal(early.trend, 'down')
+  assert.equal(early.baselineLabel, "'25-26")
+
+  // 4 games this season still uses last season; the 5th switches to this season.
+  const four = [...season('2027', [36, 36, 36, 36]), ...season('2026', [30, 30, 30, 30, 30, 30])]
+  assert.equal(metricSummary(four, 'min').baselineLabel, "'25-26")
+  const five = [...season('2027', [36, 36, 36, 36, 36]), ...season('2026', [30, 30, 30, 30, 30])]
+  const atFive = metricSummary(five, 'min')
+  assert.equal(atFive.baselineLabel, null)
+  close(atFive.baseline, 36)
+  assert.equal(atFive.trend, 'flat')
+
+  // A 0-minute game does not count toward the 5.
+  const withDnp = [...season('2027', [36, 0, 36, 36, 36]), ...season('2026', [30, 30, 30, 30, 30])]
+  assert.equal(metricSummary(withDnp, 'min').baselineLabel, "'25-26")
+
+  // Neither season has 5 games: no arrow.
+  const thin = [...season('2027', [20, 22]), ...season('2026', [30, 30, 30, 30])]
+  assert.equal(trendBaseline(thin, 'min'), null)
+  assert.equal(metricSummary(thin, 'min').trend, null)
+  const thinCard = cardTrend({ gameLogs: thin }, TREND_METRICS[0])
+  assert.deepEqual([thinCard.arrow, thinCard.trend, thinCard.baselineLabel, thinCard.text], ['', null, null, '26.4'])
+
+  // Only two seasons back counts as last season when it is the season before.
+  const gap = [...season('2027', [20]), ...season('2025', [30, 30, 30, 30, 30])]
+  assert.equal(trendBaseline(gap, 'min'), null)
+
+  // The card uses the same rule and carries the label.
+  const card = cardTrend({ gameLogs: oneGame }, TREND_METRICS[0])
+  assert.deepEqual([card.arrow, card.text, card.baselineLabel, card.color], ['↓', '27.6', "'25-26", '#ef4444'])
+  const cardFive = cardTrend({ gameLogs: five }, TREND_METRICS[0])
+  assert.deepEqual([cardFive.arrow, cardFive.baselineLabel], ['→', null])
 })
