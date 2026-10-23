@@ -141,7 +141,9 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   expect(fit.scrollWidth).toBeLessThanOrEqual(fit.innerWidth)
   expect(fit.cardRight).toBeLessThanOrEqual(fit.innerWidth)
   // Name, meta and season line beside the prop, then the MIN / USG row.
-  expect(fit.cardHeight).toBeLessThan(100)
+  // Since #381 the long "Free Throws Attempted" pill label wraps rather than
+  // clipping the name: this card measures ~117px (default and DejaVu Sans).
+  expect(fit.cardHeight).toBeLessThan(125)
   expect(await trendLineProblems(page)).toEqual([])
 
   await cards.first().click()
