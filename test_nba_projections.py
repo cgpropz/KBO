@@ -340,5 +340,139 @@ class SanityFlagTests(unittest.TestCase):
         }
 
 
+def season_game(season, minutes, pts, day, **extra):
+    game = counting_game(minutes, pts, **extra)
+    game["season"] = season
+    game["date"] = datetime(2026 if season == "2027" else 2026, 10 if season == "2027" else 3, day)
+    return game
+
+
+def board_player(*stats):
+    return {
+        "athleteId": "7",
+        "name": "Synthetic Guard",
+        "position": "PG",
+        "dvpOpponent": "BOS",
+        "ppAllProps": [{"stat": stat, "line": 10.5, "opponent": "BOS"} for stat in stats],
+    }
+
+
+class EarlySeasonTests(unittest.TestCase):
+    """Synthetic logs: 2027 is the 2026-27 season tag, 2026 is 2025-26."""
+
+    def last_season(self, count=10):
+        return [season_game("2026", 30, 10, 20 - index) for index in range(count)]
+
+    def test_weights(self):
+        self.assertEqual(proj.season_weight(1, 10), 0.25)
+        self.assertEqual(proj.season_weight(2, 10), 0.4)
+        self.assertEqual(proj.season_weight(1, 3), 0.25)
+        self.assertEqual(proj.season_weight(1, 1), 0.5)
+        self.assertAlmostEqual(proj.season_weight(2, 1), 2 / 3)
+
+    def test_one_game_blends_a_quarter_this_season(self):
+        games = [season_game("2027", 20, 20, 21)] + self.last_season()
+        bundle, mode = proj.project_board_player(games, {})
+        self.assertEqual(mode, "blend")
+        # this season 20 pts in 20 min, last season 10 pts in 30 min
+        self.assertEqual(bundle["base"]["pts"], 12.5)
+        self.assertEqual(bundle["avgMins"], 27.5)
+        self.assertEqual(bundle["gp"], 11)
+
+    def test_two_games_blend_forty_percent_this_season(self):
+        games = [season_game("2027", 20, 20, 22), season_game("2027", 20, 20, 21)] + self.last_season()
+        bundle, mode = proj.project_board_player(games, {})
+        self.assertEqual(mode, "blend")
+        self.assertEqual(bundle["base"]["pts"], 14.0)
+
+    def test_combos_and_fantasy_come_from_the_blended_stats(self):
+        games = [season_game("2027", 30, 20, 21, reb=10, ast=6, stl=2, blk=1, tov=3)] + [
+            season_game("2026", 30, 10, 20 - index, reb=4, ast=2, stl=1, blk=1, tov=1) for index in range(5)
+        ]
+        bundle, _mode = proj.project_board_player(games, {})
+        base = bundle["base"]
+        self.assertEqual(bundle["combo"]["ptsRebAst"], round(base["pts"] + base["reb"] + base["ast"], 2))
+        self.assertEqual(bundle["combo"]["blkStl"], round(base["blk"] + base["stl"], 2))
+        self.assertEqual(base["fantasy"], round(proj.calc_fantasy_score(base), 2))
+
+    def test_short_last_season_counts_its_real_games(self):
+        games = [season_game("2027", 20, 20, 21)] + self.last_season(1)
+        bundle, _mode = proj.project_board_player(games, {})
+        self.assertEqual(bundle["base"]["pts"], 15.0)
+
+    def test_last_season_counts_as_a_full_season_not_its_final_games(self):
+        late_spike = [season_game("2026", 40, 30, 20 - index) for index in range(3)]
+        rest = [season_game("2026", 20, 10, 10 - index) for index in range(7)]
+        prior = proj.season_average_bundle(late_spike + rest, {})
+        # 3 x (40 min, 30 pts) + 7 x (20 min, 10 pts): 160 pts in 260 min, 26 min a game
+        self.assertEqual(prior["avgMins"], 26.0)
+        self.assertEqual(prior["base"]["pts"], 16.0)
+        games = [season_game("2027", 20, 20, 21)] + late_spike + rest
+        bundle, _mode = proj.project_board_player(games, {})
+        self.assertEqual(bundle["base"]["pts"], 17.0)
+
+    def test_default_windows_are_unchanged(self):
+        games = [counting_game(30, 10 + index) for index in range(20)]
+        self.assertEqual(
+            proj.build_projection_bundle(games, 30.0, {})["base"],
+            proj.build_projection_bundle(games, 30.0, {}, windows=(3, 7, 15))["base"],
+        )
+
+    def test_three_games_are_unchanged(self):
+        games = [season_game("2027", 20, 20, 21 + index) for index in range(3)] + self.last_season()
+        bundle, mode = proj.project_board_player(games, {})
+        self.assertEqual(mode, "normal")
+        self.assertEqual(bundle["base"], proj.project_player(games, {})["base"])
+
+    def test_no_games_this_season_is_unchanged(self):
+        games = self.last_season()
+        bundle, mode = proj.project_board_player(games, {})
+        self.assertEqual(mode, "normal")
+        self.assertEqual(bundle["base"], proj.project_player(games, {})["base"])
+
+    def test_rookie_under_three_games_is_blank_like_any_pending_row(self):
+        games = [season_game("2027", 30, 25, 22), season_game("2027", 30, 25, 21)]
+        self.assertEqual(proj.project_board_player(games, {}), (None, "blank"))
+        filled = proj.apply_player(board_player("Points", "Pts+Rebs+Asts"), games, {"PG": {}}, {}, "PG", "roster")
+        self.assertEqual(filled["projectionStatus"], "pending")
+        self.assertEqual(filled["earlySeason"], "blank")
+        self.assertIsNone(filled["avgMins"])
+        for prop in filled["ppAllProps"]:
+            self.assertIsNone(prop["projection"])
+            self.assertIsNone(prop["rating"])
+            self.assertEqual(prop["hitRates"], {"L5": None, "L10": None, "L15": None, "FULL": None})
+            self.assertIsNone(prop["l10Values"])
+
+    def test_rookie_projects_from_game_three(self):
+        games = [season_game("2027", 30, 24, 21 + index) for index in range(3)]
+        filled = proj.apply_player(board_player("Points"), games, {"PG": {}}, {}, "PG", "roster")
+        self.assertEqual(filled["projectionStatus"], "projected")
+        self.assertIsNone(filled["earlySeason"])
+        self.assertEqual(filled["ppAllProps"][0]["projection"], 24.0)
+
+    def test_board_row_uses_the_blend(self):
+        games = [season_game("2027", 20, 20, 21)] + self.last_season()
+        filled = proj.apply_player(board_player("Points"), games, {"PG": {}}, {}, "PG", "roster")
+        self.assertEqual(filled["earlySeason"], "blend")
+        self.assertEqual(filled["ppAllProps"][0]["projection"], 12.5)
+        self.assertEqual(filled["avgMins"], 27.5)
+
+    def test_apply_board_counts(self):
+        rookie = dict(board_player("Points"), athleteId="1")
+        vet = dict(board_player("Points", "Rebounds"), athleteId="2")
+        games = {
+            "1": [season_game("2027", 30, 25, 21)],
+            "2": [season_game("2027", 20, 20, 21)] + self.last_season(),
+        }
+        _filled, counts = proj.apply_board([rookie, vet], games, {"PG": {}}, {}, {})
+        self.assertEqual((counts["blank_players"], counts["blank_lines"]), (1, 1))
+        self.assertEqual((counts["blend_players"], counts["blend_lines"]), (1, 2))
+
+    def test_loader_tags_the_season(self):
+        rows = [log_row(season="2026", date="01/15/2026")]
+        games = proj.games_by_athlete(rows, OFFICIAL)
+        self.assertEqual(games["9"][0]["season"], "2026")
+
+
 if __name__ == "__main__":
     unittest.main()
