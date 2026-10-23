@@ -6,7 +6,6 @@ import { NBA_DVP_POSITIONS } from './positions.js'
 import { DEFAULT_FILTERS, buildPropRows, filterAndSortRows } from './nbaPropLines.js'
 
 export const POSITION_SLOTS = NBA_DVP_POSITIONS.map((slot) => slot.id)
-export const UNSET = 'Unset'
 export const SORTS = [
   { id: 'cg', label: 'CG Score' },
   { id: 'l10', label: 'L10 hit rate' },
@@ -33,6 +32,11 @@ const STAT_SHORT = {
   'Reb+Asts': 'R+A',
   'Blks+Stls': 'B+S',
   'Free Throws Made': 'FTM',
+  'Free Throws Attempted': 'FTA',
+  'Two Pointers Made': '2PM',
+  'Two Pointers Attempted': '2PA',
+  'Double-Double': 'DD',
+  'Triple-Double': 'TD',
   'FG Made': 'FGM',
   'FG Attempted': 'FGA',
   '3-PT Attempted': '3PA',
@@ -64,10 +68,10 @@ export function displaySlot(player) {
   return POSITION_SLOTS.includes(slot) ? slot : ''
 }
 
-// All, the five slots, and Unset only when some player has no slot.
-export function positionChips(players) {
-  const hasUnset = (players || []).some((player) => !displaySlot(player))
-  return ['All', ...POSITION_SLOTS, ...(hasUnset ? [UNSET] : [])]
+// All and the five slots. A player with no slot shows under All only: there
+// is no Unset chip, and his card shows no position.
+export function positionChips() {
+  return ['All', ...POSITION_SLOTS]
 }
 
 export function teamOptions(players) {
@@ -211,6 +215,13 @@ export function priorTeam(player) {
   return before && now && before !== now ? before : ''
 }
 
+// Label for the 2025-26 season line: "'25-26" when he is on the same team,
+// "'25-26 w/ PHI" when that line was with another team.
+export function seasonLabel(player, seasonShort) {
+  const prior = priorTeam(player)
+  return prior ? `${seasonShort} w/ ${prior}` : seasonShort
+}
+
 export function filterPlayers(players, filters, context = {}) {
   const search = nameKey(filters?.search)
   const position = filters?.position || 'All'
@@ -218,7 +229,7 @@ export function filterPlayers(players, filters, context = {}) {
   return (players || []).filter((player) => {
     if (search && !nameKey(player?.name).includes(search)) return false
     const slot = displaySlot(player)
-    if (position === UNSET ? Boolean(slot) : position !== 'All' && slot !== position) return false
+    if (position !== 'All' && slot !== position) return false
     if (team !== 'All' && key(player?.team) !== team) return false
     if (filters?.playingToday && !todayGame(player, context.schedule, topPropFor(context.tops, player))) return false
     return true
