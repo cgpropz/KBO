@@ -64,7 +64,7 @@ class WorkflowTests(unittest.TestCase):
     def test_full_refresh_commits_source_files_and_not_paid_snapshots(self):
         self.assertIn("workflow_dispatch:", REFRESH)
         self.assertIn('PUBLISH_ONLY_PREFIX: "nba/"', REFRESH)
-        add_block = REFRESH.split("git add", 1)[1].split("if [ -f nba/nba_boxscores_2026_27.csv ]", 1)[0]
+        add_block = executable(REFRESH.split("- name: Commit non-paid NBA artifacts", 1)[1].split("- name:", 1)[0])
         self.assertNotIn("public/data", add_block)
         self.assertIn("nba/nba_boxscores_2025_26.csv", add_block)
         self.assertIn("nba/nbaPGdvp.csv", add_block)
