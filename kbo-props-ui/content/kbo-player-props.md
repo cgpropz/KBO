@@ -8,8 +8,8 @@ Organization + BreadcrumbList JSON-LD.
 -->
 
 ---
-title_tag: "KBO Player Props Today: Free Top 3 & Playoffs | CGPropz"
-meta_description: "KBO player props today through the postseason: a free top 3 ranked by CG Score, model projections and hit rates, with first pitch times in ET. 21+."
+title_tag: "KBO Playoffs Player Props & PrizePicks Picks | CGPropz"
+meta_description: "KBO playoffs player props: postseason schedule with first pitch times in ET, model projections and hit rates, and how the board scores props. 21+."
 slug: "/kbo-player-props"
 canonical: "https://www.cgpropz.com/kbo-player-props"
 primary_keyword: "kbo playoffs player props"
@@ -76,8 +76,8 @@ The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. W
 **What time do KBO playoff games start in ET?**
 Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET.
 
-**Where are today's free KBO picks?**
-In the free top 3 on the homepage: the three standard KBO lines with the highest CG Scores on the board.
+**Are there free KBO picks?**
+Only when KBO lines are posted. On those days the free top 3 on the homepage shows the three standard KBO lines with the highest CG Scores. With no KBO lines posted, there are no free KBO picks.
 
 **What does CG Score mean on KBO?**
 CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often.
@@ -95,7 +95,7 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
   "mainEntity": [
     { "@type": "Question", "name": "Are there KBO player props during the playoffs?", "acceptedAnswer": { "@type": "Answer", "text": "The KBO postseason runs from Oct 14 to as late as Nov 10, with one game a day. When lines are posted, the KBO board covers them, and the free top 3 appears on the homepage." } },
     { "@type": "Question", "name": "What time do KBO playoff games start in ET?", "acceptedAnswer": { "@type": "Answer", "text": "Most start at 5:30 AM ET. Weekend games in the first two rounds start at 1:00 AM ET. After US clocks change on Nov 1, weekday Korean Series games start at 4:30 AM ET." } },
-    { "@type": "Question", "name": "Where are today's free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "In the free top 3 on the homepage: the three standard KBO lines with the highest CG Scores on the board." } },
+    { "@type": "Question", "name": "Are there free KBO picks?", "acceptedAnswer": { "@type": "Answer", "text": "Only when KBO lines are posted. On those days the free top 3 on the homepage shows the three standard KBO lines with the highest CG Scores. With no KBO lines posted, there are no free KBO picks." } },
     { "@type": "Question", "name": "What does CG Score mean on KBO?", "acceptedAnswer": { "@type": "Answer", "text": "CG Score shows how far the CGPropz projection sits from the posted line. KBO can show its own stored score, so read KBO scores on their own terms. A higher score is not a probability or a claim that the prop hits more often." } },
     { "@type": "Question", "name": "Where is pricing?", "acceptedAnswer": { "@type": "Answer", "text": "All-Access plans are on the pricing page." } },
     { "@type": "Question", "name": "Is CGPropz affiliated with PrizePicks or Underdog?", "acceptedAnswer": { "@type": "Answer", "text": "No. CGPropz is not affiliated with PrizePicks or Underdog." } }

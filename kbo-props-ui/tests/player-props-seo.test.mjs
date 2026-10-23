@@ -94,7 +94,7 @@ test('KBO page keeps the playoff guide and leaves the results table off', () => 
   const days = buildResultDays(discoverSummaryFiles(memoryRoot))
   assert.ok(days.some((day) => day.missing === false))
   const html = renderKboPage(days)
-  assert.match(html, /<title>KBO Player Props Today: Free Top 3 &amp; Playoffs \| CGPropz<\/title>/)
+  assert.match(html, /<title>KBO Playoffs Player Props &amp; PrizePicks Picks \| CGPropz<\/title>/)
   assert.match(html, /has been under way since Wednesday, Oct 14\./)
   assert.equal(html.includes('postseason starts Wednesday, Oct 14'), false)
   assert.match(html, /<h1>KBO player props, with the full board\.<\/h1>/)
