@@ -41,6 +41,21 @@ function seasonsOf(games) {
   return { currentSeason, priorSeason }
 }
 
+// Logs and the board spell some teams differently (GS vs GSV, NY vs NYL,
+// ...). Both sides go through these before the opponent split compares them.
+const NBA_TEAM_ALIASES = Object.freeze({ GS: 'GSW', NO: 'NOP', NOR: 'NOP', NY: 'NYK', SA: 'SAS', UTAH: 'UTA', PHO: 'PHX', BRK: 'BKN', CHO: 'CHA', WSH: 'WAS' })
+const WNBA_TEAM_ALIASES = Object.freeze({ GS: 'GSV', LA: 'LAS', LV: 'LVA', NY: 'NYL', WSH: 'WAS', POR: 'PDX', PHO: 'PHX', CONN: 'CON' })
+
+function teamKeyWith(aliases) {
+  return (team) => {
+    const code = String(team ?? '').trim().toUpperCase()
+    return aliases[code] || code
+  }
+}
+
+export const nbaTeamKey = teamKeyWith(NBA_TEAM_ALIASES)
+export const wnbaTeamKey = teamKeyWith(WNBA_TEAM_ALIASES)
+
 function opponentFrom(matchup) {
   const text = String(matchup || '')
   const match = text.match(/(?:@|vs\.?)\s*([A-Z]{2,4})\s*$/)
@@ -110,6 +125,7 @@ export function nbaInsights(logs, { valueOf, opponent = null } = {}) {
     seasonLabel: basketballSeasonLabel,
     earlySeasonGames: EARLY_SEASON_GAMES.nba,
     recentScope: NBA_RECENT_SCOPE,
+    oppKey: nbaTeamKey,
     windowFrom: 'logged',
     restApplies: true,
     handApplies: false,
@@ -147,6 +163,7 @@ export function wnbaInsights(logs, { valueOf, opponent = null } = {}) {
     seasonLabel: (season) => String(season ?? ''),
     earlySeasonGames: EARLY_SEASON_GAMES.wnba,
     logCap: LOG_CAPS.wnba,
+    oppKey: wnbaTeamKey,
     windowFrom: 'logged',
     restApplies: true,
     handApplies: false,

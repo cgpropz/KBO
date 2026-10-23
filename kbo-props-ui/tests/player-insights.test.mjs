@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { buildSplits, formatMetric, metricSeries, metricWindows, parseGameDay, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel, withRest } from '../src/playerInsights/insightsCore.js'
-import { basketballSeasonLabel, EARLY_SEASON_GAMES, kboInsights, nbaInsights, nflInsights, nflTeamKey, nhlInsights, wnbaInsights } from '../src/playerInsights/insightsSports.js'
+import { basketballSeasonLabel, EARLY_SEASON_GAMES, kboInsights, nbaInsights, nbaTeamKey, nflInsights, nflTeamKey, nhlInsights, wnbaInsights, wnbaTeamKey } from '../src/playerInsights/insightsSports.js'
 import { averageMetric } from '../src/nba/nbaMinutesUsage.js'
 
 test('parses each sport date shape', () => {
@@ -181,6 +181,20 @@ test('NFL opponent split matches team-code aliases', () => {
   const vs = buildSplits(model.games, { ...model, line: 60.5 }).rows.find((entry) => entry.id === 'vsopp')
   assert.equal(vs.label, 'vs LAR')
   assert.equal(vs.n, 1)
+})
+
+test('WNBA and NBA opponent splits match team-code aliases', () => {
+  for (const [a, b] of [['GS', 'GSV'], ['LA', 'LAS'], ['LV', 'LVA'], ['NY', 'NYL'], ['WSH', 'WAS'], ['POR', 'PDX']]) assert.equal(wnbaTeamKey(a), wnbaTeamKey(b))
+  for (const [a, b] of [['GS', 'GSW'], ['NO', 'NOP'], ['NY', 'NYK'], ['SA', 'SAS'], ['UTAH', 'UTA'], ['PHO', 'PHX']]) assert.equal(nbaTeamKey(a), nbaTeamKey(b))
+  const logs = [
+    { date: '10/05/2026', opponent: 'GS', matchup: 'ATL @ GS', pts: 20, min: 30, postseason: true },
+    { date: '10/03/2026', opponent: 'GSV', matchup: 'ATL vs. GSV', pts: 10, min: 30, postseason: true },
+    { date: '09/01/2026', opponent: 'NY', matchup: 'ATL @ NY', pts: 12, min: 30 },
+  ]
+  const model = wnbaInsights(logs, { valueOf: (game) => game.pts, opponent: 'GSV' })
+  const vs = buildSplits(model.games, { ...model, line: 15.5 }).rows.find((entry) => entry.id === 'vsopp')
+  assert.equal(vs.label, 'vs GSV')
+  assert.equal(vs.n, 2)
 })
 
 test('KBO pitchers hide empty rest rows; hitters keep them', () => {
