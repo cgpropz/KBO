@@ -6,6 +6,10 @@
 // when that skin posted both sides, else SportsBetting, else Bovada.
 // A missing side is not filled from another skin. Best Over/Under may
 // still show the best price among the three.
+//
+// theScore US and theScore CA are a second shared feed (same prices on
+// both skins), counted and deduped the same way: theScore US first.
+// A group without "feed" belongs to the BetOnline feed.
 
 import policy from './bookPolicy.json' with { type: 'json' }
 
@@ -35,13 +39,17 @@ for (const source of policy.excluded || []) {
   if (source.id != null) EXCLUDED_IDS.add(Number(source.id))
 }
 
+export const SHARED_COUNT_KEY = 'betonline-sportsbetting-bovada'
+
 const SHARED_BY_KEY = new Map()
 const SHARED_BY_ID = new Map()
 for (const group of policy.sharedFeed || []) {
+  const feed = group.feed || SHARED_COUNT_KEY
   for (const source of group.sources || []) {
     const key = bookKey(source.name)
     if (!key) continue
     const info = {
+      feed,
       rank: Number(group.rank),
       canonical: source.canonical === true,
       name: source.name,
@@ -51,8 +59,6 @@ for (const group of policy.sharedFeed || []) {
     if (source.id != null) SHARED_BY_ID.set(Number(source.id), info)
   }
 }
-
-export const SHARED_COUNT_KEY = 'betonline-sportsbetting-bovada'
 
 function rowKey(quote) {
   if (quote == null) return ''
@@ -96,8 +102,9 @@ export function booksCount(rows) {
   const keys = new Set()
   for (const row of rows || []) {
     if (isExcludedBook(row)) continue
-    if (sharedFeedInfo(row)) {
-      keys.add(SHARED_COUNT_KEY)
+    const shared = sharedFeedInfo(row)
+    if (shared) {
+      keys.add(`shared:${shared.feed}`)
       continue
     }
     const key = rowKey(row)
@@ -116,14 +123,22 @@ function sidePrice(quote, side) {
 // One quote for CG odds and the fair-price book list. Other books pass through.
 export function consensusBookPrices(quotes) {
   const rest = []
-  const shared = []
+  const feeds = new Map()
   for (const quote of Array.isArray(quotes) ? quotes : []) {
     if (!quote || isExcludedBook(quote)) continue
-    if (sharedFeedInfo(quote)) shared.push(quote)
-    else rest.push(quote)
+    const info = sharedFeedInfo(quote)
+    if (!info) {
+      rest.push(quote)
+      continue
+    }
+    if (!feeds.has(info.feed)) feeds.set(info.feed, [])
+    feeds.get(info.feed).push(quote)
   }
-  const collapsed = collapseSharedQuote(shared)
-  return collapsed ? [...rest, collapsed] : rest
+  for (const group of feeds.values()) {
+    const collapsed = collapseSharedQuote(group)
+    if (collapsed) rest.push(collapsed)
+  }
+  return rest
 }
 
 function collapseSharedQuote(quotes) {

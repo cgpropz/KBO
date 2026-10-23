@@ -44,6 +44,29 @@ test('shared feed counts once and consensus keeps BetOnline', () => {
   assert.equal(policyBestQuote({ book: 'Bovada', book_key: 'bovada', price: 100 }, quotes, 'over').book, 'Bovada')
 })
 
+test('theScore US and CA are one shared feed, separate from BetOnline', () => {
+  const quotes = [
+    { book: 'FanDuel', book_key: 'fanduel', over: -110, under: -110 },
+    { book: 'TheScore US', book_key: 'thescoreus', source_id: 36, over: -125, under: 105 },
+    { book: 'TheScore CA', book_key: 'thescoreca', source_id: 60, over: -125, under: 105 },
+    { book: 'BetOnline', book_key: 'betonline', source_id: 9, over: -130, under: 110 },
+  ]
+  assert.equal(booksCount(quotes), 3)
+  assert.equal(booksCount(quotes.slice(0, 3)), 2)
+  const consensus = consensusBookPrices(quotes)
+  assert.deepEqual(consensus.map((quote) => quote.book).sort(), ['BetOnline', 'FanDuel', 'TheScore US'])
+  const caOnly = consensusBookPrices([quotes[0], quotes[2]])
+  assert.deepEqual(caOnly.map((quote) => quote.book).sort(), ['FanDuel', 'TheScore CA'])
+  assert.equal(displayedBookCount({ fair_books: ['FanDuel', 'TheScore US', 'TheScore CA'] }), 2)
+  const item = { pp_line: 2.5, matched_line: 2.5, prop: 'Shots On Goal', book_prices: quotes.slice(0, 2) }
+  const doubled = { ...item, book_prices: quotes.slice(0, 3) }
+  const one = computeCgOdds(item, 'over', 0.5)
+  const two = computeCgOdds(doubled, 'over', 0.5)
+  assert.equal(two.probability, one.probability)
+  assert.equal(two.books.length, 2)
+  assert.equal(policyBestQuote(null, quotes.slice(0, 3), 'under').price, 105)
+})
+
 test('one-sided shared skins do not become a second consensus book', () => {
   const quotes = [
     { book: 'Pinnacle', book_key: 'pinnacle', over: -110, under: -110 },

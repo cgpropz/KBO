@@ -101,6 +101,10 @@ class PolicyMatchTests(unittest.TestCase):
         self.assertEqual(shared_feed_info({"book": "BOL", "source_id": 9})["rank"], 0)
         self.assertEqual(shared_feed_info("Bovada")["rank"], 2)
         self.assertIsNone(shared_feed_info("Pinnacle"))
+        self.assertEqual(shared_feed_info("TheScore US")["feed"], "thescore")
+        self.assertEqual(shared_feed_info({"book": "theScore Bet", "source_id": 60})["rank"], 1)
+        self.assertEqual(shared_feed_info("Bovada")["feed"], "betonline-sportsbetting-bovada")
+        self.assertEqual(books_count(["TheScore US", "TheScore CA", "BetOnline", "Bovada", "FanDuel"]), 3)
 
     def test_normalize_drops_excluded_sources_and_keeps_the_shared_feed(self):
         def line(source_id, price, points=74.5):
@@ -266,6 +270,21 @@ class SnapshotPolicyTests(unittest.TestCase):
         self.assertEqual(row["best_over"]["book"], "Bovada")
         self.assertEqual(row["best_over"]["price"], 100)
         self.assertEqual({item["book"] for item in row["book_prices"]}, {"FanDuel", "BetOnline", "SportsBetting", "Bovada"})
+
+    def test_thescore_us_and_ca_count_once_and_consensus_keeps_one(self):
+        alone = self._snapshot(_pair("FanDuel", -110, -110) + _pair("TheScore US", -125, 105, 36))
+        books = _pair("FanDuel", -110, -110)
+        books += _pair("TheScore US", -125, 105, 36)
+        books += _pair("TheScore CA", -125, 105, 60)
+        row = self._snapshot(books)
+        self.assertEqual(row["matched_books_count"], 2)
+        self.assertEqual(sorted(row["fair_books"]), ["FanDuel", "TheScore US"])
+        self.assertEqual(row["fair_over_pct"], alone["fair_over_pct"])
+        # theScore is a separate feed from BetOnline: both still count.
+        mixed = self._snapshot(books + _pair("BetOnline", -130, 110, 9) + _pair("Bovada", -130, 110, 10))
+        self.assertEqual(mixed["matched_books_count"], 3)
+        ca_only = self._snapshot(_pair("FanDuel", -110, -110) + _pair("TheScore CA", -125, 105, 60))
+        self.assertEqual(sorted(ca_only["fair_books"]), ["FanDuel", "TheScore CA"])
 
     def test_shared_feed_falls_through_to_sportsbetting_then_bovada(self):
         sports = self._snapshot(_pair("FanDuel", -110, -110) + _pair("SportsBetting", -130, 110) + _pair("Bovada", 100, -120))

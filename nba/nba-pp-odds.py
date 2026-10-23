@@ -42,6 +42,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 import time
 import unicodedata
@@ -684,14 +685,30 @@ def select_slate_rows(rows: list[dict], today: datetime | None = None) -> tuple[
     return [row for row in dated if row["gameDate"] == target], target
 
 
-def index_roster(roster: list[dict]) -> tuple[dict, list[str]]:
+_NAME_SUFFIX = re.compile(r"\s+(?:jr|sr|ii|iii|iv|v)\.?$")
+
+
+def suffixless_player_key(name: object) -> str:
+    """normalize_player_key without a trailing Jr./Sr./II/III/IV/V.
+
+    PrizePicks can post "Marvin Bagley" while ESPN's roster and box scores
+    say "Marvin Bagley III". Used only as a fallback after the exact key.
+    """
+    cleaned = " ".join(str(name or "").strip().split()).translate(_FOLD_LETTERS)
+    decomposed = unicodedata.normalize("NFKD", cleaned)
+    plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
+    return normalize_player_key(_NAME_SUFFIX.sub("", plain))
+
+
+def _unique_by(roster: list[dict], key_fn) -> tuple[dict, set[str], list[str]]:
     buckets: dict[str, list[dict]] = {}
     for player in roster:
-        key = normalize_player_key(player.get("name"))
+        key = key_fn(player.get("name"))
         if not key:
             continue
         buckets.setdefault(key, []).append(player)
     unique = {}
+    ambiguous_keys = set()
     ambiguous = []
     for key, group in buckets.items():
         ids = {str(player.get("athleteId") or "") for player in group}
@@ -699,8 +716,44 @@ def index_roster(roster: list[dict]) -> tuple[dict, list[str]]:
         if len(ids) <= 1:
             unique[key] = group[0]
         else:
+            ambiguous_keys.add(key)
             ambiguous.append(str(group[0].get("name") or key))
-    return unique, sorted(ambiguous)
+    return unique, ambiguous_keys, ambiguous
+
+
+def index_roster(roster: list[dict]) -> tuple[dict, list[str]]:
+    """Exact-name index, plus suffix-free aliases that collide with nothing.
+
+    The returned dict carries the suffix index on ``.suffixless`` so
+    roster_lookup can also match a PrizePicks name that has a suffix the
+    roster lacks. An exact key that is ambiguous never falls back.
+    """
+    unique, ambiguous_keys, ambiguous = _unique_by(roster, normalize_player_key)
+    suffixless, suffix_ambiguous, _names = _unique_by(roster, suffixless_player_key)
+    index = _RosterIndex(unique)
+    index.exact_ambiguous = ambiguous_keys
+    index.suffixless = {key: player for key, player in suffixless.items() if key not in suffix_ambiguous}
+    for key, player in index.suffixless.items():
+        if key not in index and key not in ambiguous_keys:
+            index[key] = player
+    return index, sorted(ambiguous)
+
+
+class _RosterIndex(dict):
+    exact_ambiguous: set = frozenset()
+    suffixless: dict = {}
+
+
+def roster_lookup(index: dict, name: object):
+    """Roster player for a PrizePicks name: exact key, then suffix-free key."""
+    key = normalize_player_key(name)
+    if not key:
+        return None
+    if key in index:
+        return index[key]
+    if key in getattr(index, "exact_ambiguous", ()):
+        return None
+    return (getattr(index, "suffixless", None) or {}).get(suffixless_player_key(name))
 
 
 def load_roster(players_path: Path | None = None) -> list[dict]:
@@ -792,7 +845,7 @@ def build_boards(rows: list[dict], roster: list[dict], teams: dict | None = None
         if odds_type not in boards:
             continue
         key = normalize_player_key(row["name"])
-        roster_player = matched_by_key.get(key)
+        roster_player = roster_lookup(matched_by_key, row["name"])
         if roster_player is None:
             unmatched.add(row["name"])
         team = canonical_team((roster_player or {}).get("team") or row.get("team"))

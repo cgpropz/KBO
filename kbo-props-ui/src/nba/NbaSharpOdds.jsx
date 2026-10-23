@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { fetchNbaSharpOdds } from './nbaData'
 import { lineWord } from '../lineCount'
 import { fitImage } from '../fitImage.js'
-import { computeCgOdds } from '../nfl/cgOdds'
+import { computeCgOdds, lineAdjustDetail, NBA_MAX_LINE_GAP } from '../nfl/cgOdds'
+
+const CG_OPTIONS = { maxLineGap: NBA_MAX_LINE_GAP }
+import { BookLineLabel, BookLinePct, LineAdjTag } from '../nfl/LineAdjust.jsx'
 import { displayedBookCount, policyBestQuote } from '../nfl/bookPolicy'
 import { BASELINES, BookLogo, BookStrip, noBookNote } from '../nfl/BookOddsStrip'
 import { hitRateColor, priceColor, priceTone } from '../nfl/ppBoardColors'
@@ -96,7 +99,7 @@ function HitRate({ rate }) {
 
 function cgFor(item, mode) {
   const side = nbaScoredSide(item)
-  return side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven) : null
+  return side ? computeCgOdds(item, side, (BASELINES[mode] || BASELINES.flex).breakeven, CG_OPTIONS) : null
 }
 
 function CgOddsCell({ item, mode }) {
@@ -116,6 +119,7 @@ function CgOddsCell({ item, mode }) {
   const tone = cg.edgePct == null ? 'even' : cg.edgePct > 0 ? 'pos' : cg.edgePct < 0 ? 'neg' : 'even'
   const sideLabel = side === 'under' ? 'Under' : 'Over'
   const bookList = cg.books.join(', ')
+  const adjust = cg.lineAdjusted ? lineAdjustDetail(item, CG_OPTIONS) : null
   return (
     <td className={`nfl-sharp-cg tone-${tone}`}>
       <div className="cgo-hero" title="CG odds. Sniper Bot spec method: power de-vig, weighted book blend, line shift. Weights are unfitted priors; not backtested.">
@@ -129,12 +133,11 @@ function CgOddsCell({ item, mode }) {
         <div className="cgo-main">
           <b className="cgo-price">{formatAmerican(cg.american)}</b>
           <span className="cgo-prob"><strong>{(cg.probability * 100).toFixed(1)}%</strong><small>{sideLabel} fair win</small></span>
+          <BookLinePct detail={adjust} side={side} />
         </div>
         <div className="cgo-tags">
           <span className="cgo-tag" title={bookList ? `Books in the CG price: ${bookList}` : 'Books in the CG price'}>{cg.books.length} book{cg.books.length === 1 ? '' : 's'}</span>
-          {cg.lineAdjusted && (
-            <span className="cgo-tag adj" title={`Books post ${formatValue(item.matched_line)}, PrizePicks posts ${formatValue(item.pp_line)}.`}>line adj {formatValue(item.matched_line)}→{formatValue(item.pp_line)}</span>
-          )}
+          {cg.lineAdjusted && <LineAdjTag item={item} detail={adjust} />}
         </div>
       </div>
     </td>
@@ -192,8 +195,8 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           )}
         </td>
         <CgOddsCell item={item} mode={mode} />
-        <td><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
-        <td><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
+        <td><BookLineLabel item={item} side="over" /><Quote quote={policyBestQuote(item.best_over, item.book_prices, 'over')} baselineAmerican={baselineAmerican} /></td>
+        <td><BookLineLabel item={item} side="under" /><Quote quote={policyBestQuote(item.best_under, item.book_prices, 'under')} baselineAmerican={baselineAmerican} /></td>
         <td><ProjectionCell item={item} /></td>
         <td><span className={`nfl-grade ${gradeClass(matchup)}`}>{matchup || '—'}</span></td>
         <td><HitRate rate={item.hitRateL5} /></td>
@@ -276,8 +279,8 @@ export default function NbaSharpOdds({ onSelectPlayer }) {
                 <th>Player</th>
                 <th>Prop</th>
                 <th className="nfl-sharp-cg-th" title="CG fair odds, fair win% for the PrizePicks side, and edge vs the selected PrizePicks break-even. Sniper Bot spec method, unfitted priors, not backtested.">CG Odds</th>
-                <th>Best Over</th>
-                <th>Best Under</th>
+                <th title="Best book price at the book line. When the book line differs from PrizePicks, the cell says Best Over @line.">Best Over</th>
+                <th title="Best book price at the book line. When the book line differs from PrizePicks, the cell says Best Under @line.">Best Under</th>
                 <th>Our Proj</th>
                 <th>Matchup</th>
                 <th>L5</th>
