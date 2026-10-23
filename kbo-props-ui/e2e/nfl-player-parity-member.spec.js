@@ -104,6 +104,11 @@ test('nfl splits and advanced stats use NFL stats and fit', async ({ page }) => 
   await expect(splitsCard).toContainText('vs 2026 D rank 1–10')
   await expect(splitsCard).not.toContainText(/top-10 D|bottom-10 D/)
   await expect(page.getByTestId('pi-splits-card')).toContainText('Snap % 70+')
+  // Defense and Snaps rows use the shared strength scale like every other row.
+  for (const label of ['vs 2026 D rank 1–10', 'Snap % 70+']) {
+    const tone = await splitsCard.getByTestId('pi-split-row').filter({ hasText: label }).first().getAttribute('data-tone')
+    expect(['strong', 'good', 'neutral', 'soft', 'weak', 'muted']).toContain(tone)
+  }
   await page.getByTestId('pi-adv-toggle').click()
   const options = page.getByTestId('pi-adv-option')
   for (const label of ['Touches per game', 'Targets per game', 'Catch rate', 'Yards per carry', 'Yards per touch']) {

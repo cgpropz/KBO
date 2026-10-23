@@ -5,6 +5,16 @@
 
 import { meanOf, parseGameDay, ratio, sumOf } from './insightsCore.js'
 import { nflGameLog } from '../nfl/nflPlayerGames.js'
+import { registerStatDirection } from './strengthScale.js'
+
+// NFL stats where fewer is better for the player: interceptions thrown,
+// sacks taken, fumbles, and the opponent's defense rank (1 = toughest D).
+// Everything else on the NFL page (yards, catches, attempts, snap share and
+// the per-touch rates) is higher-is-better, the scale's default. There is no
+// NFL position/league baseline in our published data (only today's prop rows,
+// which skew to players with lines), so Advanced compares to the player's own
+// season, the shared fallback.
+registerStatDirection('nfl', /interception|\bints?\b|sacks? taken|fumble|def(ensive)? rank|\bdvp\b/i, { lowerIsBetter: true })
 
 // "Early season" notice below this many games in the current season.
 // NBA 82 games, WNBA 44, NFL 17, KBO 144 for hitters and ~30 starts for

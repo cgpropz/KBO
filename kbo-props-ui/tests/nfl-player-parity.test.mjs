@@ -150,3 +150,33 @@ test('board CG is Pending for a blank projection, never 0', () => {
   // The old board fallback turned a null projection into 0.
   assert.equal(nflCgScore(null, 70.5, 'Rush Yards'), 0)
 })
+
+test('nfl strength directions: turnovers and def rank are lower-is-better, yards are not', async () => {
+  await import('../src/playerInsights/insightsSports.js')
+  const { isLowerBetter, strengthTone } = await import('../src/playerInsights/strengthScale.js')
+  for (const stat of ['Pass INTs', 'INT', 'Interceptions', 'Sacks Taken', 'Fumbles Lost', 'Def rank', 'dvp']) {
+    assert.equal(isLowerBetter('nfl', stat), true, stat)
+  }
+  for (const stat of ['Rush Yards', 'Receptions', 'Pass Yards', 'Rec Targets', 'snap', 'ypcarry', 'Pass TDs']) {
+    assert.equal(isLowerBetter('nfl', stat), false, stat)
+  }
+  assert.equal(strengthTone(0.5, 1, { n: 6, lowerIsBetter: isLowerBetter('nfl', 'Pass INTs') }).tone, 'strong')
+  assert.equal(strengthTone(90, 60, { n: 2 }).tone, 'muted')
+})
+
+test('nfl defense and snap split rows carry a strength tone', async () => {
+  const { buildSplits } = await import('../src/playerInsights/insightsCore.js')
+  const mk = (i, value, snap, dvp) => ({ gameday: `2026-10-${String(1 + i).padStart(2, '0')}`, value, opponent: 'DAL', season: '2026', raw: { snap }, dvp })
+  const games = [mk(0, 40, 80, 3), mk(1, 45, 82, 5), mk(2, 50, 85, 7), mk(3, 100, 60, 28), mk(4, 110, 55, 30), mk(5, 105, 50, 25)]
+  const model = { sport: 'nfl', games, currentSeason: '2026' }
+  const extra = [
+    { group: 'Defense', id: 'dvptough', ownScope: true, label: 'vs 2026 D rank 1–10', test: (g) => g.dvp <= 10 },
+    { group: 'Defense', id: 'dvpsoft', ownScope: true, label: 'vs 2026 D rank 23–32', test: (g) => g.dvp > 22 },
+    { group: 'Snaps', id: 'snaphigh', label: 'Snap % 70+', test: (g) => g.raw.snap >= 70 },
+  ]
+  const { rows } = buildSplits(games, { ...model, extraSplits: extra, line: null })
+  const by = Object.fromEntries(rows.map((r) => [r.id, r.strength?.tone]))
+  assert.ok(['weak', 'soft'].includes(by.dvptough), JSON.stringify(by))
+  assert.ok(['strong', 'good'].includes(by.dvpsoft), JSON.stringify(by))
+  assert.ok(['weak', 'soft'].includes(by.snaphigh), JSON.stringify(by))
+})
