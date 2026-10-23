@@ -26,6 +26,14 @@ final is rejected even if its date sits inside the regular-season window. The
 2025-26 box score file already omits those games, the same way DVP does.
 
 A player with no qualifying log stays pending. No rookie projection is invented.
+
+Early 2026-27 (project_board_player): with 1 or 2 qualifying 2026-27 games,
+a player who has 2025-26 games gets a blend of a this-season-only bundle and
+a 2025-26 full-season bundle (season-long per-minute rates and average
+minutes, so a late-season minutes spike does not carry over). This season's weight is n / (n + min(m, 3)), n =
+2026-27 games, m = 2025-26 games (so 25% after one game and 40% after two
+when m >= 3). With no 2025-26 games the player stays pending (blank) until
+the third 2026-27 game. 0 or 3+ 2026-27 games: unchanged.
 There is no apply_live_formula overlay.
 
 Each prop stores sanity_flag and ratio from the projection/line check
@@ -217,14 +225,21 @@ def clamp_dvp_factor(factor) -> float:
     return min(FACTOR_MAX, max(FACTOR_MIN, value))
 
 
-def build_projection_bundle(games: list[dict], avg_mins: float, dvp_factors: dict | None = None) -> dict:
+def build_projection_bundle(
+    games: list[dict],
+    avg_mins: float,
+    dvp_factors: dict | None = None,
+    windows: tuple = (3, 7, 15),
+) -> dict:
+    """windows: game counts for the L3/L7/L15 slots. None in a slot means every game."""
     factors = dvp_factors or {}
+    short, middle, long_ = windows
     ppm = {}
     for stat in BASE_STATS:
         ppm[stat] = {
-            "L3": ppm_window(games, stat, 3),
-            "L7": ppm_window(games, stat, 7),
-            "L15": ppm_window(games, stat, 15),
+            "L3": ppm_window(games, stat, short),
+            "L7": ppm_window(games, stat, middle),
+            "L15": ppm_window(games, stat, long_),
         }
     base = {}
     for stat in BASE_STATS:
@@ -242,15 +257,15 @@ def build_projection_bundle(games: list[dict], avg_mins: float, dvp_factors: dic
     }
     binary = {
         "doubleDouble": to_fixed(
-            window_rate(games, is_double_double, 3) * 0.5
-            + window_rate(games, is_double_double, 7) * 0.3
-            + window_rate(games, is_double_double, 15) * 0.2,
+            window_rate(games, is_double_double, short) * 0.5
+            + window_rate(games, is_double_double, middle) * 0.3
+            + window_rate(games, is_double_double, long_) * 0.2,
             3,
         ),
         "tripleDouble": to_fixed(
-            window_rate(games, is_triple_double, 3) * 0.5
-            + window_rate(games, is_triple_double, 7) * 0.3
-            + window_rate(games, is_triple_double, 15) * 0.2,
+            window_rate(games, is_triple_double, short) * 0.5
+            + window_rate(games, is_triple_double, middle) * 0.3
+            + window_rate(games, is_triple_double, long_) * 0.2,
             3,
         ),
     }
@@ -312,6 +327,84 @@ def project_player(games: list[dict], dvp_factors: dict | None = None) -> dict |
     bundle["gp"] = len(qualifying)
     bundle["games"] = qualifying
     return bundle
+
+
+EARLY_SEASON_GAMES = 3
+PRIOR_SEASON_GAME_CAP = 3
+
+
+def season_weight(current_games: int, prior_games: int) -> float:
+    """This season's share of an early-season blend. Last season counts as at most 3 games."""
+    prior = min(max(prior_games, 0), PRIOR_SEASON_GAME_CAP)
+    total = current_games + prior
+    return current_games / total if total > 0 else 1.0
+
+
+def _mix(a: float, b: float, weight: float) -> float:
+    return (a or 0) * weight + (b or 0) * (1 - weight)
+
+
+def blend_bundles(current: dict, prior: dict, weight: float) -> dict:
+    """Weighted mix of two bundles. Fantasy and combos are rebuilt from the mixed stats."""
+    base = {stat: to_fixed(_mix(current["base"][stat], prior["base"][stat], weight), 2) for stat in BASE_STATS}
+    base["fantasy"] = to_fixed(calc_fantasy_score(base), 2)
+    combo = {
+        "rebAst": to_fixed(base["reb"] + base["ast"], 2),
+        "ptsReb": to_fixed(base["pts"] + base["reb"], 2),
+        "ptsAst": to_fixed(base["pts"] + base["ast"], 2),
+        "ptsRebAst": to_fixed(base["pts"] + base["reb"] + base["ast"], 2),
+        "blkStl": to_fixed(base["blk"] + base["stl"], 2),
+    }
+    binary = {key: to_fixed(_mix(current["binary"][key], prior["binary"][key], weight), 3) for key in current["binary"]}
+    ppm = {
+        stat: {window: _mix(current["ppm"][stat][window], prior["ppm"][stat][window], weight) for window in current["ppm"][stat]}
+        for stat in current["ppm"]
+    }
+    return {
+        "ppm": ppm,
+        "base": base,
+        "combo": combo,
+        "binary": binary,
+        "avgMins": to_fixed(_mix(current["avgMins"], prior["avgMins"], weight), 1),
+    }
+
+
+def season_average_bundle(games: list[dict], dvp_factors: dict | None = None) -> dict | None:
+    """Last season as one block: full-season per-minute rates and average minutes."""
+    qualifying = [game for game in games if (game.get("min") or 0) > 0]
+    if not qualifying:
+        return None
+    avg = sum(game["min"] for game in qualifying) / len(qualifying)
+    bundle = build_projection_bundle(qualifying, avg, dvp_factors, windows=(None, None, None))
+    bundle["avgMins"] = to_fixed(avg, 1)
+    return bundle
+
+
+def is_current_season_game(game: dict) -> bool:
+    return str(game.get("season") or "") == SEASON_2027
+
+
+def project_board_player(games: list[dict], dvp_factors: dict | None = None) -> tuple[dict | None, str]:
+    """Bundle for a board row and how it was built: "normal", "blend" or "blank".
+
+    1-2 qualifying 2026-27 games: blend with the 2025-26 full-season bundle
+    (season_weight), or blank
+    when there are no 2025-26 games. 0 or 3+ 2026-27 games: project_player.
+    """
+    qualifying = [game for game in games if (game.get("min") or 0) > 0]
+    current = [game for game in qualifying if is_current_season_game(game)]
+    if not current or len(current) >= EARLY_SEASON_GAMES:
+        bundle = project_player(qualifying, dvp_factors)
+        return bundle, "normal" if bundle else "blank"
+    prior = [game for game in qualifying if not is_current_season_game(game)]
+    if not prior:
+        return None, "blank"
+    weight = season_weight(len(current), len(prior))
+    bundle = blend_bundles(project_player(current, dvp_factors), season_average_bundle(prior, dvp_factors), weight)
+    bundle["gp"] = len(qualifying)
+    bundle["games"] = qualifying
+    bundle["seasonWeight"] = to_fixed(weight, 3)
+    return bundle, "blend"
 
 
 CG_MIN = 0.0
@@ -531,6 +624,7 @@ def games_by_athlete(rows: list[dict], official_teams: set[str]) -> dict[str, li
         game = game_from_row(row)
         if game is None:
             continue
+        game["season"] = str(row.get("Season") or "").strip()
         grouped[athlete_id].append((index, game))
     ordered = {}
     for athlete_id, games in grouped.items():
@@ -669,7 +763,7 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
         filled = dict(prop)
         label = prop.get("stat") or ""
         opponent = str(prop.get("opponent") or player.get("dvpOpponent") or "").strip().upper()
-        bundle = project_player(qualifying, factors_for(slot, opponent, dvp_factors)) if qualifying else None
+        bundle = project_board_player(qualifying, factors_for(slot, opponent, dvp_factors))[0] if qualifying else None
         projection = projection_for_label(label, bundle)
         filled["projection"] = projection
         fill_line_fields(filled, qualifying, label)
@@ -684,11 +778,14 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
         props.append(filled)
     updated["ppAllProps"] = props
     sample = None
+    # "blend" or "blank" (rookie under 3 games) for early 2026-27 rows, else None.
+    mode = project_board_player(qualifying)[1] if qualifying else None
+    updated["earlySeason"] = mode if mode in ("blend", "blank") else None
     if qualifying and any_projection:
-        sample = project_player(
+        sample = project_board_player(
             qualifying,
             factors_for(slot, str(updated.get("dvpOpponent") or "").upper(), dvp_factors),
-        )
+        )[0]
     if any_projection and sample:
         updated["avgMins"] = sample["avgMins"]
         updated["gp"] = sample["gp"]
@@ -703,7 +800,10 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
 def apply_board(players: list[dict], games_by_id: dict, dvp_factors: dict, dvp_ranks: dict, espn_by_id: dict) -> tuple[list[dict], dict]:
     profiles = season_profiles(games_by_id)
     filled = []
-    counts = {"roster": 0, "fallback": 0, "neutral": 0, "projected_lines": 0, "pending_lines": 0, "players": 0, "projected_players": 0}
+    counts = {
+        "roster": 0, "fallback": 0, "neutral": 0, "projected_lines": 0, "pending_lines": 0, "players": 0, "projected_players": 0,
+        "blend_players": 0, "blend_lines": 0, "blank_players": 0, "blank_lines": 0,
+    }
     flags = []
     for player in players:
         athlete_id = str(player.get("athleteId") or "")
@@ -712,6 +812,13 @@ def apply_board(players: list[dict], games_by_id: dict, dvp_factors: dict, dvp_r
         updated = apply_player(player, games, dvp_factors, dvp_ranks, slot, source)
         filled.append(updated)
         counts["players"] += 1
+        early = updated.get("earlySeason")
+        if early == "blend" and updated["projectionStatus"] == "projected":
+            counts["blend_players"] += 1
+            counts["blend_lines"] += sum(1 for prop in updated["ppAllProps"] if prop.get("projection") is not None)
+        elif early == "blank":
+            counts["blank_players"] += 1
+            counts["blank_lines"] += len(updated["ppAllProps"])
         if updated["projectionStatus"] == "projected":
             counts["projected_players"] += 1
             counts[source] += 1
@@ -788,6 +895,10 @@ def format_report(slate_note: str, per_type: dict[str, dict], position_note: str
             f"{odds_type}: projected {counts['projected_lines']} lines, pending {counts['pending_lines']} lines, "
             f"players {counts['projected_players']}/{counts['players']} "
             f"(roster slot {counts['roster']}, fallback slot {counts['fallback']}, factor 1.0 {counts['neutral']})"
+        )
+        chunks.append(
+            f"  early 2026-27: blended {counts.get('blend_lines', 0)} lines / {counts.get('blend_players', 0)} players, "
+            f"blank until game 3 {counts.get('blank_lines', 0)} lines / {counts.get('blank_players', 0)} players"
         )
         flags = counts["sanity"]
         if not flags:
