@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildSplits, formatAvg, formatMetric, metricSeries, metricWindows, rateWindows, seriesDayLabels, seriesLabelsVertical, seriesRange, seriesValueLabel } from './insightsCore.js'
-import { isLowerBetter, STRENGTH_COLORS, STRENGTH_MIN_GAMES } from './strengthScale.js'
+import { STRENGTH_COLORS, STRENGTH_MIN_GAMES } from './strengthScale.js'
 import { formatLineValue } from '../lineSlider'
 import './playerInsights.css'
 
@@ -55,13 +55,15 @@ function SplitRow({ row }) {
 function SplitsScaleNote({ splits, line }) {
   const base = splits.baseline
   if (!base || base.value == null) return null
-  const what = base.kind === 'rate'
-    ? `overall hit rate over ${formatLineValue(line)} (${Math.round(base.value)}%)`
+  const rate = base.kind === 'rate'
+  const what = rate
+    ? `overall over rate over ${formatLineValue(line)} (${Math.round(base.value)}%)`
     : `overall average (${formatAvg(base.value)})`
+  const games = base.scope === 'logged' ? `${base.n} ${rate ? 'decided' : 'logged'} games` : `${base.n} ${rate ? 'decided ' : ''}games ${base.scope}`
   return (
     <p className="pi-sub pi-scale-note" data-testid="pi-scale-note">
-      Colors: each row vs the player&apos;s {what} across all {base.n} logged games. ▲ stronger, ▼ weaker
-      {base.lowerIsBetter ? ' (lower is better for this stat)' : ''}. Under {STRENGTH_MIN_GAMES} games: gray, not rated.
+      Colors: each row vs the player&apos;s {what} across {games}.{' '}
+      {rate ? '▲ more overs than usual, ▼ fewer overs.' : '▲ above usual, ▼ below usual.'} Under {STRENGTH_MIN_GAMES} games: gray, not rated.
     </p>
   )
 }
@@ -162,6 +164,9 @@ function Unavailable({ model }) {
 function AdvancedScaleNote({ rated, metric }) {
   const base = rated.baseline
   const lower = rated.lowerIsBetter ? ' Lower is better for this stat.' : ''
+  if (rated.neutral) {
+    return <p className="pi-sub pi-scale-note" data-testid="pi-adv-baseline">Not colored: this stat has no better or worse side.</p>
+  }
   if (!base) {
     return <p className="pi-sub pi-scale-note" data-testid="pi-adv-baseline">Not colored yet: under {STRENGTH_MIN_GAMES} games to compare against.</p>
   }
@@ -222,8 +227,7 @@ function AdvancedPanel({ model }) {
 // anyone else. A blocked model (NHL until its game feed is approved) or no
 // model renders just the children.
 export default function PlayerInsights({ model, line, statLabel, children }) {
-  const lowerIsBetter = model ? isLowerBetter(model.sport, statLabel) : false
-  const splits = useMemo(() => (model && !model.splitsBlocked ? buildSplits(model.games, { ...model, line, lowerIsBetter }) : null), [model, line, lowerIsBetter])
+  const splits = useMemo(() => (model && !model.splitsBlocked ? buildSplits(model.games, { ...model, line }) : null), [model, line])
   if (!model || model.splitsBlocked || !splits) return children
   return (
     <>

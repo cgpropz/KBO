@@ -15,7 +15,7 @@
 // Games arrive newest first.
 
 import { overHitRate } from '../hitRateStrip.js'
-import { baselineFor, isLowerBetter, strengthTone } from './strengthScale.js'
+import { baselineFor, isLowerBetter, isNeutralStat, UNRATED_STRENGTH, strengthTone } from './strengthScale.js'
 
 export const SMALL_SAMPLE = 5
 const DAY_MS = 86400000
@@ -77,7 +77,7 @@ export function withRest(games) {
 //   'all'    - newest logged games whatever the season (shipped behavior)
 //   'season' - this season only; L5/L10 hidden under SCOPED_MIN_GAMES games
 //   'both'   - newest logged games, labeled "both seasons" when they span two
-// A sport adapter sets `recentScope`; flipping it is the whole switch.
+// A sport adapter sets `recentScope` (basketball: basketballRecentScope).
 export const RECENT_SCOPES = Object.freeze(['all', 'season', 'both'])
 export const SCOPED_MIN_GAMES = 5
 export const DEFAULT_EARLY_SEASON_GAMES = 10
@@ -95,6 +95,9 @@ function summarize(games, line) {
     n,
     avg,
     rate: rated?.rate ?? null,
+    // Unrounded over rate (hits / decided): strength colors use this, so a
+    // 54.9% row is never rated off its rounded 55%.
+    exactRate: decided > 0 ? ((rated?.hits ?? 0) / decided) * 100 : null,
     hits: rated?.hits ?? 0,
     decided,
     pushes,
@@ -135,6 +138,14 @@ function seasonsIn(games) {
   return new Set(games.map((game) => game.season).filter((season) => season != null)).size
 }
 
+// Games inside the 'both' scope: the adapter's two seasons when it names
+// them (basketball: league season + the one before), else the player's
+// newest season and the one before it in the log.
+function scopeFilter(scopeSeasons, season, priorSeason) {
+  const allowed = Array.isArray(scopeSeasons) && scopeSeasons.length ? scopeSeasons : [season, priorSeason].filter((value) => value != null)
+  return (game) => allowed.includes(game.season)
+}
+
 const sameOpp = (key) => (a, b) => a != null && b != null && key(a) === key(b)
 
 // Every split the logs can support. A split whose field is missing from every
@@ -152,9 +163,9 @@ export function buildSplits(games, {
   logCap = null,
   recentScope = 'all',
   hideEmptyRest = false,
+  scopeSeasons = null,
   oppKey = (team) => String(team).toUpperCase(),
   extraSplits = [],
-  lowerIsBetter = false,
 } = {}) {
   const logged = Array.isArray(games) ? games : []
   const truncatedSeason = truncatedSeasonOf(logged, logCap)
@@ -176,8 +187,10 @@ export function buildSplits(games, {
   } else skipped.push('Last 30 days (no game dates)')
 
   // Context splits follow the item-1 scope.
-  const pool = recentScope === 'season' ? seasonGames : list
-  const tag = recentScope === 'both' && seasonsIn(pool) > 1 ? ' · both seasons' : ''
+  const inScope = scopeFilter(scopeSeasons, season, priorSeason)
+  const twoSeasons = list.filter(inScope)
+  const pool = recentScope === 'season' ? seasonGames : recentScope === 'both' ? twoSeasons : list
+  const tag = recentScope === 'both' && seasonsIn(pool) > 1 ? ' · both seasons' : recentScope === 'season' ? ' · this season' : ''
   const ctx = (name) => `${name}${tag}`
 
   if (pool.some((game) => game.home != null)) {
@@ -221,19 +234,22 @@ export function buildSplits(games, {
     const matched = source.filter((game) => split.test(game))
     if (matched.length) out.push(row(split.ownScope ? split.group : ctx(split.group), split.id, split.label, matched, line))
   })
-  // Strength colors: each row against the player's own overall number for
-  // this stat across every logged game (hit rate when there is a line).
-  const overall = summarize(list, line)
+  // Strength colors: each row's over rate against the player's overall over
+  // rate in the same scope (average when there is no line). Higher = green,
+  // whatever the prop: it matches the board's hit-rate colors, so no
+  // lowerIsBetter flip here (that is for Advanced metrics only).
+  // The baseline follows the same scope as the context splits.
+  const overall = summarize(pool, line)
   const byRate = line != null && overall.rate != null
   const baseline = {
     kind: byRate ? 'rate' : 'ratio',
-    value: byRate ? overall.rate : overall.avg,
+    value: byRate ? overall.exactRate : overall.avg,
     n: overall.shown,
-    lowerIsBetter,
+    scope: recentScope === 'season' ? `in ${seasonLabel(season)}` : recentScope === 'both' && seasonsIn(pool) > 1 ? 'over both seasons' : 'logged',
   }
   const rows = out.map((entry) => ({
     ...entry,
-    strength: strengthTone(byRate ? entry.rate : entry.avg, baseline.value, { n: entry.shown, kind: baseline.kind, lowerIsBetter }),
+    strength: splitStrength(byRate ? entry.exactRate : entry.avg, baseline, entry.shown),
   }))
   return { rows, skipped, seasonGames: seasonGames.length, baseline }
 }
@@ -251,6 +267,7 @@ export function metricWindows(metric, games, {
   seasonLabel = (s) => String(s ?? ''),
   logCap = null,
   recentScope = 'all',
+  scopeSeasons = null,
   windowFrom = 'usable',
 } = {}) {
   const logged = Array.isArray(games) ? games : []
@@ -258,7 +275,11 @@ export function metricWindows(metric, games, {
   const keep = (list) => playedGames(list).filter((game) => (metric.has ? metric.has(game.raw) : true))
   const season = currentSeason ?? logged[0]?.season ?? null
   const inSeason = (value) => (game) => game.season === value
-  const source = recentScope === 'season' && season != null ? logged.filter(inSeason(season)) : logged
+  const source = recentScope === 'season' && season != null
+    ? logged.filter(inSeason(season))
+    : recentScope === 'both' && season != null
+      ? logged.filter(scopeFilter(scopeSeasons, season, priorSeason))
+      : logged
   const take = (count) => (windowFrom === 'logged' ? keep(source.slice(0, count)) : keep(source).slice(0, count))
   const windowLabel = (value) => {
     const name = seasonLabel(value)
@@ -288,11 +309,38 @@ export function metricWindows(metric, games, {
   })
 }
 
+function splitStrength(value, baseline, n) {
+  const tone = strengthTone(value, baseline.value, { n, kind: baseline.kind })
+  if (tone.level == null) return tone
+  const words = baseline.kind === 'rate'
+    ? ['fewer overs than usual', 'about usual', 'more overs than usual']
+    : ['below usual', 'about usual', 'above usual']
+  return { ...tone, label: words[Math.sign(tone.level) + 1] }
+}
+
+// Under the 'both' scope the L5/L10 windows span two seasons, so the own-
+// player baseline is the current + prior season together (when both exist).
+function scopeBaseline(metric, model) {
+  if (model?.recentScope !== 'both' || !metric?.total) return null
+  const games = Array.isArray(model.games) ? model.games : []
+  const season = model.currentSeason ?? games[0]?.season ?? null
+  const prior = model.priorSeason
+  if (season == null) return null
+  const inScope = scopeFilter(model.scopeSeasons, season, prior)
+  const kept = playedGames(games).filter((game) => inScope(game) && (metric.has ? metric.has(game.raw) : true))
+  if (seasonsIn(kept) < 2) return null
+  const raws = kept.map((game) => game.raw)
+  return { id: 'scope', label: 'both seasons', value: finite(metric.total(raws)), n: raws.length }
+}
+
 // Colors each window against a baseline: a published position/league number
 // when a provider is registered for the sport, else the player's own season.
 // The window that *is* the baseline stays neutral (marked `isBaseline`).
 export function rateWindows(windows, metric, model = {}) {
-  const baseline = baselineFor(metric, model, windows)
+  if (isNeutralStat(model.sport, metric?.id, metric)) {
+    return { windows: windows.map((window) => ({ ...window, isBaseline: false, strength: UNRATED_STRENGTH })), baseline: null, lowerIsBetter: false, neutral: true }
+  }
+  const baseline = baselineFor(metric, model, windows, scopeBaseline(metric, model))
   const lowerIsBetter = isLowerBetter(model.sport, metric?.id, metric)
   const rated = windows.map((window) => {
     const isBaseline = baseline?.windowId === window.id
@@ -301,7 +349,7 @@ export function rateWindows(windows, metric, model = {}) {
       : strengthTone(window.value, baseline?.value, { n: window.n, kind: 'ratio', lowerIsBetter })
     return { ...window, isBaseline, strength }
   })
-  return { windows: rated, baseline, lowerIsBetter }
+  return { windows: rated, baseline, lowerIsBetter, neutral: false }
 }
 
 export function metricSeries(metric, games, count = 10) {
