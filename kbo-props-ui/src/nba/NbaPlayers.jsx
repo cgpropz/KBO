@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import NbaPlayerChart from './NbaPlayerChart'
+import { TREND_METRICS, cardTrend } from './nbaMinutesUsage.js'
 import { nbaLogoUrl } from './nbaPropLines'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { fitImage } from '../fitImage.js'
@@ -104,6 +105,23 @@ function TopPropPill({ top }) {
   )
 }
 
+// "MIN ↑ 31.2 · USG ↓ 22%": L5 average and the L5 vs season arrow.
+function CardTrends({ player }) {
+  const trends = TREND_METRICS.map((metric) => cardTrend(player, metric)).filter(Boolean)
+  if (!trends.length) return null
+  return (
+    <span className="nba-plist-trends" data-testid="nba-card-trends">
+      {trends.map((item) => (
+        <span key={item.id} className={`nba-plist-trend ${item.trend || ''}`}>
+          <em>{item.short}</em>
+          {item.arrow && <b style={{ color: item.color }}>{item.arrow}</b>}
+          {item.text}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function PlayerRow({ player, top, game, minutes, onOpen }) {
   const slot = displaySlot(player)
   const prior = priorTeam(player)
@@ -131,6 +149,7 @@ function PlayerRow({ player, top, game, minutes, onOpen }) {
             ? <>{statText(player.pts)}<i>P</i> {statText(player.reb)}<i>R</i> {statText(player.ast)}<i>A</i></>
             : <>no games</>}
         </span>
+        <CardTrends player={player} />
       </span>
       <TopPropPill top={top} />
     </button>

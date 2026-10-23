@@ -547,3 +547,105 @@
   .nba-profile-headshot { width: 56px; height: 56px; font-size: 18px; }
   .nba-profile-id h1 { font-size: 24px; }
 }
+
+/* Minutes & Usage under the hit-rate chart. Display only. */
+.nba-mu {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.nba-mu-metric + .nba-mu-metric {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #1f1f1f;
+}
+
+.nba-mu-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.nba-mu-label {
+  color: #f4f4f5;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nba-mu-trend {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.nba-mu-avgs {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.nba-mu-avgs em {
+  margin-right: 3px;
+  color: #71717a;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.nba-mu-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 64px;
+  margin: 14px 0 6px;
+}
+
+.nba-mu-col {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+
+.nba-mu-bar {
+  position: relative;
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: #38bdf8;
+}
+
+.nba-mu-usg .nba-mu-bar { background: #a78bfa; }
+
+.nba-mu-bar i {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  color: #d4d4d8;
+  font: 700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-style: normal;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.nba-mu-none {
+  color: #52525b;
+  font-size: 10px;
+}
+
+.nba-mu-col.is-dimmed,
+.nba-mu-dates > span.is-dimmed {
+  opacity: 0.25;
+}
+
+.nba-mu-empty,
+.nba-mu-note {
+  margin: 6px 0 0;
+  color: #71717a;
+  font-size: 12px;
+}

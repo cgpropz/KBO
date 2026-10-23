@@ -354,6 +354,27 @@
   font-weight: 700;
 }
 
+/* "MIN ↑ 31.2  USG ↓ 22%": L5 average with the L5 vs season arrow. */
+.nba-plist-trends {
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  color: #b7cac3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.nba-plist-trend em {
+  margin-right: 3px;
+  color: #5d756d;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.nba-plist-trend b { margin-right: 3px; }
+
 /* Top prop pill: stat + line over a five-game spark and the L10 rate. */
 .nba-plist-prop {
   flex: 0 0 auto;
@@ -449,6 +470,7 @@
   .nba-plist-card { min-height: 0; }
   .nba-plist-card .nba-plist-name { font-size: 15px !important; }
   .nba-plist-card :is(.nba-plist-meta, .nba-plist-season, .nba-plist-season em, .nba-plist-season i,
+    .nba-plist-trends, .nba-plist-trend em, .nba-plist-trend b,
     .nba-plist-prop-line, .nba-plist-prop-rate small, .nba-plist-prop-rate b) { font-size: 12px !important; }
   .nba-plist-card .nba-plist-meta { gap: 4px; }
   .nba-plist-card .nba-plist-season em { margin-right: 5px; }

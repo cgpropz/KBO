@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 function logs(points) {
   return points.map((pts, index) => ({
     date: `10/${21 - index}/2026`, team: 'DEN', matchup: 'DEN vs. LAL', season: '2027',
-    min: 32 - index, pts, reb: 6, ast: 4, stl: 1, blk: 1, tov: 2, fg3m: 2,
+    min: 32 - index, usg: 20 + (index % 3), pts, reb: 6, ast: 4, stl: 1, blk: 1, tov: 2, fg3m: 2,
   }))
 }
 
@@ -72,6 +72,10 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   await expect(cards.first()).toContainText('vs LAL')
   await expect(cards.first()).toContainText('L10')
   await expect(cards.nth(1)).toContainText('@ DEN')
+  // L5 minutes (32..28 = 30.0) run above the season (27.5): MIN ↑. Usage is flat.
+  const trends = cards.first().getByTestId('nba-card-trends')
+  await expect(trends).toContainText('MIN↑30.0')
+  await expect(trends).toContainText('USG→21%')
   await expect(cards.nth(1)).toContainText('BOS')
 
   // No player without a slot, so there is no Unset chip.
@@ -98,9 +102,27 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   })
   expect(fit.scrollWidth).toBeLessThanOrEqual(fit.innerWidth)
   expect(fit.cardRight).toBeLessThanOrEqual(fit.innerWidth)
-  expect(fit.cardHeight).toBeLessThan(90)
+  // One row per player: name, meta, season line, and the MIN / USG trend line.
+  expect(fit.cardHeight).toBeLessThan(100)
 
   await cards.first().click()
   await expect(page.getByRole('heading', { name: 'Synth Center' })).toBeVisible()
   await expect(page.getByRole('button', { name: '← Players' })).toBeVisible()
+
+  // Minutes & Usage under the hit-rate chart: two charts, same L10 window.
+  const section = page.getByTestId('nba-minutes-usage')
+  await expect(section).toBeVisible()
+  await expect(section.getByTestId('nba-mu-min').locator('.nba-mu-col')).toHaveCount(10)
+  await expect(section.getByTestId('nba-mu-usg').locator('.nba-mu-col')).toHaveCount(10)
+  await expect(section.getByTestId('nba-mu-min')).toContainText('L5')
+  const profileFit = await page.evaluate(() => {
+    const box = document.querySelector('[data-testid="nba-minutes-usage"]').getBoundingClientRect()
+    return {
+      scrollWidth: Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0),
+      innerWidth: window.innerWidth,
+      right: box.right,
+    }
+  })
+  expect(profileFit.scrollWidth).toBeLessThanOrEqual(profileFit.innerWidth)
+  expect(profileFit.right).toBeLessThanOrEqual(profileFit.innerWidth)
 })
