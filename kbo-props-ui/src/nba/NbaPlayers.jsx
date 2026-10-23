@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NBA_DVP_POSITIONS } from './positions'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import NbaPlayerChart from './NbaPlayerChart'
 import { nbaLogoUrl } from './nbaPropLines'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { fitImage } from '../fitImage.js'
+import { NBA_DVP_POSITIONS } from './positions'
+import {
+  SORTS, SUMMARY_SEASON, UNSET, averageMinutes, easternDateKey, filterPlayers, gameText, hitTone,
+  isGameDay, playerKey, positionChips, priorTeam, scheduleFromScoreboard, sortPlayers, sparkBars,
+  teamOptions, todayGame, topPropFor, topProps,
+} from './nbaPlayersList.js'
+import './nbaPlayersList.css'
 
-const FILTERS = ['All', ...NBA_DVP_POSITIONS.map((position) => position.id), 'Unset']
+const SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
+const SKELETON_ROWS = 9
+const SEASON_SHORT = `'${SUMMARY_SEASON.slice(2)}`
 
 function statText(value) {
   return value == null || value === '' ? '—' : Number(value).toFixed(1)
@@ -20,17 +28,155 @@ function initials(name) {
   return String(name || '').split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase() || '?'
 }
 
+function logoSrc(team, width = 40) {
+  const url = nbaLogoUrl(team)
+  return url ? fitImage(url, width) : ''
+}
+
 // ESPN headshot from the roster, as on the dashboard and Edge cards. Initials
 // stand in when there is no image or it fails to load.
-function PlayerHeadshot({ player }) {
-  const src = player?.image ? fitImage(player.image, 128) : ''
+function PlayerHeadshot({ player, size = 128, className = 'nba-profile-headshot' }) {
+  const src = player?.image ? fitImage(player.image, size) : ''
   const [failedSrc, setFailedSrc] = useState('')
   const color = player?.teamColor || '#1f3f3d'
   return (
-    <div className="nba-profile-headshot" style={{ borderColor: color }}>
+    <div className={className} style={{ borderColor: color }}>
       {src && src !== failedSrc
-        ? <img src={src} alt={player.name} onError={() => setFailedSrc(src)} />
+        ? <img src={src} alt="" loading="lazy" onError={() => setFailedSrc(src)} />
         : <span>{initials(player?.name)}</span>}
+    </div>
+  )
+}
+
+// Today's scoreboard from ESPN's public feed: opponent and tip time for every
+// team, including players with no prop up yet. A failed read is an empty map.
+async function fetchSchedule() {
+  try {
+    const response = await fetch(`${SCOREBOARD_URL}?dates=${easternDateKey()}`)
+    if (!response.ok) return new Map()
+    return scheduleFromScoreboard(await response.json())
+  } catch {
+    return new Map()
+  }
+}
+
+function Spark({ values, line }) {
+  const { bars, lineY } = sparkBars(values, line, 16)
+  if (!bars.length) return null
+  const width = bars.length * 5 - 1
+  return (
+    <svg className="nba-plist-spark" width={width} height={16} viewBox={`0 0 ${width} 16`} aria-hidden="true">
+      {bars.map((bar, index) => (
+        <rect key={index} x={index * 5} y={16 - bar.height} width={4} height={bar.height} rx={1} className={bar.hit ? 'hit' : 'miss'} />
+      ))}
+      {lineY != null && <line x1={0} x2={width} y1={lineY} y2={lineY} className="line" />}
+    </svg>
+  )
+}
+
+function TopPropPill({ top }) {
+  if (!top) return null
+  const tone = hitTone(top.hitRate)
+  const side = top.side === 'OVER' ? 'O' : top.side === 'UNDER' ? 'U' : ''
+  return (
+    <span className={`nba-plist-prop tone-${tone}`} title={`${top.stat} ${top.line}: L10 ${top.hits ?? '—'}/${top.games ?? '—'} over`}>
+      <span className="nba-plist-prop-line">{top.short} {side}{top.line}</span>
+      <span className="nba-plist-prop-rate">
+        <small>L10</small>
+        <b>{top.hitRate == null ? '—' : `${top.hitRate}%`}</b>
+      </span>
+      <Spark values={top.last5} line={top.line} />
+    </span>
+  )
+}
+
+function PlayerRow({ player, top, game, minutes, onOpen }) {
+  const slot = player.position || ''
+  const prior = priorTeam(player)
+  return (
+    <button type="button" className="nba-plist-card" data-testid="nba-player-card" onClick={() => onOpen(player)}>
+      <span className="nba-plist-accent" style={{ background: player.teamColor || '#1f3f3d' }} />
+      <PlayerHeadshot player={player} size={96} className="nba-plist-headshot" />
+      <span className="nba-plist-main">
+        <span className="nba-plist-name">{player.name}</span>
+        <span className="nba-plist-meta">
+          <CardTeamLogo team={player.team} src={logoSrc(player.team)} />
+          <span className="nba-plist-team">{player.team}</span>
+          <span className="nba-plist-pos" style={{ color: positionColor(slot) }}>{slot || '—'}</span>
+          {game && <span className="nba-plist-game">{gameText(game)}</span>}
+          {minutes != null && <span className="nba-plist-min">{minutes.toFixed(1)} MIN</span>}
+        </span>
+        <span
+          className="nba-plist-season"
+          aria-label={player.gp
+            ? `${SEASON_SHORT}${prior ? ` with ${prior}` : ''}: ${statText(player.pts)} points, ${statText(player.reb)} rebounds, ${statText(player.ast)} assists`
+            : `${SEASON_SHORT}: no games`}
+        >
+          <em>{SEASON_SHORT}{prior ? ` ${prior}` : ''}</em>
+          {player.gp
+            ? <>{statText(player.pts)}<i>P</i> {statText(player.reb)}<i>R</i> {statText(player.ast)}<i>A</i></>
+            : <>no games</>}
+        </span>
+      </span>
+      <TopPropPill top={top} />
+    </button>
+  )
+}
+
+function SkeletonRows() {
+  return (
+    <div className="nba-plist-grid" aria-busy="true" aria-label="Loading players">
+      {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+        <div key={index} className="nba-plist-card nba-plist-skeleton">
+          <span className="nba-plist-headshot sk" />
+          <span className="nba-plist-main">
+            <span className="sk sk-line" style={{ width: '55%' }} />
+            <span className="sk sk-line" style={{ width: '38%' }} />
+            <span className="sk sk-line" style={{ width: '70%' }} />
+          </span>
+          <span className="sk sk-pill" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TeamPicker({ teams, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const choose = (team) => {
+    onChange(team)
+    setOpen(false)
+  }
+  return (
+    <div className="nba-plist-teampick">
+      <button
+        type="button"
+        className={`nba-plist-control${value !== 'All' ? ' active' : ''}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Team"
+        onClick={() => setOpen((current) => !current)}
+      >
+        {value !== 'All' && <CardTeamLogo team={value} src={logoSrc(value)} />}
+        <span>{value === 'All' ? 'Teams' : value}</span>
+        <span className="caret" aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <>
+          <button type="button" className="nba-plist-backdrop" aria-label="Close team picker" onClick={() => setOpen(false)} />
+          <div className="nba-plist-teamgrid" role="listbox" aria-label="Teams">
+            <button type="button" role="option" aria-selected={value === 'All'} className={value === 'All' ? 'active all' : 'all'} onClick={() => choose('All')}>
+              All teams
+            </button>
+            {teams.map((team) => (
+              <button key={team} type="button" role="option" aria-selected={value === team} className={value === team ? 'active' : ''} onClick={() => choose(team)}>
+                <CardTeamLogo team={team} src={logoSrc(team, 64)} />
+                <span>{team}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -53,19 +199,25 @@ export default function NbaPlayers({ initialName = '' }) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('All')
   const [teamFilter, setTeamFilter] = useState('All')
+  const [sortBy, setSortBy] = useState('cg')
+  const [playingChoice, setPlayingChoice] = useState(null)
+  const [schedule, setSchedule] = useState(() => new Map())
   const [selectedId, setSelectedId] = useState(null)
+  const listTop = useRef(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const [rows, lines] = await Promise.all([
+        const [rows, lines, games] = await Promise.all([
           fetchNbaData('nba/players.json'),
           fetchNbaData('nba/projections_standard.json').catch(() => []),
+          fetchSchedule(),
         ])
         if (!cancelled) {
           setPlayers(Array.isArray(rows) ? rows : [])
           setBoard(Array.isArray(lines) ? lines : [])
+          setSchedule(games)
         }
       } catch (err) {
         if (!cancelled) setError(err.message)
@@ -84,21 +236,38 @@ export default function NbaPlayers({ initialName = '' }) {
     setSelectedId(match.athleteId)
   }, [initialName, players])
 
-  const teams = useMemo(() => {
-    const names = new Set((players || []).map((player) => player.team).filter(Boolean))
-    return ['All', ...[...names].sort()]
-  }, [players])
+  // The controls stick under the nav when the nav itself is sticky.
+  useEffect(() => {
+    const root = listTop.current
+    const nav = document.querySelector('.wnba-nav')
+    if (!root || !nav) return undefined
+    const place = () => {
+      const sticky = window.getComputedStyle(nav).position === 'sticky'
+      root.style.setProperty('--nba-plist-top', sticky ? `${nav.offsetHeight}px` : '0px')
+    }
+    place()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(place)
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [selectedId])
 
+  const tops = useMemo(() => topProps(board, players || []), [board, players])
+  const chips = useMemo(() => positionChips(players), [players])
+  const teams = useMemo(() => teamOptions(players), [players])
+  const gameDay = isGameDay(schedule, tops)
+  const playingToday = playingChoice ?? gameDay
+  const activePos = chips.includes(posFilter) ? posFilter : 'All'
+  const context = useMemo(() => ({ schedule, tops }), [schedule, tops])
+
+  const matching = useMemo(
+    () => filterPlayers(players, { search, position: activePos, team: teamFilter }, context),
+    [players, search, activePos, teamFilter, context],
+  )
   const filtered = useMemo(() => {
-    return (players || []).filter((player) => {
-      const nameMatch = !search || player.name.toLowerCase().includes(search.toLowerCase())
-      const position = player.position || ''
-      const posMatch = posFilter === 'All'
-        || (posFilter === 'Unset' ? !position : position === posFilter)
-      const teamMatch = teamFilter === 'All' || player.team === teamFilter
-      return nameMatch && posMatch && teamMatch
-    })
-  }, [players, search, posFilter, teamFilter])
+    const list = playingToday ? filterPlayers(matching, { playingToday: true }, context) : matching
+    return sortPlayers(list, sortBy, context)
+  }, [matching, playingToday, sortBy, context])
 
   const selected = (players || []).find((player) => player.athleteId === selectedId) || null
 
@@ -141,7 +310,9 @@ export default function NbaPlayers({ initialName = '' }) {
           </div>
         </div>
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-          <p className="stat-label">2025-26 regular season</p>
+          <p className="stat-label">
+            {SUMMARY_SEASON} regular season{priorTeam(selected) ? ` · with ${priorTeam(selected)}` : ''}
+          </p>
           <p style={{ margin: '8px 0 0', color: 'white' }}>
             {selected.gp ? `${selected.gp} GP · ${statText(selected.pts)} PTS · ${statText(selected.reb)} REB · ${statText(selected.ast)} AST` : 'No 2025-26 games yet.'}
           </p>
@@ -165,82 +336,97 @@ export default function NbaPlayers({ initialName = '' }) {
     )
   }
 
+  const openPlayer = (player) => {
+    setSelectedId(player.athleteId)
+    window.scrollTo?.(0, 0)
+  }
+  const hiddenToday = playingToday ? matching.length - filtered.length : 0
+
   return (
-    <div className="fade-in">
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, color: 'white' }}>Players</h1>
-        <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>
-          {players ? `${players.length} current roster players — 2025-26 regular season` : 'Loading roster...'}
+    <div className="fade-in nba-plist" ref={listTop}>
+      <div className="nba-plist-head">
+        <h1>Players</h1>
+        <p>
+          {players
+            ? `${filtered.length} of ${players.length} players${playingToday ? ' · playing today' : ''}`
+            : 'Loading roster...'}
         </p>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="nba-plist-controls">
         <input
-          className="search-input"
-          placeholder="Search players..."
+          className="nba-plist-search"
+          type="search"
+          placeholder="Search players"
           aria-label="Search players"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {FILTERS.map((position) => (
+        <div className="nba-plist-chips" role="group" aria-label="Position">
+          {chips.map((position) => (
             <button
               key={position}
-              className={`btn-ghost${posFilter === position ? ' active' : ''}`}
+              type="button"
+              aria-pressed={activePos === position}
+              className={`nba-plist-chip${activePos === position ? ' active' : ''}`}
+              style={activePos === position && position !== 'All' && position !== UNSET ? { borderColor: positionColor(position), color: positionColor(position) } : undefined}
               onClick={() => setPosFilter(position)}
             >
               {position}
             </button>
           ))}
         </div>
-        <select
-          value={teamFilter}
-          onChange={(event) => setTeamFilter(event.target.value)}
-          aria-label="Team"
-          style={{
-            background: '#111', border: '1px solid #222', borderRadius: 8,
-            padding: '7px 12px', color: '#e5e5e5', fontSize: 13, fontFamily: 'inherit',
-          }}
-        >
-          {teams.map((team) => <option key={team} value={team}>{team === 'All' ? 'All Teams' : team}</option>)}
-        </select>
+        <div className="nba-plist-row">
+          <TeamPicker teams={teams} value={teamFilter} onChange={setTeamFilter} />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={playingToday}
+            className={`nba-plist-control nba-plist-toggle${playingToday ? ' active' : ''}`}
+            onClick={() => setPlayingChoice(!playingToday)}
+          >
+            <span className="knob" aria-hidden="true" />
+            Playing today
+          </button>
+          <label className="nba-plist-control nba-plist-sort">
+            <span className="sr-only">Sort by</span>
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort by">
+              {SORTS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+          </label>
+        </div>
       </div>
       {error && (
-        <div style={{ padding: 32, textAlign: 'center', color: '#ef4444' }}>
-          Failed to load players: {error}.
-        </div>
+        <div className="nba-plist-empty error">Failed to load players: {error}.</div>
       )}
-      {loading && <p style={{ color: '#6b7280' }}>Loading roster...</p>}
+      {loading && <SkeletonRows />}
       {!loading && filtered.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+        <div className="nba-plist-grid">
           {filtered.map((player) => {
-            const color = player.teamColor || '#94a3b8'
-            const slot = player.position || 'Unset'
+            const top = topPropFor(tops, player)
             return (
-              <button
-                key={player.athleteId || player.name}
-                type="button"
-                className="card"
-                onClick={() => setSelectedId(player.athleteId)}
-                style={{
-                  textAlign: 'left', color: 'inherit', font: 'inherit', cursor: 'pointer',
-                  padding: 20, position: 'relative', overflow: 'hidden',
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color }} />
-                <p style={{ margin: '0 0 6px', fontWeight: 700, color: 'white' }}>{player.name}</p>
-                <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color }}>
-                  {player.team} · <span style={{ color: positionColor(player.position) }}>{slot}</span>
-                </p>
-                <p style={{ margin: 0, fontSize: 13, color: '#d4d4d8' }}>
-                  {player.gp ? `${statText(player.pts)} PTS · ${statText(player.reb)} REB · ${statText(player.ast)} AST` : 'No 2025-26 games yet'}
-                </p>
-              </button>
+              <PlayerRow
+                key={playerKey(player)}
+                player={player}
+                top={top}
+                game={todayGame(player, schedule, top)}
+                minutes={sortBy === 'minutes' ? averageMinutes(player) : null}
+                onOpen={openPlayer}
+              />
             )
           })}
         </div>
       )}
-      {!loading && filtered.length === 0 && !error && (
-        <p style={{ color: '#6b7280' }}>No players match your filters.</p>
+      {!loading && !error && filtered.length === 0 && (
+        <div className="nba-plist-empty">
+          {hiddenToday > 0
+            ? <>No match is playing today. <button type="button" onClick={() => setPlayingChoice(false)}>Show all {hiddenToday}</button></>
+            : 'No players match your filters.'}
+        </div>
+      )}
+      {!loading && filtered.length > 0 && hiddenToday > 0 && (
+        <div className="nba-plist-empty">
+          {hiddenToday} more not playing today. <button type="button" onClick={() => setPlayingChoice(false)}>Show all</button>
+        </div>
       )}
     </div>
   )
