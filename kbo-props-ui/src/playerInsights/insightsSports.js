@@ -7,14 +7,17 @@ import { meanOf, parseGameDay, ratio, sumOf } from './insightsCore.js'
 import { nflGameLog } from '../nfl/nflPlayerGames.js'
 import { registerStatDirection } from './strengthScale.js'
 
-// NFL stats where fewer is better for the player: interceptions thrown,
-// sacks taken, fumbles, and the opponent's defense rank (1 = toughest D).
-// Everything else on the NFL page (yards, catches, attempts, snap share and
-// the per-touch rates) is higher-is-better, the scale's default. There is no
-// NFL position/league baseline in our published data (only today's prop rows,
+// NFL Advanced directions (the shared scale colors split rows by over rate
+// only; direction is for Advanced metrics). Fewer is better for the player:
+// interceptions thrown, sacks taken, fumbles, and the opponent's defense rank
+// (1 = toughest D). Every NFL Advanced metric we publish today (snap share,
+// touches, targets, rush and pass attempts per game, catch rate, per-target/catch/carry/touch
+// yards, completion %, TD rate) is higher-is-better. There is no NFL
+// position/league baseline in our published data (only today's prop rows,
 // which skew to players with lines), so Advanced compares to the player's own
 // season, the shared fallback.
-registerStatDirection('nfl', /interception|\bints?\b|sacks? taken|fumble|def(ensive)? rank|\bdvp\b/i, { lowerIsBetter: true })
+registerStatDirection('nfl', /interception|\bints?\b|sacks? taken|fumble|def(ensive)? rank|\bdvp\b/i, { better: 'lower' })
+registerStatDirection('nfl', /^(snap|touches|targets|carries|passatt|catch|ypt|ypc|ypcarry|yptouch|ypa|comp|tdr)$/i, { better: 'higher' })
 
 // "Early season" notice below this many games in the current season.
 // NBA 82 games, WNBA 44, NFL 17, KBO 144 for hitters and ~30 starts for

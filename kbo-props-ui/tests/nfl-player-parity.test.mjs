@@ -151,7 +151,7 @@ test('board CG is Pending for a blank projection, never 0', () => {
   assert.equal(nflCgScore(null, 70.5, 'Rush Yards'), 0)
 })
 
-test('nfl strength directions: turnovers and def rank are lower-is-better, yards are not', async () => {
+test('nfl advanced directions: turnovers and def rank are lower-is-better, yards are not', async () => {
   await import('../src/playerInsights/insightsSports.js')
   const { isLowerBetter, strengthTone } = await import('../src/playerInsights/strengthScale.js')
   for (const stat of ['Pass INTs', 'INT', 'Interceptions', 'Sacks Taken', 'Fumbles Lost', 'Def rank', 'dvp']) {
@@ -160,11 +160,17 @@ test('nfl strength directions: turnovers and def rank are lower-is-better, yards
   for (const stat of ['Rush Yards', 'Receptions', 'Pass Yards', 'Rec Targets', 'snap', 'ypcarry', 'Pass TDs']) {
     assert.equal(isLowerBetter('nfl', stat), false, stat)
   }
+  // Every NFL Advanced metric is registered higher-is-better and none is neutral.
+  const { isNeutralStat } = await import('../src/playerInsights/strengthScale.js')
+  for (const id of ['snap', 'touches', 'targets', 'carries', 'passatt', 'catch', 'ypt', 'ypc', 'ypcarry', 'yptouch', 'ypa', 'comp', 'tdr']) {
+    assert.equal(isLowerBetter('nfl', id, { id, label: id }), false, id)
+    assert.equal(isNeutralStat('nfl', id, { id, label: id }), false, id)
+  }
   assert.equal(strengthTone(0.5, 1, { n: 6, lowerIsBetter: isLowerBetter('nfl', 'Pass INTs') }).tone, 'strong')
   assert.equal(strengthTone(90, 60, { n: 2 }).tone, 'muted')
 })
 
-test('nfl defense and snap split rows carry a strength tone', async () => {
+test('nfl defense and snap split rows color by over rate vs the overall rate', async () => {
   const { buildSplits } = await import('../src/playerInsights/insightsCore.js')
   const mk = (i, value, snap, dvp) => ({ gameday: `2026-10-${String(1 + i).padStart(2, '0')}`, value, opponent: 'DAL', season: '2026', raw: { snap }, dvp })
   const games = [mk(0, 40, 80, 3), mk(1, 45, 82, 5), mk(2, 50, 85, 7), mk(3, 100, 60, 28), mk(4, 110, 55, 30), mk(5, 105, 50, 25)]
