@@ -197,8 +197,25 @@ jobs:
               CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
               if [ -n "$CONFLICTS" ]; then
                 echo "Conflicted files: $CONFLICTS"
-                echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
-                echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                # Board clock files are merged per board (newest entry wins), never taken
+                # whole from this run: its copy can be older than main's. If a merge fails
+                # the step fails; taking either side whole could roll a board back.
+                for CLOCK_FILE in shared/board_freshness.json kbo-props-ui/public/status.json kbo-props-ui/public/cheatsheet_warnings.json; do
+                  if echo "$CONFLICTS" | grep -qxF "$CLOCK_FILE"; then
+                    if python -m pipeline.board_freshness_file resolve-conflict "$CLOCK_FILE"; then
+                      git add -- "$CLOCK_FILE"
+                    else
+                      echo "::error::Board clock merge failed for $CLOCK_FILE; not taking either side whole"
+                      git rebase --abort >/dev/null 2>&1 || true
+                      exit 1
+                    fi
+                    CONFLICTS=$(echo "$CONFLICTS" | grep -vxF "$CLOCK_FILE" || true)
+                  fi
+                done
+                if [ -n "$CONFLICTS" ]; then
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git checkout --theirs --
+                  echo "$CONFLICTS" | tr '\n' '\0' | xargs -0 git add
+                fi
               fi
               if ! GIT_EDITOR=true git rebase --continue; then
                 git rebase --abort >/dev/null 2>&1 || true

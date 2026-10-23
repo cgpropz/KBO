@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def _line_buffer(stream):
@@ -23,7 +24,8 @@ _line_buffer(sys.stderr)
 
 import requests
 
-from pipeline.board_status import BOARD_TABLES, apply_published, record_from_payload
+from pipeline.board_status import SPORTS as STATUS_SPORTS
+from pipeline.board_status import BOARD_TABLES, apply_published, prefer_fresher, record_from_payload, write_status
 
 # Boards that get a row in shared/board_freshness.json. Demon and goblin
 # copies follow the standard board and do not replace its prop count.
@@ -1032,8 +1034,50 @@ def tables_for_prefix(only_prefix: str) -> dict:
     return selected
 
 
-def publish_board_status(session, headers, published_at):
-    """Upsert the public clock file. Never includes prop rows."""
+def _status_rows(rows):
+    return [row for row in rows if isinstance(row, dict) and row.get("sport") in STATUS_SPORTS]
+
+
+def fetch_live_board_status(session, headers):
+    """The live board_status row's entries, from one light single-row read.
+
+    [] when the table or row does not exist yet (nothing to protect). None when
+    the read fails, so the caller can skip the upload instead of risking an
+    older local clock replacing a newer live one.
+    """
+    try:
+        response = _rest_get(
+            session, "board_status", {"select": "data", "id": "eq.1", "limit": "1"}, headers, timeout=30,
+        )
+    except requests.RequestException as exc:
+        print(f"  ! board_status read failed: {type(exc).__name__}")
+        return None
+    if optional_table_missing("board_status", response):
+        return []
+    if getattr(response, "status_code", None) != 200:
+        print(f"  ! board_status read HTTP {getattr(response, 'status_code', None)}")
+        return None
+    try:
+        rows = response.json()
+    except ValueError:
+        print("  ! board_status read returned invalid JSON")
+        return None
+    if not isinstance(rows, list):
+        return None
+    if not rows:
+        return []
+    data = rows[0].get("data") if isinstance(rows[0], dict) else None
+    boards = data.get("boards") if isinstance(data, dict) else None
+    return _status_rows(boards) if isinstance(boards, list) else []
+
+
+def publish_board_status(session, headers, published_at, now=None):
+    """Upsert the public clock file. Never includes prop rows.
+
+    The local file is merged against the live row first (per sport, the later
+    board clock wins), so a run that started from an older checkout can never
+    roll a newer live board back.
+    """
     path = os.path.join(BASE, "kbo-props-ui", "public", "status.json")
     if not os.path.exists(path):
         print("  ! public/status.json missing; board clocks stay on the last publish")
@@ -1042,11 +1086,20 @@ def publish_board_status(session, headers, published_at):
         with open(path, "r", encoding="utf-8") as handle:
             document = json.load(handle)
     except (OSError, ValueError) as exc:
-        print(f"  ! status.json unreadable: {exc}")
+        print(f"  ! status.json unreadable: {type(exc).__name__}")
         return
     if not isinstance(document, dict) or not isinstance(document.get("boards"), list):
         print("  ! status.json has no boards list; leaving the published clocks unchanged")
         return
+    live = fetch_live_board_status(session, headers)
+    if live is None:
+        print("  ! board_status: live row unreadable; not uploading so an older clock cannot replace it")
+        return
+    document = prefer_fresher(_status_rows(document["boards"]), live, now or datetime.now(timezone.utc))
+    try:
+        write_status(document, Path(path))
+    except OSError as exc:
+        print(f"  ! status.json not rewritten after the live merge: {type(exc).__name__}")
     response = post_with_retry(
         session,
         f"{SUPABASE_URL}/rest/v1/board_status",

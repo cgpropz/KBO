@@ -180,10 +180,30 @@ def write_status(document: dict, path: Path = STATUS_PATH) -> None:
     path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
 
 
-def _later_row(left: dict, right: dict) -> dict:
-    """Keep the entry whose publish clock is later. A missing clock loses."""
-    left_at = parse_iso_ts(left.get("board_updated_at")) if left else None
-    right_at = parse_iso_ts(right.get("board_updated_at")) if right else None
+# A publish clock further ahead of now than this is treated as missing, so a
+# bad future-dated entry loses to a real publish and self-heals.
+FUTURE_SKEW_SECONDS = 5 * 60
+
+
+def _usable_clock(value: Any, now: datetime | None) -> datetime | None:
+    parsed = parse_iso_ts(value)
+    if parsed is None:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    moment = now or datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    if (parsed - moment).total_seconds() > FUTURE_SKEW_SECONDS:
+        return None
+    return parsed
+
+
+def _later_row(left: dict, right: dict, now: datetime | None = None) -> dict:
+    """Keep the entry whose publish clock is later. A missing clock loses, and
+    so does one more than five minutes in the future."""
+    left_at = _usable_clock(left.get("board_updated_at"), now) if left else None
+    right_at = _usable_clock(right.get("board_updated_at"), now) if right else None
     if left_at and right_at:
         return left if left_at >= right_at else right
     if left_at:
@@ -200,7 +220,7 @@ def prefer_fresher(local: list[dict], remote: list[dict], now: datetime) -> dict
     updates = {}
     previous = []
     for sport in SPORTS:
-        chosen = _later_row(left.get(sport) or {}, right.get(sport) or {})
+        chosen = _later_row(left.get(sport) or {}, right.get(sport) or {}, now)
         count = chosen.get("prop_count")
         updates[sport] = {
             "board_updated_at": chosen.get("board_updated_at"),

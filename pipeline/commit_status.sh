@@ -72,10 +72,16 @@ fi
 
 if ! ROOT="$ROOT" WT="$WT" FRESHNESS="$FRESHNESS" WARNINGS="$WARNINGS" python - <<'PY'
 import os
-import shutil
 from pathlib import Path
 
-from pipeline.board_freshness_file import load_freshness, merge_freshness, write_freshness
+from pipeline.board_freshness_file import (
+    load_freshness,
+    load_warning_file,
+    merge_freshness,
+    merge_warning_files,
+    write_freshness,
+    write_json,
+)
 
 root = Path(os.environ["ROOT"])
 work = Path(os.environ["WT"])
@@ -89,9 +95,12 @@ if local_fresh.is_file():
     print("freshness", ",".join(sorted(merged.get("boards") or {})))
 local_warn = root / warn_rel
 if local_warn.is_file():
+    # Whichever side checked the cheat sheet more recently wins; an older
+    # local copy never replaces a newer one already on main.
     dest = work / warn_rel
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(local_warn, dest)
+    merged_warn = merge_warning_files(load_warning_file(local_warn), load_warning_file(dest))
+    if merged_warn.get("checked_at") or merged_warn.get("warnings"):
+        write_json(merged_warn, dest)
 PY
 then
   echo "Freshness publish failed (merge); status clocks may still commit"

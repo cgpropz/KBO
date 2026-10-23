@@ -85,8 +85,19 @@ jobs:
       run:
         working-directory: kbo-props-ui
     steps:
+      # Check out the tip of main as it is now, not the commit that queued
+      # this run. A dispatch can wait up to 45 minutes in coalesce, and the
+      # default checkout (github.sha) would then build and ship the old code,
+      # undoing any site merge that deployed in between. That happened on
+      # Oct 23 2026: a 7:07 AM ET bake shipped e1bf1e2 at 7:45 AM, over #371.
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Show the commit this bake ships
+        working-directory: .
+        run: git log -1 --format='Baking %H (%s)'
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
