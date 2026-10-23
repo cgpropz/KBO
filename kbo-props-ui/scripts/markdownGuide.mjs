@@ -323,7 +323,7 @@ export const PAGE_IMAGES = {
   // Per-sport share cards from scripts/generate-og-images.mjs.
   '/kbo-player-props': {
     src: '/images/og/kbo-player-props.png',
-    alt: 'KBO player props today on CGPropz: free top 3 and CG Score',
+    alt: 'KBO player props on CGPropz: CG Score and postseason times in ET',
   },
   '/nba-player-props': {
     src: '/images/og/nba-player-props.png',

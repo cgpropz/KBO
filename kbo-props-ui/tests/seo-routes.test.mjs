@@ -20,7 +20,7 @@ const PUBLIC_PAGES = [
   ['/privacy', 'Privacy | CGPropz', 'Privacy'],
   ['/responsible-gaming', 'Responsible gaming | CGPropz', 'Responsible gaming'],
   ['/states-not-available', 'Where CGPropz isn\'t available | CGPropz', 'Where CGPropz is not available'],
-  ['/kbo-player-props', 'KBO Player Props Today: Free Top 3 &amp; Playoffs | CGPropz', 'KBO player props, with the full board.'],
+  ['/kbo-player-props', 'KBO Playoffs Player Props &amp; PrizePicks Picks | CGPropz', 'KBO player props, with the full board.'],
   ['/nfl-player-props', 'NFL Player Props Today: CG Score &amp; Hit Rates | CGPropz', 'NFL player props'],
   ['/wnba-player-props', 'WNBA Player Props Today: Free Top 3 &amp; CG Score | CGPropz', 'WNBA player props'],
   ['/nba-player-props', 'NBA Player Props Today: CG Score &amp; L10 Hit Rates | CGPropz', 'NBA player props, with the full board.'],
