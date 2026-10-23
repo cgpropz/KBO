@@ -154,7 +154,15 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   await expect(section.getByTestId('nba-mu-min').locator('.nba-mu-col')).toHaveCount(10)
   await expect(section.getByTestId('nba-mu-usg').locator('.nba-mu-col')).toHaveCount(10)
   await expect(section.getByTestId('nba-mu-min')).toContainText('L5')
-  await expect(section.getByTestId('nba-mu-min-base')).toHaveText("vs '25-26")
+  await expect(section.getByTestId('nba-mu-min-base')).toContainText("L5 vs '25-26 (26.5)")
+  // Header text (label, arrow, L5 / L10 / Season) stays inside each chart.
+  const headClipped = await page.evaluate(() => [...document.querySelectorAll('.nba-mu-metric')].flatMap((metric) => {
+    const box = metric.getBoundingClientRect()
+    return [...metric.querySelectorAll('.nba-mu-head > *, .nba-mu-avgs > span, .nba-mu-base')]
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.left < box.left - 0.5 || r.right > box.right + 0.5 })
+      .map((el) => el.textContent)
+  }))
+  expect(headClipped).toEqual([])
   // The tallest bar's value sits below the header row.
   const labelGap = await page.evaluate(() => {
     const metric = document.querySelector('[data-testid="nba-mu-min"]')

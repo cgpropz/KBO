@@ -35,15 +35,17 @@ function TrendChart({ metric, logs, windowGames, keptGames }) {
             {TREND_ARROWS[trend]}
           </b>
         )}
-        {trend && summary.baselineLabel && (
-          <span className="nba-mu-base" data-testid={`nba-mu-${metric.id}-base`}>vs {summary.baselineLabel}</span>
-        )}
         <span className="nba-mu-avgs">
           <span><em>L5</em>{formatTrendValue(summary.l5, metric.unit)}</span>
           <span><em>L10</em>{formatTrendValue(summary.l10, metric.unit)}</span>
           <span><em>Season</em>{formatTrendValue(summary.season, metric.unit)}</span>
         </span>
       </div>
+      {trend && summary.baselineLabel && (
+        <p className="nba-mu-base" data-testid={`nba-mu-${metric.id}-base`}>
+          Early season: arrow is L5 vs {summary.baselineLabel} ({formatTrendValue(summary.baseline, metric.unit)})
+        </p>
+      )}
       {hasValues ? (
         <>
           <div className="nba-mu-bars">
