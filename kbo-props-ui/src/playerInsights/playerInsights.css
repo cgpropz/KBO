@@ -18,6 +18,8 @@
 .pi-split-avg small { color: #71717a; }
 .pi-split-n, .pi-window span { text-align: right; font-size: 11px; color: #71717a; }
 .pi-split-n.is-small, .pi-window span.is-small { color: #f59e0b; }
+.pi-split-n { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.pi-split-push { font-size: 9px; color: #71717a; white-space: nowrap; }
 .pi-picker { position: relative; margin-bottom: 10px; }
 .pi-picker-button { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 10px; border: 1px solid #3f3f46; background: #18181b; color: #fafafa; font-size: 14px; font-weight: 700; }
 .pi-picker-list { list-style: none; margin: 6px 0 0; padding: 4px; border-radius: 10px; border: 1px solid #3f3f46; background: #111113; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -25,15 +27,18 @@
 .pi-picker-list button.active { background: #14532d55; color: #4ade80; }
 .pi-windows { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
 .pi-window { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 10px; background: #18181b; }
-.pi-window small { font-size: 11px; color: #a1a1aa; }
+.pi-window small { font-size: 11px; color: #a1a1aa; text-align: center; line-height: 1.2; }
 .pi-window b { font-size: 17px; color: #fafafa; margin: 2px 0; }
 .pi-window span { text-align: center; }
 .pi-series-cap { margin: 12px 0 0; font-size: 11px; color: #71717a; }
 .pi-series { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.2px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; height: 92px; margin-top: 4px; align-items: end; }
 .pi-series-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
 .pi-series-col i { display: block; width: 70%; border-radius: 3px 3px 0 0; background: #22c55e99; }
-.pi-series-col b { order: -1; font-size: 9px; color: #d4d4d8; white-space: nowrap; }
-.pi-series-col small { font-size: 9px; color: #71717a; }
+.pi-series-col b, .pi-series-col small { white-space: nowrap; font-size: 9px; text-align: center; }
+.pi-series.is-vertical { height: 108px; }
+.pi-series.is-vertical .pi-series-col b { writing-mode: vertical-rl; transform: rotate(180deg); margin-bottom: 2px; }
+.pi-series-col b { order: -1; color: #d4d4d8; }
+.pi-series-col small { color: #71717a; }
 .pi-note { margin: 10px 0 0; font-size: 11px; color: #71717a; }
 .pi-empty { margin: 0; font-size: 13px; color: #a1a1aa; }
 .pi-unavailable { margin-top: 8px; font-size: 11px; color: #71717a; }
