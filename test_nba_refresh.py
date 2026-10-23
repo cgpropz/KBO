@@ -175,5 +175,103 @@ class SnapshotJsonTests(unittest.TestCase):
         self.assertEqual(game["dreb"], 5)
 
 
+def box_row(athlete_id, team, minutes, fga, fta, tov, date="10/22/2026", season=2027, pts=10):
+    return {
+        "Player": f"Player {athlete_id}",
+        "Athlete ID": str(athlete_id),
+        "Game Date": date,
+        "Season": season,
+        "Team": team,
+        "Match Up": f"{team} vs. ZZZ",
+        "W/L": "W",
+        "MIN": minutes,
+        "PTS": pts,
+        "REB": 1,
+        "AST": 1,
+        "FGM": 1,
+        "FGA": fga,
+        "3PM": 0,
+        "3PA": 0,
+        "FTM": 0,
+        "FTA": fta,
+        "OREB": 0,
+        "DREB": 1,
+        "STL": 0,
+        "BLK": 0,
+        "TOV": tov,
+        "Position": "PG",
+    }
+
+
+ROSTER_ONE = [{"id": "1", "displayName": "Synthetic One", "_team": "AAA", "headshot": {}, "age": "", "displayHeight": "", "displayWeight": "", "college": ""}]
+TEAMS = {"AAA": {"fullName": "Synthetic A", "color": "#111111"}}
+
+
+class NextSeasonTests(unittest.TestCase):
+    def test_2026_27_regular_season_is_kept_only_for_its_own_year(self):
+        self.assertTrue(nba.is_regular_season_game(event(2027, "regular-season"), OFFICIAL, 2027))
+        self.assertFalse(nba.is_regular_season_game(event(2027, "regular-season"), OFFICIAL))
+        self.assertFalse(nba.is_regular_season_game(event(2027, "preseason"), OFFICIAL, 2027))
+
+    def test_both_season_files_are_configured(self):
+        by_year = {season.year: season for season in nba.SEASONS}
+        self.assertEqual(by_year[2026].csv.name, "nba_boxscores_2025_26.csv")
+        self.assertTrue(by_year[2026].required)
+        self.assertEqual(by_year[2027].csv.name, "nba_boxscores_2026_27.csv")
+        self.assertFalse(by_year[2027].required)
+        self.assertEqual(by_year[2027].start, nba.date(2026, 10, 1))
+
+    def test_walk_window_stays_inside_the_season_and_before_today(self):
+        season = next(season for season in nba.SEASONS if season.year == 2027)
+        today = nba.date(2026, 10, 23)
+        self.assertEqual(nba.season_walk_window(season, None, today, False), (nba.date(2026, 10, 1), today))
+        self.assertEqual(
+            nba.season_walk_window(season, nba.date(2026, 10, 21), today, True),
+            (nba.date(2026, 10, 18), today),
+        )
+        self.assertIsNone(nba.season_walk_window(season, None, nba.date(2026, 9, 30), False))
+
+    def test_finished_season_with_stored_logs_is_not_walked_again(self):
+        season = next(season for season in nba.SEASONS if season.year == 2026)
+        self.assertIsNone(nba.season_walk_window(season, nba.date(2026, 4, 12), nba.date(2026, 10, 23), True))
+
+    def test_game_logs_combine_seasons_newest_first_and_averages_stay_on_the_summary_season(self):
+        old = pd.DataFrame([box_row(1, "AAA", 30, 10, 2, 1, date="04/12/2026", season=2026, pts=20)])
+        new = pd.DataFrame([box_row(1, "AAA", 30, 10, 2, 1, date="10/22/2026", season=2027, pts=40)])
+        players = nba.build_player_snapshot(ROSTER_ONE, {}, pd.concat([old, new], ignore_index=True), TEAMS, summary_logs=old)
+        logs = players[0]["gameLogs"]
+        self.assertEqual([game["season"] for game in logs], ["2027", "2026"])
+        self.assertEqual(players[0]["gp"], 1)
+        self.assertEqual(players[0]["pts"], 20)
+
+
+class UsageTests(unittest.TestCase):
+    def test_usage_uses_summed_team_rows(self):
+        # Team AAA: 5 players x 48 minutes = 240. Player 1: FGA 20, FTA 10, TOV 2.
+        rows = [box_row(1, "AAA", 48, 20, 10, 2)] + [box_row(i, "AAA", 48, 10, 0, 1) for i in range(2, 6)]
+        logs = pd.DataFrame(rows)
+        usage = nba.usage_percentages(logs)
+        player = 20 + 0.44 * 10 + 2
+        team = (20 + 40) + 0.44 * 10 + (2 + 4)
+        expected = round(100 * (player * (240 / 5)) / (48 * team), 1)
+        self.assertEqual(usage.iloc[0], expected)
+        self.assertEqual(usage.iloc[1], round(100 * (11 * 48) / (48 * team), 1))
+
+    def test_usage_is_blank_without_minutes_or_columns(self):
+        logs = pd.DataFrame([box_row(1, "AAA", 0, 0, 0, 0), box_row(2, "AAA", 30, 5, 0, 0)])
+        usage = nba.usage_percentages(logs)
+        self.assertIsNone(usage.iloc[0])
+        self.assertIsNotNone(usage.iloc[1])
+        self.assertIsNone(nba.usage_percentages(logs.drop(columns=["FTA"])).iloc[1])
+
+    def test_snapshot_game_log_carries_usage(self):
+        rows = [box_row(1, "AAA", 24, 10, 2, 1), box_row(2, "AAA", 24, 10, 2, 1)]
+        players = nba.build_player_snapshot(ROSTER_ONE, {}, pd.DataFrame(rows), TEAMS)
+        game = players[0]["gameLogs"][0]
+        # Two-player synthetic team: 100 * (p * 48/5) / (24 * 2p) = 20.
+        self.assertEqual(game["usg"], 20.0)
+        json.dumps(players, allow_nan=False)
+
+
 if __name__ == "__main__":
     unittest.main()

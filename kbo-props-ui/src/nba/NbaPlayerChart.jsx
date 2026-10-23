@@ -8,6 +8,8 @@ import GameDateLogo from '../GameDateLogo'
 import { boundCg, cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
+import NbaRangeSlider from './NbaRangeSlider'
+import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newestSeasonLogs, resolveRange } from './nbaGameFilters'
 
 const RANGES = [
   { id: 'l5', label: 'L5', count: 5 },
@@ -68,12 +70,29 @@ export default function NbaPlayerChart({ player, projection }) {
   const groups = useMemo(() => groupProps(player, projection), [player, projection])
   const [stat, setStat] = useState('')
   const [range, setRange] = useState('l10')
+  const [selections, setSelections] = useState({})
+  const [selectionKey, setSelectionKey] = useState('')
+  const playerKey = String(player?.athleteId || player?.name || '')
+  if (selectionKey !== playerKey) {
+    setSelectionKey(playerKey)
+    setSelections({})
+  }
   const current = groups.find((group) => group.stat === stat) || groups[0] || null
+  const allLogs = useMemo(() => (Array.isArray(player?.gameLogs) ? player.gameLogs : []), [player])
+  const filters = useMemo(() => GAME_FILTERS.map((filter) => {
+    const bounds = metricBounds(allLogs, filter.field, filter.step)
+    return { ...filter, bounds, range: resolveRange(bounds, selections[filter.id], filter.step) }
+  }).filter((filter) => filter.bounds), [allLogs, selections])
+  const ranges = useMemo(() => Object.fromEntries(filters.map((filter) => [filter.id, filter.range])), [filters])
+  const filteredLogs = useMemo(() => filterGames(allLogs, ranges), [allLogs, ranges])
+  const narrowed = isFiltered(ranges)
   const chartInput = useMemo(() => {
-    const logs = Array.isArray(player?.gameLogs) ? player.gameLogs : []
+    const logs = filteredLogs
     if (!current) return { posted: null, windows: [], games: [], values: [], offered: null }
     const windows = RANGES.map((option) => {
-      const games = windowLogs(logs, option.count)
+      const games = Number.isFinite(option.count)
+        ? windowLogs(logs, option.count)
+        : windowLogs(newestSeasonLogs(logs, allLogs[0]?.season), option.count)
       return {
         id: option.id,
         label: option.label,
@@ -89,7 +108,7 @@ export default function NbaPlayerChart({ player, projection }) {
       values: selected.values,
       offered: offeredLinesForStat(current.rows, current.stat),
     }
-  }, [current, player, range])
+  }, [allLogs, current, filteredLogs, range])
   const slider = useChartLine({
     postedLine: chartInput.posted,
     values: chartInput.values,
@@ -151,6 +170,33 @@ export default function NbaPlayerChart({ player, projection }) {
           )
         })}
       </div>
+      {filters.length > 0 && (
+        <div className={`nba-player-filters${narrowed ? ' is-narrowed' : ''}`} aria-label="Game filters">
+          <div className="nba-player-filters-head">
+            <span>Filters</span>
+            <b>{narrowed ? `filtered: ${filteredLogs.length} games` : `all ${allLogs.length} games`}</b>
+            <button type="button" onClick={() => setSelections({})} disabled={!narrowed}>Reset</button>
+          </div>
+          {filters.map((filter) => (
+            <div className="nba-player-filter" key={filter.id}>
+              <div className="nba-player-filter-label">
+                <span>{filter.label}</span>
+                <b>{formatMetric(filter.range.low, filter.step)}–{formatMetric(filter.range.high, filter.step)}{filter.unit === '%' ? '%' : ` ${filter.unit}`}</b>
+              </div>
+              <NbaRangeSlider
+                label={filter.label.toLowerCase()}
+                unit={filter.unit}
+                step={filter.step}
+                min={filter.bounds.min}
+                max={filter.bounds.max}
+                low={filter.range.low}
+                high={filter.range.high}
+                onChange={(low, high) => setSelections((prev) => ({ ...prev, [filter.id]: { low, high } }))}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       <LinePlot className="nba-player-chart" slider={slider} lineClassName="nba-player-chart-line">
         <div className="nba-player-bars">
           {chartInput.games.map((game, index) => {
@@ -165,7 +211,7 @@ export default function NbaPlayerChart({ player, projection }) {
             )
           })}
         </div>
-        {!chartInput.games.length && <p className="nba-player-chart-empty">No games in this window.</p>}
+        {!chartInput.games.length && <p className="nba-player-chart-empty">{narrowed ? "No games match these filters." : "No games in this window."}</p>}
       </LinePlot>
       <div className="nba-player-dates">
         {chartInput.games.map((game, index) => (

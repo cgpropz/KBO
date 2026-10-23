@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Refresh NBA rosters and 2025-26 regular-season box scores from ESPN.
+"""Refresh NBA rosters and regular-season box scores from ESPN.
 
 ESPN only. No stats.nba.com, nba_api, or Basketball-Reference.
 
-The 2025-26 regular season is ESPN season.year 2026 and slug regular-season.
-Preseason for the following year is season.year 2027. Play-in and postseason
+Two season files, one per ESPN season.year:
+
+- 2025-26 is season.year 2026 -> nba_boxscores_2025_26.csv (required).
+- 2026-27 is season.year 2027 -> nba_boxscores_2026_27.csv, written once the
+  first completed 2026-27 regular-season game exists. generate_nba_projections,
+  build_correlations, and the refresh workflow already read that file.
+
+Each season is walked only between its start and today (ET). A season whose
+window has ended and whose file exists is not walked again. Preseason for
+either year has slug preseason and is rejected. Play-in and postseason
 slugs are left out of the box score file. ESPN also tags the NBA Cup
 Championship (competition type CC, headline "NBA Cup Championship") as
 regular-season; that game does not count toward the 82 and is rejected. The
@@ -20,7 +28,7 @@ lists stays C. A Guard or Forward who is not on them is left unset.
 
 Usage:
     python nba/refresh_nba_data.py            # full backfill, or incremental if the CSV exists
-    python nba/refresh_nba_data.py --full     # walk the whole 2025-26 window
+    python nba/refresh_nba_data.py --full     # walk each season window from its start
     python nba/refresh_nba_data.py --incremental
 """
 from __future__ import annotations
@@ -31,6 +39,7 @@ import math
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -41,6 +50,7 @@ import requests
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
 BOX_SCORE_CSV = ROOT / "nba_boxscores_2025_26.csv"
+BOX_SCORE_CSV_2027 = ROOT / "nba_boxscores_2026_27.csv"
 MAPPINGS = ROOT / "mappings"
 POSITIONS_JSON = MAPPINGS / "player_positions.json"
 TEAMS_JSON = MAPPINGS / "team_mappings.json"
@@ -62,6 +72,22 @@ CUP_CHAMPIONSHIP_TYPE = "CC"
 CUP_CHAMPIONSHIP_HEADLINE = "NBA Cup Championship"
 SEASON_START = date(2025, 10, 1)
 SEASON_END = date(2026, 6, 30)
+
+
+@dataclass(frozen=True)
+class SeasonWindow:
+    label: str
+    year: int
+    start: date
+    end: date
+    csv: Path
+    required: bool
+
+
+SEASONS = (
+    SeasonWindow("2025-26", SEASON_YEAR, SEASON_START, SEASON_END, BOX_SCORE_CSV, True),
+    SeasonWindow("2026-27", 2027, date(2026, 10, 1), date(2027, 6, 30), BOX_SCORE_CSV_2027, False),
+)
 OVERLAP_DAYS = 3
 MAX_WORKERS = 4
 EASTERN = ZoneInfo("America/New_York")
@@ -153,14 +179,14 @@ def is_cup_championship(event: dict) -> bool:
     return False
 
 
-def is_regular_season_game(event: dict, official_teams: set[str]) -> bool:
-    """2025-26 regular season only. Preseason, play-in, postseason, and the cup final are rejected."""
+def is_regular_season_game(event: dict, official_teams: set[str], season_year: int = SEASON_YEAR) -> bool:
+    """One season's regular season only (ESPN season.year). Preseason, play-in, postseason, and the cup final are rejected."""
     season = event.get("season") or {}
     try:
         year = int(season.get("year"))
     except (TypeError, ValueError):
         return False
-    if year != SEASON_YEAR or season.get("slug") != SEASON_SLUG:
+    if year != season_year or season.get("slug") != SEASON_SLUG:
         return False
     if is_cup_championship(event):
         return False
@@ -242,7 +268,7 @@ def game_date_et(event: dict) -> str:
     return parsed.strftime("%m/%d/%Y")
 
 
-def event_to_rows(event: dict, positions_by_id: dict[str, str]) -> list[dict]:
+def event_to_rows(event: dict, positions_by_id: dict[str, str], season_year: int = SEASON_YEAR) -> list[dict]:
     competition = event["competitions"][0]
     team_details = {
         entry["team"]["abbreviation"]: {
@@ -283,7 +309,7 @@ def event_to_rows(event: dict, positions_by_id: dict[str, str]) -> list[dict]:
                     "Team": team,
                     "Match Up": matchup,
                     "Game Date": game_date,
-                    "Season": SEASON_YEAR,
+                    "Season": season_year,
                     "W/L": win_loss,
                     "MIN": parse_stat_number(values.get("MIN")),
                     "PTS": parse_stat_number(values.get("PTS")),
@@ -310,7 +336,7 @@ def event_to_rows(event: dict, positions_by_id: dict[str, str]) -> list[dict]:
     return rows
 
 
-def walk_scoreboard(start: date, end: date, official_teams: set[str]) -> list[dict]:
+def walk_scoreboard(start: date, end: date, official_teams: set[str], season_year: int = SEASON_YEAR) -> list[dict]:
     days = []
     cursor = start
     while cursor <= end:
@@ -328,18 +354,18 @@ def walk_scoreboard(start: date, end: date, official_teams: set[str]) -> list[di
             done += 1
             payload = future.result()
             for event in payload.get("events") or []:
-                if is_regular_season_game(event, official_teams):
+                if is_regular_season_game(event, official_teams, season_year):
                     kept[str(event.get("id"))] = event
             if done % 20 == 0 or done == len(days):
                 print(f"  scoreboard {done}/{len(days)} days, {len(kept)} regular-season games")
     return list(kept.values())
 
 
-def fetch_boxscore_rows(events: list[dict], positions_by_id: dict[str, str]) -> pd.DataFrame:
+def fetch_boxscore_rows(events: list[dict], positions_by_id: dict[str, str], season_year: int = SEASON_YEAR) -> pd.DataFrame:
     rows: list[dict] = []
     print(f"  Fetching {len(events)} box scores")
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(event_to_rows, event, positions_by_id) for event in events]
+        futures = [executor.submit(event_to_rows, event, positions_by_id, season_year) for event in events]
         done = 0
         for future in as_completed(futures):
             done += 1
@@ -419,7 +445,49 @@ def mean_stat(series: pd.Series) -> float | None:
     return round(float(numbers.mean()), 1)
 
 
-def build_player_snapshot(roster: list[dict], positions_by_id: dict[str, str], logs: pd.DataFrame, teams: dict[str, dict]) -> list[dict]:
+USAGE_COLUMNS = ("MIN", "FGA", "FTA", "TOV")
+
+
+def usage_percentages(logs: pd.DataFrame) -> pd.Series:
+    """Per-game usage % from the box score rows already stored.
+
+    USG% = 100 * ((FGA + 0.44*FTA + TOV) * (TmMP / 5)) / (MP * (TmFGA + 0.44*TmFTA + TmTOV))
+
+    Team totals are the sums of every player row for that team on that date,
+    so TmTOV counts player-credited turnovers only. A row is None when a
+    column is missing, the player logged no minutes, or a team total is zero.
+    """
+    empty = pd.Series([None] * len(logs), index=logs.index, dtype=object)
+    if logs.empty or any(column not in logs.columns for column in USAGE_COLUMNS + ("Team", "Game Date")):
+        return empty
+    stats = logs[list(USAGE_COLUMNS)].apply(pd.to_numeric, errors="coerce")
+    keys = [logs["Game Date"].astype(str), logs["Team"].astype(str)]
+    totals = stats.groupby(keys).transform("sum")
+    possessions = stats["FGA"] + 0.44 * stats["FTA"] + stats["TOV"]
+    team_possessions = totals["FGA"] + 0.44 * totals["FTA"] + totals["TOV"]
+    denominator = stats["MIN"] * team_possessions
+    usage = 100 * (possessions * (totals["MIN"] / 5)) / denominator.where(denominator > 0)
+    usage = usage.where(stats["MIN"] > 0)
+    return usage.round(1).astype(object).where(usage.notna(), None)
+
+
+def build_player_snapshot(
+    roster: list[dict],
+    positions_by_id: dict[str, str],
+    logs: pd.DataFrame,
+    teams: dict[str, dict],
+    summary_logs: pd.DataFrame | None = None,
+) -> list[dict]:
+    """gameLogs carry every stored season, newest first. gp and the averages
+    come from summary_logs (the 2025-26 file) when it is given, so the
+    "2025-26 regular season" line on the player page keeps its meaning."""
+    if not logs.empty:
+        logs = logs.copy()
+        logs["_usg"] = usage_percentages(logs)
+    summary_grouped = {}
+    if summary_logs is not None and not summary_logs.empty:
+        for athlete_id, group in summary_logs.groupby(summary_logs["Athlete ID"].astype(str)):
+            summary_grouped[str(athlete_id)] = group
     grouped = {}
     if not logs.empty:
         for athlete_id, group in logs.groupby(logs["Athlete ID"].astype(str)):
@@ -436,6 +504,7 @@ def build_player_snapshot(roster: list[dict], positions_by_id: dict[str, str], l
             ordered["_sort"] = pd.to_datetime(ordered["Game Date"], format="%m/%d/%Y", errors="coerce")
             ordered = ordered.sort_values("_sort", ascending=False, na_position="last")
             for record in ordered.drop(columns=["_sort"]).to_dict(orient="records"):
+                season = json_safe(record.get("Season"))
                 position = json_safe(record["Position"])
                 game_logs.append({
                     "date": json_safe(record["Game Date"]) or "",
@@ -457,8 +526,11 @@ def build_player_snapshot(roster: list[dict], positions_by_id: dict[str, str], l
                     "stl": json_safe(record["STL"]),
                     "blk": json_safe(record["BLK"]),
                     "tov": json_safe(record["TOV"]),
+                    "usg": json_safe(record.get("_usg")),
+                    "season": None if season is None else str(season),
                     "position": "" if position is None else str(position),
                 })
+        summary = summary_grouped.get(athlete_id) if summary_logs is not None else rows
         headshot = athlete.get("headshot") or {}
         players.append({
             "athleteId": athlete_id,
@@ -472,10 +544,10 @@ def build_player_snapshot(roster: list[dict], positions_by_id: dict[str, str], l
             "height": athlete.get("displayHeight") or athlete.get("height") or "",
             "weight": athlete.get("displayWeight") or athlete.get("weight") or "",
             "college": college_name(athlete),
-            "gp": len(game_logs),
-            "pts": mean_stat(rows["PTS"]) if rows is not None else None,
-            "reb": mean_stat(rows["REB"]) if rows is not None else None,
-            "ast": mean_stat(rows["AST"]) if rows is not None else None,
+            "gp": len(game_logs) if summary_logs is None else (0 if summary is None else len(summary)),
+            "pts": mean_stat(summary["PTS"]) if summary is not None else None,
+            "reb": mean_stat(summary["REB"]) if summary is not None else None,
+            "ast": mean_stat(summary["AST"]) if summary is not None else None,
             "gameLogs": game_logs,
         })
     players.sort(key=lambda player: (player["team"], player["name"]))
@@ -553,9 +625,15 @@ def write_mappings(teams: dict[str, dict], roster: list[dict], positions_by_id: 
     print(f"✅ Wrote {UNSET_JSON.name}: {len(unset_sorted)} roster players without a five-position slot")
 
 
-def write_snapshots(roster: list[dict], positions_by_id: dict[str, str], logs: pd.DataFrame, teams: dict[str, dict]) -> None:
+def write_snapshots(
+    roster: list[dict],
+    positions_by_id: dict[str, str],
+    logs: pd.DataFrame,
+    teams: dict[str, dict],
+    summary_logs: pd.DataFrame | None = None,
+) -> None:
     PUBLIC_NBA.mkdir(parents=True, exist_ok=True)
-    players = build_player_snapshot(roster, positions_by_id, logs, teams)
+    players = build_player_snapshot(roster, positions_by_id, logs, teams, summary_logs)
     team_rows = build_team_snapshot(teams, roster)
     PLAYERS_JSON.write_text(json.dumps(players, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     TEAMS_SNAPSHOT.write_text(json.dumps(team_rows, indent=2, allow_nan=False) + "\n", encoding="utf-8")
@@ -576,48 +654,85 @@ def unique_games(frame: pd.DataFrame) -> int:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Refresh NBA 2025-26 data from ESPN.")
+    parser = argparse.ArgumentParser(description="Refresh NBA regular-season box scores from ESPN.")
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--full", action="store_true", help="Walk the whole 2025-26 window.")
+    mode.add_argument("--full", action="store_true", help="Walk each season window from its start.")
     mode.add_argument("--incremental", action="store_true", help="Refetch from the newest stored date, with a short overlap.")
     return parser.parse_args()
 
 
+def today_et() -> date:
+    return datetime.now(EASTERN).date()
+
+
+def season_walk_window(season: SeasonWindow, newest: date | None, today: date, incremental: bool) -> tuple[date, date] | None:
+    """Dates to walk for one season, or None when there is nothing to fetch.
+
+    Nothing before the season opens. Never past today. A finished season with
+    stored logs is left alone.
+    """
+    if today < season.start:
+        return None
+    if incremental and newest is not None and today > season.end:
+        return None
+    start = season.start
+    if incremental and newest is not None:
+        start = max(season.start, newest - timedelta(days=OVERLAP_DAYS))
+    end = min(season.end, today)
+    if start > end:
+        return None
+    return start, end
+
+
+def refresh_season(season: SeasonWindow, official: set[str], positions_by_id: dict[str, str], args: argparse.Namespace, today: date) -> pd.DataFrame:
+    """Refresh one season file and return its stored rows (possibly empty)."""
+    incremental = args.incremental or (season.csv.exists() and not args.full)
+    existing = pd.DataFrame(columns=OUTPUT_COLUMNS)
+    newest = None
+    if incremental and season.csv.exists():
+        existing = pd.read_csv(season.csv, dtype={"Athlete ID": str})
+        newest = newest_stored_date(existing)
+    window = season_walk_window(season, newest, today, incremental)
+    if window is None:
+        print(f"  {season.label}: nothing to walk (opens {season.start.isoformat()}, newest stored {newest})")
+        return existing
+    start, end = window
+    print(f"  {season.label}: walking {start.isoformat()} through {end.isoformat()}")
+    events = walk_scoreboard(start, end, official, season.year)
+    fresh = fetch_boxscore_rows(events, positions_by_id, season.year)
+    logs = merge_incremental(existing, fresh, start) if incremental else fresh
+    if logs.empty:
+        print(f"  {season.label}: no completed regular-season rows yet")
+        return logs
+    logs.to_csv(season.csv, index=False)
+    print(f"✅ Wrote {season.csv.name}: {len(logs)} player rows, {unique_games(logs)} games")
+    return logs
+
+
 def main() -> int:
     args = parse_args()
-    print("Refreshing NBA rosters, depth charts, and 2025-26 regular-season logs")
+    print("Refreshing NBA rosters, depth charts, and regular-season logs")
     teams, roster, positions_by_id, unset = load_league()
     write_mappings(teams, roster, positions_by_id, unset)
     official = set(teams)
-    incremental = args.incremental or (BOX_SCORE_CSV.exists() and not args.full)
-    start = SEASON_START
-    existing = pd.DataFrame(columns=OUTPUT_COLUMNS)
-    if incremental and BOX_SCORE_CSV.exists():
-        existing = pd.read_csv(BOX_SCORE_CSV, dtype={"Athlete ID": str})
-        newest = newest_stored_date(existing)
-        if newest is not None:
-            start = max(SEASON_START, newest - timedelta(days=OVERLAP_DAYS))
-            print(f"  Incremental from {start.isoformat()} (newest stored {newest.isoformat()}, overlap {OVERLAP_DAYS} days)")
-    if start > SEASON_END:
-        print("  Stored logs already cover the season window.")
-        write_snapshots(roster, positions_by_id, existing, teams)
-        return 0
-    events = walk_scoreboard(start, SEASON_END, official)
-    fresh = fetch_boxscore_rows(events, positions_by_id)
-    logs = merge_incremental(existing, fresh, start) if incremental else fresh
-    if logs.empty:
-        print("✗ ESPN returned no 2025-26 regular-season rows")
-        return 1
-    logs.to_csv(BOX_SCORE_CSV, index=False)
-    write_snapshots(roster, positions_by_id, logs, teams)
-    games = unique_games(logs)
-    october_2026 = logs["Game Date"].astype(str).str.endswith("/2026") & logs["Game Date"].astype(str).str.startswith("10/")
-    print(f"\n✅ Wrote {BOX_SCORE_CSV.name}: {len(logs)} player rows, {games} games")
-    print(f"   October 2026 rows: {int(october_2026.sum())}")
+    today = today_et()
+    by_season = {season.label: refresh_season(season, official, positions_by_id, args, today) for season in SEASONS}
+    for season in SEASONS:
+        if season.required and by_season[season.label].empty:
+            print(f"✗ ESPN returned no {season.label} regular-season rows")
+            return 1
+    stored = [frame for frame in by_season.values() if not frame.empty]
+    combined = pd.concat(stored, ignore_index=True) if len(stored) > 1 else stored[0]
+    logs = by_season[SEASONS[0].label]
+    write_snapshots(roster, positions_by_id, combined, teams, summary_logs=logs)
+    newest_season = by_season[SEASONS[-1].label]
+    print(f"\n   {SEASONS[-1].label} rows: {len(newest_season)}, games: {unique_games(newest_season) if not newest_season.empty else 0}")
+    current_logs = newest_season if not newest_season.empty else logs
     print(f"   Teams in logs: {logs['Team'].nunique()}")
     print(f"   Positioned log rows: {int((logs['Position'].astype(str).str.len() > 0).sum())}")
     traded = []
     current = {str(athlete.get("id")): athlete.get("_team") for athlete in roster}
+    logs = current_logs
     for athlete_id, group in logs.groupby(logs["Athlete ID"].astype(str)):
         historical = sorted({team for team in group["Team"].astype(str) if team})
         now = current.get(str(athlete_id))
