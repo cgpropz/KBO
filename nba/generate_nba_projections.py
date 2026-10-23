@@ -27,13 +27,16 @@ final is rejected even if its date sits inside the regular-season window. The
 
 A player with no qualifying log stays pending. No rookie projection is invented.
 
-Early 2026-27 (project_board_player): with 1 or 2 qualifying 2026-27 games,
+Early 2026-27 (project_board_player): with 1 to 10 qualifying 2026-27 games,
 a player who has 2025-26 games gets a blend of a this-season-only bundle and
 a 2025-26 full-season bundle (season-long per-minute rates and average
-minutes, so a late-season minutes spike does not carry over). This season's weight is n / (n + min(m, 3)), n =
-2026-27 games, m = 2025-26 games (so 25% after one game and 40% after two
-when m >= 3). With no 2025-26 games the player stays pending (blank) until
-the third 2026-27 game. 0 or 3+ 2026-27 games: unchanged.
+minutes, so a late-season minutes spike does not carry over). For games 1-2
+this season's weight is n / (n + min(m, 3)), n = 2026-27 games, m = 2025-26
+games (so 25% after one game and 40% after two when m >= 3). From game 3 to
+game 10 the weight ramps linearly from the game-2 value to 100% at game 10
+(40%, 47.5%, ... 92.5%, 100% when m >= 3). With no 2025-26 games the player
+stays pending (blank) until the third 2026-27 game, then takes the normal
+path. 0 or 11+ 2026-27 games: unchanged.
 There is no apply_live_formula overlay.
 
 Each prop stores sanity_flag and ratio from the projection/line check
@@ -330,6 +333,7 @@ def project_player(games: list[dict], dvp_factors: dict | None = None) -> dict |
 
 
 EARLY_SEASON_GAMES = 3
+RAMP_LAST_GAME = 10
 PRIOR_SEASON_GAME_CAP = 3
 
 
@@ -338,6 +342,18 @@ def season_weight(current_games: int, prior_games: int) -> float:
     prior = min(max(prior_games, 0), PRIOR_SEASON_GAME_CAP)
     total = current_games + prior
     return current_games / total if total > 0 else 1.0
+
+
+def ramp_weight(current_games: int, prior_games: int) -> float:
+    """This season's share for games 1-10. Games 1-2: season_weight. Games 3-10 ramp
+    linearly from the game-2 share to 1.0 at game 10. 1.0 from game 11 on."""
+    if current_games < EARLY_SEASON_GAMES:
+        return season_weight(current_games, prior_games)
+    if current_games >= RAMP_LAST_GAME:
+        return 1.0
+    start = season_weight(EARLY_SEASON_GAMES - 1, prior_games)
+    step = (current_games - (EARLY_SEASON_GAMES - 1)) / (RAMP_LAST_GAME - (EARLY_SEASON_GAMES - 1))
+    return start + (1.0 - start) * step
 
 
 def _mix(a: float, b: float, weight: float) -> float:
@@ -387,19 +403,19 @@ def is_current_season_game(game: dict) -> bool:
 def project_board_player(games: list[dict], dvp_factors: dict | None = None) -> tuple[dict | None, str]:
     """Bundle for a board row and how it was built: "normal", "blend" or "blank".
 
-    1-2 qualifying 2026-27 games: blend with the 2025-26 full-season bundle
-    (season_weight), or blank
-    when there are no 2025-26 games. 0 or 3+ 2026-27 games: project_player.
+    1-10 qualifying 2026-27 games: blend a this-season-only bundle with the
+    2025-26 full-season bundle (ramp_weight). With no 2025-26 games: blank for
+    games 1-2, project_player from game 3. 0 or 11+ 2026-27 games: project_player.
     """
     qualifying = [game for game in games if (game.get("min") or 0) > 0]
     current = [game for game in qualifying if is_current_season_game(game)]
-    if not current or len(current) >= EARLY_SEASON_GAMES:
+    prior = [game for game in qualifying if not is_current_season_game(game)]
+    if not current or len(current) > RAMP_LAST_GAME or (not prior and len(current) >= EARLY_SEASON_GAMES):
         bundle = project_player(qualifying, dvp_factors)
         return bundle, "normal" if bundle else "blank"
-    prior = [game for game in qualifying if not is_current_season_game(game)]
     if not prior:
         return None, "blank"
-    weight = season_weight(len(current), len(prior))
+    weight = ramp_weight(len(current), len(prior))
     bundle = blend_bundles(project_player(current, dvp_factors), season_average_bundle(prior, dvp_factors), weight)
     bundle["gp"] = len(qualifying)
     bundle["games"] = qualifying
@@ -778,7 +794,7 @@ def apply_player(player: dict, games: list[dict], dvp_factors: dict, dvp_ranks: 
         props.append(filled)
     updated["ppAllProps"] = props
     sample = None
-    # "blend" or "blank" (rookie under 3 games) for early 2026-27 rows, else None.
+    # "blend" (games 1-10) or "blank" (no 2025-26 games, under 3 games) for early 2026-27 rows, else None.
     mode = project_board_player(qualifying)[1] if qualifying else None
     updated["earlySeason"] = mode if mode in ("blend", "blank") else None
     if qualifying and any_projection:

@@ -919,6 +919,25 @@ class PulledAndOutRowsTests(unittest.TestCase):
         rows = self._rows(payload)
         self.assertEqual([row["id"] for row in rows], ["5", "6"])
 
+    def test_skip_log_prints_counts_not_names(self):
+        import contextlib
+        import io
+        base = {"team": "ZZZ", "line_type": "standard", "projection": 30.0}
+        payload = [
+            {**base, "id": "1", "player": "Synthetic Outplayer", "prop": "Receiving Yards", "line": 7.5, "pp_status": "out"},
+            {**base, "id": "2", "player": "Synthetic Outplayer", "prop": "Receptions", "line": 1.5, "pp_status": "out"},
+            {**base, "id": "3", "player": "Synthetic Pulled", "prop": "Receiving Yards", "line": 12.5, "removed": True, "pp_status": "removed"},
+            {**base, "id": "4", "player": "Synthetic Kept", "prop": "Receptions", "line": 2.5},
+        ]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rows = self._rows(payload)
+        log = out.getvalue()
+        self.assertEqual([row["id"] for row in rows], ["4"])
+        self.assertIn("skipped 3 pulled/OUT PrizePicks rows (2 OUT rows across 1 players; 1 pulled)", log)
+        for name in ("Synthetic Outplayer", "Synthetic Pulled", "Synthetic Kept", "ZZZ"):
+            self.assertNotIn(name, log)
+
     def test_pulled_status_list_matches_the_member_board(self):
         js = (Path(__file__).parent / "kbo-props-ui" / "src" / "nhl" / "pointsGate.js").read_text()
         for status in sharp.PULLED_PP_STATUSES:
