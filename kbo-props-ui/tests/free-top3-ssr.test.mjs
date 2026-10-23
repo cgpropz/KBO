@@ -61,6 +61,10 @@ test('the rendered block carries a game-day date stamp in ET and escapes names',
   assert.match(html, /Standard lines only, ranked by CG Score\./)
   const empty = renderSportFreeTop3({ sport, rows: [], now: NOW })
   assert.match(empty, /No KBO free top 3 is posted right now\./)
+  // With rows KBO's heading says today's; without rows it is conditional.
+  assert.match(empty, /<h2>Free KBO top 3, when lines are posted<\/h2>/)
+  const nfl = renderSportFreeTop3({ sport: { id: 'nfl', name: 'NFL' }, rows: [], now: NOW })
+  assert.match(nfl, /<h2>Today's free NFL top 3<\/h2>/)
 })
 
 test('static pages ship the marker with the empty fallback; the build fills it', async () => {
@@ -69,7 +73,14 @@ test('static pages ship the marker with the empty fallback; the build fills it',
     assert.ok(html.includes(FREE_TOP3_START) && html.includes(FREE_TOP3_END))
     assert.match(html, /<section id="free-top-3">/)
     // The committed fallback makes no claim and carries no build clock.
-    assert.match(html, /Check the live board for today's free [A-Z]+ top 3\./)
+    // KBO's fallback is conditional (no promise of a top 3 today); others are unchanged.
+    if (html.includes('data-sport="kbo"')) {
+      assert.match(html, /<h2>Free KBO top 3, when lines are posted<\/h2>/)
+      assert.match(html, /When KBO lines are posted, the free KBO top 3 shows here\./)
+      assert.equal(/today's free KBO top 3/i.test(html), false)
+    } else {
+      assert.match(html, /Check the live board for today's free [A-Z]+ top 3\./)
+    }
     assert.equal(html.includes('free top 3 is posted right now'), false)
     assert.equal(/class="free-top3-block"[^>]*data-built/.test(html), false)
   }

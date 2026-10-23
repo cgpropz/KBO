@@ -25,9 +25,9 @@ status: draft
 
 CGPropz tracks KBO player props for Korea Baseball Organization games: batter lines such as hits, runs and RBIs, and pitcher lines such as strikeouts. Each prop sits next to a model number built from recent form, the matchup and the posted line. The live board is the [KBO board](/?sport=kbo). All-Access plans that include KBO are listed on [pricing](/pricing).
 
-The regular season is over, and the KBO postseason has been under way since Wednesday, Oct 14. Slates shrink to one game a day, so the free picks and the full board will be smaller than in the regular season.
+The regular season is over, and the KBO postseason has been under way since Wednesday, Oct 14. Slates shrink to one game a day, so the board, and the free picks on days with posted lines, will be smaller than in the regular season.
 
-**[Open the KBO board](/?sport=kbo)** · **[Today's free top 3](/#free-top-3)** · **[See pricing](/pricing)**
+**[Open the KBO board](/?sport=kbo)** · **[See pricing](/pricing)**
 
 New here? [Start here](/guides/start-here) for a ten-minute walkthrough of reading a board row.
 
@@ -56,9 +56,9 @@ The Wild Card works differently from the other rounds. LG, the fourth seed, adva
 
 ## How the KBO board works
 
-The live KBO board in the app lines a model number up with the posted prop. The free preview shows three lines. The rest of that live board is All-Access, and those rows are not printed here.
+The live KBO board in the app lines a model number up with the posted prop. When KBO lines are posted, the free preview shows three of them. The rest of that live board is All-Access, and those rows are not printed here.
 
-**How the KBO free top 3 is picked:** the three standard lines with the highest CG Scores on the board. Lines PrizePicks has taken down are left out.
+**How the KBO free top 3 is picked:** when KBO lines are posted, it is the three standard lines with the highest CG Scores on the board. Lines PrizePicks has taken down are left out.
 
 ## What CG Score means on KBO
 
@@ -105,7 +105,7 @@ No. CGPropz is not affiliated with PrizePicks or Underdog.
 
 ## Get the full KBO board
 
-The free top 3 is a small slice. All-Access opens every KBO prop on the board with projections, scores, hit rates and matchup context, plus the NFL, WNBA, NBA and NHL boards under one login.
+When KBO lines are posted, All-Access opens every KBO prop on the board with projections, scores, hit rates and matchup context, plus the NFL, WNBA, NBA and NHL boards under one login.
 
 **[Open the KBO board](/?sport=kbo)** · **[Compare All-Access plans](/pricing)** · [Start here](/guides/start-here) · [How CG Score works](/guides/cg-score)
 

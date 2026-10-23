@@ -11,7 +11,7 @@ import sharp from 'sharp';
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), '../public/images/og');
 
 export const OG_CARDS = [
-  { id: 'kbo', label: 'KBO', headline: 'KBO Player Props Today', sub: 'Free top 3 · CG Score · Postseason times in ET', icon: 'baseball' },
+  { id: 'kbo', label: 'KBO', headline: 'KBO Player Props Today', sub: 'CG Score · Projections · Postseason times in ET', icon: 'baseball' },
   { id: 'nba', label: 'NBA', headline: 'NBA Player Props Today', sub: 'CG Score · Projections · L5, L10 and season hit rates', icon: 'basketball' },
   { id: 'nfl', label: 'NFL', headline: 'NFL Player Props Today', sub: 'CG Score · Projections · L10 hit rates · DvP', icon: 'football' },
   { id: 'nhl', label: 'NHL', headline: 'NHL Player Props Today', sub: 'Free top 3 · Shots, saves and points · CG Score', icon: 'puck' },

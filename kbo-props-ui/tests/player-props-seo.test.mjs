@@ -102,7 +102,9 @@ test('KBO page keeps the playoff guide and leaves the results table off', () => 
   assert.match(html, /href="https:\/\/www\.cgpropz\.com\/\?sport=kbo">Open the KBO board<\/a>/)
   assert.match(html, /href="https:\/\/www\.cgpropz\.com\/pricing">pricing<\/a>/)
   assert.match(html, /href="https:\/\/www\.cgpropz\.com\/pricing">See pricing<\/a>/)
-  assert.match(html, /href="https:\/\/www\.cgpropz\.com\/#free-top-3"/)
+  // No KBO lines since Oct 21: the page does not link a "Today's free top 3".
+  assert.doesNotMatch(html, /href="https:\/\/www\.cgpropz\.com\/#free-top-3"/)
+  assert.doesNotMatch(html, /today's free (KBO )?top 3/i)
   assert.match(html, /<h2>KBO postseason 2026: schedule and first pitch in ET<\/h2>/)
   assert.match(html, /5:30 AM/)
   assert.match(html, /1:00 AM/)
