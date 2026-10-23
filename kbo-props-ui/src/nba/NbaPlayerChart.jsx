@@ -11,6 +11,9 @@ import { CgScoreNote } from '../CgScoreExplainer'
 import NbaRangeSlider from './NbaRangeSlider'
 import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newestSeasonLogs, resolveRange } from './nbaGameFilters'
 import { PENDING, pickText, seasonShortLabel, todayPick } from './nbaTodayPick'
+import PlayerInsights from '../playerInsights/PlayerInsights'
+import { insightsLayout } from '../playerInsights/insightsPreview'
+import { nbaInsights } from '../playerInsights/insightsSports'
 
 const RANGES = [
   { id: 'l5', label: 'L5', count: 5 },
@@ -156,6 +159,15 @@ export default function NbaPlayerChart({ player, projection }) {
     resetKey: `${player?.athleteId || player?.name || ''}|${current?.stat || ''}`,
   })
 
+  // Splits / Advanced preview (?insights=a|b|c). Off by default.
+  const insightsMode = useMemo(() => insightsLayout(), [])
+  const insightsModel = useMemo(() => (insightsMode && current
+    ? nbaInsights(allLogs, {
+      valueOf: (game) => statValue(game, current.stat),
+      opponent: String(current.rows.find((prop) => prop?.opponent)?.opponent || '').trim().toUpperCase() || null,
+    })
+    : null), [allLogs, current, insightsMode])
+
   if (!current || slider.line == null) return <NoLineToday projection={projection} />
 
   const chartProp = current.rows.find((prop) => Number(prop.line) === Number(current.posted)) || current.rows[0]
@@ -178,7 +190,7 @@ export default function NbaPlayerChart({ player, projection }) {
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
   const hitColor = rateTextColor(chartHit.rate, chartHit.games)
 
-  return (
+  const chartCard = (
     <section className="nba-player-chart-card card" aria-label="Hit rate chart">
       <div className="nba-player-chart-head">
         <div>
@@ -268,5 +280,20 @@ export default function NbaPlayerChart({ player, projection }) {
       </div>
       <AltLinesRow slider={slider} />
     </section>
+  )
+  const statChips = groups.length > 1 ? (
+    <div className="nba-player-props">
+      {groups.map((group) => (
+        <button key={group.stat} type="button" className={group.stat === current.stat ? 'active' : ''} onClick={() => setStat(group.stat)}>
+          {group.stat}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  return (
+    <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={current.stat} chips={statChips}>
+      {chartCard}
+    </PlayerInsights>
   )
 }

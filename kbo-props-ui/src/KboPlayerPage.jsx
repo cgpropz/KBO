@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import BatterSplits from './BatterSplits'
+import PlayerInsights from './playerInsights/PlayerInsights'
+import { insightsLayout } from './playerInsights/insightsPreview'
+import { kboInsights } from './playerInsights/insightsSports'
 import PitcherMatchup from './PitcherMatchup'
 import PlayerOddsTable from './PlayerOddsTable'
 import { AltLinesRow, LinePlot } from './LineSlider'
@@ -258,6 +261,14 @@ export default function KboPlayerPage({ playerName, onBack }) {
     side: breakEvenSide,
   }), [player, currentProp, slider.line, breakEvenSide])
 
+  // Splits / Advanced preview (?insights=a|b|c). Off by default.
+  const insightsMode = useMemo(() => insightsLayout(), [])
+  const insightsModel = useMemo(() => {
+    if (!insightsMode || !player || !currentProp) return null
+    const getGameValue = PROP_GAME_VALUE[currentProp.stat]
+    return kboInsights(player, { valueOf: getGameValue || (() => null) })
+  }, [insightsMode, player, currentProp])
+
   if (error) return <div className="kbo-notice">Unable to load player data: {error}</div>
   if (!cards.length) return <div className="kbo-notice">Loading player data for {playerName}.</div>
   if (!player || !propRows.length || !currentProp) {
@@ -367,6 +378,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
           )}
         </div>
 
+        <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={currentProp.stat}>
         <div className="kbo-player-range-strip">
           {rangeOptions.map(option => (
             <button
@@ -451,6 +463,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
           })} />
         </div>
         <AltLinesRow slider={slider} />
+        </PlayerInsights>
         {!isPitcher && (
           <PitcherMatchup
             batterTeam={player.team}
