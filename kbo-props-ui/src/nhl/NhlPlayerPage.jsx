@@ -12,8 +12,7 @@ import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
 import GameDateLogo from '../GameDateLogo'
 import PlayerInsights from '../playerInsights/PlayerInsights'
-import { insightsLayout } from '../playerInsights/insightsPreview'
-import { nhlInsights } from '../playerInsights/insightsSports'
+import { NHL_LOG_SOURCE_APPROVED, nhlInsights } from '../playerInsights/insightsSports'
 
 const RANGES = [
   { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
@@ -369,9 +368,9 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
     resetKey: `${item?.playerId || item?.player || ''}|${item?.prop || ''}`,
   })
 
-  // Splits / Advanced preview (?insights=a|b|c). Off by default.
-  const insightsMode = useMemo(() => insightsLayout(), [])
-  const insightsModel = useMemo(() => (insightsMode && item ? nhlInsights(item) : null), [insightsMode, item])
+  // Splits + Advanced stats stay hidden on NHL until a licensed or official
+  // game feed replaces the non-commercial logs (NHL_LOG_SOURCE_APPROVED).
+  const insightsModel = useMemo(() => (NHL_LOG_SOURCE_APPROVED && item ? nhlInsights(item, { sourceApproved: true }) : null), [item])
 
   if (!item) return null
 
@@ -430,7 +429,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         {item.latestGame ? ` Latest game ${item.latestGame}.` : ''}
         {' '}2026-27 is this season only. 2025-26 is last season, including a previous team.
       </p>
-      <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={item.prop}>
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={item.prop}>
       <div className="nfl-player-range-strip">
         {RANGES.map((option) => {
           const window = chartInput.windows.find((entry) => entry.id === option.id)

@@ -1,29 +1,8 @@
-// Splits / Advanced preview math. Made-up game logs only.
+// Player-page Splits / Advanced stats math. Made-up game logs only.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { buildSplits, formatMetric, metricWindows, parseGameDay, withRest } from '../src/playerInsights/insightsCore.js'
 import { basketballSeasonLabel, kboInsights, nbaInsights, nflInsights, nhlInsights } from '../src/playerInsights/insightsSports.js'
-import { readInsightsLayout } from '../src/playerInsights/insightsPreview.js'
-
-function memoryStorage() {
-  const data = new Map()
-  return {
-    getItem: (key) => (data.has(key) ? data.get(key) : null),
-    setItem: (key, value) => data.set(key, String(value)),
-    removeItem: (key) => data.delete(key),
-  }
-}
-
-test('preview switch is off by default and sticks per tab', () => {
-  const storage = memoryStorage()
-  assert.equal(readInsightsLayout('', storage), null)
-  assert.equal(readInsightsLayout('?sport=nba', storage), null)
-  assert.equal(readInsightsLayout('?insights=B', storage), 'b')
-  assert.equal(readInsightsLayout('?sport=nfl', storage), 'b')
-  assert.equal(readInsightsLayout('?insights=off', storage), null)
-  assert.equal(readInsightsLayout('', storage), null)
-  assert.equal(readInsightsLayout('?insights=z', storage), null)
-})
 
 test('parses each sport date shape', () => {
   assert.equal(parseGameDay('2026-10-01'), parseGameDay('10/01/2026'))

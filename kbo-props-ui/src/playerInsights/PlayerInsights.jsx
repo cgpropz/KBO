@@ -3,8 +3,6 @@ import { buildSplits, dayLabel, formatAvg, formatMetric, metricSeries, metricWin
 import { formatLineValue, rateTextColor } from '../lineSlider'
 import './playerInsights.css'
 
-const LAYOUT_NAMES = { a: 'A · Tabs', b: 'B · Stacked', c: 'C · Table' }
-
 function rateText(row) {
   return row.rate == null ? '—' : `${row.rate}%`
 }
@@ -39,13 +37,6 @@ function SplitRow({ row }) {
 }
 
 function SplitsPanel({ splits, model, line, statLabel }) {
-  if (model.splitsBlocked) {
-    return (
-      <div className="pi-splits" data-testid="pi-splits">
-        <p className="pi-empty" data-testid="pi-splits-blocked">{model.splitsBlocked}</p>
-      </div>
-    )
-  }
   const groups = []
   splits.rows.forEach((row) => {
     let group = groups.find((entry) => entry.name === row.group)
@@ -134,7 +125,7 @@ function Unavailable({ model }) {
   )
 }
 
-function AdvancedPanel({ model, compact = false }) {
+function AdvancedPanel({ model }) {
   const [metricId, setMetricId] = useState(model.metrics[0]?.id || '')
   const metric = model.metrics.find((entry) => entry.id === metricId) || model.metrics[0]
   const windows = useMemo(() => (metric ? metricWindows(metric, model.games, model) : []), [metric, model])
@@ -148,7 +139,7 @@ function AdvancedPanel({ model, compact = false }) {
     )
   }
   return (
-    <div className={`pi-advanced${compact ? ' is-compact' : ''}`} data-testid="pi-advanced">
+    <div className="pi-advanced" data-testid="pi-advanced">
       <MetricPicker metrics={model.metrics} value={metric.id} onChange={setMetricId} />
       <div className="pi-windows">
         {windows.map((window) => (
@@ -159,93 +150,29 @@ function AdvancedPanel({ model, compact = false }) {
           </div>
         ))}
       </div>
-      {!compact && <MiniSeries series={series} format={metric.format} />}
+      <MiniSeries series={series} format={metric.format} />
       <p className="pi-note">{metric.note} From our game logs.</p>
       <Unavailable model={model} />
     </div>
   )
 }
 
-function CompactTable({ splits, model, line, statLabel }) {
-  return (
-    <section className="pi-card pi-compact" data-testid="pi-compact" aria-label="Splits and advanced stats">
-      <div className="pi-card-head">
-        <h3>Splits</h3>
-        <span>{statLabel} over {line == null ? '—' : formatLineValue(line)}</span>
-      </div>
-      <SampleNote splits={splits} model={model} />
-      {model.splitsBlocked ? <SplitsPanel splits={splits} model={model} line={line} statLabel={statLabel} /> : (
-      // A div grid, not a <table>: the phone stylesheet turns every table on
-      // these pages into cards, and this one has to stay a table.
-      <div className="pi-table" role="table" data-testid="pi-splits">
-        <div className="pi-trow pi-thead" role="row">
-          {['Split', 'Hit', 'Avg', 'n'].map((head) => <span key={head} role="columnheader">{head}</span>)}
-        </div>
-        {splits.rows.map((row) => {
-          const color = rateTextColor(row.rate, row.decided)
-          return (
-            <div key={row.id} role="row" data-testid="pi-split-row" className={`pi-trow${row.n === 0 ? ' is-empty' : ''}`}>
-              <span role="cell">{row.label}</span>
-              <span role="cell" style={color ? { color } : undefined}>{rateText(row)}</span>
-              <span role="cell">{formatAvg(row.avg)}</span>
-              <span role="cell" className={row.small ? 'is-small' : ''}>{row.n}</span>
-            </div>
-          )
-        })}
-      </div>
-      )}
-      {!model.splitsBlocked && <Skipped splits={splits} />}
-      <div className="pi-card-head pi-card-head-sub"><h3>Advanced</h3></div>
-      <AdvancedPanel model={model} compact />
-    </section>
-  )
-}
-
-// `chips` is the page's stat selector, repeated on the A-layout Splits and
-// Advanced tabs so the stat can change without going back to Hit Rate.
-// `children` is the page's existing hit-rate block, left exactly as it is.
-// With no preview layout the wrapper renders only that.
-export default function PlayerInsights({ layout, model, line, statLabel, chips = null, children }) {
-  const [tab, setTab] = useState('hit')
-  const splits = useMemo(() => (model ? (model.splitsBlocked ? { rows: [], skipped: [], seasonGames: 0 } : buildSplits(model.games, { ...model, line })) : null), [model, line])
-  if (!layout || !model || !splits) return children
-  const badge = <span className="pi-preview-badge" data-testid="pi-preview-badge">Preview {LAYOUT_NAMES[layout]}</span>
-
-  if (layout === 'a') {
-    return (
-      <>
-        <div className="pi-tabs" role="tablist" data-testid="pi-tabs">
-          {[['hit', 'Hit Rate'], ['splits', 'Splits'], ['advanced', 'Advanced']].map(([id, label]) => (
-            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>{label}</button>
-          ))}
-          {badge}
-        </div>
-        <div className="pi-hit" style={{ display: tab === 'hit' ? 'contents' : 'none' }}>{children}</div>
-        {tab === 'splits' && <section className="pi-card">{chips && <div className="pi-chips">{chips}</div>}<SplitsPanel splits={splits} model={model} line={line} statLabel={statLabel} /></section>}
-        {tab === 'advanced' && <section className="pi-card">{chips && <div className="pi-chips">{chips}</div>}<AdvancedPanel model={model} /></section>}
-      </>
-    )
-  }
-
-  if (layout === 'c') {
-    return (
-      <>
-        {children}
-        {badge}
-        <CompactTable splits={splits} model={model} line={line} statLabel={statLabel} />
-      </>
-    )
-  }
-
+// Splits and Advanced stats, stacked under the page's existing hit-rate block
+// (`children`, left exactly as it is). Pages pass `model` only for a viewer
+// who already has that sport's paid player data, so this adds nothing for
+// anyone else. A blocked model (NHL until its game feed is approved) or no
+// model renders just the children.
+export default function PlayerInsights({ model, line, statLabel, children }) {
+  const splits = useMemo(() => (model && !model.splitsBlocked ? buildSplits(model.games, { ...model, line }) : null), [model, line])
+  if (!model || model.splitsBlocked || !splits) return children
   return (
     <>
       {children}
-      {badge}
-      <section className="pi-card" aria-label="Splits">
+      <section className="pi-card" aria-label="Splits" data-testid="pi-splits-card">
         <div className="pi-card-head"><h3>Splits</h3></div>
         <SplitsPanel splits={splits} model={model} line={line} statLabel={statLabel} />
       </section>
-      <section className="pi-card" aria-label="Advanced stats">
+      <section className="pi-card" aria-label="Advanced stats" data-testid="pi-advanced-card">
         <div className="pi-card-head"><h3>Advanced stats</h3></div>
         <AdvancedPanel model={model} />
       </section>

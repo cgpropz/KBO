@@ -111,40 +111,31 @@ export async function expectFits(page, label, expect) {
   expect(box.scrollWidth, `${label} scrollWidth`).toBeLessThanOrEqual(box.innerWidth)
 }
 
-// Opens the Splits view and the Advanced picker for whichever layout is on,
-// checking that every step stays inside the viewport.
-export async function checkInsights(page, { expect, layout, label, blocked = false }) {
-  await expect(page.getByTestId('pi-preview-badge')).toBeVisible()
-  if (layout === 'a') await page.getByTestId('pi-tabs').getByRole('tab', { name: 'Splits' }).click()
-  const splits = page.getByTestId('pi-splits')
+// Checks the stacked Splits and Advanced stats cards, opens the Advanced
+// picker and switches metric, staying inside the viewport at every step.
+export async function checkInsights(page, { expect, label }) {
+  const splits = page.getByTestId('pi-splits-card')
   await expect(splits).toBeVisible()
-  if (blocked) {
-    await expect(page.getByTestId('pi-splits-blocked')).toBeVisible()
-    await expect(page.getByTestId('pi-split-row')).toHaveCount(0)
-  } else {
-    await expect(page.getByTestId('pi-split-row').first()).toBeVisible()
-    await expect(splits).not.toContainText(/NaN|undefined/)
-  }
+  await expect(page.getByTestId('pi-split-row').first()).toBeVisible()
+  await expect(splits).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} splits`, expect)
 
-  if (layout === 'a') await page.getByTestId('pi-tabs').getByRole('tab', { name: 'Advanced' }).click()
-  const advanced = page.getByTestId('pi-advanced')
+  const advanced = page.getByTestId('pi-advanced-card')
   await expect(advanced).toBeVisible()
-  if (blocked) {
-    await expect(page.getByTestId('pi-adv-toggle')).toHaveCount(0)
-  } else {
-    await page.getByTestId('pi-adv-toggle').click()
-    const options = page.getByTestId('pi-adv-option')
-    expect(await options.count()).toBeGreaterThan(1)
-    await expectFits(page, `${label} advanced open`, expect)
-    const second = (await options.nth(1).innerText()).trim()
-    await options.nth(1).click()
-    await expect(page.getByTestId('pi-adv-toggle')).toContainText(second)
-    await expect(advanced).not.toContainText(/NaN|undefined/)
-  }
+  await page.getByTestId('pi-adv-toggle').click()
+  const options = page.getByTestId('pi-adv-option')
+  expect(await options.count()).toBeGreaterThan(1)
+  await expectFits(page, `${label} advanced open`, expect)
+  const second = (await options.nth(1).innerText()).trim()
+  await options.nth(1).click()
+  await expect(page.getByTestId('pi-adv-toggle')).toContainText(second)
+  await expect(advanced).not.toContainText(/NaN|undefined/)
   await expectFits(page, `${label} advanced`, expect)
-  if (layout === 'a') {
-    await page.getByTestId('pi-tabs').getByRole('tab', { name: 'Hit Rate' }).click()
-    await expect(page.getByTestId('pi-splits')).toHaveCount(0)
-  }
+}
+
+// No Splits / Advanced markup at all (logged out, or NHL).
+export async function expectNoInsights(page, expect) {
+  await page.waitForTimeout(800)
+  await expect(page.locator('[data-testid^="pi-"]')).toHaveCount(0)
+  await expect(page.locator('.pi-card')).toHaveCount(0)
 }

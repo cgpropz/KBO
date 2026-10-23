@@ -21,7 +21,8 @@ import { fitImage } from '../fitImage.js'
 import { pickSide, sideClass } from '../pickSide.js'
 import GameDateLogo from '../GameDateLogo'
 import PlayerInsights from '../playerInsights/PlayerInsights'
-import { insightsLayout } from '../playerInsights/insightsPreview'
+import { useAuth } from '../AuthContext'
+import { sportAccess } from '../entitlements'
 import { wnbaInsights } from '../playerInsights/insightsSports'
 import { wnbaLogoUrl } from '../slipBoardModel.js'
 
@@ -319,13 +320,14 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
     resetKey: `${player?.name || ''}|${currentProp?.stat || ''}`,
   })
 
-  // Splits / Advanced preview (?insights=a|b|c). Off by default.
-  const insightsMode = useMemo(() => insightsLayout(), [])
+  // Splits + Advanced stats: WNBA members only.
+  const { tier } = useAuth()
+  const insightsAllowed = sportAccess(tier).wnba
   const insightsModel = useMemo(() => {
-    if (!insightsMode || !player || !currentProp) return null
+    if (!insightsAllowed || !player || !currentProp) return null
     const getGameValue = PROP_GAME_VALUE[currentProp.stat]
     return wnbaInsights(player.recentGames || [], { valueOf: getGameValue || (() => null), opponent: currentProp.opponent || null })
-  }, [insightsMode, player, currentProp])
+  }, [insightsAllowed, player, currentProp])
 
   if (error) return <div className="wnba-notice">Unable to load player data: {error}</div>
   if (!players.length) return <div className="wnba-notice">Loading player data for {playerName}.</div>
@@ -424,7 +426,7 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
           <div><small>USAGE %</small><strong>{usageAvg != null ? `${usageAvg.toFixed(1)}%` : 'N/A'}</strong></div>
         </div>
 
-        <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={currentProp.stat}>
+        <PlayerInsights model={insightsModel} line={chartLine} statLabel={currentProp.stat}>
         <div className="wnba-player-range-strip">
           {rangeOptions.map(option => (
             <button

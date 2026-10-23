@@ -13,7 +13,6 @@ import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newe
 import NbaMinutesUsage from './NbaMinutesUsage'
 import { PENDING, pickText, seasonShortLabel, todayPick } from './nbaTodayPick'
 import PlayerInsights from '../playerInsights/PlayerInsights'
-import { insightsLayout } from '../playerInsights/insightsPreview'
 import { nbaInsights } from '../playerInsights/insightsSports'
 
 const RANGES = [
@@ -160,14 +159,15 @@ export default function NbaPlayerChart({ player, projection }) {
     resetKey: `${player?.athleteId || player?.name || ''}|${current?.stat || ''}`,
   })
 
-  // Splits / Advanced preview (?insights=a|b|c). Off by default.
-  const insightsMode = useMemo(() => insightsLayout(), [])
-  const insightsModel = useMemo(() => (insightsMode && current
+  // Splits + Advanced stats, from the same game logs as the chart. NBA player
+  // logs only reach full-access viewers (server gate), so there is no extra
+  // client check here.
+  const insightsModel = useMemo(() => (current && allLogs.length
     ? nbaInsights(allLogs, {
       valueOf: (game) => statValue(game, current.stat),
       opponent: String(current.rows.find((prop) => prop?.opponent)?.opponent || '').trim().toUpperCase() || null,
     })
-    : null), [allLogs, current, insightsMode])
+    : null), [allLogs, current])
 
   // Minutes & Usage: the same window over every logged game (newest first);
   // games the sliders filter out stay in place, dimmed.
@@ -299,19 +299,9 @@ export default function NbaPlayerChart({ player, projection }) {
       <AltLinesRow slider={slider} />
     </section>
   )
-  const statChips = groups.length > 1 ? (
-    <div className="nba-player-props">
-      {groups.map((group) => (
-        <button key={group.stat} type="button" className={group.stat === current.stat ? 'active' : ''} onClick={() => setStat(group.stat)}>
-          {group.stat}
-        </button>
-      ))}
-    </div>
-  ) : null
-
   return (
     <>
-      <PlayerInsights layout={insightsMode} model={insightsModel} line={chartLine} statLabel={current.stat} chips={statChips}>
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={current.stat}>
         {chartCard}
       </PlayerInsights>
       {minutesUsage}

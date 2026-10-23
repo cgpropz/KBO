@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { checkInsights, installFixtures } from './playerInsightsFixtures.js'
+import { checkInsights, expectNoInsights, installFixtures } from './playerInsightsFixtures.js'
 
-// Signed-in player pages (NBA, NFL, NHL) with the Splits / Advanced preview
-// at phone width. Runs on the card-fit build, which has the fake Supabase URL
+// Signed-in player pages at phone width: stacked Splits + Advanced stats on
+// NBA, NFL, KBO and WNBA; nothing on NHL (game feed not approved yet). Runs on the card-fit build, which has the fake Supabase URL
 // so a mocked member session can finish the plan check. Made-up data only.
 
 async function installMember(page) {
@@ -36,9 +36,10 @@ async function installMember(page) {
 }
 
 const pages = [
-  ['nba', '/?sport=nba&nbaTab=players', '[data-testid="nba-player-card"]', 'Synth Guard', false],
-  ['nfl', '/?sport=nfl', '.nfl-player-link', 'Synth Receiver', false],
-  ['nhl', '/?sport=nhl', '.nfl-player-link', 'Synth Center', true],
+  ['nba', '/?sport=nba&nbaTab=players', '[data-testid="nba-player-card"]', 'Synth Guard'],
+  ['nfl', '/?sport=nfl', '.nfl-player-link', 'Synth Receiver'],
+  ['kbo', '/?sport=kbo', '.kbo-player-cell', 'Synth Hitter'],
+  ['wnba', '/?sport=wnba', '.wnba-player-link', 'Synth Forward'],
 ]
 
 test.beforeEach(async ({ page }, testInfo) => {
@@ -47,23 +48,21 @@ test.beforeEach(async ({ page }, testInfo) => {
   await installMember(page)
 })
 
-for (const [sport, path, selector, name, blocked] of pages) {
-  for (const layout of ['a', 'b', 'c']) {
-    test(`${sport} member layout ${layout.toUpperCase()} fits with Splits and the Advanced picker`, async ({ page }) => {
-      await page.goto(`${path}&insights=${layout}`, { waitUntil: 'load' })
-      const link = page.locator(selector).filter({ hasText: name }).first()
-      await expect(link).toBeVisible()
-      await link.click()
-      await checkInsights(page, { expect, layout, label: `${sport} ${layout}`, blocked })
-    })
-  }
+async function openPlayer(page, path, selector, name) {
+  await page.goto(path, { waitUntil: 'load' })
+  const link = page.locator(selector).filter({ hasText: name }).first()
+  await expect(link).toBeVisible()
+  await link.click()
+}
 
-  test(`${sport} member page has no preview UI without the switch`, async ({ page }) => {
-    await page.goto(`${path}&insights=off`, { waitUntil: 'load' })
-    const link = page.locator(selector).filter({ hasText: name }).first()
-    await expect(link).toBeVisible()
-    await link.click()
-    await page.waitForTimeout(800)
-    await expect(page.locator('[data-testid^="pi-"]')).toHaveCount(0)
+for (const [sport, path, selector, name] of pages) {
+  test(`${sport} member page stacks Splits and Advanced stats and fits`, async ({ page }) => {
+    await openPlayer(page, path, selector, name)
+    await checkInsights(page, { expect, label: sport })
   })
 }
+
+test('nhl member page has no splits or advanced stats', async ({ page }) => {
+  await openPlayer(page, '/?sport=nhl', '.nfl-player-link', 'Synth Center')
+  await expectNoInsights(page, expect)
+})
