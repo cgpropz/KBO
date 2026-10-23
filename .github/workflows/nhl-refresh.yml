@@ -72,6 +72,27 @@ jobs:
         continue-on-error: true
         run: python pipeline/build_correlations.py --sport nhl --root /tmp/moneypuck
 
+      # DISPLAY ONLY, OFF BY DEFAULT. Adds nhlApiLog (per-game TOI, PP TOI,
+      # shots, faceoffs, hits, blocks from api.nhle.com/stats/rest) to one row
+      # per player for the player page. The model never reads it, and the UI
+      # keeps those sections off until Legal clears the NHL API terms. Runs only
+      # when the repo variable NHL_API_UI_LOGS is "1". Last season is cached;
+      # this season is refetched at most every 2 hours. Always exits 0.
+      - name: Restore NHL API UI log cache
+        if: vars.NHL_API_UI_LOGS == '1'
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: /tmp/nhl_ui_logs_cache
+          key: nhl-ui-logs-${{ github.run_id }}
+          restore-keys: nhl-ui-logs-
+
+      - name: Add NHL API game logs for the player page (display only)
+        if: vars.NHL_API_UI_LOGS == '1'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python -m nhl.ui_game_logs --board nhl/projections.json --cache /tmp/nhl_ui_logs_cache
+
       - name: Publish protected NHL snapshot
         timeout-minutes: 10
         run: python publish_supabase.py

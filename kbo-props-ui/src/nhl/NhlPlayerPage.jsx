@@ -13,6 +13,11 @@ import { fitImage } from '../fitImage.js'
 import GameDateLogo from '../GameDateLogo'
 import PlayerInsights from '../playerInsights/PlayerInsights'
 import { NHL_LOG_SOURCE_APPROVED, nhlInsights } from '../playerInsights/insightsSports'
+import { NhlFilters, NhlPickCard, NhlPropChips, NhlUsageTrends } from './NhlParitySections'
+import {
+  CURRENT_SEASON, anyNarrowed, apiWindow, applyFilters, decodeNhlApiLog, filterBounds, filtersFor,
+  nhlApiInsights, nhlApiSectionsOn, playerPropRows, resolveFilters,
+} from './nhlPlayerParity.js'
 
 const RANGES = [
   { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
@@ -308,9 +313,18 @@ function sameNhlRow(row, source) {
 export default function NhlPlayerPage({ item: initialItem, onBack }) {
   const [item, setItem] = useState(initialItem)
   const [range, setRange] = useState('l10')
+  // Today's props for this player (stat chips) and the NHL API game log
+  // (nhl/ui_game_logs.py puts it on one row per player).
+  const [propRows, setPropRows] = useState([])
+  const [apiLog, setApiLog] = useState(null)
+  const [filterPicks, setFilterPicks] = useState({})
+  const apiOn = useMemo(() => nhlApiSectionsOn(), [])
 
   useEffect(() => {
     setItem(initialItem)
+    setPropRows([])
+    setApiLog(null)
+    setFilterPicks({})
     const name = initialItem?.player
     if (!name) return undefined
     let active = true
@@ -320,10 +334,22 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         const rows = Array.isArray(snapshot.data) ? snapshot.data : []
         const match = rows.find((row) => sameNhlRow(row, initialItem))
         if (match) setItem({ ...initialItem, ...match })
+        setPropRows(playerPropRows(rows, name))
+        setApiLog(rows.find((row) => String(row?.player || '') === String(name) && row?.nhlApiLog)?.nhlApiLog || null)
       })
       .catch(() => {})
     return () => { active = false }
   }, [initialItem])
+
+  // NHL API sections: only with the flag on and a log for this player.
+  const apiGames = useMemo(() => (apiOn ? decodeNhlApiLog(apiLog) : []), [apiOn, apiLog])
+  const useApi = apiGames.length > 0
+  const apiKind = apiGames[0]?.kind || (item?.prop === 'Goalie Saves' ? 'goalie' : 'skater')
+  const filters = filtersFor(apiKind)
+  const bounds = useMemo(() => filterBounds(apiGames, filters), [apiGames, filters])
+  const ranges = useMemo(() => resolveFilters(bounds, filterPicks, filters), [bounds, filterPicks, filters])
+  const narrowed = anyNarrowed(ranges)
+  const keptGames = useMemo(() => applyFilters(apiGames, ranges, filters), [apiGames, ranges, filters])
   const [dvpState, setDvpState] = useState({ position: '', payload: null })
   const position = positionGroup(item)
   const dvp = dvpState.position === position ? dvpState.payload : null
@@ -340,7 +366,9 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   const chartInput = useMemo(() => {
     if (!item) return { posted: null, bars: [], values: [], windows: [], offered: null }
     const windows = RANGES.map((option) => {
-      const windowBars = chartWindow(item, option.id)
+      const windowBars = useApi
+        ? apiWindow(keptGames, option.id, { prop: item.prop, opponent: item.opponent })
+        : chartWindow(item, option.id)
       return {
         id: option.id,
         bars: windowBars,
@@ -359,7 +387,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         item.prop,
       ),
     }
-  }, [item, range])
+  }, [item, range, useApi, keptGames])
 
   const slider = useChartLine({
     postedLine: chartInput.posted,
@@ -370,7 +398,21 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
 
   // Splits + Advanced stats stay hidden on NHL until a licensed or official
   // game feed replaces the non-commercial logs (NHL_LOG_SOURCE_APPROVED).
-  const insightsModel = useMemo(() => (NHL_LOG_SOURCE_APPROVED && item ? nhlInsights(item, { sourceApproved: true }) : null), [item])
+  // With the NHL API flag on, they come from the NHL API logs instead.
+  const insightsModel = useMemo(() => {
+    if (!item) return null
+    if (useApi) return nhlApiInsights(item, apiGames)
+    return NHL_LOG_SOURCE_APPROVED ? nhlInsights(item, { sourceApproved: true }) : null
+  }, [item, useApi, apiGames])
+
+  // Ice time trends follow the chart's window over every game (newest first,
+  // capped at 20 bars); games the sliders drop stay in place, dimmed.
+  const trendWindow = useMemo(() => {
+    if (!useApi) return []
+    const all = apiWindow(apiGames, range, { prop: item?.prop, opponent: item?.opponent }).map((bar) => bar.game)
+    return all.slice(-20).reverse()
+  }, [useApi, apiGames, range, item])
+  const keptSet = useMemo(() => (narrowed ? new Set(keptGames) : null), [narrowed, keptGames])
 
   if (!item) return null
 
@@ -425,10 +467,11 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         ) : (
           <>{item.prop} line <b>{formatCount(line)}</b>.</>
         )}
-        {' '}Projection <b>{formatCount(item.projection)}</b>.
         {item.latestGame ? ` Latest game ${item.latestGame}.` : ''}
         {' '}2026-27 is this season only. 2025-26 is last season, including a previous team.
       </p>
+      <NhlPickCard item={item} />
+      <NhlPropChips rows={propRows} current={item.prop} onSelect={(row) => setItem({ ...initialItem, ...row })} />
       <PlayerInsights model={insightsModel} line={chartLine} statLabel={item.prop}>
       <div className="nfl-player-range-strip">
         {RANGES.map((option) => {
@@ -444,6 +487,17 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
           )
         })}
       </div>
+      {useApi && (
+        <NhlFilters
+          filters={filters}
+          bounds={bounds}
+          ranges={ranges}
+          kept={keptGames.length}
+          total={apiGames.length}
+          onChange={(id, next) => setFilterPicks((current) => ({ ...current, [id]: next }))}
+          onReset={() => setFilterPicks({})}
+        />
+      )}
       <div className="nhl-chart-card">
         <div className="nhl-chart-head">
           <span>{selected.label}{includesPrior && range !== 'prior' && range !== 'season' ? ' · includes 2025-26' : ''}</span>
@@ -500,6 +554,15 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         </div>
         <AltLinesRow slider={slider} />
       </div>
+      {useApi && (
+        <NhlUsageTrends
+          kind={apiKind}
+          games={apiGames}
+          windowGames={trendWindow}
+          keptGames={keptSet}
+          seasonGames={apiGames.filter((game) => game.season === CURRENT_SEASON).length}
+        />
+      )}
       </PlayerInsights>
 
       <section className="nhl-profile" aria-label={profileTitle(position, item.prop)}>

@@ -37,6 +37,8 @@ export const HISTORY_KEYS = [
   'logSeasons',
   'logOpponents',
   'logTeams',
+  // NHL API per-game logs for the player page only (nhl/ui_game_logs.py).
+  'nhlApiLog',
   ...L10_HEAD_KEYS,
 ]
 
